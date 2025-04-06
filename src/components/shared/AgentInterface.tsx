@@ -129,7 +129,7 @@ const AgentInterface = ({
     return score >= 5 
       ? "bg-green-500/60" 
       : score >= 3 
-        ? "bg-yellow-500/60" 
+        ? "bg-green-500/60" // Changed from "bg-yellow-500/60" to "bg-green-500/60"
         : "bg-red-500/60";
   };
 
