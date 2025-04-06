@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Send, Mic, Paperclip, Image, Bot, Play, Pause, Volume2, Loader2 } from 'lucide-react';
 import { AgentMessage } from '@/lib/types';
@@ -126,7 +127,7 @@ const AgentInterface = ({
   const getTrustColor = (score: number) => {
     // Trust: 5-10 green, 3-4 amber, 1-2 red
     return score >= 5 
-      ? "bg-iqube-primary/60" 
+      ? "bg-green-500/60" 
       : score >= 3 
         ? "bg-yellow-500/60" 
         : "bg-red-500/60";
@@ -155,7 +156,7 @@ const AgentInterface = ({
               {Array.from({ length: 5 }).map((_, i) => (
                 <div 
                   key={i}
-                  className={`w-1.5 h-1.5 rounded-full mx-0.5 ${i < reliability ? 'bg-iqube-primary/60' : 'bg-muted'}`}
+                  className={`w-1.5 h-1.5 rounded-full mx-0.5 ${i < reliability ? 'bg-green-500/60' : 'bg-muted'}`}
                 />
               ))}
             </div>

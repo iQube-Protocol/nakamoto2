@@ -149,32 +149,7 @@ const DashboardOverview = ({ metrics, metaQube }: DashboardOverviewProps) => {
             </CollapsibleTrigger>
             <CollapsibleContent className="mt-2">
               <div className="p-3 bg-muted/30 rounded-md border">
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
-                  <div className="flex flex-col items-center">
-                    <div className="text-sm mb-1">Sensitivity</div>
-                    <div className={`h-8 w-8 rounded-full flex items-center justify-center text-white font-medium ${getScoreColor(metaQube["Sensitivity-Score"], 'sensitivity')}`}>
-                      {metaQube["Sensitivity-Score"]}
-                    </div>
-                  </div>
-                  <div className="flex flex-col items-center">
-                    <div className="text-sm mb-1">Accuracy</div>
-                    <div className={`h-8 w-8 rounded-full flex items-center justify-center text-white font-medium ${getScoreColor(metaQube["Accuracy-Score"], 'accuracy')}`}>
-                      {metaQube["Accuracy-Score"]}
-                    </div>
-                  </div>
-                  <div className="flex flex-col items-center">
-                    <div className="text-sm mb-1">Verifiability</div>
-                    <div className={`h-8 w-8 rounded-full flex items-center justify-center text-white font-medium ${getScoreColor(metaQube["Verifiability-Score"], 'verifiability')}`}>
-                      {metaQube["Verifiability-Score"]}
-                    </div>
-                  </div>
-                  <div className="flex flex-col items-center">
-                    <div className="text-sm mb-1">Risk</div>
-                    <div className={`h-8 w-8 rounded-full flex items-center justify-center text-white font-medium ${getScoreColor(metaQube["Risk-Score"], 'risk')}`}>
-                      {metaQube["Risk-Score"]}
-                    </div>
-                  </div>
-                </div>
+                {/* Removed the duplicate scores section here */}
                 <MetaQubeDisplay metaQube={metaQube} className="mt-3" />
               </div>
             </CollapsibleContent>
