@@ -5,9 +5,9 @@ import { MetaQube, TokenMetrics } from '@/lib/types';
 
 // Sample metaQube data
 const metaQubeData: MetaQube = {
-  "iQube-Identifier": "DataQube1",
+  "iQube-Identifier": "MonDAI iQube",
   "iQube-Type": "DataQube",
-  "iQube-Designer": "Aigent Z",
+  "iQube-Designer": "Aigent MonDAI",
   "iQube-Use": "For learning, earning and networking in web3 communities",
   "Owner-Type": "Person",
   "Owner-Identifiability": "Semi-Identifiable",
@@ -34,14 +34,9 @@ const tokenMetrics: TokenMetrics = {
 
 const Earn = () => {
   return (
-    <div className="container py-8">
-      <div className="flex flex-col md:flex-row justify-between items-start mb-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Earn</h1>
-          <p className="text-muted-foreground">
-            Manage your MonDAI tokens and explore earning opportunities
-          </p>
-        </div>
+    <div className="container p-2">
+      <div className="flex justify-between items-center mb-3">
+        <h1 className="text-2xl font-bold tracking-tight">Earn</h1>
       </div>
 
       <EarnInterface metaQube={metaQubeData} tokenMetrics={tokenMetrics} />

@@ -1,12 +1,13 @@
 
 import React, { useState } from 'react';
-import { Send, Mic, Paperclip, Image, Bot } from 'lucide-react';
+import { Send, Mic, Paperclip, Image, Bot, Play, Pause, Volume2, Loader2 } from 'lucide-react';
 import { AgentMessage } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { Card } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/components/ui/use-toast';
+import { Progress } from '@/components/ui/progress';
 
 interface AgentInterfaceProps {
   title: string;
@@ -25,6 +26,8 @@ const AgentInterface = ({
   const [inputValue, setInputValue] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
   const [activeTab, setActiveTab] = useState<'chat' | 'knowledge'>('chat');
+  const [playing, setPlaying] = useState<string | null>(null);
+  const [reliability] = useState(Math.floor(Math.random() * 3) + 3); // Random score between 3-5
   const { toast } = useToast();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -82,6 +85,29 @@ const AgentInterface = ({
     });
   };
 
+  const handlePlayAudio = (messageId: string) => {
+    if (playing === messageId) {
+      setPlaying(null);
+      toast({
+        title: "Audio Paused",
+        description: "Text-to-speech playback paused",
+      });
+    } else {
+      setPlaying(messageId);
+      toast({
+        title: "Audio Playing",
+        description: "Playing agent response as audio (simulated)",
+      });
+
+      // Simulate end of audio after 5 seconds
+      setTimeout(() => {
+        if (playing === messageId) {
+          setPlaying(null);
+        }
+      }, 5000);
+    }
+  };
+
   const handleAttachment = () => {
     toast({
       title: "Attach Files",
@@ -98,12 +124,46 @@ const AgentInterface = ({
 
   return (
     <Card className="flex flex-col h-full overflow-hidden">
-      <div className="p-4 border-b">
-        <h2 className="text-xl font-semibold flex items-center">
-          <Bot className="mr-2 h-5 w-5 text-iqube-accent" />
-          {title}
-        </h2>
-        <p className="text-sm text-muted-foreground">{description}</p>
+      <div className="p-4 border-b flex justify-between items-start">
+        <div>
+          <h2 className="text-xl font-semibold flex items-center">
+            <Bot className="mr-2 h-5 w-5 text-iqube-accent" />
+            {title}
+            {isProcessing && (
+              <span className="ml-2 flex items-center text-xs text-muted-foreground">
+                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
+                Processing...
+              </span>
+            )}
+          </h2>
+          <p className="text-sm text-muted-foreground">{description}</p>
+        </div>
+        <div className="flex items-center gap-3 bg-muted/30 p-2 rounded-md">
+          <div className="flex flex-col items-center">
+            <div className="text-xs text-muted-foreground mb-1">Reliability</div>
+            <div className="flex items-center">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div 
+                  key={i}
+                  className={`w-1.5 h-1.5 rounded-full mx-0.5 ${i < reliability ? 'bg-iqube-primary' : 'bg-muted'}`}
+                />
+              ))}
+            </div>
+          </div>
+          <div className="h-8 w-[1px] bg-border mx-1"></div>
+          <div>
+            <div className="text-xs text-muted-foreground mb-1">MonDAI iQube</div>
+            <div className="flex gap-2 items-center">
+              <Badge variant="outline" className="bg-iqube-primary/10 text-iqube-primary border-iqube-primary/30 text-[10px] h-4">
+                DataQube
+              </Badge>
+              <div className="flex">
+                <span className="text-xs font-medium mr-1">Risk:</span>
+                <span className="text-xs">4</span>
+              </div>
+            </div>
+          </div>
+        </div>
       </div>
 
       <Tabs 
@@ -140,9 +200,39 @@ const AgentInterface = ({
                   <div className="flex">
                     <div className="flex-1">
                       <p>{msg.message}</p>
-                      <span className="text-xs text-muted-foreground block mt-2">
-                        {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                      </span>
+                      <div className="flex items-center justify-between mt-2">
+                        <span className="text-xs text-muted-foreground">
+                          {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </span>
+                        {msg.sender === 'agent' && (
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            className="h-6 w-6 p-0"
+                            onClick={() => handlePlayAudio(msg.id)}
+                          >
+                            {playing === msg.id ? (
+                              <Pause className="h-3 w-3" />
+                            ) : (
+                              <Play className="h-3 w-3" />
+                            )}
+                          </Button>
+                        )}
+                      </div>
+                      {playing === msg.id && (
+                        <div className="flex items-center gap-2 mt-1">
+                          <div className="flex-1">
+                            <div className="relative h-1.5 bg-muted rounded-full overflow-hidden">
+                              <div className="absolute inset-y-0 left-0 bg-iqube-primary rounded-full animate-pulse" style={{ width: '50%' }}></div>
+                            </div>
+                            <div className="flex justify-between mt-1">
+                              <span className="text-[10px] text-muted-foreground">0:02</span>
+                              <span className="text-[10px] text-muted-foreground">0:05</span>
+                            </div>
+                          </div>
+                          <Volume2 className="h-3 w-3 text-muted-foreground" />
+                        </div>
+                      )}
                     </div>
                   </div>
                 </div>

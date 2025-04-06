@@ -5,9 +5,9 @@ import { MetaQube, CommunityMetrics } from '@/lib/types';
 
 // Sample metaQube data
 const metaQubeData: MetaQube = {
-  "iQube-Identifier": "DataQube1",
+  "iQube-Identifier": "MonDAI iQube",
   "iQube-Type": "DataQube",
-  "iQube-Designer": "Aigent Z",
+  "iQube-Designer": "Aigent MonDAI",
   "iQube-Use": "For learning, earning and networking in web3 communities",
   "Owner-Type": "Person",
   "Owner-Identifiability": "Semi-Identifiable",
@@ -32,14 +32,9 @@ const communityMetrics: CommunityMetrics = {
 
 const Connect = () => {
   return (
-    <div className="container py-8">
-      <div className="flex flex-col md:flex-row justify-between items-start mb-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Connect</h1>
-          <p className="text-muted-foreground">
-            Find and connect with like-minded people in the web3 community
-          </p>
-        </div>
+    <div className="container p-2">
+      <div className="flex justify-between items-center mb-3">
+        <h1 className="text-2xl font-bold tracking-tight">Connect</h1>
       </div>
 
       <ConnectInterface metaQube={metaQubeData} communityMetrics={communityMetrics} />

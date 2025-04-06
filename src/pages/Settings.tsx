@@ -5,7 +5,7 @@ import { UserSettings, MetaQube } from '@/lib/types';
 
 // Sample metaQube data
 const metaQubeData: MetaQube = {
-  "iQube-Identifier": "DataQube1",
+  "iQube-Identifier": "MonDAI iQube",
   "iQube-Type": "DataQube",
   "iQube-Designer": "Aigent MonDAI",
   "iQube-Use": "For learning, earning and networking in web3 communities",
