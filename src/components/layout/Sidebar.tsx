@@ -9,7 +9,7 @@ import {
   Settings,
   Menu,
   X,
-  Database,
+  Bot,
   Sparkles
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
@@ -68,23 +68,23 @@ const Sidebar = () => {
 
   const sidebarContent = (
     <div className={cn(
-      "flex flex-col h-full bg-sidebar py-6 transition-all duration-300",
+      "flex flex-col h-full bg-sidebar py-4 transition-all duration-300",
       collapsed ? "w-16" : "w-64"
     )}>
       <div className={cn(
-        "flex items-center mb-8 px-3",
+        "flex items-center mb-6 px-3",
         collapsed ? "justify-center" : "justify-between"
       )}>
         {!collapsed && (
           <div className="flex items-center">
-            <Database className="h-6 w-6 text-iqube-primary mr-2" />
-            <h1 className="text-xl font-bold bg-gradient-to-r from-iqube-primary to-iqube-accent inline-block text-transparent bg-clip-text">
-              iQube
+            <Bot className="h-6 w-6 text-iqube-primary mr-2" />
+            <h1 className="text-lg font-bold bg-gradient-to-r from-iqube-primary to-iqube-accent inline-block text-transparent bg-clip-text">
+              Aigent MonDAI
             </h1>
           </div>
         )}
         {collapsed && (
-          <Database className="h-6 w-6 text-iqube-primary" />
+          <Bot className="h-6 w-6 text-iqube-primary" />
         )}
         {!isMobile && (
           <button 
@@ -110,13 +110,13 @@ const Sidebar = () => {
       </div>
 
       <div className={cn(
-        "mt-auto mx-3 p-3 rounded-lg border border-iqube-primary/30 bg-iqube-primary/10",
+        "mt-auto mx-3 p-2 rounded-lg border border-iqube-primary/30 bg-iqube-primary/10",
         collapsed ? "text-center" : ""
       )}>
-        <Sparkles className={cn("h-5 w-5 text-iqube-accent", !collapsed && "mb-2")} />
+        <Sparkles className={cn("h-5 w-5 text-iqube-accent", !collapsed && "mb-1")} />
         {!collapsed && (
           <>
-            <h3 className="font-medium text-sm">iQube Active</h3>
+            <h3 className="font-medium text-xs">MonDAI Active</h3>
             <p className="text-xs text-sidebar-foreground opacity-70">
               Your data is secure
             </p>

@@ -1,2 +1,25 @@
 
 /* App-specific styles that aren't covered by Tailwind */
+
+/* Reduce overall spacing */
+.card {
+  margin-bottom: 0.75rem;
+}
+
+/* Make cards more compact */
+.card-header {
+  padding-bottom: 0.5rem;
+}
+
+/* Optimize for single-page view */
+.container {
+  padding-bottom: 0.5rem;
+  padding-top: 0.5rem;
+}
+
+/* Keep text readable but compact */
+p {
+  margin-bottom: 0.25rem;
+  margin-top: 0.25rem;
+}
+

@@ -7,7 +7,7 @@ import { UserSettings, MetaQube } from '@/lib/types';
 const metaQubeData: MetaQube = {
   "iQube-Identifier": "DataQube1",
   "iQube-Type": "DataQube",
-  "iQube-Designer": "Aigent Z",
+  "iQube-Designer": "Aigent MonDAI",
   "iQube-Use": "For learning, earning and networking in web3 communities",
   "Owner-Type": "Person",
   "Owner-Identifiability": "Semi-Identifiable",
@@ -38,14 +38,9 @@ const userSettings: UserSettings = {
 
 const Settings = () => {
   return (
-    <div className="container py-8">
-      <div className="flex flex-col md:flex-row justify-between items-start mb-6">
-        <div>
-          <h1 className="text-3xl font-bold tracking-tight">Settings</h1>
-          <p className="text-muted-foreground">
-            Manage your iQube settings and connections
-          </p>
-        </div>
+    <div className="container p-2">
+      <div className="flex flex-col md:flex-row justify-between items-center mb-3">
+        <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
       </div>
 
       <SettingsInterface userSettings={userSettings} metaQube={metaQubeData} />

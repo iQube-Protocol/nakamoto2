@@ -10,7 +10,7 @@ const MainLayout = ({ children }: MainLayoutProps) => {
   return (
     <div className="flex min-h-screen bg-background">
       <Sidebar />
-      <main className="flex-1 w-full p-4 md:p-6 lg:p-8 overflow-auto">
+      <main className="flex-1 w-full p-3 overflow-auto">
         {children}
       </main>
     </div>
