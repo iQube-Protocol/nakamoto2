@@ -122,7 +122,7 @@ const DashboardOverview = ({ metrics, metaQube }: DashboardOverviewProps) => {
       {/* MetaQube Info Card - Using Collapsible */}
       <Card className="shadow-sm md:col-span-2">
         <CardHeader className="p-3 pb-2 flex flex-row items-center justify-between">
-          <CardTitle className="text-sm">MonDAI Details</CardTitle>
+          <CardTitle className="text-sm">MonDAI iQube</CardTitle>
           <Collapsible className="w-full">
             <CollapsibleTrigger className="text-xs text-iqube-accent hover:underline">
               View Details
@@ -139,11 +139,10 @@ const DashboardOverview = ({ metrics, metaQube }: DashboardOverviewProps) => {
         <CardHeader className="p-3 pb-2 flex flex-row items-center justify-between">
           <div>
             <CardTitle className="text-sm">Recent Activity</CardTitle>
-            <CardDescription className="text-xs">Latest actions</CardDescription>
           </div>
           <Collapsible className="w-full">
             <CollapsibleTrigger className="text-xs text-iqube-accent hover:underline">
-              View All
+              View Latest Actions
             </CollapsibleTrigger>
             <CollapsibleContent className="mt-2">
               <div className="space-y-3 max-h-48 overflow-y-auto">
