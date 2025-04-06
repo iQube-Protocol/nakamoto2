@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { 
   Card, 
@@ -104,7 +103,6 @@ const DashboardOverview = ({ metrics, metaQube }: DashboardOverviewProps) => {
           <Progress 
             value={metrics.qubeHealth} 
             className="h-2 mt-2"
-            // Different colors based on health
             indicatorClassName={
               metrics.qubeHealth > 70 
                 ? "bg-green-500" 
