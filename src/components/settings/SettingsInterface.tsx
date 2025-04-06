@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -47,12 +46,10 @@ interface ScoreBadgeProps {
 }
 
 const ScoreBadge = ({ value, label, color }: ScoreBadgeProps) => {
-  const scoreClass = value <= 3 ? 'bg-green-500' : value <= 6 ? 'bg-yellow-500' : 'bg-red-500';
-  
   return (
     <div className="flex items-center gap-2">
       <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium"
-        style={{ backgroundColor: color || scoreClass }}>
+        style={{ backgroundColor: color || '#ff9500' }}>
         {value}
       </div>
       <span className="text-xs">{label}</span>
@@ -90,7 +87,6 @@ const SettingsInterface = ({ userSettings, metaQube }: SettingsInterfaceProps) =
   const [settings, setSettings] = useState<UserSettings>({...userSettings});
   const { toast } = useToast();
 
-  // Sample private key for demo purposes
   const [privateData, setPrivateData] = useState({
     "Profession": "Software Developer",
     "Web3-Interests": ["DeFi", "NFTs", "DAOs"],
@@ -103,7 +99,6 @@ const SettingsInterface = ({ userSettings, metaQube }: SettingsInterfaceProps) =
     "Wallets-of-Interest": ["MetaMask", "Rainbow"]
   });
 
-  // Mock function for connecting to services
   const handleConnectService = (service: keyof UserSettings['connected']) => {
     setSettings(prev => ({
       ...prev,
@@ -121,7 +116,6 @@ const SettingsInterface = ({ userSettings, metaQube }: SettingsInterfaceProps) =
     });
   };
 
-  // Mock function for saving settings
   const handleSaveSettings = () => {
     toast({
       title: "Settings saved",
@@ -129,7 +123,6 @@ const SettingsInterface = ({ userSettings, metaQube }: SettingsInterfaceProps) =
     });
   };
 
-  // Mock function for minting an iQube
   const handleMintIQube = () => {
     toast({
       title: "iQube Minted",
@@ -149,7 +142,6 @@ const SettingsInterface = ({ userSettings, metaQube }: SettingsInterfaceProps) =
         <div className="mt-2 p-2 bg-muted/30 border rounded-md flex items-center gap-4 overflow-x-auto">
           <div className="flex items-center gap-2">
             <div className="h-5 w-5 text-iqube-primary">
-              {/* Cube icon replacement */}
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
                 <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
@@ -163,8 +155,8 @@ const SettingsInterface = ({ userSettings, metaQube }: SettingsInterfaceProps) =
           </div>
           <div className="flex-1 flex items-center justify-end gap-3">
             <ScoreBadge value={metaQube["Risk-Score"]} label="Risk" color="#ff9500" />
-            <ScoreBadge value={metaQube["Verifiability-Score"]} label="Verify" color="#3b82f6" />
-            <ScoreBadge value={metaQube["Sensitivity-Score"]} label="Sensitivity" color="#10b981" />
+            <ScoreBadge value={metaQube["Verifiability-Score"]} label="Verify" color="#ff9500" />
+            <ScoreBadge value={metaQube["Sensitivity-Score"]} label="Sensitivity" color="#ff9500" />
           </div>
         </div>
         
@@ -230,7 +222,6 @@ const SettingsInterface = ({ userSettings, metaQube }: SettingsInterfaceProps) =
 
         <TabsContent value="iqube" className="mt-4">
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-            {/* blakQube Management */}
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-base flex items-center">
@@ -313,7 +304,6 @@ const SettingsInterface = ({ userSettings, metaQube }: SettingsInterfaceProps) =
               </CardContent>
             </Card>
             
-            {/* TokenQube Management */}
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-base flex items-center">

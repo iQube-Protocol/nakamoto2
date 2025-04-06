@@ -29,6 +29,7 @@ const AgentInterface = ({
   const [activeTab, setActiveTab] = useState<'chat' | 'knowledge'>('chat');
   const [playing, setPlaying] = useState<string | null>(null);
   const [reliability] = useState(Math.floor(Math.random() * 3) + 3); // Random score between 3-5
+  const [trust] = useState(4); // Trust score set to 4 out of 5
   const { toast } = useToast();
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -152,16 +153,15 @@ const AgentInterface = ({
             </div>
           </div>
           <div className="h-8 w-[1px] bg-border mx-1"></div>
-          <div>
-            <div className="text-xs text-muted-foreground mb-1">MonDAI iQube</div>
-            <div className="flex gap-2 items-center">
-              <Badge variant="outline" className="bg-iqube-primary/10 text-iqube-primary border-iqube-primary/30 text-[10px] h-4">
-                DataQube
-              </Badge>
-              <div className="flex">
-                <span className="text-xs font-medium mr-1">Risk:</span>
-                <span className="text-xs">4</span>
-              </div>
+          <div className="flex flex-col items-center">
+            <div className="text-xs text-muted-foreground mb-1">Trust</div>
+            <div className="flex items-center">
+              {Array.from({ length: 5 }).map((_, i) => (
+                <div 
+                  key={i}
+                  className={`w-1.5 h-1.5 rounded-full mx-0.5 ${i < trust ? 'bg-amber-500' : 'bg-muted'}`}
+                />
+              ))}
             </div>
           </div>
         </div>
