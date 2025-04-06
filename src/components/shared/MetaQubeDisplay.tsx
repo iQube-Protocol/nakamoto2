@@ -15,7 +15,7 @@ interface MetaQubeDisplayProps {
 interface ScoreBadgeProps {
   value: number;
   label: string;
-  type: 'risk' | 'sensitivity' | 'accuracy' | 'verifiability';
+  type: 'risk' | 'sensitivity' | 'accuracy' | 'verifiability' | 'trust';
 }
 
 const ScoreBadge = ({ value, label, type }: ScoreBadgeProps) => {
@@ -23,17 +23,24 @@ const ScoreBadge = ({ value, label, type }: ScoreBadgeProps) => {
     if (type === 'risk' || type === 'sensitivity') {
       // Risk and Sensitivity: 1-4 green, 5-7 amber, 8-10 red
       return value <= 4 
-        ? "bg-green-500" 
+        ? "bg-green-500/60" 
         : value <= 7 
-          ? "bg-yellow-500" 
-          : "bg-red-500";
+          ? "bg-yellow-500/60" 
+          : "bg-red-500/60";
+    } else if (type === 'trust') {
+      // Trust: 5-10 green, 3-4 amber, 1-2 red
+      return value >= 5 
+        ? "bg-green-500/60" 
+        : value >= 3 
+          ? "bg-yellow-500/60" 
+          : "bg-red-500/60";
     } else {
       // Accuracy and Verifiability: 1-3 red, 4-6 amber, 7-10 green
       return value <= 3 
-        ? "bg-red-500" 
+        ? "bg-red-500/60" 
         : value <= 6 
-          ? "bg-yellow-500" 
-          : "bg-green-500";
+          ? "bg-yellow-500/60" 
+          : "bg-green-500/60";
     }
   };
   
@@ -74,7 +81,7 @@ const MetaQubeDisplay = ({ metaQube, compact = false, className }: MetaQubeDispl
             </Badge>
             <div className="flex gap-2">
               <ScoreBadge value={metaQube["Sensitivity-Score"]} label="Sensitivity" type="sensitivity" />
-              <ScoreBadge value={trustScore} label="Trust" type="accuracy" />
+              <ScoreBadge value={trustScore} label="Trust" type="trust" />
               <ScoreBadge value={metaQube["Risk-Score"]} label="Risk" type="risk" />
             </div>
           </div>

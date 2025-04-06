@@ -45,23 +45,40 @@ interface ServiceConnectionProps {
 interface ScoreBadgeProps {
   value: number;
   label: string;
-  color?: string;
+  type: 'sensitivity' | 'trust' | 'risk' | 'accuracy' | 'verifiability';
 }
 
-const ScoreBadge = ({ value, label, color }: ScoreBadgeProps) => {
-  // Calculate Trust score (average of Accuracy and Verifiability)
-  const trustScore = label === 'Trust' 
-    ? Math.round((5 + 5) / 2) // Placeholder for actual calculation
-    : value;
-  
-  // Display the calculated trust score or the provided value
-  const displayValue = label === 'Trust' ? trustScore : value;
+const ScoreBadge = ({ value, label, type }: ScoreBadgeProps) => {
+  // Helper function to get the appropriate color based on score and type
+  const getScoreColor = () => {
+    if (type === 'risk' || type === 'sensitivity') {
+      // Risk and Sensitivity: 1-4 green, 5-7 amber, 8-10 red
+      return value <= 4 
+        ? "bg-green-500/60" 
+        : value <= 7 
+          ? "bg-yellow-500/60" 
+          : "bg-red-500/60";
+    } else if (type === 'trust') {
+      // Trust: 5-10 green, 3-4 amber, 1-2 red
+      return value >= 5 
+        ? "bg-green-500/60" 
+        : value >= 3 
+          ? "bg-yellow-500/60" 
+          : "bg-red-500/60";
+    } else {
+      // Accuracy and Verifiability: 1-3 red, 4-6 amber, 7-10 green
+      return value <= 3 
+        ? "bg-red-500/60" 
+        : value <= 6 
+          ? "bg-yellow-500/60" 
+          : "bg-green-500/60";
+    }
+  };
   
   return (
     <div className="flex items-center gap-2">
-      <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium"
-        style={{ backgroundColor: `${color || '#ff9500'}99` }}>
-        {displayValue}
+      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium ${getScoreColor()}`}>
+        {value}
       </div>
       <span className="text-xs">{label}</span>
     </div>
@@ -188,9 +205,9 @@ const SettingsInterface = ({ userSettings, metaQube }: SettingsInterfaceProps) =
             </Badge>
           </div>
           <div className="flex-1 flex items-center justify-end gap-3">
-            <ScoreBadge value={metaQube["Sensitivity-Score"]} label="Sensitivity" color="#ff9500" />
-            <ScoreBadge value={trustScore} label="Trust" color="#9b87f5" />
-            <ScoreBadge value={metaQube["Risk-Score"]} label="Risk" color="#ff9500" />
+            <ScoreBadge value={metaQube["Sensitivity-Score"]} label="Sensitivity" type="sensitivity" />
+            <ScoreBadge value={trustScore} label="Trust" type="trust" />
+            <ScoreBadge value={metaQube["Risk-Score"]} label="Risk" type="risk" />
           </div>
         </div>
         
