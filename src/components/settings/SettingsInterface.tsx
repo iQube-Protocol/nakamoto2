@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -11,7 +10,6 @@ import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/
 import { Progress } from '@/components/ui/progress';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { useToast } from '@/components/ui/use-toast';
-import { Input } from '@/components/ui/input';
 import {
   Linkedin,
   MessageCircle,
@@ -51,7 +49,7 @@ const ScoreBadge = ({ value, label, color }: ScoreBadgeProps) => {
   return (
     <div className="flex items-center gap-2">
       <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium"
-        style={{ backgroundColor: 'rgba(255, 149, 0, 0.4)' }}> {/* Increased transparency by 60% */}
+        style={{ backgroundColor: color || '#ff9500' }}>
         {value}
       </div>
       <span className="text-xs">{label}</span>
@@ -100,18 +98,6 @@ const SettingsInterface = ({ userSettings, metaQube }: SettingsInterfaceProps) =
     "Chain-IDs": ["1", "137"],
     "Wallets-of-Interest": ["MetaMask", "Rainbow"]
   });
-
-  const handlePrivateDataChange = (key: string, value: string) => {
-    setPrivateData(prev => ({
-      ...prev,
-      [key]: value
-    }));
-    
-    toast({
-      title: "Data Updated",
-      description: `Your ${key} has been updated`,
-    });
-  };
 
   const handleConnectService = (service: keyof UserSettings['connected']) => {
     setSettings(prev => ({
@@ -168,9 +154,9 @@ const SettingsInterface = ({ userSettings, metaQube }: SettingsInterfaceProps) =
             </Badge>
           </div>
           <div className="flex-1 flex items-center justify-end gap-3">
-            <ScoreBadge value={metaQube["Risk-Score"]} label="Risk" color="rgba(255, 149, 0, 0.4)" />
-            <ScoreBadge value={metaQube["Verifiability-Score"]} label="Verify" color="rgba(255, 149, 0, 0.4)" />
-            <ScoreBadge value={metaQube["Sensitivity-Score"]} label="Sensitivity" color="rgba(255, 149, 0, 0.4)" />
+            <ScoreBadge value={metaQube["Risk-Score"]} label="Risk" color="#ff9500" />
+            <ScoreBadge value={metaQube["Verifiability-Score"]} label="Verify" color="#ff9500" />
+            <ScoreBadge value={metaQube["Sensitivity-Score"]} label="Sensitivity" color="#ff9500" />
           </div>
         </div>
         
@@ -260,11 +246,9 @@ const SettingsInterface = ({ userSettings, metaQube }: SettingsInterfaceProps) =
                         {Object.entries(privateData).slice(0, 6).map(([key, value]) => (
                           <div key={key} className="flex justify-between items-center border-b pb-1">
                             <span className="text-xs font-medium">{key}</span>
-                            <Input 
-                              className="text-xs text-right max-w-[60%] h-7"
-                              value={Array.isArray(value) ? value.join(", ") : value.toString()}
-                              onChange={(e) => handlePrivateDataChange(key, e.target.value)}
-                            />
+                            <span className="text-xs text-muted-foreground truncate max-w-[60%] text-right">
+                              {Array.isArray(value) ? value.join(", ") : value}
+                            </span>
                           </div>
                         ))}
                         <Button variant="outline" size="sm" className="w-full mt-2">
@@ -285,16 +269,7 @@ const SettingsInterface = ({ userSettings, metaQube }: SettingsInterfaceProps) =
                       <div className="space-y-3 py-2">
                         <div className="flex justify-between items-center">
                           <Label className="text-xs">Algorithm</Label>
-                          <Select defaultValue="kyber">
-                            <SelectTrigger className="h-8 text-xs w-36">
-                              <SelectValue placeholder="Select algorithm" />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="kyber">Kyber (Quantum-resistant)</SelectItem>
-                              <SelectItem value="ntru">NTRU</SelectItem>
-                              <SelectItem value="aes">AES-256</SelectItem>
-                            </SelectContent>
-                          </Select>
+                          <Badge variant="outline" className="text-xs">Kyber (Quantum-resistant)</Badge>
                         </div>
                         
                         <div className="flex items-center justify-between space-x-2">
