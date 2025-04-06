@@ -3,7 +3,7 @@ import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MetaQube } from '@/lib/types';
-import { Lock, Unlock, ShieldCheck, Database, Cube } from 'lucide-react';
+import { Lock, Unlock, ShieldCheck, Database } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface MetaQubeDisplayProps {
@@ -36,7 +36,14 @@ const MetaQubeDisplay = ({ metaQube, compact = false, className }: MetaQubeDispl
       <Card className={cn("iqube-card", className)}>
         <CardHeader className="pb-2">
           <CardTitle className="text-sm font-medium flex items-center">
-            <Cube className="h-4 w-4 mr-2 text-iqube-accent" />
+            <div className="h-4 w-4 mr-2 text-iqube-accent">
+              {/* Cube icon replacement */}
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                <line x1="12" y1="22.08" x2="12" y2="12"></line>
+              </svg>
+            </div>
             MonDAI iQube
           </CardTitle>
         </CardHeader>
@@ -60,7 +67,14 @@ const MetaQubeDisplay = ({ metaQube, compact = false, className }: MetaQubeDispl
     <Card className={cn("iqube-card", className)}>
       <CardHeader>
         <CardTitle className="flex items-center">
-          <Cube className="h-5 w-5 mr-2 text-iqube-accent" />
+          <div className="h-5 w-5 mr-2 text-iqube-accent">
+            {/* Cube icon replacement */}
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+              <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+              <line x1="12" y1="22.08" x2="12" y2="12"></line>
+            </svg>
+          </div>
           MonDAI iQube
         </CardTitle>
         <div className="flex flex-wrap gap-2 mt-2">

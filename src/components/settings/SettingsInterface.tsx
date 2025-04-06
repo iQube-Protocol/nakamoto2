@@ -24,7 +24,6 @@ import {
   Database,
   Lock,
   Key,
-  Cube,
   Info
 } from 'lucide-react';
 import { UserSettings, MetaQube } from '@/lib/types';
@@ -149,7 +148,14 @@ const SettingsInterface = ({ userSettings, metaQube }: SettingsInterfaceProps) =
         
         <div className="mt-2 p-2 bg-muted/30 border rounded-md flex items-center gap-4 overflow-x-auto">
           <div className="flex items-center gap-2">
-            <Cube className="h-5 w-5 text-iqube-primary" />
+            <div className="h-5 w-5 text-iqube-primary">
+              {/* Cube icon replacement */}
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                <line x1="12" y1="22.08" x2="12" y2="12"></line>
+              </svg>
+            </div>
             <span className="text-sm font-medium">{metaQube["iQube-Identifier"]}</span>
             <Badge variant="outline" className="bg-iqube-primary/10 text-iqube-primary border-iqube-primary/30">
               {metaQube["iQube-Type"]}
@@ -410,8 +416,8 @@ const SettingsInterface = ({ userSettings, metaQube }: SettingsInterfaceProps) =
                   <div className="space-y-2">
                     <div className="flex items-center justify-between">
                       <Label className="text-xs">Theme</Label>
-                      <Select defaultValue={settings.theme} className="w-24">
-                        <SelectTrigger className="h-8 text-xs">
+                      <Select defaultValue={settings.theme}>
+                        <SelectTrigger className="h-8 text-xs w-24">
                           <SelectValue placeholder="Theme" />
                         </SelectTrigger>
                         <SelectContent>
@@ -423,8 +429,8 @@ const SettingsInterface = ({ userSettings, metaQube }: SettingsInterfaceProps) =
                     
                     <div className="flex items-center justify-between">
                       <Label className="text-xs">Language</Label>
-                      <Select defaultValue={settings.language} className="w-24">
-                        <SelectTrigger className="h-8 text-xs">
+                      <Select defaultValue={settings.language}>
+                        <SelectTrigger className="h-8 text-xs w-24">
                           <SelectValue placeholder="Language" />
                         </SelectTrigger>
                         <SelectContent>
