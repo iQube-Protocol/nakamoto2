@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -9,6 +10,7 @@ import { Badge } from '@/components/ui/badge';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Progress } from '@/components/ui/progress';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { Input } from '@/components/ui/input';
 import { useToast } from '@/components/ui/use-toast';
 import {
   Linkedin,
@@ -23,7 +25,8 @@ import {
   Database,
   Lock,
   Key,
-  Info
+  Info,
+  Plus
 } from 'lucide-react';
 import { UserSettings, MetaQube } from '@/lib/types';
 
@@ -46,11 +49,19 @@ interface ScoreBadgeProps {
 }
 
 const ScoreBadge = ({ value, label, color }: ScoreBadgeProps) => {
+  // Calculate Trust score (average of Accuracy and Verifiability)
+  const trustScore = label === 'Trust' 
+    ? Math.round((5 + 5) / 2) // Placeholder for actual calculation
+    : value;
+  
+  // Display the calculated trust score or the provided value
+  const displayValue = label === 'Trust' ? trustScore : value;
+  
   return (
     <div className="flex items-center gap-2">
       <div className="w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium"
-        style={{ backgroundColor: color || '#ff9500' }}>
-        {value}
+        style={{ backgroundColor: `${color || '#ff9500'}99` }}>
+        {displayValue}
       </div>
       <span className="text-xs">{label}</span>
     </div>
@@ -87,6 +98,9 @@ const SettingsInterface = ({ userSettings, metaQube }: SettingsInterfaceProps) =
   const [settings, setSettings] = useState<UserSettings>({...userSettings});
   const { toast } = useToast();
 
+  // Calculate Trust score as the average of Accuracy and Verifiability
+  const trustScore = Math.round((metaQube["Accuracy-Score"] + metaQube["Verifiability-Score"]) / 2);
+
   const [privateData, setPrivateData] = useState({
     "Profession": "Software Developer",
     "Web3-Interests": ["DeFi", "NFTs", "DAOs"],
@@ -98,6 +112,10 @@ const SettingsInterface = ({ userSettings, metaQube }: SettingsInterfaceProps) =
     "Chain-IDs": ["1", "137"],
     "Wallets-of-Interest": ["MetaMask", "Rainbow"]
   });
+
+  const [isEditing, setIsEditing] = useState(false);
+  const [editingData, setEditingData] = useState({...privateData});
+  const [encryptionAlgorithm, setEncryptionAlgorithm] = useState("kyber");
 
   const handleConnectService = (service: keyof UserSettings['connected']) => {
     setSettings(prev => ({
@@ -130,6 +148,22 @@ const SettingsInterface = ({ userSettings, metaQube }: SettingsInterfaceProps) =
     });
   };
 
+  const handleSavePrivateData = () => {
+    setPrivateData(editingData);
+    setIsEditing(false);
+    toast({
+      title: "Private Data Updated",
+      description: "Your private data has been updated successfully",
+    });
+  };
+
+  const handleAddAccessGrant = () => {
+    toast({
+      title: "Access Grant Added",
+      description: "New access grant has been added successfully",
+    });
+  };
+
   return (
     <div className="grid grid-cols-1 gap-4">
       <Tabs defaultValue="connections">
@@ -154,9 +188,9 @@ const SettingsInterface = ({ userSettings, metaQube }: SettingsInterfaceProps) =
             </Badge>
           </div>
           <div className="flex-1 flex items-center justify-end gap-3">
-            <ScoreBadge value={metaQube["Risk-Score"]} label="Risk" color="#ff9500" />
-            <ScoreBadge value={metaQube["Verifiability-Score"]} label="Verify" color="#ff9500" />
             <ScoreBadge value={metaQube["Sensitivity-Score"]} label="Sensitivity" color="#ff9500" />
+            <ScoreBadge value={trustScore} label="Trust" color="#9b87f5" />
+            <ScoreBadge value={metaQube["Risk-Score"]} label="Risk" color="#ff9500" />
           </div>
         </div>
         
@@ -243,17 +277,61 @@ const SettingsInterface = ({ userSettings, metaQube }: SettingsInterfaceProps) =
                     </AccordionTrigger>
                     <AccordionContent>
                       <div className="space-y-3 py-2">
-                        {Object.entries(privateData).slice(0, 6).map(([key, value]) => (
-                          <div key={key} className="flex justify-between items-center border-b pb-1">
-                            <span className="text-xs font-medium">{key}</span>
-                            <span className="text-xs text-muted-foreground truncate max-w-[60%] text-right">
-                              {Array.isArray(value) ? value.join(", ") : value}
-                            </span>
-                          </div>
-                        ))}
-                        <Button variant="outline" size="sm" className="w-full mt-2">
-                          <Info className="h-3.5 w-3.5 mr-1" /> View All Data
-                        </Button>
+                        {!isEditing ? (
+                          <>
+                            {Object.entries(privateData).slice(0, 6).map(([key, value]) => (
+                              <div key={key} className="flex justify-between items-center border-b pb-1">
+                                <span className="text-xs font-medium">{key}</span>
+                                <span className="text-xs text-muted-foreground truncate max-w-[60%] text-right">
+                                  {Array.isArray(value) ? value.join(", ") : value}
+                                </span>
+                              </div>
+                            ))}
+                            <div className="flex justify-between">
+                              <Button variant="outline" size="sm" className="mt-2" onClick={() => setIsEditing(true)}>
+                                <Info className="h-3.5 w-3.5 mr-1" /> Edit Data
+                              </Button>
+                              <Button variant="outline" size="sm" className="mt-2">
+                                <Info className="h-3.5 w-3.5 mr-1" /> View All
+                              </Button>
+                            </div>
+                          </>
+                        ) : (
+                          <>
+                            {Object.entries(editingData).slice(0, 6).map(([key, value]) => (
+                              <div key={key} className="space-y-1 border-b pb-2">
+                                <Label className="text-xs">{key}</Label>
+                                {Array.isArray(value) ? (
+                                  <Input
+                                    value={value.join(', ')}
+                                    onChange={(e) => setEditingData({
+                                      ...editingData,
+                                      [key]: e.target.value.split(',').map(item => item.trim())
+                                    })}
+                                    className="h-7 text-xs"
+                                  />
+                                ) : (
+                                  <Input
+                                    value={value as string}
+                                    onChange={(e) => setEditingData({
+                                      ...editingData,
+                                      [key]: e.target.value
+                                    })}
+                                    className="h-7 text-xs"
+                                  />
+                                )}
+                              </div>
+                            ))}
+                            <div className="flex justify-between">
+                              <Button variant="outline" size="sm" className="mt-2" onClick={() => setIsEditing(false)}>
+                                Cancel
+                              </Button>
+                              <Button size="sm" className="mt-2 bg-iqube-primary" onClick={handleSavePrivateData}>
+                                Save Changes
+                              </Button>
+                            </div>
+                          </>
+                        )}
                       </div>
                     </AccordionContent>
                   </AccordionItem>
@@ -269,7 +347,16 @@ const SettingsInterface = ({ userSettings, metaQube }: SettingsInterfaceProps) =
                       <div className="space-y-3 py-2">
                         <div className="flex justify-between items-center">
                           <Label className="text-xs">Algorithm</Label>
-                          <Badge variant="outline" className="text-xs">Kyber (Quantum-resistant)</Badge>
+                          <Select value={encryptionAlgorithm} onValueChange={setEncryptionAlgorithm}>
+                            <SelectTrigger className="w-[180px] h-8 text-xs">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="kyber">Kyber (Quantum-resistant)</SelectItem>
+                              <SelectItem value="ntru">NTRU (Quantum-resistant)</SelectItem>
+                              <SelectItem value="aes256">AES-256</SelectItem>
+                            </SelectContent>
+                          </Select>
                         </div>
                         
                         <div className="flex items-center justify-between space-x-2">
@@ -364,7 +451,17 @@ const SettingsInterface = ({ userSettings, metaQube }: SettingsInterfaceProps) =
                   </div>
                   
                   <div>
-                    <Label className="text-xs">Access Grants</Label>
+                    <div className="flex justify-between items-center">
+                      <Label className="text-xs">Access Grants</Label>
+                      <Button 
+                        variant="ghost" 
+                        size="icon" 
+                        className="h-5 w-5" 
+                        onClick={handleAddAccessGrant}
+                      >
+                        <Plus className="h-4 w-4" />
+                      </Button>
+                    </div>
                     <div className="border rounded-md p-2 mt-1 min-h-16 space-y-1 text-xs">
                       <div className="flex items-center justify-between p-1 bg-muted/50 rounded text-xs">
                         <span className="font-mono truncate">0x391874...35F1</span>

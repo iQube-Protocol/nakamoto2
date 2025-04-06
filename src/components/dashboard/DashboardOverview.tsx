@@ -14,19 +14,39 @@ import {
   Shield, 
   TrendingUp,
   ArrowRight,
-  AlertCircle
+  AlertCircle,
+  Plus
 } from 'lucide-react';
 import { Progress } from '@/components/ui/progress';
 import { DashboardMetrics } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import MetaQubeDisplay from '@/components/shared/MetaQubeDisplay';
 import { MetaQube } from '@/lib/types';
+import { Link } from 'react-router-dom';
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface DashboardOverviewProps {
   metrics: DashboardMetrics;
   metaQube: MetaQube;
 }
+
+const getScoreColor = (score: number, type: 'risk' | 'sensitivity' | 'accuracy' | 'verifiability') => {
+  if (type === 'risk' || type === 'sensitivity') {
+    // Risk and Sensitivity: 1-4 green, 5-7 amber, 8-10 red
+    return score <= 4 
+      ? "bg-green-500" 
+      : score <= 7 
+        ? "bg-yellow-500" 
+        : "bg-red-500";
+  } else {
+    // Accuracy and Verifiability: 1-3 red, 4-6 amber, 7-10 green
+    return score <= 3 
+      ? "bg-red-500" 
+      : score <= 6 
+        ? "bg-yellow-500" 
+        : "bg-green-500";
+  }
+};
 
 const DashboardOverview = ({ metrics, metaQube }: DashboardOverviewProps) => {
   return (
@@ -122,13 +142,41 @@ const DashboardOverview = ({ metrics, metaQube }: DashboardOverviewProps) => {
       {/* MetaQube Info Card - Using Collapsible */}
       <Card className="shadow-sm md:col-span-2">
         <CardHeader className="p-3 pb-2 flex flex-row items-center justify-between">
-          <CardTitle className="text-sm">MonDAI Details</CardTitle>
+          <CardTitle className="text-sm">MonDAI iQube</CardTitle>
           <Collapsible className="w-full">
             <CollapsibleTrigger className="text-xs text-iqube-accent hover:underline">
               View Details
             </CollapsibleTrigger>
             <CollapsibleContent className="mt-2">
-              <MetaQubeDisplay metaQube={metaQube} />
+              <div className="p-3 bg-muted/30 rounded-md border">
+                <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+                  <div className="flex flex-col items-center">
+                    <div className="text-sm mb-1">Sensitivity</div>
+                    <div className={`h-8 w-8 rounded-full flex items-center justify-center text-white font-medium ${getScoreColor(metaQube["Sensitivity-Score"], 'sensitivity')}`}>
+                      {metaQube["Sensitivity-Score"]}
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <div className="text-sm mb-1">Accuracy</div>
+                    <div className={`h-8 w-8 rounded-full flex items-center justify-center text-white font-medium ${getScoreColor(metaQube["Accuracy-Score"], 'accuracy')}`}>
+                      {metaQube["Accuracy-Score"]}
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <div className="text-sm mb-1">Verifiability</div>
+                    <div className={`h-8 w-8 rounded-full flex items-center justify-center text-white font-medium ${getScoreColor(metaQube["Verifiability-Score"], 'verifiability')}`}>
+                      {metaQube["Verifiability-Score"]}
+                    </div>
+                  </div>
+                  <div className="flex flex-col items-center">
+                    <div className="text-sm mb-1">Risk</div>
+                    <div className={`h-8 w-8 rounded-full flex items-center justify-center text-white font-medium ${getScoreColor(metaQube["Risk-Score"], 'risk')}`}>
+                      {metaQube["Risk-Score"]}
+                    </div>
+                  </div>
+                </div>
+                <MetaQubeDisplay metaQube={metaQube} className="mt-3" />
+              </div>
             </CollapsibleContent>
           </Collapsible>
         </CardHeader>
@@ -139,11 +187,10 @@ const DashboardOverview = ({ metrics, metaQube }: DashboardOverviewProps) => {
         <CardHeader className="p-3 pb-2 flex flex-row items-center justify-between">
           <div>
             <CardTitle className="text-sm">Recent Activity</CardTitle>
-            <CardDescription className="text-xs">Latest actions</CardDescription>
           </div>
           <Collapsible className="w-full">
             <CollapsibleTrigger className="text-xs text-iqube-accent hover:underline">
-              View All
+              View Latest Actions
             </CollapsibleTrigger>
             <CollapsibleContent className="mt-2">
               <div className="space-y-3 max-h-48 overflow-y-auto">
@@ -172,13 +219,15 @@ const DashboardOverview = ({ metrics, metaQube }: DashboardOverviewProps) => {
           <div className="flex items-center">
             <AlertCircle className="h-5 w-5 mr-2 text-amber-500" />
             <div>
-              <p className="text-sm font-medium">Complete Your MonDAI</p>
+              <p className="text-sm font-medium">Mint MonDAI iQube</p>
               <p className="text-xs text-muted-foreground">Enhance security</p>
             </div>
           </div>
-          <Button size="sm" className="bg-iqube-primary hover:bg-iqube-primary/90">
-            <ArrowRight className="h-4 w-4" />
-          </Button>
+          <Link to="/settings">
+            <Button size="sm" className="bg-iqube-primary hover:bg-iqube-primary/90">
+              <ArrowRight className="h-4 w-4" />
+            </Button>
+          </Link>
         </CardContent>
       </Card>
     </div>

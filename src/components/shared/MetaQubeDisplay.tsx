@@ -15,14 +15,31 @@ interface MetaQubeDisplayProps {
 interface ScoreBadgeProps {
   value: number;
   label: string;
+  type: 'risk' | 'sensitivity' | 'accuracy' | 'verifiability';
 }
 
-const ScoreBadge = ({ value, label }: ScoreBadgeProps) => {
-  const scoreClass = value <= 3 ? 'score-low' : value <= 6 ? 'score-medium' : 'score-high';
+const ScoreBadge = ({ value, label, type }: ScoreBadgeProps) => {
+  const getScoreColor = () => {
+    if (type === 'risk' || type === 'sensitivity') {
+      // Risk and Sensitivity: 1-4 green, 5-7 amber, 8-10 red
+      return value <= 4 
+        ? "bg-green-500" 
+        : value <= 7 
+          ? "bg-yellow-500" 
+          : "bg-red-500";
+    } else {
+      // Accuracy and Verifiability: 1-3 red, 4-6 amber, 7-10 green
+      return value <= 3 
+        ? "bg-red-500" 
+        : value <= 6 
+          ? "bg-yellow-500" 
+          : "bg-green-500";
+    }
+  };
   
   return (
     <div className="flex flex-col items-center">
-      <div className={cn('score-badge', scoreClass)}>
+      <div className={cn('w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium', getScoreColor())}>
         {value}
       </div>
       <span className="text-xs mt-1">{label}</span>
@@ -31,6 +48,9 @@ const ScoreBadge = ({ value, label }: ScoreBadgeProps) => {
 };
 
 const MetaQubeDisplay = ({ metaQube, compact = false, className }: MetaQubeDisplayProps) => {
+  // Calculate Trust score as the average of Accuracy and Verifiability
+  const trustScore = Math.round((metaQube["Accuracy-Score"] + metaQube["Verifiability-Score"]) / 2);
+
   if (compact) {
     return (
       <Card className={cn("iqube-card", className)}>
@@ -53,9 +73,9 @@ const MetaQubeDisplay = ({ metaQube, compact = false, className }: MetaQubeDispl
               {metaQube["iQube-Type"]}
             </Badge>
             <div className="flex gap-2">
-              <ScoreBadge value={metaQube["Risk-Score"]} label="Risk" />
-              <ScoreBadge value={metaQube["Verifiability-Score"]} label="Verify" />
-              <ScoreBadge value={metaQube["Sensitivity-Score"]} label="Sensitivity" />
+              <ScoreBadge value={metaQube["Sensitivity-Score"]} label="Sensitivity" type="sensitivity" />
+              <ScoreBadge value={trustScore} label="Trust" type="accuracy" />
+              <ScoreBadge value={metaQube["Risk-Score"]} label="Risk" type="risk" />
             </div>
           </div>
         </CardContent>
@@ -88,9 +108,10 @@ const MetaQubeDisplay = ({ metaQube, compact = false, className }: MetaQubeDispl
       </CardHeader>
       <CardContent>
         <div className="flex justify-between mb-4 pb-4 border-b">
-          <ScoreBadge value={metaQube["Risk-Score"]} label="Risk" />
-          <ScoreBadge value={metaQube["Verifiability-Score"]} label="Verify" />
-          <ScoreBadge value={metaQube["Sensitivity-Score"]} label="Sensitivity" />
+          <ScoreBadge value={metaQube["Sensitivity-Score"]} label="Sensitivity" type="sensitivity" />
+          <ScoreBadge value={metaQube["Accuracy-Score"]} label="Accuracy" type="accuracy" />
+          <ScoreBadge value={metaQube["Verifiability-Score"]} label="Verifiability" type="verifiability" />
+          <ScoreBadge value={metaQube["Risk-Score"]} label="Risk" type="risk" />
         </div>
 
         <div className="space-y-2 text-sm">
@@ -124,7 +145,7 @@ const MetaQubeDisplay = ({ metaQube, compact = false, className }: MetaQubeDispl
             <Database className="h-3.5 w-3.5 mr-1" />
             <span>DataQube</span>
           </div>
-          {metaQube["Risk-Score"] <= 5 ? (
+          {metaQube["Risk-Score"] <= 4 ? (
             <div className="flex items-center border rounded-md px-2 py-1 text-xs text-green-500 border-green-500/30">
               <Unlock className="h-3.5 w-3.5 mr-1" />
               <span>Low Risk</span>
