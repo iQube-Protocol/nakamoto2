@@ -129,7 +129,7 @@ const AgentInterface = ({
     return score >= 5 
       ? "bg-green-500/60" 
       : score >= 3 
-        ? "bg-green-500/60" // Changed from "bg-yellow-500/60" to "bg-green-500/60"
+        ? "bg-green-500/60" 
         : "bg-red-500/60";
   };
 
@@ -156,7 +156,7 @@ const AgentInterface = ({
               {Array.from({ length: 5 }).map((_, i) => (
                 <div 
                   key={i}
-                  className={`w-1.5 h-1.5 rounded-full mx-0.5 ${i < reliability ? 'bg-green-500/60' : 'bg-muted'}`}
+                  className={`w-1.5 h-1.5 rounded-full mx-0.5 ${i < reliability ? 'bg-iqube-primary/60' : 'bg-muted'}`}
                 />
               ))}
             </div>
