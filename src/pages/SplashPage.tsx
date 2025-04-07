@@ -30,10 +30,10 @@ const SplashPage = () => {
           <div className="flex flex-col md:flex-row items-center gap-12">
             <div className="flex-1">
               <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold mb-6">
-                Secure Your Web3 Identity with iQube
+                Your Crypto-Agentic Community Agent
               </h1>
               <p className="text-lg md:text-xl text-muted-foreground mb-8 max-w-2xl">
-                MonDAI provides a privacy-focused platform for learning, earning, and connecting in Web3 communities while maintaining control of your digital identity.
+                MonDAI provides an intelligent crypto-agentic platform for automated trading insights, real-time market analysis, and enhanced community engagement in the Web3 ecosystem.
               </p>
               <div className="flex gap-4 flex-wrap">
                 <Link to="/signin">
@@ -73,7 +73,7 @@ const SplashPage = () => {
               </div>
               <h3 className="text-xl font-semibold mb-3">Learn</h3>
               <p className="text-muted-foreground mb-4">
-                Access curated Web3 knowledge and personalized learning paths through AI-powered assistance.
+                Access AI-powered market insights and trading strategies through advanced algorithms and predictive analysis.
               </p>
             </div>
             
@@ -84,7 +84,7 @@ const SplashPage = () => {
               </div>
               <h3 className="text-xl font-semibold mb-3">Earn</h3>
               <p className="text-muted-foreground mb-4">
-                Manage your digital assets and discover new earning opportunities in the Web3 ecosystem.
+                Leverage automated trading strategies and discover high-potential crypto opportunities with AI-driven recommendations.
               </p>
             </div>
             
@@ -95,7 +95,7 @@ const SplashPage = () => {
               </div>
               <h3 className="text-xl font-semibold mb-3">Connect</h3>
               <p className="text-muted-foreground mb-4">
-                Find and connect with like-minded individuals in the Web3 community while protecting your privacy.
+                Engage with a network of crypto enthusiasts and experts while automated agents monitor and optimize your community interactions.
               </p>
             </div>
           </div>
@@ -108,9 +108,9 @@ const SplashPage = () => {
           <div className="w-16 h-16 rounded-full bg-iqube-primary/20 flex items-center justify-center mx-auto mb-6">
             <Shield className="h-8 w-8 text-iqube-primary" />
           </div>
-          <h2 className="text-3xl font-bold mb-4">Ready to secure your Web3 identity?</h2>
+          <h2 className="text-3xl font-bold mb-4">Ready to leverage AI for your crypto journey?</h2>
           <p className="text-lg text-muted-foreground mb-8 max-w-2xl mx-auto">
-            Join MonDAI today and take control of your data while participating in the future of Web3.
+            Join MonDAI today and experience the power of crypto-agentic AI working for your financial success in Web3.
           </p>
           <Link to="/signin">
             <Button size="lg" className="gap-2">
