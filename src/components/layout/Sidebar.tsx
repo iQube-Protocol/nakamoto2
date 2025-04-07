@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { NavLink } from 'react-router-dom';
+import { NavLink, Link } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   GraduationCap, 
@@ -76,15 +76,17 @@ const Sidebar = () => {
         collapsed ? "justify-center" : "justify-between"
       )}>
         {!collapsed && (
-          <div className="flex items-center">
+          <Link to="/splash" className="flex items-center">
             <Bot className="h-6 w-6 text-iqube-primary mr-2" />
             <h1 className="text-lg font-bold bg-gradient-to-r from-iqube-primary to-iqube-accent inline-block text-transparent bg-clip-text">
               Aigent MonDAI
             </h1>
-          </div>
+          </Link>
         )}
         {collapsed && (
-          <Bot className="h-6 w-6 text-iqube-primary" />
+          <Link to="/splash">
+            <Bot className="h-6 w-6 text-iqube-primary" />
+          </Link>
         )}
         {!isMobile && (
           <button 
