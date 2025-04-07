@@ -5,6 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { MetaQube } from '@/lib/types';
 import { Lock, Unlock, ShieldCheck, Database } from 'lucide-react';
 import { cn } from '@/lib/utils';
+import { Link } from 'react-router-dom';
 
 interface MetaQubeDisplayProps {
   metaQube: MetaQube;
@@ -58,40 +59,36 @@ const MetaQubeDisplay = ({ metaQube, compact = false, className }: MetaQubeDispl
   // Calculate Trust score as the average of Accuracy and Verifiability
   const trustScore = Math.round((metaQube["Accuracy-Score"] + metaQube["Verifiability-Score"]) / 2);
 
-  if (compact) {
-    return (
-      <Card className={cn("iqube-card", className)}>
-        <CardHeader className="pb-2">
-          <CardTitle className="text-sm font-medium flex items-center">
-            <div className="h-4 w-4 mr-2 text-iqube-accent">
-              {/* Cube icon replacement */}
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-                <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
-                <line x1="12" y1="22.08" x2="12" y2="12"></line>
-              </svg>
-            </div>
-            MonDAI iQube
-          </CardTitle>
-        </CardHeader>
-        <CardContent className="pb-3">
-          <div className="flex justify-between items-center">
-            <Badge variant="outline" className="bg-iqube-primary/10 text-iqube-primary border-iqube-primary/30">
-              {metaQube["iQube-Type"]}
-            </Badge>
-            <div className="flex gap-2">
-              <ScoreBadge value={metaQube["Sensitivity-Score"]} label="Sensitivity" type="sensitivity" />
-              <ScoreBadge value={trustScore} label="Trust" type="trust" />
-              <ScoreBadge value={metaQube["Risk-Score"]} label="Risk" type="risk" />
-            </div>
+  const cardContent = compact ? (
+    <>
+      <CardHeader className="pb-2">
+        <CardTitle className="text-sm font-medium flex items-center">
+          <div className="h-4 w-4 mr-2 text-iqube-accent">
+            {/* Cube icon replacement */}
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+              <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+              <line x1="12" y1="22.08" x2="12" y2="12"></line>
+            </svg>
           </div>
-        </CardContent>
-      </Card>
-    );
-  }
-
-  return (
-    <Card className={cn("iqube-card", className)}>
+          MonDAI iQube
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="pb-3">
+        <div className="flex justify-between items-center">
+          <Badge variant="outline" className="bg-iqube-primary/10 text-iqube-primary border-iqube-primary/30">
+            {metaQube["iQube-Type"]}
+          </Badge>
+          <div className="flex gap-2">
+            <ScoreBadge value={metaQube["Sensitivity-Score"]} label="Sensitivity" type="sensitivity" />
+            <ScoreBadge value={trustScore} label="Trust" type="trust" />
+            <ScoreBadge value={metaQube["Risk-Score"]} label="Risk" type="risk" />
+          </div>
+        </div>
+      </CardContent>
+    </>
+  ) : (
+    <>
       <CardHeader>
         <CardTitle className="flex items-center">
           <div className="h-5 w-5 mr-2 text-iqube-accent">
@@ -165,7 +162,15 @@ const MetaQubeDisplay = ({ metaQube, compact = false, className }: MetaQubeDispl
           )}
         </div>
       </CardContent>
-    </Card>
+    </>
+  );
+
+  return (
+    <Link to="/settings" className="block">
+      <Card className={cn("iqube-card cursor-pointer transition-all hover:bg-card/90 hover:shadow-md", className)}>
+        {cardContent}
+      </Card>
+    </Link>
   );
 };
 
