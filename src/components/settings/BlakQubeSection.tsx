@@ -6,11 +6,16 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Key, Shield, Info } from 'lucide-react';
+import { Key, Shield, Info, Linkedin, User, Wallet } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
+import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 
 interface PrivateData {
   [key: string]: string | string[];
+}
+
+interface DataSource {
+  [key: string]: string;
 }
 
 interface BlakQubeSectionProps {
@@ -22,6 +27,17 @@ const BlakQubeSection = ({ privateData, onUpdatePrivateData }: BlakQubeSectionPr
   const [isEditing, setIsEditing] = useState(false);
   const [editingData, setEditingData] = useState<PrivateData>({...privateData});
   const [encryptionAlgorithm, setEncryptionAlgorithm] = useState("kyber");
+  const [dataSources, setDataSources] = useState<DataSource>({
+    "Profession": "linkedin",
+    "Web3-Interests": "manual",
+    "Local-City": "linkedin",
+    "Email": "linkedin",
+    "EVM-Public-Key": "wallet",
+    "BTC-Public-Key": "wallet",
+    "Tokens-of-Interest": "manual",
+    "Chain-IDs": "wallet",
+    "Wallets-of-Interest": "wallet"
+  });
   const { toast } = useToast();
 
   const handleSavePrivateData = () => {
@@ -30,6 +46,32 @@ const BlakQubeSection = ({ privateData, onUpdatePrivateData }: BlakQubeSectionPr
     toast({
       title: "Private Data Updated",
       description: "Your private data has been updated successfully",
+    });
+  };
+
+  const getSourceIcon = (key: string) => {
+    const source = dataSources[key] || 'manual';
+
+    switch (source) {
+      case 'linkedin':
+        return <Linkedin className="h-3 w-3 text-blue-500" />;
+      case 'wallet':
+        return <Wallet className="h-3 w-3 text-orange-500" />;
+      case 'manual':
+      default:
+        return <User className="h-3 w-3 text-gray-500" />;
+    }
+  };
+
+  const handleSourceChange = (key: string, value: string) => {
+    setDataSources({
+      ...dataSources,
+      [key]: value
+    });
+    
+    toast({
+      title: "Data Source Updated",
+      description: `The data source for ${key} has been updated to ${value}`,
     });
   };
 
@@ -49,7 +91,10 @@ const BlakQubeSection = ({ privateData, onUpdatePrivateData }: BlakQubeSectionPr
                 <>
                   {Object.entries(privateData).slice(0, 6).map(([key, value]) => (
                     <div key={key} className="flex justify-between items-center border-b pb-1">
-                      <span className="text-xs font-medium">{key}</span>
+                      <span className="text-xs font-medium flex items-center">
+                        {key}
+                        <span className="ml-1.5">{getSourceIcon(key)}</span>
+                      </span>
                       <span className="text-xs text-muted-foreground truncate max-w-[60%] text-right">
                         {Array.isArray(value) ? value.join(", ") : value}
                       </span>
@@ -68,7 +113,31 @@ const BlakQubeSection = ({ privateData, onUpdatePrivateData }: BlakQubeSectionPr
                 <>
                   {Object.entries(editingData).slice(0, 6).map(([key, value]) => (
                     <div key={key} className="space-y-1 border-b pb-2">
-                      <Label className="text-xs">{key}</Label>
+                      <div className="flex justify-between items-center">
+                        <Label className="text-xs">{key}</Label>
+                        <DropdownMenu>
+                          <DropdownMenuTrigger asChild>
+                            <Button variant="ghost" size="sm" className="h-6 px-2">
+                              {getSourceIcon(key)}
+                            </Button>
+                          </DropdownMenuTrigger>
+                          <DropdownMenuContent align="end">
+                            <DropdownMenuItem onClick={() => handleSourceChange(key, 'manual')}>
+                              <User className="h-3.5 w-3.5 mr-2" /> Manual Entry
+                            </DropdownMenuItem>
+                            {['Profession', 'Local-City', 'Email'].includes(key) && (
+                              <DropdownMenuItem onClick={() => handleSourceChange(key, 'linkedin')}>
+                                <Linkedin className="h-3.5 w-3.5 mr-2" /> LinkedIn
+                              </DropdownMenuItem>
+                            )}
+                            {['EVM-Public-Key', 'BTC-Public-Key', 'Chain-IDs', 'Wallets-of-Interest'].includes(key) && (
+                              <DropdownMenuItem onClick={() => handleSourceChange(key, 'wallet')}>
+                                <Wallet className="h-3.5 w-3.5 mr-2" /> Wallet
+                              </DropdownMenuItem>
+                            )}
+                          </DropdownMenuContent>
+                        </DropdownMenu>
+                      </div>
                       {Array.isArray(value) ? (
                         <Input
                           value={value.join(', ')}
