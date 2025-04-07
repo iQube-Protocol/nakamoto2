@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Accordion, AccordionContent, AccordionItem, AccordionTrigger } from '@/components/ui/accordion';
 import { Button } from '@/components/ui/button';
@@ -91,12 +90,12 @@ const BlakQubeSection = ({ privateData, onUpdatePrivateData }: BlakQubeSectionPr
                 <>
                   {Object.entries(privateData).slice(0, 6).map(([key, value]) => (
                     <div key={key} className="flex justify-between items-center border-b pb-1">
-                      <span className="text-xs font-medium flex items-center">
+                      <span className="text-xs font-medium">
                         {key}
-                        <span className="ml-1.5">{getSourceIcon(key)}</span>
                       </span>
-                      <span className="text-xs text-muted-foreground truncate max-w-[60%] text-right">
+                      <span className="text-xs text-muted-foreground truncate max-w-[60%] text-right flex items-center justify-end">
                         {Array.isArray(value) ? value.join(", ") : value}
+                        <span className="ml-1.5">{getSourceIcon(key)}</span>
                       </span>
                     </div>
                   ))}
