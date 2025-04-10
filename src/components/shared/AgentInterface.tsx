@@ -1,5 +1,6 @@
+
 import React, { useState, useRef, useEffect } from 'react';
-import { Send, Mic, Paperclip, Image, Bot, Play, Pause, Volume2, Loader2 } from 'lucide-react';
+import { Send, Mic, Paperclip, Image, Bot, Play, Pause, Volume2, Loader2, Info } from 'lucide-react';
 import { AgentMessage } from '@/lib/types';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -9,6 +10,7 @@ import { useToast } from '@/components/ui/use-toast';
 import { Progress } from '@/components/ui/progress';
 import { Badge } from '@/components/ui/badge';
 import { ScrollArea } from '@/components/ui/scroll-area';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface AgentInterfaceProps {
   title: string;
@@ -230,6 +232,32 @@ const AgentInterface = ({
                     >
                       <div className="flex">
                         <div className="flex-1">
+                          <div className="flex items-center justify-between mb-1">
+                            {msg.sender === 'agent' && msg.metadata && (
+                              <TooltipProvider>
+                                <Tooltip>
+                                  <TooltipTrigger asChild>
+                                    <div className="flex items-center">
+                                      <Badge variant="outline" className="text-[10px] mr-1 py-0 h-4">
+                                        <span className="text-muted-foreground">MCP v{msg.metadata.version}</span>
+                                      </Badge>
+                                      {msg.metadata.modelUsed && (
+                                        <Badge variant="secondary" className="text-[10px] py-0 h-4">
+                                          {msg.metadata.modelUsed}
+                                        </Badge>
+                                      )}
+                                    </div>
+                                  </TooltipTrigger>
+                                  <TooltipContent>
+                                    <p className="text-xs">Using Model Context Protocol</p>
+                                    {msg.metadata.contextRetained && 
+                                      <p className="text-xs text-muted-foreground">Context maintained between messages</p>
+                                    }
+                                  </TooltipContent>
+                                </Tooltip>
+                              </TooltipProvider>
+                            )}
+                          </div>
                           <p>{msg.message}</p>
                           <div className="flex items-center justify-between mt-2">
                             <span className="text-xs text-muted-foreground">
@@ -368,6 +396,15 @@ const AgentInterface = ({
       </Tabs>
     </Card>
   );
+};
+
+// Helper function to get trust color
+const getTrustColor = (score: number) => {
+  return score >= 5 
+    ? "bg-green-500/60" 
+    : score >= 3 
+      ? "bg-green-500/60" 
+      : "bg-red-500/60";
 };
 
 export default AgentInterface;

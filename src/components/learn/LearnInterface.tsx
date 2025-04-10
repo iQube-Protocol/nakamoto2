@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
@@ -17,6 +17,7 @@ interface LearnInterfaceProps {
 
 const LearnInterface = ({ metaQube }: LearnInterfaceProps) => {
   const { toast } = useToast();
+  const [conversationId, setConversationId] = useState<string | null>(null);
   
   const courses = [
     {
@@ -48,11 +49,15 @@ const LearnInterface = ({ metaQube }: LearnInterfaceProps) => {
     },
   ];
 
-  // Handle AI message submission
+  // Handle AI message submission with MCP support
   const handleAIMessage = async (message: string) => {
     try {
       const { data, error } = await supabase.functions.invoke('learn-ai', {
-        body: { message, metaQube }
+        body: { 
+          message, 
+          metaQube,
+          conversationId 
+        }
       });
       
       if (error) {
@@ -60,11 +65,23 @@ const LearnInterface = ({ metaQube }: LearnInterfaceProps) => {
         throw new Error(error.message);
       }
       
+      // Store the conversation ID for future messages
+      if (data.conversationId) {
+        setConversationId(data.conversationId);
+        console.log(`MCP conversation established with ID: ${data.conversationId}`);
+        
+        // Log MCP metadata if available
+        if (data.mcp) {
+          console.log('MCP metadata:', data.mcp);
+        }
+      }
+      
       return {
         id: Date.now().toString(),
         sender: 'agent' as const,
         message: data.message,
         timestamp: data.timestamp || new Date().toISOString(),
+        metadata: data.mcp || null
       };
     } catch (error) {
       console.error('Failed to get AI response:', error);
@@ -97,6 +114,10 @@ const LearnInterface = ({ metaQube }: LearnInterfaceProps) => {
               sender: "agent",
               message: "Welcome to your learning journey! Based on your iQube profile, I see you're interested in Web3 topics. Would you like to continue with your Web3 Fundamentals course or explore something new?",
               timestamp: new Date().toISOString(),
+              metadata: {
+                version: "1.0",
+                modelUsed: "gpt-4o-mini"
+              }
             }
           ]}
         />

@@ -1,4 +1,3 @@
-
 // iQube types
 
 export interface MetaQube {
@@ -51,6 +50,12 @@ export interface AgentMessage {
   message: string;
   timestamp: string;
   attachments?: string[];
+  metadata?: {
+    version?: string;
+    modelUsed?: string;
+    contextRetained?: boolean;
+    [key: string]: any;
+  } | null;
 }
 
 export interface AgentConversation {

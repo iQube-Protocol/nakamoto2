@@ -9,6 +9,24 @@ const corsHeaders = {
   'Access-Control-Allow-Headers': 'authorization, x-client-info, apikey, content-type',
 };
 
+// Define MCP context structure
+interface MCPContext {
+  conversationId: string;
+  messages: Array<{
+    role: string;
+    content: string;
+    timestamp: string;
+  }>;
+  metadata: {
+    userProfile: Record<string, any>;
+    environment: string;
+    modelPreference?: string;
+  };
+}
+
+// Initialize a conversation store (in-memory for now, would use a database in production)
+const conversationStore = new Map<string, MCPContext>();
+
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -16,7 +34,36 @@ serve(async (req) => {
   }
 
   try {
-    const { message, metaQube } = await req.json();
+    const { message, metaQube, conversationId } = await req.json();
+    
+    // Initialize or retrieve MCP context
+    let mcpContext: MCPContext;
+    
+    if (conversationId && conversationStore.has(conversationId)) {
+      mcpContext = conversationStore.get(conversationId)!;
+      // Add user message to context
+      mcpContext.messages.push({
+        role: 'user',
+        content: message,
+        timestamp: new Date().toISOString()
+      });
+    } else {
+      // Create new conversation context
+      const newConversationId = crypto.randomUUID();
+      mcpContext = {
+        conversationId: newConversationId,
+        messages: [{
+          role: 'user',
+          content: message,
+          timestamp: new Date().toISOString()
+        }],
+        metadata: {
+          userProfile: metaQube,
+          environment: "web3_education",
+          modelPreference: "gpt-4o-mini"
+        }
+      };
+    }
     
     // Construct a personalized system prompt based on metaQube data
     const systemPrompt = `You are an AI learning assistant for the MonDAI platform.
@@ -29,6 +76,17 @@ You should tailor your responses based on the following iQube data for this user
 Keep explanations clear, concise, and accurate. Recommend learning paths based on the user's interests.
 Maintain a friendly, encouraging tone and suggest follow-up topics when relevant.`;
 
+    // Convert MCP context to OpenAI message format
+    const formattedMessages = [
+      { role: 'system', content: systemPrompt }
+    ];
+    
+    // Add conversation history (limit to last 10 messages for token constraints)
+    const recentMessages = mcpContext.messages.slice(-10);
+    recentMessages.forEach(msg => {
+      formattedMessages.push({ role: msg.role, content: msg.content });
+    });
+
     // Call OpenAI API
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -37,11 +95,8 @@ Maintain a friendly, encouraging tone and suggest follow-up topics when relevant
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: 'gpt-4o-mini',
-        messages: [
-          { role: 'system', content: systemPrompt },
-          { role: 'user', content: message }
-        ],
+        model: mcpContext.metadata.modelPreference || 'gpt-4o-mini',
+        messages: formattedMessages,
       }),
     });
 
@@ -53,14 +108,35 @@ Maintain a friendly, encouraging tone and suggest follow-up topics when relevant
 
     const data = await response.json();
     const aiResponse = data.choices[0].message.content;
-
-    // Return the AI response
+    
+    // Add AI response to context
+    mcpContext.messages.push({
+      role: 'assistant',
+      content: aiResponse,
+      timestamp: new Date().toISOString()
+    });
+    
+    // Store updated context
+    conversationStore.set(mcpContext.conversationId, mcpContext);
+    
+    // Log context state (helpful for debugging)
+    console.log(`Conversation ${mcpContext.conversationId} updated, now has ${mcpContext.messages.length} messages`);
+    
+    // Return the AI response with MCP metadata
     return new Response(JSON.stringify({ 
       message: aiResponse,
-      timestamp: new Date().toISOString()
+      timestamp: new Date().toISOString(),
+      conversationId: mcpContext.conversationId,
+      contextSize: mcpContext.messages.length,
+      mcp: {
+        version: "1.0",
+        contextRetained: true,
+        modelUsed: mcpContext.metadata.modelPreference
+      }
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
     });
+    
   } catch (error) {
     console.error('Error in learn-ai function:', error);
     return new Response(JSON.stringify({ 
