@@ -208,78 +208,80 @@ const AgentInterface = ({
         </div>
 
         <TabsContent value="chat" className="flex-1 flex flex-col p-0 m-0">
-          <ScrollArea className="flex-1">
-            <div className="p-4 space-y-4">
-              {messages.length === 0 ? (
-                <div className="flex items-center justify-center h-full min-h-[300px]">
-                  <div className="text-center p-6">
-                    <Bot className="mx-auto h-12 w-12 text-iqube-primary opacity-50 mb-4" />
-                    <h3 className="font-medium text-lg">Start a conversation</h3>
-                    <p className="text-sm text-muted-foreground mt-2">
-                      Your {agentType} agent is ready to assist you. Ask any question
-                      to get started.
-                    </p>
-                  </div>
-                </div>
-              ) : (
-                messages.map((msg) => (
-                  <div
-                    key={msg.id}
-                    className={msg.sender === 'user' ? 'user-message' : 'agent-message'}
-                  >
-                    <div className="flex">
-                      <div className="flex-1">
-                        <p>{msg.message}</p>
-                        <div className="flex items-center justify-between mt-2">
-                          <span className="text-xs text-muted-foreground">
-                            {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-                          </span>
-                          {msg.sender === 'agent' && (
-                            <Button
-                              variant="ghost"
-                              size="sm"
-                              className="h-6 w-6 p-0"
-                              onClick={() => handlePlayAudio(msg.id)}
-                            >
-                              {playing === msg.id ? (
-                                <Pause className="h-3 w-3" />
-                              ) : (
-                                <Play className="h-3 w-3" />
-                              )}
-                            </Button>
-                          )}
-                        </div>
-                        {playing === msg.id && (
-                          <div className="flex items-center gap-2 mt-1">
-                            <div className="flex-1">
-                              <div className="relative h-1.5 bg-muted rounded-full overflow-hidden">
-                                <div className="absolute inset-y-0 left-0 bg-iqube-primary rounded-full animate-pulse" style={{ width: '50%' }}></div>
-                              </div>
-                              <div className="flex justify-between mt-1">
-                                <span className="text-[10px] text-muted-foreground">0:02</span>
-                                <span className="text-[10px] text-muted-foreground">0:05</span>
-                              </div>
-                            </div>
-                            <Volume2 className="h-3 w-3 text-muted-foreground" />
-                          </div>
-                        )}
-                      </div>
+          <div className="flex-1 overflow-hidden">
+            <ScrollArea className="h-[400px]">
+              <div className="p-4 space-y-4">
+                {messages.length === 0 ? (
+                  <div className="flex items-center justify-center h-full min-h-[300px]">
+                    <div className="text-center p-6">
+                      <Bot className="mx-auto h-12 w-12 text-iqube-primary opacity-50 mb-4" />
+                      <h3 className="font-medium text-lg">Start a conversation</h3>
+                      <p className="text-sm text-muted-foreground mt-2">
+                        Your {agentType} agent is ready to assist you. Ask any question
+                        to get started.
+                      </p>
                     </div>
                   </div>
-                ))
-              )}
-              {isProcessing && (
-                <div className="agent-message">
-                  <div className="flex space-x-2 items-center">
-                    <div className="w-2 h-2 rounded-full bg-iqube-primary animate-pulse"></div>
-                    <div className="w-2 h-2 rounded-full bg-iqube-primary animate-pulse" style={{animationDelay: '0.2s'}}></div>
-                    <div className="w-2 h-2 rounded-full bg-iqube-primary animate-pulse" style={{animationDelay: '0.4s'}}></div>
+                ) : (
+                  messages.map((msg) => (
+                    <div
+                      key={msg.id}
+                      className={msg.sender === 'user' ? 'user-message' : 'agent-message'}
+                    >
+                      <div className="flex">
+                        <div className="flex-1">
+                          <p>{msg.message}</p>
+                          <div className="flex items-center justify-between mt-2">
+                            <span className="text-xs text-muted-foreground">
+                              {new Date(msg.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                            </span>
+                            {msg.sender === 'agent' && (
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 w-6 p-0"
+                                onClick={() => handlePlayAudio(msg.id)}
+                              >
+                                {playing === msg.id ? (
+                                  <Pause className="h-3 w-3" />
+                                ) : (
+                                  <Play className="h-3 w-3" />
+                                )}
+                              </Button>
+                            )}
+                          </div>
+                          {playing === msg.id && (
+                            <div className="flex items-center gap-2 mt-1">
+                              <div className="flex-1">
+                                <div className="relative h-1.5 bg-muted rounded-full overflow-hidden">
+                                  <div className="absolute inset-y-0 left-0 bg-iqube-primary rounded-full animate-pulse" style={{ width: '50%' }}></div>
+                                </div>
+                                <div className="flex justify-between mt-1">
+                                  <span className="text-[10px] text-muted-foreground">0:02</span>
+                                  <span className="text-[10px] text-muted-foreground">0:05</span>
+                                </div>
+                              </div>
+                              <Volume2 className="h-3 w-3 text-muted-foreground" />
+                            </div>
+                          )}
+                        </div>
+                      </div>
+                    </div>
+                  ))
+                )}
+                {isProcessing && (
+                  <div className="agent-message">
+                    <div className="flex space-x-2 items-center">
+                      <div className="w-2 h-2 rounded-full bg-iqube-primary animate-pulse"></div>
+                      <div className="w-2 h-2 rounded-full bg-iqube-primary animate-pulse" style={{animationDelay: '0.2s'}}></div>
+                      <div className="w-2 h-2 rounded-full bg-iqube-primary animate-pulse" style={{animationDelay: '0.4s'}}></div>
+                    </div>
                   </div>
-                </div>
-              )}
-              <div ref={messagesEndRef} />
-            </div>
-          </ScrollArea>
+                )}
+                <div ref={messagesEndRef} />
+              </div>
+            </ScrollArea>
+          </div>
 
           <form onSubmit={handleSubmit} className="border-t p-4">
             <div className="flex items-center space-x-2">
