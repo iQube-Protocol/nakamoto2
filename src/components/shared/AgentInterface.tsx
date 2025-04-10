@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Send, Mic, Paperclip, Image, Bot, Play, Pause, Volume2, Loader2 } from 'lucide-react';
 import { AgentMessage } from '@/lib/types';
@@ -15,6 +14,7 @@ interface AgentInterfaceProps {
   description: string;
   agentType: 'learn' | 'earn' | 'connect';
   initialMessages?: AgentMessage[];
+  onMessageSubmit?: (message: string) => Promise<AgentMessage>;
 }
 
 const AgentInterface = ({
@@ -22,6 +22,7 @@ const AgentInterface = ({
   description,
   agentType,
   initialMessages = [],
+  onMessageSubmit,
 }: AgentInterfaceProps) => {
   const [messages, setMessages] = useState<AgentMessage[]>(initialMessages);
   const [inputValue, setInputValue] = useState('');
@@ -36,9 +37,9 @@ const AgentInterface = ({
     setInputValue(e.target.value);
   };
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!inputValue.trim()) return;
+    if (!inputValue.trim() || isProcessing) return;
 
     // Add user message
     const userMessage: AgentMessage = {
@@ -48,36 +49,53 @@ const AgentInterface = ({
       timestamp: new Date().toISOString(),
     };
 
-    setMessages([...messages, userMessage]);
+    setMessages(prev => [...prev, userMessage]);
     setInputValue('');
     setIsProcessing(true);
 
-    // Simulate agent response
-    setTimeout(() => {
-      let agentResponse = '';
-      
-      switch (agentType) {
-        case 'learn':
-          agentResponse = `I'm your Learning Agent. Based on your iQube data, I recommend exploring topics related to ${Math.random() > 0.5 ? 'DeFi protocols' : 'NFT marketplaces'}. Would you like me to provide more information?`;
-          break;
-        case 'earn':
-          agentResponse = `I'm your Earning Agent. Your MonDAI tokens have increased by ${(Math.random() * 5).toFixed(2)}% today. Would you like to see potential staking opportunities based on your iQube profile?`;
-          break;
-        case 'connect':
-          agentResponse = `I'm your Connection Agent. Based on your interests in your iQube, I found ${Math.floor(Math.random() * 10) + 1} community members with similar interests in ${Math.random() > 0.5 ? 'DeFi' : 'NFTs'}. Would you like me to introduce you?`;
-          break;
+    try {
+      // Use the custom message handler if provided, otherwise use the default handler
+      if (onMessageSubmit) {
+        const agentResponse = await onMessageSubmit(userMessage.message);
+        setMessages(prev => [...prev, agentResponse]);
+      } else {
+        // Simulate agent response (default behavior)
+        setTimeout(() => {
+          let agentResponse = '';
+          
+          switch (agentType) {
+            case 'learn':
+              agentResponse = `I'm your Learning Agent. Based on your iQube data, I recommend exploring topics related to ${Math.random() > 0.5 ? 'DeFi protocols' : 'NFT marketplaces'}. Would you like me to provide more information?`;
+              break;
+            case 'earn':
+              agentResponse = `I'm your Earning Agent. Your MonDAI tokens have increased by ${(Math.random() * 5).toFixed(2)}% today. Would you like to see potential staking opportunities based on your iQube profile?`;
+              break;
+            case 'connect':
+              agentResponse = `I'm your Connection Agent. Based on your interests in your iQube, I found ${Math.floor(Math.random() * 10) + 1} community members with similar interests in ${Math.random() > 0.5 ? 'DeFi' : 'NFTs'}. Would you like me to introduce you?`;
+              break;
+          }
+
+          const newAgentMessage: AgentMessage = {
+            id: (Date.now() + 1).toString(),
+            sender: 'agent',
+            message: agentResponse,
+            timestamp: new Date().toISOString(),
+          };
+
+          setMessages(prev => [...prev, newAgentMessage]);
+          setIsProcessing(false);
+        }, 1500);
       }
-
-      const newAgentMessage: AgentMessage = {
-        id: (Date.now() + 1).toString(),
-        sender: 'agent',
-        message: agentResponse,
-        timestamp: new Date().toISOString(),
-      };
-
-      setMessages(prev => [...prev, newAgentMessage]);
+    } catch (error) {
+      console.error('Error handling message:', error);
+      toast({
+        title: "Error",
+        description: "Failed to process your message. Please try again.",
+        variant: "destructive"
+      });
+    } finally {
       setIsProcessing(false);
-    }, 1500);
+    }
   };
 
   const handleVoiceInput = () => {

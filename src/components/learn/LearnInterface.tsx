@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
@@ -8,12 +8,16 @@ import { BookOpen, FileText, Video, Award, ArrowRight } from 'lucide-react';
 import AgentInterface from '@/components/shared/AgentInterface';
 import MetaQubeDisplay from '@/components/shared/MetaQubeDisplay';
 import { MetaQube } from '@/lib/types';
+import { useToast } from '@/components/ui/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 
 interface LearnInterfaceProps {
   metaQube: MetaQube;
 }
 
 const LearnInterface = ({ metaQube }: LearnInterfaceProps) => {
+  const { toast } = useToast();
+  
   const courses = [
     {
       id: 1,
@@ -44,6 +48,41 @@ const LearnInterface = ({ metaQube }: LearnInterfaceProps) => {
     },
   ];
 
+  // Handle AI message submission
+  const handleAIMessage = async (message: string) => {
+    try {
+      const { data, error } = await supabase.functions.invoke('learn-ai', {
+        body: { message, metaQube }
+      });
+      
+      if (error) {
+        console.error('Error calling learn-ai function:', error);
+        throw new Error(error.message);
+      }
+      
+      return {
+        id: Date.now().toString(),
+        sender: 'agent' as const,
+        message: data.message,
+        timestamp: data.timestamp || new Date().toISOString(),
+      };
+    } catch (error) {
+      console.error('Failed to get AI response:', error);
+      toast({
+        title: "AI Service Error",
+        description: "Could not connect to the AI service. Please try again later.",
+        variant: "destructive"
+      });
+      
+      return {
+        id: Date.now().toString(),
+        sender: 'agent' as const,
+        message: "I'm sorry, I couldn't process your request. Please try again later.",
+        timestamp: new Date().toISOString(),
+      };
+    }
+  };
+
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
       <div className="lg:col-span-2">
@@ -51,6 +90,7 @@ const LearnInterface = ({ metaQube }: LearnInterfaceProps) => {
           title="Learning Assistant"
           description="Personalized web3 education based on your iQube data"
           agentType="learn"
+          onMessageSubmit={handleAIMessage}
           initialMessages={[
             {
               id: "1",

@@ -1,1 +1,5 @@
+
 project_id = "odzaacarlkmxqrpmggwe"
+
+[functions."learn-ai"]
+verify_jwt = true
