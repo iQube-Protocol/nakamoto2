@@ -88,7 +88,6 @@ const LearnInterface = ({ metaQube }: LearnInterfaceProps) => {
     { id: 8, title: "iQube Master", status: "Locked", unlocked: false },
   ];
 
-  // Determine which items to show based on active tab
   const getCurrentItems = () => {
     switch(activeTab) {
       case 'courses':
@@ -104,7 +103,6 @@ const LearnInterface = ({ metaQube }: LearnInterfaceProps) => {
 
   const currentItems = getCurrentItems();
   
-  // Navigation functions
   const goToPrev = () => {
     setCurrentItemIndex((prevIndex) => 
       prevIndex === 0 ? currentItems.length - 1 : prevIndex - 1
@@ -117,13 +115,11 @@ const LearnInterface = ({ metaQube }: LearnInterfaceProps) => {
     );
   };
 
-  // Handle tab click to allow deselection
   const handleTabClick = (value: string) => {
     setActiveTab(prevTab => prevTab === value ? null : value);
-    setCurrentItemIndex(0); // Reset to the first item when changing tabs
+    setCurrentItemIndex(0);
   };
 
-  // Handle AI message submission with MCP support
   const handleAIMessage = async (message: string) => {
     try {
       const { data, error } = await supabase.functions.invoke('learn-ai', {
@@ -139,12 +135,10 @@ const LearnInterface = ({ metaQube }: LearnInterfaceProps) => {
         throw new Error(error.message);
       }
       
-      // Store the conversation ID for future messages
       if (data.conversationId) {
         setConversationId(data.conversationId);
         console.log(`MCP conversation established with ID: ${data.conversationId}`);
         
-        // Log MCP metadata if available
         if (data.mcp) {
           console.log('MCP metadata:', data.mcp);
         }
@@ -174,10 +168,8 @@ const LearnInterface = ({ metaQube }: LearnInterfaceProps) => {
     }
   };
 
-  // Render different content based on tab selection
   const renderRightPanel = () => {
     if (!activeTab) {
-      // Show dashboard summary when no tab is selected
       return (
         <Card className="h-full">
           <CardHeader>
@@ -235,7 +227,6 @@ const LearnInterface = ({ metaQube }: LearnInterfaceProps) => {
       );
     }
 
-    // Tab is selected, show the appropriate card with navigation
     const current = currentItems[currentItemIndex];
     
     if (!current) return null;
@@ -322,10 +313,6 @@ const LearnInterface = ({ metaQube }: LearnInterfaceProps) => {
       </div>
 
       <div className="space-y-6 flex flex-col">
-        <div className="flex-grow">
-          {renderRightPanel()}
-        </div>
-
         <Card>
           <CardHeader className="pb-0">
             <CardTitle className="text-lg">MetaQube</CardTitle>
@@ -334,6 +321,10 @@ const LearnInterface = ({ metaQube }: LearnInterfaceProps) => {
             <MetaQubeDisplay metaQube={metaQube} compact={true} />
           </CardContent>
         </Card>
+
+        <div className="flex-grow">
+          {renderRightPanel()}
+        </div>
       </div>
 
       <div className="lg:col-span-3">
