@@ -69,6 +69,7 @@ type ConnectItem = Member | Group | Event | Message;
 const ConnectInterface = ({ metaQube, communityMetrics }: ConnectInterfaceProps) => {
   const [activeTab, setActiveTab] = useState<string | null>(null);
   const [currentItemIndex, setCurrentItemIndex] = useState(0);
+  const [dashboardTabValue, setDashboardTabValue] = useState("connections");
 
   // Create some sample members with type field
   const members: Member[] = [
@@ -228,7 +229,7 @@ const ConnectInterface = ({ metaQube, communityMetrics }: ConnectInterfaceProps)
             <div className="pt-2">
               <h3 className="font-medium mb-3 flex justify-between items-center">
                 <span>Suggested Connections</span>
-                <Tabs defaultValue="connections" className="w-40">
+                <Tabs defaultValue="connections" className="w-40" value={dashboardTabValue} onValueChange={setDashboardTabValue}>
                   <TabsList className="h-8">
                     <TabsTrigger value="connections" className="text-xs">Connections</TabsTrigger>
                     <TabsTrigger value="messages" className="text-xs">Messages</TabsTrigger>
@@ -236,51 +237,53 @@ const ConnectInterface = ({ metaQube, communityMetrics }: ConnectInterfaceProps)
                 </Tabs>
               </h3>
               
-              <TabsContent value="connections" className="m-0 p-0">
-                <div className="space-y-3">
-                  {members.slice(0, 2).map((member) => (
-                    <div key={member.id} className="flex items-center p-2 border rounded-md">
-                      <Avatar className="h-8 w-8 mr-3">
-                        <AvatarImage src={member.avatar} />
-                        <AvatarFallback className={getRandomColorClass(member.id)}>
-                          {getInitials(member.name)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <div className="text-sm font-medium">{member.name}</div>
-                        <div className="text-xs text-muted-foreground">{member.role}</div>
-                      </div>
-                      <Button size="sm" className="h-8">
-                        <UserPlus className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </TabsContent>
-              
-              <TabsContent value="messages" className="m-0 p-0">
-                <div className="space-y-3">
-                  {messages.slice(0, 2).map((message) => (
-                    <div key={message.id} className="flex items-center p-2 border rounded-md">
-                      <Avatar className="h-8 w-8 mr-3">
-                        <AvatarFallback className={getRandomColorClass(message.id)}>
-                          {getInitials(message.sender)}
-                        </AvatarFallback>
-                      </Avatar>
-                      <div className="flex-1">
-                        <div className="text-sm font-medium flex items-center">
-                          {message.sender}
-                          {message.unread && <Badge className="ml-2 px-1 py-0 h-4 bg-iqube-accent text-[10px]">New</Badge>}
+              <div>
+                {dashboardTabValue === "connections" && (
+                  <div className="space-y-3">
+                    {members.slice(0, 2).map((member) => (
+                      <div key={member.id} className="flex items-center p-2 border rounded-md">
+                        <Avatar className="h-8 w-8 mr-3">
+                          <AvatarImage src={member.avatar} />
+                          <AvatarFallback className={getRandomColorClass(member.id)}>
+                            {getInitials(member.name)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                          <div className="text-sm font-medium">{member.name}</div>
+                          <div className="text-xs text-muted-foreground">{member.role}</div>
                         </div>
-                        <div className="text-xs text-muted-foreground truncate">{message.content}</div>
+                        <Button size="sm" className="h-8">
+                          <UserPlus className="h-4 w-4" />
+                        </Button>
                       </div>
-                      <Button size="sm" className="h-8" variant="outline">
-                        <MessageSquare className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  ))}
-                </div>
-              </TabsContent>
+                    ))}
+                  </div>
+                )}
+                
+                {dashboardTabValue === "messages" && (
+                  <div className="space-y-3">
+                    {messages.slice(0, 2).map((message) => (
+                      <div key={message.id} className="flex items-center p-2 border rounded-md">
+                        <Avatar className="h-8 w-8 mr-3">
+                          <AvatarFallback className={getRandomColorClass(message.id)}>
+                            {getInitials(message.sender)}
+                          </AvatarFallback>
+                        </Avatar>
+                        <div className="flex-1">
+                          <div className="text-sm font-medium flex items-center">
+                            {message.sender}
+                            {message.unread && <Badge className="ml-2 px-1 py-0 h-4 bg-iqube-accent text-[10px]">New</Badge>}
+                          </div>
+                          <div className="text-xs text-muted-foreground truncate">{message.content}</div>
+                        </div>
+                        <Button size="sm" className="h-8" variant="outline">
+                          <MessageSquare className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
             </div>
             
             <div className="pt-2">
