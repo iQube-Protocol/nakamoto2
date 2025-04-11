@@ -1,15 +1,15 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { BookOpen, FileText, Video, Award, ArrowRight } from 'lucide-react';
+import { BookOpen, FileText, Video, Award, ArrowRight, ChevronLeft, ChevronRight } from 'lucide-react';
 import AgentInterface from '@/components/shared/AgentInterface';
 import MetaQubeDisplay from '@/components/shared/MetaQubeDisplay';
 import { MetaQube } from '@/lib/types';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import CourseCard from '@/components/learn/CourseCard';
 
 interface LearnInterfaceProps {
   metaQube: MetaQube;
@@ -18,6 +18,7 @@ interface LearnInterfaceProps {
 const LearnInterface = ({ metaQube }: LearnInterfaceProps) => {
   const { toast } = useToast();
   const [conversationId, setConversationId] = useState<string | null>(null);
+  const [currentCourseIndex, setCurrentCourseIndex] = useState(0);
   
   const courses = [
     {
@@ -48,6 +49,18 @@ const LearnInterface = ({ metaQube }: LearnInterfaceProps) => {
       icon: <Video className="h-10 w-10 text-green-400" />,
     },
   ];
+
+  const handleNextCourse = () => {
+    setCurrentCourseIndex((prev) => 
+      prev === courses.length - 1 ? 0 : prev + 1
+    );
+  };
+
+  const handlePrevCourse = () => {
+    setCurrentCourseIndex((prev) => 
+      prev === 0 ? courses.length - 1 : prev - 1
+    );
+  };
 
   // Handle AI message submission with MCP support
   const handleAIMessage = async (message: string) => {
@@ -102,6 +115,42 @@ const LearnInterface = ({ metaQube }: LearnInterfaceProps) => {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
+      <div>
+        <div className="space-y-6">
+          <MetaQubeDisplay metaQube={metaQube} compact={true} />
+
+          <Card>
+            <CardHeader className="flex flex-row items-center justify-between pb-2">
+              <CardTitle className="text-lg">Course Navigation</CardTitle>
+              <div className="flex items-center space-x-1">
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-8 w-8" 
+                  onClick={handlePrevCourse}
+                >
+                  <ChevronLeft className="h-4 w-4" />
+                </Button>
+                <span className="text-sm text-muted-foreground">
+                  {currentCourseIndex + 1}/{courses.length}
+                </span>
+                <Button 
+                  variant="ghost" 
+                  size="icon" 
+                  className="h-8 w-8" 
+                  onClick={handleNextCourse}
+                >
+                  <ChevronRight className="h-4 w-4" />
+                </Button>
+              </div>
+            </CardHeader>
+            <CardContent>
+              <CourseCard course={courses[currentCourseIndex]} />
+            </CardContent>
+          </Card>
+        </div>
+      </div>
+
       <div className="lg:col-span-2">
         <AgentInterface
           title="Learning Assistant"
@@ -123,70 +172,6 @@ const LearnInterface = ({ metaQube }: LearnInterfaceProps) => {
         />
       </div>
 
-      <div className="space-y-6">
-        <MetaQubeDisplay metaQube={metaQube} compact={true} />
-
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Learning Dashboard</CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <div className="flex justify-between mb-2">
-                <span className="font-medium">Your Progress</span>
-                <span className="text-sm text-muted-foreground">35%</span>
-              </div>
-              <Progress value={35} className="h-2" />
-            </div>
-            
-            <div className="grid grid-cols-2 gap-3">
-              <Card className="p-3">
-                <div className="text-xl font-bold">3</div>
-                <div className="text-xs text-muted-foreground">Courses in Progress</div>
-              </Card>
-              <Card className="p-3">
-                <div className="text-xl font-bold">11</div>
-                <div className="text-xs text-muted-foreground">Lessons Completed</div>
-              </Card>
-              <Card className="p-3">
-                <div className="text-xl font-bold">4</div>
-                <div className="text-xs text-muted-foreground">Certifications</div>
-              </Card>
-              <Card className="p-3">
-                <div className="text-xl font-bold">2.5</div>
-                <div className="text-xs text-muted-foreground">Hours This Week</div>
-              </Card>
-            </div>
-
-            <div className="pt-2">
-              <h3 className="font-medium mb-3">Recommended Path</h3>
-              <div className="space-y-3">
-                <div className="flex items-center p-2 border rounded-md bg-iqube-primary/5 border-iqube-primary/20">
-                  <BookOpen className="h-5 w-5 text-iqube-primary mr-3" />
-                  <div className="flex-1">
-                    <div className="text-sm font-medium">Complete Web3 Fundamentals</div>
-                    <div className="text-xs text-muted-foreground">4 lessons remaining</div>
-                  </div>
-                  <Button size="sm" className="h-8">
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
-                </div>
-                <div className="flex items-center p-2 border rounded-md">
-                  <Award className="h-5 w-5 text-amber-500 mr-3" />
-                  <div className="flex-1">
-                    <div className="text-sm font-medium">Take Certification Exam</div>
-                    <div className="text-xs text-muted-foreground">Unlock level 2 learning</div>
-                  </div>
-                  <Button size="sm" variant="ghost" className="h-8">
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-
       <div className="lg:col-span-3">
         <Tabs defaultValue="courses">
           <TabsList className="w-full grid grid-cols-3">
@@ -197,28 +182,7 @@ const LearnInterface = ({ metaQube }: LearnInterfaceProps) => {
           <TabsContent value="courses" className="mt-4">
             <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
               {courses.map((course) => (
-                <Card key={course.id}>
-                  <CardContent className="pt-6">
-                    <div className="mb-4">
-                      {course.icon}
-                    </div>
-                    <h3 className="text-lg font-semibold mb-1">{course.title}</h3>
-                    <p className="text-sm text-muted-foreground mb-4">{course.description}</p>
-                    <div className="mb-4">
-                      <div className="flex justify-between text-sm mb-1">
-                        <span>Progress</span>
-                        <span>{course.progress}%</span>
-                      </div>
-                      <Progress value={course.progress} className="h-2" />
-                    </div>
-                    <div className="flex justify-between text-sm text-muted-foreground">
-                      <span>{course.completed}/{course.lessons} lessons</span>
-                      <Button size="sm" className="h-8">
-                        Continue
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
+                <CourseCard key={course.id} course={course} />
               ))}
             </div>
           </TabsContent>

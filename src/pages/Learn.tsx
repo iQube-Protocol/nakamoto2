@@ -22,12 +22,14 @@ const metaQubeData: MetaQube = {
 
 const Learn = () => {
   return (
-    <div className="container p-2">
+    <div className="container p-2 h-[calc(100vh-4rem)] flex flex-col">
       <div className="flex justify-between items-center mb-3">
         <h1 className="text-2xl font-bold tracking-tight">Learn</h1>
       </div>
 
-      <LearnInterface metaQube={metaQubeData} />
+      <div className="flex-1 overflow-hidden">
+        <LearnInterface metaQube={metaQubeData} />
+      </div>
     </div>
   );
 };
