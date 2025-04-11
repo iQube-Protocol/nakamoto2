@@ -2,7 +2,6 @@
 import React from 'react';
 import ConnectInterface from '@/components/connect/ConnectInterface';
 import { MetaQube, CommunityMetrics } from '@/lib/types';
-import { useIsMobile } from '@/hooks/use-mobile';
 
 // Sample metaQube data
 const metaQubeData: MetaQube = {
@@ -32,15 +31,13 @@ const communityMetrics: CommunityMetrics = {
 };
 
 const Connect = () => {
-  const isMobile = useIsMobile();
-  
   return (
     <div className="container p-2 h-[calc(100vh-100px)]">
       <div className="flex justify-between items-center mb-3">
         <h1 className="text-2xl font-bold tracking-tight">Connect</h1>
       </div>
 
-      <ConnectInterface metaQube={metaQubeData} communityMetrics={communityMetrics} isMobile={isMobile} />
+      <ConnectInterface metaQube={metaQubeData} communityMetrics={communityMetrics} />
     </div>
   );
 };
