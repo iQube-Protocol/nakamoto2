@@ -67,7 +67,7 @@ interface Message {
 type ConnectItem = Member | Group | Event | Message;
 
 const ConnectInterface = ({ metaQube, communityMetrics }: ConnectInterfaceProps) => {
-  const [activeTab, setActiveTab] = useState<string | null>(null);
+  const [selectedTab, setSelectedTab] = useState("members");
   const [currentItemIndex, setCurrentItemIndex] = useState(0);
   const [dashboardTabValue, setDashboardTabValue] = useState("connections");
 
@@ -161,11 +161,6 @@ const ConnectInterface = ({ metaQube, communityMetrics }: ConnectInterfaceProps)
     return colors[id % colors.length];
   };
 
-  const handleTabClick = (value: string) => {
-    setActiveTab(prevTab => prevTab === value ? null : value);
-    setCurrentItemIndex(0); // Reset to first item when changing tabs
-  };
-
   const goToPrev = () => {
     const currentItems = getCurrentItems();
     setCurrentItemIndex((prevIndex) => 
@@ -181,7 +176,7 @@ const ConnectInterface = ({ metaQube, communityMetrics }: ConnectInterfaceProps)
   };
 
   const getCurrentItems = (): ConnectItem[] => {
-    switch(activeTab) {
+    switch(selectedTab) {
       case 'members':
         return members;
       case 'groups':
@@ -195,121 +190,7 @@ const ConnectInterface = ({ metaQube, communityMetrics }: ConnectInterfaceProps)
     }
   };
 
-  const renderRightPanel = () => {
-    if (!activeTab) {
-      // Show dashboard summary when no tab is selected
-      return (
-        <Card className="h-full">
-          <CardHeader>
-            <CardTitle className="text-lg flex items-center">
-              <Activity className="mr-2 h-5 w-5 text-iqube-accent" />
-              Connect Dashboard
-            </CardTitle>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            <div className="grid grid-cols-2 gap-3 mt-2">
-              <Card className="p-3">
-                <div className="text-xl font-bold">{communityMetrics.totalConnections}</div>
-                <div className="text-xs text-muted-foreground">Total Connections</div>
-              </Card>
-              <Card className="p-3">
-                <div className="text-xl font-bold">{communityMetrics.groupsJoined}</div>
-                <div className="text-xs text-muted-foreground">Groups Joined</div>
-              </Card>
-              <Card className="p-3">
-                <div className="text-xl font-bold">{communityMetrics.upcomingEvents}</div>
-                <div className="text-xs text-muted-foreground">Upcoming Events</div>
-              </Card>
-              <Card className="p-3">
-                <div className="text-xl font-bold">{communityMetrics.unreadMessages}</div>
-                <div className="text-xs text-muted-foreground">Unread Messages</div>
-              </Card>
-            </div>
-
-            <div className="pt-2">
-              <h3 className="font-medium mb-3 flex justify-between items-center">
-                <span>Suggested Connections</span>
-                <Tabs defaultValue="connections" className="w-40" value={dashboardTabValue} onValueChange={setDashboardTabValue}>
-                  <TabsList className="h-8">
-                    <TabsTrigger value="connections" className="text-xs">Connections</TabsTrigger>
-                    <TabsTrigger value="messages" className="text-xs">Messages</TabsTrigger>
-                  </TabsList>
-                </Tabs>
-              </h3>
-              
-              <div>
-                {dashboardTabValue === "connections" && (
-                  <div className="space-y-3">
-                    {members.slice(0, 2).map((member) => (
-                      <div key={member.id} className="flex items-center p-2 border rounded-md">
-                        <Avatar className="h-8 w-8 mr-3">
-                          <AvatarImage src={member.avatar} />
-                          <AvatarFallback className={getRandomColorClass(member.id)}>
-                            {getInitials(member.name)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                          <div className="text-sm font-medium">{member.name}</div>
-                          <div className="text-xs text-muted-foreground">{member.role}</div>
-                        </div>
-                        <Button size="sm" className="h-8">
-                          <UserPlus className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-                
-                {dashboardTabValue === "messages" && (
-                  <div className="space-y-3">
-                    {messages.slice(0, 2).map((message) => (
-                      <div key={message.id} className="flex items-center p-2 border rounded-md">
-                        <Avatar className="h-8 w-8 mr-3">
-                          <AvatarFallback className={getRandomColorClass(message.id)}>
-                            {getInitials(message.sender)}
-                          </AvatarFallback>
-                        </Avatar>
-                        <div className="flex-1">
-                          <div className="text-sm font-medium flex items-center">
-                            {message.sender}
-                            {message.unread && <Badge className="ml-2 px-1 py-0 h-4 bg-iqube-accent text-[10px]">New</Badge>}
-                          </div>
-                          <div className="text-xs text-muted-foreground truncate">{message.content}</div>
-                        </div>
-                        <Button size="sm" className="h-8" variant="outline">
-                          <MessageSquare className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </div>
-            </div>
-            
-            <div className="pt-2">
-              <h3 className="font-medium mb-3">Upcoming Event</h3>
-              <Card className="overflow-hidden">
-                <div className="h-20 bg-gradient-to-r from-iqube-primary/30 to-iqube-accent/30 flex items-center justify-center">
-                  <Calendar className="h-10 w-10 text-iqube-primary" />
-                </div>
-                <CardContent className="pt-4">
-                  <h3 className="font-semibold mb-1">{events[0].title}</h3>
-                  <div className="flex items-center text-sm text-muted-foreground mb-2">
-                    <Calendar className="h-4 w-4 mr-1" />
-                    {formatDate(events[0].date)}
-                  </div>
-                  <Button className="w-full bg-iqube-primary hover:bg-iqube-primary/90 mt-2">
-                    RSVP
-                  </Button>
-                </CardContent>
-              </Card>
-            </div>
-          </CardContent>
-        </Card>
-      );
-    }
-
-    // Tab is selected, show the appropriate card with navigation
+  const renderDetailPanel = () => {
     const currentItems = getCurrentItems();
     const current = currentItems[currentItemIndex];
     
@@ -319,10 +200,10 @@ const ConnectInterface = ({ metaQube, communityMetrics }: ConnectInterfaceProps)
       <Card className="h-full">
         <CardHeader className="pb-2 flex flex-row items-center justify-between">
           <CardTitle className="text-lg">
-            {activeTab === 'members' && 'Community Member'}
-            {activeTab === 'groups' && 'Group'}
-            {activeTab === 'events' && 'Event'}
-            {activeTab === 'messages' && 'Message'}
+            {selectedTab === 'members' && 'Community Member'}
+            {selectedTab === 'groups' && 'Group'}
+            {selectedTab === 'events' && 'Event'}
+            {selectedTab === 'messages' && 'Message'}
           </CardTitle>
           <div className="flex items-center space-x-2">
             <Button 
@@ -474,26 +355,157 @@ const ConnectInterface = ({ metaQube, communityMetrics }: ConnectInterfaceProps)
       </Card>
     );
   };
+
+  const renderDashboard = () => {
+    return (
+      <Card className="h-full">
+        <CardHeader>
+          <CardTitle className="text-lg flex items-center">
+            <Activity className="mr-2 h-5 w-5 text-iqube-accent" />
+            Connect Dashboard
+          </CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <div className="grid grid-cols-2 gap-3 mt-2">
+            <Card className="p-3">
+              <div className="text-xl font-bold">{communityMetrics.totalConnections}</div>
+              <div className="text-xs text-muted-foreground">Total Connections</div>
+            </Card>
+            <Card className="p-3">
+              <div className="text-xl font-bold">{communityMetrics.groupsJoined}</div>
+              <div className="text-xs text-muted-foreground">Groups Joined</div>
+            </Card>
+            <Card className="p-3">
+              <div className="text-xl font-bold">{communityMetrics.upcomingEvents}</div>
+              <div className="text-xs text-muted-foreground">Upcoming Events</div>
+            </Card>
+            <Card className="p-3">
+              <div className="text-xl font-bold">{communityMetrics.unreadMessages}</div>
+              <div className="text-xs text-muted-foreground">Unread Messages</div>
+            </Card>
+          </div>
+
+          <div className="pt-2">
+            <h3 className="font-medium mb-3 flex justify-between items-center">
+              <span>Suggested Connections</span>
+              <Tabs defaultValue="connections" className="w-40" value={dashboardTabValue} onValueChange={setDashboardTabValue}>
+                <TabsList className="h-8">
+                  <TabsTrigger value="connections" className="text-xs">Connections</TabsTrigger>
+                  <TabsTrigger value="messages" className="text-xs">Messages</TabsTrigger>
+                </TabsList>
+              </Tabs>
+            </h3>
+            
+            <div>
+              {dashboardTabValue === "connections" && (
+                <div className="space-y-3">
+                  {members.slice(0, 2).map((member) => (
+                    <div key={member.id} className="flex items-center p-2 border rounded-md">
+                      <Avatar className="h-8 w-8 mr-3">
+                        <AvatarImage src={member.avatar} />
+                        <AvatarFallback className={getRandomColorClass(member.id)}>
+                          {getInitials(member.name)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <div className="text-sm font-medium">{member.name}</div>
+                        <div className="text-xs text-muted-foreground">{member.role}</div>
+                      </div>
+                      <Button size="sm" className="h-8">
+                        <UserPlus className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              
+              {dashboardTabValue === "messages" && (
+                <div className="space-y-3">
+                  {messages.slice(0, 2).map((message) => (
+                    <div key={message.id} className="flex items-center p-2 border rounded-md">
+                      <Avatar className="h-8 w-8 mr-3">
+                        <AvatarFallback className={getRandomColorClass(message.id)}>
+                          {getInitials(message.sender)}
+                        </AvatarFallback>
+                      </Avatar>
+                      <div className="flex-1">
+                        <div className="text-sm font-medium flex items-center">
+                          {message.sender}
+                          {message.unread && <Badge className="ml-2 px-1 py-0 h-4 bg-iqube-accent text-[10px]">New</Badge>}
+                        </div>
+                        <div className="text-xs text-muted-foreground truncate">{message.content}</div>
+                      </div>
+                      <Button size="sm" className="h-8" variant="outline">
+                        <MessageSquare className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+          </div>
+          
+          <div className="pt-2">
+            <h3 className="font-medium mb-3">Upcoming Event</h3>
+            <Card className="overflow-hidden">
+              <div className="h-20 bg-gradient-to-r from-iqube-primary/30 to-iqube-accent/30 flex items-center justify-center">
+                <Calendar className="h-10 w-10 text-iqube-primary" />
+              </div>
+              <CardContent className="pt-4">
+                <h3 className="font-semibold mb-1">{events[0].title}</h3>
+                <div className="flex items-center text-sm text-muted-foreground mb-2">
+                  <Calendar className="h-4 w-4 mr-1" />
+                  {formatDate(events[0].date)}
+                </div>
+                <Button className="w-full bg-iqube-primary hover:bg-iqube-primary/90 mt-2">
+                  RSVP
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  };
   
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
-      <div className="lg:col-span-2">
-        <AgentInterface
-          title="Connection Assistant"
-          description="Community insights and networking opportunities"
-          agentType="connect"
-          initialMessages={[
-            {
-              id: "1",
-              sender: "agent",
-              message: "Welcome to your Connect dashboard. Based on your iQube profile, I've identified several community members with similar interests in DeFi and NFTs. Would you like me to suggest potential connections or keep you updated on upcoming events?",
-              timestamp: new Date().toISOString(),
-            }
-          ]}
-        />
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
+      {/* Left column - Chat Interface */}
+      <div className="lg:col-span-8">
+        <div className="space-y-6">
+          <AgentInterface
+            title="Connection Assistant"
+            description="Community insights and networking opportunities"
+            agentType="connect"
+            initialMessages={[
+              {
+                id: "1",
+                sender: "agent",
+                message: "Welcome to your Connect dashboard. Based on your iQube profile, I've identified several community members with similar interests in DeFi and NFTs. Would you like me to suggest potential connections or keep you updated on upcoming events?",
+                timestamp: new Date().toISOString(),
+              }
+            ]}
+          />
+
+          {/* Tabs moved under the chat interface */}
+          <div>
+            <Tabs value={selectedTab} onValueChange={setSelectedTab}>
+              <TabsList className="w-full grid grid-cols-4">
+                <TabsTrigger value="members">Community</TabsTrigger>
+                <TabsTrigger value="groups">Groups</TabsTrigger>
+                <TabsTrigger value="events">Events</TabsTrigger>
+                <TabsTrigger value="messages">Messages</TabsTrigger>
+              </TabsList>
+              <TabsContent value={selectedTab} className="mt-6">
+                {renderDetailPanel()}
+              </TabsContent>
+            </Tabs>
+          </div>
+        </div>
       </div>
 
-      <div className="space-y-6 flex flex-col">
+      {/* Right column - MetaQube & Dashboard */}
+      <div className="lg:col-span-4 space-y-6">
         <Card>
           <CardHeader className="pb-0">
             <CardTitle className="text-lg">MetaQube</CardTitle>
@@ -504,42 +516,7 @@ const ConnectInterface = ({ metaQube, communityMetrics }: ConnectInterfaceProps)
         </Card>
 
         <div className="flex-grow">
-          {renderRightPanel()}
-        </div>
-        
-        <div>
-          <Tabs value={activeTab || ""} className="w-full">
-            <TabsList className="w-full grid grid-cols-4">
-              <TabsTrigger 
-                value="members" 
-                onClick={() => handleTabClick('members')}
-                data-state={activeTab === 'members' ? 'active' : ''}
-              >
-                Community
-              </TabsTrigger>
-              <TabsTrigger 
-                value="groups" 
-                onClick={() => handleTabClick('groups')}
-                data-state={activeTab === 'groups' ? 'active' : ''}
-              >
-                Groups
-              </TabsTrigger>
-              <TabsTrigger 
-                value="events" 
-                onClick={() => handleTabClick('events')}
-                data-state={activeTab === 'events' ? 'active' : ''}
-              >
-                Events
-              </TabsTrigger>
-              <TabsTrigger 
-                value="messages" 
-                onClick={() => handleTabClick('messages')}
-                data-state={activeTab === 'messages' ? 'active' : ''}
-              >
-                Messages
-              </TabsTrigger>
-            </TabsList>
-          </Tabs>
+          {renderDashboard()}
         </div>
       </div>
     </div>
