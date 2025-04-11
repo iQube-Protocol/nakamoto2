@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -422,50 +421,49 @@ const ConnectInterface = ({ metaQube, communityMetrics }: ConnectInterfaceProps)
       </Card>
     );
   };
-  
-  return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
-      {/* Left column - Chat Interface & Tabs */}
-      <div className="lg:col-span-6">
-        <div className="space-y-6 h-full flex flex-col">
-          <AgentInterface
-            title="Connection Assistant"
-            description="Community insights and networking opportunities"
-            agentType="connect"
-            initialMessages={[
-              {
-                id: "1",
-                sender: "agent",
-                message: "Welcome to your Connect dashboard. Based on your iQube profile, I've identified several community members with similar interests in DeFi and NFTs. Would you like me to suggest potential connections or keep you updated on upcoming events?",
-                timestamp: new Date().toISOString(),
-              }
-            ]}
-          />
 
-          {/* Tabs moved under the chat interface */}
-          <Tabs value={selectedTab} onValueChange={handleTabChange} className="flex-shrink-0">
-            <TabsList className="w-full grid grid-cols-4">
-              <TabsTrigger value="members">Community</TabsTrigger>
-              <TabsTrigger value="groups">Groups</TabsTrigger>
-              <TabsTrigger value="events">Events</TabsTrigger>
-              <TabsTrigger value="messages">Messages</TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </div>
+  return (
+    <div className="flex flex-col h-full gap-6">
+      <div className="flex-grow">
+        <AgentInterface
+          title="Connection Assistant"
+          description="Community insights and networking opportunities"
+          agentType="connect"
+          initialMessages={[
+            {
+              id: "1",
+              sender: "agent",
+              message: "Welcome to your Connect dashboard. Based on your iQube profile, I've identified several community members with similar interests in DeFi and NFTs. Would you like me to suggest potential connections or keep you updated on upcoming events?",
+              timestamp: new Date().toISOString(),
+            }
+          ]}
+        />
       </div>
 
-      {/* Right column - Content based on tab selection */}
-      <div className="lg:col-span-6 space-y-6 h-full flex flex-col">
-        <Card>
-          <CardHeader className="pb-0">
-            <CardTitle className="text-lg">MetaQube</CardTitle>
-          </CardHeader>
-          <CardContent className="pt-4">
-            <MetaQubeDisplay metaQube={metaQube} compact={true} />
-          </CardContent>
-        </Card>
+      <div className="w-full">
+        <Tabs value={selectedTab} onValueChange={handleTabChange}>
+          <TabsList className="w-full grid grid-cols-4">
+            <TabsTrigger value="members">Community</TabsTrigger>
+            <TabsTrigger value="groups">Groups</TabsTrigger>
+            <TabsTrigger value="events">Events</TabsTrigger>
+            <TabsTrigger value="messages">Messages</TabsTrigger>
+          </TabsList>
+        </Tabs>
+      </div>
 
-        <div className="flex-grow">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="lg:col-span-6">
+          <Card>
+            <CardHeader className="pb-0">
+              <CardTitle className="text-lg">MetaQube</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <MetaQubeDisplay metaQube={metaQube} compact={true} />
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="lg:col-span-6 h-full">
           <ScrollArea className="h-full">
             {selectedTab ? (
               renderDetailPanel()
