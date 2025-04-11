@@ -26,7 +26,6 @@ interface ConnectInterfaceProps {
   communityMetrics: CommunityMetrics;
 }
 
-// Define more specific types for each item type
 interface Member {
   id: number;
   name: string;
@@ -62,14 +61,12 @@ interface Message {
   type: 'message';
 }
 
-// Union type for all possible items
 type ConnectItem = Member | Group | Event | Message;
 
 const ConnectInterface = ({ metaQube, communityMetrics }: ConnectInterfaceProps) => {
   const [selectedTab, setSelectedTab] = useState<string | undefined>(undefined);
   const [currentItemIndex, setCurrentItemIndex] = useState(0);
 
-  // Create some sample members with type field
   const members: Member[] = [
     { id: 1, name: 'Alex Chen', role: 'Developer', avatar: '', interests: ['DeFi', 'Smart Contracts'], type: 'member' },
     { id: 2, name: 'Mia Wong', role: 'Designer', avatar: '', interests: ['NFTs', 'DAO'], type: 'member' },
@@ -78,7 +75,6 @@ const ConnectInterface = ({ metaQube, communityMetrics }: ConnectInterfaceProps)
     { id: 5, name: 'Taylor Kim', role: 'Educator', avatar: '', interests: ['Education', 'Onboarding'], type: 'member' },
   ];
 
-  // Create some sample events with type field
   const events: Event[] = [
     { 
       id: 1, 
@@ -106,7 +102,6 @@ const ConnectInterface = ({ metaQube, communityMetrics }: ConnectInterfaceProps)
     },
   ];
 
-  // Create some sample groups with type field
   const groups: Group[] = [
     { id: 1, name: 'DeFi Enthusiasts', members: 120, activity: 'High', type: 'group' },
     { id: 2, name: 'NFT Creators', members: 85, activity: 'Medium', type: 'group' },
@@ -114,7 +109,6 @@ const ConnectInterface = ({ metaQube, communityMetrics }: ConnectInterfaceProps)
     { id: 4, name: 'Privacy Advocates', members: 42, activity: 'Low', type: 'group' },
   ];
 
-  // Create some sample messages with type field
   const messages: Message[] = [
     { id: 1, sender: 'Alex Chen', content: 'Hey! Saw your post about DeFi protocols. Would love to chat.', timestamp: '2025-04-10T14:30:00', unread: true, type: 'message' },
     { id: 2, sender: 'DAO Governance', content: 'New proposal available for voting. Check it out!', timestamp: '2025-04-09T09:15:00', unread: true, type: 'message' },
@@ -122,7 +116,6 @@ const ConnectInterface = ({ metaQube, communityMetrics }: ConnectInterfaceProps)
     { id: 4, sender: 'DeFi Enthusiasts', content: 'Welcome to the group! Introduce yourself.', timestamp: '2025-04-07T11:20:00', unread: false, type: 'message' },
   ];
 
-  // Type guard functions to check what type of item we're dealing with
   const isMember = (item: ConnectItem): item is Member => item.type === 'member';
   const isGroup = (item: ConnectItem): item is Group => item.type === 'group';
   const isEvent = (item: ConnectItem): item is Event => item.type === 'event';
@@ -189,7 +182,6 @@ const ConnectInterface = ({ metaQube, communityMetrics }: ConnectInterfaceProps)
   };
 
   const handleTabChange = (value: string) => {
-    // If clicking the same tab, deselect it
     if (value === selectedTab) {
       setSelectedTab(undefined);
       return;
@@ -424,20 +416,33 @@ const ConnectInterface = ({ metaQube, communityMetrics }: ConnectInterfaceProps)
 
   return (
     <div className="flex flex-col h-full gap-6">
-      <div className="flex-grow">
-        <AgentInterface
-          title="Connection Assistant"
-          description="Community insights and networking opportunities"
-          agentType="connect"
-          initialMessages={[
-            {
-              id: "1",
-              sender: "agent",
-              message: "Welcome to your Connect dashboard. Based on your iQube profile, I've identified several community members with similar interests in DeFi and NFTs. Would you like me to suggest potential connections or keep you updated on upcoming events?",
-              timestamp: new Date().toISOString(),
-            }
-          ]}
-        />
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+        <div className="lg:col-span-8">
+          <AgentInterface
+            title="Connection Assistant"
+            description="Community insights and networking opportunities"
+            agentType="connect"
+            initialMessages={[
+              {
+                id: "1",
+                sender: "agent",
+                message: "Welcome to your Connect dashboard. Based on your iQube profile, I've identified several community members with similar interests in DeFi and NFTs. Would you like me to suggest potential connections or keep you updated on upcoming events?",
+                timestamp: new Date().toISOString(),
+              }
+            ]}
+          />
+        </div>
+
+        <div className="lg:col-span-4">
+          <Card>
+            <CardHeader className="pb-0">
+              <CardTitle className="text-lg">MetaQube</CardTitle>
+            </CardHeader>
+            <CardContent className="pt-4">
+              <MetaQubeDisplay metaQube={metaQube} compact={true} />
+            </CardContent>
+          </Card>
+        </div>
       </div>
 
       <div className="w-full">
@@ -451,27 +456,14 @@ const ConnectInterface = ({ metaQube, communityMetrics }: ConnectInterfaceProps)
         </Tabs>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
-        <div className="lg:col-span-6">
-          <Card>
-            <CardHeader className="pb-0">
-              <CardTitle className="text-lg">MetaQube</CardTitle>
-            </CardHeader>
-            <CardContent className="pt-4">
-              <MetaQubeDisplay metaQube={metaQube} compact={true} />
-            </CardContent>
-          </Card>
-        </div>
-
-        <div className="lg:col-span-6 h-full">
-          <ScrollArea className="h-full">
-            {selectedTab ? (
-              renderDetailPanel()
-            ) : (
-              renderDashboard()
-            )}
-          </ScrollArea>
-        </div>
+      <div className="h-[calc(100vh-600px)] min-h-[300px]">
+        <ScrollArea className="h-full">
+          {selectedTab ? (
+            renderDetailPanel()
+          ) : (
+            renderDashboard()
+          )}
+        </ScrollArea>
       </div>
     </div>
   );
