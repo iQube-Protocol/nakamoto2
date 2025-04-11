@@ -73,6 +73,14 @@ const ConnectInterface = ({ metaQube, communityMetrics }: ConnectInterfaceProps)
     { id: 4, name: 'Privacy Advocates', members: 42, activity: 'Low' },
   ];
 
+  // Create some sample messages
+  const messages = [
+    { id: 1, sender: 'Alex Chen', content: 'Hey! Saw your post about DeFi protocols. Would love to chat.', timestamp: '2025-04-10T14:30:00', unread: true },
+    { id: 2, sender: 'DAO Governance', content: 'New proposal available for voting. Check it out!', timestamp: '2025-04-09T09:15:00', unread: true },
+    { id: 3, sender: 'Mia Wong', content: 'Thanks for connecting! Looking forward to collaborating.', timestamp: '2025-04-08T16:45:00', unread: false },
+    { id: 4, sender: 'DeFi Enthusiasts', content: 'Welcome to the group! Introduce yourself.', timestamp: '2025-04-07T11:20:00', unread: false },
+  ];
+
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
     return date.toLocaleDateString('en-US', { 
@@ -104,100 +112,83 @@ const ConnectInterface = ({ metaQube, communityMetrics }: ConnectInterfaceProps)
     return colors[id % colors.length];
   };
 
-  const handleTabChange = (value: string) => {
-    // If clicking the same tab, toggle it off
-    if (activeTab === value) {
-      setActiveTab(null);
-    } else {
-      setActiveTab(value);
-      setCurrentItemIndex(0); // Reset to first item when changing tabs
+  const handleTabClick = (value: string) => {
+    setActiveTab(prevTab => prevTab === value ? null : value);
+    setCurrentItemIndex(0); // Reset to first item when changing tabs
+  };
+
+  const goToPrev = () => {
+    const currentItems = getCurrentItems();
+    setCurrentItemIndex((prevIndex) => 
+      prevIndex === 0 ? currentItems.length - 1 : prevIndex - 1
+    );
+  };
+
+  const goToNext = () => {
+    const currentItems = getCurrentItems();
+    setCurrentItemIndex((prevIndex) => 
+      prevIndex === currentItems.length - 1 ? 0 : prevIndex + 1
+    );
+  };
+
+  const getCurrentItems = () => {
+    switch(activeTab) {
+      case 'members':
+        return members;
+      case 'groups':
+        return groups;
+      case 'events':
+        return events;
+      case 'messages':
+        return messages;
+      default:
+        return [];
     }
   };
 
-  const handlePrevItem = () => {
-    const items = activeTab === 'members' ? members : 
-                 activeTab === 'groups' ? groups : 
-                 events;
-    setCurrentItemIndex(prev => 
-      prev > 0 ? prev - 1 : items.length - 1
-    );
-  };
+  const renderRightPanel = () => {
+    if (!activeTab) {
+      // Show dashboard summary when no tab is selected
+      return (
+        <Card className="h-full">
+          <CardHeader>
+            <CardTitle className="text-lg flex items-center">
+              <Activity className="mr-2 h-5 w-5 text-iqube-accent" />
+              Connect Dashboard
+            </CardTitle>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="grid grid-cols-2 gap-3 mt-2">
+              <Card className="p-3">
+                <div className="text-xl font-bold">{communityMetrics.totalConnections}</div>
+                <div className="text-xs text-muted-foreground">Total Connections</div>
+              </Card>
+              <Card className="p-3">
+                <div className="text-xl font-bold">{communityMetrics.groupsJoined}</div>
+                <div className="text-xs text-muted-foreground">Groups Joined</div>
+              </Card>
+              <Card className="p-3">
+                <div className="text-xl font-bold">{communityMetrics.upcomingEvents}</div>
+                <div className="text-xs text-muted-foreground">Upcoming Events</div>
+              </Card>
+              <Card className="p-3">
+                <div className="text-xl font-bold">{communityMetrics.unreadMessages}</div>
+                <div className="text-xs text-muted-foreground">Unread Messages</div>
+              </Card>
+            </div>
 
-  const handleNextItem = () => {
-    const items = activeTab === 'members' ? members : 
-                 activeTab === 'groups' ? groups : 
-                 events;
-    setCurrentItemIndex(prev => 
-      prev < items.length - 1 ? prev + 1 : 0
-    );
-  };
-
-  return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
-      <div className="lg:col-span-2">
-        <AgentInterface
-          title="Connection Assistant"
-          description="Community insights and networking opportunities"
-          agentType="connect"
-          initialMessages={[
-            {
-              id: "1",
-              sender: "agent",
-              message: "Welcome to your Connect dashboard. Based on your iQube profile, I've identified several community members with similar interests in DeFi and NFTs. Would you like me to suggest potential connections or keep you updated on upcoming events?",
-              timestamp: new Date().toISOString(),
-            }
-          ]}
-        />
-      </div>
-
-      <div className="space-y-6 h-full max-h-full overflow-hidden flex flex-col">
-        <div>
-          <Tabs 
-            defaultValue=""
-            value={activeTab || ""}
-            onValueChange={handleTabChange} 
-            className="w-full"
-          >
-            <TabsList className="w-full grid grid-cols-3">
-              <TabsTrigger value="members">Community</TabsTrigger>
-              <TabsTrigger value="groups">Groups</TabsTrigger>
-              <TabsTrigger value="events">Events</TabsTrigger>
-            </TabsList>
-          </Tabs>
-        </div>
-
-        {!activeTab && (
-          <Card className="flex-1 overflow-auto">
-            <CardHeader>
-              <CardTitle className="text-lg flex items-center">
-                <Activity className="mr-2 h-5 w-5 text-iqube-accent" />
-                Connect Dashboard
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <MetaQubeDisplay metaQube={metaQube} compact={true} />
+            <div className="pt-2">
+              <h3 className="font-medium mb-3 flex justify-between items-center">
+                <span>Suggested Connections</span>
+                <Tabs defaultValue="connections" className="w-40">
+                  <TabsList className="h-8">
+                    <TabsTrigger value="connections" className="text-xs">Connections</TabsTrigger>
+                    <TabsTrigger value="messages" className="text-xs">Messages</TabsTrigger>
+                  </TabsList>
+                </Tabs>
+              </h3>
               
-              <div className="grid grid-cols-2 gap-3 mt-4">
-                <Card className="p-3">
-                  <div className="text-xl font-bold">{communityMetrics.totalConnections}</div>
-                  <div className="text-xs text-muted-foreground">Total Connections</div>
-                </Card>
-                <Card className="p-3">
-                  <div className="text-xl font-bold">{communityMetrics.groupsJoined}</div>
-                  <div className="text-xs text-muted-foreground">Groups Joined</div>
-                </Card>
-                <Card className="p-3">
-                  <div className="text-xl font-bold">{communityMetrics.upcomingEvents}</div>
-                  <div className="text-xs text-muted-foreground">Upcoming Events</div>
-                </Card>
-                <Card className="p-3">
-                  <div className="text-xl font-bold">{communityMetrics.unreadMessages}</div>
-                  <div className="text-xs text-muted-foreground">Unread Messages</div>
-                </Card>
-              </div>
-
-              <div className="pt-2">
-                <h3 className="font-medium mb-3">Suggested Connections</h3>
+              <TabsContent value="connections" className="m-0 p-0">
                 <div className="space-y-3">
                   {members.slice(0, 2).map((member) => (
                     <div key={member.id} className="flex items-center p-2 border rounded-md">
@@ -217,213 +208,288 @@ const ConnectInterface = ({ metaQube, communityMetrics }: ConnectInterfaceProps)
                     </div>
                   ))}
                 </div>
-              </div>
+              </TabsContent>
               
-              <div className="pt-2">
-                <h3 className="font-medium mb-3">Upcoming Event</h3>
-                <Card className="overflow-hidden">
-                  <div className="h-20 bg-gradient-to-r from-iqube-primary/30 to-iqube-accent/30 flex items-center justify-center">
-                    <Calendar className="h-10 w-10 text-iqube-primary" />
-                  </div>
-                  <CardContent className="pt-4">
-                    <h3 className="font-semibold mb-1">{events[0].title}</h3>
-                    <div className="flex items-center text-sm text-muted-foreground mb-2">
-                      <Calendar className="h-4 w-4 mr-1" />
-                      {formatDate(events[0].date)}
-                    </div>
-                    <Button className="w-full bg-iqube-primary hover:bg-iqube-primary/90 mt-2">
-                      RSVP
-                    </Button>
-                  </CardContent>
-                </Card>
-              </div>
-            </CardContent>
-          </Card>
-        )}
-
-        {activeTab === 'members' && (
-          <Card className="flex-1 overflow-hidden">
-            <CardHeader className="pb-0 flex flex-row items-center justify-between">
-              <CardTitle className="text-lg">Community Members</CardTitle>
-              <div className="flex items-center space-x-2">
-                <Button 
-                  variant="outline" 
-                  size="icon" 
-                  className="h-8 w-8" 
-                  onClick={handlePrevItem}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <span className="text-sm font-medium">{currentItemIndex + 1}/{members.length}</span>
-                <Button 
-                  variant="outline" 
-                  size="icon" 
-                  className="h-8 w-8" 
-                  onClick={handleNextItem}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-4 overflow-auto h-full">
-              {members[currentItemIndex] && (
-                <Card key={members[currentItemIndex].id} className="flex flex-col">
-                  <CardContent className="pt-6 flex-1">
-                    <div className="flex items-center mb-4">
-                      <Avatar className="h-12 w-12 mr-3">
-                        <AvatarImage src={members[currentItemIndex].avatar} />
-                        <AvatarFallback className={getRandomColorClass(members[currentItemIndex].id)}>
-                          {getInitials(members[currentItemIndex].name)}
+              <TabsContent value="messages" className="m-0 p-0">
+                <div className="space-y-3">
+                  {messages.slice(0, 2).map((message) => (
+                    <div key={message.id} className="flex items-center p-2 border rounded-md">
+                      <Avatar className="h-8 w-8 mr-3">
+                        <AvatarFallback className={getRandomColorClass(message.id)}>
+                          {getInitials(message.sender)}
                         </AvatarFallback>
                       </Avatar>
-                      <div>
-                        <h3 className="font-medium">{members[currentItemIndex].name}</h3>
-                        <p className="text-sm text-muted-foreground">{members[currentItemIndex].role}</p>
+                      <div className="flex-1">
+                        <div className="text-sm font-medium flex items-center">
+                          {message.sender}
+                          {message.unread && <Badge className="ml-2 px-1 py-0 h-4 bg-iqube-accent text-[10px]">New</Badge>}
+                        </div>
+                        <div className="text-xs text-muted-foreground truncate">{message.content}</div>
                       </div>
-                    </div>
-                    <div className="mb-4">
-                      <h4 className="text-sm font-medium mb-2">Interests</h4>
-                      <div className="flex flex-wrap gap-2">
-                        {members[currentItemIndex].interests.map((interest, i) => (
-                          <Badge key={i} variant="outline" className="bg-iqube-primary/5">
-                            {interest}
-                          </Badge>
-                        ))}
-                      </div>
-                    </div>
-                    <div className="flex space-x-2 mt-auto pt-4">
-                      <Button size="sm" className="flex-1 bg-iqube-primary hover:bg-iqube-primary/90">
-                        Connect
-                      </Button>
-                      <Button size="sm" variant="outline" className="flex-1">
-                        Message
+                      <Button size="sm" className="h-8" variant="outline">
+                        <MessageSquare className="h-4 w-4" />
                       </Button>
                     </div>
-                  </CardContent>
-                </Card>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {activeTab === 'groups' && (
-          <Card className="flex-1 overflow-hidden">
-            <CardHeader className="pb-0 flex flex-row items-center justify-between">
-              <CardTitle className="text-lg">Groups</CardTitle>
-              <div className="flex items-center space-x-2">
-                <Button 
-                  variant="outline" 
-                  size="icon" 
-                  className="h-8 w-8" 
-                  onClick={handlePrevItem}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <span className="text-sm font-medium">{currentItemIndex + 1}/{groups.length}</span>
-                <Button 
-                  variant="outline" 
-                  size="icon" 
-                  className="h-8 w-8" 
-                  onClick={handleNextItem}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-4">
-              {groups[currentItemIndex] && (
-                <Card key={groups[currentItemIndex].id}>
-                  <CardContent className="pt-6">
-                    <div className="bg-iqube-primary/20 w-12 h-12 rounded-full flex items-center justify-center mb-4">
-                      <Users className="h-6 w-6 text-iqube-primary" />
-                    </div>
-                    <h3 className="font-semibold mb-1">{groups[currentItemIndex].name}</h3>
-                    <div className="flex items-center text-sm text-muted-foreground mb-3">
-                      <Users className="h-4 w-4 mr-1" />
-                      {groups[currentItemIndex].members} members
-                    </div>
-                    <div className="flex items-center text-sm mb-4">
-                      <div 
-                        className={`w-2 h-2 rounded-full mr-2 ${
-                          groups[currentItemIndex].activity === 'High' ? 'bg-green-500' :
-                          groups[currentItemIndex].activity === 'Medium' ? 'bg-amber-500' :
-                          'bg-gray-400'
-                        }`}
-                      ></div>
-                      <span className="text-muted-foreground">
-                        {groups[currentItemIndex].activity} activity
-                      </span>
-                    </div>
-                    <Button 
-                      variant={groups[currentItemIndex].id % 2 === 0 ? "outline" : "default"} 
-                      className={`w-full ${
-                        groups[currentItemIndex].id % 2 !== 0 ? "bg-iqube-primary hover:bg-iqube-primary/90" : ""
-                      }`}
-                    >
-                      {groups[currentItemIndex].id % 2 === 0 ? "Leave Group" : "Join Group"}
-                    </Button>
-                  </CardContent>
-                </Card>
-              )}
-            </CardContent>
-          </Card>
-        )}
-
-        {activeTab === 'events' && (
-          <Card className="flex-1 overflow-hidden">
-            <CardHeader className="pb-0 flex flex-row items-center justify-between">
-              <CardTitle className="text-lg">Events</CardTitle>
-              <div className="flex items-center space-x-2">
-                <Button 
-                  variant="outline" 
-                  size="icon" 
-                  className="h-8 w-8" 
-                  onClick={handlePrevItem}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-                <span className="text-sm font-medium">{currentItemIndex + 1}/{events.length}</span>
-                <Button 
-                  variant="outline" 
-                  size="icon" 
-                  className="h-8 w-8" 
-                  onClick={handleNextItem}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </div>
-            </CardHeader>
-            <CardContent className="pt-4">
-              {events[currentItemIndex] && (
-                <Card key={events[currentItemIndex].id} className="overflow-hidden">
-                  <div className="h-32 bg-gradient-to-r from-iqube-primary/30 to-iqube-accent/30 flex items-center justify-center">
-                    <Calendar className="h-12 w-12 text-iqube-primary" />
+                  ))}
+                </div>
+              </TabsContent>
+            </div>
+            
+            <div className="pt-2">
+              <h3 className="font-medium mb-3">Upcoming Event</h3>
+              <Card className="overflow-hidden">
+                <div className="h-20 bg-gradient-to-r from-iqube-primary/30 to-iqube-accent/30 flex items-center justify-center">
+                  <Calendar className="h-10 w-10 text-iqube-primary" />
+                </div>
+                <CardContent className="pt-4">
+                  <h3 className="font-semibold mb-1">{events[0].title}</h3>
+                  <div className="flex items-center text-sm text-muted-foreground mb-2">
+                    <Calendar className="h-4 w-4 mr-1" />
+                    {formatDate(events[0].date)}
                   </div>
-                  <CardContent className="pt-4">
-                    <h3 className="font-semibold mb-1">{events[currentItemIndex].title}</h3>
-                    <div className="flex items-center text-sm text-muted-foreground mb-3">
-                      <Calendar className="h-4 w-4 mr-1" />
-                      {formatDate(events[currentItemIndex].date)}
-                    </div>
-                    <div className="flex justify-between items-center">
-                      <div className="flex items-center text-sm text-muted-foreground">
-                        <MapPin className="h-4 w-4 mr-1" />
-                        {events[currentItemIndex].location}
-                      </div>
-                      <div className="flex items-center text-sm text-muted-foreground">
-                        <Users className="h-4 w-4 mr-1" />
-                        {events[currentItemIndex].attendees}
-                      </div>
-                    </div>
-                    <Button className="w-full mt-4 bg-iqube-primary hover:bg-iqube-primary/90">
-                      RSVP
-                    </Button>
-                  </CardContent>
-                </Card>
-              )}
-            </CardContent>
-          </Card>
-        )}
+                  <Button className="w-full bg-iqube-primary hover:bg-iqube-primary/90 mt-2">
+                    RSVP
+                  </Button>
+                </CardContent>
+              </Card>
+            </div>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    // Tab is selected, show the appropriate card with navigation
+    const currentItems = getCurrentItems();
+    const current = currentItems[currentItemIndex];
+    
+    if (!current) return null;
+
+    return (
+      <Card className="h-full">
+        <CardHeader className="pb-2 flex flex-row items-center justify-between">
+          <CardTitle className="text-lg">
+            {activeTab === 'members' && 'Community Member'}
+            {activeTab === 'groups' && 'Group'}
+            {activeTab === 'events' && 'Event'}
+            {activeTab === 'messages' && 'Message'}
+          </CardTitle>
+          <div className="flex items-center space-x-2">
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className="h-8 w-8" 
+              onClick={goToPrev}
+            >
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <span className="text-sm font-medium">{currentItemIndex + 1}/{currentItems.length}</span>
+            <Button 
+              variant="outline" 
+              size="icon" 
+              className="h-8 w-8" 
+              onClick={goToNext}
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-4">
+          {activeTab === 'members' && (
+            <div className="flex flex-col">
+              <div className="flex items-center mb-4">
+                <Avatar className="h-12 w-12 mr-3">
+                  <AvatarImage src={current.avatar} />
+                  <AvatarFallback className={getRandomColorClass(current.id)}>
+                    {getInitials(current.name)}
+                  </AvatarFallback>
+                </Avatar>
+                <div>
+                  <h3 className="font-medium">{current.name}</h3>
+                  <p className="text-sm text-muted-foreground">{current.role}</p>
+                </div>
+              </div>
+              <div className="mb-4">
+                <h4 className="text-sm font-medium mb-2">Interests</h4>
+                <div className="flex flex-wrap gap-2">
+                  {current.interests.map((interest, i) => (
+                    <Badge key={i} variant="outline" className="bg-iqube-primary/5">
+                      {interest}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+              <div className="flex space-x-2 mt-auto pt-4">
+                <Button size="sm" className="flex-1 bg-iqube-primary hover:bg-iqube-primary/90">
+                  Connect
+                </Button>
+                <Button size="sm" variant="outline" className="flex-1">
+                  Message
+                </Button>
+              </div>
+            </div>
+          )}
+          
+          {activeTab === 'groups' && (
+            <div>
+              <div className="bg-iqube-primary/20 w-12 h-12 rounded-full flex items-center justify-center mb-4">
+                <Users className="h-6 w-6 text-iqube-primary" />
+              </div>
+              <h3 className="font-semibold mb-1">{current.name}</h3>
+              <div className="flex items-center text-sm text-muted-foreground mb-3">
+                <Users className="h-4 w-4 mr-1" />
+                {current.members} members
+              </div>
+              <div className="flex items-center text-sm mb-4">
+                <div 
+                  className={`w-2 h-2 rounded-full mr-2 ${
+                    current.activity === 'High' ? 'bg-green-500' :
+                    current.activity === 'Medium' ? 'bg-amber-500' :
+                    'bg-gray-400'
+                  }`}
+                ></div>
+                <span className="text-muted-foreground">
+                  {current.activity} activity
+                </span>
+              </div>
+              <Button 
+                variant={current.id % 2 === 0 ? "outline" : "default"} 
+                className={`w-full ${
+                  current.id % 2 !== 0 ? "bg-iqube-primary hover:bg-iqube-primary/90" : ""
+                }`}
+              >
+                {current.id % 2 === 0 ? "Leave Group" : "Join Group"}
+              </Button>
+            </div>
+          )}
+          
+          {activeTab === 'events' && (
+            <div>
+              <div className="h-32 bg-gradient-to-r from-iqube-primary/30 to-iqube-accent/30 flex items-center justify-center">
+                <Calendar className="h-12 w-12 text-iqube-primary" />
+              </div>
+              <div className="mt-4">
+                <h3 className="font-semibold mb-1">{current.title}</h3>
+                <div className="flex items-center text-sm text-muted-foreground mb-3">
+                  <Calendar className="h-4 w-4 mr-1" />
+                  {formatDate(current.date)}
+                </div>
+                <div className="flex justify-between items-center">
+                  <div className="flex items-center text-sm text-muted-foreground">
+                    <MapPin className="h-4 w-4 mr-1" />
+                    {current.location}
+                  </div>
+                  <div className="flex items-center text-sm text-muted-foreground">
+                    <Users className="h-4 w-4 mr-1" />
+                    {current.attendees}
+                  </div>
+                </div>
+                <Button className="w-full mt-4 bg-iqube-primary hover:bg-iqube-primary/90">
+                  RSVP
+                </Button>
+              </div>
+            </div>
+          )}
+          
+          {activeTab === 'messages' && (
+            <div>
+              <div className="flex items-center mb-4">
+                <Avatar className="h-12 w-12 mr-3">
+                  <AvatarFallback className={getRandomColorClass(current.id)}>
+                    {getInitials(current.sender)}
+                  </AvatarFallback>
+                </Avatar>
+                <div className="flex-1">
+                  <h3 className="font-medium flex items-center">
+                    {current.sender}
+                    {current.unread && <Badge className="ml-2 px-1 py-0 h-4 bg-iqube-accent text-[10px]">New</Badge>}
+                  </h3>
+                  <p className="text-xs text-muted-foreground">{formatDate(current.timestamp)}</p>
+                </div>
+              </div>
+              <Card className="p-3 bg-muted/30 mb-4">
+                <p className="text-sm">{current.content}</p>
+              </Card>
+              <div className="flex justify-between mt-auto pt-4">
+                <Button size="sm" variant="outline" className="flex-1 mr-2">
+                  Mark {current.unread ? 'Read' : 'Unread'}
+                </Button>
+                <Button size="sm" className="flex-1 bg-iqube-primary hover:bg-iqube-primary/90">
+                  Reply
+                </Button>
+              </div>
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    );
+  };
+  
+  return (
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
+      <div className="lg:col-span-2">
+        <AgentInterface
+          title="Connection Assistant"
+          description="Community insights and networking opportunities"
+          agentType="connect"
+          initialMessages={[
+            {
+              id: "1",
+              sender: "agent",
+              message: "Welcome to your Connect dashboard. Based on your iQube profile, I've identified several community members with similar interests in DeFi and NFTs. Would you like me to suggest potential connections or keep you updated on upcoming events?",
+              timestamp: new Date().toISOString(),
+            }
+          ]}
+        />
+      </div>
+
+      <div className="space-y-6 flex flex-col">
+        <Card>
+          <CardHeader className="pb-0">
+            <CardTitle className="text-lg">MetaQube</CardTitle>
+          </CardHeader>
+          <CardContent className="pt-4">
+            <MetaQubeDisplay metaQube={metaQube} compact={true} />
+          </CardContent>
+        </Card>
+
+        <div className="flex-grow">
+          {renderRightPanel()}
+        </div>
+        
+        <div>
+          <Tabs value={activeTab || ""} className="w-full">
+            <TabsList className="w-full grid grid-cols-4">
+              <TabsTrigger 
+                value="members" 
+                onClick={() => handleTabClick('members')}
+                data-state={activeTab === 'members' ? 'active' : ''}
+              >
+                Community
+              </TabsTrigger>
+              <TabsTrigger 
+                value="groups" 
+                onClick={() => handleTabClick('groups')}
+                data-state={activeTab === 'groups' ? 'active' : ''}
+              >
+                Groups
+              </TabsTrigger>
+              <TabsTrigger 
+                value="events" 
+                onClick={() => handleTabClick('events')}
+                data-state={activeTab === 'events' ? 'active' : ''}
+              >
+                Events
+              </TabsTrigger>
+              <TabsTrigger 
+                value="messages" 
+                onClick={() => handleTabClick('messages')}
+                data-state={activeTab === 'messages' ? 'active' : ''}
+              >
+                Messages
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
       </div>
     </div>
   );
