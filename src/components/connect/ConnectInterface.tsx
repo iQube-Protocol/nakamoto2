@@ -416,57 +416,69 @@ const ConnectInterface = ({ metaQube, communityMetrics }: ConnectInterfaceProps)
   };
 
   return (
-    <div className="flex flex-col h-full gap-6">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
-        {/* Chat Interface (spans 8 columns) */}
-        <div className="lg:col-span-8">
-          <AgentInterface
-            title="Connection Assistant"
-            description="Community insights and networking opportunities"
-            agentType="connect"
-            initialMessages={[
-              {
-                id: "1",
-                sender: "agent",
-                message: "Welcome to your Connect dashboard. Based on your iQube profile, I've identified several community members with similar interests in DeFi and NFTs. Would you like me to suggest potential connections or keep you updated on upcoming events?",
-                timestamp: new Date().toISOString(),
-              }
-            ]}
-          />
-        </div>
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
+      <div className="lg:col-span-2 flex flex-col">
+        <AgentInterface
+          title="Connection Assistant"
+          description="Community insights and networking opportunities"
+          agentType="connect"
+          initialMessages={[
+            {
+              id: "1",
+              sender: "agent",
+              message: "Welcome to your Connect dashboard. Based on your iQube profile, I've identified several community members with similar interests in DeFi and NFTs. Would you like me to suggest potential connections or keep you updated on upcoming events?",
+              timestamp: new Date().toISOString(),
+            }
+          ]}
+        />
+      </div>
 
-        {/* MetaQube (spans 4 columns) */}
-        <div className="lg:col-span-4">
-          <Card>
-            <CardHeader className="pb-0">
-              <CardTitle className="text-lg">MetaQube</CardTitle>
-            </CardHeader>
-            <CardContent className="pt-4">
-              <MetaQubeDisplay metaQube={metaQube} compact={true} />
-            </CardContent>
-          </Card>
+      <div className="space-y-6 flex flex-col">
+        <Card>
+          <CardHeader className="pb-0">
+            <CardTitle className="text-lg">MetaQube</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <MetaQubeDisplay metaQube={metaQube} compact={true} />
+          </CardContent>
+        </Card>
+
+        <div className="flex-grow">
+          {selectedTab ? renderDetailPanel() : renderDashboard()}
         </div>
       </div>
 
-      {/* Content Area - between MetaQube and Tabs */}
-      <div className="w-full mb-6">
-        <ScrollArea className="h-[calc(100vh-600px)] min-h-[300px]">
-          {selectedTab ? (
-            renderDetailPanel()
-          ) : (
-            renderDashboard()
-          )}
-        </ScrollArea>
-      </div>
-
-      {/* Tabs Menu - at the bottom */}
-      <div className="w-full">
-        <Tabs value={selectedTab} onValueChange={handleTabChange}>
+      <div className="lg:col-span-3">
+        <Tabs value={selectedTab || ''}>
           <TabsList className="w-full grid grid-cols-4">
-            <TabsTrigger value="members">Community</TabsTrigger>
-            <TabsTrigger value="groups">Groups</TabsTrigger>
-            <TabsTrigger value="events">Events</TabsTrigger>
-            <TabsTrigger value="messages">Messages</TabsTrigger>
+            <TabsTrigger 
+              value="members" 
+              onClick={() => handleTabChange('members')}
+              data-state={selectedTab === 'members' ? 'active' : ''}
+            >
+              Community
+            </TabsTrigger>
+            <TabsTrigger 
+              value="groups" 
+              onClick={() => handleTabChange('groups')}
+              data-state={selectedTab === 'groups' ? 'active' : ''}
+            >
+              Groups
+            </TabsTrigger>
+            <TabsTrigger 
+              value="events" 
+              onClick={() => handleTabChange('events')}
+              data-state={selectedTab === 'events' ? 'active' : ''}
+            >
+              Events
+            </TabsTrigger>
+            <TabsTrigger 
+              value="messages" 
+              onClick={() => handleTabChange('messages')}
+              data-state={selectedTab === 'messages' ? 'active' : ''}
+            >
+              Messages
+            </TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
