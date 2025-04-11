@@ -2,14 +2,14 @@
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
-import { BookOpen, FileText, Video, Award, ArrowRight } from 'lucide-react';
+import { BookOpen, FileText, Video, Award, ArrowRight, ChevronLeft, ChevronRight, EllipsisVertical } from 'lucide-react';
 import AgentInterface from '@/components/shared/AgentInterface';
 import MetaQubeDisplay from '@/components/shared/MetaQubeDisplay';
 import { MetaQube } from '@/lib/types';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
+import CourseCard from './CourseCard';
 
 interface LearnInterfaceProps {
   metaQube: MetaQube;
@@ -18,6 +18,8 @@ interface LearnInterfaceProps {
 const LearnInterface = ({ metaQube }: LearnInterfaceProps) => {
   const { toast } = useToast();
   const [conversationId, setConversationId] = useState<string | null>(null);
+  const [currentItemIndex, setCurrentItemIndex] = useState<number>(0);
+  const [activeTab, setActiveTab] = useState<string>('courses');
   
   const courses = [
     {
@@ -48,6 +50,73 @@ const LearnInterface = ({ metaQube }: LearnInterfaceProps) => {
       icon: <Video className="h-10 w-10 text-green-400" />,
     },
   ];
+
+  const certifications = [
+    {
+      id: 1,
+      title: "Web3 Fundamentals",
+      description: "Blockchain basics and smart contract fundamentals",
+      status: "In progress - 65% complete",
+      icon: <Award className="h-12 w-12 text-amber-500" />,
+      unlocked: true,
+    },
+    {
+      id: 2,
+      title: "iQube Protocol Expert",
+      description: "Master the iQube protocol architecture and implementation",
+      status: "Locked - Complete prerequisites first",
+      icon: <Award className="h-12 w-12 text-gray-300" />,
+      unlocked: false,
+    },
+    {
+      id: 3,
+      title: "Advanced dApp Development",
+      description: "Building complex decentralized applications with advanced features",
+      status: "Locked - Complete prerequisites first",
+      icon: <Award className="h-12 w-12 text-gray-300" />,
+      unlocked: false,
+    },
+  ];
+  
+  const achievements = [
+    { id: 1, title: "First Steps", status: "Unlocked", unlocked: true },
+    { id: 2, title: "Knowledge Seeker", status: "Unlocked", unlocked: true },
+    { id: 3, title: "Quiz Master", status: "Unlocked", unlocked: true },
+    { id: 4, title: "Web3 Explorer", status: "Locked", unlocked: false },
+    { id: 5, title: "Token Sage", status: "Locked", unlocked: false },
+    { id: 6, title: "Community Leader", status: "Locked", unlocked: false },
+    { id: 7, title: "Developer", status: "Locked", unlocked: false },
+    { id: 8, title: "iQube Master", status: "Locked", unlocked: false },
+  ];
+
+  // Determine which items to show based on active tab
+  const getCurrentItems = () => {
+    switch(activeTab) {
+      case 'courses':
+        return courses;
+      case 'certifications':
+        return certifications;
+      case 'achievements':
+        return achievements;
+      default:
+        return courses;
+    }
+  };
+
+  const currentItems = getCurrentItems();
+  
+  // Navigation functions
+  const goToPrev = () => {
+    setCurrentItemIndex((prevIndex) => 
+      prevIndex === 0 ? currentItems.length - 1 : prevIndex - 1
+    );
+  };
+
+  const goToNext = () => {
+    setCurrentItemIndex((prevIndex) => 
+      prevIndex === currentItems.length - 1 ? 0 : prevIndex + 1
+    );
+  };
 
   // Handle AI message submission with MCP support
   const handleAIMessage = async (message: string) => {
@@ -100,9 +169,55 @@ const LearnInterface = ({ metaQube }: LearnInterfaceProps) => {
     }
   };
 
+  // Render different card content based on tab
+  const renderCurrentItemCard = () => {
+    const current = currentItems[currentItemIndex];
+    
+    if (!current) return null;
+    
+    if (activeTab === 'courses') {
+      return <CourseCard course={current as typeof courses[0]} />;
+    } else if (activeTab === 'certifications') {
+      const cert = current as typeof certifications[0];
+      return (
+        <Card className="h-full">
+          <CardContent className="p-6 h-full flex flex-col">
+            {cert.icon}
+            <h3 className="font-semibold mb-1 mt-4">{cert.title}</h3>
+            <p className="text-sm text-muted-foreground mb-4">{cert.description}</p>
+            <div className="text-xs text-muted-foreground mt-auto">
+              {cert.status}
+            </div>
+          </CardContent>
+        </Card>
+      );
+    } else if (activeTab === 'achievements') {
+      const achievement = current as typeof achievements[0];
+      return (
+        <Card className="h-full">
+          <CardContent className="p-6 h-full flex flex-col items-center justify-center text-center">
+            <div className={`mx-auto rounded-full w-12 h-12 flex items-center justify-center mb-4 ${
+              achievement.unlocked ? "bg-gradient-to-r from-iqube-primary to-iqube-accent" : "bg-gray-200"
+            }`}>
+              {achievement.unlocked ? (
+                <Award className="h-6 w-6 text-white" />
+              ) : (
+                <Award className="h-6 w-6 text-gray-400" />
+              )}
+            </div>
+            <h3 className="text-lg font-medium mb-2">{achievement.title}</h3>
+            <p className="text-sm text-muted-foreground">{achievement.status}</p>
+          </CardContent>
+        </Card>
+      );
+    }
+    
+    return null;
+  };
+
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-      <div className="lg:col-span-2">
+    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
+      <div className="lg:col-span-2 flex flex-col">
         <AgentInterface
           title="Learning Assistant"
           description="Personalized web3 education based on your iQube data"
@@ -123,169 +238,52 @@ const LearnInterface = ({ metaQube }: LearnInterfaceProps) => {
         />
       </div>
 
-      <div className="space-y-6">
-        <MetaQubeDisplay metaQube={metaQube} compact={true} />
+      <div className="space-y-6 flex flex-col">
+        <div className="flex-grow">
+          <Card className="h-full flex flex-col">
+            <CardHeader className="pb-0">
+              <div className="flex justify-between items-center">
+                <CardTitle className="text-lg">
+                  {activeTab === 'courses' && 'Course Details'}
+                  {activeTab === 'certifications' && 'Certification Details'}
+                  {activeTab === 'achievements' && 'Achievement Details'}
+                </CardTitle>
+                <div className="flex space-x-1">
+                  <Button variant="ghost" size="icon" onClick={goToPrev}>
+                    <ChevronLeft className="h-4 w-4" />
+                  </Button>
+                  <Button variant="ghost" size="icon" className="text-sm">
+                    {currentItemIndex + 1}/{currentItems.length}
+                  </Button>
+                  <Button variant="ghost" size="icon" onClick={goToNext}>
+                    <ChevronRight className="h-4 w-4" />
+                  </Button>
+                </div>
+              </div>
+            </CardHeader>
+            <CardContent className="flex-grow">
+              {renderCurrentItemCard()}
+            </CardContent>
+          </Card>
+        </div>
 
         <Card>
-          <CardHeader>
-            <CardTitle className="text-lg">Learning Dashboard</CardTitle>
+          <CardHeader className="pb-0">
+            <CardTitle className="text-lg">MetaQube</CardTitle>
           </CardHeader>
-          <CardContent className="space-y-4">
-            <div>
-              <div className="flex justify-between mb-2">
-                <span className="font-medium">Your Progress</span>
-                <span className="text-sm text-muted-foreground">35%</span>
-              </div>
-              <Progress value={35} className="h-2" />
-            </div>
-            
-            <div className="grid grid-cols-2 gap-3">
-              <Card className="p-3">
-                <div className="text-xl font-bold">3</div>
-                <div className="text-xs text-muted-foreground">Courses in Progress</div>
-              </Card>
-              <Card className="p-3">
-                <div className="text-xl font-bold">11</div>
-                <div className="text-xs text-muted-foreground">Lessons Completed</div>
-              </Card>
-              <Card className="p-3">
-                <div className="text-xl font-bold">4</div>
-                <div className="text-xs text-muted-foreground">Certifications</div>
-              </Card>
-              <Card className="p-3">
-                <div className="text-xl font-bold">2.5</div>
-                <div className="text-xs text-muted-foreground">Hours This Week</div>
-              </Card>
-            </div>
-
-            <div className="pt-2">
-              <h3 className="font-medium mb-3">Recommended Path</h3>
-              <div className="space-y-3">
-                <div className="flex items-center p-2 border rounded-md bg-iqube-primary/5 border-iqube-primary/20">
-                  <BookOpen className="h-5 w-5 text-iqube-primary mr-3" />
-                  <div className="flex-1">
-                    <div className="text-sm font-medium">Complete Web3 Fundamentals</div>
-                    <div className="text-xs text-muted-foreground">4 lessons remaining</div>
-                  </div>
-                  <Button size="sm" className="h-8">
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
-                </div>
-                <div className="flex items-center p-2 border rounded-md">
-                  <Award className="h-5 w-5 text-amber-500 mr-3" />
-                  <div className="flex-1">
-                    <div className="text-sm font-medium">Take Certification Exam</div>
-                    <div className="text-xs text-muted-foreground">Unlock level 2 learning</div>
-                  </div>
-                  <Button size="sm" variant="ghost" className="h-8">
-                    <ArrowRight className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </div>
+          <CardContent>
+            <MetaQubeDisplay metaQube={metaQube} compact={true} />
           </CardContent>
         </Card>
       </div>
 
       <div className="lg:col-span-3">
-        <Tabs defaultValue="courses">
+        <Tabs defaultValue="courses" value={activeTab} onValueChange={setActiveTab}>
           <TabsList className="w-full grid grid-cols-3">
             <TabsTrigger value="courses">Courses</TabsTrigger>
             <TabsTrigger value="certifications">Certifications</TabsTrigger>
             <TabsTrigger value="achievements">Achievements</TabsTrigger>
           </TabsList>
-          <TabsContent value="courses" className="mt-4">
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {courses.map((course) => (
-                <Card key={course.id}>
-                  <CardContent className="pt-6">
-                    <div className="mb-4">
-                      {course.icon}
-                    </div>
-                    <h3 className="text-lg font-semibold mb-1">{course.title}</h3>
-                    <p className="text-sm text-muted-foreground mb-4">{course.description}</p>
-                    <div className="mb-4">
-                      <div className="flex justify-between text-sm mb-1">
-                        <span>Progress</span>
-                        <span>{course.progress}%</span>
-                      </div>
-                      <Progress value={course.progress} className="h-2" />
-                    </div>
-                    <div className="flex justify-between text-sm text-muted-foreground">
-                      <span>{course.completed}/{course.lessons} lessons</span>
-                      <Button size="sm" className="h-8">
-                        Continue
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          </TabsContent>
-          <TabsContent value="certifications">
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-              <Card className="p-6">
-                <Award className="h-12 w-12 text-amber-500 mb-4" />
-                <h3 className="font-semibold mb-1">Web3 Fundamentals</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Blockchain basics and smart contract fundamentals
-                </p>
-                <div className="text-xs text-muted-foreground">
-                  In progress - 65% complete
-                </div>
-              </Card>
-              <Card className="p-6 border border-dashed border-muted">
-                <Award className="h-12 w-12 text-gray-300 mb-4" />
-                <h3 className="font-semibold mb-1">iQube Protocol Expert</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Master the iQube protocol architecture and implementation
-                </p>
-                <div className="text-xs text-muted-foreground">
-                  Locked - Complete prerequisites first
-                </div>
-              </Card>
-              <Card className="p-6 border border-dashed border-muted">
-                <Award className="h-12 w-12 text-gray-300 mb-4" />
-                <h3 className="font-semibold mb-1">Advanced dApp Development</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Building complex decentralized applications with advanced features
-                </p>
-                <div className="text-xs text-muted-foreground">
-                  Locked - Complete prerequisites first
-                </div>
-              </Card>
-            </div>
-          </TabsContent>
-          <TabsContent value="achievements">
-            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
-              {[...Array(8)].map((_, i) => (
-                <Card key={i} className={`p-4 text-center ${i < 3 ? "" : "opacity-50"}`}>
-                  <div className={`mx-auto rounded-full w-12 h-12 flex items-center justify-center mb-2 ${
-                    i < 3 ? "bg-gradient-to-r from-iqube-primary to-iqube-accent" : "bg-gray-200"
-                  }`}>
-                    {i < 3 ? (
-                      <Award className="h-6 w-6 text-white" />
-                    ) : (
-                      <Award className="h-6 w-6 text-gray-400" />
-                    )}
-                  </div>
-                  <h3 className="text-sm font-medium">
-                    {i === 0 && "First Steps"}
-                    {i === 1 && "Knowledge Seeker"}
-                    {i === 2 && "Quiz Master"}
-                    {i === 3 && "Web3 Explorer"}
-                    {i === 4 && "Token Sage"}
-                    {i === 5 && "Community Leader"}
-                    {i === 6 && "Developer"}
-                    {i === 7 && "iQube Master"}
-                  </h3>
-                  <p className="text-xs text-muted-foreground mt-1">
-                    {i < 3 ? "Unlocked" : "Locked"}
-                  </p>
-                </Card>
-              ))}
-            </div>
-          </TabsContent>
         </Tabs>
       </div>
     </div>

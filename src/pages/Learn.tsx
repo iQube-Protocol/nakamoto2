@@ -22,7 +22,7 @@ const metaQubeData: MetaQube = {
 
 const Learn = () => {
   return (
-    <div className="container p-2">
+    <div className="container p-2 h-[calc(100vh-100px)]">
       <div className="flex justify-between items-center mb-3">
         <h1 className="text-2xl font-bold tracking-tight">Learn</h1>
       </div>
