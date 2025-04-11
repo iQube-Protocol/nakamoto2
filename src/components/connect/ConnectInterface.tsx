@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -416,7 +417,8 @@ const ConnectInterface = ({ metaQube, communityMetrics }: ConnectInterfaceProps)
 
   return (
     <div className="flex flex-col h-full gap-6">
-      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 mb-6">
+        {/* Chat Interface (spans 8 columns) */}
         <div className="lg:col-span-8">
           <AgentInterface
             title="Connection Assistant"
@@ -433,6 +435,7 @@ const ConnectInterface = ({ metaQube, communityMetrics }: ConnectInterfaceProps)
           />
         </div>
 
+        {/* MetaQube (spans 4 columns) */}
         <div className="lg:col-span-4">
           <Card>
             <CardHeader className="pb-0">
@@ -445,6 +448,18 @@ const ConnectInterface = ({ metaQube, communityMetrics }: ConnectInterfaceProps)
         </div>
       </div>
 
+      {/* Content Area - between MetaQube and Tabs */}
+      <div className="w-full mb-6">
+        <ScrollArea className="h-[calc(100vh-600px)] min-h-[300px]">
+          {selectedTab ? (
+            renderDetailPanel()
+          ) : (
+            renderDashboard()
+          )}
+        </ScrollArea>
+      </div>
+
+      {/* Tabs Menu - at the bottom */}
       <div className="w-full">
         <Tabs value={selectedTab} onValueChange={handleTabChange}>
           <TabsList className="w-full grid grid-cols-4">
@@ -454,16 +469,6 @@ const ConnectInterface = ({ metaQube, communityMetrics }: ConnectInterfaceProps)
             <TabsTrigger value="messages">Messages</TabsTrigger>
           </TabsList>
         </Tabs>
-      </div>
-
-      <div className="h-[calc(100vh-600px)] min-h-[300px]">
-        <ScrollArea className="h-full">
-          {selectedTab ? (
-            renderDetailPanel()
-          ) : (
-            renderDashboard()
-          )}
-        </ScrollArea>
       </div>
     </div>
   );
