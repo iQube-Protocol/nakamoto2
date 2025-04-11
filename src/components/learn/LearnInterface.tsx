@@ -1,9 +1,8 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
-import { BookOpen, FileText, Video, Award, ArrowRight, ChevronLeft, ChevronRight, EllipsisVertical } from 'lucide-react';
+import { BookOpen, FileText, Video, Award, ArrowRight, ChevronLeft, ChevronRight, EllipsisVertical, BarChart } from 'lucide-react';
 import AgentInterface from '@/components/shared/AgentInterface';
 import MetaQubeDisplay from '@/components/shared/MetaQubeDisplay';
 import { MetaQube } from '@/lib/types';
@@ -19,7 +18,7 @@ const LearnInterface = ({ metaQube }: LearnInterfaceProps) => {
   const { toast } = useToast();
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [currentItemIndex, setCurrentItemIndex] = useState<number>(0);
-  const [activeTab, setActiveTab] = useState<string>('courses');
+  const [activeTab, setActiveTab] = useState<string | null>(null);
   
   const courses = [
     {
@@ -99,7 +98,7 @@ const LearnInterface = ({ metaQube }: LearnInterfaceProps) => {
       case 'achievements':
         return achievements;
       default:
-        return courses;
+        return [];
     }
   };
 
@@ -116,6 +115,12 @@ const LearnInterface = ({ metaQube }: LearnInterfaceProps) => {
     setCurrentItemIndex((prevIndex) => 
       prevIndex === currentItems.length - 1 ? 0 : prevIndex + 1
     );
+  };
+
+  // Handle tab click to allow deselection
+  const handleTabClick = (value: string) => {
+    setActiveTab(prevTab => prevTab === value ? null : value);
+    setCurrentItemIndex(0); // Reset to the first item when changing tabs
   };
 
   // Handle AI message submission with MCP support
@@ -169,50 +174,128 @@ const LearnInterface = ({ metaQube }: LearnInterfaceProps) => {
     }
   };
 
-  // Render different card content based on tab
-  const renderCurrentItemCard = () => {
-    const current = currentItems[currentItemIndex];
-    
-    if (!current) return null;
-    
-    if (activeTab === 'courses') {
-      return <CourseCard course={current as typeof courses[0]} />;
-    } else if (activeTab === 'certifications') {
-      const cert = current as typeof certifications[0];
+  // Render different content based on tab selection
+  const renderRightPanel = () => {
+    if (!activeTab) {
+      // Show dashboard summary when no tab is selected
       return (
         <Card className="h-full">
-          <CardContent className="p-6 h-full flex flex-col">
-            {cert.icon}
-            <h3 className="font-semibold mb-1 mt-4">{cert.title}</h3>
-            <p className="text-sm text-muted-foreground mb-4">{cert.description}</p>
-            <div className="text-xs text-muted-foreground mt-auto">
-              {cert.status}
+          <CardHeader>
+            <CardTitle className="flex items-center text-lg">
+              <BarChart className="h-5 w-5 mr-2 text-blue-400" />
+              Learning Dashboard
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <div className="space-y-4">
+              <div>
+                <h3 className="font-medium text-sm mb-1">Your Progress</h3>
+                <div className="flex justify-between text-sm mb-1">
+                  <span>Overall completion</span>
+                  <span>65%</span>
+                </div>
+                <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                  <div className="h-full bg-blue-500 rounded-full" style={{ width: '65%' }}></div>
+                </div>
+              </div>
+              
+              <div>
+                <h3 className="font-medium text-sm mb-1">Recent Activity</h3>
+                <ul className="space-y-2">
+                  <li className="text-sm flex items-start">
+                    <div className="w-1.5 h-1.5 rounded-full bg-blue-500 mt-1.5 mr-2"></div>
+                    <span>Completed Web3 Fundamentals Lesson 8</span>
+                  </li>
+                  <li className="text-sm flex items-start">
+                    <div className="w-1.5 h-1.5 rounded-full bg-green-500 mt-1.5 mr-2"></div>
+                    <span>Earned "Knowledge Seeker" achievement</span>
+                  </li>
+                  <li className="text-sm flex items-start">
+                    <div className="w-1.5 h-1.5 rounded-full bg-purple-500 mt-1.5 mr-2"></div>
+                    <span>Started iQube Protocol course</span>
+                  </li>
+                </ul>
+              </div>
+              
+              <div>
+                <h3 className="font-medium text-sm mb-1">Recommended Next</h3>
+                <Card className="p-2 hover:bg-muted/50 transition-colors cursor-pointer">
+                  <div className="flex items-center">
+                    <BookOpen className="h-6 w-6 mr-3 text-blue-400" />
+                    <div>
+                      <p className="font-medium text-sm">Web3 Fundamentals</p>
+                      <p className="text-xs text-muted-foreground">Continue Lesson 9: Smart Contracts</p>
+                    </div>
+                  </div>
+                </Card>
+              </div>
             </div>
-          </CardContent>
-        </Card>
-      );
-    } else if (activeTab === 'achievements') {
-      const achievement = current as typeof achievements[0];
-      return (
-        <Card className="h-full">
-          <CardContent className="p-6 h-full flex flex-col items-center justify-center text-center">
-            <div className={`mx-auto rounded-full w-12 h-12 flex items-center justify-center mb-4 ${
-              achievement.unlocked ? "bg-gradient-to-r from-iqube-primary to-iqube-accent" : "bg-gray-200"
-            }`}>
-              {achievement.unlocked ? (
-                <Award className="h-6 w-6 text-white" />
-              ) : (
-                <Award className="h-6 w-6 text-gray-400" />
-              )}
-            </div>
-            <h3 className="text-lg font-medium mb-2">{achievement.title}</h3>
-            <p className="text-sm text-muted-foreground">{achievement.status}</p>
           </CardContent>
         </Card>
       );
     }
+
+    // Tab is selected, show the appropriate card with navigation
+    const current = currentItems[currentItemIndex];
     
-    return null;
+    if (!current) return null;
+    
+    return (
+      <Card className="h-full flex flex-col">
+        <CardHeader className="pb-0">
+          <div className="flex justify-between items-center">
+            <CardTitle className="text-lg">
+              {activeTab === 'courses' && 'Course Details'}
+              {activeTab === 'certifications' && 'Certification Details'}
+              {activeTab === 'achievements' && 'Achievement Details'}
+            </CardTitle>
+            <div className="flex space-x-1">
+              <Button variant="ghost" size="icon" onClick={goToPrev} disabled={currentItems.length <= 1}>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="icon" className="text-sm">
+                {currentItemIndex + 1}/{currentItems.length}
+              </Button>
+              <Button variant="ghost" size="icon" onClick={goToNext} disabled={currentItems.length <= 1}>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="flex-grow">
+          {activeTab === 'courses' ? (
+            <CourseCard course={current as typeof courses[0]} />
+          ) : activeTab === 'certifications' ? (
+            <div className="h-full">
+              <div className="p-6 h-full flex flex-col">
+                {(current as typeof certifications[0]).icon}
+                <h3 className="font-semibold mb-1 mt-4">{(current as typeof certifications[0]).title}</h3>
+                <p className="text-sm text-muted-foreground mb-4">{(current as typeof certifications[0]).description}</p>
+                <div className="text-xs text-muted-foreground mt-auto">
+                  {(current as typeof certifications[0]).status}
+                </div>
+              </div>
+            </div>
+          ) : activeTab === 'achievements' ? (
+            <div className="h-full">
+              <div className="p-6 h-full flex flex-col items-center justify-center text-center">
+                <div className={`mx-auto rounded-full w-12 h-12 flex items-center justify-center mb-4 ${
+                  (current as typeof achievements[0]).unlocked ? "bg-gradient-to-r from-iqube-primary to-iqube-accent" : "bg-gray-200"
+                }`}>
+                  {(current as typeof achievements[0]).unlocked ? (
+                    <Award className="h-6 w-6 text-white" />
+                  ) : (
+                    <Award className="h-6 w-6 text-gray-400" />
+                  )}
+                </div>
+                <h3 className="text-lg font-medium mb-2">{(current as typeof achievements[0]).title}</h3>
+                <p className="text-sm text-muted-foreground">{(current as typeof achievements[0]).status}</p>
+              </div>
+            </div>
+          ) : null}
+        </CardContent>
+      </Card>
+    );
   };
 
   return (
@@ -240,31 +323,7 @@ const LearnInterface = ({ metaQube }: LearnInterfaceProps) => {
 
       <div className="space-y-6 flex flex-col">
         <div className="flex-grow">
-          <Card className="h-full flex flex-col">
-            <CardHeader className="pb-0">
-              <div className="flex justify-between items-center">
-                <CardTitle className="text-lg">
-                  {activeTab === 'courses' && 'Course Details'}
-                  {activeTab === 'certifications' && 'Certification Details'}
-                  {activeTab === 'achievements' && 'Achievement Details'}
-                </CardTitle>
-                <div className="flex space-x-1">
-                  <Button variant="ghost" size="icon" onClick={goToPrev}>
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  <Button variant="ghost" size="icon" className="text-sm">
-                    {currentItemIndex + 1}/{currentItems.length}
-                  </Button>
-                  <Button variant="ghost" size="icon" onClick={goToNext}>
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
-              </div>
-            </CardHeader>
-            <CardContent className="flex-grow">
-              {renderCurrentItemCard()}
-            </CardContent>
-          </Card>
+          {renderRightPanel()}
         </div>
 
         <Card>
@@ -278,11 +337,29 @@ const LearnInterface = ({ metaQube }: LearnInterfaceProps) => {
       </div>
 
       <div className="lg:col-span-3">
-        <Tabs defaultValue="courses" value={activeTab} onValueChange={setActiveTab}>
+        <Tabs value={activeTab || ''}>
           <TabsList className="w-full grid grid-cols-3">
-            <TabsTrigger value="courses">Courses</TabsTrigger>
-            <TabsTrigger value="certifications">Certifications</TabsTrigger>
-            <TabsTrigger value="achievements">Achievements</TabsTrigger>
+            <TabsTrigger 
+              value="courses" 
+              onClick={() => handleTabClick('courses')}
+              data-state={activeTab === 'courses' ? 'active' : ''}
+            >
+              Courses
+            </TabsTrigger>
+            <TabsTrigger 
+              value="certifications" 
+              onClick={() => handleTabClick('certifications')}
+              data-state={activeTab === 'certifications' ? 'active' : ''}
+            >
+              Certifications
+            </TabsTrigger>
+            <TabsTrigger 
+              value="achievements" 
+              onClick={() => handleTabClick('achievements')}
+              data-state={activeTab === 'achievements' ? 'active' : ''}
+            >
+              Achievements
+            </TabsTrigger>
           </TabsList>
         </Tabs>
       </div>
