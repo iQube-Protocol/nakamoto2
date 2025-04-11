@@ -5,6 +5,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Badge } from '@/components/ui/badge';
 import { Button } from '@/components/ui/button';
 import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   Users, 
   Calendar, 
@@ -66,7 +67,7 @@ interface Message {
 type ConnectItem = Member | Group | Event | Message;
 
 const ConnectInterface = ({ metaQube, communityMetrics }: ConnectInterfaceProps) => {
-  const [selectedTab, setSelectedTab] = useState("dashboard");
+  const [selectedTab, setSelectedTab] = useState<string | undefined>(undefined);
   const [currentItemIndex, setCurrentItemIndex] = useState(0);
 
   // Create some sample members with type field
@@ -186,6 +187,16 @@ const ConnectInterface = ({ metaQube, communityMetrics }: ConnectInterfaceProps)
       default:
         return [];
     }
+  };
+
+  const handleTabChange = (value: string) => {
+    // If clicking the same tab, deselect it
+    if (value === selectedTab) {
+      setSelectedTab(undefined);
+      return;
+    }
+    setSelectedTab(value);
+    setCurrentItemIndex(0);
   };
 
   const renderDetailPanel = () => {
@@ -376,12 +387,12 @@ const ConnectInterface = ({ metaQube, communityMetrics }: ConnectInterfaceProps)
               <div className="text-xs text-muted-foreground">Groups Joined</div>
             </Card>
             <Card className="p-3">
-              <div className="text-xl font-bold">{communityMetrics.upcomingEvents}</div>
-              <div className="text-xs text-muted-foreground">Upcoming Events</div>
-            </Card>
-            <Card className="p-3">
               <div className="text-xl font-bold">{communityMetrics.unreadMessages}</div>
               <div className="text-xs text-muted-foreground">Unread Messages</div>
+            </Card>
+            <Card className="p-3">
+              <div className="text-xl font-bold">{communityMetrics.totalMembers}</div>
+              <div className="text-xs text-muted-foreground">Community Members</div>
             </Card>
           </div>
 
@@ -416,7 +427,7 @@ const ConnectInterface = ({ metaQube, communityMetrics }: ConnectInterfaceProps)
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
       {/* Left column - Chat Interface & Tabs */}
       <div className="lg:col-span-6">
-        <div className="space-y-6">
+        <div className="space-y-6 h-full flex flex-col">
           <AgentInterface
             title="Connection Assistant"
             description="Community insights and networking opportunities"
@@ -432,9 +443,8 @@ const ConnectInterface = ({ metaQube, communityMetrics }: ConnectInterfaceProps)
           />
 
           {/* Tabs moved under the chat interface */}
-          <Tabs value={selectedTab} onValueChange={setSelectedTab}>
-            <TabsList className="w-full grid grid-cols-5">
-              <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
+          <Tabs value={selectedTab} onValueChange={handleTabChange} className="flex-shrink-0">
+            <TabsList className="w-full grid grid-cols-4">
               <TabsTrigger value="members">Community</TabsTrigger>
               <TabsTrigger value="groups">Groups</TabsTrigger>
               <TabsTrigger value="events">Events</TabsTrigger>
@@ -445,7 +455,7 @@ const ConnectInterface = ({ metaQube, communityMetrics }: ConnectInterfaceProps)
       </div>
 
       {/* Right column - Content based on tab selection */}
-      <div className="lg:col-span-6 space-y-6">
+      <div className="lg:col-span-6 space-y-6 h-full flex flex-col">
         <Card>
           <CardHeader className="pb-0">
             <CardTitle className="text-lg">MetaQube</CardTitle>
@@ -455,23 +465,15 @@ const ConnectInterface = ({ metaQube, communityMetrics }: ConnectInterfaceProps)
           </CardContent>
         </Card>
 
-        <Tabs value={selectedTab} className="h-full">
-          <TabsContent value="dashboard" className="m-0 h-full">
-            {renderDashboard()}
-          </TabsContent>
-          <TabsContent value="members" className="m-0 h-full">
-            {renderDetailPanel()}
-          </TabsContent>
-          <TabsContent value="groups" className="m-0 h-full">
-            {renderDetailPanel()}
-          </TabsContent>
-          <TabsContent value="events" className="m-0 h-full">
-            {renderDetailPanel()}
-          </TabsContent>
-          <TabsContent value="messages" className="m-0 h-full">
-            {renderDetailPanel()}
-          </TabsContent>
-        </Tabs>
+        <div className="flex-grow">
+          <ScrollArea className="h-full">
+            {selectedTab ? (
+              renderDetailPanel()
+            ) : (
+              renderDashboard()
+            )}
+          </ScrollArea>
+        </div>
       </div>
     </div>
   );
