@@ -9,12 +9,14 @@ import { MetaQube } from '@/lib/types';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import CourseCard from './CourseCard';
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 
 interface LearnInterfaceProps {
   metaQube: MetaQube;
+  isMobile?: boolean;
 }
 
-const LearnInterface = ({ metaQube }: LearnInterfaceProps) => {
+const LearnInterface = ({ metaQube, isMobile = false }: LearnInterfaceProps) => {
   const { toast } = useToast();
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [currentItemIndex, setCurrentItemIndex] = useState<number>(0);
@@ -88,7 +90,6 @@ const LearnInterface = ({ metaQube }: LearnInterfaceProps) => {
     { id: 8, title: "iQube Master", status: "Locked", unlocked: false },
   ];
 
-  // Determine which items to show based on active tab
   const getCurrentItems = () => {
     switch(activeTab) {
       case 'courses':
@@ -104,7 +105,6 @@ const LearnInterface = ({ metaQube }: LearnInterfaceProps) => {
 
   const currentItems = getCurrentItems();
   
-  // Navigation functions
   const goToPrev = () => {
     setCurrentItemIndex((prevIndex) => 
       prevIndex === 0 ? currentItems.length - 1 : prevIndex - 1
@@ -117,13 +117,11 @@ const LearnInterface = ({ metaQube }: LearnInterfaceProps) => {
     );
   };
 
-  // Handle tab click to allow deselection
   const handleTabClick = (value: string) => {
     setActiveTab(prevTab => prevTab === value ? null : value);
-    setCurrentItemIndex(0); // Reset to the first item when changing tabs
+    setCurrentItemIndex(0);
   };
 
-  // Handle AI message submission with MCP support
   const handleAIMessage = async (message: string) => {
     try {
       const { data, error } = await supabase.functions.invoke('learn-ai', {
@@ -139,12 +137,10 @@ const LearnInterface = ({ metaQube }: LearnInterfaceProps) => {
         throw new Error(error.message);
       }
       
-      // Store the conversation ID for future messages
       if (data.conversationId) {
         setConversationId(data.conversationId);
         console.log(`MCP conversation established with ID: ${data.conversationId}`);
         
-        // Log MCP metadata if available
         if (data.mcp) {
           console.log('MCP metadata:', data.mcp);
         }
@@ -174,10 +170,8 @@ const LearnInterface = ({ metaQube }: LearnInterfaceProps) => {
     }
   };
 
-  // Render different content based on tab selection
   const renderRightPanel = () => {
     if (!activeTab) {
-      // Show dashboard summary when no tab is selected
       return (
         <Card className="h-full">
           <CardHeader>
@@ -235,7 +229,6 @@ const LearnInterface = ({ metaQube }: LearnInterfaceProps) => {
       );
     }
 
-    // Tab is selected, show the appropriate card with navigation
     const current = currentItems[currentItemIndex];
     
     if (!current) return null;
@@ -297,6 +290,162 @@ const LearnInterface = ({ metaQube }: LearnInterfaceProps) => {
       </Card>
     );
   };
+
+  if (isMobile) {
+    return (
+      <div className="flex flex-col h-full">
+        <div className="flex-1 overflow-auto">
+          <AgentInterface
+            title="Learning Assistant"
+            description="Personalized web3 education based on your iQube data"
+            agentType="learn"
+            onMessageSubmit={handleAIMessage}
+            initialMessages={[
+              {
+                id: "1",
+                sender: "agent",
+                message: "Welcome to your learning journey! Based on your iQube profile, I see you're interested in Web3 topics. Would you like to continue with your Web3 Fundamentals course or explore something new?",
+                timestamp: new Date().toISOString(),
+                metadata: {
+                  version: "1.0",
+                  modelUsed: "gpt-4o-mini"
+                }
+              }
+            ]}
+          />
+        </div>
+        
+        <div className="mt-4 pb-2">
+          <Sheet>
+            <SheetTrigger asChild>
+              <Button className="w-full" variant="outline">
+                View Dashboard & Courses
+              </Button>
+            </SheetTrigger>
+            <SheetContent side="bottom" className="h-[80vh]">
+              <div className="flex flex-col h-full overflow-auto">
+                <div className="pb-4">
+                  <h2 className="text-lg font-medium mb-2">Your Learning</h2>
+                  <MetaQubeDisplay metaQube={metaQube} compact={true} />
+                </div>
+                <div className="pb-4">
+                  <Tabs value={activeTab || ''}>
+                    <TabsList className="w-full grid grid-cols-3">
+                      <TabsTrigger 
+                        value="courses" 
+                        onClick={() => handleTabClick('courses')}
+                        data-state={activeTab === 'courses' ? 'active' : ''}
+                      >
+                        Courses
+                      </TabsTrigger>
+                      <TabsTrigger 
+                        value="certifications" 
+                        onClick={() => handleTabClick('certifications')}
+                        data-state={activeTab === 'certifications' ? 'active' : ''}
+                      >
+                        Certifications
+                      </TabsTrigger>
+                      <TabsTrigger 
+                        value="achievements" 
+                        onClick={() => handleTabClick('achievements')}
+                        data-state={activeTab === 'achievements' ? 'active' : ''}
+                      >
+                        Achievements
+                      </TabsTrigger>
+                    </TabsList>
+                  </Tabs>
+                </div>
+                <div className="flex-1 overflow-auto">
+                  {!activeTab ? (
+                    <Card>
+                      <CardHeader className="pb-2">
+                        <CardTitle className="flex items-center text-lg">
+                          <BarChart className="h-5 w-5 mr-2 text-blue-400" />
+                          Learning Dashboard
+                        </CardTitle>
+                      </CardHeader>
+                      <CardContent>
+                        <div className="space-y-4">
+                          <div>
+                            <h3 className="font-medium text-sm mb-1">Your Progress</h3>
+                            <div className="flex justify-between text-sm mb-1">
+                              <span>Overall completion</span>
+                              <span>65%</span>
+                            </div>
+                            <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
+                              <div className="h-full bg-blue-500 rounded-full" style={{ width: '65%' }}></div>
+                            </div>
+                          </div>
+                          
+                          <div>
+                            <h3 className="font-medium text-sm mb-1">Recommended Next</h3>
+                            <Card className="p-2 hover:bg-muted/50 transition-colors cursor-pointer">
+                              <div className="flex items-center">
+                                <BookOpen className="h-6 w-6 mr-3 text-blue-400" />
+                                <div>
+                                  <p className="font-medium text-sm">Web3 Fundamentals</p>
+                                  <p className="text-xs text-muted-foreground">Continue Lesson 9: Smart Contracts</p>
+                                </div>
+                              </div>
+                            </Card>
+                          </div>
+                        </div>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <div className="p-1">
+                      {activeTab === 'courses' && courses.length > 0 && (
+                        <CourseCard course={courses[currentItemIndex]} />
+                      )}
+                      {activeTab === 'certifications' && certifications.length > 0 && (
+                        <div className="p-4 flex flex-col items-center text-center">
+                          {certifications[currentItemIndex].icon}
+                          <h3 className="font-semibold mb-1 mt-4">{certifications[currentItemIndex].title}</h3>
+                          <p className="text-sm text-muted-foreground mb-4">{certifications[currentItemIndex].description}</p>
+                          <div className="text-xs text-muted-foreground mt-auto">
+                            {certifications[currentItemIndex].status}
+                          </div>
+                        </div>
+                      )}
+                      {activeTab === 'achievements' && achievements.length > 0 && (
+                        <div className="p-4 flex flex-col items-center text-center">
+                          <div className={`mx-auto rounded-full w-12 h-12 flex items-center justify-center mb-4 ${
+                            achievements[currentItemIndex].unlocked ? "bg-gradient-to-r from-iqube-primary to-iqube-accent" : "bg-gray-200"
+                          }`}>
+                            {achievements[currentItemIndex].unlocked ? (
+                              <Award className="h-6 w-6 text-white" />
+                            ) : (
+                              <Award className="h-6 w-6 text-gray-400" />
+                            )}
+                          </div>
+                          <h3 className="text-lg font-medium mb-2">{achievements[currentItemIndex].title}</h3>
+                          <p className="text-sm text-muted-foreground">{achievements[currentItemIndex].status}</p>
+                        </div>
+                      )}
+                      
+                      {activeTab && currentItems.length > 1 && (
+                        <div className="flex justify-between items-center mt-4 px-2">
+                          <Button variant="outline" size="sm" onClick={goToPrev}>
+                            <ChevronLeft className="h-4 w-4 mr-1" />
+                            Previous
+                          </Button>
+                          <span className="text-sm">{currentItemIndex + 1}/{currentItems.length}</span>
+                          <Button variant="outline" size="sm" onClick={goToNext}>
+                            Next
+                            <ChevronRight className="h-4 w-4 ml-1" />
+                          </Button>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+              </div>
+            </SheetContent>
+          </Sheet>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
