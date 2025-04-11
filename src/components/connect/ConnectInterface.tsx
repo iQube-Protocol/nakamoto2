@@ -153,7 +153,7 @@ const ConnectInterface = ({ metaQube, communityMetrics }: ConnectInterfaceProps)
       <div className="space-y-6 h-full max-h-full overflow-hidden flex flex-col">
         <div>
           <Tabs 
-            defaultValue={activeTab || ""} 
+            defaultValue=""
             value={activeTab || ""}
             onValueChange={handleTabChange} 
             className="w-full"
