@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { NavLink, Link } from 'react-router-dom';
 import { 
@@ -17,7 +16,6 @@ import { useIsMobile } from '@/hooks/use-mobile';
 import MetaQubeDisplay from '@/components/shared/MetaQubeDisplay';
 import { MetaQube } from '@/lib/types';
 
-// Sample metaQube data - this would typically come from a context or prop
 const metaQubeData: MetaQube = {
   "iQube-Identifier": "MonDAI iQube",
   "iQube-Type": "DataQube",
@@ -141,7 +139,7 @@ const Sidebar = () => {
             to="/settings" 
             className="flex items-center justify-center py-3 px-3 rounded-md transition-all hover:bg-iqube-primary/20 group"
           >
-            <Database className="h-5 w-5 text-iqube-primary" />
+            <Database className="h-6 w-6 text-iqube-primary" />
             <div className="absolute left-16 rounded-md px-2 py-1 ml-6 bg-iqube-dark text-foreground
               scale-0 group-hover:scale-100 transition-all duration-100 origin-left z-50">
               iQube Settings
