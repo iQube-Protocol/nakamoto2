@@ -28,6 +28,7 @@ interface ContentDisplayProps {
   goToPrev: () => void;
   goToNext: () => void;
   onCollapse?: () => void;
+  isPanelCollapsed?: boolean;
 }
 
 const ContentDisplay = ({
@@ -43,8 +44,13 @@ const ContentDisplay = ({
   transactionCards,
   goToPrev,
   goToNext,
-  onCollapse
+  onCollapse,
+  isPanelCollapsed
 }: ContentDisplayProps) => {
+  if (isPanelCollapsed) {
+    return null;
+  }
+
   if (!selectedTab) {
     return (
       <Card className="h-full">

@@ -3,23 +3,6 @@ import React from 'react';
 import EarnInterface from '@/components/earn/EarnInterface';
 import { MetaQube, TokenMetrics } from '@/lib/types';
 
-// Sample metaQube data
-const metaQubeData: MetaQube = {
-  "iQube-Identifier": "MonDAI iQube",
-  "iQube-Type": "DataQube",
-  "iQube-Designer": "Aigent MonDAI",
-  "iQube-Use": "For learning, earning and networking in web3 communities",
-  "Owner-Type": "Person",
-  "Owner-Identifiability": "Semi-Identifiable",
-  "Date-Minted": new Date().toISOString(),
-  "Related-iQubes": ["ContentQube1", "AgentQube1"],
-  "X-of-Y": "5 of 20",
-  "Sensitivity-Score": 4,
-  "Verifiability-Score": 5,
-  "Accuracy-Score": 5,
-  "Risk-Score": 4
-};
-
 // Sample token metrics
 const tokenMetrics: TokenMetrics = {
   price: 0.5,

@@ -104,7 +104,7 @@ const EarnInterface = ({ tokenMetrics }: EarnInterfaceProps) => {
       </div>
 
       {isPanelCollapsed ? (
-        <div className="lg:col-span-1 flex flex-col items-center space-y-6 border-l pl-2">
+        <div className="lg:col-span-1 flex flex-col items-center justify-start border-l pl-2 h-full">
           <Button
             variant="ghost"
             size="icon"
@@ -114,45 +114,47 @@ const EarnInterface = ({ tokenMetrics }: EarnInterfaceProps) => {
             <ChevronLeft className="h-6 w-6" />
           </Button>
           
-          <Button
-            variant={selectedTab === 'price' ? 'secondary' : 'ghost'}
-            size="icon"
-            className={`p-2 ${selectedTab === 'price' ? 'bg-iqube-primary/20' : ''}`}
-            onClick={() => handleTabChange('price')}
-            title="Price"
-          >
-            <DollarSign className="h-6 w-6" />
-          </Button>
-          
-          <Button
-            variant={selectedTab === 'stats' ? 'secondary' : 'ghost'}
-            size="icon"
-            className={`p-2 ${selectedTab === 'stats' ? 'bg-iqube-primary/20' : ''}`}
-            onClick={() => handleTabChange('stats')}
-            title="Statistics"
-          >
-            <TrendingUp className="h-6 w-6" />
-          </Button>
-          
-          <Button
-            variant={selectedTab === 'portfolio' ? 'secondary' : 'ghost'}
-            size="icon"
-            className={`p-2 ${selectedTab === 'portfolio' ? 'bg-iqube-primary/20' : ''}`}
-            onClick={() => handleTabChange('portfolio')}
-            title="Portfolio"
-          >
-            <User className="h-6 w-6" />
-          </Button>
-          
-          <Button
-            variant={selectedTab === 'transactions' ? 'secondary' : 'ghost'}
-            size="icon"
-            className={`p-2 ${selectedTab === 'transactions' ? 'bg-iqube-primary/20' : ''}`}
-            onClick={() => handleTabChange('transactions')}
-            title="Transactions"
-          >
-            <ListOrdered className="h-6 w-6" />
-          </Button>
+          <div className="mt-6 flex flex-col space-y-6">
+            <Button
+              variant={selectedTab === 'price' ? 'secondary' : 'ghost'}
+              size="icon"
+              className={`p-2 ${selectedTab === 'price' ? 'bg-iqube-primary/20' : ''}`}
+              onClick={() => handleTabChange('price')}
+              title="Price"
+            >
+              <DollarSign className="h-6 w-6" />
+            </Button>
+            
+            <Button
+              variant={selectedTab === 'stats' ? 'secondary' : 'ghost'}
+              size="icon"
+              className={`p-2 ${selectedTab === 'stats' ? 'bg-iqube-primary/20' : ''}`}
+              onClick={() => handleTabChange('stats')}
+              title="Statistics"
+            >
+              <TrendingUp className="h-6 w-6" />
+            </Button>
+            
+            <Button
+              variant={selectedTab === 'portfolio' ? 'secondary' : 'ghost'}
+              size="icon"
+              className={`p-2 ${selectedTab === 'portfolio' ? 'bg-iqube-primary/20' : ''}`}
+              onClick={() => handleTabChange('portfolio')}
+              title="Portfolio"
+            >
+              <User className="h-6 w-6" />
+            </Button>
+            
+            <Button
+              variant={selectedTab === 'transactions' ? 'secondary' : 'ghost'}
+              size="icon"
+              className={`p-2 ${selectedTab === 'transactions' ? 'bg-iqube-primary/20' : ''}`}
+              onClick={() => handleTabChange('transactions')}
+              title="Transactions"
+            >
+              <ListOrdered className="h-6 w-6" />
+            </Button>
+          </div>
         </div>
       ) : (
         <div className="lg:col-span-4 space-y-6 flex flex-col">
@@ -171,6 +173,7 @@ const EarnInterface = ({ tokenMetrics }: EarnInterfaceProps) => {
               goToPrev={goToPrev}
               goToNext={goToNext}
               onCollapse={togglePanelCollapse}
+              isPanelCollapsed={isPanelCollapsed}
             />
           </div>
         </div>
