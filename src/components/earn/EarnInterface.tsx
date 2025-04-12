@@ -87,6 +87,7 @@ const EarnInterface = ({ tokenMetrics }: EarnInterfaceProps) => {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
+      {/* Agent Interface */}
       <div className={`lg:col-span-${isPanelCollapsed ? '11' : '8'}`}>
         <AgentInterface
           title="Earning Assistant"
@@ -103,9 +104,10 @@ const EarnInterface = ({ tokenMetrics }: EarnInterfaceProps) => {
         />
       </div>
 
-      <div className={`lg:col-span-${isPanelCollapsed ? '1' : '4'} flex flex-col`}>
+      {/* Dashboard Panel */}
+      <div className={`lg:col-span-${isPanelCollapsed ? '1' : '4'}`}>
         {isPanelCollapsed ? (
-          <div className="border-l h-full flex flex-col items-center justify-start pl-2">
+          <div className="border-l h-full flex flex-col items-center justify-start p-2">
             <Button
               variant="ghost"
               size="icon"
@@ -158,27 +160,26 @@ const EarnInterface = ({ tokenMetrics }: EarnInterfaceProps) => {
             </div>
           </div>
         ) : (
-          <div className="flex-grow">
-            <ContentDisplay
-              selectedTab={selectedTab}
-              currentItemIndex={currentItemIndex}
-              tokenMetrics={tokenMetrics}
-              chartData={chartData}
-              timeframe={timeframe}
-              setTimeframe={setTimeframe}
-              distributionData={distributionData}
-              tokenStatsCards={tokenStatsCards}
-              portfolioCards={portfolioCards}
-              transactionCards={transactionCards}
-              goToPrev={goToPrev}
-              goToNext={goToNext}
-              onCollapse={togglePanelCollapse}
-              isPanelCollapsed={isPanelCollapsed}
-            />
-          </div>
+          <ContentDisplay
+            selectedTab={selectedTab}
+            currentItemIndex={currentItemIndex}
+            tokenMetrics={tokenMetrics}
+            chartData={chartData}
+            timeframe={timeframe}
+            setTimeframe={setTimeframe}
+            distributionData={distributionData}
+            tokenStatsCards={tokenStatsCards}
+            portfolioCards={portfolioCards}
+            transactionCards={transactionCards}
+            goToPrev={goToPrev}
+            goToNext={goToNext}
+            onCollapse={togglePanelCollapse}
+            isPanelCollapsed={isPanelCollapsed}
+          />
         )}
       </div>
 
+      {/* Bottom Tabs */}
       <div className="lg:col-span-12">
         <Tabs value={selectedTab || ''}>
           <TabsList className="w-full grid grid-cols-4">
