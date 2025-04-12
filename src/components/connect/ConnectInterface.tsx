@@ -64,6 +64,7 @@ type ConnectItem = Member | Group | Event | Message;
 const ConnectInterface = ({ communityMetrics }: ConnectInterfaceProps) => {
   const [selectedTab, setSelectedTab] = useState<string | undefined>(undefined);
   const [currentItemIndex, setCurrentItemIndex] = useState(0);
+  const [isCollapsed, setIsCollapsed] = useState(false);
 
   const members: Member[] = [
     { id: 1, name: 'Alex Chen', role: 'Developer', avatar: '', interests: ['DeFi', 'Smart Contracts'], type: 'member' },
@@ -186,6 +187,67 @@ const ConnectInterface = ({ communityMetrics }: ConnectInterfaceProps) => {
     }
     setSelectedTab(value);
     setCurrentItemIndex(0);
+    setIsCollapsed(false);
+  };
+
+  const toggleCollapse = () => {
+    setIsCollapsed(!isCollapsed);
+  };
+
+  const renderCollapsedIcons = () => {
+    return (
+      <div className="flex flex-col items-center space-y-6 p-4">
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className="w-12 h-12" 
+          onClick={toggleCollapse}
+          title="Expand panel"
+        >
+          <ChevronLeft className="h-6 w-6" />
+        </Button>
+        
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className={`w-12 h-12 ${selectedTab === 'members' ? 'bg-muted' : ''}`}
+          onClick={() => handleTabChange('members')} 
+          title="Community"
+        >
+          <Users className="h-6 w-6" />
+        </Button>
+        
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className={`w-12 h-12 ${selectedTab === 'groups' ? 'bg-muted' : ''}`}
+          onClick={() => handleTabChange('groups')} 
+          title="Groups"
+        >
+          <Users className="h-6 w-6" />
+        </Button>
+        
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className={`w-12 h-12 ${selectedTab === 'events' ? 'bg-muted' : ''}`}
+          onClick={() => handleTabChange('events')} 
+          title="Events"
+        >
+          <Calendar className="h-6 w-6" />
+        </Button>
+        
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          className={`w-12 h-12 ${selectedTab === 'messages' ? 'bg-muted' : ''}`}
+          onClick={() => handleTabChange('messages')} 
+          title="Messages"
+        >
+          <MessageSquare className="h-6 w-6" />
+        </Button>
+      </div>
+    );
   };
 
   const renderDetailPanel = () => {
@@ -206,6 +268,17 @@ const ConnectInterface = ({ communityMetrics }: ConnectInterfaceProps) => {
             {selectedTab === 'messages' && 'Message'}
           </CardTitle>
           <div className="flex items-center space-x-2">
+            {isCollapsed ? null : (
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-8 w-8" 
+                onClick={toggleCollapse}
+                title="Collapse panel"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            )}
             <Button 
               variant="outline" 
               size="icon" 
@@ -360,10 +433,17 @@ const ConnectInterface = ({ communityMetrics }: ConnectInterfaceProps) => {
     return (
       <Card className="h-full">
         <CardHeader>
-          <CardTitle className="text-lg flex items-center">
-            <Activity className="mr-2 h-5 w-5 text-iqube-accent" />
-            Connect Dashboard
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="text-lg flex items-center">
+              <Activity className="mr-2 h-5 w-5 text-iqube-accent" />
+              Connect Dashboard
+            </CardTitle>
+            {!isCollapsed && (
+              <Button variant="ghost" size="icon" onClick={toggleCollapse} title="Collapse panel">
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-3 mt-2">
@@ -414,7 +494,7 @@ const ConnectInterface = ({ communityMetrics }: ConnectInterfaceProps) => {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
-      <div className="lg:col-span-8">
+      <div className={`lg:col-span-${isCollapsed ? '11' : '8'} transition-all duration-300`}>
         <AgentInterface
           title="Connection Assistant"
           description="Community insights and networking opportunities"
@@ -430,46 +510,54 @@ const ConnectInterface = ({ communityMetrics }: ConnectInterfaceProps) => {
         />
       </div>
 
-      <div className="lg:col-span-4 space-y-6 flex flex-col">
-        <div className="flex-grow">
-          {selectedTab ? renderDetailPanel() : renderDashboard()}
+      {isCollapsed ? (
+        <div className="lg:col-span-1 border-l">
+          {renderCollapsedIcons()}
         </div>
-      </div>
+      ) : (
+        <div className="lg:col-span-4 space-y-6 flex flex-col">
+          <div className="flex-grow">
+            {selectedTab ? renderDetailPanel() : renderDashboard()}
+          </div>
+        </div>
+      )}
 
-      <div className="lg:col-span-12">
-        <Tabs value={selectedTab || ''}>
-          <TabsList className="w-full grid grid-cols-4">
-            <TabsTrigger 
-              value="members" 
-              onClick={() => handleTabChange('members')}
-              data-state={selectedTab === 'members' ? 'active' : ''}
-            >
-              Community
-            </TabsTrigger>
-            <TabsTrigger 
-              value="groups" 
-              onClick={() => handleTabChange('groups')}
-              data-state={selectedTab === 'groups' ? 'active' : ''}
-            >
-              Groups
-            </TabsTrigger>
-            <TabsTrigger 
-              value="events" 
-              onClick={() => handleTabChange('events')}
-              data-state={selectedTab === 'events' ? 'active' : ''}
-            >
-              Events
-            </TabsTrigger>
-            <TabsTrigger 
-              value="messages" 
-              onClick={() => handleTabChange('messages')}
-              data-state={selectedTab === 'messages' ? 'active' : ''}
-            >
-              Messages
-            </TabsTrigger>
-          </TabsList>
-        </Tabs>
-      </div>
+      {!isCollapsed && (
+        <div className="lg:col-span-12">
+          <Tabs value={selectedTab || ''}>
+            <TabsList className="w-full grid grid-cols-4">
+              <TabsTrigger 
+                value="members" 
+                onClick={() => handleTabChange('members')}
+                data-state={selectedTab === 'members' ? 'active' : ''}
+              >
+                Community
+              </TabsTrigger>
+              <TabsTrigger 
+                value="groups" 
+                onClick={() => handleTabChange('groups')}
+                data-state={selectedTab === 'groups' ? 'active' : ''}
+              >
+                Groups
+              </TabsTrigger>
+              <TabsTrigger 
+                value="events" 
+                onClick={() => handleTabChange('events')}
+                data-state={selectedTab === 'events' ? 'active' : ''}
+              >
+                Events
+              </TabsTrigger>
+              <TabsTrigger 
+                value="messages" 
+                onClick={() => handleTabChange('messages')}
+                data-state={selectedTab === 'messages' ? 'active' : ''}
+              >
+                Messages
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+        </div>
+      )}
     </div>
   );
 };

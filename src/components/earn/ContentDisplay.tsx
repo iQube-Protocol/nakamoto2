@@ -27,6 +27,7 @@ interface ContentDisplayProps {
   transactionCards: React.ReactNode[];
   goToPrev: () => void;
   goToNext: () => void;
+  onCollapse?: () => void;
 }
 
 const ContentDisplay = ({
@@ -41,16 +42,24 @@ const ContentDisplay = ({
   portfolioCards,
   transactionCards,
   goToPrev,
-  goToNext
+  goToNext,
+  onCollapse
 }: ContentDisplayProps) => {
   if (!selectedTab) {
     return (
       <Card className="h-full">
         <CardHeader>
-          <CardTitle className="flex items-center text-lg">
-            <BarChart className="h-5 w-5 mr-2 text-iqube-accent" />
-            Earning Dashboard
-          </CardTitle>
+          <div className="flex items-center justify-between">
+            <CardTitle className="flex items-center text-lg">
+              <BarChart className="h-5 w-5 mr-2 text-iqube-accent" />
+              Earning Dashboard
+            </CardTitle>
+            {onCollapse && (
+              <Button variant="ghost" size="icon" onClick={onCollapse} title="Collapse panel">
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           <ScrollArea className="h-[340px]">
@@ -63,14 +72,28 @@ const ContentDisplay = ({
 
   if (selectedTab === 'price') {
     return (
-      <ScrollArea className="h-full">
-        <TokenPriceChart 
-          tokenMetrics={tokenMetrics}
-          chartData={chartData}
-          timeframe={timeframe}
-          setTimeframe={setTimeframe}
-        />
-      </ScrollArea>
+      <Card className="h-full">
+        <CardHeader className="pb-0">
+          <div className="flex justify-between items-center">
+            <CardTitle className="text-lg">MonDAI Price</CardTitle>
+            {onCollapse && (
+              <Button variant="ghost" size="icon" onClick={onCollapse} title="Collapse panel">
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        </CardHeader>
+        <CardContent className="pt-4">
+          <ScrollArea className="h-full">
+            <TokenPriceChart 
+              tokenMetrics={tokenMetrics}
+              chartData={chartData}
+              timeframe={timeframe}
+              setTimeframe={setTimeframe}
+            />
+          </ScrollArea>
+        </CardContent>
+      </Card>
     );
   }
 
@@ -99,7 +122,12 @@ const ContentDisplay = ({
             {selectedTab === 'portfolio' && 'Your Portfolio'}
             {selectedTab === 'transactions' && 'Transaction History'}
           </CardTitle>
-          <div className="flex space-x-1">
+          <div className="flex items-center space-x-1">
+            {onCollapse && (
+              <Button variant="ghost" size="icon" onClick={onCollapse} title="Collapse panel">
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            )}
             <Button variant="ghost" size="icon" onClick={goToPrev} disabled={currentItems.length <= 1}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
