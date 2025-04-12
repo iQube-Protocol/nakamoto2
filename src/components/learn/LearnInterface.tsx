@@ -314,9 +314,6 @@ const LearnInterface = ({ metaQube }: LearnInterfaceProps) => {
 
       <div className="space-y-6 flex flex-col">
         <Card>
-          <CardHeader className="pb-0">
-            <CardTitle className="text-lg">MetaQube</CardTitle>
-          </CardHeader>
           <CardContent>
             <MetaQubeDisplay metaQube={metaQube} compact={true} />
           </CardContent>
