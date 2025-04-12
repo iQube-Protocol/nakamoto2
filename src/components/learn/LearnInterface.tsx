@@ -3,7 +3,6 @@ import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import AgentInterface from '@/components/shared/AgentInterface';
-import MetaQubeDisplay from '@/components/shared/MetaQubeDisplay';
 import { MetaQube } from '@/lib/types';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -130,12 +129,6 @@ const LearnInterface = ({ metaQube }: LearnInterfaceProps) => {
       </div>
 
       <div className="space-y-6 flex flex-col">
-        <Card>
-          <CardContent>
-            <MetaQubeDisplay metaQube={metaQube} compact={true} />
-          </CardContent>
-        </Card>
-
         <div className="flex-grow">
           <ContentDisplay
             activeTab={activeTab}

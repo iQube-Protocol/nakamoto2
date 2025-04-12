@@ -9,11 +9,29 @@ import {
   Settings,
   Menu,
   X,
-  Bot,
-  Sparkles
+  Bot
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
+import MetaQubeDisplay from '@/components/shared/MetaQubeDisplay';
+import { MetaQube } from '@/lib/types';
+
+// Sample metaQube data - this would typically come from a context or prop
+const metaQubeData: MetaQube = {
+  "iQube-Identifier": "MonDAI iQube",
+  "iQube-Type": "DataQube",
+  "iQube-Designer": "Aigent MonDAI",
+  "iQube-Use": "For learning, earning and networking in web3 communities",
+  "Owner-Type": "Person",
+  "Owner-Identifiability": "Semi-Identifiable",
+  "Date-Minted": new Date().toISOString(),
+  "Related-iQubes": ["ContentQube1", "AgentQube1"],
+  "X-of-Y": "5 of 20",
+  "Sensitivity-Score": 4,
+  "Verifiability-Score": 5,
+  "Accuracy-Score": 5,
+  "Risk-Score": 4
+};
 
 interface NavItemProps {
   to: string;
@@ -110,20 +128,14 @@ const Sidebar = () => {
           />
         ))}
       </div>
-
-      <div className={cn(
-        "mt-auto mx-3 p-2 rounded-lg border border-iqube-primary/30 bg-iqube-primary/10",
-        collapsed ? "text-center" : ""
-      )}>
-        <Sparkles className={cn("h-5 w-5 text-iqube-accent", !collapsed && "mb-1")} />
-        {!collapsed && (
-          <>
-            <h3 className="font-medium text-xs">MonDAI Active</h3>
-            <p className="text-xs text-sidebar-foreground opacity-70">
-              Your data is secure
-            </p>
-          </>
-        )}
+      
+      {/* Replace the previous MonDAI active panel with MetaQubeDisplay */}
+      <div className="px-3 mt-auto">
+        <MetaQubeDisplay 
+          metaQube={metaQubeData} 
+          compact={true} 
+          className={cn(collapsed && "scale-90 origin-center")}
+        />
       </div>
     </div>
   );
