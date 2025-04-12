@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -74,126 +73,127 @@ const generateDistributionData = () => [
   { name: 'Ecosystem', value: 15 }
 ];
 
+// IMPORTANT: CustomTooltip must be defined before it's used
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (active && payload && payload.length) {
+    return (
+      <Card className="p-2 text-xs border bg-background">
+        <p className="font-semibold">{label}</p>
+        <p className="text-iqube-primary">Price: ${payload[0].value}</p>
+        <p className="text-muted-foreground">
+          Volume: {Number(payload[0].payload.volume).toLocaleString()}
+        </p>
+      </Card>
+    );
+  }
+  return null;
+};
+
+// IMPORTANT: renderPricePanel must be defined before it's used
+const renderPricePanel = (tokenMetrics: TokenMetrics, chartData: any[], timeframe: string, setTimeframe: (value: string) => void) => (
+  <Card className="h-full">
+    <CardHeader className="pb-3">
+      <div className="flex items-center justify-between">
+        <CardTitle className="flex items-center">
+          <Activity className="mr-2 h-5 w-5 text-iqube-accent" />
+          MonDAI Token Price
+        </CardTitle>
+        <div className="flex items-center">
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setTimeframe('1W')}
+            className={timeframe === '1W' ? "bg-muted" : ""}
+          >
+            1W
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setTimeframe('1M')}
+            className={timeframe === '1M' ? "bg-muted" : ""}
+          >
+            1M
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setTimeframe('3M')}
+            className={timeframe === '3M' ? "bg-muted" : ""}
+          >
+            3M
+          </Button>
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={() => setTimeframe('1Y')}
+            className={timeframe === '1Y' ? "bg-muted" : ""}
+          >
+            1Y
+          </Button>
+        </div>
+      </div>
+      <div className="flex items-center space-x-4 mt-2">
+        <div className="text-2xl font-bold">${tokenMetrics.price.toFixed(4)}</div>
+        <div className={`flex items-center text-sm ${
+          tokenMetrics.priceChange24h >= 0 ? 'text-green-500' : 'text-red-500'
+        }`}>
+          {tokenMetrics.priceChange24h >= 0 ? (
+            <TrendingUp className="h-4 w-4 mr-1" />
+          ) : (
+            <TrendingDown className="h-4 w-4 mr-1" />
+          )}
+          {tokenMetrics.priceChange24h >= 0 ? '+' : ''}{tokenMetrics.priceChange24h}%
+        </div>
+      </div>
+    </CardHeader>
+    <CardContent>
+      <div className="h-[250px]">
+        <ResponsiveContainer width="100%" height="100%">
+          <AreaChart
+            data={chartData}
+            margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
+          >
+            <defs>
+              <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
+                <stop offset="5%" stopColor="#6E56CF" stopOpacity={0.8} />
+                <stop offset="95%" stopColor="#6E56CF" stopOpacity={0} />
+              </linearGradient>
+            </defs>
+            <XAxis 
+              dataKey="date" 
+              tick={{ fontSize: 12 }} 
+              tickFormatter={(value) => {
+                const date = new Date(value);
+                return `${date.getDate()}/${date.getMonth() + 1}`;
+              }}
+            />
+            <YAxis 
+              tick={{ fontSize: 12 }}
+              domain={['dataMin - 0.05', 'dataMax + 0.05']}
+              tickFormatter={(value) => `$${value}`}
+            />
+            <Tooltip content={<CustomTooltip />} />
+            <Area 
+              type="monotone" 
+              dataKey="price" 
+              stroke="#6E56CF" 
+              fillOpacity={1}
+              fill="url(#colorPrice)" 
+            />
+          </AreaChart>
+        </ResponsiveContainer>
+      </div>
+    </CardContent>
+  </Card>
+);
+
 const EarnInterface = ({ metaQube, tokenMetrics }: EarnInterfaceProps) => {
   const [chartData] = useState(generateChartData());
   const [distributionData] = useState(generateDistributionData());
   const [timeframe, setTimeframe] = useState('1M');
   const [selectedTab, setSelectedTab] = useState<string | null>(null);
   const [currentItemIndex, setCurrentItemIndex] = useState<number>(0);
-
-  const CustomTooltip = ({ active, payload, label }: any) => {
-    if (active && payload && payload.length) {
-      return (
-        <Card className="p-2 text-xs border bg-background">
-          <p className="font-semibold">{label}</p>
-          <p className="text-iqube-primary">Price: ${payload[0].value}</p>
-          <p className="text-muted-foreground">
-            Volume: {Number(payload[0].payload.volume).toLocaleString()}
-          </p>
-        </Card>
-      );
-    }
-    return null;
-  };
-
-  // IMPORTANT: Define renderPricePanel BEFORE it's used in getCurrentItems
-  const renderPricePanel = () => (
-    <Card className="h-full">
-      <CardHeader className="pb-3">
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center">
-            <Activity className="mr-2 h-5 w-5 text-iqube-accent" />
-            MonDAI Token Price
-          </CardTitle>
-          <div className="flex items-center">
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setTimeframe('1W')}
-              className={timeframe === '1W' ? "bg-muted" : ""}
-            >
-              1W
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setTimeframe('1M')}
-              className={timeframe === '1M' ? "bg-muted" : ""}
-            >
-              1M
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setTimeframe('3M')}
-              className={timeframe === '3M' ? "bg-muted" : ""}
-            >
-              3M
-            </Button>
-            <Button
-              variant="ghost"
-              size="sm"
-              onClick={() => setTimeframe('1Y')}
-              className={timeframe === '1Y' ? "bg-muted" : ""}
-            >
-              1Y
-            </Button>
-          </div>
-        </div>
-        <div className="flex items-center space-x-4 mt-2">
-          <div className="text-2xl font-bold">${tokenMetrics.price.toFixed(4)}</div>
-          <div className={`flex items-center text-sm ${
-            tokenMetrics.priceChange24h >= 0 ? 'text-green-500' : 'text-red-500'
-          }`}>
-            {tokenMetrics.priceChange24h >= 0 ? (
-              <TrendingUp className="h-4 w-4 mr-1" />
-            ) : (
-              <TrendingDown className="h-4 w-4 mr-1" />
-            )}
-            {tokenMetrics.priceChange24h >= 0 ? '+' : ''}{tokenMetrics.priceChange24h}%
-          </div>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="h-[250px]">
-          <ResponsiveContainer width="100%" height="100%">
-            <AreaChart
-              data={chartData}
-              margin={{ top: 10, right: 30, left: 0, bottom: 0 }}
-            >
-              <defs>
-                <linearGradient id="colorPrice" x1="0" y1="0" x2="0" y2="1">
-                  <stop offset="5%" stopColor="#6E56CF" stopOpacity={0.8} />
-                  <stop offset="95%" stopColor="#6E56CF" stopOpacity={0} />
-                </linearGradient>
-              </defs>
-              <XAxis 
-                dataKey="date" 
-                tick={{ fontSize: 12 }} 
-                tickFormatter={(value) => {
-                  const date = new Date(value);
-                  return `${date.getDate()}/${date.getMonth() + 1}`;
-                }}
-              />
-              <YAxis 
-                tick={{ fontSize: 12 }}
-                domain={['dataMin - 0.05', 'dataMax + 0.05']}
-                tickFormatter={(value) => `$${value}`}
-              />
-              <Tooltip content={<CustomTooltip />} />
-              <Area 
-                type="monotone" 
-                dataKey="price" 
-                stroke="#6E56CF" 
-                fillOpacity={1}
-                fill="url(#colorPrice)" 
-              />
-            </AreaChart>
-          </ResponsiveContainer>
-        </div>
-      </CardContent>
-    </Card>
-  );
 
   // Token Stats Cards defined before they are used in getCurrentItems
   const tokenStatsCards = [
@@ -474,7 +474,7 @@ const EarnInterface = ({ metaQube, tokenMetrics }: EarnInterfaceProps) => {
   const getCurrentItems = () => {
     switch(selectedTab) {
       case 'price':
-        return [renderPricePanel()];
+        return [renderPricePanel(tokenMetrics, chartData, timeframe, setTimeframe)];
       case 'stats':
         return tokenStatsCards;
       case 'portfolio':
@@ -485,7 +485,7 @@ const EarnInterface = ({ metaQube, tokenMetrics }: EarnInterfaceProps) => {
         return [];
     }
   };
-
+  
   const currentItems = getCurrentItems();
   
   const goToPrev = () => {
@@ -589,7 +589,7 @@ const EarnInterface = ({ metaQube, tokenMetrics }: EarnInterfaceProps) => {
     if (selectedTab === 'price') {
       return (
         <ScrollArea className="h-full">
-          {renderPricePanel()}
+          {renderPricePanel(tokenMetrics, chartData, timeframe, setTimeframe)}
         </ScrollArea>
       );
     }
@@ -649,10 +649,7 @@ const EarnInterface = ({ metaQube, tokenMetrics }: EarnInterfaceProps) => {
       </div>
 
       <div className="space-y-6 flex flex-col">
-        <Card>
-          <CardHeader className="pb-0">
-            <CardTitle className="text-lg">MetaQube</CardTitle>
-          </CardHeader>
+        <Card className="py-2">
           <CardContent>
             <MetaQubeDisplay metaQube={metaQube} compact={true} />
           </CardContent>
