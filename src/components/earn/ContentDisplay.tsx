@@ -47,8 +47,85 @@ const ContentDisplay = ({
   onCollapse,
   isPanelCollapsed
 }: ContentDisplayProps) => {
+  // When panel is collapsed, we don't want to hide content completely
+  // Instead, we'll show the content for the selected tab when an icon is clicked
   if (isPanelCollapsed) {
-    return null;
+    // Return null only if no tab is selected at all
+    if (!selectedTab) {
+      return null;
+    }
+    
+    // For collapsed panel with a selected tab, render the corresponding content in fullscreen
+    if (selectedTab === 'price') {
+      return (
+        <Card className="h-full fixed top-0 left-0 right-0 bottom-0 z-50 bg-background m-4 rounded-lg shadow-lg">
+          <CardHeader className="flex flex-row items-center justify-between">
+            <CardTitle className="text-lg">MonDAI Price</CardTitle>
+            <Button variant="ghost" size="icon" onClick={onCollapse}>
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+          </CardHeader>
+          <CardContent className="pt-4 pb-6">
+            <ScrollArea className="h-[calc(100vh-200px)]">
+              <TokenPriceChart 
+                tokenMetrics={tokenMetrics}
+                chartData={chartData}
+                timeframe={timeframe}
+                setTimeframe={setTimeframe}
+              />
+            </ScrollArea>
+          </CardContent>
+        </Card>
+      );
+    }
+
+    // Get current items based on selected tab for collapsed view
+    const getCurrentItems = () => {
+      switch(selectedTab) {
+        case 'stats':
+          return tokenStatsCards;
+        case 'portfolio':
+          return portfolioCards;
+        case 'transactions':
+          return transactionCards;
+        default:
+          return [];
+      }
+    };
+
+    const currentItems = getCurrentItems();
+    const currentItem = currentItems[currentItemIndex] || null;
+
+    return (
+      <Card className="h-full fixed top-0 left-0 right-0 bottom-0 z-50 bg-background m-4 rounded-lg shadow-lg">
+        <CardHeader className="flex flex-row items-center justify-between">
+          <CardTitle className="text-lg">
+            {selectedTab === 'stats' && 'Token Statistics'}
+            {selectedTab === 'portfolio' && 'Your Portfolio'}
+            {selectedTab === 'transactions' && 'Transaction History'}
+          </CardTitle>
+          <div className="flex space-x-1 items-center">
+            <Button variant="ghost" size="icon" onClick={goToPrev} disabled={currentItems.length <= 1}>
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" className="text-sm">
+              {currentItemIndex + 1}/{currentItems.length}
+            </Button>
+            <Button variant="ghost" size="icon" onClick={goToNext} disabled={currentItems.length <= 1}>
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+            <Button variant="ghost" size="icon" onClick={onCollapse} className="ml-2">
+              <ChevronLeft className="h-4 w-4" />
+            </Button>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-4 pb-6">
+          <ScrollArea className="h-[calc(100vh-200px)]">
+            {currentItem}
+          </ScrollArea>
+        </CardContent>
+      </Card>
+    );
   }
 
   if (!selectedTab) {
