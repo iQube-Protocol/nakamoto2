@@ -86,9 +86,9 @@ const EarnInterface = ({ tokenMetrics }: EarnInterfaceProps) => {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
-      {/* Agent Interface */}
-      <div className={`lg:col-span-${isPanelCollapsed ? '11' : '8'}`}>
+    <div className="grid grid-cols-12 gap-6 h-full">
+      {/* Agent Interface - Expanded when panel is collapsed */}
+      <div className={isPanelCollapsed ? "col-span-11" : "col-span-8"}>
         <AgentInterface
           title="Earning Assistant"
           description="MonDAI token insights and earning opportunities"
@@ -104,8 +104,8 @@ const EarnInterface = ({ tokenMetrics }: EarnInterfaceProps) => {
         />
       </div>
 
-      {/* Dashboard Panel */}
-      <div className={`lg:col-span-${isPanelCollapsed ? '1' : '4'}`}>
+      {/* Dashboard Panel - Collapsed to small column when toggled */}
+      <div className={isPanelCollapsed ? "col-span-1" : "col-span-4"}>
         {isPanelCollapsed ? (
           <div className="border-l h-full flex flex-col items-center justify-start p-2">
             <Button
@@ -179,8 +179,8 @@ const EarnInterface = ({ tokenMetrics }: EarnInterfaceProps) => {
         )}
       </div>
 
-      {/* Bottom Tabs */}
-      <div className="lg:col-span-12">
+      {/* Bottom Tabs - Full width */}
+      <div className="col-span-12">
         <Tabs value={selectedTab || ''}>
           <TabsList className="w-full grid grid-cols-4">
             <TabsTrigger 
