@@ -103,61 +103,61 @@ const EarnInterface = ({ tokenMetrics }: EarnInterfaceProps) => {
         />
       </div>
 
-      {isPanelCollapsed ? (
-        <div className="lg:col-span-1 flex flex-col items-center justify-start border-l pl-2 h-full">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={togglePanelCollapse}
-            className="mt-4"
-          >
-            <ChevronLeft className="h-6 w-6" />
-          </Button>
-          
-          <div className="mt-6 flex flex-col space-y-6">
+      <div className={`lg:col-span-${isPanelCollapsed ? '1' : '4'} flex flex-col`}>
+        {isPanelCollapsed ? (
+          <div className="border-l h-full flex flex-col items-center justify-start pl-2">
             <Button
-              variant={selectedTab === 'price' ? 'secondary' : 'ghost'}
+              variant="ghost"
               size="icon"
-              className={`p-2 ${selectedTab === 'price' ? 'bg-iqube-primary/20' : ''}`}
-              onClick={() => handleTabChange('price')}
-              title="Price"
+              onClick={togglePanelCollapse}
+              className="mt-4"
             >
-              <DollarSign className="h-6 w-6" />
+              <ChevronLeft className="h-6 w-6" />
             </Button>
             
-            <Button
-              variant={selectedTab === 'stats' ? 'secondary' : 'ghost'}
-              size="icon"
-              className={`p-2 ${selectedTab === 'stats' ? 'bg-iqube-primary/20' : ''}`}
-              onClick={() => handleTabChange('stats')}
-              title="Statistics"
-            >
-              <TrendingUp className="h-6 w-6" />
-            </Button>
-            
-            <Button
-              variant={selectedTab === 'portfolio' ? 'secondary' : 'ghost'}
-              size="icon"
-              className={`p-2 ${selectedTab === 'portfolio' ? 'bg-iqube-primary/20' : ''}`}
-              onClick={() => handleTabChange('portfolio')}
-              title="Portfolio"
-            >
-              <User className="h-6 w-6" />
-            </Button>
-            
-            <Button
-              variant={selectedTab === 'transactions' ? 'secondary' : 'ghost'}
-              size="icon"
-              className={`p-2 ${selectedTab === 'transactions' ? 'bg-iqube-primary/20' : ''}`}
-              onClick={() => handleTabChange('transactions')}
-              title="Transactions"
-            >
-              <ListOrdered className="h-6 w-6" />
-            </Button>
+            <div className="mt-6 flex flex-col space-y-6">
+              <Button
+                variant={selectedTab === 'price' ? 'secondary' : 'ghost'}
+                size="icon"
+                className={`p-2 ${selectedTab === 'price' ? 'bg-iqube-primary/20' : ''}`}
+                onClick={() => handleTabChange('price')}
+                title="Price"
+              >
+                <DollarSign className="h-6 w-6" />
+              </Button>
+              
+              <Button
+                variant={selectedTab === 'stats' ? 'secondary' : 'ghost'}
+                size="icon"
+                className={`p-2 ${selectedTab === 'stats' ? 'bg-iqube-primary/20' : ''}`}
+                onClick={() => handleTabChange('stats')}
+                title="Statistics"
+              >
+                <TrendingUp className="h-6 w-6" />
+              </Button>
+              
+              <Button
+                variant={selectedTab === 'portfolio' ? 'secondary' : 'ghost'}
+                size="icon"
+                className={`p-2 ${selectedTab === 'portfolio' ? 'bg-iqube-primary/20' : ''}`}
+                onClick={() => handleTabChange('portfolio')}
+                title="Portfolio"
+              >
+                <User className="h-6 w-6" />
+              </Button>
+              
+              <Button
+                variant={selectedTab === 'transactions' ? 'secondary' : 'ghost'}
+                size="icon"
+                className={`p-2 ${selectedTab === 'transactions' ? 'bg-iqube-primary/20' : ''}`}
+                onClick={() => handleTabChange('transactions')}
+                title="Transactions"
+              >
+                <ListOrdered className="h-6 w-6" />
+              </Button>
+            </div>
           </div>
-        </div>
-      ) : (
-        <div className="lg:col-span-4 space-y-6 flex flex-col">
+        ) : (
           <div className="flex-grow">
             <ContentDisplay
               selectedTab={selectedTab}
@@ -176,8 +176,8 @@ const EarnInterface = ({ tokenMetrics }: EarnInterfaceProps) => {
               isPanelCollapsed={isPanelCollapsed}
             />
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       <div className="lg:col-span-12">
         <Tabs value={selectedTab || ''}>

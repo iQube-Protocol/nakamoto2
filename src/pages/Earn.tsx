@@ -1,7 +1,7 @@
 
 import React from 'react';
 import EarnInterface from '@/components/earn/EarnInterface';
-import { MetaQube, TokenMetrics } from '@/lib/types';
+import { TokenMetrics } from '@/lib/types';
 
 // Sample token metrics
 const tokenMetrics: TokenMetrics = {
