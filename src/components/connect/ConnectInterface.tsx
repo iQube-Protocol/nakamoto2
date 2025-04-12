@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -434,10 +433,7 @@ const ConnectInterface = ({ metaQube, communityMetrics }: ConnectInterfaceProps)
       </div>
 
       <div className="space-y-6 flex flex-col">
-        <Card>
-          <CardHeader className="pb-0">
-            <CardTitle className="text-lg">MetaQube</CardTitle>
-          </CardHeader>
+        <Card className="py-2">
           <CardContent>
             <MetaQubeDisplay metaQube={metaQube} compact={true} />
           </CardContent>

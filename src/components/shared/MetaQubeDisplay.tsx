@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MetaQube } from '@/lib/types';
 import { Lock, Unlock, ShieldCheck, Database } from 'lucide-react';
@@ -58,12 +58,12 @@ const DotScore = ({ value, label, type }: DotScoreProps) => {
             key={i}
             className={cn(
               "w-1.5 h-1.5 rounded-full",
-              i < dotCount ? getScoreColor() : "bg-gray-300"
+              i < dotCount ? getScoreColor() : "bg-gray-400"
             )}
           />
         ))}
       </div>
-      <span className="text-xs">{label}</span>
+      <span className="text-xs text-muted-foreground">{label}</span>
     </div>
   );
 };
@@ -74,9 +74,9 @@ const MetaQubeDisplay = ({ metaQube, compact = false, className }: MetaQubeDispl
 
   const cardContent = compact ? (
     <CardContent className="pb-3 pt-3">
-      <div className="flex justify-between items-center">
+      <div className="flex flex-col space-y-2">
         <div className="flex items-center gap-2">
-          <div className="h-5 w-5 text-iqube-primary">
+          <div className="h-5 w-5 text-green-500">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
               <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
@@ -84,14 +84,16 @@ const MetaQubeDisplay = ({ metaQube, compact = false, className }: MetaQubeDispl
             </svg>
           </div>
           <span className="text-sm font-medium">{metaQube["iQube-Identifier"]}</span>
+        </div>
+        <div className="flex justify-between items-center">
           <Badge variant="outline" className="bg-iqube-primary/10 text-iqube-primary border-iqube-primary/30">
             {metaQube["iQube-Type"]}
           </Badge>
-        </div>
-        <div className="flex items-center justify-end gap-3">
-          <DotScore value={metaQube["Sensitivity-Score"]} label="Sensitivity" type="sensitivity" />
-          <DotScore value={trustScore} label="Trust" type="trust" />
-          <DotScore value={metaQube["Risk-Score"]} label="Risk" type="risk" />
+          <div className="flex items-center justify-end gap-3">
+            <DotScore value={metaQube["Sensitivity-Score"]} label="Sensitivity" type="sensitivity" />
+            <DotScore value={trustScore} label="Trust" type="trust" />
+            <DotScore value={metaQube["Risk-Score"]} label="Risk" type="risk" />
+          </div>
         </div>
       </div>
     </CardContent>
@@ -99,7 +101,7 @@ const MetaQubeDisplay = ({ metaQube, compact = false, className }: MetaQubeDispl
     <>
       <CardContent className="pt-4">
         <div className="flex items-center mb-4">
-          <div className="h-5 w-5 mr-2 text-iqube-accent">
+          <div className="h-5 w-5 mr-2 text-green-500">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
               <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
