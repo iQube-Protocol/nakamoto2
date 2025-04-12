@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -47,10 +46,9 @@ const ContentDisplay = ({
   onCollapse,
   isPanelCollapsed
 }: ContentDisplayProps) => {
-  // When panel is collapsed, we don't want to hide content completely
-  // Instead, we'll show the content for the selected tab when an icon is clicked
+  // Fixed issue: Content not showing when panel is collapsed
+  // For collapsed panel with a selected tab, render the corresponding content in fullscreen
   if (isPanelCollapsed && selectedTab) {
-    // For collapsed panel with a selected tab, render the corresponding content in fullscreen
     if (selectedTab === 'price') {
       return (
         <Card className="h-full fixed top-0 left-0 right-0 bottom-0 z-50 bg-background m-4 rounded-lg shadow-lg">
@@ -91,6 +89,7 @@ const ContentDisplay = ({
     const currentItems = getCurrentItems();
     const currentItem = currentItems[currentItemIndex] || null;
 
+    // Display the fullscreen overlay with the selected content
     return (
       <Card className="h-full fixed top-0 left-0 right-0 bottom-0 z-50 bg-background m-4 rounded-lg shadow-lg">
         <CardHeader className="flex flex-row items-center justify-between">

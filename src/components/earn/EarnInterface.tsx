@@ -69,9 +69,6 @@ const EarnInterface = ({ tokenMetrics }: EarnInterfaceProps) => {
 
   const togglePanelCollapse = () => {
     setIsPanelCollapsed(!isPanelCollapsed);
-    
-    if (isPanelCollapsed && !selectedTab) {
-    }
   };
 
   const getCurrentItems = () => {
@@ -88,12 +85,12 @@ const EarnInterface = ({ tokenMetrics }: EarnInterfaceProps) => {
   };
 
   const handleCollapsedIconClick = (tabName: string) => {
-    if (selectedTab === tabName && isPanelCollapsed) {
-      setSelectedTab(null);
-    } else {
-      setSelectedTab(tabName);
-      setCurrentItemIndex(0);
-    }
+    // Always set the selected tab - this ensures content is loaded
+    setSelectedTab(tabName);
+    setCurrentItemIndex(0);
+    
+    // Don't toggle collapse state - keep it collapsed
+    // This lets the ContentDisplay component show fullscreen content
   };
 
   return (
