@@ -1,16 +1,28 @@
 
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { BarChart, BookOpen } from 'lucide-react';
+import { BarChart, BookOpen, ChevronRight } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
-const LearningDashboard = () => {
+interface LearningDashboardProps {
+  onCollapse?: () => void;
+}
+
+const LearningDashboard = ({ onCollapse }: LearningDashboardProps) => {
   return (
     <Card className="h-full">
       <CardHeader>
-        <CardTitle className="flex items-center text-lg">
-          <BarChart className="h-5 w-5 mr-2 text-blue-400" />
-          Learning Dashboard
-        </CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center text-lg">
+            <BarChart className="h-5 w-5 mr-2 text-blue-400" />
+            Learning Dashboard
+          </CardTitle>
+          {onCollapse && (
+            <Button variant="ghost" size="icon" onClick={onCollapse} title="Collapse panel">
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
       </CardHeader>
       <CardContent>
         <div className="space-y-4">

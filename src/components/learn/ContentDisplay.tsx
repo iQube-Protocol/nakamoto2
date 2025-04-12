@@ -15,6 +15,7 @@ interface ContentDisplayProps {
   achievements: Achievement[];
   goToPrev: () => void;
   goToNext: () => void;
+  onCollapse?: () => void;
 }
 
 const ContentDisplay = ({
@@ -25,9 +26,10 @@ const ContentDisplay = ({
   achievements,
   goToPrev,
   goToNext,
+  onCollapse,
 }: ContentDisplayProps) => {
   if (!activeTab) {
-    return <LearningDashboard />;
+    return <LearningDashboard onCollapse={onCollapse} />;
   }
 
   const currentItems = 
@@ -44,7 +46,7 @@ const ContentDisplay = ({
             {activeTab === 'certifications' && 'Certification Details'}
             {activeTab === 'achievements' && 'Achievement Details'}
           </CardTitle>
-          <div className="flex space-x-1">
+          <div className="flex space-x-1 items-center">
             <Button variant="ghost" size="icon" onClick={goToPrev} disabled={currentItems.length <= 1}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
@@ -54,6 +56,11 @@ const ContentDisplay = ({
             <Button variant="ghost" size="icon" onClick={goToNext} disabled={currentItems.length <= 1}>
               <ChevronRight className="h-4 w-4" />
             </Button>
+            {onCollapse && (
+              <Button variant="ghost" size="icon" onClick={onCollapse} title="Collapse panel">
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
       </CardHeader>
@@ -70,7 +77,7 @@ const ContentDisplay = ({
   );
 };
 
-// Import this component separately
+// Import and update the LearningDashboard component
 import LearningDashboard from './LearningDashboard';
 
 export default ContentDisplay;

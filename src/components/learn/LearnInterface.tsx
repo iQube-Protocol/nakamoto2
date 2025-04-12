@@ -10,6 +10,8 @@ import ContentDisplay from './ContentDisplay';
 import { defaultCourses } from './CourseList';
 import { defaultCertifications } from './CertificationsList';
 import { defaultAchievements } from './AchievementsList';
+import { Button } from '@/components/ui/button';
+import { ChevronRight, ChevronLeft, BookOpen, Award, Trophy } from 'lucide-react';
 
 interface LearnInterfaceProps {
   metaQube: MetaQube;
@@ -20,6 +22,7 @@ const LearnInterface = ({ metaQube }: LearnInterfaceProps) => {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [currentItemIndex, setCurrentItemIndex] = useState<number>(0);
   const [activeTab, setActiveTab] = useState<string | null>(null);
+  const [isPanelCollapsed, setIsPanelCollapsed] = useState<boolean>(false);
   
   const courses = defaultCourses;
   const certifications = defaultCertifications;
@@ -55,6 +58,11 @@ const LearnInterface = ({ metaQube }: LearnInterfaceProps) => {
   const handleTabClick = (value: string) => {
     setActiveTab(prevTab => prevTab === value ? null : value);
     setCurrentItemIndex(0);
+    setIsPanelCollapsed(false);
+  };
+
+  const togglePanelCollapse = () => {
+    setIsPanelCollapsed(!isPanelCollapsed);
   };
 
   const handleAIMessage = async (message: string) => {
@@ -106,8 +114,8 @@ const LearnInterface = ({ metaQube }: LearnInterfaceProps) => {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
-      <div className="lg:col-span-2 flex flex-col">
+    <div className={`grid ${isPanelCollapsed ? 'grid-cols-1 lg:grid-cols-[1fr,auto]' : 'grid-cols-1 lg:grid-cols-3'} gap-6 h-full`}>
+      <div className={`${isPanelCollapsed ? 'lg:col-span-1' : 'lg:col-span-2'} flex flex-col`}>
         <AgentInterface
           title="Learning Assistant"
           description="Personalized web3 education based on your iQube data"
@@ -128,19 +136,63 @@ const LearnInterface = ({ metaQube }: LearnInterfaceProps) => {
         />
       </div>
 
-      <div className="space-y-6 flex flex-col">
-        <div className="flex-grow">
-          <ContentDisplay
-            activeTab={activeTab}
-            currentItemIndex={currentItemIndex}
-            courses={courses}
-            certifications={certifications}
-            achievements={achievements}
-            goToPrev={goToPrev}
-            goToNext={goToNext}
-          />
+      {isPanelCollapsed ? (
+        <div className="flex flex-col items-center space-y-6 border-l pl-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={togglePanelCollapse}
+            className="mt-4"
+          >
+            <ChevronLeft className="h-6 w-6" />
+          </Button>
+          
+          <Button
+            variant={activeTab === 'courses' ? 'secondary' : 'ghost'}
+            size="icon"
+            className={`p-2 ${activeTab === 'courses' ? 'bg-iqube-primary/20' : ''}`}
+            onClick={() => handleTabClick('courses')}
+            title="Courses"
+          >
+            <BookOpen className="h-6 w-6" />
+          </Button>
+          
+          <Button
+            variant={activeTab === 'certifications' ? 'secondary' : 'ghost'}
+            size="icon"
+            className={`p-2 ${activeTab === 'certifications' ? 'bg-iqube-primary/20' : ''}`}
+            onClick={() => handleTabClick('certifications')}
+            title="Certifications"
+          >
+            <Award className="h-6 w-6" />
+          </Button>
+          
+          <Button
+            variant={activeTab === 'achievements' ? 'secondary' : 'ghost'}
+            size="icon"
+            className={`p-2 ${activeTab === 'achievements' ? 'bg-iqube-primary/20' : ''}`}
+            onClick={() => handleTabClick('achievements')}
+            title="Achievements"
+          >
+            <Trophy className="h-6 w-6" />
+          </Button>
         </div>
-      </div>
+      ) : (
+        <div className="space-y-6 flex flex-col">
+          <div className="flex-grow">
+            <ContentDisplay
+              activeTab={activeTab}
+              currentItemIndex={currentItemIndex}
+              courses={courses}
+              certifications={certifications}
+              achievements={achievements}
+              goToPrev={goToPrev}
+              goToNext={goToNext}
+              onCollapse={togglePanelCollapse}
+            />
+          </div>
+        </div>
+      )}
 
       <div className="lg:col-span-3">
         <Tabs value={activeTab || ''}>
