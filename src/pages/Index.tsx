@@ -2,7 +2,24 @@
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import DashboardOverview from '@/components/dashboard/DashboardOverview';
-import { DashboardMetrics } from '@/lib/types';
+import { MetaQube, DashboardMetrics } from '@/lib/types';
+
+// Sample metaQube data
+const metaQubeData: MetaQube = {
+  "iQube-Identifier": "DataQube1",
+  "iQube-Type": "DataQube",
+  "iQube-Designer": "Aigent Z",
+  "iQube-Use": "For learning, earning and networking in web3 communities",
+  "Owner-Type": "Person",
+  "Owner-Identifiability": "Semi-Identifiable",
+  "Date-Minted": new Date().toISOString(),
+  "Related-iQubes": ["ContentQube1", "AgentQube1"],
+  "X-of-Y": "5 of 20",
+  "Sensitivity-Score": 4,
+  "Verifiability-Score": 5,
+  "Accuracy-Score": 5,
+  "Risk-Score": 4
+};
 
 // Sample dashboard metrics
 const dashboardMetrics: DashboardMetrics = {
@@ -33,6 +50,7 @@ const Index = () => {
 
       <DashboardOverview 
         metrics={dashboardMetrics} 
+        metaQube={metaQubeData} 
       />
 
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
