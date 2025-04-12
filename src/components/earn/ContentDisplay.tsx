@@ -49,12 +49,7 @@ const ContentDisplay = ({
 }: ContentDisplayProps) => {
   // When panel is collapsed, we don't want to hide content completely
   // Instead, we'll show the content for the selected tab when an icon is clicked
-  if (isPanelCollapsed) {
-    // Return null only if no tab is selected at all
-    if (!selectedTab) {
-      return null;
-    }
-    
+  if (isPanelCollapsed && selectedTab) {
     // For collapsed panel with a selected tab, render the corresponding content in fullscreen
     if (selectedTab === 'price') {
       return (
