@@ -73,39 +73,39 @@ const SettingsInterface = ({ userSettings, metaQube }: SettingsInterfaceProps) =
 
   return (
     <div className="grid grid-cols-1 gap-4">
+      <MetaQubeHeader metaQube={metaQube} />
+      
+      <TabsContent value="connections" className="mt-4">
+        <ConnectionsTab 
+          settings={settings} 
+          onConnectService={handleConnectService} 
+        />
+      </TabsContent>
+
+      <TabsContent value="iqube" className="mt-4">
+        <IQubeManagementTab 
+          settings={settings}
+          privateData={privateData}
+          onUpdatePrivateData={handleUpdatePrivateData}
+          onConnectWallet={() => handleConnectService('wallet')}
+          onMintIQube={handleMintIQube}
+          onAddAccessGrant={handleAddAccessGrant}
+        />
+      </TabsContent>
+
+      <TabsContent value="preferences" className="mt-4">
+        <PreferencesTab 
+          settings={settings} 
+          onSaveSettings={handleSaveSettings} 
+        />
+      </TabsContent>
+      
       <Tabs defaultValue="connections">
         <TabsList className="w-full grid grid-cols-3">
           <TabsTrigger value="connections">Connections</TabsTrigger>
           <TabsTrigger value="iqube">iQube Management</TabsTrigger>
           <TabsTrigger value="preferences">Preferences</TabsTrigger>
         </TabsList>
-        
-        <MetaQubeHeader metaQube={metaQube} />
-        
-        <TabsContent value="connections" className="mt-4">
-          <ConnectionsTab 
-            settings={settings} 
-            onConnectService={handleConnectService} 
-          />
-        </TabsContent>
-
-        <TabsContent value="iqube" className="mt-4">
-          <IQubeManagementTab 
-            settings={settings}
-            privateData={privateData}
-            onUpdatePrivateData={handleUpdatePrivateData}
-            onConnectWallet={() => handleConnectService('wallet')}
-            onMintIQube={handleMintIQube}
-            onAddAccessGrant={handleAddAccessGrant}
-          />
-        </TabsContent>
-
-        <TabsContent value="preferences" className="mt-4">
-          <PreferencesTab 
-            settings={settings} 
-            onSaveSettings={handleSaveSettings} 
-          />
-        </TabsContent>
       </Tabs>
     </div>
   );
