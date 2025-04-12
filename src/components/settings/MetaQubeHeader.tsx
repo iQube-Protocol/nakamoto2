@@ -4,6 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { MetaQube } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
+import { Database } from 'lucide-react';
 
 interface MetaQubeHeaderProps {
   metaQube: MetaQube;
@@ -74,8 +75,8 @@ const MetaQubeHeader = ({ metaQube }: MetaQubeHeaderProps) => {
           </div>
           <span className="text-sm font-medium">{metaQube["iQube-Identifier"]}</span>
         </div>
-        <Badge variant="outline" className="bg-iqube-primary/10 text-iqube-primary border-iqube-primary/30">
-          {metaQube["iQube-Type"]}
+        <Badge variant="outline" className="flex items-center gap-1 bg-iqube-primary/10 text-iqube-primary border-iqube-primary/30">
+          <Database size={14} />
         </Badge>
       </div>
       <div className="flex items-center justify-between">

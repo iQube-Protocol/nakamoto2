@@ -88,8 +88,8 @@ const MetaQubeDisplay = ({ metaQube, compact = false, className }: MetaQubeDispl
             </div>
             <span className="text-sm font-medium">{metaQube["iQube-Identifier"]}</span>
           </div>
-          <Badge variant="outline" className="bg-iqube-primary/10 text-iqube-primary border-iqube-primary/30">
-            {metaQube["iQube-Type"]}
+          <Badge variant="outline" className="flex items-center gap-1 bg-iqube-primary/10 text-iqube-primary border-iqube-primary/30">
+            <Database size={14} />
           </Badge>
         </div>
         
@@ -124,8 +124,8 @@ const MetaQubeDisplay = ({ metaQube, compact = false, className }: MetaQubeDispl
             </div>
             <span className="text-lg font-medium">{metaQube["iQube-Identifier"]}</span>
           </div>
-          <Badge variant="outline" className="bg-iqube-primary/10 text-iqube-primary border-iqube-primary/30">
-            {metaQube["iQube-Type"]}
+          <Badge variant="outline" className="flex items-center gap-1 bg-iqube-primary/10 text-iqube-primary border-iqube-primary/30">
+            <Database size={14} />
           </Badge>
         </div>
         
@@ -178,7 +178,7 @@ const MetaQubeDisplay = ({ metaQube, compact = false, className }: MetaQubeDispl
           </div>
           <div className="flex items-center border rounded-md px-2 py-1 text-xs">
             <Database className="h-3.5 w-3.5 mr-1" />
-            <span>DataQube</span>
+            <span>Data</span>
           </div>
           {metaQube["Risk-Score"] <= 4 ? (
             <div className="flex items-center border rounded-md px-2 py-1 text-xs text-green-500 border-green-500/30">
