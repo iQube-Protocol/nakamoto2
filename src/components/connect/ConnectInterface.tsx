@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -16,10 +15,12 @@ import {
   ArrowUpRight,
   MapPin,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  PanelRightClose
 } from 'lucide-react';
 import AgentInterface from '@/components/shared/AgentInterface';
 import { CommunityMetrics } from '@/lib/types';
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from '@/components/ui/collapsible';
 
 interface ConnectInterfaceProps {
   communityMetrics: CommunityMetrics;
@@ -230,6 +231,14 @@ const ConnectInterface = ({ communityMetrics }: ConnectInterfaceProps) => {
             >
               <ChevronRight className="h-4 w-4" />
             </Button>
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              className="h-7 w-7 ml-2" 
+              onClick={togglePanelCollapse}
+            >
+              <PanelRightClose className="h-4 w-4" />
+            </Button>
           </div>
         </CardHeader>
         <CardContent className="pt-4">
@@ -366,11 +375,19 @@ const ConnectInterface = ({ communityMetrics }: ConnectInterfaceProps) => {
   const renderDashboard = () => {
     return (
       <Card className="h-full">
-        <CardHeader>
+        <CardHeader className="pb-2 flex flex-row items-center justify-between">
           <CardTitle className="text-lg flex items-center">
             <Activity className="mr-2 h-5 w-5 text-iqube-accent" />
             Connect Dashboard
           </CardTitle>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={togglePanelCollapse}
+            className="h-7 w-7"
+          >
+            <PanelRightClose className="h-4 w-4" />
+          </Button>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="grid grid-cols-2 gap-3 mt-2">
@@ -421,7 +438,6 @@ const ConnectInterface = ({ communityMetrics }: ConnectInterfaceProps) => {
 
   return (
     <div className="grid grid-cols-12 gap-6 h-full">
-      {/* Agent Interface - Expanded when panel is collapsed */}
       <div className={isPanelCollapsed ? "col-span-11" : "col-span-8"}>
         <AgentInterface
           title="Connection Assistant"
@@ -438,7 +454,6 @@ const ConnectInterface = ({ communityMetrics }: ConnectInterfaceProps) => {
         />
       </div>
 
-      {/* Dashboard Panel - Collapsed to small column when toggled */}
       <div className={isPanelCollapsed ? "col-span-1" : "col-span-4"}>
         {isPanelCollapsed ? (
           <div className="border-l h-full flex flex-col items-center justify-start p-2">
@@ -502,7 +517,6 @@ const ConnectInterface = ({ communityMetrics }: ConnectInterfaceProps) => {
         )}
       </div>
 
-      {/* Bottom Tabs - Full width */}
       <div className="col-span-12">
         <Tabs value={selectedTab || ''}>
           <TabsList className="w-full grid grid-cols-4">
