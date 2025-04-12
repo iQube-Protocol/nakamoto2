@@ -39,7 +39,7 @@ const Earn = () => {
         <h1 className="text-2xl font-bold tracking-tight">Earn</h1>
       </div>
 
-      <EarnInterface metaQube={metaQubeData} tokenMetrics={tokenMetrics} />
+      <EarnInterface tokenMetrics={tokenMetrics} />
     </div>
   );
 };

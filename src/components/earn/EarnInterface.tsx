@@ -2,9 +2,8 @@
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DollarSign, TrendingUp, User, ListOrdered } from 'lucide-react';
-import { MetaQube, TokenMetrics } from '@/lib/types';
+import { TokenMetrics } from '@/lib/types';
 import AgentInterface from '@/components/shared/AgentInterface';
-import MetaQubeDisplay from '@/components/shared/MetaQubeDisplay';
 import ContentDisplay from './ContentDisplay';
 import TokenStatsCard from './cards/TokenStatsCard';
 import TokenMetricsCard from './cards/TokenMetricsCard';
@@ -15,11 +14,10 @@ import TransactionHistoryCard from './cards/TransactionHistoryCard';
 import { generateChartData, generateDistributionData } from './utils/chartUtils';
 
 interface EarnInterfaceProps {
-  metaQube: MetaQube;
   tokenMetrics: TokenMetrics;
 }
 
-const EarnInterface = ({ metaQube, tokenMetrics }: EarnInterfaceProps) => {
+const EarnInterface = ({ tokenMetrics }: EarnInterfaceProps) => {
   const [chartData] = useState(generateChartData());
   const [distributionData] = useState(generateDistributionData());
   const [timeframe, setTimeframe] = useState('1M');
@@ -83,7 +81,7 @@ const EarnInterface = ({ metaQube, tokenMetrics }: EarnInterfaceProps) => {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
-      <div className="lg:col-span-9">
+      <div className="lg:col-span-8">
         <AgentInterface
           title="Earning Assistant"
           description="MonDAI token insights and earning opportunities"
@@ -99,9 +97,7 @@ const EarnInterface = ({ metaQube, tokenMetrics }: EarnInterfaceProps) => {
         />
       </div>
 
-      <div className="lg:col-span-3 space-y-6 flex flex-col">
-        <MetaQubeDisplay metaQube={metaQube} compact={true} />
-
+      <div className="lg:col-span-4 space-y-6 flex flex-col">
         <div className="flex-grow">
           <ContentDisplay
             selectedTab={selectedTab}

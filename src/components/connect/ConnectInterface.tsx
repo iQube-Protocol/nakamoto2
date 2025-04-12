@@ -18,11 +18,9 @@ import {
   ChevronRight
 } from 'lucide-react';
 import AgentInterface from '@/components/shared/AgentInterface';
-import MetaQubeDisplay from '@/components/shared/MetaQubeDisplay';
-import { MetaQube, CommunityMetrics } from '@/lib/types';
+import { CommunityMetrics } from '@/lib/types';
 
 interface ConnectInterfaceProps {
-  metaQube: MetaQube;
   communityMetrics: CommunityMetrics;
 }
 
@@ -63,7 +61,7 @@ interface Message {
 
 type ConnectItem = Member | Group | Event | Message;
 
-const ConnectInterface = ({ metaQube, communityMetrics }: ConnectInterfaceProps) => {
+const ConnectInterface = ({ communityMetrics }: ConnectInterfaceProps) => {
   const [selectedTab, setSelectedTab] = useState<string | undefined>(undefined);
   const [currentItemIndex, setCurrentItemIndex] = useState(0);
 
@@ -416,7 +414,7 @@ const ConnectInterface = ({ metaQube, communityMetrics }: ConnectInterfaceProps)
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
-      <div className="lg:col-span-9">
+      <div className="lg:col-span-8">
         <AgentInterface
           title="Connection Assistant"
           description="Community insights and networking opportunities"
@@ -432,9 +430,7 @@ const ConnectInterface = ({ metaQube, communityMetrics }: ConnectInterfaceProps)
         />
       </div>
 
-      <div className="lg:col-span-3 space-y-6 flex flex-col">
-        <MetaQubeDisplay metaQube={metaQube} compact={true} />
-
+      <div className="lg:col-span-4 space-y-6 flex flex-col">
         <div className="flex-grow">
           {selectedTab ? renderDetailPanel() : renderDashboard()}
         </div>

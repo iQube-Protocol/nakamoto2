@@ -37,7 +37,7 @@ const Connect = () => {
         <h1 className="text-2xl font-bold tracking-tight">Connect</h1>
       </div>
 
-      <ConnectInterface metaQube={metaQubeData} communityMetrics={communityMetrics} />
+      <ConnectInterface communityMetrics={communityMetrics} />
     </div>
   );
 };

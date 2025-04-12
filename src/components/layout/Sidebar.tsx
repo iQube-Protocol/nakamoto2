@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { NavLink, Link } from 'react-router-dom';
 import { 
@@ -130,14 +131,16 @@ const Sidebar = () => {
       
       <div className="px-3 mt-auto">
         {!collapsed ? (
-          <MetaQubeDisplay 
-            metaQube={metaQubeData} 
-            compact={true}
-          />
+          <div className="bg-iqube-primary/10 rounded-md">
+            <MetaQubeDisplay 
+              metaQube={metaQubeData} 
+              compact={true}
+            />
+          </div>
         ) : (
           <Link 
             to="/settings" 
-            className="flex items-center justify-center py-3 px-3 rounded-md transition-all hover:bg-iqube-primary/20 group"
+            className="flex items-center justify-center py-3 px-3 rounded-md transition-all hover:bg-iqube-primary/20 bg-iqube-primary/10 group"
           >
             <Database className="h-6 w-6 text-iqube-primary" />
             <div className="absolute left-16 rounded-md px-2 py-1 ml-6 bg-iqube-dark text-foreground
