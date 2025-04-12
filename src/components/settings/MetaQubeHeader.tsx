@@ -1,12 +1,58 @@
-
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { MetaQube } from '@/lib/types';
-import ScoreBadge from './ScoreBadge';
+import { cn } from '@/lib/utils';
 
 interface MetaQubeHeaderProps {
   metaQube: MetaQube;
 }
+
+interface DotScoreProps {
+  value: number;
+  label: string;
+  type: 'risk' | 'sensitivity' | 'trust';
+}
+
+const DotScore = ({ value, label, type }: DotScoreProps) => {
+  // Convert score to number of dots (divide by 2 and round up)
+  const dotCount = Math.ceil(value / 2);
+  const maxDots = 5; // Max possible dots (10/2 = 5)
+  
+  const getScoreColor = () => {
+    if (type === 'risk' || type === 'sensitivity') {
+      // Risk and Sensitivity: 1-4 green, 5-7 amber, 8-10 red
+      return value <= 4 
+        ? "bg-green-500" 
+        : value <= 7 
+          ? "bg-yellow-500" 
+          : "bg-red-500";
+    } else {
+      // Trust: 5-10 green, 3-4 amber, 1-2 red
+      return value >= 5 
+        ? "bg-green-500" 
+        : value >= 3 
+          ? "bg-yellow-500" 
+          : "bg-red-500";
+    }
+  };
+  
+  return (
+    <div className="flex flex-col items-center">
+      <div className="flex space-x-0.5 mb-1">
+        {[...Array(maxDots)].map((_, i) => (
+          <div
+            key={i}
+            className={cn(
+              "w-1.5 h-1.5 rounded-full",
+              i < dotCount ? getScoreColor() : "bg-gray-300"
+            )}
+          />
+        ))}
+      </div>
+      <span className="text-xs">{label}</span>
+    </div>
+  );
+};
 
 const MetaQubeHeader = ({ metaQube }: MetaQubeHeaderProps) => {
   // Calculate Trust score as the average of Accuracy and Verifiability
@@ -28,9 +74,9 @@ const MetaQubeHeader = ({ metaQube }: MetaQubeHeaderProps) => {
         </Badge>
       </div>
       <div className="flex-1 flex items-center justify-end gap-3">
-        <ScoreBadge value={metaQube["Sensitivity-Score"]} label="Sensitivity" type="sensitivity" />
-        <ScoreBadge value={trustScore} label="Trust" type="trust" />
-        <ScoreBadge value={metaQube["Risk-Score"]} label="Risk" type="risk" />
+        <DotScore value={metaQube["Sensitivity-Score"]} label="Sensitivity" type="sensitivity" />
+        <DotScore value={trustScore} label="Trust" type="trust" />
+        <DotScore value={metaQube["Risk-Score"]} label="Risk" type="risk" />
       </div>
     </div>
   );

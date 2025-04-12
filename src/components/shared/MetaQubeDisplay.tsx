@@ -13,44 +13,57 @@ interface MetaQubeDisplayProps {
   className?: string;
 }
 
-interface ScoreBadgeProps {
+interface DotScoreProps {
   value: number;
   label: string;
   type: 'risk' | 'sensitivity' | 'accuracy' | 'verifiability' | 'trust';
 }
 
-const ScoreBadge = ({ value, label, type }: ScoreBadgeProps) => {
+// New dot score component to replace the numeric score badges
+const DotScore = ({ value, label, type }: DotScoreProps) => {
+  // Convert score to number of dots (divide by 2 and round up)
+  const dotCount = Math.ceil(value / 2);
+  const maxDots = 5; // Max possible dots (10/2 = 5)
+  
   const getScoreColor = () => {
     if (type === 'risk' || type === 'sensitivity') {
       // Risk and Sensitivity: 1-4 green, 5-7 amber, 8-10 red
       return value <= 4 
-        ? "bg-green-500/60" 
+        ? "bg-green-500" 
         : value <= 7 
-          ? "bg-yellow-500/60" 
-          : "bg-red-500/60";
+          ? "bg-yellow-500" 
+          : "bg-red-500";
     } else if (type === 'trust') {
       // Trust: 5-10 green, 3-4 amber, 1-2 red
       return value >= 5 
-        ? "bg-green-500/60" 
+        ? "bg-green-500" 
         : value >= 3 
-          ? "bg-yellow-500/60" 
-          : "bg-red-500/60";
+          ? "bg-yellow-500" 
+          : "bg-red-500";
     } else {
       // Accuracy and Verifiability: 1-3 red, 4-6 amber, 7-10 green
       return value <= 3 
-        ? "bg-red-500/60" 
+        ? "bg-red-500" 
         : value <= 6 
-          ? "bg-yellow-500/60" 
-          : "bg-green-500/60";
+          ? "bg-yellow-500" 
+          : "bg-green-500";
     }
   };
   
   return (
     <div className="flex flex-col items-center">
-      <div className={cn('w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium', getScoreColor())}>
-        {value}
+      <div className="flex space-x-0.5 mb-1">
+        {[...Array(maxDots)].map((_, i) => (
+          <div
+            key={i}
+            className={cn(
+              "w-1.5 h-1.5 rounded-full",
+              i < dotCount ? getScoreColor() : "bg-gray-300"
+            )}
+          />
+        ))}
       </div>
-      <span className="text-xs mt-1">{label}</span>
+      <span className="text-xs">{label}</span>
     </div>
   );
 };
@@ -60,48 +73,42 @@ const MetaQubeDisplay = ({ metaQube, compact = false, className }: MetaQubeDispl
   const trustScore = Math.round((metaQube["Accuracy-Score"] + metaQube["Verifiability-Score"]) / 2);
 
   const cardContent = compact ? (
-    <>
-      <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium flex items-center">
-          <div className="h-4 w-4 mr-2 text-iqube-accent">
-            {/* Cube icon replacement */}
+    <CardContent className="pb-3 pt-3">
+      <div className="flex justify-between items-center">
+        <div className="flex items-center gap-2">
+          <div className="h-5 w-5 text-iqube-primary">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
               <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
               <line x1="12" y1="22.08" x2="12" y2="12"></line>
             </svg>
           </div>
-          MonDAI iQube
-        </CardTitle>
-      </CardHeader>
-      <CardContent className="pb-3">
-        <div className="flex justify-between items-center">
+          <span className="text-sm font-medium">{metaQube["iQube-Identifier"]}</span>
           <Badge variant="outline" className="bg-iqube-primary/10 text-iqube-primary border-iqube-primary/30">
             {metaQube["iQube-Type"]}
           </Badge>
-          <div className="flex gap-2">
-            <ScoreBadge value={metaQube["Sensitivity-Score"]} label="Sensitivity" type="sensitivity" />
-            <ScoreBadge value={trustScore} label="Trust" type="trust" />
-            <ScoreBadge value={metaQube["Risk-Score"]} label="Risk" type="risk" />
-          </div>
         </div>
-      </CardContent>
-    </>
+        <div className="flex items-center justify-end gap-3">
+          <DotScore value={metaQube["Sensitivity-Score"]} label="Sensitivity" type="sensitivity" />
+          <DotScore value={trustScore} label="Trust" type="trust" />
+          <DotScore value={metaQube["Risk-Score"]} label="Risk" type="risk" />
+        </div>
+      </div>
+    </CardContent>
   ) : (
     <>
-      <CardHeader>
-        <CardTitle className="flex items-center">
+      <CardContent className="pt-4">
+        <div className="flex items-center mb-4">
           <div className="h-5 w-5 mr-2 text-iqube-accent">
-            {/* Cube icon replacement */}
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
               <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
               <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
               <line x1="12" y1="22.08" x2="12" y2="12"></line>
             </svg>
           </div>
-          MonDAI iQube
-        </CardTitle>
-        <div className="flex flex-wrap gap-2 mt-2">
+          <span className="text-lg font-medium">{metaQube["iQube-Identifier"]}</span>
+        </div>
+        <div className="flex flex-wrap gap-2 mb-4">
           <Badge variant="outline" className="bg-iqube-primary/10 text-iqube-primary border-iqube-primary/30">
             {metaQube["iQube-Type"]}
           </Badge>
@@ -109,13 +116,12 @@ const MetaQubeDisplay = ({ metaQube, compact = false, className }: MetaQubeDispl
             {metaQube["Owner-Identifiability"]}
           </Badge>
         </div>
-      </CardHeader>
-      <CardContent>
+
         <div className="flex justify-between mb-4 pb-4 border-b">
-          <ScoreBadge value={metaQube["Sensitivity-Score"]} label="Sensitivity" type="sensitivity" />
-          <ScoreBadge value={metaQube["Accuracy-Score"]} label="Accuracy" type="accuracy" />
-          <ScoreBadge value={metaQube["Verifiability-Score"]} label="Verifiability" type="verifiability" />
-          <ScoreBadge value={metaQube["Risk-Score"]} label="Risk" type="risk" />
+          <DotScore value={metaQube["Sensitivity-Score"]} label="Sensitivity" type="sensitivity" />
+          <DotScore value={metaQube["Accuracy-Score"]} label="Accuracy" type="accuracy" />
+          <DotScore value={metaQube["Verifiability-Score"]} label="Verifiability" type="verifiability" />
+          <DotScore value={metaQube["Risk-Score"]} label="Risk" type="risk" />
         </div>
 
         <div className="space-y-2 text-sm">
