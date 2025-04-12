@@ -15,8 +15,7 @@ import {
   ArrowUpRight,
   MapPin,
   ChevronLeft,
-  ChevronRight,
-  PanelRightClose
+  ChevronRight
 } from 'lucide-react';
 import AgentInterface from '@/components/shared/AgentInterface';
 import { CommunityMetrics } from '@/lib/types';
@@ -237,7 +236,7 @@ const ConnectInterface = ({ communityMetrics }: ConnectInterfaceProps) => {
               className="h-7 w-7 ml-2" 
               onClick={togglePanelCollapse}
             >
-              <PanelRightClose className="h-4 w-4" />
+              <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
         </CardHeader>
@@ -386,7 +385,7 @@ const ConnectInterface = ({ communityMetrics }: ConnectInterfaceProps) => {
             onClick={togglePanelCollapse}
             className="h-7 w-7"
           >
-            <PanelRightClose className="h-4 w-4" />
+            <ChevronRight className="h-4 w-4" />
           </Button>
         </CardHeader>
         <CardContent className="space-y-4">

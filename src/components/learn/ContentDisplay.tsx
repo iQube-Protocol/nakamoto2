@@ -57,7 +57,7 @@ const ContentDisplay = ({
               <ChevronRight className="h-4 w-4" />
             </Button>
             {onCollapse && (
-              <Button variant="ghost" size="icon" onClick={onCollapse} title="Collapse panel">
+              <Button variant="ghost" size="icon" onClick={onCollapse} className="ml-2">
                 <ChevronRight className="h-4 w-4" />
               </Button>
             )}
