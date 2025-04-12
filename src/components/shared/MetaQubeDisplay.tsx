@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -53,7 +52,8 @@ const DotScore = ({ value, label, type }: DotScoreProps) => {
   
   return (
     <div className="flex flex-col items-center">
-      <div className="flex space-x-0.5 mb-1">
+      <span className="text-xs text-muted-foreground mb-1">{label}</span>
+      <div className="flex space-x-0.5">
         {[...Array(maxDots)].map((_, i) => (
           <div
             key={i}
@@ -64,7 +64,6 @@ const DotScore = ({ value, label, type }: DotScoreProps) => {
           />
         ))}
       </div>
-      <span className="text-xs text-muted-foreground">{label}</span>
     </div>
   );
 };
@@ -77,7 +76,7 @@ const MetaQubeDisplay = ({ metaQube, compact = false, className }: MetaQubeDispl
   const cardContent = compact ? (
     <CardContent className="pb-3 pt-3">
       <div className="flex flex-col space-y-2">
-        <div className="flex items-center justify-between">
+        <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
             <div className="h-5 w-5 text-green-500">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -94,12 +93,12 @@ const MetaQubeDisplay = ({ metaQube, compact = false, className }: MetaQubeDispl
         </div>
         
         <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-6">
             <DotScore value={trustScore} label="Trust" type="trust" />
             <DotScore value={metaQube["Risk-Score"]} label="Risk" type="risk" />
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-xs text-muted-foreground">{isActive ? 'Active' : 'Inactive'}</span>
+          <div className="flex flex-col items-center">
+            <span className="text-xs text-muted-foreground mb-1">{isActive ? 'Active' : 'Inactive'}</span>
             <Switch 
               checked={isActive} 
               onCheckedChange={setIsActive} 
@@ -130,12 +129,12 @@ const MetaQubeDisplay = ({ metaQube, compact = false, className }: MetaQubeDispl
         </div>
         
         <div className="flex items-center justify-between mb-4">
-          <div className="flex items-center gap-3">
+          <div className="flex items-center gap-8">
             <DotScore value={trustScore} label="Trust" type="trust" />
             <DotScore value={metaQube["Risk-Score"]} label="Risk" type="risk" />
           </div>
-          <div className="flex items-center gap-2">
-            <span className="text-sm text-muted-foreground">{isActive ? 'Active' : 'Inactive'}</span>
+          <div className="flex flex-col items-center">
+            <span className="text-sm text-muted-foreground mb-1">{isActive ? 'Active' : 'Inactive'}</span>
             <Switch 
               checked={isActive} 
               onCheckedChange={setIsActive}

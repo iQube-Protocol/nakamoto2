@@ -41,7 +41,8 @@ const DotScore = ({ value, label, type }: DotScoreProps) => {
   
   return (
     <div className="flex flex-col items-center">
-      <div className="flex space-x-0.5 mb-1">
+      <span className="text-xs text-muted-foreground mb-1">{label}</span>
+      <div className="flex space-x-0.5">
         {[...Array(maxDots)].map((_, i) => (
           <div
             key={i}
@@ -52,7 +53,6 @@ const DotScore = ({ value, label, type }: DotScoreProps) => {
           />
         ))}
       </div>
-      <span className="text-xs text-muted-foreground">{label}</span>
     </div>
   );
 };
@@ -64,7 +64,7 @@ const MetaQubeHeader = ({ metaQube }: MetaQubeHeaderProps) => {
   
   return (
     <div className="p-2 bg-muted/30 border rounded-md overflow-x-auto">
-      <div className="flex items-center justify-between mb-1">
+      <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <div className="h-5 w-5 text-green-500">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
@@ -80,12 +80,12 @@ const MetaQubeHeader = ({ metaQube }: MetaQubeHeaderProps) => {
         </Badge>
       </div>
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-6">
           <DotScore value={trustScore} label="Trust" type="trust" />
           <DotScore value={metaQube["Risk-Score"]} label="Risk" type="risk" />
         </div>
-        <div className="flex items-center gap-2">
-          <span className="text-xs text-muted-foreground">{isActive ? 'Active' : 'Inactive'}</span>
+        <div className="flex flex-col items-center">
+          <span className="text-xs text-muted-foreground mb-1">{isActive ? 'Active' : 'Inactive'}</span>
           <Switch 
             checked={isActive} 
             onCheckedChange={setIsActive} 
