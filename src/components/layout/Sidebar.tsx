@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { NavLink, Link } from 'react-router-dom';
 import { 
@@ -8,7 +9,8 @@ import {
   Settings,
   Menu,
   X,
-  Bot
+  Bot,
+  Database
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -129,11 +131,23 @@ const Sidebar = () => {
       </div>
       
       <div className="px-3 mt-auto">
-        <MetaQubeDisplay 
-          metaQube={metaQubeData} 
-          compact={true} 
-          className={cn(collapsed && "scale-90 origin-center")}
-        />
+        {!collapsed ? (
+          <MetaQubeDisplay 
+            metaQube={metaQubeData} 
+            compact={true}
+          />
+        ) : (
+          <Link 
+            to="/settings" 
+            className="flex items-center justify-center py-3 px-3 rounded-md transition-all hover:bg-iqube-primary/20 group"
+          >
+            <Database className="h-5 w-5 text-iqube-primary" />
+            <div className="absolute left-16 rounded-md px-2 py-1 ml-6 bg-iqube-dark text-foreground
+              scale-0 group-hover:scale-100 transition-all duration-100 origin-left z-50">
+              iQube Settings
+            </div>
+          </Link>
+        )}
       </div>
     </div>
   );
