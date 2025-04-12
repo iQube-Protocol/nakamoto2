@@ -7,8 +7,8 @@ import {
   Wallet, 
   Users, 
   Settings,
-  Menu,
-  X,
+  ChevronLeft,
+  ChevronRight,
   Bot,
   Database
 } from 'lucide-react';
@@ -111,8 +111,8 @@ const Sidebar = () => {
             onClick={toggleSidebar} 
             className="p-1 rounded-md hover:bg-sidebar-accent text-sidebar-foreground"
           >
-            <Menu className={cn("h-5 w-5", !collapsed && "hidden")} />
-            <X className={cn("h-5 w-5", collapsed && "hidden")} />
+            <ChevronLeft className={cn("h-5 w-5", collapsed && "hidden")} />
+            <ChevronRight className={cn("h-5 w-5", !collapsed && "hidden")} />
           </button>
         )}
       </div>
@@ -158,7 +158,7 @@ const Sidebar = () => {
       onClick={toggleMobileSidebar}
       className="fixed top-4 left-4 z-50 p-2 rounded-md bg-sidebar-accent text-sidebar-foreground"
     >
-      {mobileOpen ? <X /> : <Menu />}
+      {mobileOpen ? <ChevronLeft /> : <ChevronRight />}
     </button>
   );
 
