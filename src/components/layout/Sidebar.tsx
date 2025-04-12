@@ -14,6 +14,26 @@ import {
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
+import MetaQubeDisplay from '@/components/shared/MetaQubeDisplay';
+import { Switch } from '@/components/ui/switch';
+import { MetaQube } from '@/lib/types';
+
+// Sample metaQube data - we'll move this from Index.tsx
+const metaQubeData: MetaQube = {
+  "iQube-Identifier": "DataQube1",
+  "iQube-Type": "DataQube",
+  "iQube-Designer": "Aigent Z",
+  "iQube-Use": "For learning, earning and networking in web3 communities",
+  "Owner-Type": "Person",
+  "Owner-Identifiability": "Semi-Identifiable",
+  "Date-Minted": new Date().toISOString(),
+  "Related-iQubes": ["ContentQube1", "AgentQube1"],
+  "X-of-Y": "5 of 20",
+  "Sensitivity-Score": 4,
+  "Verifiability-Score": 5,
+  "Accuracy-Score": 5,
+  "Risk-Score": 4
+};
 
 interface NavItemProps {
   to: string;
@@ -49,6 +69,7 @@ const Sidebar = () => {
   const isMobile = useIsMobile();
   const [collapsed, setCollapsed] = useState(isMobile);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [isQubeActive, setIsQubeActive] = useState(true);
 
   const toggleSidebar = () => {
     setCollapsed(!collapsed);
@@ -65,6 +86,10 @@ const Sidebar = () => {
     { to: "/connect", icon: <Users />, label: "Connect" },
     { to: "/settings", icon: <Settings />, label: "Settings" }
   ];
+
+  const handleQubeToggle = (checked: boolean) => {
+    setIsQubeActive(checked);
+  };
 
   const sidebarContent = (
     <div className={cn(
@@ -111,19 +136,46 @@ const Sidebar = () => {
         ))}
       </div>
 
-      <div className={cn(
-        "mt-auto mx-3 p-2 rounded-lg border border-iqube-primary/30 bg-iqube-primary/10",
-        collapsed ? "text-center" : ""
-      )}>
-        <Sparkles className={cn("h-5 w-5 text-iqube-accent", !collapsed && "mb-1")} />
-        {!collapsed && (
-          <>
-            <h3 className="font-medium text-xs">MonDAI Active</h3>
-            <p className="text-xs text-sidebar-foreground opacity-70">
-              Your data is secure
-            </p>
-          </>
-        )}
+      {/* MetaQube Display for Sidebar */}
+      <div className="px-3 mt-2">
+        <div className={cn(
+          "border border-iqube-primary/30 bg-sidebar rounded-md px-3 py-2",
+          collapsed && "text-center"
+        )}>
+          <div className={cn(
+            "flex items-center justify-between mb-2",
+            collapsed && "flex-col"
+          )}>
+            <div className="flex items-center">
+              <span className="text-xs font-medium text-iqube-primary">DataQube</span>
+            </div>
+            <div className="flex items-center gap-1">
+              <span className="text-xs text-sidebar-foreground">
+                {isQubeActive ? "On" : "Off"}
+              </span>
+              <Switch 
+                checked={isQubeActive} 
+                onCheckedChange={handleQubeToggle}
+                className="scale-75" 
+              />
+            </div>
+          </div>
+
+          {!collapsed ? (
+            <MetaQubeDisplay 
+              metaQube={metaQubeData} 
+              compact={true} 
+              className="bg-transparent border-none shadow-none p-0"
+              hideLabel={true}
+              showOnlyScores={["Risk", "Trust"]}
+            />
+          ) : (
+            <div className="flex flex-col items-center">
+              <Sparkles className="h-5 w-5 text-iqube-accent mb-1" />
+              <span className="text-xs font-medium">MonDAI</span>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );
