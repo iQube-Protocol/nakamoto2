@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DollarSign, TrendingUp, User, ListOrdered, ChevronLeft } from 'lucide-react';
@@ -85,12 +86,13 @@ const EarnInterface = ({ tokenMetrics }: EarnInterfaceProps) => {
   };
 
   const handleCollapsedIconClick = (tabName: string) => {
-    // Always set the selected tab - this ensures content is loaded
+    // Set the selected tab
     setSelectedTab(tabName);
     setCurrentItemIndex(0);
     
-    // Don't toggle collapse state - keep it collapsed
-    // This lets the ContentDisplay component show fullscreen content
+    // IMPORTANT: Expand the panel when clicking icon in collapsed state
+    // This is the key change needed to fix the issue
+    setIsPanelCollapsed(false);
   };
 
   return (

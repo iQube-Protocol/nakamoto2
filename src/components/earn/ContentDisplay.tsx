@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -46,8 +47,8 @@ const ContentDisplay = ({
   onCollapse,
   isPanelCollapsed
 }: ContentDisplayProps) => {
-  // Fixed issue: Content not showing when panel is collapsed
-  // For collapsed panel with a selected tab, render the corresponding content in fullscreen
+  // We'll only render the fullscreen overlay if isPanelCollapsed is true
+  // and there's a selectedTab
   if (isPanelCollapsed && selectedTab) {
     if (selectedTab === 'price') {
       return (
