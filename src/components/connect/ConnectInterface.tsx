@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
@@ -64,6 +65,7 @@ type ConnectItem = Member | Group | Event | Message;
 const ConnectInterface = ({ communityMetrics }: ConnectInterfaceProps) => {
   const [selectedTab, setSelectedTab] = useState<string | undefined>(undefined);
   const [currentItemIndex, setCurrentItemIndex] = useState(0);
+  const [isPanelCollapsed, setIsPanelCollapsed] = useState<boolean>(false);
 
   const members: Member[] = [
     { id: 1, name: 'Alex Chen', role: 'Developer', avatar: '', interests: ['DeFi', 'Smart Contracts'], type: 'member' },
@@ -186,6 +188,11 @@ const ConnectInterface = ({ communityMetrics }: ConnectInterfaceProps) => {
     }
     setSelectedTab(value);
     setCurrentItemIndex(0);
+    setIsPanelCollapsed(false);
+  };
+
+  const togglePanelCollapse = () => {
+    setIsPanelCollapsed(!isPanelCollapsed);
   };
 
   const renderDetailPanel = () => {
@@ -413,8 +420,9 @@ const ConnectInterface = ({ communityMetrics }: ConnectInterfaceProps) => {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
-      <div className="lg:col-span-8">
+    <div className="grid grid-cols-12 gap-6 h-full">
+      {/* Agent Interface - Expanded when panel is collapsed */}
+      <div className={isPanelCollapsed ? "col-span-11" : "col-span-8"}>
         <AgentInterface
           title="Connection Assistant"
           description="Community insights and networking opportunities"
@@ -430,13 +438,72 @@ const ConnectInterface = ({ communityMetrics }: ConnectInterfaceProps) => {
         />
       </div>
 
-      <div className="lg:col-span-4 space-y-6 flex flex-col">
-        <div className="flex-grow">
-          {selectedTab ? renderDetailPanel() : renderDashboard()}
-        </div>
+      {/* Dashboard Panel - Collapsed to small column when toggled */}
+      <div className={isPanelCollapsed ? "col-span-1" : "col-span-4"}>
+        {isPanelCollapsed ? (
+          <div className="border-l h-full flex flex-col items-center justify-start p-2">
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={togglePanelCollapse}
+              className="mt-4"
+            >
+              <ChevronLeft className="h-6 w-6" />
+            </Button>
+            
+            <div className="mt-6 flex flex-col space-y-6">
+              <Button
+                variant={selectedTab === 'members' ? 'secondary' : 'ghost'}
+                size="icon"
+                className={`p-2 ${selectedTab === 'members' ? 'bg-iqube-primary/20' : ''}`}
+                onClick={() => handleTabChange('members')}
+                title="Community"
+              >
+                <Users className="h-6 w-6" />
+              </Button>
+              
+              <Button
+                variant={selectedTab === 'groups' ? 'secondary' : 'ghost'}
+                size="icon"
+                className={`p-2 ${selectedTab === 'groups' ? 'bg-iqube-primary/20' : ''}`}
+                onClick={() => handleTabChange('groups')}
+                title="Groups"
+              >
+                <Users className="h-6 w-6" />
+              </Button>
+              
+              <Button
+                variant={selectedTab === 'events' ? 'secondary' : 'ghost'}
+                size="icon"
+                className={`p-2 ${selectedTab === 'events' ? 'bg-iqube-primary/20' : ''}`}
+                onClick={() => handleTabChange('events')}
+                title="Events"
+              >
+                <Calendar className="h-6 w-6" />
+              </Button>
+              
+              <Button
+                variant={selectedTab === 'messages' ? 'secondary' : 'ghost'}
+                size="icon"
+                className={`p-2 ${selectedTab === 'messages' ? 'bg-iqube-primary/20' : ''}`}
+                onClick={() => handleTabChange('messages')}
+                title="Messages"
+              >
+                <MessageSquare className="h-6 w-6" />
+              </Button>
+            </div>
+          </div>
+        ) : (
+          <div className="space-y-6 flex flex-col">
+            <div className="flex-grow">
+              {selectedTab ? renderDetailPanel() : renderDashboard()}
+            </div>
+          </div>
+        )}
       </div>
 
-      <div className="lg:col-span-12">
+      {/* Bottom Tabs - Full width */}
+      <div className="col-span-12">
         <Tabs value={selectedTab || ''}>
           <TabsList className="w-full grid grid-cols-4">
             <TabsTrigger 
