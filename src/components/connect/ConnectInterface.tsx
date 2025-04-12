@@ -415,8 +415,8 @@ const ConnectInterface = ({ metaQube, communityMetrics }: ConnectInterfaceProps)
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
-      <div className="lg:col-span-2 flex flex-col">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
+      <div className="lg:col-span-9">
         <AgentInterface
           title="Connection Assistant"
           description="Community insights and networking opportunities"
@@ -432,19 +432,15 @@ const ConnectInterface = ({ metaQube, communityMetrics }: ConnectInterfaceProps)
         />
       </div>
 
-      <div className="space-y-6 flex flex-col">
-        <Card className="py-2">
-          <CardContent>
-            <MetaQubeDisplay metaQube={metaQube} compact={true} />
-          </CardContent>
-        </Card>
+      <div className="lg:col-span-3 space-y-6 flex flex-col">
+        <MetaQubeDisplay metaQube={metaQube} compact={true} />
 
         <div className="flex-grow">
           {selectedTab ? renderDetailPanel() : renderDashboard()}
         </div>
       </div>
 
-      <div className="lg:col-span-3">
+      <div className="lg:col-span-12">
         <Tabs value={selectedTab || ''}>
           <TabsList className="w-full grid grid-cols-4">
             <TabsTrigger 

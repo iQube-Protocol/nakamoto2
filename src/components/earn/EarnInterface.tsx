@@ -82,8 +82,8 @@ const EarnInterface = ({ metaQube, tokenMetrics }: EarnInterfaceProps) => {
   };
 
   return (
-    <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 h-full">
-      <div className="lg:col-span-2 flex flex-col">
+    <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
+      <div className="lg:col-span-9">
         <AgentInterface
           title="Earning Assistant"
           description="MonDAI token insights and earning opportunities"
@@ -99,7 +99,7 @@ const EarnInterface = ({ metaQube, tokenMetrics }: EarnInterfaceProps) => {
         />
       </div>
 
-      <div className="space-y-6 flex flex-col">
+      <div className="lg:col-span-3 space-y-6 flex flex-col">
         <MetaQubeDisplay metaQube={metaQube} compact={true} />
 
         <div className="flex-grow">
@@ -120,7 +120,7 @@ const EarnInterface = ({ metaQube, tokenMetrics }: EarnInterfaceProps) => {
         </div>
       </div>
 
-      <div className="lg:col-span-3">
+      <div className="lg:col-span-12">
         <Tabs value={selectedTab || ''}>
           <TabsList className="w-full grid grid-cols-4">
             <TabsTrigger 

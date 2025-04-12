@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { NavLink, Link } from 'react-router-dom';
 import { 
@@ -129,7 +128,6 @@ const Sidebar = () => {
         ))}
       </div>
       
-      {/* Replace the previous MonDAI active panel with MetaQubeDisplay */}
       <div className="px-3 mt-auto">
         <MetaQubeDisplay 
           metaQube={metaQubeData} 
@@ -140,7 +138,6 @@ const Sidebar = () => {
     </div>
   );
 
-  // Mobile hamburger menu
   const mobileMenuButton = isMobile && (
     <button
       onClick={toggleMobileSidebar}
@@ -150,7 +147,6 @@ const Sidebar = () => {
     </button>
   );
 
-  // Mobile sidebar overlay
   const mobileSidebar = isMobile && (
     <div
       className={cn(
