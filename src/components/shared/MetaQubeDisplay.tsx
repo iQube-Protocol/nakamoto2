@@ -1,11 +1,12 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MetaQube } from '@/lib/types';
 import { Lock, Unlock, ShieldCheck, Database } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
+import { Switch } from '@/components/ui/switch';
 
 interface MetaQubeDisplayProps {
   metaQube: MetaQube;
@@ -69,30 +70,42 @@ const DotScore = ({ value, label, type }: DotScoreProps) => {
 };
 
 const MetaQubeDisplay = ({ metaQube, compact = false, className }: MetaQubeDisplayProps) => {
+  const [isActive, setIsActive] = useState(true);
   // Calculate Trust score as the average of Accuracy and Verifiability
   const trustScore = Math.round((metaQube["Accuracy-Score"] + metaQube["Verifiability-Score"]) / 2);
 
   const cardContent = compact ? (
     <CardContent className="pb-3 pt-3">
       <div className="flex flex-col space-y-2">
-        <div className="flex items-center gap-2">
-          <div className="h-5 w-5 text-green-500">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-              <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
-              <line x1="12" y1="22.08" x2="12" y2="12"></line>
-            </svg>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <div className="h-5 w-5 text-green-500">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                <line x1="12" y1="22.08" x2="12" y2="12"></line>
+              </svg>
+            </div>
+            <span className="text-sm font-medium">{metaQube["iQube-Identifier"]}</span>
           </div>
-          <span className="text-sm font-medium">{metaQube["iQube-Identifier"]}</span>
-        </div>
-        <div className="flex justify-between items-center">
           <Badge variant="outline" className="bg-iqube-primary/10 text-iqube-primary border-iqube-primary/30">
             {metaQube["iQube-Type"]}
           </Badge>
-          <div className="flex items-center justify-end gap-3">
-            <DotScore value={metaQube["Sensitivity-Score"]} label="Sensitivity" type="sensitivity" />
+        </div>
+        
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-3">
             <DotScore value={trustScore} label="Trust" type="trust" />
             <DotScore value={metaQube["Risk-Score"]} label="Risk" type="risk" />
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-xs text-muted-foreground">{isActive ? 'Active' : 'Inactive'}</span>
+            <Switch 
+              checked={isActive} 
+              onCheckedChange={setIsActive} 
+              size="sm"
+              className="data-[state=checked]:bg-iqube-primary"
+            />
           </div>
         </div>
       </div>
@@ -100,30 +113,40 @@ const MetaQubeDisplay = ({ metaQube, compact = false, className }: MetaQubeDispl
   ) : (
     <>
       <CardContent className="pt-4">
-        <div className="flex items-center mb-4">
-          <div className="h-5 w-5 mr-2 text-green-500">
-            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-              <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
-              <line x1="12" y1="22.08" x2="12" y2="12"></line>
-            </svg>
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center">
+            <div className="h-5 w-5 mr-2 text-green-500">
+              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                <line x1="12" y1="22.08" x2="12" y2="12"></line>
+              </svg>
+            </div>
+            <span className="text-lg font-medium">{metaQube["iQube-Identifier"]}</span>
           </div>
-          <span className="text-lg font-medium">{metaQube["iQube-Identifier"]}</span>
-        </div>
-        <div className="flex flex-wrap gap-2 mb-4">
           <Badge variant="outline" className="bg-iqube-primary/10 text-iqube-primary border-iqube-primary/30">
             {metaQube["iQube-Type"]}
           </Badge>
-          <Badge variant="outline" className="bg-iqube-accent/10 text-iqube-accent border-iqube-accent/30">
-            {metaQube["Owner-Identifiability"]}
-          </Badge>
+        </div>
+        
+        <div className="flex items-center justify-between mb-4">
+          <div className="flex items-center gap-3">
+            <DotScore value={trustScore} label="Trust" type="trust" />
+            <DotScore value={metaQube["Risk-Score"]} label="Risk" type="risk" />
+          </div>
+          <div className="flex items-center gap-2">
+            <span className="text-sm text-muted-foreground">{isActive ? 'Active' : 'Inactive'}</span>
+            <Switch 
+              checked={isActive} 
+              onCheckedChange={setIsActive}
+              className="data-[state=checked]:bg-iqube-primary"
+            />
+          </div>
         </div>
 
         <div className="flex justify-between mb-4 pb-4 border-b">
-          <DotScore value={metaQube["Sensitivity-Score"]} label="Sensitivity" type="sensitivity" />
           <DotScore value={metaQube["Accuracy-Score"]} label="Accuracy" type="accuracy" />
           <DotScore value={metaQube["Verifiability-Score"]} label="Verifiability" type="verifiability" />
-          <DotScore value={metaQube["Risk-Score"]} label="Risk" type="risk" />
         </div>
 
         <div className="space-y-2 text-sm">
