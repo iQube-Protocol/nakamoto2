@@ -146,6 +146,7 @@ const EarnInterface = ({ tokenMetrics }: EarnInterfaceProps) => {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
+      {/* Chat interface - expanded when panel is collapsed */}
       <div className={`lg:col-span-${isCollapsed ? '11' : '8'} transition-all duration-300`}>
         <AgentInterface
           title="Earning Assistant"
@@ -162,8 +163,9 @@ const EarnInterface = ({ tokenMetrics }: EarnInterfaceProps) => {
         />
       </div>
 
+      {/* Collapsed panel with icons */}
       {isCollapsed ? (
-        <div className="lg:col-span-1 border-l">
+        <div className="lg:col-span-1 border-l h-full">
           {renderCollapsedIcons()}
         </div>
       ) : (
@@ -188,6 +190,7 @@ const EarnInterface = ({ tokenMetrics }: EarnInterfaceProps) => {
         </div>
       )}
 
+      {/* Tab controls (only visible when not collapsed) */}
       {!isCollapsed && (
         <div className="lg:col-span-12">
           <Tabs value={selectedTab || ''}>

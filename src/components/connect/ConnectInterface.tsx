@@ -511,7 +511,7 @@ const ConnectInterface = ({ communityMetrics }: ConnectInterfaceProps) => {
       </div>
 
       {isCollapsed ? (
-        <div className="lg:col-span-1 border-l">
+        <div className="lg:col-span-1 border-l h-full">
           {renderCollapsedIcons()}
         </div>
       ) : (
