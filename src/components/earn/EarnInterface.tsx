@@ -3,6 +3,7 @@ import React, { useState } from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Button } from '@/components/ui/button';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import { 
   TrendingUp, 
   TrendingDown, 
@@ -15,9 +16,11 @@ import {
   Wallet,
   Share2,
   DollarSign,
-  CreditCard as CreditCardIcon,
   User,
-  ListOrdered
+  ListOrdered,
+  ChevronLeft,
+  ChevronRight,
+  BarChart
 } from 'lucide-react';
 import AgentInterface from '@/components/shared/AgentInterface';
 import MetaQubeDisplay from '@/components/shared/MetaQubeDisplay';
@@ -76,6 +79,7 @@ const EarnInterface = ({ metaQube, tokenMetrics }: EarnInterfaceProps) => {
   const [distributionData] = useState(generateDistributionData());
   const [timeframe, setTimeframe] = useState('1M');
   const [selectedTab, setSelectedTab] = useState<string | null>(null);
+  const [currentItemIndex, setCurrentItemIndex] = useState<number>(0);
 
   const CustomTooltip = ({ active, payload, label }: any) => {
     if (active && payload && payload.length) {
@@ -94,6 +98,36 @@ const EarnInterface = ({ metaQube, tokenMetrics }: EarnInterfaceProps) => {
 
   const handleTabChange = (value: string) => {
     setSelectedTab(value === selectedTab ? null : value);
+    setCurrentItemIndex(0);
+  };
+
+  const getCurrentItems = () => {
+    switch(selectedTab) {
+      case 'price':
+        return [renderPricePanel()];
+      case 'stats':
+        return tokenStatsCards;
+      case 'portfolio':
+        return portfolioCards;
+      case 'transactions':
+        return transactionCards;
+      default:
+        return [];
+    }
+  };
+
+  const currentItems = getCurrentItems();
+  
+  const goToPrev = () => {
+    setCurrentItemIndex((prevIndex) => 
+      prevIndex === 0 ? currentItems.length - 1 : prevIndex - 1
+    );
+  };
+
+  const goToNext = () => {
+    setCurrentItemIndex((prevIndex) => 
+      prevIndex === currentItems.length - 1 ? 0 : prevIndex + 1
+    );
   };
 
   const renderPricePanel = () => (
@@ -154,7 +188,7 @@ const EarnInterface = ({ metaQube, tokenMetrics }: EarnInterfaceProps) => {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="h-[300px]">
+        <div className="h-[250px]">
           <ResponsiveContainer width="100%" height="100%">
             <AreaChart
               data={chartData}
@@ -194,222 +228,221 @@ const EarnInterface = ({ metaQube, tokenMetrics }: EarnInterfaceProps) => {
     </Card>
   );
 
-  const renderTokenStatsPanel = () => (
-    <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Token Distribution</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="h-[200px]">
-            <ResponsiveContainer width="100%" height="100%">
-              <LineChart data={distributionData}>
-                <XAxis dataKey="name" />
-                <YAxis />
-                <Tooltip />
-                <Line 
-                  type="monotone" 
-                  dataKey="value" 
-                  stroke="#6E56CF" 
-                  strokeWidth={2}
-                  dot={{ r: 4 }}
-                  activeDot={{ r: 6 }}
-                />
-              </LineChart>
-            </ResponsiveContainer>
+  // Token Stats Cards
+  const tokenStatsCards = [
+    <Card key="distribution" className="h-full">
+      <CardHeader>
+        <CardTitle className="text-base">Token Distribution</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="h-[180px]">
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart data={distributionData}>
+              <XAxis dataKey="name" />
+              <YAxis />
+              <Tooltip />
+              <Line 
+                type="monotone" 
+                dataKey="value" 
+                stroke="#6E56CF" 
+                strokeWidth={2}
+                dot={{ r: 4 }}
+                activeDot={{ r: 6 }}
+              />
+            </LineChart>
+          </ResponsiveContainer>
+        </div>
+        <div className="grid grid-cols-2 gap-2 mt-4">
+          {distributionData.map((item, i) => (
+            <div key={i} className="flex items-center text-xs">
+              <div className={`w-3 h-3 rounded-full mr-1 bg-iqube-primary opacity-${(i+5)*10}`}></div>
+              <span>{item.name}: {item.value}%</span>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>,
+    
+    <Card key="metrics" className="h-full">
+      <CardHeader>
+        <CardTitle className="text-base">Key Metrics</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-3">
+          <div className="flex justify-between">
+            <span className="text-sm text-muted-foreground">Price (USD)</span>
+            <span className="font-medium">${tokenMetrics.price}</span>
           </div>
-          <div className="grid grid-cols-2 gap-2 mt-4">
-            {distributionData.map((item, i) => (
-              <div key={i} className="flex items-center text-xs">
-                <div className={`w-3 h-3 rounded-full mr-1 bg-iqube-primary opacity-${(i+5)*10}`}></div>
-                <span>{item.name}: {item.value}%</span>
-              </div>
-            ))}
+          <div className="flex justify-between">
+            <span className="text-sm text-muted-foreground">Market Cap</span>
+            <span className="font-medium">${tokenMetrics.marketCap.toLocaleString()}</span>
           </div>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Key Metrics</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-3">
-            <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">Price (USD)</span>
-              <span className="font-medium">${tokenMetrics.price}</span>
+          <div className="flex justify-between">
+            <span className="text-sm text-muted-foreground">24h Volume</span>
+            <span className="font-medium">${tokenMetrics.volume24h.toLocaleString()}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-sm text-muted-foreground">Circulating Supply</span>
+            <span className="font-medium">{tokenMetrics.circulatingSupply.toLocaleString()}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-sm text-muted-foreground">Total Supply</span>
+            <span className="font-medium">{tokenMetrics.totalSupply.toLocaleString()}</span>
+          </div>
+          <div className="flex justify-between">
+            <span className="text-sm text-muted-foreground">All Time High</span>
+            <span className="font-medium">${tokenMetrics.allTimeHigh}</span>
+          </div>
+        </div>
+      </CardContent>
+    </Card>,
+    
+    <Card key="utility" className="h-full">
+      <CardHeader>
+        <CardTitle className="text-base">Utility & Benefits</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          <div className="flex">
+            <div className="bg-iqube-primary/20 p-2 rounded mr-3">
+              <Lock className="h-5 w-5 text-iqube-primary" />
             </div>
-            <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">Market Cap</span>
-              <span className="font-medium">${tokenMetrics.marketCap.toLocaleString()}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">24h Volume</span>
-              <span className="font-medium">${tokenMetrics.volume24h.toLocaleString()}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">Circulating Supply</span>
-              <span className="font-medium">{tokenMetrics.circulatingSupply.toLocaleString()}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">Total Supply</span>
-              <span className="font-medium">{tokenMetrics.totalSupply.toLocaleString()}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">All Time High</span>
-              <span className="font-medium">${tokenMetrics.allTimeHigh}</span>
+            <div>
+              <h4 className="text-sm font-medium">Access Control</h4>
+              <p className="text-xs text-muted-foreground mt-1">Unlock premium features and content</p>
             </div>
           </div>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Utility & Benefits</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex">
-              <div className="bg-iqube-primary/20 p-2 rounded mr-3">
-                <Lock className="h-5 w-5 text-iqube-primary" />
-              </div>
-              <div>
-                <h4 className="text-sm font-medium">Access Control</h4>
-                <p className="text-xs text-muted-foreground mt-1">Unlock premium features and content</p>
-              </div>
+          
+          <div className="flex">
+            <div className="bg-iqube-primary/20 p-2 rounded mr-3">
+              <Wallet className="h-5 w-5 text-iqube-primary" />
             </div>
-            
-            <div className="flex">
-              <div className="bg-iqube-primary/20 p-2 rounded mr-3">
-                <Wallet className="h-5 w-5 text-iqube-primary" />
-              </div>
-              <div>
-                <h4 className="text-sm font-medium">Staking Rewards</h4>
-                <p className="text-xs text-muted-foreground mt-1">Earn passive income by staking your tokens</p>
-              </div>
+            <div>
+              <h4 className="text-sm font-medium">Staking Rewards</h4>
+              <p className="text-xs text-muted-foreground mt-1">Earn passive income by staking your tokens</p>
             </div>
-            
-            <div className="flex">
-              <div className="bg-iqube-primary/20 p-2 rounded mr-3">
-                <Users className="h-5 w-5 text-iqube-primary" />
-              </div>
-              <div>
-                <h4 className="text-sm font-medium">Governance</h4>
-                <p className="text-xs text-muted-foreground mt-1">Vote on protocol decisions and proposals</p>
-              </div>
-            </div>
-            
-            <Button className="w-full mt-2 bg-iqube-primary hover:bg-iqube-primary/90">
-              <ArrowUpRight className="mr-2 h-4 w-4" />
-              View Tokenomics
-            </Button>
           </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
+          
+          <div className="flex">
+            <div className="bg-iqube-primary/20 p-2 rounded mr-3">
+              <Users className="h-5 w-5 text-iqube-primary" />
+            </div>
+            <div>
+              <h4 className="text-sm font-medium">Governance</h4>
+              <p className="text-xs text-muted-foreground mt-1">Vote on protocol decisions and proposals</p>
+            </div>
+          </div>
+          
+          <Button className="w-full mt-2 bg-iqube-primary hover:bg-iqube-primary/90">
+            <ArrowUpRight className="mr-2 h-4 w-4" />
+            View Tokenomics
+          </Button>
+        </div>
+      </CardContent>
+    </Card>
+  ];
 
-  const renderPortfolioPanel = () => (
-    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Your MonDAI Balance</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="text-3xl font-bold mb-1">2,500 MDAI</div>
-          <div className="text-sm text-muted-foreground mb-4">≈ $1,250.00 USD</div>
+  // Portfolio Cards
+  const portfolioCards = [
+    <Card key="balance" className="h-full">
+      <CardHeader>
+        <CardTitle className="text-base">Your MonDAI Balance</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="text-3xl font-bold mb-1">2,500 MDAI</div>
+        <div className="text-sm text-muted-foreground mb-4">≈ $1,250.00 USD</div>
+        
+        <div className="grid grid-cols-2 gap-3">
+          <Button className="w-full bg-iqube-primary hover:bg-iqube-primary/90">
+            Send
+          </Button>
+          <Button className="w-full" variant="outline">
+            Receive
+          </Button>
+        </div>
+        
+        <div className="mt-6">
+          <h4 className="text-sm font-medium mb-2">Token Distribution</h4>
+          <div className="space-y-3">
+            <div>
+              <div className="flex justify-between text-sm mb-1">
+                <span>Wallet</span>
+                <span>1,500 MDAI</span>
+              </div>
+              <div className="bg-muted h-2 rounded-full">
+                <div className="bg-iqube-primary h-2 rounded-full" style={{width: '60%'}}></div>
+              </div>
+            </div>
+            <div>
+              <div className="flex justify-between text-sm mb-1">
+                <span>Staked</span>
+                <span>1,000 MDAI</span>
+              </div>
+              <div className="bg-muted h-2 rounded-full">
+                <div className="bg-iqube-accent h-2 rounded-full" style={{width: '40%'}}></div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </CardContent>
+    </Card>,
+    
+    <Card key="earning-stats" className="h-full">
+      <CardHeader>
+        <CardTitle className="text-base">Earning Stats</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          <div>
+            <div className="flex justify-between mb-1">
+              <span className="text-sm">Monthly Earnings</span>
+              <div className="flex items-center text-green-500">
+                <TrendingUp className="h-4 w-4 mr-1" />
+                <span className="text-sm">+25.4 MDAI</span>
+              </div>
+            </div>
+            <p className="text-xs text-muted-foreground">From staking rewards and participation</p>
+          </div>
           
           <div className="grid grid-cols-2 gap-3">
-            <Button className="w-full bg-iqube-primary hover:bg-iqube-primary/90">
-              Send
-            </Button>
-            <Button className="w-full" variant="outline">
-              Receive
-            </Button>
+            <Card className="p-3">
+              <div className="text-xl font-bold">8.5%</div>
+              <div className="text-xs text-muted-foreground">Current APY</div>
+            </Card>
+            <Card className="p-3">
+              <div className="text-xl font-bold">45 days</div>
+              <div className="text-xs text-muted-foreground">Avg. Lock Period</div>
+            </Card>
           </div>
           
-          <div className="mt-6">
-            <h4 className="text-sm font-medium mb-2">Token Distribution</h4>
-            <div className="space-y-3">
-              <div>
-                <div className="flex justify-between text-sm mb-1">
-                  <span>Wallet</span>
-                  <span>1,500 MDAI</span>
-                </div>
-                <div className="bg-muted h-2 rounded-full">
-                  <div className="bg-iqube-primary h-2 rounded-full" style={{width: '60%'}}></div>
-                </div>
-              </div>
-              <div>
-                <div className="flex justify-between text-sm mb-1">
-                  <span>Staked</span>
-                  <span>1,000 MDAI</span>
-                </div>
-                <div className="bg-muted h-2 rounded-full">
-                  <div className="bg-iqube-accent h-2 rounded-full" style={{width: '40%'}}></div>
-                </div>
-              </div>
-            </div>
-          </div>
-        </CardContent>
-      </Card>
-      
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-base">Earning Stats</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div>
-              <div className="flex justify-between mb-1">
-                <span className="text-sm">Monthly Earnings</span>
-                <div className="flex items-center text-green-500">
-                  <TrendingUp className="h-4 w-4 mr-1" />
-                  <span className="text-sm">+25.4 MDAI</span>
-                </div>
-              </div>
-              <p className="text-xs text-muted-foreground">From staking rewards and participation</p>
-            </div>
-            
-            <div className="grid grid-cols-2 gap-3">
-              <Card className="p-3">
-                <div className="text-xl font-bold">8.5%</div>
-                <div className="text-xs text-muted-foreground">Current APY</div>
-              </Card>
-              <Card className="p-3">
-                <div className="text-xl font-bold">45 days</div>
-                <div className="text-xs text-muted-foreground">Avg. Lock Period</div>
-              </Card>
-            </div>
-            
-            <div>
-              <h4 className="text-sm font-medium mb-2">Earning History</h4>
-              <div className="space-y-2">
-                {[...Array(3)].map((_, i) => (
-                  <div key={i} className="flex justify-between items-center p-2 border rounded-md">
-                    <div>
-                      <div className="text-sm font-medium">
-                        {i === 0 ? 'Staking Reward' : i === 1 ? 'Participation Bonus' : 'Referral Reward'}
-                      </div>
-                      <div className="text-xs text-muted-foreground">
-                        {new Date(Date.now() - i * 86400000 * 7).toLocaleDateString()}
-                      </div>
+          <div>
+            <h4 className="text-sm font-medium mb-2">Earning History</h4>
+            <div className="space-y-2">
+              {[...Array(3)].map((_, i) => (
+                <div key={i} className="flex justify-between items-center p-2 border rounded-md">
+                  <div>
+                    <div className="text-sm font-medium">
+                      {i === 0 ? 'Staking Reward' : i === 1 ? 'Participation Bonus' : 'Referral Reward'}
                     </div>
-                    <div className="text-sm text-green-500">
-                      +{(10 - i * 2.5).toFixed(1)} MDAI
+                    <div className="text-xs text-muted-foreground">
+                      {new Date(Date.now() - i * 86400000 * 7).toLocaleDateString()}
                     </div>
                   </div>
-                ))}
-              </div>
+                  <div className="text-sm text-green-500">
+                    +{(10 - i * 2.5).toFixed(1)} MDAI
+                  </div>
+                </div>
+              ))}
             </div>
           </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
+        </div>
+      </CardContent>
+    </Card>
+  ];
 
-  const renderTransactionsPanel = () => (
-    <Card>
+  // Transaction Cards
+  const transactionCards = [
+    <Card key="recent-transactions" className="h-full">
       <CardHeader>
         <div className="flex items-center justify-between">
           <CardTitle className="text-base">Recent Transactions</CardTitle>
@@ -417,114 +450,118 @@ const EarnInterface = ({ metaQube, tokenMetrics }: EarnInterfaceProps) => {
         </div>
       </CardHeader>
       <CardContent>
-        <div className="space-y-4">
-          {[...Array(5)].map((_, i) => (
-            <div key={i} className="flex justify-between items-center p-3 border rounded-md">
-              <div className="flex items-center">
-                <div className={`p-2 rounded-full mr-3 ${
-                  i % 3 === 0 ? 'bg-green-500/20' : 
-                  i % 3 === 1 ? 'bg-iqube-primary/20' : 
-                  'bg-amber-500/20'
-                }`}>
-                  {i % 3 === 0 ? (
-                    <TrendingDown className={`h-5 w-5 ${i % 3 === 0 ? 'text-green-500' : ''}`} />
-                  ) : i % 3 === 1 ? (
-                    <ArrowUpRight className="h-5 w-5 text-iqube-primary" />
-                  ) : (
-                    <CreditCard className="h-5 w-5 text-amber-500" />
-                  )}
+        <ScrollArea className="h-[280px]">
+          <div className="space-y-4 pr-4">
+            {[...Array(5)].map((_, i) => (
+              <div key={i} className="flex justify-between items-center p-3 border rounded-md">
+                <div className="flex items-center">
+                  <div className={`p-2 rounded-full mr-3 ${
+                    i % 3 === 0 ? 'bg-green-500/20' : 
+                    i % 3 === 1 ? 'bg-iqube-primary/20' : 
+                    'bg-amber-500/20'
+                  }`}>
+                    {i % 3 === 0 ? (
+                      <TrendingDown className={`h-4 w-4 ${i % 3 === 0 ? 'text-green-500' : ''}`} />
+                    ) : i % 3 === 1 ? (
+                      <ArrowUpRight className="h-4 w-4 text-iqube-primary" />
+                    ) : (
+                      <CreditCard className="h-4 w-4 text-amber-500" />
+                    )}
+                  </div>
+                  <div>
+                    <div className="text-sm font-medium">
+                      {i % 3 === 0 ? 'Received MonDAI' : 
+                       i % 3 === 1 ? 'Sent MonDAI' : 
+                       'Staking Deposit'}
+                    </div>
+                    <div className="text-xs text-muted-foreground">
+                      {new Date(Date.now() - i * 86400000).toLocaleString()}
+                    </div>
+                  </div>
                 </div>
                 <div>
-                  <div className="text-sm font-medium">
-                    {i % 3 === 0 ? 'Received MonDAI' : 
-                     i % 3 === 1 ? 'Sent MonDAI' : 
-                     'Staking Deposit'}
+                  <div className={`text-sm font-medium ${
+                    i % 3 === 0 ? 'text-green-500' : 
+                    i % 3 === 1 ? 'text-red-500' : 
+                    'text-amber-500'
+                  }`}>
+                    {i % 3 === 0 ? '+' : i % 3 === 1 ? '-' : ''}{(50 / (i + 1)).toFixed(2)} MDAI
                   </div>
-                  <div className="text-xs text-muted-foreground">
-                    {new Date(Date.now() - i * 86400000).toLocaleString()}
+                  <div className="text-xs text-right text-muted-foreground">
+                    ${((50 / (i + 1)) * 0.5).toFixed(2)}
                   </div>
                 </div>
               </div>
-              <div>
-                <div className={`text-sm font-medium ${
-                  i % 3 === 0 ? 'text-green-500' : 
-                  i % 3 === 1 ? 'text-red-500' : 
-                  'text-amber-500'
-                }`}>
-                  {i % 3 === 0 ? '+' : i % 3 === 1 ? '-' : ''}{(50 / (i + 1)).toFixed(2)} MDAI
-                </div>
-                <div className="text-xs text-right text-muted-foreground">
-                  ${((50 / (i + 1)) * 0.5).toFixed(2)}
-                </div>
-              </div>
-            </div>
-          ))}
-          <Button variant="outline" className="w-full">
-            View All Transactions
-          </Button>
-        </div>
+            ))}
+            <Button variant="outline" className="w-full">
+              View All Transactions
+            </Button>
+          </div>
+        </ScrollArea>
       </CardContent>
     </Card>
-  );
+  ];
 
   const renderEarningsSummary = () => (
-    <Card>
+    <Card className="h-full">
       <CardHeader>
-        <CardTitle className="text-lg">Earning Summary</CardTitle>
+        <CardTitle className="text-base">Earning Summary</CardTitle>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <div className="grid grid-cols-2 gap-3">
-          <Card className="p-3">
-            <div className="text-xl font-bold">{tokenMetrics.holders.toLocaleString()}</div>
-            <div className="text-xs text-muted-foreground">Total Holders</div>
-          </Card>
-          <Card className="p-3">
-            <div className="text-xl font-bold">${tokenMetrics.marketCap.toLocaleString()}</div>
-            <div className="text-xs text-muted-foreground">Market Cap</div>
-          </Card>
-          <Card className="p-3 flex items-center">
-            <div className="mr-2">
-              {tokenMetrics.priceChange24h >= 0 ? (
-                <TrendingUp className="h-5 w-5 text-green-500" />
-              ) : (
-                <TrendingDown className="h-5 w-5 text-red-500" />
-              )}
-            </div>
-            <div>
-              <div className={`text-sm font-bold ${
-                tokenMetrics.priceChange24h >= 0 ? 'text-green-500' : 'text-red-500'
-              }`}>
-                {tokenMetrics.priceChange24h >= 0 ? '+' : ''}{tokenMetrics.priceChange24h}%
+      <CardContent>
+        <div className="space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <Card className="p-3">
+              <div className="text-lg font-bold">{tokenMetrics.holders.toLocaleString()}</div>
+              <div className="text-xs text-muted-foreground">Total Holders</div>
+            </Card>
+            <Card className="p-3">
+              <div className="text-lg font-bold">${tokenMetrics.marketCap.toLocaleString()}</div>
+              <div className="text-xs text-muted-foreground">Market Cap</div>
+            </Card>
+            <Card className="p-3 flex items-center">
+              <div className="mr-2">
+                {tokenMetrics.priceChange24h >= 0 ? (
+                  <TrendingUp className="h-5 w-5 text-green-500" />
+                ) : (
+                  <TrendingDown className="h-5 w-5 text-red-500" />
+                )}
               </div>
-              <div className="text-xs text-muted-foreground">24h Change</div>
-            </div>
-          </Card>
-          <Card className="p-3">
-            <div className="text-xl font-bold">${tokenMetrics.volume24h.toLocaleString()}</div>
-            <div className="text-xs text-muted-foreground">24h Volume</div>
-          </Card>
-        </div>
+              <div>
+                <div className={`text-sm font-bold ${
+                  tokenMetrics.priceChange24h >= 0 ? 'text-green-500' : 'text-red-500'
+                }`}>
+                  {tokenMetrics.priceChange24h >= 0 ? '+' : ''}{tokenMetrics.priceChange24h}%
+                </div>
+                <div className="text-xs text-muted-foreground">24h Change</div>
+              </div>
+            </Card>
+            <Card className="p-3">
+              <div className="text-lg font-bold">${tokenMetrics.volume24h.toLocaleString()}</div>
+              <div className="text-xs text-muted-foreground">24h Volume</div>
+            </Card>
+          </div>
 
-        <div className="pt-2">
-          <h3 className="font-medium mb-3">Earning Opportunities</h3>
-          <div className="space-y-3">
-            <div className="flex items-center p-2 border rounded-md bg-iqube-primary/5 border-iqube-primary/20">
-              <CreditCard className="h-5 w-5 text-iqube-primary mr-3" />
-              <div className="flex-1">
-                <div className="text-sm font-medium">Staking Pool</div>
-                <div className="text-xs text-muted-foreground">8.5% APY</div>
+          <div className="pt-2">
+            <h3 className="font-medium mb-3">Earning Opportunities</h3>
+            <div className="space-y-3">
+              <div className="flex items-center p-2 border rounded-md bg-iqube-primary/5 border-iqube-primary/20">
+                <CreditCard className="h-5 w-5 text-iqube-primary mr-3" />
+                <div className="flex-1">
+                  <div className="text-sm font-medium">Staking Pool</div>
+                  <div className="text-xs text-muted-foreground">8.5% APY</div>
+                </div>
+                <Button size="sm" className="h-8">Stake</Button>
               </div>
-              <Button size="sm" className="h-8">Stake</Button>
-            </div>
-            <div className="flex items-center p-2 border rounded-md">
-              <Users className="h-5 w-5 text-amber-500 mr-3" />
-              <div className="flex-1">
-                <div className="text-sm font-medium">Referral Program</div>
-                <div className="text-xs text-muted-foreground">Earn 5% commission</div>
+              <div className="flex items-center p-2 border rounded-md">
+                <Users className="h-5 w-5 text-amber-500 mr-3" />
+                <div className="flex-1">
+                  <div className="text-sm font-medium">Referral Program</div>
+                  <div className="text-xs text-muted-foreground">Earn 5% commission</div>
+                </div>
+                <Button size="sm" variant="ghost" className="h-8">
+                  <Share2 className="h-4 w-4" />
+                </Button>
               </div>
-              <Button size="sm" variant="ghost" className="h-8">
-                <Share2 className="h-4 w-4" />
-              </Button>
             </div>
           </div>
         </div>
@@ -532,83 +569,62 @@ const EarnInterface = ({ metaQube, tokenMetrics }: EarnInterfaceProps) => {
     </Card>
   );
 
-  const renderDashboard = () => (
-    <div className="space-y-6">
-      {renderPricePanel()}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-        <Card>
+  const renderRightPanel = () => {
+    if (!selectedTab) {
+      return (
+        <Card className="h-full">
           <CardHeader>
-            <CardTitle className="text-base">Portfolio Snapshot</CardTitle>
+            <CardTitle className="flex items-center text-lg">
+              <BarChart className="h-5 w-5 mr-2 text-iqube-accent" />
+              Earning Dashboard
+            </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold mb-1">2,500 MDAI</div>
-            <div className="text-sm text-muted-foreground mb-4">≈ $1,250.00 USD</div>
-            <div className="grid grid-cols-2 gap-3">
-              <Button className="w-full bg-iqube-primary hover:bg-iqube-primary/90">
-                View Portfolio
-              </Button>
-              <Button className="w-full" variant="outline">
-                View Transactions
-              </Button>
-            </div>
+            <ScrollArea className="h-[340px]">
+              {renderEarningsSummary()}
+            </ScrollArea>
           </CardContent>
         </Card>
-        <Card>
-          <CardHeader>
-            <CardTitle className="text-base">Recent Activity</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="space-y-2">
-              {[...Array(3)].map((_, i) => (
-                <div key={i} className="flex justify-between items-center p-2 border rounded-md">
-                  <div className="flex items-center">
-                    <div className={`p-1.5 rounded-full mr-2 ${
-                      i % 3 === 0 ? 'bg-green-500/20' : 
-                      i % 3 === 1 ? 'bg-iqube-primary/20' : 
-                      'bg-amber-500/20'
-                    }`}>
-                      {i % 3 === 0 ? (
-                        <TrendingDown className="h-4 w-4 text-green-500" />
-                      ) : i % 3 === 1 ? (
-                        <ArrowUpRight className="h-4 w-4 text-iqube-primary" />
-                      ) : (
-                        <CreditCard className="h-4 w-4 text-amber-500" />
-                      )}
-                    </div>
-                    <div className="text-sm">
-                      {i % 3 === 0 ? 'Received MonDAI' : 
-                       i % 3 === 1 ? 'Sent MonDAI' : 
-                       'Staking Deposit'}
-                    </div>
-                  </div>
-                  <div className={`text-sm ${
-                    i % 3 === 0 ? 'text-green-500' : 
-                    i % 3 === 1 ? 'text-red-500' : 
-                    'text-amber-500'
-                  }`}>
-                    {i % 3 === 0 ? '+' : i % 3 === 1 ? '-' : ''}{(50 / (i + 1)).toFixed(2)} MDAI
-                  </div>
-                </div>
-              ))}
-            </div>
-          </CardContent>
-        </Card>
-      </div>
-    </div>
-  );
-
-  const renderContent = () => {
-    if (selectedTab === 'price') {
-      return renderPricePanel();
-    } else if (selectedTab === 'stats') {
-      return renderTokenStatsPanel();
-    } else if (selectedTab === 'portfolio') {
-      return renderPortfolioPanel();
-    } else if (selectedTab === 'transactions') {
-      return renderTransactionsPanel();
-    } else {
-      return renderDashboard();
+      );
     }
+
+    if (selectedTab === 'price') {
+      return (
+        <ScrollArea className="h-full">
+          {renderPricePanel()}
+        </ScrollArea>
+      );
+    }
+
+    return (
+      <Card className="h-full flex flex-col">
+        <CardHeader className="pb-0">
+          <div className="flex justify-between items-center">
+            <CardTitle className="text-lg">
+              {selectedTab === 'stats' && 'Token Statistics'}
+              {selectedTab === 'portfolio' && 'Your Portfolio'}
+              {selectedTab === 'transactions' && 'Transaction History'}
+            </CardTitle>
+            <div className="flex space-x-1">
+              <Button variant="ghost" size="icon" onClick={goToPrev} disabled={currentItems.length <= 1}>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <Button variant="ghost" size="icon" className="text-sm">
+                {currentItemIndex + 1}/{currentItems.length}
+              </Button>
+              <Button variant="ghost" size="icon" onClick={goToNext} disabled={currentItems.length <= 1}>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent className="flex-grow pt-4 pb-6">
+          <ScrollArea className="h-full">
+            {currentItems[currentItemIndex]}
+          </ScrollArea>
+        </CardContent>
+      </Card>
+    );
   };
 
   return (
@@ -630,10 +646,17 @@ const EarnInterface = ({ metaQube, tokenMetrics }: EarnInterfaceProps) => {
       </div>
 
       <div className="space-y-6 flex flex-col">
-        <MetaQubeDisplay metaQube={metaQube} compact={true} />
+        <Card>
+          <CardHeader className="pb-0">
+            <CardTitle className="text-lg">MetaQube</CardTitle>
+          </CardHeader>
+          <CardContent>
+            <MetaQubeDisplay metaQube={metaQube} compact={true} />
+          </CardContent>
+        </Card>
 
         <div className="flex-grow">
-          {renderContent()}
+          {renderRightPanel()}
         </div>
       </div>
 
