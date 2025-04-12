@@ -163,32 +163,34 @@ const EarnInterface = ({ tokenMetrics }: EarnInterfaceProps) => {
         />
       </div>
 
-      {/* Collapsed panel with icons */}
-      {isCollapsed ? (
-        <div className="lg:col-span-1 border-l h-full">
-          {renderCollapsedIcons()}
-        </div>
-      ) : (
-        <div className="lg:col-span-4 space-y-6 flex flex-col">
-          <div className="flex-grow">
-            <ContentDisplay
-              selectedTab={selectedTab}
-              currentItemIndex={currentItemIndex}
-              tokenMetrics={tokenMetrics}
-              chartData={chartData}
-              timeframe={timeframe}
-              setTimeframe={setTimeframe}
-              distributionData={distributionData}
-              tokenStatsCards={tokenStatsCards}
-              portfolioCards={portfolioCards}
-              transactionCards={transactionCards}
-              goToPrev={goToPrev}
-              goToNext={goToNext}
-              onCollapse={toggleCollapse}
-            />
+      {/* Sidebar content - either collapsed or expanded */}
+      <div className={`lg:col-span-${isCollapsed ? '1' : '4'} transition-all duration-300`}>
+        {isCollapsed ? (
+          <div className="border-l h-full">
+            {renderCollapsedIcons()}
           </div>
-        </div>
-      )}
+        ) : (
+          <div className="space-y-6 flex flex-col h-full">
+            <div className="flex-grow">
+              <ContentDisplay
+                selectedTab={selectedTab}
+                currentItemIndex={currentItemIndex}
+                tokenMetrics={tokenMetrics}
+                chartData={chartData}
+                timeframe={timeframe}
+                setTimeframe={setTimeframe}
+                distributionData={distributionData}
+                tokenStatsCards={tokenStatsCards}
+                portfolioCards={portfolioCards}
+                transactionCards={transactionCards}
+                goToPrev={goToPrev}
+                goToNext={goToNext}
+                onCollapse={toggleCollapse}
+              />
+            </div>
+          </div>
+        )}
+      </div>
 
       {/* Tab controls (only visible when not collapsed) */}
       {!isCollapsed && (

@@ -510,17 +510,17 @@ const ConnectInterface = ({ communityMetrics }: ConnectInterfaceProps) => {
         />
       </div>
 
-      {isCollapsed ? (
-        <div className="lg:col-span-1 border-l h-full">
-          {renderCollapsedIcons()}
-        </div>
-      ) : (
-        <div className="lg:col-span-4 space-y-6 flex flex-col">
+      <div className={`lg:col-span-${isCollapsed ? '1' : '4'} transition-all duration-300`}>
+        {isCollapsed ? (
+          <div className="border-l h-full">
+            {renderCollapsedIcons()}
+          </div>
+        ) : (
           <div className="flex-grow">
             {selectedTab ? renderDetailPanel() : renderDashboard()}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {!isCollapsed && (
         <div className="lg:col-span-12">
