@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { DollarSign, TrendingUp, User, ListOrdered } from 'lucide-react';
+import { DollarSign, TrendingUp, User, ListOrdered, ChevronLeft } from 'lucide-react';
 import { TokenMetrics } from '@/lib/types';
 import AgentInterface from '@/components/shared/AgentInterface';
 import ContentDisplay from './ContentDisplay';
@@ -12,6 +12,7 @@ import PortfolioBalanceCard from './cards/PortfolioBalanceCard';
 import EarningStatsCard from './cards/EarningStatsCard';
 import TransactionHistoryCard from './cards/TransactionHistoryCard';
 import { generateChartData, generateDistributionData } from './utils/chartUtils';
+import { Button } from '@/components/ui/button';
 
 interface EarnInterfaceProps {
   tokenMetrics: TokenMetrics;
@@ -23,6 +24,7 @@ const EarnInterface = ({ tokenMetrics }: EarnInterfaceProps) => {
   const [timeframe, setTimeframe] = useState('1M');
   const [selectedTab, setSelectedTab] = useState<string | null>(null);
   const [currentItemIndex, setCurrentItemIndex] = useState<number>(0);
+  const [isPanelCollapsed, setIsPanelCollapsed] = useState<boolean>(false);
 
   // Token Stats Cards array
   const tokenStatsCards = [
@@ -65,6 +67,10 @@ const EarnInterface = ({ tokenMetrics }: EarnInterfaceProps) => {
     setCurrentItemIndex(0);
   };
 
+  const togglePanelCollapse = () => {
+    setIsPanelCollapsed(!isPanelCollapsed);
+  };
+
   // Get current items based on selected tab - needed for the button handlers
   const getCurrentItems = () => {
     switch(selectedTab) {
@@ -81,7 +87,7 @@ const EarnInterface = ({ tokenMetrics }: EarnInterfaceProps) => {
 
   return (
     <div className="grid grid-cols-1 lg:grid-cols-12 gap-6 h-full">
-      <div className="lg:col-span-8">
+      <div className={`lg:col-span-${isPanelCollapsed ? '11' : '8'}`}>
         <AgentInterface
           title="Earning Assistant"
           description="MonDAI token insights and earning opportunities"
@@ -97,24 +103,78 @@ const EarnInterface = ({ tokenMetrics }: EarnInterfaceProps) => {
         />
       </div>
 
-      <div className="lg:col-span-4 space-y-6 flex flex-col">
-        <div className="flex-grow">
-          <ContentDisplay
-            selectedTab={selectedTab}
-            currentItemIndex={currentItemIndex}
-            tokenMetrics={tokenMetrics}
-            chartData={chartData}
-            timeframe={timeframe}
-            setTimeframe={setTimeframe}
-            distributionData={distributionData}
-            tokenStatsCards={tokenStatsCards}
-            portfolioCards={portfolioCards}
-            transactionCards={transactionCards}
-            goToPrev={goToPrev}
-            goToNext={goToNext}
-          />
+      {isPanelCollapsed ? (
+        <div className="lg:col-span-1 flex flex-col items-center space-y-6 border-l pl-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={togglePanelCollapse}
+            className="mt-4"
+          >
+            <ChevronLeft className="h-6 w-6" />
+          </Button>
+          
+          <Button
+            variant={selectedTab === 'price' ? 'secondary' : 'ghost'}
+            size="icon"
+            className={`p-2 ${selectedTab === 'price' ? 'bg-iqube-primary/20' : ''}`}
+            onClick={() => handleTabChange('price')}
+            title="Price"
+          >
+            <DollarSign className="h-6 w-6" />
+          </Button>
+          
+          <Button
+            variant={selectedTab === 'stats' ? 'secondary' : 'ghost'}
+            size="icon"
+            className={`p-2 ${selectedTab === 'stats' ? 'bg-iqube-primary/20' : ''}`}
+            onClick={() => handleTabChange('stats')}
+            title="Statistics"
+          >
+            <TrendingUp className="h-6 w-6" />
+          </Button>
+          
+          <Button
+            variant={selectedTab === 'portfolio' ? 'secondary' : 'ghost'}
+            size="icon"
+            className={`p-2 ${selectedTab === 'portfolio' ? 'bg-iqube-primary/20' : ''}`}
+            onClick={() => handleTabChange('portfolio')}
+            title="Portfolio"
+          >
+            <User className="h-6 w-6" />
+          </Button>
+          
+          <Button
+            variant={selectedTab === 'transactions' ? 'secondary' : 'ghost'}
+            size="icon"
+            className={`p-2 ${selectedTab === 'transactions' ? 'bg-iqube-primary/20' : ''}`}
+            onClick={() => handleTabChange('transactions')}
+            title="Transactions"
+          >
+            <ListOrdered className="h-6 w-6" />
+          </Button>
         </div>
-      </div>
+      ) : (
+        <div className="lg:col-span-4 space-y-6 flex flex-col">
+          <div className="flex-grow">
+            <ContentDisplay
+              selectedTab={selectedTab}
+              currentItemIndex={currentItemIndex}
+              tokenMetrics={tokenMetrics}
+              chartData={chartData}
+              timeframe={timeframe}
+              setTimeframe={setTimeframe}
+              distributionData={distributionData}
+              tokenStatsCards={tokenStatsCards}
+              portfolioCards={portfolioCards}
+              transactionCards={transactionCards}
+              goToPrev={goToPrev}
+              goToNext={goToNext}
+              onCollapse={togglePanelCollapse}
+            />
+          </div>
+        </div>
+      )}
 
       <div className="lg:col-span-12">
         <Tabs value={selectedTab || ''}>

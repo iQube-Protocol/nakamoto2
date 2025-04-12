@@ -27,6 +27,7 @@ interface ContentDisplayProps {
   transactionCards: React.ReactNode[];
   goToPrev: () => void;
   goToNext: () => void;
+  onCollapse?: () => void;
 }
 
 const ContentDisplay = ({
@@ -41,16 +42,29 @@ const ContentDisplay = ({
   portfolioCards,
   transactionCards,
   goToPrev,
-  goToNext
+  goToNext,
+  onCollapse
 }: ContentDisplayProps) => {
   if (!selectedTab) {
     return (
       <Card className="h-full">
         <CardHeader>
-          <CardTitle className="flex items-center text-lg">
-            <BarChart className="h-5 w-5 mr-2 text-iqube-accent" />
-            Earning Dashboard
-          </CardTitle>
+          <div className="flex justify-between items-center">
+            <CardTitle className="flex items-center text-lg">
+              <BarChart className="h-5 w-5 mr-2 text-iqube-accent" />
+              Earning Dashboard
+            </CardTitle>
+            {onCollapse && (
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={onCollapse}
+                className="h-8 w-8"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            )}
+          </div>
         </CardHeader>
         <CardContent>
           <ScrollArea className="h-[340px]">
@@ -64,6 +78,19 @@ const ContentDisplay = ({
   if (selectedTab === 'price') {
     return (
       <ScrollArea className="h-full">
+        <div className="flex justify-between items-center mb-2 px-2">
+          <div></div> {/* Empty div for spacing */}
+          {onCollapse && (
+            <Button 
+              variant="ghost" 
+              size="icon" 
+              onClick={onCollapse}
+              className="h-8 w-8"
+            >
+              <ChevronRight className="h-4 w-4" />
+            </Button>
+          )}
+        </div>
         <TokenPriceChart 
           tokenMetrics={tokenMetrics}
           chartData={chartData}
@@ -99,7 +126,7 @@ const ContentDisplay = ({
             {selectedTab === 'portfolio' && 'Your Portfolio'}
             {selectedTab === 'transactions' && 'Transaction History'}
           </CardTitle>
-          <div className="flex space-x-1">
+          <div className="flex space-x-1 items-center">
             <Button variant="ghost" size="icon" onClick={goToPrev} disabled={currentItems.length <= 1}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
@@ -109,6 +136,16 @@ const ContentDisplay = ({
             <Button variant="ghost" size="icon" onClick={goToNext} disabled={currentItems.length <= 1}>
               <ChevronRight className="h-4 w-4" />
             </Button>
+            {onCollapse && (
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                onClick={onCollapse}
+                className="h-8 w-8 ml-2"
+              >
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            )}
           </div>
         </div>
       </CardHeader>
