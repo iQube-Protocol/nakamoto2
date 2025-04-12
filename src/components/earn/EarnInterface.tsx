@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DollarSign, TrendingUp, User, ListOrdered, ChevronLeft } from 'lucide-react';
@@ -65,13 +64,16 @@ const EarnInterface = ({ tokenMetrics }: EarnInterfaceProps) => {
   const handleTabChange = (value: string) => {
     setSelectedTab(value === selectedTab ? null : value);
     setCurrentItemIndex(0);
+    setIsPanelCollapsed(false);
   };
 
   const togglePanelCollapse = () => {
     setIsPanelCollapsed(!isPanelCollapsed);
+    
+    if (isPanelCollapsed && !selectedTab) {
+    }
   };
 
-  // Get current items based on selected tab - needed for the button handlers
   const getCurrentItems = () => {
     switch(selectedTab) {
       case 'stats':
@@ -85,9 +87,17 @@ const EarnInterface = ({ tokenMetrics }: EarnInterfaceProps) => {
     }
   };
 
+  const handleCollapsedIconClick = (tabName: string) => {
+    if (selectedTab === tabName && isPanelCollapsed) {
+      setSelectedTab(null);
+    } else {
+      setSelectedTab(tabName);
+      setCurrentItemIndex(0);
+    }
+  };
+
   return (
     <div className="grid grid-cols-12 gap-6 h-full">
-      {/* Agent Interface - Expanded when panel is collapsed */}
       <div className={isPanelCollapsed ? "col-span-11" : "col-span-8"}>
         <AgentInterface
           title="Earning Assistant"
@@ -104,7 +114,6 @@ const EarnInterface = ({ tokenMetrics }: EarnInterfaceProps) => {
         />
       </div>
 
-      {/* Dashboard Panel - Collapsed to small column when toggled */}
       <div className={isPanelCollapsed ? "col-span-1" : "col-span-4"}>
         {isPanelCollapsed ? (
           <div className="border-l h-full flex flex-col items-center justify-start p-2">
@@ -122,7 +131,7 @@ const EarnInterface = ({ tokenMetrics }: EarnInterfaceProps) => {
                 variant={selectedTab === 'price' ? 'secondary' : 'ghost'}
                 size="icon"
                 className={`p-2 ${selectedTab === 'price' ? 'bg-iqube-primary/20' : ''}`}
-                onClick={() => handleTabChange('price')}
+                onClick={() => handleCollapsedIconClick('price')}
                 title="Price"
               >
                 <DollarSign className="h-6 w-6" />
@@ -132,7 +141,7 @@ const EarnInterface = ({ tokenMetrics }: EarnInterfaceProps) => {
                 variant={selectedTab === 'stats' ? 'secondary' : 'ghost'}
                 size="icon"
                 className={`p-2 ${selectedTab === 'stats' ? 'bg-iqube-primary/20' : ''}`}
-                onClick={() => handleTabChange('stats')}
+                onClick={() => handleCollapsedIconClick('stats')}
                 title="Statistics"
               >
                 <TrendingUp className="h-6 w-6" />
@@ -142,7 +151,7 @@ const EarnInterface = ({ tokenMetrics }: EarnInterfaceProps) => {
                 variant={selectedTab === 'portfolio' ? 'secondary' : 'ghost'}
                 size="icon"
                 className={`p-2 ${selectedTab === 'portfolio' ? 'bg-iqube-primary/20' : ''}`}
-                onClick={() => handleTabChange('portfolio')}
+                onClick={() => handleCollapsedIconClick('portfolio')}
                 title="Portfolio"
               >
                 <User className="h-6 w-6" />
@@ -152,7 +161,7 @@ const EarnInterface = ({ tokenMetrics }: EarnInterfaceProps) => {
                 variant={selectedTab === 'transactions' ? 'secondary' : 'ghost'}
                 size="icon"
                 className={`p-2 ${selectedTab === 'transactions' ? 'bg-iqube-primary/20' : ''}`}
-                onClick={() => handleTabChange('transactions')}
+                onClick={() => handleCollapsedIconClick('transactions')}
                 title="Transactions"
               >
                 <ListOrdered className="h-6 w-6" />
@@ -179,7 +188,6 @@ const EarnInterface = ({ tokenMetrics }: EarnInterfaceProps) => {
         )}
       </div>
 
-      {/* Bottom Tabs - Full width */}
       <div className="col-span-12">
         <Tabs value={selectedTab || ''}>
           <TabsList className="w-full grid grid-cols-4">
