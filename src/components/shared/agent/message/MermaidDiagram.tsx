@@ -1,40 +1,50 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { processCode, setupRenderTimeout } from './utils/mermaidUtils';
 import DiagramErrorHandler from './DiagramErrorHandler';
 
-// Initialize mermaid on component mount
-const initializeMermaid = async () => {
-  try {
-    // Dynamically import mermaid
-    const mermaid = await import('mermaid');
-    
-    // Configure mermaid with settings
-    mermaid.default.initialize({
-      startOnLoad: false,
-      theme: 'neutral',
-      securityLevel: 'loose',
-      fontFamily: 'inherit',
-      flowchart: {
-        htmlLabels: true,
-        curve: 'cardinal',
-      },
-      themeVariables: {
-        primaryColor: '#4f46e5',
-        primaryTextColor: '#ffffff',
-        primaryBorderColor: '#3730a3',
-        lineColor: '#6366f1',
-        secondaryColor: '#818cf8',
-        tertiaryColor: '#e0e7ff'
-      },
-      logLevel: 'error'
+// Store mermaid instance globally to avoid reinitialization
+let mermaidInstance: any = null;
+let mermaidPromise: Promise<any> | null = null;
+
+// Initialize mermaid once and reuse
+const getMermaid = async () => {
+  if (mermaidInstance) return mermaidInstance;
+  
+  if (!mermaidPromise) {
+    mermaidPromise = import('mermaid').then(m => {
+      const instance = m.default;
+      
+      // Configure mermaid with settings
+      instance.initialize({
+        startOnLoad: false,
+        theme: 'neutral',
+        securityLevel: 'loose', // Allow all rendering
+        fontFamily: 'inherit',
+        flowchart: {
+          htmlLabels: true,
+          curve: 'cardinal',
+        },
+        themeVariables: {
+          primaryColor: '#4f46e5',
+          primaryTextColor: '#ffffff',
+          primaryBorderColor: '#3730a3',
+          lineColor: '#6366f1',
+          secondaryColor: '#818cf8',
+          tertiaryColor: '#e0e7ff'
+        },
+        logLevel: 'fatal', // Only show fatal errors, reduce noise
+      });
+      
+      mermaidInstance = instance;
+      return instance;
+    }).catch(err => {
+      console.error("Failed to initialize mermaid:", err);
+      mermaidPromise = null;
+      throw err;
     });
-    
-    return mermaid.default;
-  } catch (err) {
-    console.error("Failed to initialize mermaid:", err);
-    return null;
   }
+  
+  return mermaidPromise;
 };
 
 interface MermaidDiagramProps {
@@ -43,31 +53,17 @@ interface MermaidDiagramProps {
 }
 
 const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
-  const [mermaid, setMermaid] = useState<any>(null);
   const [svg, setSvg] = useState<string | null>(null);
   const [error, setError] = useState<Error | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [currentCode, setCurrentCode] = useState(code);
-  const [showCodeView, setShowCodeView] = useState(false);
+  const [currentCode, setCurrentCode] = useState<string>(code);
+  const [showCodeView, setShowCodeView] = useState<boolean>(false);
   const containerRef = useRef<HTMLDivElement>(null);
   
-  // Load mermaid library on component mount
+  // Render diagram when code changes or component mounts
   useEffect(() => {
-    const loadMermaid = async () => {
-      const mermaidInstance = await initializeMermaid();
-      setMermaid(mermaidInstance);
-    };
-    
-    loadMermaid();
-    
-    return () => {
-      // Cleanup any pending operations
-    };
-  }, []);
-  
-  // Reset state and attempt rendering when code or mermaid library changes
-  useEffect(() => {
-    if (!mermaid) return;
+    let isMounted = true;
+    let timeoutId: number | null = null;
     
     const renderDiagram = async () => {
       if (showCodeView) return;
@@ -75,34 +71,52 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
       setIsLoading(true);
       setError(null);
       
+      // Set a timeout to prevent hanging
+      timeoutId = window.setTimeout(() => {
+        if (isMounted) {
+          setError(new Error("Rendering timeout - diagram may be too complex"));
+          setIsLoading(false);
+        }
+      }, 5000);
+      
       try {
-        console.log("Trying to render diagram with code:", currentCode);
+        console.log(`Rendering diagram (ID: ${id}) with code:`, currentCode);
         
-        // Process the code to fix common issues
-        const processedCode = processCode(currentCode);
-        
-        // Setup timeout to prevent hanging
-        const cancelTimeout = setupRenderTimeout();
+        // Get mermaid instance
+        const mermaid = await getMermaid();
         
         // Create a unique ID for this render
         const uniqueId = `mermaid-${id}-${Date.now()}`;
         
-        // Render the diagram
-        const { svg } = await mermaid.render(uniqueId, processedCode);
-        setSvg(svg);
+        // Render to SVG string
+        const { svg } = await mermaid.render(uniqueId, currentCode);
         
-        // Clear timeout as rendering completed
-        cancelTimeout();
+        if (isMounted) {
+          setSvg(svg);
+          setIsLoading(false);
+        }
       } catch (err) {
         console.error("Mermaid rendering error:", err);
-        setError(err instanceof Error ? err : new Error(String(err)));
+        
+        if (isMounted) {
+          setError(err instanceof Error ? err : new Error(String(err)));
+          setIsLoading(false);
+        }
       } finally {
-        setIsLoading(false);
+        if (timeoutId) {
+          window.clearTimeout(timeoutId);
+          timeoutId = null;
+        }
       }
     };
     
     renderDiagram();
-  }, [mermaid, currentCode, id, showCodeView]);
+    
+    return () => {
+      isMounted = false;
+      if (timeoutId) window.clearTimeout(timeoutId);
+    };
+  }, [currentCode, id, showCodeView]);
   
   // Insert SVG into the container when available
   useEffect(() => {
@@ -120,18 +134,17 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
       }
     } catch (err) {
       console.error("Error inserting SVG:", err);
+      setError(err instanceof Error ? err : new Error(String(err)));
     }
   }, [svg, isLoading]);
   
   const handleRetry = (codeToRender: string) => {
     if (codeToRender.startsWith("SHOW_CODE_")) {
       setShowCodeView(true);
-      setCurrentCode(codeToRender);
+      setCurrentCode(codeToRender.replace("SHOW_CODE_", ""));
     } else {
       setShowCodeView(false);
       setCurrentCode(codeToRender);
-      setError(null);
-      setIsLoading(true);
     }
   };
   
@@ -168,11 +181,11 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
     return (
       <div className="my-4 p-3 bg-gray-50 rounded border border-gray-300">
         <p className="text-xs font-medium mb-1">Diagram code:</p>
-        <pre className="text-xs overflow-auto p-2 bg-gray-100 rounded">{currentCode.replace("SHOW_CODE_", "")}</pre>
+        <pre className="text-xs overflow-auto p-2 bg-gray-100 rounded">{currentCode}</pre>
         <button 
           type="button"
           className="mt-2 text-xs border border-blue-300 rounded px-2 py-1 hover:bg-blue-50"
-          onClick={() => handleRetry(currentCode.replace("SHOW_CODE_", ""))}
+          onClick={() => handleRetry(currentCode)}
         >
           Try rendering again
         </button>

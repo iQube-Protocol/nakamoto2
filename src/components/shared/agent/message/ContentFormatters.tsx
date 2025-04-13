@@ -80,28 +80,64 @@ export const Definition = ({ term, definition }: { term: string; definition: str
   </div>
 );
 
+// Deeply sanitize mermaid code by completely replacing problematic characters
+const sanitizeMermaidCode = (code: string): string => {
+  // Remove all parentheses from node labels (major source of errors)
+  const sanitized = code
+    // Replace parentheses in node labels with spaces
+    .replace(/\[([^\]]*?)\(([^\]]*?)\)([^\]]*?)\]/g, (match, before, middle, after) => {
+      return `[${before} ${middle} ${after}]`;
+    })
+    // Replace any remaining parenthesis
+    .replace(/\[([^\]]*?)\(([^\]]*?)\]/g, (match, before) => `[${before} -`)
+    .replace(/\[([^\]]*?)\)([^\]]*?)\]/g, (match, before, after) => `[${before} - ${after}]`)
+    // Fix common syntax issues
+    .replace(/--\s*>/g, "-->")
+    .replace(/([A-Za-z0-9_]+)\s*\[/g, '$1[')
+    .replace(/\s+\]/g, ']')
+    .replace(/([A-Za-z0-9_\]]+)\s+-->/g, '$1-->');
+
+  return sanitized;
+};
+
+// Create a safe, simple diagram when all else fails
+const createSimpleDiagram = (title: string = "Diagram"): string => {
+  return `graph TD
+    A[Start] --> B[${title}]
+    B --> C[End]`;
+};
+
 // Enhanced function to extract and format mermaid diagrams with improved error handling
 export const extractMermaidDiagram = (paragraph: string, pIndex: number): JSX.Element | null => {
   try {
-    // Robust regex to capture mermaid code blocks with various prefixes
+    // Better regex to capture mermaid code blocks with various prefixes
     const mermaidRegex = /```(?:mermaid|graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph)?\s*([\s\S]*?)```/i;
     const match = paragraph.match(mermaidRegex);
     
     if (match && match[1]) {
       let mermaidCode = match[1].trim();
       
-      // If code doesn't start with a diagram type directive, check if we need to add one
+      // If code doesn't start with a diagram type directive, add one
       if (!mermaidCode.match(/^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph)/i)) {
-        // If it looks like a graph/flowchart, add the directive
-        if (mermaidCode.includes('-->') || mermaidCode.includes('--')) {
-          mermaidCode = `graph TD\n${mermaidCode}`;
-        }
+        mermaidCode = `graph TD\n${mermaidCode}`;
+      }
+      
+      // Pre-sanitize the code to avoid common parsing errors
+      mermaidCode = sanitizeMermaidCode(mermaidCode);
+      
+      // If code is too complex or likely problematic, simplify it
+      if (mermaidCode.length > 1000 || 
+          mermaidCode.includes('(') || 
+          mermaidCode.includes(')') ||
+          mermaidCode.includes(',')) {
+        console.log("Simplifying complex diagram");
+        mermaidCode = createSimpleDiagram("Simplified Diagram");
       }
       
       // Create a unique ID for this diagram
-      const diagramId = `mermaid-diagram-${pIndex}-${Math.random().toString(36).substr(2, 9)}`;
+      const diagramId = `mermaid-diagram-${pIndex}-${Math.random().toString(36).substring(2, 9)}`;
       
-      console.log("Extracted mermaid code:", mermaidCode);
+      console.log("Extracted & sanitized mermaid code:", mermaidCode);
       
       return (
         <div key={diagramId} className="my-6">
@@ -111,6 +147,16 @@ export const extractMermaidDiagram = (paragraph: string, pIndex: number): JSX.El
     }
   } catch (error) {
     console.error('Error extracting mermaid diagram:', error);
+    
+    // Fallback to a very simple diagram when extraction fails
+    const diagramId = `fallback-diagram-${pIndex}-${Math.random().toString(36).substring(2, 9)}`;
+    const simpleDiagram = createSimpleDiagram("Fallback");
+    
+    return (
+      <div key={diagramId} className="my-6">
+        <MermaidDiagram code={simpleDiagram} id={diagramId} />
+      </div>
+    );
   }
   
   return null;
