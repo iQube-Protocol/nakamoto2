@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef } from 'react';
 import mermaid from 'mermaid';
 
@@ -44,11 +43,7 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
         
         // Clean up the mermaid code - ensure proper formatting
         // Preprocess the code to sanitize common errors
-        let cleanCode = code.trim()
-          .replace(/--\s*-+/g, '-->')  // Replace incorrect arrows like "-- ----" with "-->"
-          .replace(/--+/g, '--')       // Replace multiple hyphens with double hyphen
-          .replace(/\|\|+/g, '||')     // Fix multiple vertical bars
-          .replace(/\s{2,}/g, ' ');    // Replace multiple spaces with single space
+        const cleanCode = processCode(code);
         
         console.log(`Attempting to render mermaid diagram with ID ${uniqueId}:`, cleanCode);
         
@@ -56,14 +51,6 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
         containerRef.current.innerHTML = '<div class="text-sm text-gray-500">Rendering diagram...</div>';
         
         try {
-          // Check if the code starts with a valid mermaid directive
-          if (!cleanCode.match(/^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph)/)) {
-            // Try to add flowchart directive if missing
-            if (!cleanCode.startsWith('graph')) {
-              cleanCode = 'graph TD\n' + cleanCode;
-            }
-          }
-          
           // Manually parse the diagram first to check for errors
           await mermaid.parse(cleanCode);
           
@@ -125,6 +112,47 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
     };
   }, [code, id]);
 
+  // Process the code to fix common Mermaid syntax issues
+  const processCode = (inputCode: string): string => {
+    // Ensure the code starts with proper directive
+    let result = inputCode.trim();
+    
+    // Handle graph/flowchart directives
+    if (result.startsWith('graph') || result.startsWith('flowchart')) {
+      // Split the first line from the rest to process separately
+      const firstLineEnd = result.indexOf('\n');
+      const firstLine = firstLineEnd > -1 ? result.substring(0, firstLineEnd).trim() : result;
+      const restOfCode = firstLineEnd > -1 ? result.substring(firstLineEnd + 1) : '';
+      
+      // Ensure there's a line break after the directive
+      result = firstLine + '\n';
+      
+      // Process the rest line by line
+      if (restOfCode) {
+        const lines = restOfCode.split('\n');
+        lines.forEach(line => {
+          if (line.trim()) {
+            result += '    ' + line.trim() + '\n';
+          }
+        });
+      }
+    }
+    // Other diagram types
+    else if (!result.match(/^(sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph)/i)) {
+      // Default to flowchart if no recognized directive
+      result = `graph TD\n    ${result.replace(/\n/g, '\n    ')}`;
+    }
+    
+    // Fix common syntax issues
+    return result
+      .replace(/([A-Za-z0-9_]+)\s*\[/g, '$1[') // Remove spaces before [
+      .replace(/\[\s+/g, '[') // Remove spaces after [
+      .replace(/\s+\]/g, ']') // Remove spaces before ]
+      .replace(/([A-Za-z0-9_\]]+)\s+-->/g, '$1-->') // Remove spaces before -->
+      .replace(/--\s+->/g, '-->') // Fix broken arrows like "-- ->"
+      .replace(/--\s+/g, '-->'); // Fix other broken arrows
+  };
+
   // Enhanced retry function with auto-correction attempts
   const handleRetry = (originalCode: string) => {
     renderAttempted.current = false;
@@ -167,15 +195,18 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
     }
   };
 
-  const renderDiagram = async (codeToRender: string = code.trim()) => {
+  const renderDiagram = async (codeToRender: string) => {
     if (!containerRef.current) return;
     
     try {
       const uniqueId = `mermaid-${id}-${Math.random().toString(36).substring(2, 11)}`;
       
+      // Process the code to fix common issues
+      const processedCode = processCode(codeToRender);
+      
       // Parse and render
-      await mermaid.parse(codeToRender);
-      const { svg } = await mermaid.render(uniqueId, codeToRender);
+      await mermaid.parse(processedCode);
+      const { svg } = await mermaid.render(uniqueId, processedCode);
       
       if (containerRef.current) {
         containerRef.current.innerHTML = svg;

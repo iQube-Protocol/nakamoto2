@@ -40,13 +40,14 @@ const MessageContent = ({ content, sender }: MessageContentProps) => {
         // Enhanced Mermaid diagram detection with multiple formats
         if (paragraph.includes('```mermaid') || 
             (paragraph.includes('```') && 
-             (paragraph.includes('graph') || 
-              paragraph.includes('flowchart') || 
-              paragraph.includes('sequenceDiagram') ||
-              paragraph.includes('classDiagram') ||
-              paragraph.includes('stateDiagram') ||
-              paragraph.includes('erDiagram')))) {
+             (paragraph.toLowerCase().includes('graph') || 
+              paragraph.toLowerCase().includes('flowchart') || 
+              paragraph.toLowerCase().includes('sequence') ||
+              paragraph.toLowerCase().includes('class') ||
+              paragraph.toLowerCase().includes('state') ||
+              paragraph.toLowerCase().includes('er')))) {
           
+          // First try the extractMermaidDiagram function
           const mermaidDiagram = extractMermaidDiagram(paragraph, pIndex);
           if (mermaidDiagram) return mermaidDiagram;
           
@@ -55,10 +56,27 @@ const MessageContent = ({ content, sender }: MessageContentProps) => {
           const match = paragraph.match(codeRegex);
           
           if (match && match[1]) {
+            // Properly format the extracted code
+            let diagramCode = match[1].trim();
+            
+            // Ensure proper directive and formatting
+            if (diagramCode.match(/^(graph|flowchart)/i)) {
+              // Format properly with linebreaks
+              const lines = diagramCode.split('\n');
+              let formattedCode = lines[0].trim() + '\n';
+              for (let i = 1; i < lines.length; i++) {
+                formattedCode += '    ' + lines[i].trim() + '\n';
+              }
+              diagramCode = formattedCode.trim();
+            } else if (!diagramCode.match(/^(sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph)/i)) {
+              // If no recognized directive, add flowchart directive
+              diagramCode = `graph TD\n    ${diagramCode.replace(/\n/g, '\n    ')}`;
+            }
+            
             const diagramId = `manual-mermaid-${pIndex}`;
             return (
               <div key={diagramId} className="my-4">
-                <MermaidDiagram code={match[1].trim()} id={diagramId} />
+                <MermaidDiagram code={diagramCode} id={diagramId} />
               </div>
             );
           }
