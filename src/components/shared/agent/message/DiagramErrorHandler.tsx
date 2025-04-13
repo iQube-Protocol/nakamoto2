@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { attemptAutoFix, sanitizeMermaidCode } from './utils/mermaidUtils';
 import { AlertCircle } from 'lucide-react';
@@ -42,23 +43,24 @@ const DiagramErrorHandler: React.FC<DiagramErrorHandlerProps> = ({ error, code, 
     // Use a timeout to prevent UI freezing
     setTimeout(() => {
       try {
-        // Try major sanitization first for errors related to parentheses, commas, etc.
+        // Choose fixing strategy based on error type
         if (errorMessage.includes("PS") || 
             errorMessage.includes("parentheses") || 
             errorMessage.includes("comma") ||
             errorMessage.includes("Expecting")) {
+          console.log("Using deep sanitization for parentheses/commas error");
+          // Use the sanitizeMermaidCode function for heavy error fixing
           const sanitized = sanitizeMermaidCode(code);
           onRetry(sanitized);
-        } else {
-          // Get fixed code using standard autofix
+        } else if (errorMessage.includes("Parse error")) {
+          // Generic parse errors - try standard autofix first
+          console.log("Using auto fix for parse error");
           const fixedCode = attemptAutoFix(code);
-          
-          if (fixedCode !== code) {
-            onRetry(fixedCode);
-          } else {
-            // If code is unchanged, try a simple graph
-            onRetry("graph TD\n    A[Start] --> B[End]");
-          }
+          onRetry(fixedCode);
+        } else {
+          // For other errors, try a simple diagram
+          console.log("Using simplified diagram for general error");
+          onRetry("graph TD\n    A[Error] --> B[Simple Diagram]\n    B --> C[For Debugging]");
         }
       } catch (err) {
         console.error('Auto-fix failed:', err);

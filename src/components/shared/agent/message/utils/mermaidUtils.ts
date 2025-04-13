@@ -24,16 +24,23 @@ export const processCode = (inputCode: string): string => {
       result = `graph TD\n    ${result.replace(/\n/g, '\n    ')}`;
     }
     
-    // Fix common syntax issues
+    // Fix common syntax issues - especially parentheses which cause most errors
     result = result
       .replace(/([A-Za-z0-9_]+)\s*\[/g, '$1[') // Remove spaces before [
       .replace(/\s+\]/g, ']') // Remove spaces before ]
       .replace(/([A-Za-z0-9_\]]+)\s+-->/g, '$1-->') // Remove spaces before -->
       .replace(/--\s+->/g, '-->') // Fix broken arrows
       .replace(/--\s+/g, '-->') // Fix dashed lines to arrows
-      .replace(/(\[\s*[^\]]*)(e\.g\.,)([^\]]*\])/g, '$1e.g.$3') // Fix e.g., syntax with commas
-      .replace(/(\[[^\]]*),([^\]]*\])/g, '$1_$2') // Replace commas in node labels with underscores
-      .replace(/(\[[^\]]*)\(([^\]]*)\)([^\]]*\])/g, '$1_$2_$3'); // Replace parentheses with underscores
+      // Replace parentheses and commas in node labels - CRITICAL FIX
+      .replace(/\[([^\]]*?)(\(|\))([^\]]*?)\]/g, (match, before, paren, after) => {
+        return `[${before}${paren === '(' ? '_' : '_'}${after}]`;
+      })
+      .replace(/\[([^\]]*?)e\.g\.,([^\]]*?)\]/g, (match, before, after) => {
+        return `[${before}e.g.${after}]`;
+      })
+      .replace(/\[([^\]]*?),([^\]]*?)\]/g, (match, before, after) => {
+        return `[${before}_${after}]`;
+      });
       
     return result;
   } catch (err) {
@@ -61,29 +68,26 @@ export const attemptAutoFix = (originalCode: string): string => {
     
     // Fix 3: Handle special characters and parentheses in labels which often cause issues
     fixedCode = fixedCode
-      .replace(/(\[\s*[^\]]*)(e\.g\.,)([^\]]*\])/g, '$1e.g.$3') // Remove comma from e.g.,
-      .replace(/(\[[^\]]*),([^\]]*\])/g, '$1_$2') // Replace commas in node labels
-      .replace(/(\[[^\]]*)\(([^\]]*)\)([^\]]*\])/g, '$1_$2_$3') // Replace parentheses
-      .replace(/(\[[^\]]*)\s+\(/g, '$1_(') // Fix spaces before parentheses
-      .replace(/\)\s+\]/g, ')_]'); // Fix spaces after parentheses
+      // Remove ALL parentheses from node labels - they cause most parsing errors
+      .replace(/\[([^\]]*?)\(([^\]]*?)\)([^\]]*?)\]/g, (match, before, inside, after) => {
+        return `[${before}_${inside}_${after}]`;
+      })
+      // Fix "e.g.," notation which causes comma parsing issues
+      .replace(/\[([^\]]*?)e\.g\.,([^\]]*?)\]/g, (match, before, after) => {
+        return `[${before}e.g.${after}]`;
+      })
+      // Replace all commas in node labels
+      .replace(/\[([^\]]*?),([^\]]*?)\]/g, (match, before, after) => {
+        return `[${before}_${after}]`;
+      })
+      // Extra safety for parenthesis issues
+      .replace(/\[\s*([^\]]*)\s*\(/, '[${1}_')
+      .replace(/\)\s*([^\]]*)\s*\]/, '_$1]');
     
     // Fix 4: If too complex, provide a minimal working example
     if (fixedCode.length > 300 && !fixedCode.startsWith('graph')) {
-      fixedCode = `graph TD\n    A[Start] --> B[Middle] --> C[End]`;
-    } else if (fixedCode.length > 500) {
-      fixedCode = `graph TD\n    A[Start] --> B[Middle] --> C[End]`;
+      return `graph TD\n    A[Start] --> B[Middle] --> C[End]`;
     }
-    
-    // Fix 5: Handle problematic nodes with weird formatting
-    const nodeRegex = /\[([^\]]*)\]/g;
-    fixedCode = fixedCode.replace(nodeRegex, (match) => {
-      return match
-        .replace(/\(/g, '_') // Replace opening parentheses
-        .replace(/\)/g, '_') // Replace closing parentheses
-        .replace(/,/g, '_') // Replace commas
-        .replace(/;/g, '_') // Replace semicolons
-        .replace(/:/g, '-') // Replace colons
-    });
     
     return fixedCode;
   } catch (error) {
@@ -101,26 +105,49 @@ export const setupRenderTimeout = (): (() => void) => {
   return () => clearTimeout(timeoutId);
 };
 
-// Handle malformed mermaid diagrams
+// Special sanitization for diagrams with PS parse errors (parenthesis issues)
 export const sanitizeMermaidCode = (code: string): string => {
-  // First apply basic processing
-  let sanitized = processCode(code);
+  console.log("Sanitizing problematic diagram code");
   
-  // Handle known problematic patterns
-  sanitized = sanitized
-    // Remove or escape problematic characters in node text
-    .replace(/\[([^\]]*)([\(\),;:])+([^\]]*)\]/g, (match, p1, p2, p3) => {
-      return `[${p1}${p2.replace(/./g, '_')}${p3}]`;
-    })
-    // Fix node connections that might be using invalid syntax
-    .replace(/(-+)(?!>)/g, '-->')
-    // Remove blank lines
-    .replace(/\n\s*\n/g, '\n');
-  
-  // If all else fails, return a simple valid diagram
-  if (sanitized.includes('Parse error') || sanitized.includes('Syntax error')) {
-    return 'graph TD\n    A[Error in Diagram] --> B[Simplified Version]';
+  try {
+    // First strip any SHOW_CODE prefix
+    let sanitized = code.replace(/^SHOW_CODE_/, '').trim();
+    
+    // Get the diagram type - preserve it for later
+    const typeMatch = sanitized.match(/^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph)\s+([A-Z]{2})?/i);
+    const diagramType = typeMatch ? typeMatch[0] : 'graph TD';
+    
+    // For PS errors specifically
+    if (code.includes("e.g.,") || code.includes("(") || code.includes(")")) {
+      // Replace all nodes with parentheses with safer versions
+      sanitized = sanitized.replace(/\[([^\]]*)(\(|\))([^\]]*)\]/g, (match, before, paren, after) => {
+        return `[${before}${after}]`;
+      });
+      
+      // Replace all nodes with commas with safer versions
+      sanitized = sanitized.replace(/\[([^\]]*),([^\]]*)\]/g, (match, before, after) => {
+        return `[${before} and ${after}]`;
+      });
+      
+      // Replace "e.g.," which often causes parse errors
+      sanitized = sanitized.replace(/e\.g\.,/g, 'eg');
+    }
+    
+    // If a parse error is still likely, create a very simple diagram
+    if (sanitized.includes('Parse error') || sanitized.includes('Syntax error')) {
+      console.log("Creating fallback simple diagram due to syntax errors");
+      return `${diagramType}\n    A[Simplified Diagram] --> B[Due to Parse Error]`;
+    }
+    
+    // Ensure we still have a valid diagram type
+    if (!sanitized.match(/^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph)/i)) {
+      sanitized = `${diagramType}\n${sanitized}`;
+    }
+    
+    return sanitized;
+  } catch (err) {
+    console.error('Error sanitizing mermaid code:', err);
+    return 'graph TD\n    A[Error] --> B[Fixed Diagram]';
   }
-  
-  return sanitized;
 };
+
