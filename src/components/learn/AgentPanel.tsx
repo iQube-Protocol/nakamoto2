@@ -79,7 +79,7 @@ const AgentPanel = ({
           {
             id: "1",
             sender: "agent",
-            message: "Welcome to your learning journey! Based on your iQube profile, I see you're interested in Web3 topics. Would you like to continue with your Web3 Fundamentals course or explore something new?",
+            message: "Hi there! I'm your Learning Assistant, here to help you explore the world of Web3 and blockchain. Based on your iQube profile, I see you're interested in several Web3 topics. What aspects of blockchain or Web3 are you curious about today? Or is there something specific you'd like to learn?",
             timestamp: new Date().toISOString(),
             metadata: {
               version: "1.0",
