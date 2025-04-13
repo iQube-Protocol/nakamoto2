@@ -13,7 +13,7 @@ interface MetaQubeHeaderProps {
 interface DotScoreProps {
   value: number;
   label: string;
-  type: 'risk' | 'sensitivity' | 'trust';
+  type: 'risk' | 'sensitivity' | 'trust' | 'accuracy' | 'verifiability';
 }
 
 const DotScore = ({ value, label, type }: DotScoreProps) => {
@@ -29,6 +29,13 @@ const DotScore = ({ value, label, type }: DotScoreProps) => {
         : value <= 7 
           ? "bg-yellow-500" 
           : "bg-red-500";
+    } else if (type === 'accuracy' || type === 'verifiability') {
+      // Accuracy and Verifiability: 1-3 red, 4-6 amber, 7-10 green
+      return value <= 3 
+        ? "bg-red-500" 
+        : value <= 6 
+          ? "bg-yellow-500" 
+          : "bg-green-500";
     } else {
       // Trust: 5-10 green, 3-4 amber, 1-2 red
       return value >= 5 
@@ -80,12 +87,14 @@ const MetaQubeHeader = ({ metaQube }: MetaQubeHeaderProps) => {
         </Badge>
       </div>
       <div className="flex items-center justify-between">
-        <div className="flex items-center gap-6">
+        <div className="flex items-center gap-4 overflow-x-auto pb-1">
           <DotScore value={trustScore} label="Trust" type="trust" />
           <DotScore value={metaQube["Sensitivity-Score"]} label="Sensitivity" type="sensitivity" />
           <DotScore value={metaQube["Risk-Score"]} label="Risk" type="risk" />
+          <DotScore value={metaQube["Accuracy-Score"]} label="Accuracy" type="accuracy" />
+          <DotScore value={metaQube["Verifiability-Score"]} label="Verifiability" type="verifiability" />
         </div>
-        <div className="flex flex-col items-center">
+        <div className="flex flex-col items-center ml-2">
           <span className="text-xs text-muted-foreground mb-1">{isActive ? 'Active' : 'Inactive'}</span>
           <Switch 
             checked={isActive} 
