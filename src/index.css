@@ -1,3 +1,4 @@
+
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -150,6 +151,6 @@
   
   /* Tooltip styles enhancement */
   [data-radix-popper-content-wrapper] [role="tooltip"] {
-    @apply bg-[hsl(var(--tooltip-background))] text-[hsl(var(--tooltip-foreground))] border border-border shadow-md;
+    @apply bg-[hsl(var(--tooltip-background))] text-[hsl(var(--tooltip-foreground))] border border-border shadow-md px-3 py-1.5 rounded-md;
   }
 }

@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useRef } from 'react';
 import DiagramErrorHandler from './DiagramErrorHandler';
+import { useTheme } from '@/contexts/ThemeContext';
 
 // Store mermaid instance globally to avoid reinitialization
 let mermaidInstance: any = null;
@@ -79,6 +80,7 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
   const [currentCode, setCurrentCode] = useState<string>(code);
   const [showCodeView, setShowCodeView] = useState<boolean>(false);
   const containerRef = useRef<HTMLDivElement>(null);
+  const { theme } = useTheme();
   
   // Render diagram when code changes or component mounts
   useEffect(() => {
@@ -155,8 +157,9 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
         svgElement.style.maxHeight = '650px'; // Fixed height for better visibility
         svgElement.style.fontFamily = 'Inter, system-ui, sans-serif';
         
-        // Apply beige background to the entire SVG
-        svgElement.style.backgroundColor = '#FDE1D3';
+        // Apply different background based on theme
+        const backgroundColor = theme === 'light' ? '#F9F5EB' : '#FDE1D3';
+        svgElement.style.backgroundColor = backgroundColor;
         svgElement.style.borderRadius = '12px';
         svgElement.style.padding = '16px';
         
@@ -212,7 +215,7 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
       console.error("Error inserting SVG:", err);
       setError(err instanceof Error ? err : new Error(String(err)));
     }
-  }, [svg, isLoading]);
+  }, [svg, isLoading, theme]);
   
   const handleRetry = (codeToRender: string) => {
     if (codeToRender.startsWith("SHOW_CODE_")) {
@@ -273,7 +276,9 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
   return (
     <div 
       ref={containerRef}
-      className="flex justify-center overflow-x-auto p-4 bg-[#FDE1D3] rounded-xl min-h-[100px] border border-amber-100 shadow-sm"
+      className={`flex justify-center overflow-x-auto p-4 rounded-xl min-h-[100px] border shadow-sm ${
+        theme === 'light' ? 'bg-[#F9F5EB] border-amber-100' : 'bg-[#FDE1D3] border-amber-100'
+      }`}
     />
   );
 };
