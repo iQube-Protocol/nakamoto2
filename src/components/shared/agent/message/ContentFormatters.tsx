@@ -119,7 +119,7 @@ const sanitizeMermaidCode = (code: string): string => {
     // Limit node label length for better rendering
     .replace(/\[([^\]]{50,})\]/g, (match, content) => {
       // Split long node text to multiple lines
-      const lines = content.match(/.{1,25}(\s|$)/g) || [content];
+      const lines = content.match(/.{1,30}(\s|$)/g) || [content]; // Increased character limit per line
       return `["${lines.join('<br>')}"]`;
     });
     
@@ -133,8 +133,8 @@ const createSimpleDiagram = (title: string = "Diagram"): string => {
     B --> C[End]
     
     %% Styling directives
-    classDef default fill:#f4f4f4,stroke:#6E56CF,stroke-width:1px,color:#333,font-size:14px;
-    classDef primary fill:#6E56CF,stroke:#5842B5,stroke-width:1px,color:#fff,font-size:14px;
+    classDef default fill:#E5DEFF,stroke:#7E69AB,stroke-width:1.5px,color:#1A1F2C,font-size:16px;
+    classDef primary fill:#9B87F5,stroke:#7E69AB,stroke-width:1.5px,color:#1A1F2C,font-size:16px;
     
     class B primary;`;
 };

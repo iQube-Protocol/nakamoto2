@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import DiagramErrorHandler from './DiagramErrorHandler';
 
@@ -18,33 +19,38 @@ const getMermaid = async () => {
         startOnLoad: false,
         theme: 'neutral',
         securityLevel: 'loose', // Allow all rendering
-        fontFamily: 'inherit',
-        fontSize: 14, // Control font size
+        fontFamily: 'Inter, system-ui, sans-serif',
+        fontSize: 16, // Increased font size for better legibility
         flowchart: {
           htmlLabels: true,
           curve: 'basis', // Smoother curves
-          diagramPadding: 8, // Reduce padding
-          nodeSpacing: 30, // Spacing between nodes
-          rankSpacing: 40, // Spacing between ranks
+          diagramPadding: 12, // Slightly more padding
+          nodeSpacing: 35, // Increased spacing between nodes
+          rankSpacing: 45, // Increased spacing between ranks
         },
         themeVariables: {
-          primaryColor: '#6E56CF', // Match iqube-primary
-          primaryTextColor: '#ffffff',
-          primaryBorderColor: '#5842B5',
-          lineColor: '#9B8AFB', // Match iqube-secondary
-          secondaryColor: '#9B8AFB',
-          tertiaryColor: '#e0e7ff',
-          // Font sizes
-          fontSize: '14px',
-          fontFamily: 'inherit',
+          // Use a refined color palette with better contrast
+          primaryColor: '#9B87F5', // Lighter purple for better text visibility
+          primaryTextColor: '#1A1F2C', // Darker text for contrast
+          primaryBorderColor: '#7E69AB', // Border color
+          lineColor: '#7E69AB', // Line color for connections
+          secondaryColor: '#D6BCFA', // Light purple for secondary elements
+          tertiaryColor: '#F1F0FB', // Very light background
+          
+          // Adjustments for text
+          fontSize: '16px',
+          fontFamily: 'Inter, system-ui, sans-serif',
+          
           // Node styling
           nodeBorder: '1px',
-          mainBkg: '#6E56CF',
-          nodeBkg: '#6E56CF',
+          mainBkg: '#E5DEFF', // Light purple background for nodes
+          nodeBkg: '#E5DEFF',
+          
           // Edge styling
-          edgeLabelBackground: '#f7f7ff',
-          // More elegant label styling
-          labelBackground: '#f7f7ff',
+          edgeLabelBackground: '#FFFFFF', // White background for edge labels
+          
+          // Label styling
+          labelBackground: '#FFFFFF', // White background
           labelBorderRadius: '4px',
         },
         logLevel: 'fatal', // Only show fatal errors, reduce noise
@@ -147,32 +153,36 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
         svgElement.setAttribute('width', '100%');
         svgElement.setAttribute('height', 'auto');
         svgElement.style.maxWidth = '100%';
-        svgElement.style.maxHeight = '500px';
+        svgElement.style.maxHeight = '650px'); // Increased height for better visibility
         
         // Improve font rendering
-        svgElement.style.fontFamily = 'inherit';
+        svgElement.style.fontFamily = 'Inter, system-ui, sans-serif';
         
         // Additional styling improvements
         const labels = svgElement.querySelectorAll('.nodeLabel, .edgeLabel');
         labels.forEach((label: Element) => {
           if (label instanceof HTMLElement) {
-            label.style.fontSize = '14px';
+            label.style.fontSize = '15px'; // Increased font size for better readability
             // Make labels wrap at a reasonable width
             if (label.classList.contains('nodeLabel')) {
-              label.style.maxWidth = '120px';
+              label.style.maxWidth = '150px'; // Wider nodes for better text fit
               label.style.whiteSpace = 'normal';
-              label.style.lineHeight = '1.3';
+              label.style.lineHeight = '1.4';
+              label.style.padding = '4px';
+              label.style.color = '#1A1F2C'; // Ensure text color is dark for contrast
             }
           }
         });
         
-        // Style node shapes
+        // Style node shapes with more elegant appearance
         const nodes = svgElement.querySelectorAll('.node rect, .node circle, .node ellipse, .node polygon');
         nodes.forEach((node: Element) => {
           if (node instanceof SVGElement) {
-            node.style.rx = '4'; // Rounded corners
-            node.style.ry = '4'; // Rounded corners
-            node.style.filter = 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1))'; // Subtle shadow
+            node.style.rx = '6'; // More rounded corners
+            node.style.ry = '6'; // More rounded corners
+            node.style.filter = 'drop-shadow(0 2px 3px rgba(0, 0, 0, 0.1))'; // Enhanced subtle shadow
+            node.style.stroke = '#7E69AB'; // Consistent border color
+            node.style.strokeWidth = '1.5px'; // Slightly thicker border
           }
         });
         
@@ -180,7 +190,17 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
         const edges = svgElement.querySelectorAll('.edgePath path');
         edges.forEach((edge: Element) => {
           if (edge instanceof SVGElement) {
-            edge.style.strokeWidth = '1.5px';
+            edge.style.strokeWidth = '2px'; // Thicker lines for visibility
+            edge.style.stroke = '#7E69AB'; // Consistent edge color
+          }
+        });
+        
+        // Add styling to arrow markers
+        const arrowHeads = svgElement.querySelectorAll('.marker');
+        arrowHeads.forEach((arrow: Element) => {
+          if (arrow instanceof SVGElement) {
+            arrow.style.stroke = '#7E69AB';
+            arrow.style.fill = '#7E69AB';
           }
         });
       }
