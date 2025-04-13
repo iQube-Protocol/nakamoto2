@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import DiagramErrorHandler from './DiagramErrorHandler';
 
@@ -19,7 +20,7 @@ const getMermaid = async () => {
         theme: 'neutral',
         securityLevel: 'loose', // Allow all rendering
         fontFamily: 'Inter, system-ui, sans-serif',
-        fontSize: 18, // Increased font size for better legibility
+        fontSize: 24, // Increased font size by ~30% (from 18 to 24)
         flowchart: {
           htmlLabels: true,
           curve: 'basis', // Smoother curves
@@ -37,12 +38,12 @@ const getMermaid = async () => {
           tertiaryColor: '#F1F0FB', // Very light background
           
           // Adjustments for text
-          fontSize: '18px', // Increased font size
+          fontSize: '24px', // Increased font size by ~30% (from 18px to 24px)
           fontFamily: 'Inter, system-ui, sans-serif',
           
           // Node styling - changed to white background
           nodeBorder: '1px',
-          mainBkg: '#FFFFFF', // White background for nodes (was #E5DEFF)
+          mainBkg: '#FFFFFF', // White background for nodes 
           nodeBkg: '#FFFFFF', // White background for nodes
           
           // Edge styling
@@ -152,7 +153,7 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
         svgElement.setAttribute('width', '100%');
         svgElement.setAttribute('height', 'auto');
         svgElement.style.maxWidth = '100%';
-        svgElement.style.maxHeight = '650px'; // Fixed: removed extra parenthesis here
+        svgElement.style.maxHeight = '650px'; // Fixed height for better visibility
         
         // Improve font rendering
         svgElement.style.fontFamily = 'Inter, system-ui, sans-serif';
@@ -161,13 +162,13 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
         const labels = svgElement.querySelectorAll('.nodeLabel, .edgeLabel');
         labels.forEach((label: Element) => {
           if (label instanceof HTMLElement) {
-            label.style.fontSize = '17px'; // Increased font size further for better readability
+            label.style.fontSize = '22px'; // Increased font size by ~30% (from 17px to 22px)
             // Make labels wrap at a reasonable width
             if (label.classList.contains('nodeLabel')) {
-              label.style.maxWidth = '160px'; // Wider nodes for better text fit
+              label.style.maxWidth = '180px'; // Wider nodes for better text fit
               label.style.whiteSpace = 'normal';
               label.style.lineHeight = '1.4';
-              label.style.padding = '4px';
+              label.style.padding = '6px'; // Increased padding for more space
               label.style.color = '#1A1F2C'; // Ensure text color is dark for contrast
               label.style.fontWeight = '500'; // Slightly bolder text for better readability
             }
@@ -178,8 +179,8 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
         const nodes = svgElement.querySelectorAll('.node rect, .node circle, .node ellipse, .node polygon');
         nodes.forEach((node: Element) => {
           if (node instanceof SVGElement) {
-            node.style.rx = '6'; // More rounded corners
-            node.style.ry = '6'; // More rounded corners
+            node.style.rx = '8'; // More rounded corners
+            node.style.ry = '8'; // More rounded corners
             node.style.filter = 'drop-shadow(0 2px 3px rgba(0, 0, 0, 0.1))'; // Enhanced subtle shadow
             node.style.stroke = '#7E69AB'; // Consistent border color
             node.style.strokeWidth = '1.5px'; // Slightly thicker border
@@ -191,7 +192,7 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
         const edges = svgElement.querySelectorAll('.edgePath path');
         edges.forEach((edge: Element) => {
           if (edge instanceof SVGElement) {
-            edge.style.strokeWidth = '2px'; // Thicker lines for visibility
+            edge.style.strokeWidth = '2.5px'; // Thicker lines for visibility (increased from 2px)
             edge.style.stroke = '#7E69AB'; // Consistent edge color
           }
         });
