@@ -13,7 +13,7 @@ interface MetaQubeHeaderProps {
 interface DotScoreProps {
   value: number;
   label: string;
-  type: 'risk' | 'trust';
+  type: 'risk' | 'sensitivity' | 'trust';
 }
 
 const DotScore = ({ value, label, type }: DotScoreProps) => {
@@ -22,8 +22,8 @@ const DotScore = ({ value, label, type }: DotScoreProps) => {
   const maxDots = 5; // Max possible dots (10/2 = 5)
   
   const getScoreColor = () => {
-    if (type === 'risk') {
-      // Risk: 1-4 green, 5-7 amber, 8-10 red
+    if (type === 'risk' || type === 'sensitivity') {
+      // Risk and Sensitivity: 1-4 green, 5-7 amber, 8-10 red
       return value <= 4 
         ? "bg-green-500" 
         : value <= 7 
@@ -82,6 +82,7 @@ const MetaQubeHeader = ({ metaQube }: MetaQubeHeaderProps) => {
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-6">
           <DotScore value={trustScore} label="Trust" type="trust" />
+          <DotScore value={metaQube["Sensitivity-Score"]} label="Sensitivity" type="sensitivity" />
           <DotScore value={metaQube["Risk-Score"]} label="Risk" type="risk" />
         </div>
         <div className="flex flex-col items-center">

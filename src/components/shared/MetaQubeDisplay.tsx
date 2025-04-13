@@ -145,6 +145,7 @@ const MetaQubeDisplay = ({ metaQube, compact = false, className }: MetaQubeDispl
 
         <div className="flex justify-between mb-4 pb-4 border-b">
           <DotScore value={metaQube["Accuracy-Score"]} label="Accuracy" type="accuracy" />
+          <DotScore value={metaQube["Sensitivity-Score"]} label="Sensitivity" type="sensitivity" />
           <DotScore value={metaQube["Verifiability-Score"]} label="Verifiability" type="verifiability" />
         </div>
 
