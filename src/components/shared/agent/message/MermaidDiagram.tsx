@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import DiagramErrorHandler from './DiagramErrorHandler';
 
@@ -27,7 +26,6 @@ const getMermaid = async () => {
           diagramPadding: 8, // Reduce padding
           nodeSpacing: 30, // Spacing between nodes
           rankSpacing: 40, // Spacing between ranks
-          wrap: true, // Allow text wrapping in nodes
         },
         themeVariables: {
           primaryColor: '#6E56CF', // Match iqube-primary
