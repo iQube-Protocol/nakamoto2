@@ -34,7 +34,7 @@ const getMermaid = async () => {
           primaryBorderColor: '#7E69AB', // Border color
           lineColor: '#7E69AB', // Line color for connections
           secondaryColor: '#D6BCFA', // Light purple for secondary elements
-          tertiaryColor: '#FDE1D3', // Changed to beige background
+          tertiaryColor: '#FEF5E7', // Changed to cream background
           
           // Adjustments for text
           fontSize: '84px', // Keep the large font size
@@ -50,7 +50,7 @@ const getMermaid = async () => {
           
           // Label styling
           labelBackground: '#FFFFFF', // White background
-          labelBorderRadius: '8px', // More rounded corners
+          labelBorderRadius: '16px', // Doubled corner radius for more rounding
         },
         logLevel: 'fatal', // Only show fatal errors, reduce noise
       });
@@ -155,9 +155,9 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
         svgElement.style.maxHeight = '650px'; // Fixed height for better visibility
         svgElement.style.fontFamily = 'Inter, system-ui, sans-serif';
         
-        // Apply beige background to the entire SVG
-        svgElement.style.backgroundColor = '#FDE1D3';
-        svgElement.style.borderRadius = '12px';
+        // Apply cream background to the entire SVG
+        svgElement.style.backgroundColor = '#FEF5E7';
+        svgElement.style.borderRadius = '16px';
         svgElement.style.padding = '16px';
         
         // Additional styling improvements for labels
@@ -177,12 +177,12 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
           }
         });
         
-        // Style node shapes with more elegant appearance
+        // Style node shapes with more elegant appearance and doubled corner radius
         const nodes = svgElement.querySelectorAll('.node rect, .node circle, .node ellipse, .node polygon');
         nodes.forEach((node: Element) => {
           if (node instanceof SVGElement) {
-            node.style.rx = '12'; // More rounded corners for elegance
-            node.style.ry = '12'; // More rounded corners for elegance
+            node.style.rx = '24'; // Doubled corner radius for more elegance
+            node.style.ry = '24'; // Doubled corner radius for more elegance
             node.style.filter = 'drop-shadow(0 3px 5px rgba(0, 0, 0, 0.1))'; // Enhanced subtle shadow
             node.style.stroke = '#7E69AB'; // Consistent border color
             node.style.strokeWidth = '4px'; // Refined border thickness
@@ -273,7 +273,7 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
   return (
     <div 
       ref={containerRef}
-      className="flex justify-center overflow-x-auto p-4 bg-[#FDE1D3] rounded-xl min-h-[100px] border border-amber-100 shadow-sm"
+      className="flex justify-center overflow-x-auto p-4 bg-[#FEF5E7] rounded-xl min-h-[100px] border border-amber-100 shadow-sm"
     />
   );
 };
