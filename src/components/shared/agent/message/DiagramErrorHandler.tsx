@@ -31,17 +31,24 @@ const DiagramErrorHandler: React.FC<DiagramErrorHandlerProps> = ({ error, code, 
   }, [errorMessage, code]);
 
   const handleRetry = () => {
+    // Simple retry with current code
     onRetry(code);
   };
   
   const handleAutoFix = () => {
-    const fixedCode = attemptAutoFix(code);
-    console.log('Attempting fix with:', fixedCode);
-    onRetry(fixedCode);
+    try {
+      const fixedCode = attemptAutoFix(code);
+      console.log('Attempting fix with:', fixedCode);
+      onRetry(fixedCode);
+    } catch (err) {
+      console.error('Auto-fix failed:', err);
+      // If auto-fix fails, just retry with original code
+      onRetry(code);
+    }
   };
   
   const handleShowCode = () => {
-    // Instead of using DOM manipulation, we'll return a flag to the parent component
+    // Send a signal to parent component to show code view
     onRetry("SHOW_CODE_" + code);
   };
   

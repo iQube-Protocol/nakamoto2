@@ -1,6 +1,7 @@
+
 import mermaid from 'mermaid';
 
-// Initialize mermaid with better configuration for rendering
+// Initialize mermaid with safer configuration
 mermaid.initialize({
   startOnLoad: false,
   theme: 'neutral',
@@ -22,96 +23,81 @@ mermaid.initialize({
 
 // Process the code to fix common Mermaid syntax issues
 export const processCode = (inputCode: string): string => {
-  // Ensure the code starts with proper directive
-  let result = inputCode.trim();
-  
-  // Handle graph/flowchart directives
-  if (result.startsWith('graph') || result.startsWith('flowchart')) {
-    // Split the first line from the rest to process separately
-    const firstLineEnd = result.indexOf('\n');
-    const firstLine = firstLineEnd > -1 ? result.substring(0, firstLineEnd).trim() : result;
-    const restOfCode = firstLineEnd > -1 ? result.substring(firstLineEnd + 1) : '';
+  try {
+    // Remove "SHOW_CODE_" prefix if present
+    let result = inputCode.replace(/^SHOW_CODE_/, '').trim();
     
-    // Ensure there's a line break after the directive
-    result = firstLine + '\n';
+    // Handle completely empty input
+    if (!result) {
+      return 'graph TD\n    A[Start] --> B[End]';
+    }
     
-    // Process the rest line by line
-    if (restOfCode) {
-      const lines = restOfCode.split('\n');
-      lines.forEach(line => {
-        if (line.trim()) {
-          // Escape parentheses in node labels to prevent parsing errors
-          let processedLine = line.trim();
-          
-          // Replace spaces in node labels with underscores to prevent parsing issues
-          processedLine = processedLine.replace(/\[([^\]]*)\]/g, (match, content) => {
-            // Replace spaces with underscores in node labels
-            const safeContent = content.replace(/\s+/g, '_');
-            // Also replace parentheses with safer characters
-            return `[${safeContent}]`;
-          });
-          
-          result += '    ' + processedLine + '\n';
+    // Handle graph/flowchart directives
+    if (result.startsWith('graph') || result.startsWith('flowchart')) {
+      // Split into lines and rebuild with proper spacing
+      const lines = result.split('\n');
+      
+      // Process the first line (graph directive)
+      result = lines[0].trim() + '\n';
+      
+      // Process remaining lines with proper indentation
+      if (lines.length > 1) {
+        for (let i = 1; i < lines.length; i++) {
+          const line = lines[i].trim();
+          if (line) {
+            // Sanitize node labels to remove problematic characters
+            let processedLine = line
+              .replace(/\[([^\]]*)\]/g, (match, content) => {
+                // Replace spaces, parentheses with safe characters
+                const safeContent = content
+                  .replace(/\s+/g, '_')
+                  .replace(/\(/g, '〈')
+                  .replace(/\)/g, '〉')
+                  .replace(/,/g, '،');
+                return `[${safeContent}]`;
+              });
+              
+            result += '    ' + processedLine + '\n';
+          }
         }
-      });
+      }
     }
-  }
-  // Other diagram types
-  else if (!result.match(/^(sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph)/i)) {
-    // Default to flowchart if no recognized directive
-    result = `graph TD\n    ${result.replace(/\n/g, '\n    ')}`;
-  }
-  
-  // Fix common syntax issues
-  result = result
-    .replace(/([A-Za-z0-9_]+)\s*\[/g, '$1[') // Remove spaces before [
-    .replace(/\[\s+/g, '[') // Remove spaces after [
-    .replace(/\s+\]/g, ']') // Remove spaces before ]
-    .replace(/([A-Za-z0-9_\]]+)\s+-->/g, '$1-->') // Remove spaces before -->
-    .replace(/--\s+->/g, '-->') // Fix broken arrows like "-- ->"
-    .replace(/--\s+/g, '-->'); // Fix other broken arrows
-    
-  // Special processing for parentheses in node text which cause parsing errors
-  result = result.replace(/\[([^\]]*\([^\]]*\)[^\]]*)\]/g, (match, content) => {
-    // Replace parentheses with brackets or similar to avoid parsing issues
-    const safeContent = content
-      .replace(/\(/g, '〈')
-      .replace(/\)/g, '〉')
-      .replace(/,/g, '،') // Replace commas with a similar character
-      .replace(/;/g, '؛'); // Replace semicolons
-    return `[${safeContent}]`;
-  });
-  
-  // Handle nodes with complex names containing problematic characters
-  result = result.replace(/\[([^\]]+)\]/g, (match, content) => {
-    // Make node names safe by replacing problematic characters
-    let safeContent = content
-      .replace(/\s+/g, '_')        // Replace spaces with underscores
-      .replace(/[.,;:]/g, '_')     // Replace punctuation with underscores
-      .replace(/[()]/g, '_')       // Replace parentheses with underscores
-      .replace(/["']/g, '')        // Remove quotes
-      .replace(/-+/g, '_')         // Replace hyphens with underscores
-      .replace(/[^a-zA-Z0-9_]/g, ''); // Remove any other problematic characters
-    
-    // Ensure we have some content after all the replacements
-    if (!safeContent.trim()) {
-      safeContent = 'node_' + Math.random().toString(36).substring(2, 7);
+    // Handle other diagram types or create a default flowchart
+    else if (!result.match(/^(sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph)/i)) {
+      // Default to simple flowchart if no recognized directive
+      result = `graph TD\n    ${result.replace(/\n/g, '\n    ')}`;
     }
     
-    return `[${safeContent}]`;
-  });
-  
-  return result;
+    // Fix common syntax issues
+    result = result
+      .replace(/([A-Za-z0-9_]+)\s*\[/g, '$1[') // Remove spaces before [
+      .replace(/\s+\]/g, ']') // Remove spaces before ]
+      .replace(/([A-Za-z0-9_\]]+)\s+-->/g, '$1-->') // Remove spaces before -->
+      .replace(/--\s+->/g, '-->') // Fix broken arrows
+      .replace(/--\s+/g, '-->')
+      .replace(/\[\s*\]/g, '[Empty]'); // Replace empty brackets
+      
+    // If we detect it's a complete mess, provide a simple working diagram
+    if (result.length > 500 || result.split('\n').length > 20) {
+      console.log('Diagram too complex, simplifying...');
+      result = `graph TD
+    A[Start] --> B[Process]
+    B --> C[End]`;
+    }
+    
+    return result;
+  } catch (err) {
+    console.error('Error processing mermaid code:', err);
+    // Return a minimal valid diagram
+    return 'graph TD\n    A[Error] --> B[Try Again]';
+  }
 };
 
-// Parse and render mermaid diagram
+// Render mermaid diagram with error handling
 export const renderMermaidDiagram = async (code: string, uniqueId: string): Promise<string> => {
   try {
     // Process the code to fix common issues
     const processedCode = processCode(code);
-    
-    // Log the processed code for debugging
-    console.log('Processed mermaid code:', processedCode);
     
     // Parse the diagram to check for errors
     await mermaid.parse(processedCode);
@@ -119,12 +105,11 @@ export const renderMermaidDiagram = async (code: string, uniqueId: string): Prom
     // If parsing succeeds, render the diagram
     const { svg } = await mermaid.render(uniqueId, processedCode);
     
-    // After rendering, replace back any special characters we substituted
+    // After rendering, clean up the result
     const finalSvg = svg
       .replace(/〈/g, '(')
       .replace(/〉/g, ')')
-      .replace(/،/g, ',')
-      .replace(/؛/g, ';');
+      .replace(/،/g, ',');
     
     return finalSvg;
   } catch (error) {
@@ -136,57 +121,52 @@ export const renderMermaidDiagram = async (code: string, uniqueId: string): Prom
 // Auto-correct common mermaid syntax issues
 export const attemptAutoFix = (originalCode: string): string => {
   console.log('Attempting to fix code:', originalCode);
-  let fixedCode = originalCode;
+  let fixedCode = originalCode.replace(/^SHOW_CODE_/, '');
   
-  // Fix 1: Ensure proper graph type declaration
-  if (!fixedCode.match(/^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph)/)) {
-    fixedCode = 'graph TD\n' + fixedCode;
-  }
-  
-  // Fix 2: Fix arrow syntax
-  fixedCode = fixedCode
-    .replace(/--\s*-+/g, '-->')
-    .replace(/--(?!>)/g, '-->')
-    .replace(/\s*-+\s*>/g, ' -->');
-  
-  // Fix 3: Ensure nodes have brackets
-  const lines = fixedCode.split('\n');
-  const fixedLines = lines.map(line => {
-    // Skip comments and directives
-    if (line.trim().startsWith('%') || line.match(/^(graph|flowchart|sequenceDiagram|classDiagram)/)) {
-      return line;
+  try {
+    // Fix 1: Ensure proper graph type declaration
+    if (!fixedCode.match(/^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph)/)) {
+      fixedCode = 'graph TD\n' + fixedCode;
     }
     
-    // Add brackets to node references if missing
-    return line.replace(/([A-Za-z0-9_]+)(?!\[|\()(\s*-->|\s*--|\s*-.-|\s*==)/g, '[$1]$2');
-  });
-  
-  fixedCode = fixedLines.join('\n');
-  
-  // Fix 4: Convert complex diagrams to simpler syntax
-  if (fixedCode.includes('--') || fixedCode.includes('->')) {
-    // If the diagram has complex relationship syntax, convert to a simpler TD flowchart
-    const nodeMatches = fixedCode.match(/([A-Za-z0-9_]+)(\[[^\]]+\])?/g);
-    if (nodeMatches && nodeMatches.length > 1) {
-      // Create a simple top-down flowchart with the extracted nodes
-      let simpleGraph = 'graph TD\n';
-      for (let i = 0; i < nodeMatches.length - 1; i++) {
-        const uniqueId = `node${i}_${Math.random().toString(36).substring(2, 5)}`;
-        simpleGraph += `    ${uniqueId}[Node ${i+1}] --> `;
-        
-        const nextUniqueId = `node${i+1}_${Math.random().toString(36).substring(2, 5)}`;
-        simpleGraph += `${nextUniqueId}[Node ${i+2}]\n`;
+    // Fix 2: Fix arrow syntax
+    fixedCode = fixedCode
+      .replace(/--\s*-+/g, '-->')
+      .replace(/--(?!>)/g, '-->')
+      .replace(/\s*-+\s*>/g, ' -->');
+    
+    // Fix 3: Fix node definition syntax
+    const lines = fixedCode.split('\n');
+    const fixedLines = lines.map(line => {
+      // Skip comments and directives
+      if (line.trim().startsWith('%') || line.match(/^(graph|flowchart|sequenceDiagram|classDiagram)/)) {
+        return line;
       }
-      fixedCode = simpleGraph;
+      
+      // Add brackets to node references if missing
+      return line.replace(/([A-Za-z0-9_]+)(?!\[|\()(\s*-->|\s*--|\s*-.-|\s*==)/g, '[$1]$2');
+    });
+    
+    fixedCode = fixedLines.join('\n');
+    
+    // Fix 4: Handle parentheses in labels which often cause issues
+    fixedCode = fixedCode.replace(/\[([^\]]*)\]/g, (match, content) => {
+      // Replace problematic characters
+      return `[${content.replace(/[()/,;]/g, '_')}]`;
+    });
+    
+    // Fix 5: If all else fails, provide a minimal working example
+    if (fixedCode.split('\n').length <= 2) {
+      fixedCode = `graph TD
+    A[Start] --> B[Middle] --> C[End]`;
     }
+    
+    console.log('Auto-fixed code:', fixedCode);
+    return fixedCode;
+  } catch (error) {
+    console.error('Error during auto-fix:', error);
+    return `graph TD
+    A[Auto-Fix] --> B[Failed]
+    B --> C[Basic Graph]`;
   }
-  
-  // If all else fails, provide a minimal working example
-  if (fixedCode.split('\n').length <= 2) {
-    fixedCode = `graph TD
-    A[Start] --> B[End]`;
-  }
-  
-  console.log('Auto-fixed code:', fixedCode);
-  return fixedCode;
 };

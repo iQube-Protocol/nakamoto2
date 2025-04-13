@@ -16,22 +16,24 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
   const [renderAttempts, setRenderAttempts] = useState(0);
   const [showCodeView, setShowCodeView] = useState(false);
 
+  // Reset state when code input changes
   useEffect(() => {
-    // Reset state when code changes from parent
-    if (code !== currentCode && !currentCode.startsWith("SHOW_CODE_")) {
+    if (code !== currentCode && !code.startsWith("SHOW_CODE_")) {
       setCurrentCode(code);
       setError(null);
       setIsLoading(true);
       setRenderAttempts(0);
       setShowCodeView(false);
     }
-  }, [code]);
+  }, [code, currentCode]);
 
+  // Handle diagram rendering
   useEffect(() => {
     let isMounted = true;
+    let timer: ReturnType<typeof setTimeout>;
     
     const renderDiagram = async () => {
-      // Check if we're showing code view instead of diagram
+      // Handle code view toggle
       if (currentCode.startsWith("SHOW_CODE_")) {
         setShowCodeView(true);
         setIsLoading(false);
@@ -49,24 +51,25 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
         const uniqueId = `mermaid-${id}-${renderAttempts}`;
         const cleanCode = processCode(currentCode);
         
-        console.log(`Attempting to render mermaid diagram with ID ${uniqueId}:`, cleanCode);
+        console.log(`Rendering mermaid diagram with ID ${uniqueId}:`, cleanCode);
         
+        // Wait for diagram rendering
         const svg = await renderMermaidDiagram(cleanCode, uniqueId);
         
-        // Important: Check if component is still mounted before updating state
+        // Check if component is still mounted
         if (isMounted && containerRef.current) {
-          // Use React state instead of direct DOM manipulation
+          // Use innerHTML to insert the SVG - this is safe for SVGs from our own code
           containerRef.current.innerHTML = svg;
           console.log('Diagram rendered successfully');
         }
       } catch (err) {
-        console.error('Mermaid error:', err);
+        console.error('Mermaid rendering error:', err);
         
         if (isMounted) {
-          // If first attempt fails, try an auto-fix
+          // Only auto-fix on first failure
           if (renderAttempts === 0) {
             setRenderAttempts(1);
-            // Try a simple fix
+            // Try a simple fix if code changed
             const fixedCode = processCode(currentCode);
             if (fixedCode !== currentCode) {
               console.log('Attempting auto-fix on first failure...');
@@ -78,25 +81,30 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
           setError(err as Error);
         }
       } finally {
+        // Only update state if component is still mounted
         if (isMounted) {
           setIsLoading(false);
         }
       }
     };
 
-    // Add a delay to ensure DOM is fully ready
-    const timer = setTimeout(() => {
+    // Add a delay to ensure DOM is ready
+    timer = setTimeout(() => {
       renderDiagram();
     }, 300);
     
     return () => {
       isMounted = false;
       clearTimeout(timer);
-      // Clean up to prevent memory leaks
+      // Clean container to prevent memory leaks
+      if (containerRef.current) {
+        containerRef.current.innerHTML = '';
+      }
     };
   }, [currentCode, id, renderAttempts]);
 
   const handleRetry = (codeToRender: string) => {
+    // Increment render attempts to force re-render with new ID
     setRenderAttempts(prev => prev + 1);
     setCurrentCode(codeToRender);
   };
@@ -132,7 +140,7 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
             )}
           </div>
           
-          {/* Error handler rendered conditionally */}
+          {/* Error handler */}
           {!isLoading && error && (
             <DiagramErrorHandler 
               error={error}
