@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { MetaQube } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
-import { Database } from 'lucide-react';
+import { Database, ShieldCheck, CheckCircle } from 'lucide-react';
 
 interface MetaQubeHeaderProps {
   metaQube: MetaQube;
@@ -13,7 +13,7 @@ interface MetaQubeHeaderProps {
 interface DotScoreProps {
   value: number;
   label: string;
-  type: 'risk' | 'sensitivity' | 'trust';
+  type: 'risk' | 'sensitivity' | 'trust' | 'accuracy' | 'verifiability';
 }
 
 const DotScore = ({ value, label, type }: DotScoreProps) => {
@@ -30,12 +30,12 @@ const DotScore = ({ value, label, type }: DotScoreProps) => {
           ? "bg-yellow-500" 
           : "bg-red-500";
     } else {
-      // Trust: 5-10 green, 3-4 amber, 1-2 red
-      return value >= 5 
-        ? "bg-green-500" 
-        : value >= 3 
+      // Trust, Accuracy and Verifiability: 1-3 red, 4-6 amber, 7-10 green
+      return value <= 3 
+        ? "bg-red-500" 
+        : value <= 6 
           ? "bg-yellow-500" 
-          : "bg-red-500";
+          : "bg-green-500";
     }
   };
   
@@ -79,12 +79,25 @@ const MetaQubeHeader = ({ metaQube }: MetaQubeHeaderProps) => {
           <Database size={14} />
         </Badge>
       </div>
-      <div className="flex items-center justify-between">
-        <div className="flex items-center gap-6">
+      <div className="flex flex-wrap items-center justify-between gap-3">
+        <div className="flex items-center gap-5">
           <DotScore value={trustScore} label="Trust" type="trust" />
           <DotScore value={metaQube["Sensitivity-Score"]} label="Sensitivity" type="sensitivity" />
           <DotScore value={metaQube["Risk-Score"]} label="Risk" type="risk" />
         </div>
+
+        {/* Adding Accuracy and Verifiability scores */}
+        <div className="flex items-center gap-5">
+          <div className="flex items-center gap-1">
+            <CheckCircle size={14} className="text-green-500" />
+            <DotScore value={metaQube["Accuracy-Score"]} label="Accuracy" type="accuracy" />
+          </div>
+          <div className="flex items-center gap-1">
+            <ShieldCheck size={14} className="text-blue-500" />
+            <DotScore value={metaQube["Verifiability-Score"]} label="Verifiability" type="verifiability" />
+          </div>
+        </div>
+
         <div className="flex flex-col items-center">
           <span className="text-xs text-muted-foreground mb-1">{isActive ? 'Active' : 'Inactive'}</span>
           <Switch 
