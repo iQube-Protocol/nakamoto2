@@ -1,6 +1,6 @@
 
 import React, { useState } from 'react';
-import { MetaQube } from '@/lib/types';
+import { MetaQube, BlakQube } from '@/lib/types';
 import ContentDisplay from './ContentDisplay';
 import { defaultCourses } from './CourseList';
 import { defaultCertifications } from './CertificationsList';
@@ -11,9 +11,10 @@ import TabsNavigation from './TabsNavigation';
 
 interface LearnInterfaceProps {
   metaQube: MetaQube;
+  blakQube?: BlakQube;
 }
 
-const LearnInterface = ({ metaQube }: LearnInterfaceProps) => {
+const LearnInterface = ({ metaQube, blakQube }: LearnInterfaceProps) => {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [currentItemIndex, setCurrentItemIndex] = useState<number>(0);
   const [activeTab, setActiveTab] = useState<string | null>(null);
@@ -63,7 +64,8 @@ const LearnInterface = ({ metaQube }: LearnInterfaceProps) => {
   return (
     <div className={`grid ${isPanelCollapsed ? 'grid-cols-1 lg:grid-cols-[1fr,auto]' : 'grid-cols-1 lg:grid-cols-3'} gap-6 h-full`}>
       <AgentPanel 
-        metaQube={metaQube} 
+        metaQube={metaQube}
+        blakQube={blakQube}
         conversationId={conversationId} 
         setConversationId={setConversationId}
         isPanelCollapsed={isPanelCollapsed}

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import ConnectInterface from '@/components/connect/ConnectInterface';
-import { MetaQube, CommunityMetrics } from '@/lib/types';
+import { MetaQube, CommunityMetrics, BlakQube } from '@/lib/types';
 
 // Sample metaQube data
 const metaQubeData: MetaQube = {
@@ -12,12 +12,25 @@ const metaQubeData: MetaQube = {
   "Owner-Type": "Person",
   "Owner-Identifiability": "Semi-Identifiable",
   "Date-Minted": new Date().toISOString(),
-  "Related-iQubes": ["ContentQube1", "AgentQube1"],
+  "Related-iQubes": ["CommunityQube", "DeFiQube", "NFTMarketQube"],
   "X-of-Y": "5 of 20",
   "Sensitivity-Score": 4,
   "Verifiability-Score": 5,
   "Accuracy-Score": 5,
   "Risk-Score": 4
+};
+
+// Sample blakQube data
+const blakQubeData: BlakQube = {
+  "Profession": "Community Manager",
+  "Web3-Interests": ["DAOs", "Social Tokens", "NFT Communities"],
+  "Local-City": "Berlin",
+  "Email": "user@example.com",
+  "EVM-Public-Key": "0x71C7656EC7ab88b098defB751B7401B5f6d8976F",
+  "BTC-Public-Key": "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq",
+  "Tokens-of-Interest": ["USDC", "ETH", "PEOPLE", "ENS"],
+  "Chain-IDs": ["1", "137", "10"],
+  "Wallets-of-Interest": ["MetaMask", "Rainbow", "Frame"]
 };
 
 // Sample community metrics
@@ -37,7 +50,11 @@ const Connect = () => {
         <h1 className="text-2xl font-bold tracking-tight">Connect</h1>
       </div>
 
-      <ConnectInterface communityMetrics={communityMetrics} />
+      <ConnectInterface 
+        communityMetrics={communityMetrics} 
+        metaQube={metaQubeData}
+        blakQube={blakQubeData}
+      />
     </div>
   );
 };

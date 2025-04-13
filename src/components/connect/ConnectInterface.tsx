@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
-import { CommunityMetrics } from '@/lib/types';
-import AgentInterface from '@/components/shared/AgentInterface';
+import { MetaQube, CommunityMetrics, BlakQube } from '@/lib/types';
+import AgentPanel from './AgentPanel';
 import DetailPanel from './panels/DetailPanel';
 import DashboardPanel from './panels/DashboardPanel';
 import CollapsedSidebar from './CollapsedSidebar';
@@ -11,9 +11,11 @@ import { members, groups, events, messages } from './data/connectData';
 
 interface ConnectInterfaceProps {
   communityMetrics: CommunityMetrics;
+  metaQube: MetaQube;
+  blakQube?: BlakQube;
 }
 
-const ConnectInterface = ({ communityMetrics }: ConnectInterfaceProps) => {
+const ConnectInterface = ({ communityMetrics, metaQube, blakQube }: ConnectInterfaceProps) => {
   const [selectedTab, setSelectedTab] = useState<string | undefined>(undefined);
   const [currentItemIndex, setCurrentItemIndex] = useState(0);
   const [isPanelCollapsed, setIsPanelCollapsed] = useState<boolean>(true);
@@ -64,18 +66,11 @@ const ConnectInterface = ({ communityMetrics }: ConnectInterfaceProps) => {
   return (
     <div className="grid grid-cols-12 gap-6 h-full">
       <div className={isPanelCollapsed ? "col-span-11" : "col-span-8"}>
-        <AgentInterface
-          title="Connection Assistant"
-          description="Community insights and networking opportunities"
-          agentType="connect"
-          initialMessages={[
-            {
-              id: "1",
-              sender: "agent",
-              message: "Welcome to your Connect dashboard. Based on your iQube profile, I've identified several community members with similar interests in DeFi and NFTs. Would you like me to suggest potential connections or keep you updated on upcoming events?",
-              timestamp: new Date().toISOString(),
-            }
-          ]}
+        <AgentPanel
+          communityMetrics={communityMetrics}
+          metaQube={metaQube}
+          blakQube={blakQube}
+          isPanelCollapsed={isPanelCollapsed}
         />
       </div>
 

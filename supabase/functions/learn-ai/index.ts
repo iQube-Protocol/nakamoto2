@@ -34,7 +34,7 @@ serve(async (req) => {
   }
 
   try {
-    const { message, metaQube, conversationId } = await req.json();
+    const { message, metaQube, blakQube, conversationId } = await req.json();
     
     // Initialize or retrieve MCP context
     let mcpContext: MCPContext;
@@ -58,14 +58,17 @@ serve(async (req) => {
           timestamp: new Date().toISOString()
         }],
         metadata: {
-          userProfile: metaQube,
+          userProfile: {
+            metaQube,
+            blakQube
+          },
           environment: "web3_education",
           modelPreference: "gpt-4o-mini"
         }
       };
     }
     
-    // Updated system prompt with formatting instructions including Mermaid
+    // Updated system prompt with formatting instructions including Mermaid and iQube data
     const systemPrompt = `## **Prompt: Learning Aigent Powered by iQubes**
 
 **<role-description>**  
@@ -191,9 +194,16 @@ Mermaid is supported for these diagram types:
 Be conversational and friendly. Welcome users and ask open-ended questions about their interests in web3, AI, and blockchain. Don't explicitly request a learning topic right away - instead, engage users in a natural conversation where they can express their interests and learning goals at any point. Be responsive to whatever subject they wish to learn about, whenever they mention it.
 
 Additionally, consider the following iQube data for personalization:
-- iQube Type: ${metaQube["iQube-Type"]}
-- Use: ${metaQube["iQube-Use"]}
-- Web3 Interests: ${metaQube["Related-iQubes"] ? metaQube["Related-iQubes"].join(", ") : "General web3 topics"}`;
+- MetaQube Information:
+  - iQube Type: ${metaQube ? metaQube["iQube-Type"] : "DataQube"}
+  - iQube Use: ${metaQube ? metaQube["iQube-Use"] : "For learning in web3 communities"}
+  - Related iQubes: ${metaQube && metaQube["Related-iQubes"] ? metaQube["Related-iQubes"].join(", ") : "General web3 topics"}
+
+- BlakQube Information (if available):
+  - Profession: ${blakQube ? blakQube["Profession"] : "Web3 Professional"}
+  - Web3 Interests: ${blakQube && blakQube["Web3-Interests"] ? blakQube["Web3-Interests"].join(", ") : "Blockchain, DeFi, NFTs"}
+  - Tokens of Interest: ${blakQube && blakQube["Tokens-of-Interest"] ? blakQube["Tokens-of-Interest"].join(", ") : "General tokens"}
+  - Chain IDs: ${blakQube && blakQube["Chain-IDs"] ? blakQube["Chain-IDs"].join(", ") : "Multiple chains"}`;
 
     // Convert MCP context to OpenAI message format
     const formattedMessages = [

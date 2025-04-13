@@ -1,9 +1,8 @@
-
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { DollarSign, TrendingUp, User, ListOrdered, ChevronLeft } from 'lucide-react';
-import { TokenMetrics } from '@/lib/types';
-import AgentInterface from '@/components/shared/AgentInterface';
+import { TokenMetrics, MetaQube, BlakQube } from '@/lib/types';
+import AgentPanel from './AgentPanel';
 import ContentDisplay from './ContentDisplay';
 import TokenStatsCard from './cards/TokenStatsCard';
 import TokenMetricsCard from './cards/TokenMetricsCard';
@@ -16,9 +15,11 @@ import { Button } from '@/components/ui/button';
 
 interface EarnInterfaceProps {
   tokenMetrics: TokenMetrics;
+  metaQube: MetaQube;
+  blakQube?: BlakQube;
 }
 
-const EarnInterface = ({ tokenMetrics }: EarnInterfaceProps) => {
+const EarnInterface = ({ tokenMetrics, metaQube, blakQube }: EarnInterfaceProps) => {
   const [chartData] = useState(generateChartData());
   const [distributionData] = useState(generateDistributionData());
   const [timeframe, setTimeframe] = useState('1M');
@@ -86,30 +87,19 @@ const EarnInterface = ({ tokenMetrics }: EarnInterfaceProps) => {
   };
 
   const handleCollapsedIconClick = (tabName: string) => {
-    // Set the selected tab
     setSelectedTab(tabName);
     setCurrentItemIndex(0);
-    
-    // IMPORTANT: Expand the panel when clicking icon in collapsed state
-    // This is the key change needed to fix the issue
     setIsPanelCollapsed(false);
   };
 
   return (
     <div className="grid grid-cols-12 gap-6 h-full">
       <div className={isPanelCollapsed ? "col-span-11" : "col-span-8"}>
-        <AgentInterface
-          title="Earning Assistant"
-          description="MonDAI token insights and earning opportunities"
-          agentType="earn"
-          initialMessages={[
-            {
-              id: "1",
-              sender: "agent",
-              message: "Welcome to your Earn dashboard. I see MonDAI token has grown by 3.5% this week! Based on your iQube data, I can suggest personalized earning strategies. Would you like to explore staking options or learn about upcoming airdrops?",
-              timestamp: new Date().toISOString(),
-            }
-          ]}
+        <AgentPanel
+          tokenMetrics={tokenMetrics}
+          metaQube={metaQube}
+          blakQube={blakQube}
+          isPanelCollapsed={isPanelCollapsed}
         />
       </div>
 

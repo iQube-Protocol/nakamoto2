@@ -3,38 +3,38 @@ import React from 'react';
 import { AgentInterface } from '@/components/shared/agent';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
-import { MetaQube, BlakQube } from '@/lib/types';
+import { MetaQube, TokenMetrics, BlakQube } from '@/lib/types';
 
 interface AgentPanelProps {
+  tokenMetrics: TokenMetrics;
   metaQube: MetaQube;
   blakQube?: BlakQube;
-  conversationId: string | null;
-  setConversationId: (id: string | null) => void;
   isPanelCollapsed: boolean;
 }
 
 const AgentPanel = ({ 
+  tokenMetrics, 
   metaQube, 
   blakQube,
-  conversationId, 
-  setConversationId,
   isPanelCollapsed 
 }: AgentPanelProps) => {
   const { toast } = useToast();
+  const [conversationId, setConversationId] = React.useState<string | null>(null);
 
   const handleAIMessage = async (message: string) => {
     try {
-      const { data, error } = await supabase.functions.invoke('learn-ai', {
+      const { data, error } = await supabase.functions.invoke('earn-ai', {
         body: { 
           message, 
           metaQube,
           blakQube,
+          tokenMetrics,
           conversationId 
         }
       });
       
       if (error) {
-        console.error('Error calling learn-ai function:', error);
+        console.error('Error calling earn-ai function:', error);
         throw new Error(error.message);
       }
       
@@ -72,17 +72,17 @@ const AgentPanel = ({
   };
 
   return (
-    <div className={`${isPanelCollapsed ? 'lg:col-span-1' : 'lg:col-span-2'} flex flex-col`}>
+    <div className={`${isPanelCollapsed ? 'col-span-11' : 'col-span-8'} flex flex-col`}>
       <AgentInterface
-        title="Learning Assistant"
-        description="Personalized web3 education based on your iQube data"
-        agentType="learn"
+        title="Earning Assistant"
+        description="MonDAI token insights and earning opportunities"
+        agentType="earn"
         onMessageSubmit={handleAIMessage}
         initialMessages={[
           {
             id: "1",
             sender: "agent",
-            message: "Hi there! I'm your Learning Assistant, here to help you explore the world of Web3 and blockchain. Based on your iQube profile, I see you're interested in several Web3 topics. What aspects of blockchain or Web3 are you curious about today? Or is there something specific you'd like to learn?",
+            message: "Welcome to your Earn dashboard. I see MonDAI token has grown by 3.5% this week! Based on your iQube data, I can suggest personalized earning strategies. Would you like to explore staking options or learn about upcoming airdrops?",
             timestamp: new Date().toISOString(),
             metadata: {
               version: "1.0",
