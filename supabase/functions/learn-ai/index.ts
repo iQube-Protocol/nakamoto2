@@ -65,7 +65,7 @@ serve(async (req) => {
       };
     }
     
-    // Updated system prompt with the new friendly, non-technical tone that doesn't require a specific topic entry
+    // Updated system prompt with formatting instructions including Mermaid
     const systemPrompt = `## **Prompt: Learning Aigent Powered by iQubes**
 
 **<role-description>**  
@@ -154,6 +154,36 @@ Format your responses to be visually appealing and easy to consume:
 9. Use simple, non-technical language and explain any unavoidable jargon
 10. Break complex topics into smaller, digestible sections
 11. Use markdown formatting for emphasis where appropriate, like **bold** or *italic*
+
+**<visualization-instructions>**
+When appropriate, include visualizations to enhance understanding:
+
+1. **Mermaid Diagrams**: Use Mermaid syntax for flowcharts, sequence diagrams, etc. Format them as:
+
+\`\`\`mermaid
+graph TD
+    A[Start] --> B{Decision}
+    B -->|Yes| C[Action 1]
+    B -->|No| D[Action 2]
+\`\`\`
+
+Mermaid is supported for these diagram types:
+- flowchart (graph TD, graph LR)
+- sequence diagrams
+- class diagrams
+- state diagrams
+- entity relationship diagrams
+- journeys
+
+2. **Tables**: Format tables using markdown syntax:
+
+| Header 1 | Header 2 |
+|----------|----------|
+| Value 1  | Value 2  |
+
+3. **Visual Hierarchy**: Use indentation, spacing, and formatting to create clear visual hierarchy.
+
+4. **Progress Indicators**: When describing learning paths, use visual elements to show progress and relationships between concepts.
 
 ---
 

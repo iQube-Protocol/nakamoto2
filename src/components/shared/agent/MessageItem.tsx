@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Play, Pause, Volume2, BookOpen, Lightbulb, AlertCircle, CheckCircle } from 'lucide-react';
 import { AgentMessage } from '@/lib/types';
 import { Button } from '@/components/ui/button';
@@ -10,12 +10,21 @@ import {
   TooltipProvider, 
   TooltipTrigger 
 } from '@/components/ui/tooltip';
+import mermaid from 'mermaid';
 
 interface MessageItemProps {
   message: AgentMessage;
   isPlaying: boolean;
   onPlayAudio: (messageId: string) => void;
 }
+
+// Initialize mermaid
+mermaid.initialize({
+  startOnLoad: true,
+  theme: 'neutral',
+  securityLevel: 'loose',
+  fontFamily: 'inherit',
+});
 
 // Function to process message content and convert it to JSX with formatting
 const formatMessageContent = (content: string): JSX.Element => {
@@ -25,8 +34,21 @@ const formatMessageContent = (content: string): JSX.Element => {
   return (
     <>
       {paragraphs.map((paragraph, pIndex) => {
+        // Handle Mermaid diagrams
+        if (paragraph.includes('```mermaid')) {
+          const mermaidCode = paragraph.replace(/```mermaid\n/, '').replace(/\n```$/, '');
+          const diagramId = `mermaid-diagram-${pIndex}`;
+          
+          // Use useEffect to render the diagram after the component mounts
+          return (
+            <div key={pIndex} className="my-4">
+              <MermaidDiagram code={mermaidCode} id={diagramId} />
+            </div>
+          );
+        }
+        
         // Handle bullet points
-        if (paragraph.trim().startsWith('- ') || paragraph.trim().startsWith('* ')) {
+        else if (paragraph.trim().startsWith('- ') || paragraph.trim().startsWith('* ')) {
           const bulletItems = paragraph.split(/\n/).filter(line => line.trim().startsWith('- ') || line.trim().startsWith('* '));
           return (
             <ul key={pIndex} className="pl-5 my-4 space-y-2">
@@ -94,7 +116,7 @@ const formatMessageContent = (content: string): JSX.Element => {
         }
         
         // Handle code examples
-        else if (paragraph.includes('```')) {
+        else if (paragraph.includes('```') && !paragraph.includes('```mermaid')) {
           const parts = paragraph.split('```');
           return (
             <div key={pIndex} className="my-4">
@@ -141,6 +163,24 @@ const formatMessageContent = (content: string): JSX.Element => {
       })}
     </>
   );
+};
+
+// Component to render Mermaid diagrams
+const MermaidDiagram = ({ code, id }: { code: string; id: string }) => {
+  useEffect(() => {
+    // Render Mermaid diagram after component mounts
+    try {
+      mermaid.render(id, code).then((result) => {
+        document.getElementById(`${id}-container`)!.innerHTML = result.svg;
+      });
+    } catch (error) {
+      console.error('Error rendering mermaid diagram:', error);
+      document.getElementById(`${id}-container`)!.innerHTML = 
+        `<div class="p-3 text-red-500 border border-red-300 rounded">Error rendering diagram</div>`;
+    }
+  }, [code, id]);
+
+  return <div id={`${id}-container`} className="flex justify-center overflow-x-auto my-4"></div>;
 };
 
 const MessageItem = ({ message, isPlaying, onPlayAudio }: MessageItemProps) => {
@@ -224,4 +264,3 @@ const MessageItem = ({ message, isPlaying, onPlayAudio }: MessageItemProps) => {
 };
 
 export default MessageItem;
-
