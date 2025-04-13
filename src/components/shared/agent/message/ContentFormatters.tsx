@@ -80,17 +80,25 @@ export const Definition = ({ term, definition }: { term: string; definition: str
   </div>
 );
 
-// Function to extract and format mermaid diagrams
+// Enhanced function to extract and format mermaid diagrams with better error handling
 export const extractMermaidDiagram = (paragraph: string, pIndex: number): JSX.Element | null => {
-  const mermaidRegex = /```mermaid\s+([\s\S]*?)```/;
+  // More robust regex to capture mermaid code blocks
+  const mermaidRegex = /```(?:mermaid)?\s*(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph|[\s\S]*?)```/i;
   const match = paragraph.match(mermaidRegex);
   
-  if (match && match[1]) {
-    const mermaidCode = match[1].trim();
-    const diagramId = `mermaid-diagram-${pIndex}`;
+  if (match) {
+    let mermaidCode = match[1].trim();
+    
+    // Check if the code already starts with a mermaid directive
+    if (!mermaidCode.match(/^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph)/i)) {
+      // Add flowchart directive if missing - this helps fix many common syntax errors
+      mermaidCode = `graph TD\n${mermaidCode}`;
+    }
+    
+    const diagramId = `mermaid-diagram-${pIndex}-${Math.random().toString(36).substring(2, 6)}`;
     
     return (
-      <div key={pIndex} className="my-6">
+      <div key={diagramId} className="my-6">
         <MermaidDiagram code={mermaidCode} id={diagramId} />
       </div>
     );

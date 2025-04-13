@@ -13,6 +13,7 @@ import {
   Definition,
   extractMermaidDiagram
 } from './ContentFormatters';
+import MermaidDiagram from './MermaidDiagram';
 
 interface MessageContentProps {
   content: string;
@@ -25,16 +26,42 @@ const MessageContent = ({ content, sender }: MessageContentProps) => {
     return <p>{content}</p>;
   }
 
+  // First, check for any mermaid diagrams in the content
+  const hasMermaidDiagram = content.includes('```mermaid') || 
+                            content.includes('```graph') || 
+                            content.includes('```flowchart');
+
   // Split content by double newlines to identify paragraphs
   const paragraphs = content.split(/\n\n+/);
   
   return (
     <>
       {paragraphs.map((paragraph, pIndex) => {
-        // Mermaid diagram detection and extraction
-        if (paragraph.includes('```mermaid')) {
+        // Enhanced Mermaid diagram detection with multiple formats
+        if (paragraph.includes('```mermaid') || 
+            (paragraph.includes('```') && 
+             (paragraph.includes('graph') || 
+              paragraph.includes('flowchart') || 
+              paragraph.includes('sequenceDiagram') ||
+              paragraph.includes('classDiagram') ||
+              paragraph.includes('stateDiagram') ||
+              paragraph.includes('erDiagram')))) {
+          
           const mermaidDiagram = extractMermaidDiagram(paragraph, pIndex);
           if (mermaidDiagram) return mermaidDiagram;
+          
+          // If extraction failed but we detected mermaid, try to extract manually
+          const codeRegex = /```(?:mermaid)?\s*([\s\S]*?)```/;
+          const match = paragraph.match(codeRegex);
+          
+          if (match && match[1]) {
+            const diagramId = `manual-mermaid-${pIndex}`;
+            return (
+              <div key={diagramId} className="my-4">
+                <MermaidDiagram code={match[1].trim()} id={diagramId} />
+              </div>
+            );
+          }
         }
         
         // Handle bullet points
@@ -83,8 +110,8 @@ const MessageContent = ({ content, sender }: MessageContentProps) => {
           return <Warning key={pIndex}>{paragraph}</Warning>;
         }
         
-        // Handle code examples
-        else if (paragraph.includes('```') && !paragraph.includes('```mermaid')) {
+        // Handle code examples but skip if already identified as mermaid
+        else if (paragraph.includes('```') && !hasMermaidDiagram) {
           const parts = paragraph.split('```');
           return (
             <div key={pIndex} className="my-4">
