@@ -5,6 +5,8 @@ import mermaid from 'mermaid';
 // Process the code to fix common Mermaid syntax issues
 export const processCode = (inputCode: string): string => {
   try {
+    console.log("Processing mermaid code:", inputCode);
+    
     // Remove "SHOW_CODE_" prefix if present
     let result = inputCode.replace(/^SHOW_CODE_/, '').trim();
     
@@ -13,14 +15,9 @@ export const processCode = (inputCode: string): string => {
       return 'graph TD\n    A[Start] --> B[End]';
     }
     
-    // Create a simpler diagram if too complex - but allow more length
-    if (result.length > 1000) {
-      console.log('Diagram very complex, simplifying...');
-      return 'graph TD\n    A[Start] --> B[Process]\n    B --> C[End]';
-    }
-    
-    // Handle graph/flowchart directives - make sure there's a directive
+    // Add graph directive if missing
     if (!result.match(/^(sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph|graph|flowchart)/i)) {
+      console.log("Adding graph TD directive to code");
       result = `graph TD\n    ${result.replace(/\n/g, '\n    ')}`;
     }
     
@@ -42,6 +39,7 @@ export const processCode = (inputCode: string): string => {
         return `[${before}_${after}]`;
       });
       
+    console.log("Processed mermaid code:", result);
     return result;
   } catch (err) {
     console.error('Error processing mermaid code:', err);
@@ -52,11 +50,13 @@ export const processCode = (inputCode: string): string => {
 
 // Auto-correct common mermaid syntax issues
 export const attemptAutoFix = (originalCode: string): string => {
+  console.log("Attempting to auto-fix mermaid code");
+  
   try {
     let fixedCode = originalCode.replace(/^SHOW_CODE_/, '');
     
     // Fix 1: Ensure proper graph type declaration
-    if (!fixedCode.match(/^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph)/)) {
+    if (!fixedCode.match(/^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph)/i)) {
       fixedCode = 'graph TD\n' + fixedCode;
     }
     
@@ -84,11 +84,7 @@ export const attemptAutoFix = (originalCode: string): string => {
       .replace(/\[\s*([^\]]*)\s*\(/, '[${1}_')
       .replace(/\)\s*([^\]]*)\s*\]/, '_$1]');
     
-    // Fix 4: Only provide minimal example for truly complex diagrams
-    if (fixedCode.length > 500 && !fixedCode.startsWith('graph')) {
-      return `graph TD\n    A[Start] --> B[Middle] --> C[End]`;
-    }
-    
+    console.log("Auto-fixed mermaid code:", fixedCode);
     return fixedCode;
   } catch (error) {
     console.error('Error during auto-fix:', error);
@@ -144,6 +140,7 @@ export const sanitizeMermaidCode = (code: string): string => {
       sanitized = `${diagramType}\n${sanitized}`;
     }
     
+    console.log("Sanitized mermaid code:", sanitized);
     return sanitized;
   } catch (err) {
     console.error('Error sanitizing mermaid code:', err);

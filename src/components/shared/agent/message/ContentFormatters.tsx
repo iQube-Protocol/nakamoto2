@@ -83,20 +83,25 @@ export const Definition = ({ term, definition }: { term: string; definition: str
 // Enhanced function to extract and format mermaid diagrams with improved error handling
 export const extractMermaidDiagram = (paragraph: string, pIndex: number): JSX.Element | null => {
   try {
-    // More robust regex to capture mermaid code blocks
-    const mermaidRegex = /```(?:mermaid)?\s*(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph|[\s\S]*?)```/i;
+    // Robust regex to capture mermaid code blocks with various prefixes
+    const mermaidRegex = /```(?:mermaid|graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph)?\s*([\s\S]*?)```/i;
     const match = paragraph.match(mermaidRegex);
     
-    if (match) {
+    if (match && match[1]) {
       let mermaidCode = match[1].trim();
       
-      // Ensure the code is not too complex or problematic
-      if (mermaidCode.length > 1000) {
-        mermaidCode = `graph TD
-    A[Complex Diagram] --> B[Simplified for Display]`;
+      // If code doesn't start with a diagram type directive, check if we need to add one
+      if (!mermaidCode.match(/^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph)/i)) {
+        // If it looks like a graph/flowchart, add the directive
+        if (mermaidCode.includes('-->') || mermaidCode.includes('--')) {
+          mermaidCode = `graph TD\n${mermaidCode}`;
+        }
       }
       
-      const diagramId = `mermaid-diagram-${pIndex}-${Math.random().toString(36).substring(2, 6)}`;
+      // Create a unique ID for this diagram
+      const diagramId = `mermaid-diagram-${pIndex}-${Math.random().toString(36).substr(2, 9)}`;
+      
+      console.log("Extracted mermaid code:", mermaidCode);
       
       return (
         <div key={diagramId} className="my-6">

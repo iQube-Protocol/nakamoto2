@@ -30,7 +30,43 @@ const MessageContent = ({ content, sender }: MessageContentProps) => {
   const hasMermaidDiagram = content.includes('```mermaid') || 
                             content.includes('```graph') || 
                             content.includes('```flowchart');
-                            
+  
+  // For mermaid diagrams, try direct extraction first
+  if (hasMermaidDiagram) {
+    try {
+      // Extract mermaid code from the content
+      const mermaidRegex = /```(?:mermaid)?\s*([\s\S]*?)```/;
+      const match = content.match(mermaidRegex);
+      
+      if (match && match[1]) {
+        const diagramCode = match[1].trim();
+        const diagramId = `mermaid-diagram-${Date.now()}`;
+        
+        // Split content into parts: before diagram, diagram, and after diagram
+        const contentParts = content.split(mermaidRegex);
+        
+        return (
+          <>
+            {contentParts[0] && <p className="my-3">{contentParts[0]}</p>}
+            <div className="my-6">
+              <MermaidDiagram code={diagramCode} id={diagramId} />
+            </div>
+            {contentParts[2] && renderContentParts(contentParts[2])}
+          </>
+        );
+      }
+    } catch (error) {
+      console.error("Error during direct mermaid extraction:", error);
+      // Fall back to standard rendering if direct extraction fails
+    }
+  }
+  
+  // Standard content processing for non-diagram or fallback cases
+  return renderContentParts(content);
+};
+
+// Helper function to render content parts
+const renderContentParts = (content: string) => {
   // Split content by double newlines to identify paragraphs
   const paragraphs = content.split(/\n\n+/);
   
@@ -122,7 +158,7 @@ const MessageContent = ({ content, sender }: MessageContentProps) => {
           }
           
           // Handle code examples but skip if already identified as mermaid
-          else if (paragraph.includes('```') && !hasMermaidDiagram) {
+          else if (paragraph.includes('```')) {
             const parts = paragraph.split('```');
             return (
               <div key={pIndex} className="my-4">
