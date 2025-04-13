@@ -23,8 +23,6 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
       setError(null);
 
       try {
-        if (!containerRef.current) return;
-        
         const uniqueId = `mermaid-${id}-${Math.random().toString(36).substring(2, 11)}`;
         
         // Clean up the mermaid code - with enhanced processing
@@ -34,8 +32,11 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
         
         const svg = await renderMermaidDiagram(cleanCode, uniqueId);
         
-        // Only update if component is still mounted
+        // Important: Check if component is still mounted before updating DOM
         if (containerRef.current) {
+          // Clear the container first
+          containerRef.current.innerHTML = '';
+          // Then set the new content
           containerRef.current.innerHTML = svg;
           console.log('Diagram rendered successfully');
         }
@@ -45,7 +46,7 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
         // If first attempt fails, try an auto-fix
         if (renderAttempts === 0) {
           setRenderAttempts(1);
-          // The recursive call will happen when currentCode changes
+          // Don't set new code if it's the same to avoid infinite loops
           const fixedCode = processCode(currentCode);
           if (fixedCode !== currentCode) {
             console.log('Attempting auto-fix on first failure...');
@@ -67,10 +68,18 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
     
     return () => {
       clearTimeout(timer);
+      // Important: Clean up to prevent memory leaks and DOM conflicts
+      if (containerRef.current) {
+        containerRef.current.innerHTML = '';
+      }
     };
   }, [currentCode, id, renderAttempts]);
 
   const handleRetry = (codeToRender: string) => {
+    // Clear any existing content first to prevent DOM conflicts
+    if (containerRef.current) {
+      containerRef.current.innerHTML = '';
+    }
     setRenderAttempts(0); // Reset attempts counter
     setCurrentCode(codeToRender);
   };
@@ -92,16 +101,17 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
             </div>
           </div>
         )}
-        
-        {!isLoading && error && (
-          <DiagramErrorHandler 
-            error={error}
-            code={currentCode}
-            id={id}
-            onRetry={handleRetry}
-          />
-        )}
       </div>
+      
+      {/* Important: Error handler is now rendered outside the container to avoid conflicts */}
+      {!isLoading && error && (
+        <DiagramErrorHandler 
+          error={error}
+          code={currentCode}
+          id={id}
+          onRetry={handleRetry}
+        />
+      )}
     </div>
   );
 };

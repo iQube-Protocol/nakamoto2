@@ -34,25 +34,31 @@ const DiagramErrorHandler: React.FC<DiagramErrorHandlerProps> = ({ error, code, 
     onRetry(fixedCode);
   };
   
-  const handleShowCode = (containerRef: HTMLDivElement) => {
-    containerRef.innerHTML = `
-      <div class="p-3 bg-gray-50 rounded border border-gray-300">
-        <p class="text-xs font-medium mb-1">Diagram code:</p>
-        <pre class="text-xs overflow-auto p-2 bg-gray-100 rounded">${code.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
-        <button class="mt-2 text-xs border border-blue-300 rounded px-2 py-1 hover:bg-blue-50" id="retry-again-${id}">Try rendering again</button>
-      </div>
-    `;
-    
-    setTimeout(() => {
-      const retryAgainButton = document.getElementById(`retry-again-${id}`);
-      if (retryAgainButton) {
-        retryAgainButton.addEventListener('click', () => onRetry(code));
-      }
-    }, 0);
+  const handleShowCode = () => {
+    const container = document.getElementById(`diagram-container-${id}`);
+    if (container) {
+      // Clear the container first
+      container.innerHTML = '';
+      // Then set the new content
+      container.innerHTML = `
+        <div class="p-3 bg-gray-50 rounded border border-gray-300">
+          <p class="text-xs font-medium mb-1">Diagram code:</p>
+          <pre class="text-xs overflow-auto p-2 bg-gray-100 rounded">${code.replace(/</g, '&lt;').replace(/>/g, '&gt;')}</pre>
+          <button class="mt-2 text-xs border border-blue-300 rounded px-2 py-1 hover:bg-blue-50" id="retry-again-${id}">Try rendering again</button>
+        </div>
+      `;
+      
+      setTimeout(() => {
+        const retryAgainButton = document.getElementById(`retry-again-${id}`);
+        if (retryAgainButton) {
+          retryAgainButton.addEventListener('click', () => onRetry(code));
+        }
+      }, 0);
+    }
   };
   
   return (
-    <div className="p-3 rounded border border-red-300 bg-red-50">
+    <div className="p-3 rounded border border-red-300 bg-red-50 mt-2">
       <p className="text-red-600 text-sm font-medium">Error rendering diagram:</p>
       <p className="text-red-500 text-xs mt-1">{errorMessage}</p>
       <div dangerouslySetInnerHTML={{ __html: errorHint }} />
@@ -71,12 +77,7 @@ const DiagramErrorHandler: React.FC<DiagramErrorHandlerProps> = ({ error, code, 
         </button>
         <button 
           className="text-xs border border-gray-300 rounded px-2 py-1 hover:bg-gray-50"
-          onClick={() => {
-            const container = document.getElementById(`diagram-container-${id}`);
-            if (container) {
-              handleShowCode(container as HTMLDivElement);
-            }
-          }}
+          onClick={handleShowCode}
         >
           Show code
         </button>

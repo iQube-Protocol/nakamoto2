@@ -82,52 +82,30 @@ export const Definition = ({ term, definition }: { term: string; definition: str
 
 // Enhanced function to extract and format mermaid diagrams with improved error handling
 export const extractMermaidDiagram = (paragraph: string, pIndex: number): JSX.Element | null => {
-  // More robust regex to capture mermaid code blocks
-  const mermaidRegex = /```(?:mermaid)?\s*(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph|[\s\S]*?)```/i;
-  const match = paragraph.match(mermaidRegex);
-  
-  if (match) {
-    let mermaidCode = match[1].trim();
+  try {
+    // More robust regex to capture mermaid code blocks
+    const mermaidRegex = /```(?:mermaid)?\s*(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph|[\s\S]*?)```/i;
+    const match = paragraph.match(mermaidRegex);
     
-    // Add proper line breaks after directive and between nodes
-    // This is crucial for proper Mermaid parsing
-    if (mermaidCode.match(/^(graph|flowchart)/i)) {
-      // Split the code by lines and rebuild with proper formatting
-      const lines = mermaidCode.split('\n');
-      if (lines.length > 0) {
-        // Format the first line (directive) properly
-        let formattedCode = lines[0].trim() + '\n';
-        
-        // Process the remaining lines
-        for (let i = 1; i < lines.length; i++) {
-          const line = lines[i].trim();
-          if (line) {
-            formattedCode += '    ' + line + '\n'; // Add indentation and line break
-          }
-        }
-        mermaidCode = formattedCode.trim();
+    if (match) {
+      let mermaidCode = match[1].trim();
+      
+      // Ensure the code is not too complex or problematic
+      if (mermaidCode.length > 1000) {
+        mermaidCode = `graph TD
+    A[Complex Diagram] --> B[Simplified for Display]`;
       }
-    } else if (!mermaidCode.match(/^(sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph)/i)) {
-      // If no recognized directive, add flowchart directive and format properly
-      mermaidCode = `graph TD\n    ${mermaidCode.replace(/\n/g, '\n    ')}`;
+      
+      const diagramId = `mermaid-diagram-${pIndex}-${Math.random().toString(36).substring(2, 6)}`;
+      
+      return (
+        <div key={diagramId} className="my-6">
+          <MermaidDiagram code={mermaidCode} id={diagramId} />
+        </div>
+      );
     }
-    
-    // Replace any problematic syntax
-    mermaidCode = mermaidCode
-      .replace(/([A-Za-z0-9_]+)\s*\[/g, '$1[') // Remove spaces before [
-      .replace(/([A-Za-z0-9_]+)\s+-->/g, '$1-->') // Remove spaces before -->
-      .replace(/--\s+->/g, '-->') // Fix broken arrows like "-- ->"
-      .replace(/--\s+/g, '-->') // Fix other broken arrows
-      .replace(/\[\s+/g, '[') // Remove spaces after [
-      .replace(/\s+\]/g, ']'); // Remove spaces before ]
-    
-    const diagramId = `mermaid-diagram-${pIndex}-${Math.random().toString(36).substring(2, 6)}`;
-    
-    return (
-      <div key={diagramId} className="my-6">
-        <MermaidDiagram code={mermaidCode} id={diagramId} />
-      </div>
-    );
+  } catch (error) {
+    console.error('Error extracting mermaid diagram:', error);
   }
   
   return null;
