@@ -18,7 +18,8 @@ mermaid.initialize({
     lineColor: '#6366f1',
     secondaryColor: '#818cf8',
     tertiaryColor: '#e0e7ff'
-  }
+  },
+  logLevel: 'error'
 });
 
 // Process the code to fix common Mermaid syntax issues
@@ -45,26 +46,15 @@ export const processCode = (inputCode: string): string => {
         for (let i = 1; i < lines.length; i++) {
           const line = lines[i].trim();
           if (line) {
-            // Sanitize node labels to remove problematic characters
-            let processedLine = line
-              .replace(/\[([^\]]*)\]/g, (match, content) => {
-                // Replace spaces, parentheses with safe characters
-                const safeContent = content
-                  .replace(/\s+/g, '_')
-                  .replace(/\(/g, '〈')
-                  .replace(/\)/g, '〉')
-                  .replace(/,/g, '،');
-                return `[${safeContent}]`;
-              });
-              
+            // Safe processing of line content
+            let processedLine = line;
             result += '    ' + processedLine + '\n';
           }
         }
       }
     }
-    // Handle other diagram types or create a default flowchart
-    else if (!result.match(/^(sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph)/i)) {
-      // Default to simple flowchart if no recognized directive
+    // If no directive is found, add a default one
+    else if (!result.match(/^(sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph|graph|flowchart)/i)) {
       result = `graph TD\n    ${result.replace(/\n/g, '\n    ')}`;
     }
     
@@ -77,12 +67,10 @@ export const processCode = (inputCode: string): string => {
       .replace(/--\s+/g, '-->')
       .replace(/\[\s*\]/g, '[Empty]'); // Replace empty brackets
       
-    // If we detect it's a complete mess, provide a simple working diagram
+    // Provide a simpler diagram if too complex
     if (result.length > 500 || result.split('\n').length > 20) {
       console.log('Diagram too complex, simplifying...');
-      result = `graph TD
-    A[Start] --> B[Process]
-    B --> C[End]`;
+      result = `graph TD\n    A[Start] --> B[Process]\n    B --> C[End]`;
     }
     
     return result;
@@ -95,27 +83,35 @@ export const processCode = (inputCode: string): string => {
 
 // Render mermaid diagram with error handling
 export const renderMermaidDiagram = async (code: string, uniqueId: string): Promise<string> => {
-  try {
-    // Process the code to fix common issues
-    const processedCode = processCode(code);
-    
-    // Parse the diagram to check for errors
-    await mermaid.parse(processedCode);
-    
-    // If parsing succeeds, render the diagram
-    const { svg } = await mermaid.render(uniqueId, processedCode);
-    
-    // After rendering, clean up the result
-    const finalSvg = svg
-      .replace(/〈/g, '(')
-      .replace(/〉/g, ')')
-      .replace(/،/g, ',');
-    
-    return finalSvg;
-  } catch (error) {
-    console.error('Mermaid rendering error:', error);
-    throw error;
-  }
+  return new Promise(async (resolve, reject) => {
+    try {
+      // Process the code to fix common issues
+      const processedCode = code.trim();
+      
+      // Create a timeout for rendering
+      const renderTimeout = setTimeout(() => {
+        reject(new Error('Diagram rendering timed out'));
+      }, 5000);
+      
+      try {
+        // Render the diagram
+        const { svg } = await mermaid.render(uniqueId, processedCode);
+        
+        // Clear the timeout since rendering succeeded
+        clearTimeout(renderTimeout);
+        
+        // Return the SVG
+        resolve(svg || '<div>Failed to generate diagram</div>');
+      } catch (renderError) {
+        clearTimeout(renderTimeout);
+        console.error('Mermaid render error:', renderError);
+        reject(renderError);
+      }
+    } catch (error) {
+      console.error('General mermaid error:', error);
+      reject(error instanceof Error ? error : new Error('Unknown error in mermaid rendering'));
+    }
+  });
 };
 
 // Auto-correct common mermaid syntax issues
@@ -157,16 +153,13 @@ export const attemptAutoFix = (originalCode: string): string => {
     
     // Fix 5: If all else fails, provide a minimal working example
     if (fixedCode.split('\n').length <= 2) {
-      fixedCode = `graph TD
-    A[Start] --> B[Middle] --> C[End]`;
+      fixedCode = `graph TD\n    A[Start] --> B[Middle] --> C[End]`;
     }
     
     console.log('Auto-fixed code:', fixedCode);
     return fixedCode;
   } catch (error) {
     console.error('Error during auto-fix:', error);
-    return `graph TD
-    A[Auto-Fix] --> B[Failed]
-    B --> C[Basic Graph]`;
+    return `graph TD\n    A[Auto-Fix] --> B[Failed]\n    B --> C[Basic Graph]`;
   }
 };

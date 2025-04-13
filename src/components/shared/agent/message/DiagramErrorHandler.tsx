@@ -53,24 +53,27 @@ const DiagramErrorHandler: React.FC<DiagramErrorHandlerProps> = ({ error, code, 
   };
   
   return (
-    <div className="p-3 rounded border border-red-300 bg-red-50 mt-2">
+    <div className="p-3 rounded border border-red-300 bg-red-50 mt-2" data-testid="diagram-error">
       <p className="text-red-600 text-sm font-medium">Error rendering diagram:</p>
       <p className="text-red-500 text-xs mt-1">{errorMessage}</p>
       {errorHint}
       <div className="mt-2 flex gap-2">
         <button 
+          type="button"
           className="text-xs border border-blue-300 rounded px-2 py-1 hover:bg-blue-50"
           onClick={handleRetry}
         >
           Try again
         </button>
         <button 
+          type="button"
           className="text-xs border border-green-300 rounded px-2 py-1 hover:bg-green-50"
           onClick={handleAutoFix}
         >
-          Auto-fix & render
+          Auto-fix &amp; render
         </button>
         <button 
+          type="button"
           className="text-xs border border-gray-300 rounded px-2 py-1 hover:bg-gray-50"
           onClick={handleShowCode}
         >
