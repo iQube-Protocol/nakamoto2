@@ -24,7 +24,7 @@ const EarnInterface = ({ tokenMetrics }: EarnInterfaceProps) => {
   const [timeframe, setTimeframe] = useState('1M');
   const [selectedTab, setSelectedTab] = useState<string | null>(null);
   const [currentItemIndex, setCurrentItemIndex] = useState<number>(0);
-  const [isPanelCollapsed, setIsPanelCollapsed] = useState<boolean>(false);
+  const [isPanelCollapsed, setIsPanelCollapsed] = useState<boolean>(true);
 
   // Token Stats Cards array
   const tokenStatsCards = [

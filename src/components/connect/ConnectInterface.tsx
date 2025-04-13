@@ -16,7 +16,7 @@ interface ConnectInterfaceProps {
 const ConnectInterface = ({ communityMetrics }: ConnectInterfaceProps) => {
   const [selectedTab, setSelectedTab] = useState<string | undefined>(undefined);
   const [currentItemIndex, setCurrentItemIndex] = useState(0);
-  const [isPanelCollapsed, setIsPanelCollapsed] = useState<boolean>(false);
+  const [isPanelCollapsed, setIsPanelCollapsed] = useState<boolean>(true);
 
   const goToPrev = () => {
     const currentItems = getCurrentItems();

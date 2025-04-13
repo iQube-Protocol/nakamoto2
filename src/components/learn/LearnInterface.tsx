@@ -17,7 +17,7 @@ const LearnInterface = ({ metaQube }: LearnInterfaceProps) => {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [currentItemIndex, setCurrentItemIndex] = useState<number>(0);
   const [activeTab, setActiveTab] = useState<string | null>(null);
-  const [isPanelCollapsed, setIsPanelCollapsed] = useState<boolean>(false);
+  const [isPanelCollapsed, setIsPanelCollapsed] = useState<boolean>(true);
   
   const courses = defaultCourses;
   const certifications = defaultCertifications;
