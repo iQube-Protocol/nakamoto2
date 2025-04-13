@@ -1,4 +1,3 @@
-
 import mermaid from 'mermaid';
 
 // Initialize mermaid with better configuration for rendering
