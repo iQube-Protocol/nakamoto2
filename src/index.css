@@ -1,4 +1,3 @@
-
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -44,9 +43,9 @@
     --sidebar-border: 240 10% 90%;
     --sidebar-ring: 256 56% 57%;
     
-    /* Added tooltip styling for light mode */
-    --tooltip-background: 240 10% 15%;
-    --tooltip-foreground: 240 10% 98%;
+    /* Tooltip styling for light mode */
+    --tooltip-background: 240 10% 98%;
+    --tooltip-foreground: 240 10% 5%;
   }
 
   .dark {
@@ -87,7 +86,7 @@
     --sidebar-border: 240 10% 15%;
     --sidebar-ring: 256 56% 57%;
     
-    /* Added tooltip styling for dark mode */
+    /* Tooltip styling for dark mode */
     --tooltip-background: 240 10% 15%;
     --tooltip-foreground: 240 10% 98%;
   }
@@ -151,14 +150,6 @@
   
   /* Tooltip styles enhancement */
   [data-radix-popper-content-wrapper] [role="tooltip"] {
-    @apply bg-background border border-border shadow-md;
-  }
-  
-  .light [data-radix-popper-content-wrapper] [role="tooltip"] {
-    @apply bg-white text-gray-800 border-gray-200;
-  }
-  
-  .dark [data-radix-popper-content-wrapper] [role="tooltip"] {
-    @apply bg-gray-800 text-white border-gray-700;
+    @apply bg-[hsl(var(--tooltip-background))] text-[hsl(var(--tooltip-foreground))] border border-border shadow-md;
   }
 }

@@ -16,6 +16,7 @@ import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import MetaQubeDisplay from '@/components/shared/MetaQubeDisplay';
 import { MetaQube } from '@/lib/types';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const metaQubeData: MetaQube = {
   "iQube-Identifier": "MonDAI iQube",
@@ -54,10 +55,16 @@ const NavItem = ({ to, icon, label, collapsed }: NavItemProps) => {
       <div className="mr-3 text-xl">{icon}</div>
       {!collapsed && <span>{label}</span>}
       {collapsed && (
-        <div className="absolute left-16 rounded-md px-2 py-1 ml-6 bg-iqube-dark text-foreground
-          scale-0 group-hover:scale-100 transition-all duration-100 origin-left z-50">
-          {label}
-        </div>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <span className="sr-only">{label}</span>
+            </TooltipTrigger>
+            <TooltipContent side="right" className="z-50">
+              {label}
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       )}
     </NavLink>
   );
@@ -138,16 +145,21 @@ const Sidebar = () => {
             />
           </div>
         ) : (
-          <Link 
-            to="/settings" 
-            className="flex items-center justify-center py-3 px-3 rounded-md transition-all hover:bg-iqube-primary/20 bg-iqube-primary/10 group"
-          >
-            <Database className="h-6 w-6 text-iqube-primary" />
-            <div className="absolute left-16 rounded-md px-2 py-1 ml-6 bg-iqube-dark text-foreground
-              scale-0 group-hover:scale-100 transition-all duration-100 origin-left z-50">
-              iQube Settings
-            </div>
-          </Link>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link 
+                  to="/settings" 
+                  className="flex items-center justify-center py-3 px-3 rounded-md transition-all hover:bg-iqube-primary/20 bg-iqube-primary/10"
+                >
+                  <Database className="h-6 w-6 text-iqube-primary" />
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                iQube Settings
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         )}
       </div>
     </div>
