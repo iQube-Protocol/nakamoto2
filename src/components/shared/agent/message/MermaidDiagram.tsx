@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import DiagramErrorHandler from './DiagramErrorHandler';
 
@@ -20,7 +19,7 @@ const getMermaid = async () => {
         theme: 'neutral',
         securityLevel: 'loose', // Allow all rendering
         fontFamily: 'Inter, system-ui, sans-serif',
-        fontSize: 16, // Increased font size for better legibility
+        fontSize: 18, // Increased font size for better legibility
         flowchart: {
           htmlLabels: true,
           curve: 'basis', // Smoother curves
@@ -38,13 +37,13 @@ const getMermaid = async () => {
           tertiaryColor: '#F1F0FB', // Very light background
           
           // Adjustments for text
-          fontSize: '16px',
+          fontSize: '18px', // Increased font size
           fontFamily: 'Inter, system-ui, sans-serif',
           
-          // Node styling
+          // Node styling - changed to white background
           nodeBorder: '1px',
-          mainBkg: '#E5DEFF', // Light purple background for nodes
-          nodeBkg: '#E5DEFF',
+          mainBkg: '#FFFFFF', // White background for nodes (was #E5DEFF)
+          nodeBkg: '#FFFFFF', // White background for nodes
           
           // Edge styling
           edgeLabelBackground: '#FFFFFF', // White background for edge labels
@@ -162,14 +161,15 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
         const labels = svgElement.querySelectorAll('.nodeLabel, .edgeLabel');
         labels.forEach((label: Element) => {
           if (label instanceof HTMLElement) {
-            label.style.fontSize = '15px'; // Increased font size for better readability
+            label.style.fontSize = '17px'; // Increased font size further for better readability
             // Make labels wrap at a reasonable width
             if (label.classList.contains('nodeLabel')) {
-              label.style.maxWidth = '150px'; // Wider nodes for better text fit
+              label.style.maxWidth = '160px'; // Wider nodes for better text fit
               label.style.whiteSpace = 'normal';
               label.style.lineHeight = '1.4';
               label.style.padding = '4px';
               label.style.color = '#1A1F2C'; // Ensure text color is dark for contrast
+              label.style.fontWeight = '500'; // Slightly bolder text for better readability
             }
           }
         });
@@ -183,6 +183,7 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
             node.style.filter = 'drop-shadow(0 2px 3px rgba(0, 0, 0, 0.1))'; // Enhanced subtle shadow
             node.style.stroke = '#7E69AB'; // Consistent border color
             node.style.strokeWidth = '1.5px'; // Slightly thicker border
+            node.style.fill = '#FFFFFF'; // Ensure white fill for nodes
           }
         });
         

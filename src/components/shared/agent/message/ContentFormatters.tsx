@@ -133,8 +133,8 @@ const createSimpleDiagram = (title: string = "Diagram"): string => {
     B --> C[End]
     
     %% Styling directives
-    classDef default fill:#E5DEFF,stroke:#7E69AB,stroke-width:1.5px,color:#1A1F2C,font-size:16px;
-    classDef primary fill:#9B87F5,stroke:#7E69AB,stroke-width:1.5px,color:#1A1F2C,font-size:16px;
+    classDef default fill:#FFFFFF,stroke:#7E69AB,stroke-width:1.5px,color:#1A1F2C,font-size:18px;
+    classDef primary fill:#9B87F5,stroke:#7E69AB,stroke-width:1.5px,color:#1A1F2C,font-size:18px;
     
     class B primary;`;
 };
