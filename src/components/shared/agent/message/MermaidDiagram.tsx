@@ -14,23 +14,40 @@ const getMermaid = async () => {
     mermaidPromise = import('mermaid').then(m => {
       const instance = m.default;
       
-      // Configure mermaid with settings
+      // Configure mermaid with improved styling settings
       instance.initialize({
         startOnLoad: false,
         theme: 'neutral',
         securityLevel: 'loose', // Allow all rendering
         fontFamily: 'inherit',
+        fontSize: 14, // Control font size
         flowchart: {
           htmlLabels: true,
-          curve: 'cardinal',
+          curve: 'basis', // Smoother curves
+          diagramPadding: 8, // Reduce padding
+          nodeSpacing: 30, // Spacing between nodes
+          rankSpacing: 40, // Spacing between ranks
+          wrap: true, // Allow text wrapping in nodes
         },
         themeVariables: {
-          primaryColor: '#4f46e5',
+          primaryColor: '#6E56CF', // Match iqube-primary
           primaryTextColor: '#ffffff',
-          primaryBorderColor: '#3730a3',
-          lineColor: '#6366f1',
-          secondaryColor: '#818cf8',
-          tertiaryColor: '#e0e7ff'
+          primaryBorderColor: '#5842B5',
+          lineColor: '#9B8AFB', // Match iqube-secondary
+          secondaryColor: '#9B8AFB',
+          tertiaryColor: '#e0e7ff',
+          // Font sizes
+          fontSize: '14px',
+          fontFamily: 'inherit',
+          // Node styling
+          nodeBorder: '1px',
+          mainBkg: '#6E56CF',
+          nodeBkg: '#6E56CF',
+          // Edge styling
+          edgeLabelBackground: '#f7f7ff',
+          // More elegant label styling
+          labelBackground: '#f7f7ff',
+          labelBorderRadius: '4px',
         },
         logLevel: 'fatal', // Only show fatal errors, reduce noise
       });
@@ -125,12 +142,49 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
     try {
       containerRef.current.innerHTML = svg;
       
-      // Make SVG responsive
+      // Make SVG responsive and apply refined styling
       const svgElement = containerRef.current.querySelector('svg');
       if (svgElement) {
+        // Set size constraints
         svgElement.setAttribute('width', '100%');
         svgElement.setAttribute('height', 'auto');
         svgElement.style.maxWidth = '100%';
+        svgElement.style.maxHeight = '500px';
+        
+        // Improve font rendering
+        svgElement.style.fontFamily = 'inherit';
+        
+        // Additional styling improvements
+        const labels = svgElement.querySelectorAll('.nodeLabel, .edgeLabel');
+        labels.forEach((label: Element) => {
+          if (label instanceof HTMLElement) {
+            label.style.fontSize = '14px';
+            // Make labels wrap at a reasonable width
+            if (label.classList.contains('nodeLabel')) {
+              label.style.maxWidth = '120px';
+              label.style.whiteSpace = 'normal';
+              label.style.lineHeight = '1.3';
+            }
+          }
+        });
+        
+        // Style node shapes
+        const nodes = svgElement.querySelectorAll('.node rect, .node circle, .node ellipse, .node polygon');
+        nodes.forEach((node: Element) => {
+          if (node instanceof SVGElement) {
+            node.style.rx = '4'; // Rounded corners
+            node.style.ry = '4'; // Rounded corners
+            node.style.filter = 'drop-shadow(0 1px 2px rgba(0, 0, 0, 0.1))'; // Subtle shadow
+          }
+        });
+        
+        // Make edges more elegant
+        const edges = svgElement.querySelectorAll('.edgePath path');
+        edges.forEach((edge: Element) => {
+          if (edge instanceof SVGElement) {
+            edge.style.strokeWidth = '1.5px';
+          }
+        });
       }
     } catch (err) {
       console.error("Error inserting SVG:", err);
@@ -193,11 +247,11 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
     );
   }
   
-  // Display successful render
+  // Display successful render with refined container styling
   return (
     <div 
       ref={containerRef}
-      className="flex justify-center overflow-x-auto p-2 bg-gray-50 rounded-md min-h-[100px]"
+      className="flex justify-center overflow-x-auto p-4 bg-gray-50/50 rounded-md min-h-[100px] border border-gray-100 shadow-sm"
     />
   );
 };

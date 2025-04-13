@@ -80,31 +80,63 @@ export const Definition = ({ term, definition }: { term: string; definition: str
   </div>
 );
 
-// Deeply sanitize mermaid code by completely replacing problematic characters
+// Enhanced sanitization function for mermaid code
 const sanitizeMermaidCode = (code: string): string => {
-  // Remove all parentheses from node labels (major source of errors)
-  const sanitized = code
+  // First, check for chart type and add if missing
+  let sanitized = code.trim();
+  
+  // Add graph directive if missing
+  if (!sanitized.match(/^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph)/i)) {
+    sanitized = `graph TD\n${sanitized}`;
+  }
+  
+  // Fix common syntax issues
+  sanitized = sanitized
+    // Replace problematic quotes 
+    .replace(/'/g, '"')
     // Replace parentheses in node labels with spaces
     .replace(/\[([^\]]*?)\(([^\]]*?)\)([^\]]*?)\]/g, (match, before, middle, after) => {
       return `[${before} ${middle} ${after}]`;
     })
-    // Replace any remaining parenthesis
+    // Replace any remaining parenthesis in nodes
     .replace(/\[([^\]]*?)\(([^\]]*?)\]/g, (match, before) => `[${before} -`)
     .replace(/\[([^\]]*?)\)([^\]]*?)\]/g, (match, before, after) => `[${before} - ${after}]`)
-    // Fix common syntax issues
+    // Fix arrow syntax
     .replace(/--\s*>/g, "-->")
+    // Fix spacing issues in node definitions
     .replace(/([A-Za-z0-9_]+)\s*\[/g, '$1[')
     .replace(/\s+\]/g, ']')
-    .replace(/([A-Za-z0-9_\]]+)\s+-->/g, '$1-->');
-
+    .replace(/([A-Za-z0-9_\]]+)\s+-->/g, '$1-->')
+    // Add quotes around problematic labels
+    .replace(/\[([^\]"']*[,;:].*?)\]/g, (match, content) => {
+      if (!content.includes('"') && !content.includes("'")) {
+        return `["${content}"]`;
+      }
+      return match;
+    })
+    // Ensure line breaks are properly formatted
+    .replace(/\r\n/g, '\n')
+    // Limit node label length for better rendering
+    .replace(/\[([^\]]{50,})\]/g, (match, content) => {
+      // Split long node text to multiple lines
+      const lines = content.match(/.{1,25}(\s|$)/g) || [content];
+      return `["${lines.join('<br>')}"]`;
+    });
+    
   return sanitized;
 };
 
-// Create a safe, simple diagram when all else fails
+// Create a refined simple diagram when all else fails
 const createSimpleDiagram = (title: string = "Diagram"): string => {
   return `graph TD
-    A[Start] --> B[${title}]
-    B --> C[End]`;
+    A[Start] --> B["${title}"]
+    B --> C[End]
+    
+    %% Styling directives
+    classDef default fill:#f4f4f4,stroke:#6E56CF,stroke-width:1px,color:#333,font-size:14px;
+    classDef primary fill:#6E56CF,stroke:#5842B5,stroke-width:1px,color:#fff,font-size:14px;
+    
+    class B primary;`;
 };
 
 // Enhanced function to extract and format mermaid diagrams with improved error handling
@@ -117,16 +149,11 @@ export const extractMermaidDiagram = (paragraph: string, pIndex: number): JSX.El
     if (match && match[1]) {
       let mermaidCode = match[1].trim();
       
-      // If code doesn't start with a diagram type directive, add one
-      if (!mermaidCode.match(/^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph)/i)) {
-        mermaidCode = `graph TD\n${mermaidCode}`;
-      }
-      
       // Pre-sanitize the code to avoid common parsing errors
       mermaidCode = sanitizeMermaidCode(mermaidCode);
       
       // If code is too complex or likely problematic, simplify it
-      if (mermaidCode.length > 1000 || 
+      if (mermaidCode.length > 500 || 
           mermaidCode.includes('(') || 
           mermaidCode.includes(')') ||
           mermaidCode.includes(',')) {
@@ -150,7 +177,7 @@ export const extractMermaidDiagram = (paragraph: string, pIndex: number): JSX.El
     
     // Fallback to a very simple diagram when extraction fails
     const diagramId = `fallback-diagram-${pIndex}-${Math.random().toString(36).substring(2, 9)}`;
-    const simpleDiagram = createSimpleDiagram("Fallback");
+    const simpleDiagram = createSimpleDiagram("Fallback Diagram");
     
     return (
       <div key={diagramId} className="my-6">
