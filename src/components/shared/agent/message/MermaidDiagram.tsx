@@ -13,6 +13,7 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
   const [error, setError] = useState<Error | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [currentCode, setCurrentCode] = useState(code);
+  const [renderAttempts, setRenderAttempts] = useState(0);
 
   useEffect(() => {
     if (!containerRef.current) return;
@@ -26,7 +27,7 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
         
         const uniqueId = `mermaid-${id}-${Math.random().toString(36).substring(2, 11)}`;
         
-        // Clean up the mermaid code
+        // Clean up the mermaid code - with enhanced processing
         const cleanCode = processCode(currentCode);
         
         console.log(`Attempting to render mermaid diagram with ID ${uniqueId}:`, cleanCode);
@@ -40,6 +41,19 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
         }
       } catch (err) {
         console.error('Mermaid error:', err);
+        
+        // If first attempt fails, try an auto-fix
+        if (renderAttempts === 0) {
+          setRenderAttempts(1);
+          // The recursive call will happen when currentCode changes
+          const fixedCode = processCode(currentCode);
+          if (fixedCode !== currentCode) {
+            console.log('Attempting auto-fix on first failure...');
+            setCurrentCode(fixedCode);
+            return;
+          }
+        }
+        
         setError(err as Error);
       } finally {
         setIsLoading(false);
@@ -54,9 +68,10 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
     return () => {
       clearTimeout(timer);
     };
-  }, [currentCode, id]);
+  }, [currentCode, id, renderAttempts]);
 
   const handleRetry = (codeToRender: string) => {
+    setRenderAttempts(0); // Reset attempts counter
     setCurrentCode(codeToRender);
   };
 

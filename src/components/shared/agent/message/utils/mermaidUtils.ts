@@ -1,3 +1,4 @@
+
 import mermaid from 'mermaid';
 
 // Initialize mermaid with better configuration for rendering
@@ -40,7 +41,17 @@ export const processCode = (inputCode: string): string => {
       const lines = restOfCode.split('\n');
       lines.forEach(line => {
         if (line.trim()) {
-          result += '    ' + line.trim() + '\n';
+          // Escape parentheses in node labels to prevent parsing errors
+          let processedLine = line.trim();
+          
+          // Replace spaces in node labels to prevent parsing issues
+          processedLine = processedLine.replace(/\[([^\]]*)\]/g, (match, content) => {
+            // Replace spaces with underscores in node labels
+            const safeContent = content.replace(/\s+/g, '_');
+            return `[${safeContent}]`;
+          });
+          
+          result += '    ' + processedLine + '\n';
         }
       });
     }
@@ -52,13 +63,22 @@ export const processCode = (inputCode: string): string => {
   }
   
   // Fix common syntax issues
-  return result
+  result = result
     .replace(/([A-Za-z0-9_]+)\s*\[/g, '$1[') // Remove spaces before [
     .replace(/\[\s+/g, '[') // Remove spaces after [
     .replace(/\s+\]/g, ']') // Remove spaces before ]
     .replace(/([A-Za-z0-9_\]]+)\s+-->/g, '$1-->') // Remove spaces before -->
     .replace(/--\s+->/g, '-->') // Fix broken arrows like "-- ->"
     .replace(/--\s+/g, '-->'); // Fix other broken arrows
+    
+  // Special processing for parentheses in node text which cause parsing errors
+  result = result.replace(/\[([^\]]*\([^\]]*\)[^\]]*)\]/g, (match, content) => {
+    // Replace parentheses with brackets or similar to avoid parsing issues
+    const safeContent = content.replace(/\(/g, '〈').replace(/\)/g, '〉');
+    return `[${safeContent}]`;
+  });
+  
+  return result;
 };
 
 // Parse and render mermaid diagram
@@ -67,13 +87,21 @@ export const renderMermaidDiagram = async (code: string, uniqueId: string): Prom
     // Process the code to fix common issues
     const processedCode = processCode(code);
     
+    // Log the processed code for debugging
+    console.log('Processed mermaid code:', processedCode);
+    
     // Parse the diagram to check for errors
     await mermaid.parse(processedCode);
     
     // If parsing succeeds, render the diagram
     const { svg } = await mermaid.render(uniqueId, processedCode);
-    return svg;
+    
+    // After rendering, replace back any special characters we substituted
+    const finalSvg = svg.replace(/〈/g, '(').replace(/〉/g, ')');
+    
+    return finalSvg;
   } catch (error) {
+    console.error('Mermaid rendering error:', error);
     throw error;
   }
 };
@@ -105,5 +133,24 @@ export const attemptAutoFix = (originalCode: string): string => {
     return line.replace(/([A-Za-z0-9_]+)(?!\[|\()(\s*-->|\s*--|\s*-.-|\s*==)/g, '[$1]$2');
   });
   
-  return fixedLines.join('\n');
+  fixedCode = fixedLines.join('\n');
+  
+  // Fix 4: Special handling for parentheses in node labels
+  fixedCode = fixedCode.replace(/\[([^\]]*\([^\]]*\)[^\]]*)\]/g, (match, content) => {
+    // Replace parentheses with visually similar characters to avoid parsing issues
+    const safeContent = content.replace(/\(/g, '〈').replace(/\)/g, '〉');
+    return `[${safeContent}]`;
+  });
+  
+  // Fix 5: Replace spaces in node labels with underscores
+  fixedCode = fixedCode.replace(/\[([^\]]*)\]/g, (match, content) => {
+    // Replace spaces with underscores in node content
+    if (content.includes(' ')) {
+      const safeContent = content.replace(/\s+/g, '_');
+      return `[${safeContent}]`;
+    }
+    return match;
+  });
+  
+  return fixedCode;
 };
