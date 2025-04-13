@@ -1,6 +1,6 @@
-
 import React, { useState } from 'react';
 import { attemptAutoFix } from './utils/mermaidUtils';
+import { AlertCircle } from 'lucide-react';
 
 interface DiagramErrorHandlerProps {
   error: Error | string;
@@ -39,16 +39,23 @@ const DiagramErrorHandler: React.FC<DiagramErrorHandlerProps> = ({ error, code, 
   const handleAutoFix = () => {
     setIsFixing(true);
     
-    // Small delay to allow UI to update
+    // Use a timeout to prevent UI freezing
     setTimeout(() => {
       try {
+        // Get fixed code
         const fixedCode = attemptAutoFix(code);
         console.log('Attempting fix with:', fixedCode);
-        onRetry(fixedCode);
+        
+        if (fixedCode !== code) {
+          onRetry(fixedCode);
+        } else {
+          // If code is unchanged, try a simple graph
+          onRetry("graph TD\n    A[Start] --> B[End]");
+        }
       } catch (err) {
         console.error('Auto-fix failed:', err);
-        // If auto-fix fails, just retry with original code
-        onRetry(code);
+        // If auto-fix fails, try with minimal example
+        onRetry("graph TD\n    A[Error] --> B[Try Again]");
       } finally {
         setIsFixing(false);
       }
@@ -62,9 +69,15 @@ const DiagramErrorHandler: React.FC<DiagramErrorHandlerProps> = ({ error, code, 
   
   return (
     <div className="p-3 rounded border border-red-300 bg-red-50 mt-2" data-testid="diagram-error">
-      <p className="text-red-600 text-sm font-medium">Error rendering diagram:</p>
-      <p className="text-red-500 text-xs mt-1">{errorMessage}</p>
-      {errorHint}
+      <div className="flex items-start">
+        <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0 text-red-500" />
+        <div>
+          <p className="text-red-600 text-sm font-medium">Error rendering diagram:</p>
+          <p className="text-red-500 text-xs mt-1">{errorMessage}</p>
+          {errorHint}
+        </div>
+      </div>
+      
       <div className="mt-2 flex gap-2">
         <button 
           type="button"
