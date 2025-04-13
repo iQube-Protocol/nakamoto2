@@ -1,26 +1,6 @@
 
+// Import mermaid with a safer approach to avoid SSR issues
 import mermaid from 'mermaid';
-
-// Initialize mermaid with safer configuration
-mermaid.initialize({
-  startOnLoad: false,
-  theme: 'neutral',
-  securityLevel: 'loose',
-  fontFamily: 'inherit',
-  flowchart: {
-    htmlLabels: true,
-    curve: 'cardinal',
-  },
-  themeVariables: {
-    primaryColor: '#4f46e5',
-    primaryTextColor: '#ffffff',
-    primaryBorderColor: '#3730a3',
-    lineColor: '#6366f1',
-    secondaryColor: '#818cf8',
-    tertiaryColor: '#e0e7ff'
-  },
-  logLevel: 'error'
-});
 
 // Process the code to fix common Mermaid syntax issues
 export const processCode = (inputCode: string): string => {
@@ -81,39 +61,6 @@ export const processCode = (inputCode: string): string => {
   }
 };
 
-// Render mermaid diagram with error handling
-export const renderMermaidDiagram = async (code: string, uniqueId: string): Promise<string> => {
-  return new Promise(async (resolve, reject) => {
-    try {
-      // Process the code to fix common issues
-      const processedCode = code.trim();
-      
-      // Create a timeout for rendering
-      const renderTimeout = setTimeout(() => {
-        reject(new Error('Diagram rendering timed out'));
-      }, 5000);
-      
-      try {
-        // Render the diagram
-        const { svg } = await mermaid.render(uniqueId, processedCode);
-        
-        // Clear the timeout since rendering succeeded
-        clearTimeout(renderTimeout);
-        
-        // Return the SVG
-        resolve(svg || '<div>Failed to generate diagram</div>');
-      } catch (renderError) {
-        clearTimeout(renderTimeout);
-        console.error('Mermaid render error:', renderError);
-        reject(renderError);
-      }
-    } catch (error) {
-      console.error('General mermaid error:', error);
-      reject(error instanceof Error ? error : new Error('Unknown error in mermaid rendering'));
-    }
-  });
-};
-
 // Auto-correct common mermaid syntax issues
 export const attemptAutoFix = (originalCode: string): string => {
   console.log('Attempting to fix code:', originalCode);
@@ -162,4 +109,30 @@ export const attemptAutoFix = (originalCode: string): string => {
     console.error('Error during auto-fix:', error);
     return `graph TD\n    A[Auto-Fix] --> B[Failed]\n    B --> C[Basic Graph]`;
   }
+};
+
+// Render mermaid diagram with error handling - Note: this function is no longer used
+// Instead, we render directly in the MermaidDiagram component
+export const renderMermaidDiagram = async (code: string, uniqueId: string): Promise<string> => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const processedCode = code.trim();
+      
+      // Create a timeout for rendering
+      const renderTimeout = setTimeout(() => {
+        reject(new Error('Diagram rendering timed out'));
+      }, 5000);
+      
+      try {
+        const { svg } = await mermaid.render(uniqueId, processedCode);
+        clearTimeout(renderTimeout);
+        resolve(svg || '<div>Failed to generate diagram</div>');
+      } catch (renderError) {
+        clearTimeout(renderTimeout);
+        reject(renderError);
+      }
+    } catch (error) {
+      reject(error instanceof Error ? error : new Error('Unknown error in mermaid rendering'));
+    }
+  });
 };

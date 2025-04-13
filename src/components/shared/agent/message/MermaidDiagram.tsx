@@ -1,7 +1,31 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { processCode, renderMermaidDiagram } from './utils/mermaidUtils';
+import { processCode } from './utils/mermaidUtils';
 import DiagramErrorHandler from './DiagramErrorHandler';
+import mermaid from 'mermaid';
+
+// Initialize mermaid with safe configuration
+if (typeof window !== 'undefined') {
+  mermaid.initialize({
+    startOnLoad: false,
+    theme: 'neutral',
+    securityLevel: 'loose',
+    fontFamily: 'inherit',
+    flowchart: {
+      htmlLabels: true,
+      curve: 'cardinal',
+    },
+    themeVariables: {
+      primaryColor: '#4f46e5',
+      primaryTextColor: '#ffffff',
+      primaryBorderColor: '#3730a3',
+      lineColor: '#6366f1',
+      secondaryColor: '#818cf8',
+      tertiaryColor: '#e0e7ff'
+    },
+    logLevel: 'error'
+  });
+}
 
 interface MermaidDiagramProps {
   code: string;
@@ -16,15 +40,6 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
   const [renderAttempts, setRenderAttempts] = useState(0);
   const [showCodeView, setShowCodeView] = useState(false);
 
-  // Clean up function to prevent memory leaks
-  useEffect(() => {
-    return () => {
-      if (containerRef.current) {
-        containerRef.current.innerHTML = '';
-      }
-    };
-  }, []);
-
   // Reset state when code input changes
   useEffect(() => {
     if (code !== currentCode && !code.startsWith("SHOW_CODE_")) {
@@ -38,76 +53,76 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
 
   // Handle diagram rendering
   useEffect(() => {
-    let isMounted = true;
-    const timer = setTimeout(() => {
-      // Check for code view toggle first
-      if (currentCode.startsWith("SHOW_CODE_")) {
-        if (isMounted) {
-          setShowCodeView(true);
-          setIsLoading(false);
-        }
-        return;
-      } else {
-        if (isMounted) {
-          setShowCodeView(false);
-        }
-      }
-      
-      if (!containerRef.current || !isMounted) return;
-      
-      // Reset container to prevent issues with previous renders
-      containerRef.current.innerHTML = '';
-      
-      if (isMounted) {
-        setIsLoading(true);
-        setError(null);
-      }
+    // Check for code view toggle first
+    if (currentCode.startsWith("SHOW_CODE_")) {
+      setShowCodeView(true);
+      setIsLoading(false);
+      return;
+    } else {
+      setShowCodeView(false);
+    }
 
+    let isMounted = true;
+    setIsLoading(true);
+    setError(null);
+
+    // Generate a truly unique ID for this render attempt
+    const uniqueId = `mermaid-${id}-${renderAttempts}-${Math.random().toString(36).substring(2, 8)}`;
+    
+    const renderDiagram = async () => {
       try {
-        const uniqueId = `mermaid-${id}-${renderAttempts}`;
-        const cleanCode = processCode(currentCode);
+        if (!containerRef.current || !isMounted) return;
         
+        // Clear previous content safely
+        while (containerRef.current.firstChild) {
+          containerRef.current.removeChild(containerRef.current.firstChild);
+        }
+        
+        const cleanCode = processCode(currentCode);
         console.log(`Rendering mermaid diagram with ID ${uniqueId}:`, cleanCode);
         
-        renderMermaidDiagram(cleanCode, uniqueId)
-          .then(svg => {
-            // Only proceed if component is still mounted
-            if (!isMounted || !containerRef.current) return;
-            
-            // Safely update the DOM
-            try {
-              containerRef.current.innerHTML = svg;
-              console.log('Diagram rendered successfully');
-            } catch (domError) {
-              console.error('DOM insertion error:', domError);
-              if (isMounted) {
-                setError(new Error('Failed to insert diagram into DOM'));
-              }
-            }
-          })
-          .catch(err => {
-            console.error('Mermaid rendering error:', err);
-            if (isMounted) {
-              setError(err);
-            }
-          })
-          .finally(() => {
-            if (isMounted) {
-              setIsLoading(false);
-            }
-          });
+        try {
+          // Create a new temporary container for mermaid rendering
+          const tempContainer = document.createElement('div');
+          tempContainer.id = uniqueId;
+          tempContainer.style.width = '100%';
+          
+          // Render to the temporary container first
+          const { svg } = await mermaid.render(uniqueId, cleanCode, tempContainer);
+          
+          if (!isMounted || !containerRef.current) return;
+          
+          // Add the rendered SVG to the actual container
+          containerRef.current.innerHTML = svg;
+          console.log('Diagram rendered successfully');
+        } catch (mermaidError) {
+          console.error('Mermaid rendering error:', mermaidError);
+          if (isMounted) {
+            setError(mermaidError instanceof Error ? mermaidError : new Error(String(mermaidError)));
+          }
+        }
       } catch (err) {
         console.error('Error during diagram preparation:', err);
         if (isMounted) {
           setError(err instanceof Error ? err : new Error(String(err)));
+        }
+      } finally {
+        if (isMounted) {
           setIsLoading(false);
         }
       }
-    }, 100); // Shorter delay for faster rendering
+    };
+
+    // Add a small delay to ensure DOM is ready
+    const timer = setTimeout(renderDiagram, 50);
     
     return () => {
       isMounted = false;
       clearTimeout(timer);
+      // Ensure we clean up any DOM elements when unmounting
+      if (containerRef.current) {
+        containerRef.current.innerHTML = '';
+      }
     };
   }, [currentCode, id, renderAttempts]);
 

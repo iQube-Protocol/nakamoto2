@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { attemptAutoFix } from './utils/mermaidUtils';
 
 interface DiagramErrorHandlerProps {
@@ -10,6 +10,7 @@ interface DiagramErrorHandlerProps {
 }
 
 const DiagramErrorHandler: React.FC<DiagramErrorHandlerProps> = ({ error, code, id, onRetry }) => {
+  const [isFixing, setIsFixing] = useState(false);
   const errorMessage = error instanceof Error ? error.message : String(error);
   
   // Extract line number from error message if available
@@ -36,15 +37,22 @@ const DiagramErrorHandler: React.FC<DiagramErrorHandlerProps> = ({ error, code, 
   };
   
   const handleAutoFix = () => {
-    try {
-      const fixedCode = attemptAutoFix(code);
-      console.log('Attempting fix with:', fixedCode);
-      onRetry(fixedCode);
-    } catch (err) {
-      console.error('Auto-fix failed:', err);
-      // If auto-fix fails, just retry with original code
-      onRetry(code);
-    }
+    setIsFixing(true);
+    
+    // Small delay to allow UI to update
+    setTimeout(() => {
+      try {
+        const fixedCode = attemptAutoFix(code);
+        console.log('Attempting fix with:', fixedCode);
+        onRetry(fixedCode);
+      } catch (err) {
+        console.error('Auto-fix failed:', err);
+        // If auto-fix fails, just retry with original code
+        onRetry(code);
+      } finally {
+        setIsFixing(false);
+      }
+    }, 100);
   };
   
   const handleShowCode = () => {
@@ -62,6 +70,7 @@ const DiagramErrorHandler: React.FC<DiagramErrorHandlerProps> = ({ error, code, 
           type="button"
           className="text-xs border border-blue-300 rounded px-2 py-1 hover:bg-blue-50"
           onClick={handleRetry}
+          disabled={isFixing}
         >
           Try again
         </button>
@@ -69,13 +78,15 @@ const DiagramErrorHandler: React.FC<DiagramErrorHandlerProps> = ({ error, code, 
           type="button"
           className="text-xs border border-green-300 rounded px-2 py-1 hover:bg-green-50"
           onClick={handleAutoFix}
+          disabled={isFixing}
         >
-          Auto-fix &amp; render
+          {isFixing ? 'Fixing...' : 'Auto-fix & render'}
         </button>
         <button 
           type="button"
           className="text-xs border border-gray-300 rounded px-2 py-1 hover:bg-gray-50"
           onClick={handleShowCode}
+          disabled={isFixing}
         >
           Show code
         </button>
