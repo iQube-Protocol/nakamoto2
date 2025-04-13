@@ -5,8 +5,10 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Button } from '@/components/ui/button';
-import { Bell, Shield } from 'lucide-react';
+import { Bell, Shield, Sun, Moon } from 'lucide-react';
 import { UserSettings } from '@/lib/types';
+import { useTheme } from '@/contexts/ThemeContext';
+import { useToast } from '@/hooks/use-toast';
 
 interface PreferencesTabProps {
   settings: UserSettings;
@@ -14,6 +16,19 @@ interface PreferencesTabProps {
 }
 
 const PreferencesTab = ({ settings, onSaveSettings }: PreferencesTabProps) => {
+  const { theme, setTheme } = useTheme();
+  const { toast } = useToast();
+
+  const handleThemeChange = (value: string) => {
+    if (value === 'dark' || value === 'light') {
+      setTheme(value);
+      toast({
+        title: "Theme Changed",
+        description: `Theme set to ${value} mode`,
+      });
+    }
+  };
+
   return (
     <Card>
       <CardHeader className="pb-2">
@@ -29,8 +44,19 @@ const PreferencesTab = ({ settings, onSaveSettings }: PreferencesTabProps) => {
             
             <div className="space-y-2">
               <div className="flex items-center justify-between">
-                <Label className="text-xs">Theme</Label>
-                <Select defaultValue={settings.theme}>
+                <Label className="text-xs flex items-center">
+                  Theme
+                  {theme === 'dark' ? (
+                    <Moon className="h-3.5 w-3.5 ml-1 text-iqube-secondary" />
+                  ) : (
+                    <Sun className="h-3.5 w-3.5 ml-1 text-amber-500" />
+                  )}
+                </Label>
+                <Select 
+                  defaultValue={settings.theme} 
+                  value={theme} 
+                  onValueChange={handleThemeChange}
+                >
                   <SelectTrigger className="h-8 text-xs w-24">
                     <SelectValue placeholder="Theme" />
                   </SelectTrigger>

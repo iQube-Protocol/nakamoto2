@@ -2,6 +2,7 @@
 import React from 'react';
 import SettingsInterface from '@/components/settings/SettingsInterface';
 import { UserSettings, MetaQube } from '@/lib/types';
+import { useTheme } from '@/contexts/ThemeContext';
 
 // Sample metaQube data
 const metaQubeData: MetaQube = {
@@ -20,23 +21,25 @@ const metaQubeData: MetaQube = {
   "Risk-Score": 4
 };
 
-// Sample user settings
-const userSettings: UserSettings = {
-  connected: {
-    linkedin: false,
-    luma: false,
-    telegram: true,
-    twitter: false,
-    discord: true,
-    wallet: false
-  },
-  dataSync: true,
-  notifications: true,
-  theme: 'dark',
-  language: 'en'
-};
-
 const Settings = () => {
+  const { theme } = useTheme();
+  
+  // Sample user settings
+  const userSettings: UserSettings = {
+    connected: {
+      linkedin: false,
+      luma: false,
+      telegram: true,
+      twitter: false,
+      discord: true,
+      wallet: false
+    },
+    dataSync: true,
+    notifications: true,
+    theme: theme as 'dark' | 'light',
+    language: 'en'
+  };
+
   return (
     <div className="container p-2">
       <div className="flex flex-col md:flex-row justify-between items-center mb-3">

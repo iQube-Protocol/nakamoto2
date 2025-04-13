@@ -1,12 +1,13 @@
 
 import React, { useState } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { UserSettings, MetaQube } from '@/lib/types';
 import MetaQubeHeader from './MetaQubeHeader';
 import ConnectionsTab from './ConnectionsTab';
 import IQubeManagementTab from './IQubeManagementTab';
 import PreferencesTab from './PreferencesTab';
+import { useTheme } from '@/contexts/ThemeContext';
 
 interface SettingsInterfaceProps {
   userSettings: UserSettings;
@@ -14,7 +15,12 @@ interface SettingsInterfaceProps {
 }
 
 const SettingsInterface = ({ userSettings, metaQube }: SettingsInterfaceProps) => {
-  const [settings, setSettings] = useState<UserSettings>({...userSettings});
+  const { theme } = useTheme();
+  const [settings, setSettings] = useState<UserSettings>({
+    ...userSettings,
+    theme: theme as 'dark' | 'light'
+  });
+  
   const { toast } = useToast();
 
   const [privateData, setPrivateData] = useState({

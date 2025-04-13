@@ -14,6 +14,7 @@ import NotFound from "./pages/NotFound";
 import SplashPage from "./pages/SplashPage";
 import SignIn from "./pages/SignIn";
 import { useEffect } from "react";
+import { ThemeProvider } from "./contexts/ThemeContext";
 
 const queryClient = new QueryClient();
 
@@ -36,72 +37,74 @@ const App = () => {
 
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            {/* Public routes */}
-            <Route path="/splash" element={<SplashPage />} />
-            <Route path="/signin" element={<SignIn />} />
-            
-            {/* Protected routes */}
-            <Route 
-              path="/" 
-              element={
-                <ProtectedRoute>
-                  <MainLayout>
-                    <Index />
-                  </MainLayout>
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/learn" 
-              element={
-                <ProtectedRoute>
-                  <MainLayout>
-                    <Learn />
-                  </MainLayout>
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/earn" 
-              element={
-                <ProtectedRoute>
-                  <MainLayout>
-                    <Earn />
-                  </MainLayout>
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/connect" 
-              element={
-                <ProtectedRoute>
-                  <MainLayout>
-                    <Connect />
-                  </MainLayout>
-                </ProtectedRoute>
-              } 
-            />
-            <Route 
-              path="/settings" 
-              element={
-                <ProtectedRoute>
-                  <MainLayout>
-                    <Settings />
-                  </MainLayout>
-                </ProtectedRoute>
-              } 
-            />
-            
-            {/* Catch-all route */}
-            <Route path="*" element={<NotFound />} />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
+      <ThemeProvider>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              {/* Public routes */}
+              <Route path="/splash" element={<SplashPage />} />
+              <Route path="/signin" element={<SignIn />} />
+              
+              {/* Protected routes */}
+              <Route 
+                path="/" 
+                element={
+                  <ProtectedRoute>
+                    <MainLayout>
+                      <Index />
+                    </MainLayout>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/learn" 
+                element={
+                  <ProtectedRoute>
+                    <MainLayout>
+                      <Learn />
+                    </MainLayout>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/earn" 
+                element={
+                  <ProtectedRoute>
+                    <MainLayout>
+                      <Earn />
+                    </MainLayout>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/connect" 
+                element={
+                  <ProtectedRoute>
+                    <MainLayout>
+                      <Connect />
+                    </MainLayout>
+                  </ProtectedRoute>
+                } 
+              />
+              <Route 
+                path="/settings" 
+                element={
+                  <ProtectedRoute>
+                    <MainLayout>
+                      <Settings />
+                    </MainLayout>
+                  </ProtectedRoute>
+                } 
+              />
+              
+              {/* Catch-all route */}
+              <Route path="*" element={<NotFound />} />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </ThemeProvider>
     </QueryClientProvider>
   );
 };
