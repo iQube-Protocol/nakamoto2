@@ -18,13 +18,72 @@ interface MessageItemProps {
   onPlayAudio: (messageId: string) => void;
 }
 
-// Initialize mermaid
+// Initialize mermaid with better configuration for rendering
 mermaid.initialize({
   startOnLoad: true,
   theme: 'neutral',
   securityLevel: 'loose',
   fontFamily: 'inherit',
+  flowchart: {
+    htmlLabels: true,
+    curve: 'cardinal',
+  },
+  themeVariables: {
+    primaryColor: '#4f46e5',
+    primaryTextColor: '#ffffff',
+    primaryBorderColor: '#3730a3',
+    lineColor: '#6366f1',
+    secondaryColor: '#818cf8',
+    tertiaryColor: '#e0e7ff'
+  }
 });
+
+// Component to render Mermaid diagrams
+const MermaidDiagram = ({ code, id }: { code: string; id: string }) => {
+  useEffect(() => {
+    const renderDiagram = async () => {
+      try {
+        // Clean the container first
+        const container = document.getElementById(`${id}-container`);
+        if (!container) return;
+        
+        // Use unique ID for each render to avoid conflicts
+        const uniqueId = `mermaid-${id}-${Date.now()}`;
+        
+        // Log the code being rendered for debugging
+        console.log(`Rendering mermaid diagram with ID ${uniqueId}:`, code);
+        
+        try {
+          const { svg } = await mermaid.render(uniqueId, code);
+          container.innerHTML = svg;
+        } catch (error) {
+          console.error('Mermaid rendering error:', error);
+          container.innerHTML = `<div class="p-3 text-red-500 border border-red-300 rounded">
+            Error rendering diagram: ${error instanceof Error ? error.message : 'Unknown error'}
+          </div>`;
+        }
+      } catch (error) {
+        console.error('Error in mermaid diagram component:', error);
+      }
+    };
+
+    // Small delay to ensure the DOM is ready
+    const timer = setTimeout(() => {
+      renderDiagram();
+    }, 100);
+    
+    return () => clearTimeout(timer);
+  }, [code, id]);
+
+  return (
+    <div 
+      id={`${id}-container`} 
+      className="flex justify-center overflow-x-auto my-4 p-2 bg-gray-50 rounded-md"
+    >
+      <div className="text-sm text-gray-500">Loading diagram...</div>
+    </div>
+  );
+};
 
 // Function to process message content and convert it to JSX with formatting
 const formatMessageContent = (content: string): JSX.Element => {
@@ -34,17 +93,21 @@ const formatMessageContent = (content: string): JSX.Element => {
   return (
     <>
       {paragraphs.map((paragraph, pIndex) => {
-        // Handle Mermaid diagrams
+        // Improved Mermaid diagram detection and extraction
         if (paragraph.includes('```mermaid')) {
-          const mermaidCode = paragraph.replace(/```mermaid\n/, '').replace(/\n```$/, '');
-          const diagramId = `mermaid-diagram-${pIndex}`;
+          const mermaidRegex = /```mermaid\s+([\s\S]*?)```/;
+          const match = paragraph.match(mermaidRegex);
           
-          // Use useEffect to render the diagram after the component mounts
-          return (
-            <div key={pIndex} className="my-4">
-              <MermaidDiagram code={mermaidCode} id={diagramId} />
-            </div>
-          );
+          if (match && match[1]) {
+            const mermaidCode = match[1].trim();
+            const diagramId = `mermaid-diagram-${pIndex}`;
+            
+            return (
+              <div key={pIndex} className="my-6">
+                <MermaidDiagram code={mermaidCode} id={diagramId} />
+              </div>
+            );
+          }
         }
         
         // Handle bullet points
@@ -163,24 +226,6 @@ const formatMessageContent = (content: string): JSX.Element => {
       })}
     </>
   );
-};
-
-// Component to render Mermaid diagrams
-const MermaidDiagram = ({ code, id }: { code: string; id: string }) => {
-  useEffect(() => {
-    // Render Mermaid diagram after component mounts
-    try {
-      mermaid.render(id, code).then((result) => {
-        document.getElementById(`${id}-container`)!.innerHTML = result.svg;
-      });
-    } catch (error) {
-      console.error('Error rendering mermaid diagram:', error);
-      document.getElementById(`${id}-container`)!.innerHTML = 
-        `<div class="p-3 text-red-500 border border-red-300 rounded">Error rendering diagram</div>`;
-    }
-  }, [code, id]);
-
-  return <div id={`${id}-container`} className="flex justify-center overflow-x-auto my-4"></div>;
 };
 
 const MessageItem = ({ message, isPlaying, onPlayAudio }: MessageItemProps) => {
