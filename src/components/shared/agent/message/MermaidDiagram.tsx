@@ -153,7 +153,7 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
         svgElement.setAttribute('width', '100%');
         svgElement.setAttribute('height', 'auto');
         svgElement.style.maxWidth = '100%';
-        svgElement.style.maxHeight = '650px'); // Increased height for better visibility
+        svgElement.style.maxHeight = '650px'; // Fixed: removed extra parenthesis here
         
         // Improve font rendering
         svgElement.style.fontFamily = 'Inter, system-ui, sans-serif';
