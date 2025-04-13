@@ -31,6 +31,29 @@ export const ThemeProvider = ({ children }: { children: React.ReactNode }) => {
     
     // Store the theme preference
     localStorage.setItem('theme', theme);
+    
+    // Update tooltip styling based on theme
+    const tooltipStyle = document.createElement('style');
+    tooltipStyle.id = 'tooltip-theme-styles';
+    
+    if (theme === 'light') {
+      tooltipStyle.textContent = `
+        [data-radix-popper-content-wrapper] [role="tooltip"] {
+          background-color: hsl(var(--popover)) !important;
+          color: hsl(var(--popover-foreground)) !important;
+          border: 1px solid hsl(var(--border)) !important;
+        }
+      `;
+    } else {
+      tooltipStyle.textContent = '';
+    }
+    
+    const existingStyle = document.getElementById('tooltip-theme-styles');
+    if (existingStyle) {
+      document.head.removeChild(existingStyle);
+    }
+    document.head.appendChild(tooltipStyle);
+    
   }, [theme]);
 
   return (
