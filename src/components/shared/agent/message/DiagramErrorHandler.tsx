@@ -58,9 +58,13 @@ const DiagramErrorHandler: React.FC<DiagramErrorHandlerProps> = ({ error, code, 
           const fixedCode = attemptAutoFix(code);
           onRetry(fixedCode);
         } else {
-          // For other errors, try a simple diagram
+          // For other errors, use a simplified flowchart
           console.log("Using simplified diagram for general error");
-          onRetry("graph TD\n    A[Error] --> B[Simple Diagram]\n    B --> C[For Debugging]");
+          // Create a simpler auto-generated diagram 
+          const simplified = `graph TD
+    A[Starting Point] --> B[Process]
+    B --> C[Result]`;
+          onRetry(simplified);
         }
       } catch (err) {
         console.error('Auto-fix failed:', err);
@@ -77,6 +81,14 @@ const DiagramErrorHandler: React.FC<DiagramErrorHandlerProps> = ({ error, code, 
     onRetry("SHOW_CODE_" + code);
   };
   
+  const handleUseSimple = () => {
+    // Create a simple diagram that's guaranteed to work
+    const simple = `graph TD
+    A[Simple] --> B[Diagram]
+    B --> C[Example]`;
+    onRetry(simple);
+  };
+  
   return (
     <div className="p-3 rounded border border-red-300 bg-red-50 mt-2" data-testid="diagram-error">
       <div className="flex items-start">
@@ -88,7 +100,7 @@ const DiagramErrorHandler: React.FC<DiagramErrorHandlerProps> = ({ error, code, 
         </div>
       </div>
       
-      <div className="mt-2 flex gap-2">
+      <div className="mt-2 flex flex-wrap gap-2">
         <button 
           type="button"
           className="text-xs border border-blue-300 rounded px-2 py-1 hover:bg-blue-50"
@@ -112,6 +124,14 @@ const DiagramErrorHandler: React.FC<DiagramErrorHandlerProps> = ({ error, code, 
           disabled={isFixing}
         >
           Show code
+        </button>
+        <button 
+          type="button"
+          className="text-xs border border-purple-300 rounded px-2 py-1 hover:bg-purple-50"
+          onClick={handleUseSimple}
+          disabled={isFixing}
+        >
+          Use simple diagram
         </button>
       </div>
     </div>

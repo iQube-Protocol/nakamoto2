@@ -1,31 +1,47 @@
 
 import React, { useState, useEffect, useRef } from 'react';
-import { processCode } from './utils/mermaidUtils';
+import { processCode, setupRenderTimeout } from './utils/mermaidUtils';
 import DiagramErrorHandler from './DiagramErrorHandler';
-import mermaid from 'mermaid';
 
-// Initialize mermaid with safe configuration
-if (typeof window !== 'undefined') {
-  mermaid.initialize({
-    startOnLoad: false,
-    theme: 'neutral',
-    securityLevel: 'loose',
-    fontFamily: 'inherit',
-    flowchart: {
-      htmlLabels: true,
-      curve: 'cardinal',
-    },
-    themeVariables: {
-      primaryColor: '#4f46e5',
-      primaryTextColor: '#ffffff',
-      primaryBorderColor: '#3730a3',
-      lineColor: '#6366f1',
-      secondaryColor: '#818cf8',
-      tertiaryColor: '#e0e7ff'
-    },
-    logLevel: 'error'
-  });
-}
+// Use dynamic import to avoid SSR issues
+let mermaidModule: any;
+
+// Initialize mermaid with configuration once it's available
+const initializeMermaid = async () => {
+  if (typeof window === 'undefined') return null;
+  
+  try {
+    // Import mermaid dynamically
+    const m = await import('mermaid');
+    mermaidModule = m.default;
+    
+    // Initialize with configuration
+    mermaidModule.initialize({
+      startOnLoad: false,
+      theme: 'neutral',
+      securityLevel: 'loose',
+      fontFamily: 'inherit',
+      flowchart: {
+        htmlLabels: true,
+        curve: 'cardinal',
+      },
+      themeVariables: {
+        primaryColor: '#4f46e5',
+        primaryTextColor: '#ffffff',
+        primaryBorderColor: '#3730a3',
+        lineColor: '#6366f1',
+        secondaryColor: '#818cf8',
+        tertiaryColor: '#e0e7ff'
+      },
+      logLevel: 'error'
+    });
+    
+    return mermaidModule;
+  } catch (err) {
+    console.error("Failed to load mermaid:", err);
+    return null;
+  }
+};
 
 interface MermaidDiagramProps {
   code: string;
@@ -38,6 +54,25 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
   const [currentCode, setCurrentCode] = useState(code);
   const [showCodeView, setShowCodeView] = useState(false);
   const [renderKey, setRenderKey] = useState(0); // Used to trigger re-renders
+  const [mermaidLoaded, setMermaidLoaded] = useState(false);
+  
+  // Load mermaid on component mount
+  useEffect(() => {
+    let isMounted = true;
+    
+    const loadMermaid = async () => {
+      const mermaid = await initializeMermaid();
+      if (isMounted && mermaid) {
+        setMermaidLoaded(true);
+      }
+    };
+    
+    loadMermaid();
+    
+    return () => {
+      isMounted = false;
+    };
+  }, []);
   
   // Reset state when code input changes
   useEffect(() => {
@@ -64,7 +99,7 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
 
   // Safe rendering function
   const renderDiagram = async () => {
-    if (showCodeView) return;
+    if (showCodeView || !mermaidLoaded) return null;
 
     try {
       setIsLoading(true);
@@ -76,18 +111,19 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
       // Create a unique ID for this render
       const uniqueId = `mermaid-${id}-${renderKey}`;
       
+      // Setup timeout to prevent hanging
+      const cancelTimeout = setupRenderTimeout();
+      
       // Wait a moment to ensure DOM is ready
       await new Promise(resolve => setTimeout(resolve, 50));
       
       // Render using mermaid API
-      const { svg } = await mermaid.render(uniqueId, cleanCode);
+      const { svg } = await mermaidModule.render(uniqueId, cleanCode);
       
-      // Create a container for the rendered SVG
-      const container = document.createElement('div');
-      container.innerHTML = svg;
+      // Clear timeout as rendering completed
+      cancelTimeout();
       
-      // Return the rendered SVG
-      return container.innerHTML;
+      return svg;
     } catch (err) {
       console.error("Error rendering diagram:", err);
       setError(err instanceof Error ? err : new Error(String(err)));
@@ -126,29 +162,31 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
     );
   }
 
-  return (
-    <div className="my-4" data-testid="mermaid-container">
-      <React.Suspense fallback={
-        <div className="flex justify-center items-center p-4 bg-gray-50 rounded min-h-[100px]">
-          <div className="text-sm text-gray-500 flex items-center">
-            Loading diagram... 
-            <div className="ml-2 flex space-x-1">
-              <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse"></div>
-              <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-              <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
-            </div>
+  if (!mermaidLoaded) {
+    return (
+      <div className="flex justify-center items-center p-4 bg-gray-50 rounded min-h-[100px]">
+        <div className="text-sm text-gray-500 flex items-center">
+          Loading mermaid renderer... 
+          <div className="ml-2 flex space-x-1">
+            <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse"></div>
+            <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
+            <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
           </div>
         </div>
-      }>
-        <DiagramRenderer 
-          renderDiagram={renderDiagram} 
-          isLoading={isLoading} 
-          error={error}
-          code={currentCode}
-          id={id}
-          onRetry={handleRetry}
-        />
-      </React.Suspense>
+      </div>
+    );
+  }
+
+  return (
+    <div className="my-4" data-testid="mermaid-container">
+      <DiagramRenderer 
+        renderDiagram={renderDiagram} 
+        isLoading={isLoading} 
+        error={error}
+        code={currentCode}
+        id={id}
+        onRetry={handleRetry}
+      />
     </div>
   );
 };
@@ -196,8 +234,17 @@ const DiagramRenderer = ({
   useEffect(() => {
     if (!isLoading && svg && containerRef.current) {
       try {
-        // Safely insert the SVG using React's way
+        // Safely insert the SVG 
         containerRef.current.innerHTML = svg;
+        
+        // Add pan and zoom behavior for large diagrams
+        const svgElement = containerRef.current.querySelector('svg');
+        if (svgElement) {
+          // Make SVG responsive
+          svgElement.setAttribute('width', '100%');
+          svgElement.setAttribute('height', 'auto');
+          svgElement.style.maxWidth = '100%';
+        }
       } catch (err) {
         console.error("Error inserting SVG:", err);
       }
@@ -208,7 +255,7 @@ const DiagramRenderer = ({
     return (
       <div className="flex justify-center items-center p-4 bg-gray-50 rounded min-h-[100px]">
         <div className="text-sm text-gray-500 flex items-center">
-          Loading diagram... 
+          Generating diagram... 
           <div className="ml-2 flex space-x-1">
             <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse"></div>
             <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>

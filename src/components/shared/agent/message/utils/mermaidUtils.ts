@@ -13,9 +13,9 @@ export const processCode = (inputCode: string): string => {
       return 'graph TD\n    A[Start] --> B[End]';
     }
     
-    // Create a very simple diagram for safety if too complex
-    if (result.length > 500) {
-      console.log('Diagram too complex, simplifying...');
+    // Create a simpler diagram if too complex - but allow more length
+    if (result.length > 1000) {
+      console.log('Diagram very complex, simplifying...');
       return 'graph TD\n    A[Start] --> B[Process]\n    B --> C[End]';
     }
     
@@ -84,8 +84,8 @@ export const attemptAutoFix = (originalCode: string): string => {
       .replace(/\[\s*([^\]]*)\s*\(/, '[${1}_')
       .replace(/\)\s*([^\]]*)\s*\]/, '_$1]');
     
-    // Fix 4: If too complex, provide a minimal working example
-    if (fixedCode.length > 300 && !fixedCode.startsWith('graph')) {
+    // Fix 4: Only provide minimal example for truly complex diagrams
+    if (fixedCode.length > 500 && !fixedCode.startsWith('graph')) {
       return `graph TD\n    A[Start] --> B[Middle] --> C[End]`;
     }
     
@@ -100,7 +100,7 @@ export const attemptAutoFix = (originalCode: string): string => {
 export const setupRenderTimeout = (): (() => void) => {
   const timeoutId = setTimeout(() => {
     console.error('Mermaid render timeout - operation took too long');
-  }, 5000);
+  }, 10000); // Extended timeout for complex diagrams
   
   return () => clearTimeout(timeoutId);
 };
@@ -150,4 +150,3 @@ export const sanitizeMermaidCode = (code: string): string => {
     return 'graph TD\n    A[Error] --> B[Fixed Diagram]';
   }
 };
-
