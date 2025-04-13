@@ -1,6 +1,6 @@
 
 import React from 'react';
-import AgentInterface from '@/components/shared/AgentInterface';
+import { AgentInterface } from '@/components/shared/agent';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { MetaQube } from '@/lib/types';
