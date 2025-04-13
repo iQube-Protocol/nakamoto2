@@ -1,313 +1,15 @@
-import React, { useEffect, useRef } from 'react';
-import { Play, Pause, Volume2, BookOpen, Lightbulb, AlertCircle, CheckCircle } from 'lucide-react';
+
+import React from 'react';
 import { AgentMessage } from '@/lib/types';
-import { Button } from '@/components/ui/button';
-import { Badge } from '@/components/ui/badge';
-import { 
-  Tooltip, 
-  TooltipContent, 
-  TooltipProvider, 
-  TooltipTrigger 
-} from '@/components/ui/tooltip';
-import mermaid from 'mermaid';
+import MessageContent from './message/MessageContent';
+import AudioPlayback from './message/AudioPlayback';
+import MetadataBadge from './message/MetadataBadge';
 
 interface MessageItemProps {
   message: AgentMessage;
   isPlaying: boolean;
   onPlayAudio: (messageId: string) => void;
 }
-
-// Initialize mermaid with better configuration for rendering
-mermaid.initialize({
-  startOnLoad: false,
-  theme: 'neutral',
-  securityLevel: 'loose',
-  fontFamily: 'inherit',
-  flowchart: {
-    htmlLabels: true,
-    curve: 'cardinal',
-  },
-  themeVariables: {
-    primaryColor: '#4f46e5',
-    primaryTextColor: '#ffffff',
-    primaryBorderColor: '#3730a3',
-    lineColor: '#6366f1',
-    secondaryColor: '#818cf8',
-    tertiaryColor: '#e0e7ff'
-  }
-});
-
-// Component to render Mermaid diagrams
-const MermaidDiagram = ({ code, id }: { code: string; id: string }) => {
-  // Use ref to track if component is mounted
-  const containerRef = useRef<HTMLDivElement>(null);
-  const renderAttempted = useRef(false);
-
-  useEffect(() => {
-    if (!containerRef.current || renderAttempted.current) return;
-    
-    renderAttempted.current = true;
-    
-    const renderDiagram = async () => {
-      try {
-        // Make sure container exists
-        if (!containerRef.current) return;
-        
-        // Generate a truly unique ID to avoid conflicts
-        const uniqueId = `mermaid-${id}-${Math.random().toString(36).substring(2, 11)}`;
-        
-        // Clean up the mermaid code - ensure proper formatting
-        const cleanCode = code.trim();
-        console.log(`Attempting to render mermaid diagram with ID ${uniqueId}:`, cleanCode);
-        
-        // Insert a loading placeholder
-        containerRef.current.innerHTML = '<div class="text-sm text-gray-500">Rendering diagram...</div>';
-        
-        try {
-          // Manually parse the diagram first to check for errors
-          await mermaid.parse(cleanCode);
-          
-          // If parsing succeeds, render the diagram
-          const { svg } = await mermaid.render(uniqueId, cleanCode);
-          
-          // Only update if component is still mounted
-          if (containerRef.current) {
-            containerRef.current.innerHTML = svg;
-            console.log('Diagram rendered successfully');
-          }
-        } catch (error) {
-          console.error('Mermaid error:', error);
-          if (containerRef.current) {
-            containerRef.current.innerHTML = `
-              <div class="p-3 text-red-500 border border-red-300 rounded">
-                Error rendering diagram: ${error instanceof Error ? error.message : 'Unknown error'}
-              </div>
-            `;
-          }
-        }
-      } catch (outerError) {
-        console.error('Outer error in mermaid component:', outerError);
-      }
-    };
-
-    // Add a delay to ensure DOM is fully ready and to avoid race conditions
-    const timer = setTimeout(() => {
-      renderDiagram();
-    }, 300);
-    
-    return () => {
-      clearTimeout(timer);
-    };
-  }, [code, id]);
-
-  // Retry button to manually trigger rendering
-  const handleRetry = () => {
-    renderAttempted.current = false;
-    if (containerRef.current) {
-      containerRef.current.innerHTML = '<div class="text-sm text-gray-500">Retrying...</div>';
-      setTimeout(() => {
-        renderAttempted.current = true;
-        renderDiagram();
-      }, 100);
-    }
-  };
-
-  const renderDiagram = async () => {
-    if (!containerRef.current) return;
-    
-    try {
-      const uniqueId = `mermaid-${id}-${Math.random().toString(36).substring(2, 11)}`;
-      const cleanCode = code.trim();
-      
-      // Parse and render
-      await mermaid.parse(cleanCode);
-      const { svg } = await mermaid.render(uniqueId, cleanCode);
-      
-      if (containerRef.current) {
-        containerRef.current.innerHTML = svg;
-      }
-    } catch (error) {
-      console.error('Retry error:', error);
-      if (containerRef.current) {
-        containerRef.current.innerHTML = `
-          <div class="p-3 text-red-500 border border-red-300 rounded">
-            Error rendering diagram: ${error instanceof Error ? error.message : 'Unknown error'}
-            <button class="ml-2 text-blue-500 underline text-sm" id="retry-${id}">Retry</button>
-          </div>
-        `;
-        
-        // Add event listener to retry button
-        setTimeout(() => {
-          const retryButton = document.getElementById(`retry-${id}`);
-          if (retryButton) {
-            retryButton.addEventListener('click', handleRetry);
-          }
-        }, 0);
-      }
-    }
-  };
-
-  return (
-    <div className="my-4">
-      <div 
-        ref={containerRef}
-        className="flex justify-center overflow-x-auto p-2 bg-gray-50 rounded-md min-h-[100px]"
-      >
-        <div className="text-sm text-gray-500 flex items-center">
-          Loading diagram... 
-          <div className="ml-2 flex space-x-1">
-            <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse"></div>
-            <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style={{ animationDelay: '0.2s' }}></div>
-            <div className="w-2 h-2 bg-gray-400 rounded-full animate-pulse" style={{ animationDelay: '0.4s' }}></div>
-          </div>
-        </div>
-      </div>
-    </div>
-  );
-};
-
-// Function to process message content and convert it to JSX with formatting
-const formatMessageContent = (content: string): JSX.Element => {
-  // Split content by double newlines to identify paragraphs
-  const paragraphs = content.split(/\n\n+/);
-  
-  return (
-    <>
-      {paragraphs.map((paragraph, pIndex) => {
-        // Improved Mermaid diagram detection and extraction
-        if (paragraph.includes('```mermaid')) {
-          const mermaidRegex = /```mermaid\s+([\s\S]*?)```/;
-          const match = paragraph.match(mermaidRegex);
-          
-          if (match && match[1]) {
-            const mermaidCode = match[1].trim();
-            const diagramId = `mermaid-diagram-${pIndex}`;
-            
-            return (
-              <div key={pIndex} className="my-6">
-                <MermaidDiagram code={mermaidCode} id={diagramId} />
-              </div>
-            );
-          }
-        }
-        
-        // Handle bullet points
-        else if (paragraph.trim().startsWith('- ') || paragraph.trim().startsWith('* ')) {
-          const bulletItems = paragraph.split(/\n/).filter(line => line.trim().startsWith('- ') || line.trim().startsWith('* '));
-          return (
-            <ul key={pIndex} className="pl-5 my-4 space-y-2">
-              {bulletItems.map((item, iIndex) => (
-                <li key={iIndex} className="flex items-start">
-                  <span className="mr-2 mt-1 text-iqube-primary">•</span>
-                  <span>{item.replace(/^[*-] /, '')}</span>
-                </li>
-              ))}
-            </ul>
-          );
-        }
-        
-        // Handle numbered lists
-        else if (/^\d+\.\s/.test(paragraph.trim())) {
-          const listItems = paragraph.split(/\n/).filter(line => /^\d+\.\s/.test(line.trim()));
-          return (
-            <ol key={pIndex} className="pl-5 my-4 space-y-2 list-decimal">
-              {listItems.map((item, iIndex) => (
-                <li key={iIndex} className="ml-4">{item.replace(/^\d+\.\s/, '')}</li>
-              ))}
-            </ol>
-          );
-        }
-        
-        // Handle headings
-        else if (paragraph.startsWith('# ')) {
-          return <h2 key={pIndex} className="text-xl font-bold mt-4 mb-2">{paragraph.substring(2)}</h2>;
-        }
-        else if (paragraph.startsWith('## ')) {
-          return <h3 key={pIndex} className="text-lg font-bold mt-3 mb-2">{paragraph.substring(3)}</h3>;
-        }
-        else if (paragraph.startsWith('### ')) {
-          return <h4 key={pIndex} className="text-base font-bold mt-3 mb-2">{paragraph.substring(4)}</h4>;
-        }
-        
-        // Handle key concepts with an icon
-        else if (paragraph.toLowerCase().includes('key concept') || paragraph.toLowerCase().includes('important:')) {
-          return (
-            <div key={pIndex} className="flex my-4 p-3 bg-iqube-primary/10 rounded-md">
-              <Lightbulb className="h-5 w-5 mr-2 flex-shrink-0 text-iqube-primary" />
-              <div>{paragraph}</div>
-            </div>
-          );
-        }
-        
-        // Handle tips with an icon
-        else if (paragraph.toLowerCase().includes('tip:') || paragraph.toLowerCase().includes('hint:')) {
-          return (
-            <div key={pIndex} className="flex my-4 p-3 bg-green-100 rounded-md">
-              <CheckCircle className="h-5 w-5 mr-2 flex-shrink-0 text-green-600" />
-              <div>{paragraph}</div>
-            </div>
-          );
-        }
-        
-        // Handle warnings or notes
-        else if (paragraph.toLowerCase().includes('note:') || paragraph.toLowerCase().includes('warning:')) {
-          return (
-            <div key={pIndex} className="flex my-4 p-3 bg-amber-100 rounded-md">
-              <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0 text-amber-500" />
-              <div>{paragraph}</div>
-            </div>
-          );
-        }
-        
-        // Handle code examples
-        else if (paragraph.includes('```') && !paragraph.includes('```mermaid')) {
-          const parts = paragraph.split('```');
-          return (
-            <div key={pIndex} className="my-4">
-              {parts.map((part, partIndex) => {
-                if (partIndex % 2 === 1) { // This is a code block
-                  // Extract language if specified
-                  const codeLines = part.split('\n');
-                  const language = codeLines[0].trim();
-                  const code = codeLines.slice(language ? 1 : 0).join('\n');
-                  
-                  return (
-                    <pre key={partIndex} className="bg-gray-100 p-3 rounded-md overflow-x-auto my-2">
-                      <code>{code}</code>
-                    </pre>
-                  );
-                } else if (part.trim()) { // Regular text before/after code block
-                  return <p key={partIndex} className="my-2">{part}</p>;
-                }
-                return null;
-              })}
-            </div>
-          );
-        }
-        
-        // Handle definition lists or term explanations
-        else if (paragraph.includes(':') && paragraph.split(':')[0].trim().length < 30) {
-          const term = paragraph.split(':')[0].trim();
-          const definition = paragraph.split(':').slice(1).join(':').trim();
-          
-          return (
-            <div key={pIndex} className="my-4">
-              <dt className="font-bold">{term}:</dt>
-              <dd className="ml-4">{definition}</dd>
-            </div>
-          );
-        }
-        
-        // Regular paragraph
-        else if (paragraph.trim()) {
-          return <p key={pIndex} className="my-3">{paragraph}</p>;
-        }
-        
-        return null;
-      })}
-    </>
-  );
-};
 
 const MessageItem = ({ message, isPlaying, onPlayAudio }: MessageItemProps) => {
   return (
@@ -316,38 +18,13 @@ const MessageItem = ({ message, isPlaying, onPlayAudio }: MessageItemProps) => {
         <div className="flex-1">
           <div className="flex items-center justify-between mb-1">
             {message.sender === 'agent' && message.metadata && (
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <div className="flex items-center">
-                      <Badge variant="outline" className="text-[10px] mr-1 py-0 h-4">
-                        <span className="text-muted-foreground">MCP v{message.metadata.version}</span>
-                      </Badge>
-                      {message.metadata.modelUsed && (
-                        <Badge variant="secondary" className="text-[10px] py-0 h-4">
-                          {message.metadata.modelUsed}
-                        </Badge>
-                      )}
-                    </div>
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p className="text-xs">Using Model Context Protocol</p>
-                    {message.metadata.contextRetained && 
-                      <p className="text-xs text-muted-foreground">Context maintained between messages</p>
-                    }
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+              <MetadataBadge metadata={message.metadata} />
             )}
           </div>
           
           {/* Apply formatted message content */}
           <div className="prose prose-sm max-w-none">
-            {message.sender === 'user' ? (
-              <p>{message.message}</p>
-            ) : (
-              formatMessageContent(message.message)
-            )}
+            <MessageContent content={message.message} sender={message.sender} />
           </div>
           
           <div className="flex items-center justify-between mt-2">
@@ -355,34 +32,13 @@ const MessageItem = ({ message, isPlaying, onPlayAudio }: MessageItemProps) => {
               {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
             </span>
             {message.sender === 'agent' && (
-              <Button
-                variant="ghost"
-                size="sm"
-                className="h-6 w-6 p-0"
-                onClick={() => onPlayAudio(message.id)}
-              >
-                {isPlaying ? (
-                  <Pause className="h-3 w-3" />
-                ) : (
-                  <Play className="h-3 w-3" />
-                )}
-              </Button>
+              <AudioPlayback 
+                isPlaying={isPlaying} 
+                messageId={message.id} 
+                onPlayAudio={onPlayAudio} 
+              />
             )}
           </div>
-          {isPlaying && (
-            <div className="flex items-center gap-2 mt-1">
-              <div className="flex-1">
-                <div className="relative h-1.5 bg-muted rounded-full overflow-hidden">
-                  <div className="absolute inset-y-0 left-0 bg-iqube-primary rounded-full animate-pulse" style={{ width: '50%' }}></div>
-                </div>
-                <div className="flex justify-between mt-1">
-                  <span className="text-[10px] text-muted-foreground">0:02</span>
-                  <span className="text-[10px] text-muted-foreground">0:05</span>
-                </div>
-              </div>
-              <Volume2 className="h-3 w-3 text-muted-foreground" />
-            </div>
-          )}
         </div>
       </div>
     </div>
