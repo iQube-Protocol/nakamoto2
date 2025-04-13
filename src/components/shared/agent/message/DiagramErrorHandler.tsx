@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { attemptAutoFix } from './utils/mermaidUtils';
+import { attemptAutoFix, sanitizeMermaidCode } from './utils/mermaidUtils';
 import { AlertCircle } from 'lucide-react';
 
 interface DiagramErrorHandlerProps {
@@ -42,15 +42,23 @@ const DiagramErrorHandler: React.FC<DiagramErrorHandlerProps> = ({ error, code, 
     // Use a timeout to prevent UI freezing
     setTimeout(() => {
       try {
-        // Get fixed code
-        const fixedCode = attemptAutoFix(code);
-        console.log('Attempting fix with:', fixedCode);
-        
-        if (fixedCode !== code) {
-          onRetry(fixedCode);
+        // Try major sanitization first for errors related to parentheses, commas, etc.
+        if (errorMessage.includes("PS") || 
+            errorMessage.includes("parentheses") || 
+            errorMessage.includes("comma") ||
+            errorMessage.includes("Expecting")) {
+          const sanitized = sanitizeMermaidCode(code);
+          onRetry(sanitized);
         } else {
-          // If code is unchanged, try a simple graph
-          onRetry("graph TD\n    A[Start] --> B[End]");
+          // Get fixed code using standard autofix
+          const fixedCode = attemptAutoFix(code);
+          
+          if (fixedCode !== code) {
+            onRetry(fixedCode);
+          } else {
+            // If code is unchanged, try a simple graph
+            onRetry("graph TD\n    A[Start] --> B[End]");
+          }
         }
       } catch (err) {
         console.error('Auto-fix failed:', err);
