@@ -7,6 +7,8 @@ import {
   TooltipProvider,
   TooltipTrigger
 } from '@/components/ui/tooltip';
+import ScoreTooltip from '../../ScoreTooltips';
+import { Cpu } from 'lucide-react';
 
 interface MetadataBadgeProps {
   metadata: {
@@ -29,9 +31,12 @@ const MetadataBadge = ({ metadata }: MetadataBadgeProps) => {
               <span className="text-muted-foreground">MCP v{metadata.version}</span>
             </Badge>
             {metadata.modelUsed && (
-              <Badge variant="secondary" className="text-[10px] py-0 h-4">
-                {metadata.modelUsed}
-              </Badge>
+              <ScoreTooltip type="mlModel">
+                <Badge variant="secondary" className="text-[10px] py-0 h-4 flex items-center">
+                  <Cpu className="h-3 w-3 mr-1" />
+                  {metadata.modelUsed}
+                </Badge>
+              </ScoreTooltip>
             )}
           </div>
         </TooltipTrigger>

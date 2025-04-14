@@ -4,6 +4,7 @@ import { Send, Mic, Paperclip, Image } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
+import ScoreTooltip from '../ScoreTooltips';
 
 interface AgentInputBarProps {
   inputValue: string;
@@ -46,32 +47,38 @@ const AgentInputBar = ({
   return (
     <form onSubmit={handleSubmit} className="border-t p-4">
       <div className="flex items-center space-x-2">
-        <Button
-          type="button"
-          size="icon"
-          variant="outline"
-          onClick={handleVoiceInput}
-        >
-          <Mic className="h-4 w-4" />
-        </Button>
+        <ScoreTooltip type="voice">
+          <Button
+            type="button"
+            size="icon"
+            variant="outline"
+            onClick={handleVoiceInput}
+          >
+            <Mic className="h-4 w-4" />
+          </Button>
+        </ScoreTooltip>
         
-        <Button
-          type="button"
-          size="icon"
-          variant="outline"
-          onClick={handleAttachment}
-        >
-          <Paperclip className="h-4 w-4" />
-        </Button>
+        <ScoreTooltip type="attachment">
+          <Button
+            type="button"
+            size="icon"
+            variant="outline"
+            onClick={handleAttachment}
+          >
+            <Paperclip className="h-4 w-4" />
+          </Button>
+        </ScoreTooltip>
         
-        <Button
-          type="button"
-          size="icon"
-          variant="outline"
-          onClick={handleImageUpload}
-        >
-          <Image className="h-4 w-4" />
-        </Button>
+        <ScoreTooltip type="image">
+          <Button
+            type="button"
+            size="icon"
+            variant="outline"
+            onClick={handleImageUpload}
+          >
+            <Image className="h-4 w-4" />
+          </Button>
+        </ScoreTooltip>
         
         <Textarea
           value={inputValue}

@@ -2,6 +2,7 @@
 import React from 'react';
 import LearnInterface from '@/components/learn/LearnInterface';
 import { MetaQube, BlakQube } from '@/lib/types';
+import { TooltipProvider } from '@/components/ui/tooltip';
 
 // Sample metaQube data
 const metaQubeData: MetaQube = {
@@ -35,16 +36,18 @@ const blakQubeData: BlakQube = {
 
 const Learn = () => {
   return (
-    <div className="container p-2 h-[calc(100vh-100px)]">
-      <div className="flex justify-between items-center mb-3">
-        <h1 className="text-2xl font-bold tracking-tight">Learn</h1>
-      </div>
+    <TooltipProvider>
+      <div className="container p-2 h-[calc(100vh-100px)]">
+        <div className="flex justify-between items-center mb-3">
+          <h1 className="text-2xl font-bold tracking-tight">Learn</h1>
+        </div>
 
-      <LearnInterface 
-        metaQube={metaQubeData} 
-        blakQube={blakQubeData}
-      />
-    </div>
+        <LearnInterface 
+          metaQube={metaQubeData} 
+          blakQube={blakQubeData}
+        />
+      </div>
+    </TooltipProvider>
   );
 };
 

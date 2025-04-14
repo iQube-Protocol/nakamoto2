@@ -2,6 +2,7 @@
 import React from 'react';
 import EarnInterface from '@/components/earn/EarnInterface';
 import { TokenMetrics, MetaQube, BlakQube } from '@/lib/types';
+import { TooltipProvider } from '@/components/ui/tooltip';
 
 // Sample data
 const tokenMetrics: TokenMetrics = {
@@ -45,17 +46,19 @@ const blakQubeData: BlakQube = {
 
 const Earn = () => {
   return (
-    <div className="container p-2 h-[calc(100vh-100px)]">
-      <div className="flex justify-between items-center mb-3">
-        <h1 className="text-2xl font-bold tracking-tight">Earn</h1>
-      </div>
+    <TooltipProvider>
+      <div className="container p-2 h-[calc(100vh-100px)]">
+        <div className="flex justify-between items-center mb-3">
+          <h1 className="text-2xl font-bold tracking-tight">Earn</h1>
+        </div>
 
-      <EarnInterface 
-        tokenMetrics={tokenMetrics} 
-        metaQube={metaQubeData}
-        blakQube={blakQubeData}
-      />
-    </div>
+        <EarnInterface 
+          tokenMetrics={tokenMetrics} 
+          metaQube={metaQubeData}
+          blakQube={blakQubeData}
+        />
+      </div>
+    </TooltipProvider>
   );
 };
 

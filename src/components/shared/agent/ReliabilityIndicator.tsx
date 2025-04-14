@@ -1,5 +1,6 @@
 
 import React, { useState } from 'react';
+import ScoreTooltip from '../ScoreTooltips';
 
 const ReliabilityIndicator = () => {
   // Using a fixed value or random value between 3-5 as per original component
@@ -18,26 +19,30 @@ const ReliabilityIndicator = () => {
     <div className="flex items-center gap-3 bg-muted/30 p-2 rounded-md">
       <div className="flex flex-col items-center">
         <div className="text-xs text-muted-foreground mb-1">Reliability</div>
-        <div className="flex items-center">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div 
-              key={i}
-              className={`w-1.5 h-1.5 rounded-full mx-0.5 ${i < reliability ? 'bg-iqube-primary/60' : 'bg-muted'}`}
-            />
-          ))}
-        </div>
+        <ScoreTooltip type="reliability" score={reliability * 2}>
+          <div className="flex items-center">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div 
+                key={i}
+                className={`w-1.5 h-1.5 rounded-full mx-0.5 ${i < reliability ? 'bg-iqube-primary/60' : 'bg-muted'}`}
+              />
+            ))}
+          </div>
+        </ScoreTooltip>
       </div>
       <div className="h-8 w-[1px] bg-border mx-1"></div>
       <div className="flex flex-col items-center">
         <div className="text-xs text-muted-foreground mb-1">Trust</div>
-        <div className="flex items-center">
-          {Array.from({ length: 5 }).map((_, i) => (
-            <div 
-              key={i}
-              className={`w-1.5 h-1.5 rounded-full mx-0.5 ${i < trust ? getTrustColor(trust) : 'bg-muted'}`}
-            />
-          ))}
-        </div>
+        <ScoreTooltip type="trust" score={trust * 2}>
+          <div className="flex items-center">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div 
+                key={i}
+                className={`w-1.5 h-1.5 rounded-full mx-0.5 ${i < trust ? getTrustColor(trust) : 'bg-muted'}`}
+              />
+            ))}
+          </div>
+        </ScoreTooltip>
       </div>
     </div>
   );
