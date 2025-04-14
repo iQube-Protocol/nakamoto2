@@ -5,6 +5,7 @@ import { MetaQube } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
 import { Database } from 'lucide-react';
+import ScoreTooltip from '@/components/shared/ScoreTooltips';
 
 interface MetaQubeHeaderProps {
   metaQube: MetaQube;
@@ -49,17 +50,19 @@ const DotScore = ({ value, label, type }: DotScoreProps) => {
   return (
     <div className="flex flex-col items-center">
       <span className="text-xs text-muted-foreground mb-1">{label}</span>
-      <div className="flex space-x-0.5">
-        {[...Array(maxDots)].map((_, i) => (
-          <div
-            key={i}
-            className={cn(
-              "w-1.5 h-1.5 rounded-full",
-              i < dotCount ? getScoreColor() : "bg-gray-400"
-            )}
-          />
-        ))}
-      </div>
+      <ScoreTooltip type={type} score={value}>
+        <div className="flex space-x-0.5">
+          {[...Array(maxDots)].map((_, i) => (
+            <div
+              key={i}
+              className={cn(
+                "w-1.5 h-1.5 rounded-full",
+                i < dotCount ? getScoreColor() : "bg-gray-400"
+              )}
+            />
+          ))}
+        </div>
+      </ScoreTooltip>
     </div>
   );
 };
@@ -82,9 +85,11 @@ const MetaQubeHeader = ({ metaQube }: MetaQubeHeaderProps) => {
           </div>
           <span className="text-sm font-medium">{metaQube["iQube-Identifier"]}</span>
         </div>
-        <Badge variant="outline" className="flex items-center gap-1 bg-iqube-primary/10 text-iqube-primary border-iqube-primary/30">
-          <Database size={14} />
-        </Badge>
+        <ScoreTooltip type="dataQube">
+          <Badge variant="outline" className="flex items-center gap-1 bg-iqube-primary/10 text-iqube-primary border-iqube-primary/30">
+            <Database size={14} />
+          </Badge>
+        </ScoreTooltip>
       </div>
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4 overflow-x-auto pb-1">

@@ -154,6 +154,7 @@ const ScoreTooltip: React.FC<ScoreTooltipProps> = ({ children, score, type }) =>
             <div className="text-xs space-y-1">
               <p>Currently using OpenAI's GPT-4o model for inference.</p>
               <p>Capabilities: text generation, code analysis, and contextual understanding.</p>
+              <p>Advanced prompt handling with context retention.</p>
             </div>
           </div>
         );
