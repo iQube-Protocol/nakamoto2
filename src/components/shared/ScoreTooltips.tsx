@@ -155,6 +155,8 @@ const ScoreTooltip: React.FC<ScoreTooltipProps> = ({ children, score, type }) =>
               <p>Currently using OpenAI's GPT-4o model for inference.</p>
               <p>Capabilities: text generation, code analysis, and contextual understanding.</p>
               <p>Advanced prompt handling with context retention.</p>
+              <p>Trained up to April 2023 knowledge cutoff.</p>
+              <p>Response latency: ~2-5s for typical requests.</p>
             </div>
           </div>
         );
@@ -169,7 +171,7 @@ const ScoreTooltip: React.FC<ScoreTooltipProps> = ({ children, score, type }) =>
         <TooltipTrigger asChild>
           {children}
         </TooltipTrigger>
-        <TooltipContent side="top" align="center">
+        <TooltipContent side="top" align="center" className="z-50">
           {getTooltipContent()}
         </TooltipContent>
       </Tooltip>

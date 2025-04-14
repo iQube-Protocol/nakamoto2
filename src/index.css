@@ -153,7 +153,14 @@
   
   /* Tooltip styles enhancement - explicitly define tooltip styling */
   [role="tooltip"] {
-    @apply bg-popover text-popover-foreground border border-border shadow-md;
+    @apply bg-popover text-popover-foreground border border-border shadow-md z-50;
     @apply visible opacity-100;
+  }
+  
+  /* Extra styling to ensure tooltips are visible */
+  .RadixTooltip--content {
+    z-index: 50 !important;
+    visibility: visible !important;
+    opacity: 1 !important;
   }
 }

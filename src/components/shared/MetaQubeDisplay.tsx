@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -6,6 +7,7 @@ import { Lock, Unlock, ShieldCheck, Database } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 import { Switch } from '@/components/ui/switch';
+import ScoreTooltip from '@/components/shared/ScoreTooltips';
 
 interface MetaQubeDisplayProps {
   metaQube: MetaQube;
@@ -53,17 +55,19 @@ const DotScore = ({ value, label, type }: DotScoreProps) => {
   return (
     <div className="flex flex-col items-center">
       <span className="text-xs text-muted-foreground mb-1">{label}</span>
-      <div className="flex space-x-0.5">
-        {[...Array(maxDots)].map((_, i) => (
-          <div
-            key={i}
-            className={cn(
-              "w-1.5 h-1.5 rounded-full",
-              i < dotCount ? getScoreColor() : "bg-gray-400"
-            )}
-          />
-        ))}
-      </div>
+      <ScoreTooltip type={type} score={value}>
+        <div className="flex space-x-0.5">
+          {[...Array(maxDots)].map((_, i) => (
+            <div
+              key={i}
+              className={cn(
+                "w-1.5 h-1.5 rounded-full",
+                i < dotCount ? getScoreColor() : "bg-gray-400"
+              )}
+            />
+          ))}
+        </div>
+      </ScoreTooltip>
     </div>
   );
 };
@@ -87,9 +91,11 @@ const MetaQubeDisplay = ({ metaQube, compact = false, className }: MetaQubeDispl
             </div>
             <span className="text-sm font-medium">{metaQube["iQube-Identifier"]}</span>
           </div>
-          <Badge variant="outline" className="flex items-center gap-1 bg-iqube-primary/10 text-iqube-primary border-iqube-primary/30">
-            <Database size={14} />
-          </Badge>
+          <ScoreTooltip type="dataQube">
+            <Badge variant="outline" className="flex items-center gap-1 bg-iqube-primary/10 text-iqube-primary border-iqube-primary/30">
+              <Database size={14} />
+            </Badge>
+          </ScoreTooltip>
         </div>
         
         <div className="flex items-center justify-between">
@@ -123,9 +129,11 @@ const MetaQubeDisplay = ({ metaQube, compact = false, className }: MetaQubeDispl
             </div>
             <span className="text-lg font-medium">{metaQube["iQube-Identifier"]}</span>
           </div>
-          <Badge variant="outline" className="flex items-center gap-1 bg-iqube-primary/10 text-iqube-primary border-iqube-primary/30">
-            <Database size={14} />
-          </Badge>
+          <ScoreTooltip type="dataQube">
+            <Badge variant="outline" className="flex items-center gap-1 bg-iqube-primary/10 text-iqube-primary border-iqube-primary/30">
+              <Database size={14} />
+            </Badge>
+          </ScoreTooltip>
         </div>
         
         <div className="flex items-center justify-between mb-4">

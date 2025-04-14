@@ -20,7 +20,7 @@ const ReliabilityIndicator = () => {
       <div className="flex flex-col items-center">
         <div className="text-xs text-muted-foreground mb-1">Reliability</div>
         <ScoreTooltip type="reliability" score={reliability * 2}>
-          <div className="flex items-center">
+          <div className="flex items-center cursor-help">
             {Array.from({ length: 5 }).map((_, i) => (
               <div 
                 key={i}
@@ -34,7 +34,7 @@ const ReliabilityIndicator = () => {
       <div className="flex flex-col items-center">
         <div className="text-xs text-muted-foreground mb-1">Trust</div>
         <ScoreTooltip type="trust" score={trust * 2}>
-          <div className="flex items-center">
+          <div className="flex items-center cursor-help">
             {Array.from({ length: 5 }).map((_, i) => (
               <div 
                 key={i}
