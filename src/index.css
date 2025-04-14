@@ -45,8 +45,9 @@
     --sidebar-ring: 256 56% 57%;
     
     /* Tooltip styling for light mode */
-    --tooltip-background: 240 10% 98%;
+    --tooltip-background: 0 0% 100%;
     --tooltip-foreground: 240 10% 5%;
+    --tooltip-border: 240 10% 80%;
   }
 
   .dark {
@@ -90,6 +91,7 @@
     /* Tooltip styling for dark mode */
     --tooltip-background: 240 10% 15%;
     --tooltip-foreground: 240 10% 98%;
+    --tooltip-border: 240 10% 30%;
   }
 }
 
@@ -151,6 +153,6 @@
   
   /* Tooltip styles enhancement */
   [data-radix-popper-content-wrapper] [role="tooltip"] {
-    @apply bg-[hsl(var(--tooltip-background))] text-[hsl(var(--tooltip-foreground))] border border-border shadow-md px-3 py-1.5 rounded-md;
+    @apply bg-[hsl(var(--tooltip-background))] text-[hsl(var(--tooltip-foreground))] border border-[hsl(var(--tooltip-border))] shadow-md px-3 py-1.5 rounded-md text-sm;
   }
 }

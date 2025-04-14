@@ -10,7 +10,13 @@ import {
   ChevronLeft,
   ChevronRight,
   Bot,
-  Database
+  Database,
+  ShieldCheck,
+  ShieldAlert,
+  Eye,
+  Lock,
+  CheckCircle2,
+  FileCheck
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -52,19 +58,25 @@ const NavItem = ({ to, icon, label, collapsed }: NavItemProps) => {
         )
       }
     >
-      <div className="mr-3 text-xl">{icon}</div>
-      {!collapsed && <span>{label}</span>}
-      {collapsed && (
+      {collapsed ? (
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <span className="sr-only">{label}</span>
+              <div className="flex items-center justify-center">
+                <div className="text-xl">{icon}</div>
+                <span className="sr-only">{label}</span>
+              </div>
             </TooltipTrigger>
-            <TooltipContent side="right" className="z-50">
+            <TooltipContent side="right">
               {label}
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
+      ) : (
+        <>
+          <div className="mr-3 text-xl">{icon}</div>
+          <span>{label}</span>
+        </>
       )}
     </NavLink>
   );
@@ -100,27 +112,44 @@ const Sidebar = () => {
         "flex items-center mb-6 px-3",
         collapsed ? "justify-center" : "justify-between"
       )}>
-        {!collapsed && (
+        {!collapsed ? (
           <Link to="/splash" className="flex items-center">
             <Bot className="h-6 w-6 text-iqube-primary mr-2" />
             <h1 className="text-lg font-bold bg-gradient-to-r from-iqube-primary to-iqube-accent inline-block text-transparent bg-clip-text">
               Aigent MonDAI
             </h1>
           </Link>
-        )}
-        {collapsed && (
-          <Link to="/splash">
-            <Bot className="h-6 w-6 text-iqube-primary" />
-          </Link>
+        ) : (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Link to="/splash">
+                  <Bot className="h-6 w-6 text-iqube-primary" />
+                </Link>
+              </TooltipTrigger>
+              <TooltipContent side="right">
+                Aigent MonDAI
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         )}
         {!isMobile && (
-          <button 
-            onClick={toggleSidebar} 
-            className="p-1 rounded-md hover:bg-sidebar-accent text-sidebar-foreground"
-          >
-            <ChevronLeft className={cn("h-5 w-5", collapsed && "hidden")} />
-            <ChevronRight className={cn("h-5 w-5", !collapsed && "hidden")} />
-          </button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <button 
+                  onClick={toggleSidebar} 
+                  className="p-1 rounded-md hover:bg-sidebar-accent text-sidebar-foreground"
+                >
+                  <ChevronLeft className={cn("h-5 w-5", collapsed && "hidden")} />
+                  <ChevronRight className={cn("h-5 w-5", !collapsed && "hidden")} />
+                </button>
+              </TooltipTrigger>
+              <TooltipContent side={collapsed ? "right" : "left"}>
+                {collapsed ? "Expand sidebar" : "Collapse sidebar"}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         )}
       </div>
 
@@ -156,7 +185,10 @@ const Sidebar = () => {
                 </Link>
               </TooltipTrigger>
               <TooltipContent side="right">
-                iQube Settings
+                <div className="space-y-2">
+                  <div className="font-semibold">DataQube Settings</div>
+                  <div className="text-xs opacity-80">Manage your MonDAI iQube</div>
+                </div>
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>

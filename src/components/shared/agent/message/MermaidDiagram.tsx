@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import DiagramErrorHandler from './DiagramErrorHandler';
 import { useTheme } from '@/contexts/ThemeContext';
@@ -158,7 +159,8 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
         svgElement.style.fontFamily = 'Inter, system-ui, sans-serif';
         
         // Apply different background based on theme
-        const backgroundColor = theme === 'light' ? '#F9F5EB' : '#FDE1D3';
+        // Use cream color (#FAF7ED) in dark mode instead of orange
+        const backgroundColor = theme === 'light' ? '#F9F5EB' : '#FAF7ED';
         svgElement.style.backgroundColor = backgroundColor;
         svgElement.style.borderRadius = '12px';
         svgElement.style.padding = '16px';
@@ -277,7 +279,7 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
     <div 
       ref={containerRef}
       className={`flex justify-center overflow-x-auto p-4 rounded-xl min-h-[100px] border shadow-sm ${
-        theme === 'light' ? 'bg-[#F9F5EB] border-amber-100' : 'bg-[#FDE1D3] border-amber-100'
+        theme === 'light' ? 'bg-[#F9F5EB] border-amber-100' : 'bg-[#FAF7ED] border-amber-100'
       }`}
     />
   );
