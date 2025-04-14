@@ -11,18 +11,13 @@ import {
   ChevronRight,
   Bot,
   Database,
-  ShieldCheck,
-  ShieldAlert,
-  Eye,
-  Lock,
-  CheckCircle2,
-  FileCheck
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import MetaQubeDisplay from '@/components/shared/MetaQubeDisplay';
 import { MetaQube } from '@/lib/types';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import ScoreTooltip from '@/components/shared/ScoreTooltips';
 
 const metaQubeData: MetaQube = {
   "iQube-Identifier": "MonDAI iQube",
@@ -174,24 +169,14 @@ const Sidebar = () => {
             />
           </div>
         ) : (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Link 
-                  to="/settings" 
-                  className="flex items-center justify-center py-3 px-3 rounded-md transition-all hover:bg-iqube-primary/20 bg-iqube-primary/10"
-                >
-                  <Database className="h-6 w-6 text-iqube-primary" />
-                </Link>
-              </TooltipTrigger>
-              <TooltipContent side="right">
-                <div className="space-y-2">
-                  <div className="font-semibold">DataQube Settings</div>
-                  <div className="text-xs opacity-80">Manage your MonDAI iQube</div>
-                </div>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
+          <ScoreTooltip type="dataQube">
+            <Link 
+              to="/settings" 
+              className="flex items-center justify-center py-3 px-3 rounded-md transition-all hover:bg-iqube-primary/20 bg-iqube-primary/10"
+            >
+              <Database className="h-6 w-6 text-iqube-primary" />
+            </Link>
+          </ScoreTooltip>
         )}
       </div>
     </div>

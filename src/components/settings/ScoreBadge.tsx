@@ -1,5 +1,6 @@
 
 import React from 'react';
+import ScoreTooltip from '../shared/ScoreTooltips';
 
 export interface ScoreBadgeProps {
   value: number;
@@ -36,9 +37,11 @@ const ScoreBadge = ({ value, label, type }: ScoreBadgeProps) => {
   
   return (
     <div className="flex items-center gap-2">
-      <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium ${getScoreColor()}`}>
-        {value}
-      </div>
+      <ScoreTooltip type={type} score={value}>
+        <div className={`w-8 h-8 rounded-full flex items-center justify-center text-white text-sm font-medium ${getScoreColor()} cursor-help`}>
+          {value}
+        </div>
+      </ScoreTooltip>
       <span className="text-xs">{label}</span>
     </div>
   );

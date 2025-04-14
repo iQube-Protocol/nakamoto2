@@ -3,6 +3,7 @@ import React from 'react';
 import SettingsInterface from '@/components/settings/SettingsInterface';
 import { UserSettings, MetaQube } from '@/lib/types';
 import { useTheme } from '@/contexts/ThemeContext';
+import { TooltipProvider } from '@/components/ui/tooltip';
 
 // Sample metaQube data
 const metaQubeData: MetaQube = {
@@ -41,13 +42,15 @@ const Settings = () => {
   };
 
   return (
-    <div className="container p-2">
-      <div className="flex flex-col md:flex-row justify-between items-center mb-3">
-        <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
-      </div>
+    <TooltipProvider>
+      <div className="container p-2">
+        <div className="flex flex-col md:flex-row justify-between items-center mb-3">
+          <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
+        </div>
 
-      <SettingsInterface userSettings={userSettings} metaQube={metaQubeData} />
-    </div>
+        <SettingsInterface userSettings={userSettings} metaQube={metaQubeData} />
+      </div>
+    </TooltipProvider>
   );
 };
 
