@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { AgentInterface } from '@/components/shared/agent';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -22,6 +22,20 @@ const AgentPanel = ({
 }: AgentPanelProps) => {
   const { toast } = useToast();
   const [metisActive, setMetisActive] = useState<boolean>(false);
+
+  // Listen for Metis activation events
+  useEffect(() => {
+    const handleMetisActivated = () => {
+      setMetisActive(true);
+      console.log('Metis agent activated via custom event');
+    };
+
+    window.addEventListener('metisActivated', handleMetisActivated);
+    
+    return () => {
+      window.removeEventListener('metisActivated', handleMetisActivated);
+    };
+  }, []);
 
   const handleAIMessage = async (message: string) => {
     try {
@@ -55,17 +69,15 @@ const AgentPanel = ({
         }
       }
       
-      // Listen for events from MessageItem to update Metis status
-      window.addEventListener('metisActivated', () => {
-        setMetisActive(true);
-      });
-      
       return {
         id: Date.now().toString(),
         sender: 'agent' as const,
         message: data.message,
         timestamp: data.timestamp || new Date().toISOString(),
-        metadata: data.mcp || null
+        metadata: {
+          ...(data.mcp || {}),
+          metisActive: metisActive
+        }
       };
     } catch (error) {
       console.error('Failed to get AI response:', error);
@@ -80,6 +92,9 @@ const AgentPanel = ({
         sender: 'agent' as const,
         message: "I'm sorry, I couldn't process your request. Please try again later.",
         timestamp: new Date().toISOString(),
+        metadata: {
+          metisActive: metisActive
+        }
       };
     }
   };
@@ -99,7 +114,8 @@ const AgentPanel = ({
             timestamp: new Date().toISOString(),
             metadata: {
               version: "1.0",
-              modelUsed: "gpt-4o-mini"
+              modelUsed: "gpt-4o-mini",
+              metisActive: metisActive
             }
           }
         ]}

@@ -68,7 +68,7 @@ const MessageItem = ({ message, isPlaying, onPlayAudio }: MessageItemProps) => {
     toast({
       title: "Metis Agent Activated",
       description: "You now have access to advanced crypto risk analysis capabilities.",
-      variant: "default", // Changed from "success" to "default" to match allowed types
+      variant: "default",
     });
     
     // Dispatch custom event to inform parent components about Metis activation
@@ -85,7 +85,7 @@ const MessageItem = ({ message, isPlaying, onPlayAudio }: MessageItemProps) => {
                 metadata={message.metadata ? { 
                   ...message.metadata,
                   metisActive: metisActive
-                } : null} 
+                } : { metisActive: metisActive }} 
               />
             )}
           </div>
