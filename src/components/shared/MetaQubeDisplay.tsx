@@ -3,7 +3,7 @@ import React, { useState } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MetaQube } from '@/lib/types';
-import { Lock, Unlock, ShieldCheck, Database } from 'lucide-react';
+import { Lock, Unlock, ShieldCheck, Database, Brain } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Link } from 'react-router-dom';
 import { Switch } from '@/components/ui/switch';
@@ -76,24 +76,44 @@ const MetaQubeDisplay = ({ metaQube, compact = false, className }: MetaQubeDispl
   const [isActive, setIsActive] = useState(true);
   // Calculate Trust score as the average of Accuracy and Verifiability
   const trustScore = Math.round((metaQube["Accuracy-Score"] + metaQube["Verifiability-Score"]) / 2);
+  
+  // Determine if this is a DataQube or AgentQube for styling
+  const isAgentQube = metaQube["iQube-Type"] === "AgentQube";
+  
+  // Color classes based on qube type
+  const qubeColorClasses = isAgentQube 
+    ? {
+        bg: "bg-purple-500/10",
+        border: "border-purple-500/30",
+        text: "text-purple-500",
+      }
+    : {
+        bg: "bg-iqube-primary/10",
+        border: "border-iqube-primary/30",
+        text: "text-iqube-primary",
+      };
 
   const cardContent = compact ? (
     <CardContent className="pb-3 pt-3">
       <div className="flex flex-col space-y-2">
         <div className="flex items-center justify-between mb-2">
           <div className="flex items-center gap-2">
-            <div className="h-5 w-5 text-green-500">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-                <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
-                <line x1="12" y1="22.08" x2="12" y2="12"></line>
-              </svg>
+            <div className={`h-5 w-5 ${qubeColorClasses.text}`}>
+              {isAgentQube ? (
+                <Brain />
+              ) : (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                  <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                  <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                </svg>
+              )}
             </div>
             <span className="text-sm font-medium">{metaQube["iQube-Identifier"]}</span>
           </div>
-          <ScoreTooltip type="dataQube">
-            <Badge variant="outline" className="flex items-center gap-1 bg-iqube-primary/10 text-iqube-primary border-iqube-primary/30">
-              <Database size={14} />
+          <ScoreTooltip type={isAgentQube ? "agentQube" : "dataQube"}>
+            <Badge variant="outline" className={`flex items-center gap-1 ${qubeColorClasses.bg} ${qubeColorClasses.text} ${qubeColorClasses.border}`}>
+              {isAgentQube ? <Brain size={14} /> : <Database size={14} />}
             </Badge>
           </ScoreTooltip>
         </div>
@@ -109,7 +129,7 @@ const MetaQubeDisplay = ({ metaQube, compact = false, className }: MetaQubeDispl
               checked={isActive} 
               onCheckedChange={setIsActive} 
               size="sm"
-              className="data-[state=checked]:bg-iqube-primary"
+              className={`data-[state=checked]:${isAgentQube ? 'bg-purple-500' : 'bg-iqube-primary'}`}
             />
           </div>
         </div>
@@ -120,18 +140,22 @@ const MetaQubeDisplay = ({ metaQube, compact = false, className }: MetaQubeDispl
       <CardContent className="pt-4">
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center">
-            <div className="h-5 w-5 mr-2 text-green-500">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-                <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
-                <line x1="12" y1="22.08" x2="12" y2="12"></line>
-              </svg>
+            <div className={`h-5 w-5 mr-2 ${qubeColorClasses.text}`}>
+              {isAgentQube ? (
+                <Brain />
+              ) : (
+                <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                  <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+                  <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+                  <line x1="12" y1="22.08" x2="12" y2="12"></line>
+                </svg>
+              )}
             </div>
             <span className="text-lg font-medium">{metaQube["iQube-Identifier"]}</span>
           </div>
-          <ScoreTooltip type="dataQube">
-            <Badge variant="outline" className="flex items-center gap-1 bg-iqube-primary/10 text-iqube-primary border-iqube-primary/30">
-              <Database size={14} />
+          <ScoreTooltip type={isAgentQube ? "agentQube" : "dataQube"}>
+            <Badge variant="outline" className={`flex items-center gap-1 ${qubeColorClasses.bg} ${qubeColorClasses.text} ${qubeColorClasses.border}`}>
+              {isAgentQube ? <Brain size={14} /> : <Database size={14} />}
             </Badge>
           </ScoreTooltip>
         </div>
@@ -146,7 +170,7 @@ const MetaQubeDisplay = ({ metaQube, compact = false, className }: MetaQubeDispl
             <Switch 
               checked={isActive} 
               onCheckedChange={setIsActive}
-              className="data-[state=checked]:bg-iqube-primary"
+              className={`data-[state=checked]:${isAgentQube ? 'bg-purple-500' : 'bg-iqube-primary'}`}
             />
           </div>
         </div>
@@ -185,8 +209,17 @@ const MetaQubeDisplay = ({ metaQube, compact = false, className }: MetaQubeDispl
             <span>Protected</span>
           </div>
           <div className="flex items-center border rounded-md px-2 py-1 text-xs">
-            <Database className="h-3.5 w-3.5 mr-1" />
-            <span>Data</span>
+            {isAgentQube ? (
+              <>
+                <Brain className="h-3.5 w-3.5 mr-1" />
+                <span>Agent</span>
+              </>
+            ) : (
+              <>
+                <Database className="h-3.5 w-3.5 mr-1" />
+                <span>Data</span>
+              </>
+            )}
           </div>
           {metaQube["Risk-Score"] <= 4 ? (
             <div className="flex items-center border rounded-md px-2 py-1 text-xs text-green-500 border-green-500/30">
@@ -206,7 +239,7 @@ const MetaQubeDisplay = ({ metaQube, compact = false, className }: MetaQubeDispl
 
   return (
     <Link to="/settings" className="block">
-      <Card className={cn("iqube-card cursor-pointer transition-all hover:bg-card/90 hover:shadow-md", className)}>
+      <Card className={cn(`iqube-card cursor-pointer transition-all hover:bg-card/90 hover:shadow-md ${isAgentQube ? 'border-purple-500/20' : ''}`, className)}>
         {cardContent}
       </Card>
     </Link>

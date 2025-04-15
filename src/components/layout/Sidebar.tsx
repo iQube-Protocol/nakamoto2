@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { NavLink, Link } from 'react-router-dom';
 import { 
@@ -10,6 +11,7 @@ import {
   ChevronRight,
   Bot,
   Database,
+  Brain,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -32,6 +34,22 @@ const metaQubeData: MetaQube = {
   "Verifiability-Score": 5,
   "Accuracy-Score": 5,
   "Risk-Score": 4
+};
+
+const metisQubeData: MetaQube = {
+  "iQube-Identifier": "Metis iQube",
+  "iQube-Type": "AgentQube",
+  "iQube-Designer": "Aigent Metis",
+  "iQube-Use": "Advanced agent for data analysis and insights",
+  "Owner-Type": "Organization",
+  "Owner-Identifiability": "Identifiable",
+  "Date-Minted": new Date().toISOString(),
+  "Related-iQubes": ["DataQube1", "ContentQube2"],
+  "X-of-Y": "3 of 15",
+  "Sensitivity-Score": 3,
+  "Verifiability-Score": 8,
+  "Accuracy-Score": 7,
+  "Risk-Score": 3
 };
 
 interface NavItemProps {
@@ -159,23 +177,41 @@ const Sidebar = () => {
         ))}
       </div>
       
-      <div className="px-3 mt-auto">
+      <div className="px-3 mt-auto space-y-3">
         {!collapsed ? (
-          <div className="bg-iqube-primary/10 rounded-md">
-            <MetaQubeDisplay 
-              metaQube={metaQubeData} 
-              compact={true}
-            />
-          </div>
+          <>
+            <div className="bg-iqube-primary/10 rounded-md">
+              <MetaQubeDisplay 
+                metaQube={metaQubeData} 
+                compact={true}
+              />
+            </div>
+            <div className="bg-purple-500/10 rounded-md">
+              <MetaQubeDisplay 
+                metaQube={metisQubeData} 
+                compact={true}
+              />
+            </div>
+          </>
         ) : (
-          <ScoreTooltip type="dataQube">
-            <Link 
-              to="/settings" 
-              className="flex items-center justify-center py-3 px-3 rounded-md transition-all hover:bg-iqube-primary/20 bg-iqube-primary/10"
-            >
-              <Database className="h-6 w-6 text-iqube-primary" />
-            </Link>
-          </ScoreTooltip>
+          <>
+            <ScoreTooltip type="dataQube">
+              <Link 
+                to="/settings" 
+                className="flex items-center justify-center py-3 px-3 rounded-md transition-all hover:bg-iqube-primary/20 bg-iqube-primary/10"
+              >
+                <Database className="h-6 w-6 text-iqube-primary" />
+              </Link>
+            </ScoreTooltip>
+            <ScoreTooltip type="agentQube">
+              <Link 
+                to="/settings" 
+                className="flex items-center justify-center py-3 px-3 rounded-md transition-all hover:bg-purple-500/20 bg-purple-500/10"
+              >
+                <Brain className="h-6 w-6 text-purple-500" />
+              </Link>
+            </ScoreTooltip>
+          </>
         )}
       </div>
     </div>
