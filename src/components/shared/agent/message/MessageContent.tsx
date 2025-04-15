@@ -27,7 +27,7 @@ const MessageContent = ({ content, sender }: MessageContentProps) => {
           <MermaidDiagram 
             key={i} 
             code={code} 
-            id={`mermaid-${i}-${Date.now()}`} // Added unique id
+            id={`mermaid-${i}-${Date.now()}`}
           />
         );
       }

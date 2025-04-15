@@ -84,7 +84,7 @@ const MessageItem = ({ message, isPlaying, onPlayAudio }: MessageItemProps) => {
               <MetadataBadge 
                 metadata={message.metadata ? { 
                   ...message.metadata,
-                  metisActive: metisActive
+                  metisActive: message.metadata.metisActive || metisActive
                 } : { metisActive: metisActive }} 
               />
             )}
