@@ -37,7 +37,11 @@ export const processCode = (inputCode: string): string => {
       })
       .replace(/\[([^\]]*?),([^\]]*?)\]/g, (match, before, after) => {
         return `[${before}_${after}]`;
-      });
+      })
+      // Remove % characters and trailing comments which cause parse errors
+      .replace(/(%.*?)($|\n)/g, '$2')
+      // Fix invalid statements with NODE_STRING errors
+      .replace(/\s+\w+\s*-->/g, ' -->');
       
     console.log("Processed mermaid code:", result);
     return result;
@@ -82,7 +86,12 @@ export const attemptAutoFix = (originalCode: string): string => {
       })
       // Extra safety for parenthesis issues
       .replace(/\[\s*([^\]]*)\s*\(/, '[${1}_')
-      .replace(/\)\s*([^\]]*)\s*\]/, '_$1]');
+      .replace(/\)\s*([^\]]*)\s*\]/, '_$1]')
+      // Remove % characters and comments that cause parse errors
+      .replace(/(%.*?)($|\n)/g, '$2')
+      // Fix NODE_STRING errors by removing invalid node references
+      .replace(/(\w+\s+)(\w+)(\s*-->)/g, '$1$3')
+      .replace(/-->(\s*)(\w+)(\s*[^[])/g, '-->$1$3');
     
     console.log("Auto-fixed mermaid code:", fixedCode);
     return fixedCode;
@@ -127,6 +136,23 @@ export const sanitizeMermaidCode = (code: string): string => {
       
       // Replace "e.g.," which often causes parse errors
       sanitized = sanitized.replace(/e\.g\.,/g, 'eg');
+    }
+    
+    // Handle NODE_STRING errors (like the one in the user's message)
+    if (code.includes('NODE_STRING')) {
+      // Remove % characters which can cause issues
+      sanitized = sanitized.replace(/%.*/g, '');
+      
+      // Fix unquoted labels or invalid node references
+      const lines = sanitized.split('\n');
+      const fixedLines = lines.map(line => {
+        // If line contains --> but no node definition, remove any stray text after -->
+        if (line.includes('-->') && !line.includes('[') && !line.match(/-->\s*[A-Za-z0-9_]+$/)) {
+          return line.replace(/-->\s*[A-Za-z0-9_]+.*$/, '-->');
+        }
+        return line;
+      });
+      sanitized = fixedLines.join('\n');
     }
     
     // If a parse error is still likely, create a very simple diagram

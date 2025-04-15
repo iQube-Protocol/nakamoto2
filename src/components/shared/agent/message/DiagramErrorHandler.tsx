@@ -48,7 +48,7 @@ const DiagramErrorHandler: React.FC<DiagramErrorHandlerProps> = ({ error, code, 
             errorMessage.includes("parentheses") || 
             errorMessage.includes("comma") ||
             errorMessage.includes("Expecting")) {
-          console.log("Using deep sanitization for parentheses/commas error");
+          console.log("Using deep sanitization for syntax error");
           // Use the sanitizeMermaidCode function for heavy error fixing
           const sanitized = sanitizeMermaidCode(code);
           onRetry(sanitized);
