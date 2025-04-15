@@ -68,8 +68,11 @@ const MessageItem = ({ message, isPlaying, onPlayAudio }: MessageItemProps) => {
     toast({
       title: "Metis Agent Activated",
       description: "You now have access to advanced crypto risk analysis capabilities.",
-      variant: "success",
+      variant: "default", // Changed from "success" to "default" to match allowed types
     });
+    
+    // Dispatch custom event to inform parent components about Metis activation
+    window.dispatchEvent(new CustomEvent('metisActivated'));
   };
 
   return (

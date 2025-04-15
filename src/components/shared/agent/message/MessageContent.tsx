@@ -23,7 +23,13 @@ const MessageContent = ({ content, sender }: MessageContentProps) => {
       
       // Handle Mermaid diagrams
       if (language === 'mermaid') {
-        return <MermaidDiagram key={i} code={code} />;
+        return (
+          <MermaidDiagram 
+            key={i} 
+            code={code} 
+            id={`mermaid-${i}-${Date.now()}`} // Added unique id
+          />
+        );
       }
       
       // Handle regular code
