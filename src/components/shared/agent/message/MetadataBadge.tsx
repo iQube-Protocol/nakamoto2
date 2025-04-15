@@ -9,18 +9,22 @@ import {
 } from '@/components/ui/tooltip';
 import ScoreTooltip from '../../ScoreTooltips';
 import { Cpu } from 'lucide-react';
+import MetisAgentBadge from './MetisAgentBadge';
 
 interface MetadataBadgeProps {
   metadata: {
     version?: string;
     modelUsed?: string;
     contextRetained?: boolean;
+    metisActive?: boolean;
     [key: string]: any;
   } | null;
 }
 
 const MetadataBadge = ({ metadata }: MetadataBadgeProps) => {
   if (!metadata) return null;
+  
+  const isMetisActive = metadata.metisActive === true;
   
   return (
     <TooltipProvider>
@@ -38,12 +42,16 @@ const MetadataBadge = ({ metadata }: MetadataBadgeProps) => {
                 </Badge>
               </ScoreTooltip>
             )}
+            <MetisAgentBadge isActive={isMetisActive} />
           </div>
         </TooltipTrigger>
         <TooltipContent>
           <p className="text-xs">Using Model Context Protocol</p>
           {metadata.contextRetained && 
             <p className="text-xs text-muted-foreground">Context maintained between messages</p>
+          }
+          {isMetisActive &&
+            <p className="text-xs text-violet-500 font-medium">Metis Agent active</p>
           }
         </TooltipContent>
       </Tooltip>

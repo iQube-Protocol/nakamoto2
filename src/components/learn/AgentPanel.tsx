@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { AgentInterface } from '@/components/shared/agent';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -21,6 +21,7 @@ const AgentPanel = ({
   isPanelCollapsed 
 }: AgentPanelProps) => {
   const { toast } = useToast();
+  const [metisActive, setMetisActive] = useState<boolean>(false);
 
   const handleAIMessage = async (message: string) => {
     try {
@@ -29,7 +30,8 @@ const AgentPanel = ({
           message, 
           metaQube,
           blakQube,
-          conversationId 
+          conversationId,
+          metisActive
         }
       });
       
@@ -44,8 +46,19 @@ const AgentPanel = ({
         
         if (data.mcp) {
           console.log('MCP metadata:', data.mcp);
+          
+          // Update local state if Metis was activated through the payment flow
+          if (data.mcp.metisActive !== undefined && data.mcp.metisActive !== metisActive) {
+            setMetisActive(data.mcp.metisActive);
+            console.log(`Metis agent status updated to: ${data.mcp.metisActive}`);
+          }
         }
       }
+      
+      // Listen for events from MessageItem to update Metis status
+      window.addEventListener('metisActivated', () => {
+        setMetisActive(true);
+      });
       
       return {
         id: Date.now().toString(),

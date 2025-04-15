@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
@@ -21,6 +20,7 @@ interface MCPContext {
     userProfile: Record<string, any>;
     environment: string;
     modelPreference?: string;
+    metisActive?: boolean;
   };
 }
 
@@ -34,7 +34,7 @@ serve(async (req) => {
   }
 
   try {
-    const { message, metaQube, blakQube, conversationId } = await req.json();
+    const { message, metaQube, blakQube, conversationId, metisActive } = await req.json();
     
     // Initialize or retrieve MCP context
     let mcpContext: MCPContext;
@@ -47,6 +47,10 @@ serve(async (req) => {
         content: message,
         timestamp: new Date().toISOString()
       });
+      // Update Metis status if changed
+      if (metisActive !== undefined) {
+        mcpContext.metadata.metisActive = metisActive;
+      }
     } else {
       // Create new conversation context
       const newConversationId = crypto.randomUUID();
@@ -63,13 +67,14 @@ serve(async (req) => {
             blakQube
           },
           environment: "web3_education",
-          modelPreference: "gpt-4o-mini"
+          modelPreference: "gpt-4o-mini",
+          metisActive: metisActive || false
         }
       };
     }
     
     // Updated system prompt with formatting instructions including Mermaid and iQube data
-    const systemPrompt = `## **Prompt: Learning Aigent Powered by iQubes**
+    let systemPrompt = `## **Prompt: Learning Aigent Powered by iQubes**
 
 **<role-description>**  
 You are a **Learning Aigent**, built to help people confidently explore and grow in the world of AI — even if they have zero technical experience. You specialize in turning any content into a custom learning journey, all powered by **iQubes** (smart information containers) and **Aigents** (intelligent assistants that know how to use them).  
@@ -205,6 +210,24 @@ Additionally, consider the following iQube data for personalization:
   - Tokens of Interest: ${blakQube && blakQube["Tokens-of-Interest"] ? blakQube["Tokens-of-Interest"].join(", ") : "General tokens"}
   - Chain IDs: ${blakQube && blakQube["Chain-IDs"] ? blakQube["Chain-IDs"].join(", ") : "Multiple chains"}`;
 
+    // Add Metis capabilities if active
+    if (mcpContext.metadata.metisActive) {
+      systemPrompt += `
+
+**<metis-agent-capabilities>**
+As an enhanced agent with Metis capabilities, you now have specialized expertise in:
+
+1. **Crypto Risk Analysis**: You can analyze and explain security risks associated with specific tokens, cryptocurrencies, and wallets.
+
+2. **Blockchain Security**: You can provide detailed explanations about blockchain security models, vulnerabilities, and best practices.
+
+3. **Token Risk Assessment**: You can evaluate tokens based on their market behavior, smart contract implementations, and security history.
+
+4. **Wallet Security Best Practices**: You can recommend specific security measures for different wallet types and use cases.
+
+When the user asks about crypto risks, token security, or wallet protection, provide more detailed, technical and specific information than you normally would. Include specific security metrics and risk factors in your analysis.`;
+    }
+
     // Convert MCP context to OpenAI message format
     const formattedMessages = [
       { role: 'system', content: systemPrompt }
@@ -250,6 +273,7 @@ Additionally, consider the following iQube data for personalization:
     
     // Log context state (helpful for debugging)
     console.log(`Conversation ${mcpContext.conversationId} updated, now has ${mcpContext.messages.length} messages`);
+    console.log(`Metis status: ${mcpContext.metadata.metisActive ? 'Active' : 'Inactive'}`);
     
     // Return the AI response with MCP metadata
     return new Response(JSON.stringify({ 
@@ -260,7 +284,8 @@ Additionally, consider the following iQube data for personalization:
       mcp: {
         version: "1.0",
         contextRetained: true,
-        modelUsed: mcpContext.metadata.modelPreference
+        modelUsed: mcpContext.metadata.modelPreference,
+        metisActive: mcpContext.metadata.metisActive
       }
     }), {
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
