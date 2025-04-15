@@ -11,14 +11,15 @@ import {
   Mic,
   Paperclip,
   Image,
-  Cpu
+  Cpu,
+  Brain
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ScoreTooltipProps {
   children: React.ReactNode;
   score?: number;
-  type: 'reliability' | 'trust' | 'risk' | 'sensitivity' | 'accuracy' | 'verifiability' | 'dataQube' | 'voice' | 'attachment' | 'image' | 'mlModel';
+  type: 'reliability' | 'trust' | 'risk' | 'sensitivity' | 'accuracy' | 'verifiability' | 'dataQube' | 'voice' | 'attachment' | 'image' | 'mlModel' | 'agentQube';
 }
 
 const ScoreTooltip: React.FC<ScoreTooltipProps> = ({ children, score, type }) => {
@@ -105,6 +106,18 @@ const ScoreTooltip: React.FC<ScoreTooltipProps> = ({ children, score, type }) =>
             </div>
             <div className="text-xs">
               Access your personal data store with permissions and metadata tracking.
+            </div>
+          </div>
+        );
+      case 'agentQube':
+        return (
+          <div className="space-y-1">
+            <div className="font-semibold flex items-center">
+              <Brain className="h-4 w-4 mr-2 text-purple-500" />
+              AgentQube
+            </div>
+            <div className="text-xs">
+              Advanced AI agent with specialized capabilities and configurable permissions.
             </div>
           </div>
         );
