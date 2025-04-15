@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   AlertCircle, 
@@ -55,7 +54,15 @@ const AgentActivationModal = ({
       const result = await onConfirmPayment();
       
       if (result) {
-        setTimeout(() => setCurrentStep('complete'), 3500);
+        setTimeout(() => {
+          setCurrentStep('complete');
+          if (agentName === 'Metis') {
+            localStorage.setItem('metisActive', 'true');
+            const activationEvent = new Event('metisActivated');
+            window.dispatchEvent(activationEvent);
+            console.log('Dispatched metisActivated event');
+          }
+        }, 3500);
       } else {
         setErrorMessage('Payment could not be processed. Please try again.');
         setCurrentStep('error');

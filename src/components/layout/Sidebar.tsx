@@ -1,5 +1,4 @@
-
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { NavLink, Link } from 'react-router-dom';
 import { 
   LayoutDashboard, 
@@ -98,6 +97,7 @@ const Sidebar = () => {
   const isMobile = useIsMobile();
   const [collapsed, setCollapsed] = useState(isMobile);
   const [mobileOpen, setMobileOpen] = useState(false);
+  const [metisActivated, setMetisActivated] = useState(false);
 
   const toggleSidebar = () => {
     setCollapsed(!collapsed);
@@ -106,6 +106,24 @@ const Sidebar = () => {
   const toggleMobileSidebar = () => {
     setMobileOpen(!mobileOpen);
   };
+
+  useEffect(() => {
+    const handleMetisActivated = () => {
+      console.log('Sidebar: Metis agent activation detected');
+      setMetisActivated(true);
+    };
+
+    window.addEventListener('metisActivated', handleMetisActivated);
+    
+    const metisActiveStatus = localStorage.getItem('metisActive');
+    if (metisActiveStatus === 'true') {
+      setMetisActivated(true);
+    }
+    
+    return () => {
+      window.removeEventListener('metisActivated', handleMetisActivated);
+    };
+  }, []);
 
   const navItems = [
     { to: "/", icon: <LayoutDashboard />, label: "Dashboard" },
@@ -186,12 +204,14 @@ const Sidebar = () => {
                 compact={true}
               />
             </div>
-            <div className="bg-purple-500/10 rounded-md">
-              <MetaQubeDisplay 
-                metaQube={metisQubeData} 
-                compact={true}
-              />
-            </div>
+            {metisActivated && (
+              <div className="bg-purple-500/10 rounded-md">
+                <MetaQubeDisplay 
+                  metaQube={metisQubeData} 
+                  compact={true}
+                />
+              </div>
+            )}
           </>
         ) : (
           <>
@@ -203,14 +223,16 @@ const Sidebar = () => {
                 <Database className="h-6 w-6 text-iqube-primary" />
               </Link>
             </ScoreTooltip>
-            <ScoreTooltip type="agentQube">
-              <Link 
-                to="/settings" 
-                className="flex items-center justify-center py-3 px-3 rounded-md transition-all hover:bg-purple-500/20 bg-purple-500/10"
-              >
-                <Brain className="h-6 w-6 text-purple-500" />
-              </Link>
-            </ScoreTooltip>
+            {metisActivated && (
+              <ScoreTooltip type="agentQube">
+                <Link 
+                  to="/settings" 
+                  className="flex items-center justify-center py-3 px-3 rounded-md transition-all hover:bg-purple-500/20 bg-purple-500/10"
+                >
+                  <Brain className="h-6 w-6 text-purple-500" />
+                </Link>
+              </ScoreTooltip>
+            )}
           </>
         )}
       </div>
