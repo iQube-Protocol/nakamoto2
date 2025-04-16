@@ -12,6 +12,7 @@ import {
   Bot,
   Database,
   Brain,
+  X
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -100,6 +101,7 @@ const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(isMobile);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [metisActivated, setMetisActivated] = useState(false);
+  const [metisRemoved, setMetisRemoved] = useState(false);
 
   const toggleSidebar = () => {
     setCollapsed(!collapsed);
@@ -113,6 +115,7 @@ const Sidebar = () => {
     const handleMetisActivated = () => {
       console.log('Sidebar: Metis agent activation detected');
       setMetisActivated(true);
+      localStorage.setItem('metisActive', 'true');
     };
 
     window.addEventListener('metisActivated', handleMetisActivated);
@@ -120,6 +123,12 @@ const Sidebar = () => {
     const metisActiveStatus = localStorage.getItem('metisActive');
     if (metisActiveStatus === 'true') {
       setMetisActivated(true);
+    }
+    
+    // Check if Metis has been removed
+    const metisRemovedStatus = localStorage.getItem('metisRemoved');
+    if (metisRemovedStatus === 'true') {
+      setMetisRemoved(true);
     }
     
     return () => {
@@ -139,11 +148,50 @@ const Sidebar = () => {
   const handleIQubeClick = (iqubeId: string) => {
     console.log("iQube clicked:", iqubeId);
     
+    if (iqubeId === "Metis iQube") {
+      // Toggle Metis activation state
+      const newState = !metisActivated;
+      setMetisActivated(newState);
+      localStorage.setItem('metisActive', newState.toString());
+      
+      // Dispatch activation/deactivation event
+      if (newState) {
+        const activationEvent = new Event('metisActivated');
+        window.dispatchEvent(activationEvent);
+        console.log('Metis activated by sidebar click');
+      } else {
+        const deactivationEvent = new Event('metisDeactivated');
+        window.dispatchEvent(deactivationEvent);
+        console.log('Metis deactivated by sidebar click');
+      }
+    }
+    
     // Create and dispatch a custom event with the iQube ID
     const event = new CustomEvent('iqubeSelected', { 
       detail: { iqubeId: iqubeId } 
     });
     window.dispatchEvent(event);
+  };
+
+  // Handler to remove Metis iQube from sidebar
+  const handleRemoveMetisIQube = (e: React.MouseEvent) => {
+    e.stopPropagation();
+    setMetisRemoved(true);
+    localStorage.setItem('metisRemoved', 'true');
+    
+    // Also deactivate if active
+    if (metisActivated) {
+      setMetisActivated(false);
+      localStorage.setItem('metisActive', 'false');
+      
+      const deactivationEvent = new Event('metisDeactivated');
+      window.dispatchEvent(deactivationEvent);
+    }
+    
+    // Dispatch a custom removal event
+    const removalEvent = new Event('metisRemoved');
+    window.dispatchEvent(removalEvent);
+    console.log('Metis removed from sidebar');
   };
 
   const CubeIcon = () => (
@@ -227,42 +275,80 @@ const Sidebar = () => {
                 className="cursor-pointer hover:bg-iqube-primary/20 transition-colors"
               />
             </div>
-            {metisActivated && (
-              <div className="bg-purple-500/10 rounded-md">
+            {metisActivated !== null && !metisRemoved && (
+              <div className={`bg-purple-500/10 rounded-md relative ${metisActivated ? "" : "opacity-70"}`}>
                 <MetaQubeDisplay 
                   metaQube={metisQubeData} 
                   compact={true}
                   onClick={() => handleIQubeClick("Metis iQube")}
                   className="cursor-pointer hover:bg-purple-500/20 transition-colors"
                 />
+                <button
+                  onClick={handleRemoveMetisIQube}
+                  className="absolute top-1 right-1 p-1 rounded-full bg-gray-200 hover:bg-gray-300 text-gray-600"
+                  title="Remove Metis iQube"
+                >
+                  <X className="h-3 w-3" />
+                </button>
               </div>
             )}
           </>
         ) : (
           <>
-            <ScoreTooltip type="dataQube">
-              <Link 
-                to="/settings" 
-                className="flex items-center justify-center py-3 px-3 rounded-md transition-all hover:bg-iqube-primary/20 bg-iqube-primary/10"
-                onClick={() => handleIQubeClick("MonDAI iQube")}
-              >
-                <div className="text-iqube-primary h-6 w-6">
-                  <CubeIcon />
-                </div>
-              </Link>
-            </ScoreTooltip>
-            {metisActivated && (
-              <ScoreTooltip type="agentQube">
-                <Link 
-                  to="/settings" 
-                  className="flex items-center justify-center py-3 px-3 rounded-md transition-all hover:bg-purple-500/20 bg-purple-500/10"
-                  onClick={() => handleIQubeClick("Metis iQube")}
-                >
-                  <div className="text-iqube-primary h-6 w-6">
-                    <CubeIcon />
-                  </div>
-                </Link>
-              </ScoreTooltip>
+            <TooltipProvider>
+              <Tooltip>
+                <TooltipTrigger asChild>
+                  <Link 
+                    to="/settings" 
+                    className="flex items-center justify-center py-3 px-3 rounded-md transition-all hover:bg-iqube-primary/20 bg-iqube-primary/10"
+                    onClick={() => handleIQubeClick("MonDAI iQube")}
+                  >
+                    <div className="text-iqube-primary h-6 w-6">
+                      <CubeIcon />
+                    </div>
+                  </Link>
+                </TooltipTrigger>
+                <TooltipContent side="right">
+                  MonDAI iQube - Data Cube
+                </TooltipContent>
+              </Tooltip>
+            </TooltipProvider>
+            
+            {metisActivated !== null && !metisRemoved && (
+              <div className="relative">
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Link 
+                        to="/settings" 
+                        className={`flex items-center justify-center py-3 px-3 rounded-md transition-all hover:bg-purple-500/20 bg-purple-500/10 ${metisActivated ? "" : "opacity-70"}`}
+                        onClick={() => handleIQubeClick("Metis iQube")}
+                      >
+                        <Brain className="h-5 w-5 text-purple-500" />
+                      </Link>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">
+                      Metis iQube - Agent Cube {metisActivated ? "(Active)" : "(Inactive)"}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+                
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <button
+                        onClick={handleRemoveMetisIQube}
+                        className="absolute -top-1 -right-1 p-1 rounded-full bg-gray-200 hover:bg-gray-300 text-gray-600"
+                      >
+                        <X className="h-3 w-3" />
+                      </button>
+                    </TooltipTrigger>
+                    <TooltipContent side="right">
+                      Remove Metis iQube
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
             )}
           </>
         )}
