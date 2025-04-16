@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { MetaQube } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
-import { Database, Brain } from 'lucide-react';
+import { Database } from 'lucide-react';
 import ScoreTooltip from '@/components/shared/ScoreTooltips';
 
 interface MetaQubeHeaderProps {
@@ -72,30 +72,22 @@ const MetaQubeHeader = ({ metaQube }: MetaQubeHeaderProps) => {
   // Calculate Trust score as the average of Accuracy and Verifiability
   const trustScore = Math.round((metaQube["Accuracy-Score"] + metaQube["Verifiability-Score"]) / 2);
   
-  // Determine if this is an agent qube
-  const isAgentQube = metaQube["iQube-Type"] === "AgentQube";
-  const borderColor = isAgentQube ? "border-purple-500" : "border-iqube-primary";
-  
   return (
     <div className="p-2 bg-muted/30 border rounded-md overflow-x-auto">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <div className="h-5 w-5 text-green-500">
-            {isAgentQube ? (
-              <Brain className="h-5 w-5 text-purple-500" />
-            ) : (
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-                <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
-                <line x1="12" y1="22.08" x2="12" y2="12"></line>
-              </svg>
-            )}
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+              <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+              <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+              <line x1="12" y1="22.08" x2="12" y2="12"></line>
+            </svg>
           </div>
           <span className="text-sm font-medium">{metaQube["iQube-Identifier"]}</span>
         </div>
-        <ScoreTooltip type={isAgentQube ? "agentQube" : "dataQube"}>
-          <Badge variant="outline" className={`flex items-center gap-1 ${isAgentQube ? "bg-purple-500/10 text-purple-500 border-purple-500/30" : "bg-iqube-primary/10 text-iqube-primary border-iqube-primary/30"}`}>
-            {isAgentQube ? <Brain size={14} /> : <Database size={14} />}
+        <ScoreTooltip type="dataQube">
+          <Badge variant="outline" className="flex items-center gap-1 bg-iqube-primary/10 text-iqube-primary border-iqube-primary/30">
+            <Database size={14} />
           </Badge>
         </ScoreTooltip>
       </div>
@@ -113,7 +105,7 @@ const MetaQubeHeader = ({ metaQube }: MetaQubeHeaderProps) => {
             checked={isActive} 
             onCheckedChange={setIsActive} 
             size="sm"
-            className={`data-[state=checked]:${isAgentQube ? "bg-purple-500" : "bg-iqube-primary"}`}
+            className="data-[state=checked]:bg-iqube-primary"
           />
         </div>
       </div>

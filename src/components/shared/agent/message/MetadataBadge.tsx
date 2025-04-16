@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import {
   Tooltip,
@@ -22,38 +22,9 @@ interface MetadataBadgeProps {
 }
 
 const MetadataBadge = ({ metadata }: MetadataBadgeProps) => {
-  const [isMetisActive, setIsMetisActive] = useState<boolean>(false);
-  
-  useEffect(() => {
-    // Initialize from props or localStorage
-    if (metadata?.metisActive !== undefined) {
-      setIsMetisActive(metadata.metisActive);
-    } else {
-      const storedMetisActive = localStorage.getItem('metisActive') === 'true';
-      setIsMetisActive(storedMetisActive);
-    }
-    
-    // Add event listeners for activation/deactivation
-    const handleMetisActivated = () => {
-      console.log('MetadataBadge: Metis agent activation detected');
-      setIsMetisActive(true);
-    };
-    
-    const handleMetisDeactivated = () => {
-      console.log('MetadataBadge: Metis agent deactivation detected');
-      setIsMetisActive(false);
-    };
-    
-    window.addEventListener('metisActivated', handleMetisActivated);
-    window.addEventListener('metisDeactivated', handleMetisDeactivated);
-    
-    return () => {
-      window.removeEventListener('metisActivated', handleMetisActivated);
-      window.removeEventListener('metisDeactivated', handleMetisDeactivated);
-    };
-  }, [metadata]);
-  
   if (!metadata) return null;
+  
+  const isMetisActive = metadata.metisActive === true;
   
   return (
     <TooltipProvider>
