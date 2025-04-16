@@ -14,6 +14,7 @@ export function useMetisAgent() {
 
     window.addEventListener('metisActivated', handleMetisActivated);
     
+    // Check localStorage only after component mounts
     const metisActiveStatus = localStorage.getItem('metisActive');
     if (metisActiveStatus === 'true') {
       setMetisActivated(true);
