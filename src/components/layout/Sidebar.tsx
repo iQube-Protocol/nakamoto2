@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { NavLink, Link, useLocation } from 'react-router-dom';
 import { 
@@ -134,6 +135,17 @@ const Sidebar = () => {
     { to: "/settings", icon: <Settings />, label: "Settings" }
   ];
 
+  // Handler for iQube clicks that dispatches a custom event
+  const handleIQubeClick = (iqubeId: string) => {
+    console.log("iQube clicked:", iqubeId);
+    
+    // Create and dispatch a custom event with the iQube ID
+    const event = new CustomEvent('iqubeSelected', { 
+      detail: { iqubeId: iqubeId } 
+    });
+    window.dispatchEvent(event);
+  };
+
   const CubeIcon = () => (
     <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
       <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
@@ -211,6 +223,8 @@ const Sidebar = () => {
               <MetaQubeDisplay 
                 metaQube={metaQubeData} 
                 compact={true}
+                onClick={() => handleIQubeClick("MonDAI iQube")}
+                className="cursor-pointer hover:bg-iqube-primary/20 transition-colors"
               />
             </div>
             {metisActivated && (
@@ -218,6 +232,8 @@ const Sidebar = () => {
                 <MetaQubeDisplay 
                   metaQube={metisQubeData} 
                   compact={true}
+                  onClick={() => handleIQubeClick("Metis iQube")}
+                  className="cursor-pointer hover:bg-purple-500/20 transition-colors"
                 />
               </div>
             )}
@@ -228,6 +244,7 @@ const Sidebar = () => {
               <Link 
                 to="/settings" 
                 className="flex items-center justify-center py-3 px-3 rounded-md transition-all hover:bg-iqube-primary/20 bg-iqube-primary/10"
+                onClick={() => handleIQubeClick("MonDAI iQube")}
               >
                 <div className="text-iqube-primary h-6 w-6">
                   <CubeIcon />
@@ -239,6 +256,7 @@ const Sidebar = () => {
                 <Link 
                   to="/settings" 
                   className="flex items-center justify-center py-3 px-3 rounded-md transition-all hover:bg-purple-500/20 bg-purple-500/10"
+                  onClick={() => handleIQubeClick("Metis iQube")}
                 >
                   <div className="text-iqube-primary h-6 w-6">
                     <CubeIcon />

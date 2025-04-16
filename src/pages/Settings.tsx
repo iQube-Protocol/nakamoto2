@@ -60,6 +60,27 @@ const Settings = () => {
       window.removeEventListener('metisActivated', handleMetisActivated);
     };
   }, []);
+
+  // Listen for iQube selection events from sidebar
+  useEffect(() => {
+    const handleIQubeSelected = (e: CustomEvent) => {
+      const iQubeId = e.detail?.iqubeId;
+      console.log("iQube selection event received:", iQubeId);
+      
+      if (iQubeId === "MonDAI iQube") {
+        setSelectedIQube(monDaiQubeData);
+      } else if (iQubeId === "Metis iQube" && metisActivated) {
+        setSelectedIQube(metisQubeData);
+      }
+    };
+
+    // Use type assertion for CustomEvent
+    window.addEventListener('iqubeSelected', handleIQubeSelected as EventListener);
+    
+    return () => {
+      window.removeEventListener('iqubeSelected', handleIQubeSelected as EventListener);
+    };
+  }, [metisActivated]);
   
   // Sample user settings
   const userSettings: UserSettings = {
