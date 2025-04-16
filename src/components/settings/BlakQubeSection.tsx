@@ -34,10 +34,10 @@ const BlakQubeSection = ({ privateData, onUpdatePrivateData, metaQube }: BlakQub
   const defaultDataSources = isAgentQube ? 
     {
       "AI-Capabilities": "api",
-      "Integration-APIs": "manual",
-      "Security-Level": "system",
+      "Model Weights": "system",
+      "Training Data": "api",
       "Model-Version": "api",
-      "API-Key-Hash": "system",
+      "API Key": "system",
       "Access-Control": "manual",
       "Data-Sources": "api",
       "Refresh-Interval": "system",

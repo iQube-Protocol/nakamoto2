@@ -38,10 +38,10 @@ const SettingsInterface = ({ userSettings, metaQube }: SettingsInterfaceProps) =
 
   const [metisPrivateData, setMetisPrivateData] = useState({
     "AI-Capabilities": ["Data Analysis", "NLP", "Blockchain Insights"],
-    "Integration-APIs": ["Web3", "REST", "GraphQL"],
-    "Security-Level": "High",
+    "Model Weights": "Transformer 12B",
+    "Training Data": ["Web3 Data", "Financial Markets", "Public Data"],
     "Model-Version": "1.3.7",
-    "API-Key-Hash": "0x8f7D2a23A82E71677D619C685BEceb5c06515E67",
+    "API Key": "••••••••••••••••",
     "Access-Control": "Permissioned",
     "Data-Sources": ["On-chain", "User Input", "External APIs"],
     "Refresh-Interval": "24h",
