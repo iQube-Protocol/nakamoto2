@@ -4,6 +4,7 @@ import SettingsInterface from '@/components/settings/SettingsInterface';
 import { UserSettings, MetaQube } from '@/lib/types';
 import { useTheme } from '@/contexts/ThemeContext';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import MetaQubeDisplay from '@/components/shared/MetaQubeDisplay';
 
 // Sample metaQube data
 const monDaiQubeData: MetaQube = {
