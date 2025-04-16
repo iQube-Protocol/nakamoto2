@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { NavLink, Link, useLocation } from 'react-router-dom';
 import { 
@@ -139,20 +138,17 @@ const Sidebar = () => {
     { to: "/settings", icon: <Settings />, label: "Settings" }
   ];
 
-  // Handler for iQube clicks that dispatches a custom event
   const handleIQubeClick = (iqubeId: string) => {
     console.log("iQube clicked:", iqubeId);
     
-    // Create and dispatch a custom event with the iQube ID
     const event = new CustomEvent('iqubeSelected', { 
       detail: { iqubeId: iqubeId } 
     });
     window.dispatchEvent(event);
   };
 
-  // Handler to close and remove the Metis iQube from the sidebar
   const handleCloseMetisIQube = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.stopPropagation(); // Prevent the parent click event from triggering
+    e.stopPropagation();
     setMetisVisible(false);
     console.log("Metis iQube closed from sidebar");
   };
@@ -248,9 +244,9 @@ const Sidebar = () => {
                 />
                 <button
                   onClick={handleCloseMetisIQube}
-                  className="absolute top-2 right-2 p-1 rounded-full bg-purple-100 hover:bg-purple-200"
+                  className="absolute top-2 right-2 p-1 rounded-full hover:bg-gray-200 text-gray-500 hover:text-gray-700"
                 >
-                  <X className="h-3 w-3 text-purple-700" />
+                  <X className="h-3 w-3" />
                 </button>
               </div>
             )}
@@ -283,9 +279,9 @@ const Sidebar = () => {
                 </ScoreTooltip>
                 <button
                   onClick={handleCloseMetisIQube}
-                  className="absolute top-0 right-0 p-1 rounded-full bg-purple-100 hover:bg-purple-200"
+                  className="absolute top-0 right-0 p-1 rounded-full hover:bg-gray-200 text-gray-500 hover:text-gray-700"
                 >
-                  <X className="h-3 w-3 text-purple-700" />
+                  <X className="h-3 w-3" />
                 </button>
               </div>
             )}
