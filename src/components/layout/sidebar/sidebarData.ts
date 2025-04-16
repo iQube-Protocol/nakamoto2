@@ -9,11 +9,11 @@ import {
 } from 'lucide-react';
 
 export const navItems = [
-  { to: "/", icon: <LayoutDashboard />, label: "Dashboard" },
-  { to: "/learn", icon: <GraduationCap />, label: "Learn" },
-  { to: "/earn", icon: <Wallet />, label: "Earn" },
-  { to: "/connect", icon: <Users />, label: "Connect" },
-  { to: "/settings", icon: <Settings />, label: "Settings" }
+  { to: "/", icon: LayoutDashboard, label: "Dashboard" },
+  { to: "/learn", icon: GraduationCap, label: "Learn" },
+  { to: "/earn", icon: Wallet, label: "Earn" },
+  { to: "/connect", icon: Users, label: "Connect" },
+  { to: "/settings", icon: Settings, label: "Settings" }
 ];
 
 export const monDaiQubeData: MetaQube = {

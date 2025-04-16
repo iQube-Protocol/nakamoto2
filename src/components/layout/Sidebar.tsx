@@ -94,7 +94,7 @@ const Sidebar = () => {
           <NavItem
             key={item.to}
             to={item.to}
-            icon={item.icon}
+            icon={React.createElement(item.icon)}
             label={item.label}
             collapsed={collapsed}
           />
