@@ -57,25 +57,10 @@ const AgentActivationModal = ({
         setTimeout(() => {
           setCurrentStep('complete');
           if (agentName === 'Metis') {
-            console.log('AgentActivationModal: Activating Metis agent after payment');
-            
-            // Store Metis active state in localStorage
             localStorage.setItem('metisActive', 'true');
-            
-            // Make sure metisRemoved flag is cleared when activating
-            localStorage.removeItem('metisRemoved');
-            
-            // Dispatch custom event with additional detail
-            const activationEvent = new CustomEvent('metisActivated');
+            const activationEvent = new Event('metisActivated');
             window.dispatchEvent(activationEvent);
-            console.log('AgentActivationModal: Dispatched metisActivated event');
-            
-            // Also dispatch the toggle event to ensure all components update
-            const toggleEvent = new CustomEvent('metisToggled', {
-              detail: { active: true }
-            });
-            window.dispatchEvent(toggleEvent);
-            console.log('AgentActivationModal: Dispatched metisToggled event');
+            console.log('Dispatched metisActivated event');
           }
         }, 3500);
       } else {

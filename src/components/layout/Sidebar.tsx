@@ -12,7 +12,6 @@ import {
   Bot,
   Database,
   Brain,
-  X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -101,7 +100,6 @@ const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(isMobile);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [metisActivated, setMetisActivated] = useState(false);
-  const [metisVisible, setMetisVisible] = useState(true);
 
   const toggleSidebar = () => {
     setCollapsed(!collapsed);
@@ -117,37 +115,15 @@ const Sidebar = () => {
       setMetisActivated(true);
     };
 
-    const handleMetisDeactivated = () => {
-      console.log('Sidebar: Metis agent deactivation detected');
-      setMetisActivated(false);
-    };
-    
-    const handleMetisToggled = (e: CustomEvent) => {
-      const isActive = e.detail?.active;
-      console.log('Sidebar: Metis agent toggled:', isActive);
-      setMetisActivated(isActive);
-    };
-    
     window.addEventListener('metisActivated', handleMetisActivated);
-    window.addEventListener('metisDeactivated', handleMetisDeactivated);
-    window.addEventListener('metisToggled', handleMetisToggled as EventListener);
     
-    // Check if Metis has been removed
-    const metisRemoved = localStorage.getItem('metisRemoved');
-    if (metisRemoved === 'true') {
-      setMetisVisible(false);
-    } else {
-      // Check activation status
-      const metisActiveStatus = localStorage.getItem('metisActive');
-      if (metisActiveStatus === 'true') {
-        setMetisActivated(true);
-      }
+    const metisActiveStatus = localStorage.getItem('metisActive');
+    if (metisActiveStatus === 'true') {
+      setMetisActivated(true);
     }
     
     return () => {
       window.removeEventListener('metisActivated', handleMetisActivated);
-      window.removeEventListener('metisDeactivated', handleMetisDeactivated);
-      window.removeEventListener('metisToggled', handleMetisToggled as EventListener);
     };
   }, []);
 
@@ -159,31 +135,15 @@ const Sidebar = () => {
     { to: "/settings", icon: <Settings />, label: "Settings" }
   ];
 
+  // Handler for iQube clicks that dispatches a custom event
   const handleIQubeClick = (iqubeId: string) => {
     console.log("iQube clicked:", iqubeId);
     
+    // Create and dispatch a custom event with the iQube ID
     const event = new CustomEvent('iqubeSelected', { 
       detail: { iqubeId: iqubeId } 
     });
     window.dispatchEvent(event);
-  };
-
-  const removeMetisIQube = (e: React.MouseEvent) => {
-    e.stopPropagation(); // Prevent triggering the parent click
-    console.log('Removing Metis iQube');
-    setMetisVisible(false);
-    localStorage.setItem('metisRemoved', 'true');
-    localStorage.setItem('metisActive', 'false');
-    
-    // Notify other components
-    const event = new CustomEvent('metisToggled', { 
-      detail: { active: false }
-    });
-    window.dispatchEvent(event);
-    
-    // Dispatch removal event
-    const removalEvent = new CustomEvent('metisRemoved');
-    window.dispatchEvent(removalEvent);
   };
 
   const CubeIcon = () => (
@@ -267,21 +227,14 @@ const Sidebar = () => {
                 className="cursor-pointer hover:bg-iqube-primary/20 transition-colors"
               />
             </div>
-            {metisVisible && (
-              <div className={`bg-purple-500/10 rounded-md relative ${metisActivated ? '' : 'opacity-70'}`}>
+            {metisActivated && (
+              <div className="bg-purple-500/10 rounded-md">
                 <MetaQubeDisplay 
                   metaQube={metisQubeData} 
                   compact={true}
                   onClick={() => handleIQubeClick("Metis iQube")}
                   className="cursor-pointer hover:bg-purple-500/20 transition-colors"
                 />
-                <button 
-                  onClick={removeMetisIQube}
-                  className="absolute top-1 right-1 p-1 rounded-full bg-sidebar hover:bg-sidebar-accent"
-                  title="Remove Metis iQube"
-                >
-                  <X size={12} />
-                </button>
               </div>
             )}
           </>
@@ -298,27 +251,18 @@ const Sidebar = () => {
                 </div>
               </Link>
             </ScoreTooltip>
-            {metisVisible && (
-              <div className="relative">
-                <ScoreTooltip type="agentQube">
-                  <Link 
-                    to="/settings" 
-                    className={`flex items-center justify-center py-3 px-3 rounded-md transition-all hover:bg-purple-500/20 bg-purple-500/10 ${metisActivated ? '' : 'opacity-70'}`}
-                    onClick={() => handleIQubeClick("Metis iQube")}
-                  >
-                    <div className="text-iqube-primary h-6 w-6">
-                      <CubeIcon />
-                    </div>
-                  </Link>
-                </ScoreTooltip>
-                <button 
-                  onClick={removeMetisIQube}
-                  className="absolute top-0 right-0 p-1 rounded-full bg-sidebar hover:bg-sidebar-accent"
-                  title="Remove Metis iQube"
+            {metisActivated && (
+              <ScoreTooltip type="agentQube">
+                <Link 
+                  to="/settings" 
+                  className="flex items-center justify-center py-3 px-3 rounded-md transition-all hover:bg-purple-500/20 bg-purple-500/10"
+                  onClick={() => handleIQubeClick("Metis iQube")}
                 >
-                  <X size={10} />
-                </button>
-              </div>
+                  <div className="text-iqube-primary h-6 w-6">
+                    <CubeIcon />
+                  </div>
+                </Link>
+              </ScoreTooltip>
             )}
           </>
         )}

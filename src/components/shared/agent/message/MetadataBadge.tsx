@@ -1,5 +1,5 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import {
   Tooltip,
@@ -22,71 +22,9 @@ interface MetadataBadgeProps {
 }
 
 const MetadataBadge = ({ metadata }: MetadataBadgeProps) => {
-  const [isMetisActive, setIsMetisActive] = useState(false);
-  const [isMetisRemoved, setIsMetisRemoved] = useState(false);
-  
-  // Listen for Metis activation/deactivation
-  useEffect(() => {
-    // Check local storage on mount
-    const checkMetisStatus = () => {
-      const metisRemoved = localStorage.getItem('metisRemoved');
-      const storedState = localStorage.getItem('metisActive');
-      
-      console.log('MetadataBadge: Checking Metis status from localStorage:', {
-        removed: metisRemoved === 'true',
-        active: storedState === 'true'
-      });
-      
-      setIsMetisRemoved(metisRemoved === 'true');
-      setIsMetisActive(storedState === 'true');
-    };
-    
-    checkMetisStatus();
-    
-    // Listen for toggling events
-    const handleMetisToggled = (e: CustomEvent) => {
-      const isActive = e.detail?.active;
-      console.log('MetadataBadge: Metis toggled event received:', isActive);
-      setIsMetisActive(isActive);
-    };
-    
-    // Listen for direct activation events
-    const handleMetisActivated = () => {
-      console.log('MetadataBadge: Metis activated event received');
-      setIsMetisActive(true);
-    };
-    
-    // Listen for removal events
-    const handleMetisRemoved = () => {
-      console.log('MetadataBadge: Metis removed event received');
-      setIsMetisRemoved(true);
-      setIsMetisActive(false);
-    };
-    
-    window.addEventListener('metisToggled', handleMetisToggled as EventListener);
-    window.addEventListener('metisActivated', handleMetisActivated as EventListener);
-    window.addEventListener('metisRemoved', handleMetisRemoved as EventListener);
-    
-    return () => {
-      window.removeEventListener('metisToggled', handleMetisToggled as EventListener);
-      window.removeEventListener('metisActivated', handleMetisActivated as EventListener);
-      window.removeEventListener('metisRemoved', handleMetisRemoved as EventListener);
-    };
-  }, []);
-  
-  useEffect(() => {
-    // This effect will log whenever the Metis state changes
-    console.log('MetadataBadge: Metis state updated:', { 
-      isMetisActive, 
-      isMetisRemoved,
-      metadataMetisActive: metadata?.metisActive 
-    });
-  }, [isMetisActive, isMetisRemoved, metadata?.metisActive]);
-  
   if (!metadata) return null;
   
-  // Use our state or fallback to the prop, but only if Metis hasn't been removed
-  const metisActive = !isMetisRemoved && (isMetisActive || metadata.metisActive === true);
+  const isMetisActive = metadata.metisActive === true;
   
   return (
     <TooltipProvider>
@@ -104,7 +42,7 @@ const MetadataBadge = ({ metadata }: MetadataBadgeProps) => {
                 </Badge>
               </ScoreTooltip>
             )}
-            <MetisAgentBadge isActive={metisActive} />
+            <MetisAgentBadge isActive={isMetisActive} />
           </div>
         </TooltipTrigger>
         <TooltipContent>
@@ -112,7 +50,7 @@ const MetadataBadge = ({ metadata }: MetadataBadgeProps) => {
           {metadata.contextRetained && 
             <p className="text-xs text-muted-foreground">Context maintained between messages</p>
           }
-          {metisActive &&
+          {isMetisActive &&
             <p className="text-xs text-violet-500 font-medium">Metis Agent active</p>
           }
         </TooltipContent>

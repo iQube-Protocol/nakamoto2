@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { MetaQube } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
-import { Database, Brain } from 'lucide-react';
+import { Database } from 'lucide-react';
 import ScoreTooltip from '@/components/shared/ScoreTooltips';
 
 interface MetaQubeHeaderProps {
@@ -72,35 +72,6 @@ const MetaQubeHeader = ({ metaQube }: MetaQubeHeaderProps) => {
   // Calculate Trust score as the average of Accuracy and Verifiability
   const trustScore = Math.round((metaQube["Accuracy-Score"] + metaQube["Verifiability-Score"]) / 2);
   
-  // Determine if this is an AgentQube
-  const isAgentQube = metaQube["iQube-Type"] === "AgentQube";
-
-  // Handle switch change for agent activation
-  const handleSwitchChange = (checked: boolean) => {
-    setIsActive(checked);
-    
-    if (isAgentQube && metaQube["iQube-Identifier"] === "Metis iQube") {
-      // Store Metis active state in localStorage
-      localStorage.setItem('metisActive', checked.toString());
-      
-      // Dispatch event to notify other components
-      const event = new CustomEvent('metisToggled', { 
-        detail: { active: checked }
-      });
-      window.dispatchEvent(event);
-    }
-  };
-  
-  // Initialize active state based on localStorage for Metis
-  React.useEffect(() => {
-    if (isAgentQube && metaQube["iQube-Identifier"] === "Metis iQube") {
-      const storedState = localStorage.getItem('metisActive');
-      if (storedState !== null) {
-        setIsActive(storedState === 'true');
-      }
-    }
-  }, [isAgentQube, metaQube]);
-  
   return (
     <div className="p-2 bg-muted/30 border rounded-md overflow-x-auto">
       <div className="flex items-center justify-between mb-3">
@@ -114,9 +85,9 @@ const MetaQubeHeader = ({ metaQube }: MetaQubeHeaderProps) => {
           </div>
           <span className="text-sm font-medium">{metaQube["iQube-Identifier"]}</span>
         </div>
-        <ScoreTooltip type={isAgentQube ? "agentQube" : "dataQube"}>
-          <Badge variant="outline" className={`flex items-center gap-1 bg-${isAgentQube ? "purple" : "iqube-primary"}/10 text-${isAgentQube ? "purple" : "iqube-primary"}-500 border-${isAgentQube ? "purple" : "iqube-primary"}/30`}>
-            {isAgentQube ? <Brain size={14} /> : <Database size={14} />}
+        <ScoreTooltip type="dataQube">
+          <Badge variant="outline" className="flex items-center gap-1 bg-iqube-primary/10 text-iqube-primary border-iqube-primary/30">
+            <Database size={14} />
           </Badge>
         </ScoreTooltip>
       </div>
@@ -132,9 +103,9 @@ const MetaQubeHeader = ({ metaQube }: MetaQubeHeaderProps) => {
           <span className="text-xs text-muted-foreground mb-1">{isActive ? 'Active' : 'Inactive'}</span>
           <Switch 
             checked={isActive} 
-            onCheckedChange={handleSwitchChange} 
+            onCheckedChange={setIsActive} 
             size="sm"
-            className={isAgentQube ? "data-[state=checked]:bg-purple-500" : "data-[state=checked]:bg-iqube-primary"}
+            className="data-[state=checked]:bg-iqube-primary"
           />
         </div>
       </div>
