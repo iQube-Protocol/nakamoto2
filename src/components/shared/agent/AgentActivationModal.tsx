@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { 
   AlertCircle, 
@@ -58,8 +59,20 @@ const AgentActivationModal = ({
           setCurrentStep('complete');
           if (agentName === 'Metis') {
             localStorage.setItem('metisActive', 'true');
-            const activationEvent = new Event('metisActivated');
+            
+            // Make sure metisRemoved flag is cleared when activating
+            localStorage.removeItem('metisRemoved');
+            
+            // Dispatch custom event with additional detail
+            const activationEvent = new CustomEvent('metisActivated');
             window.dispatchEvent(activationEvent);
+            
+            // Also dispatch the toggle event to ensure all components update
+            const toggleEvent = new CustomEvent('metisToggled', {
+              detail: { active: true }
+            });
+            window.dispatchEvent(toggleEvent);
+            
             console.log('Dispatched metisActivated event');
           }
         }, 3500);

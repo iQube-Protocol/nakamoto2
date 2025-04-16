@@ -27,7 +27,10 @@ const AgentPanel = ({
   useEffect(() => {
     // Check if Metis is already activated via localStorage
     const storedMetisActive = localStorage.getItem('metisActive');
-    if (storedMetisActive === 'true') {
+    const metisRemoved = localStorage.getItem('metisRemoved');
+    
+    // Only set active if it's not been removed
+    if (storedMetisActive === 'true' && metisRemoved !== 'true') {
       setMetisActive(true);
       console.log('AgentPanel: Metis already active from localStorage');
     }
@@ -36,11 +39,26 @@ const AgentPanel = ({
       setMetisActive(true);
       console.log('AgentPanel: Metis agent activated via custom event');
     };
+    
+    const handleMetisToggled = (e: CustomEvent) => {
+      const isActive = e.detail?.active;
+      console.log('AgentPanel: Metis toggled event received:', isActive);
+      setMetisActive(isActive);
+    };
+    
+    const handleMetisRemoved = () => {
+      console.log('AgentPanel: Metis removed event received');
+      setMetisActive(false);
+    };
 
     window.addEventListener('metisActivated', handleMetisActivated);
+    window.addEventListener('metisToggled', handleMetisToggled as EventListener);
+    window.addEventListener('metisRemoved', handleMetisRemoved);
     
     return () => {
       window.removeEventListener('metisActivated', handleMetisActivated);
+      window.removeEventListener('metisToggled', handleMetisToggled as EventListener);
+      window.removeEventListener('metisRemoved', handleMetisRemoved);
     };
   }, []);
 
@@ -73,11 +91,19 @@ const AgentPanel = ({
             setMetisActive(data.mcp.metisActive);
             
             // Persist Metis activation status to localStorage
-            localStorage.setItem('metisActive', 'true');
+            localStorage.setItem('metisActive', data.mcp.metisActive ? 'true' : 'false');
             
             // Dispatch global event to notify other components
-            const activationEvent = new Event('metisActivated');
-            window.dispatchEvent(activationEvent);
+            if (data.mcp.metisActive) {
+              const activationEvent = new CustomEvent('metisActivated');
+              window.dispatchEvent(activationEvent);
+            }
+            
+            // Also dispatch toggle event for components that listen for it
+            const toggleEvent = new CustomEvent('metisToggled', { 
+              detail: { active: data.mcp.metisActive } 
+            });
+            window.dispatchEvent(toggleEvent);
             
             console.log(`Metis agent status updated to: ${data.mcp.metisActive}`);
           }

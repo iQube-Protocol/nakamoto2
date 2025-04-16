@@ -37,7 +37,14 @@ const MetadataBadge = ({ metadata }: MetadataBadgeProps) => {
     // Listen for toggling events
     const handleMetisToggled = (e: CustomEvent) => {
       const isActive = e.detail?.active;
+      console.log('MetadataBadge: Metis toggled event received:', isActive);
       setIsMetisActive(isActive);
+    };
+    
+    // Listen for direct activation events
+    const handleMetisActivated = () => {
+      console.log('MetadataBadge: Metis activated event received');
+      setIsMetisActive(true);
     };
     
     // Listen for removal events
@@ -47,10 +54,12 @@ const MetadataBadge = ({ metadata }: MetadataBadgeProps) => {
     };
     
     window.addEventListener('metisToggled', handleMetisToggled as EventListener);
+    window.addEventListener('metisActivated', handleMetisActivated as EventListener);
     window.addEventListener('metisRemoved', handleMetisRemoved as EventListener);
     
     return () => {
       window.removeEventListener('metisToggled', handleMetisToggled as EventListener);
+      window.removeEventListener('metisActivated', handleMetisActivated as EventListener);
       window.removeEventListener('metisRemoved', handleMetisRemoved as EventListener);
     };
   }, []);

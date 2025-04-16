@@ -20,6 +20,42 @@ const MessageItem = ({ message, isPlaying, onPlayAudio }: MessageItemProps) => {
   const [showActivationModal, setShowActivationModal] = useState(false);
   const [metisActive, setMetisActive] = useState(false);
 
+  // Check for Metis active status on load and listen for changes
+  useEffect(() => {
+    const checkMetisStatus = () => {
+      const metisActiveStatus = localStorage.getItem('metisActive');
+      const metisRemoved = localStorage.getItem('metisRemoved');
+      setMetisActive(metisActiveStatus === 'true' && metisRemoved !== 'true');
+    };
+    
+    // Check on initial load
+    checkMetisStatus();
+    
+    // Listen for activation events
+    const handleMetisActivated = () => {
+      setMetisActive(true);
+    };
+    
+    const handleMetisToggled = (e: CustomEvent) => {
+      const isActive = e.detail?.active;
+      setMetisActive(isActive);
+    };
+    
+    const handleMetisRemoved = () => {
+      setMetisActive(false);
+    };
+    
+    window.addEventListener('metisActivated', handleMetisActivated);
+    window.addEventListener('metisToggled', handleMetisToggled as EventListener);
+    window.addEventListener('metisRemoved', handleMetisRemoved);
+    
+    return () => {
+      window.removeEventListener('metisActivated', handleMetisActivated);
+      window.removeEventListener('metisToggled', handleMetisToggled as EventListener);
+      window.removeEventListener('metisRemoved', handleMetisRemoved);
+    };
+  }, []);
+
   // Check if the message contains crypto-risk related keywords
   useEffect(() => {
     if (message.sender === 'user') {
@@ -31,7 +67,11 @@ const MessageItem = ({ message, isPlaying, onPlayAudio }: MessageItemProps) => {
          lowerMessage.includes('crypto') || 
          lowerMessage.includes('blockchain'));
       
-      if (hasCryptoKeyword) {
+      // Only show recommendation if Metis is not already active and not removed
+      const metisRemoved = localStorage.getItem('metisRemoved') === 'true';
+      const metisActive = localStorage.getItem('metisActive') === 'true';
+      
+      if (hasCryptoKeyword && !metisActive && !metisRemoved) {
         // Slight delay to ensure message is processed first
         setTimeout(() => {
           setShowRecommendation(true);
@@ -70,9 +110,6 @@ const MessageItem = ({ message, isPlaying, onPlayAudio }: MessageItemProps) => {
       description: "You now have access to advanced crypto risk analysis capabilities.",
       variant: "default",
     });
-    
-    // Dispatch custom event to inform parent components about Metis activation
-    window.dispatchEvent(new CustomEvent('metisActivated'));
   };
 
   return (
