@@ -4,6 +4,9 @@ import SettingsInterface from '@/components/settings/SettingsInterface';
 import { UserSettings, MetaQube } from '@/lib/types';
 import { useTheme } from '@/contexts/ThemeContext';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { useMetisAgent } from '@/hooks/use-metis-agent';
+import AgentRecommendation from '@/components/shared/agent/AgentRecommendation';
+import { toast } from 'sonner';
 
 // Sample metaQube data
 const monDaiQubeData: MetaQube = {
@@ -41,26 +44,9 @@ const metisQubeData: MetaQube = {
 const Settings = () => {
   const { theme } = useTheme();
   const [selectedIQube, setSelectedIQube] = useState<MetaQube>(monDaiQubeData);
-  const [metisActivated, setMetisActivated] = useState(false);
+  const { metisActivated, metisVisible, activateMetis } = useMetisAgent();
+  const [showAgentRecommendation, setShowAgentRecommendation] = useState(!metisActivated);
   
-  // Listen for Metis activation
-  useEffect(() => {
-    const metisActiveStatus = localStorage.getItem('metisActive');
-    if (metisActiveStatus === 'true') {
-      setMetisActivated(true);
-    }
-
-    const handleMetisActivated = () => {
-      setMetisActivated(true);
-    };
-
-    window.addEventListener('metisActivated', handleMetisActivated);
-    
-    return () => {
-      window.removeEventListener('metisActivated', handleMetisActivated);
-    };
-  }, []);
-
   // Listen for iQube selection events from sidebar
   useEffect(() => {
     const handleIQubeSelected = (e: CustomEvent) => {
@@ -82,6 +68,19 @@ const Settings = () => {
     };
   }, [metisActivated]);
   
+  const handleActivateMetis = () => {
+    activateMetis();
+    setShowAgentRecommendation(false);
+    toast.success("Metis agent activated successfully");
+    // Dispatch the metisActivated event
+    window.dispatchEvent(new Event('metisActivated'));
+  };
+  
+  const handleDismissAgent = () => {
+    setShowAgentRecommendation(false);
+    toast.info("Agent recommendation dismissed");
+  };
+
   // Sample user settings
   const userSettings: UserSettings = {
     connected: {
@@ -104,6 +103,17 @@ const Settings = () => {
         <div className="flex flex-col md:flex-row justify-between items-center mb-3">
           <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
         </div>
+
+        {/* Show agent recommendation if Metis is not activated */}
+        {showAgentRecommendation && !metisActivated && (
+          <AgentRecommendation 
+            agentName="Metis"
+            description="Advanced analytics agent with crypto risk analysis capabilities"
+            fee={5}
+            onActivate={handleActivateMetis}
+            onDismiss={handleDismissAgent}
+          />
+        )}
 
         {/* Main settings panel */}
         <div className="flex-1">

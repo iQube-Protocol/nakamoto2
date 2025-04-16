@@ -19,6 +19,9 @@ export function useMetisAgent() {
     if (metisActiveStatus === 'true') {
       setMetisActivated(true);
       setMetisVisible(true);
+    } else {
+      // Ensure Metis is not visible if not activated
+      setMetisVisible(false);
     }
     
     return () => {
@@ -31,9 +34,18 @@ export function useMetisAgent() {
     console.log("Metis iQube closed");
   };
 
+  // Add a function to activate Metis
+  const activateMetis = () => {
+    setMetisActivated(true);
+    setMetisVisible(true);
+    localStorage.setItem('metisActive', 'true');
+    console.log("Metis activated manually");
+  };
+
   return {
     metisActivated,
     metisVisible,
-    hideMetis
+    hideMetis,
+    activateMetis
   };
 }
