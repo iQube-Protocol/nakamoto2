@@ -1,4 +1,5 @@
-import React, { useState } from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
 import { MetaQube } from '@/lib/types';
@@ -79,6 +80,48 @@ const MetaQubeDisplay = ({ metaQube, compact = false, className, onClick }: Meta
   
   // Determine if this is a DataQube or AgentQube for styling
   const isAgentQube = metaQube["iQube-Type"] === "AgentQube";
+  const isMetisIQube = metaQube["iQube-Identifier"] === "Metis iQube";
+  
+  // Initialize active state for Metis from localStorage
+  useEffect(() => {
+    if (isMetisIQube) {
+      const storedState = localStorage.getItem('metisActive');
+      if (storedState !== null) {
+        setIsActive(storedState === 'true');
+      }
+    }
+  }, [isMetisIQube]);
+  
+  // Handle activation state change
+  const handleActiveChange = (checked: boolean) => {
+    setIsActive(checked);
+    
+    if (isMetisIQube) {
+      // Store state in localStorage
+      localStorage.setItem('metisActive', checked.toString());
+      
+      // Dispatch activation/deactivation event
+      if (checked) {
+        const event = new CustomEvent('metisActivated');
+        window.dispatchEvent(event);
+      } else {
+        const event = new CustomEvent('metisDeactivated');
+        window.dispatchEvent(event);
+      }
+      
+      // Dispatch toggle event for other components to react
+      const toggleEvent = new CustomEvent('metisToggled', { 
+        detail: { active: checked }
+      });
+      window.dispatchEvent(toggleEvent);
+      
+      // Also fire iqubeSelected event to update Settings view if needed
+      const selectEvent = new CustomEvent('iqubeSelected', {
+        detail: { iqubeId: metaQube["iQube-Identifier"] }
+      });
+      window.dispatchEvent(selectEvent);
+    }
+  };
   
   // Color classes based on qube type - now using green for the cube icon in both cases
   const qubeColorClasses = {
@@ -121,7 +164,7 @@ const MetaQubeDisplay = ({ metaQube, compact = false, className, onClick }: Meta
             <span className="text-xs text-muted-foreground mb-1">{isActive ? 'Active' : 'Inactive'}</span>
             <Switch 
               checked={isActive} 
-              onCheckedChange={setIsActive} 
+              onCheckedChange={handleActiveChange} 
               size="sm"
               className={switchColorClass}
             />

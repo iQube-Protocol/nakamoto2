@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Badge } from '@/components/ui/badge';
 import {
   Tooltip,
@@ -22,9 +22,31 @@ interface MetadataBadgeProps {
 }
 
 const MetadataBadge = ({ metadata }: MetadataBadgeProps) => {
+  const [isMetisActive, setIsMetisActive] = useState(false);
+  
+  // Listen for Metis activation/deactivation
+  useEffect(() => {
+    // Check local storage on mount
+    const storedState = localStorage.getItem('metisActive');
+    setIsMetisActive(storedState === 'true');
+    
+    // Listen for toggling events
+    const handleMetisToggled = (e: CustomEvent) => {
+      const isActive = e.detail?.active;
+      setIsMetisActive(isActive);
+    };
+    
+    window.addEventListener('metisToggled', handleMetisToggled as EventListener);
+    
+    return () => {
+      window.removeEventListener('metisToggled', handleMetisToggled as EventListener);
+    };
+  }, []);
+  
   if (!metadata) return null;
   
-  const isMetisActive = metadata.metisActive === true;
+  // Use our state or fallback to the prop
+  const metisActive = isMetisActive || metadata.metisActive === true;
   
   return (
     <TooltipProvider>
@@ -42,7 +64,7 @@ const MetadataBadge = ({ metadata }: MetadataBadgeProps) => {
                 </Badge>
               </ScoreTooltip>
             )}
-            <MetisAgentBadge isActive={isMetisActive} />
+            <MetisAgentBadge isActive={metisActive} />
           </div>
         </TooltipTrigger>
         <TooltipContent>
@@ -50,7 +72,7 @@ const MetadataBadge = ({ metadata }: MetadataBadgeProps) => {
           {metadata.contextRetained && 
             <p className="text-xs text-muted-foreground">Context maintained between messages</p>
           }
-          {isMetisActive &&
+          {metisActive &&
             <p className="text-xs text-violet-500 font-medium">Metis Agent active</p>
           }
         </TooltipContent>

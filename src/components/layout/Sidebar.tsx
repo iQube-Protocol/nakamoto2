@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { NavLink, Link, useLocation } from 'react-router-dom';
 import { 
@@ -115,7 +114,20 @@ const Sidebar = () => {
       setMetisActivated(true);
     };
 
+    const handleMetisDeactivated = () => {
+      console.log('Sidebar: Metis agent deactivation detected');
+      setMetisActivated(false);
+    };
+    
+    const handleMetisToggled = (e: CustomEvent) => {
+      const isActive = e.detail?.active;
+      console.log('Sidebar: Metis agent toggled:', isActive);
+      setMetisActivated(isActive);
+    };
+    
     window.addEventListener('metisActivated', handleMetisActivated);
+    window.addEventListener('metisDeactivated', handleMetisDeactivated);
+    window.addEventListener('metisToggled', handleMetisToggled as EventListener);
     
     const metisActiveStatus = localStorage.getItem('metisActive');
     if (metisActiveStatus === 'true') {
@@ -124,6 +136,8 @@ const Sidebar = () => {
     
     return () => {
       window.removeEventListener('metisActivated', handleMetisActivated);
+      window.removeEventListener('metisDeactivated', handleMetisDeactivated);
+      window.removeEventListener('metisToggled', handleMetisToggled as EventListener);
     };
   }, []);
 
@@ -135,11 +149,9 @@ const Sidebar = () => {
     { to: "/settings", icon: <Settings />, label: "Settings" }
   ];
 
-  // Handler for iQube clicks that dispatches a custom event
   const handleIQubeClick = (iqubeId: string) => {
     console.log("iQube clicked:", iqubeId);
     
-    // Create and dispatch a custom event with the iQube ID
     const event = new CustomEvent('iqubeSelected', { 
       detail: { iqubeId: iqubeId } 
     });
