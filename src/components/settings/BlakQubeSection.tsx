@@ -5,9 +5,10 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
-import { Key, Shield, Info, Linkedin, User, Wallet } from 'lucide-react';
+import { Key, Shield, Info, Linkedin, User, Wallet, Database, Brain } from 'lucide-react';
 import { useToast } from '@/components/ui/use-toast';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
+import { MetaQube } from '@/lib/types';
 
 interface PrivateData {
   [key: string]: string | string[];
@@ -20,23 +21,41 @@ interface DataSource {
 interface BlakQubeSectionProps {
   privateData: PrivateData;
   onUpdatePrivateData: (newData: PrivateData) => void;
+  metaQube?: MetaQube;
 }
 
-const BlakQubeSection = ({ privateData, onUpdatePrivateData }: BlakQubeSectionProps) => {
+const BlakQubeSection = ({ privateData, onUpdatePrivateData, metaQube }: BlakQubeSectionProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editingData, setEditingData] = useState<PrivateData>({...privateData});
   const [encryptionAlgorithm, setEncryptionAlgorithm] = useState("kyber");
-  const [dataSources, setDataSources] = useState<DataSource>({
-    "Profession": "linkedin",
-    "Web3-Interests": "manual",
-    "Local-City": "linkedin",
-    "Email": "linkedin",
-    "EVM-Public-Key": "wallet",
-    "BTC-Public-Key": "wallet",
-    "Tokens-of-Interest": "manual",
-    "Chain-IDs": "wallet",
-    "Wallets-of-Interest": "wallet"
-  });
+  
+  const isAgentQube = metaQube?.["iQube-Type"] === "AgentQube";
+  
+  const defaultDataSources = isAgentQube ? 
+    {
+      "AI-Capabilities": "api",
+      "Integration-APIs": "manual",
+      "Security-Level": "system",
+      "Model-Version": "api",
+      "API-Key-Hash": "system",
+      "Access-Control": "manual",
+      "Data-Sources": "api",
+      "Refresh-Interval": "system",
+      "Trustworthiness": "system"
+    } : 
+    {
+      "Profession": "linkedin",
+      "Web3-Interests": "manual",
+      "Local-City": "linkedin",
+      "Email": "linkedin",
+      "EVM-Public-Key": "wallet",
+      "BTC-Public-Key": "wallet",
+      "Tokens-of-Interest": "manual",
+      "Chain-IDs": "wallet",
+      "Wallets-of-Interest": "wallet"
+    };
+
+  const [dataSources, setDataSources] = useState<DataSource>(defaultDataSources);
   const { toast } = useToast();
 
   const handleSavePrivateData = () => {
@@ -44,21 +63,33 @@ const BlakQubeSection = ({ privateData, onUpdatePrivateData }: BlakQubeSectionPr
     setIsEditing(false);
     toast({
       title: "Private Data Updated",
-      description: "Your private data has been updated successfully",
+      description: `Your ${isAgentQube ? 'agent' : 'private'} data has been updated successfully`,
     });
   };
 
   const getSourceIcon = (key: string) => {
     const source = dataSources[key] || 'manual';
 
-    switch (source) {
-      case 'linkedin':
-        return <Linkedin className="h-3 w-3 text-blue-500" />;
-      case 'wallet':
-        return <Wallet className="h-3 w-3 text-orange-500" />;
-      case 'manual':
-      default:
-        return <User className="h-3 w-3 text-gray-500" />;
+    if (isAgentQube) {
+      switch (source) {
+        case 'api':
+          return <Database className="h-3 w-3 text-blue-500" />;
+        case 'system':
+          return <Brain className="h-3 w-3 text-purple-500" />;
+        case 'manual':
+        default:
+          return <User className="h-3 w-3 text-gray-500" />;
+      }
+    } else {
+      switch (source) {
+        case 'linkedin':
+          return <Linkedin className="h-3 w-3 text-blue-500" />;
+        case 'wallet':
+          return <Wallet className="h-3 w-3 text-orange-500" />;
+        case 'manual':
+        default:
+          return <User className="h-3 w-3 text-gray-500" />;
+      }
     }
   };
 
@@ -74,6 +105,42 @@ const BlakQubeSection = ({ privateData, onUpdatePrivateData }: BlakQubeSectionPr
     });
   };
 
+  const getSourceOptions = (key: string) => {
+    if (isAgentQube) {
+      return (
+        <>
+          <DropdownMenuItem onClick={() => handleSourceChange(key, 'manual')}>
+            <User className="h-3.5 w-3.5 mr-2" /> Manual Entry
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => handleSourceChange(key, 'api')}>
+            <Database className="h-3.5 w-3.5 mr-2" /> API Source
+          </DropdownMenuItem>
+          <DropdownMenuItem onClick={() => handleSourceChange(key, 'system')}>
+            <Brain className="h-3.5 w-3.5 mr-2" /> System Generated
+          </DropdownMenuItem>
+        </>
+      );
+    } else {
+      return (
+        <>
+          <DropdownMenuItem onClick={() => handleSourceChange(key, 'manual')}>
+            <User className="h-3.5 w-3.5 mr-2" /> Manual Entry
+          </DropdownMenuItem>
+          {['Profession', 'Local-City', 'Email'].includes(key) && (
+            <DropdownMenuItem onClick={() => handleSourceChange(key, 'linkedin')}>
+              <Linkedin className="h-3.5 w-3.5 mr-2" /> LinkedIn
+            </DropdownMenuItem>
+          )}
+          {['EVM-Public-Key', 'BTC-Public-Key', 'Chain-IDs', 'Wallets-of-Interest'].includes(key) && (
+            <DropdownMenuItem onClick={() => handleSourceChange(key, 'wallet')}>
+              <Wallet className="h-3.5 w-3.5 mr-2" /> Wallet
+            </DropdownMenuItem>
+          )}
+        </>
+      );
+    }
+  };
+
   return (
     <div>
       <Accordion type="single" collapsible className="w-full">
@@ -81,7 +148,7 @@ const BlakQubeSection = ({ privateData, onUpdatePrivateData }: BlakQubeSectionPr
           <AccordionTrigger>
             <div className="flex items-center">
               <Key className="h-4 w-4 mr-2" />
-              Private Data Fields
+              {isAgentQube ? 'Agent Data Fields' : 'Private Data Fields'}
             </div>
           </AccordionTrigger>
           <AccordionContent>
@@ -121,19 +188,7 @@ const BlakQubeSection = ({ privateData, onUpdatePrivateData }: BlakQubeSectionPr
                             </Button>
                           </DropdownMenuTrigger>
                           <DropdownMenuContent align="end">
-                            <DropdownMenuItem onClick={() => handleSourceChange(key, 'manual')}>
-                              <User className="h-3.5 w-3.5 mr-2" /> Manual Entry
-                            </DropdownMenuItem>
-                            {['Profession', 'Local-City', 'Email'].includes(key) && (
-                              <DropdownMenuItem onClick={() => handleSourceChange(key, 'linkedin')}>
-                                <Linkedin className="h-3.5 w-3.5 mr-2" /> LinkedIn
-                              </DropdownMenuItem>
-                            )}
-                            {['EVM-Public-Key', 'BTC-Public-Key', 'Chain-IDs', 'Wallets-of-Interest'].includes(key) && (
-                              <DropdownMenuItem onClick={() => handleSourceChange(key, 'wallet')}>
-                                <Wallet className="h-3.5 w-3.5 mr-2" /> Wallet
-                              </DropdownMenuItem>
-                            )}
+                            {getSourceOptions(key)}
                           </DropdownMenuContent>
                         </DropdownMenu>
                       </div>

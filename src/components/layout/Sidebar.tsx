@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { NavLink, Link } from 'react-router-dom';
+import { NavLink, Link, useLocation } from 'react-router-dom';
 import { 
   LayoutDashboard, 
   GraduationCap, 
@@ -95,6 +95,7 @@ const NavItem = ({ to, icon, label, collapsed }: NavItemProps) => {
 
 const Sidebar = () => {
   const isMobile = useIsMobile();
+  const location = useLocation();
   const [collapsed, setCollapsed] = useState(isMobile);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [metisActivated, setMetisActivated] = useState(false);
@@ -132,6 +133,14 @@ const Sidebar = () => {
     { to: "/connect", icon: <Users />, label: "Connect" },
     { to: "/settings", icon: <Settings />, label: "Settings" }
   ];
+
+  const CubeIcon = () => (
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+      <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+      <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+      <line x1="12" y1="22.08" x2="12" y2="12"></line>
+    </svg>
+  );
 
   const sidebarContent = (
     <div className={cn(
@@ -220,7 +229,9 @@ const Sidebar = () => {
                 to="/settings" 
                 className="flex items-center justify-center py-3 px-3 rounded-md transition-all hover:bg-iqube-primary/20 bg-iqube-primary/10"
               >
-                <Database className="h-6 w-6 text-iqube-primary" />
+                <div className="text-iqube-primary h-6 w-6">
+                  <CubeIcon />
+                </div>
               </Link>
             </ScoreTooltip>
             {metisActivated && (
@@ -229,7 +240,9 @@ const Sidebar = () => {
                   to="/settings" 
                   className="flex items-center justify-center py-3 px-3 rounded-md transition-all hover:bg-purple-500/20 bg-purple-500/10"
                 >
-                  <Brain className="h-6 w-6 text-purple-500" />
+                  <div className="text-iqube-primary h-6 w-6">
+                    <CubeIcon />
+                  </div>
                 </Link>
               </ScoreTooltip>
             )}

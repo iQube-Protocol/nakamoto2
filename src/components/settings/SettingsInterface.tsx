@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { UserSettings, MetaQube } from '@/lib/types';
@@ -23,7 +23,8 @@ const SettingsInterface = ({ userSettings, metaQube }: SettingsInterfaceProps) =
   
   const { toast } = useToast();
 
-  const [privateData, setPrivateData] = useState({
+  // Create different private data sets for different iQubes
+  const [mondaiPrivateData, setMondaiPrivateData] = useState({
     "Profession": "Software Developer",
     "Web3-Interests": ["DeFi", "NFTs", "DAOs"],
     "Local-City": "San Francisco",
@@ -34,6 +35,22 @@ const SettingsInterface = ({ userSettings, metaQube }: SettingsInterfaceProps) =
     "Chain-IDs": ["1", "137"],
     "Wallets-of-Interest": ["MetaMask", "Rainbow"]
   });
+
+  const [metisPrivateData, setMetisPrivateData] = useState({
+    "AI-Capabilities": ["Data Analysis", "NLP", "Blockchain Insights"],
+    "Integration-APIs": ["Web3", "REST", "GraphQL"],
+    "Security-Level": "High",
+    "Model-Version": "1.3.7",
+    "API-Key-Hash": "0x8f7D2a23A82E71677D619C685BEceb5c06515E67",
+    "Access-Control": "Permissioned",
+    "Data-Sources": ["On-chain", "User Input", "External APIs"],
+    "Refresh-Interval": "24h",
+    "Trustworthiness": "Verified"
+  });
+
+  // Determine which private data to show based on selected iQube
+  const isMetisIQube = metaQube["iQube-Identifier"] === "Metis iQube";
+  const privateData = isMetisIQube ? metisPrivateData : mondaiPrivateData;
 
   const handleConnectService = (service: keyof UserSettings['connected']) => {
     setSettings(prev => ({
@@ -61,19 +78,28 @@ const SettingsInterface = ({ userSettings, metaQube }: SettingsInterfaceProps) =
 
   const handleMintIQube = () => {
     toast({
-      title: "iQube Minted",
-      description: "Your iQube has been minted successfully to the blockchain",
+      title: `${metaQube["iQube-Identifier"]} Minted`,
+      description: `Your ${metaQube["iQube-Identifier"]} has been minted successfully to the blockchain`,
     });
   };
 
   const handleUpdatePrivateData = (newData: any) => {
-    setPrivateData(newData);
+    if (isMetisIQube) {
+      setMetisPrivateData(newData);
+    } else {
+      setMondaiPrivateData(newData);
+    }
+
+    toast({
+      title: `${metaQube["iQube-Identifier"]} Data Updated`,
+      description: "Private data has been updated successfully",
+    });
   };
 
   const handleAddAccessGrant = () => {
     toast({
       title: "Access Grant Added",
-      description: "New access grant has been added successfully",
+      description: `New access grant has been added for ${metaQube["iQube-Identifier"]}`,
     });
   };
 
@@ -97,6 +123,7 @@ const SettingsInterface = ({ userSettings, metaQube }: SettingsInterfaceProps) =
             onConnectWallet={() => handleConnectService('wallet')}
             onMintIQube={handleMintIQube}
             onAddAccessGrant={handleAddAccessGrant}
+            metaQube={metaQube}
           />
         </TabsContent>
 

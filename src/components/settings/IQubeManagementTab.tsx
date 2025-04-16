@@ -2,7 +2,7 @@
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Lock, Wallet } from 'lucide-react';
-import { UserSettings } from '@/lib/types';
+import { UserSettings, MetaQube } from '@/lib/types';
 import BlakQubeSection from './BlakQubeSection';
 import TokenQubeSection from './TokenQubeSection';
 
@@ -17,6 +17,7 @@ interface IQubeManagementTabProps {
   onConnectWallet: () => void;
   onMintIQube: () => void;
   onAddAccessGrant: () => void;
+  metaQube: MetaQube;
 }
 
 const IQubeManagementTab = ({ 
@@ -25,29 +26,34 @@ const IQubeManagementTab = ({
   onUpdatePrivateData,
   onConnectWallet,
   onMintIQube,
-  onAddAccessGrant
+  onAddAccessGrant,
+  metaQube
 }: IQubeManagementTabProps) => {
+  const isAgentQube = metaQube["iQube-Type"] === "AgentQube";
+  const borderColor = isAgentQube ? "border-t-purple-500" : "border-t-iqube-primary";
+  
   return (
     <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
-      <Card>
+      <Card className={`border-t-4 ${borderColor}`}>
         <CardHeader className="pb-2">
           <CardTitle className="text-base flex items-center">
             <Lock className="h-5 w-5 mr-2 text-iqube-primary" />
             blakQube Management
           </CardTitle>
           <CardDescription>
-            Manage your private encrypted data
+            Manage your private encrypted data for {metaQube["iQube-Identifier"]}
           </CardDescription>
         </CardHeader>
         <CardContent>
           <BlakQubeSection 
             privateData={privateData} 
-            onUpdatePrivateData={onUpdatePrivateData} 
+            onUpdatePrivateData={onUpdatePrivateData}
+            metaQube={metaQube}
           />
         </CardContent>
       </Card>
       
-      <Card>
+      <Card className={`border-t-4 ${borderColor}`}>
         <CardHeader className="pb-2">
           <CardTitle className="text-base flex items-center">
             <Wallet className="h-5 w-5 mr-2 text-iqube-accent" />
