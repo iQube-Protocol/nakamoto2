@@ -13,7 +13,7 @@ import MobileSidebar, { MobileMenuButton } from './sidebar/MobileSidebar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 const Sidebar = () => {
-  const { isMobile } = useIsMobile();
+  const isMobile = useIsMobile();
   const { metisActivated, metisVisible, hideMetis } = useMetisAgent();
   const { collapsed, mobileOpen, toggleSidebar, toggleMobileSidebar } = useSidebarState();
 

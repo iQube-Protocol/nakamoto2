@@ -16,7 +16,6 @@ export function useSidebarState() {
   };
 
   return {
-    isMobile,
     collapsed,
     mobileOpen,
     toggleSidebar,
