@@ -23,11 +23,15 @@ interface MetadataBadgeProps {
 
 const MetadataBadge = ({ metadata }: MetadataBadgeProps) => {
   const [isMetisActive, setIsMetisActive] = useState(false);
+  const [isMetisRemoved, setIsMetisRemoved] = useState(false);
   
   // Listen for Metis activation/deactivation
   useEffect(() => {
     // Check local storage on mount
+    const metisRemoved = localStorage.getItem('metisRemoved');
     const storedState = localStorage.getItem('metisActive');
+    
+    setIsMetisRemoved(metisRemoved === 'true');
     setIsMetisActive(storedState === 'true');
     
     // Listen for toggling events
@@ -36,17 +40,25 @@ const MetadataBadge = ({ metadata }: MetadataBadgeProps) => {
       setIsMetisActive(isActive);
     };
     
+    // Listen for removal events
+    const handleMetisRemoved = () => {
+      setIsMetisRemoved(true);
+      setIsMetisActive(false);
+    };
+    
     window.addEventListener('metisToggled', handleMetisToggled as EventListener);
+    window.addEventListener('metisRemoved', handleMetisRemoved as EventListener);
     
     return () => {
       window.removeEventListener('metisToggled', handleMetisToggled as EventListener);
+      window.removeEventListener('metisRemoved', handleMetisRemoved as EventListener);
     };
   }, []);
   
   if (!metadata) return null;
   
-  // Use our state or fallback to the prop
-  const metisActive = isMetisActive || metadata.metisActive === true;
+  // Use our state or fallback to the prop, but only if Metis hasn't been removed
+  const metisActive = !isMetisRemoved && (isMetisActive || metadata.metisActive === true);
   
   return (
     <TooltipProvider>

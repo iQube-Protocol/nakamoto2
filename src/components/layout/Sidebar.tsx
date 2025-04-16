@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { NavLink, Link, useLocation } from 'react-router-dom';
 import { 
@@ -11,6 +12,7 @@ import {
   Bot,
   Database,
   Brain,
+  X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -99,6 +101,7 @@ const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(isMobile);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [metisActivated, setMetisActivated] = useState(false);
+  const [metisVisible, setMetisVisible] = useState(true);
 
   const toggleSidebar = () => {
     setCollapsed(!collapsed);
@@ -129,9 +132,16 @@ const Sidebar = () => {
     window.addEventListener('metisDeactivated', handleMetisDeactivated);
     window.addEventListener('metisToggled', handleMetisToggled as EventListener);
     
-    const metisActiveStatus = localStorage.getItem('metisActive');
-    if (metisActiveStatus === 'true') {
-      setMetisActivated(true);
+    // Check if Metis has been removed
+    const metisRemoved = localStorage.getItem('metisRemoved');
+    if (metisRemoved === 'true') {
+      setMetisVisible(false);
+    } else {
+      // Check activation status
+      const metisActiveStatus = localStorage.getItem('metisActive');
+      if (metisActiveStatus === 'true') {
+        setMetisActivated(true);
+      }
     }
     
     return () => {
@@ -156,6 +166,24 @@ const Sidebar = () => {
       detail: { iqubeId: iqubeId } 
     });
     window.dispatchEvent(event);
+  };
+
+  const removeMetisIQube = (e: React.MouseEvent) => {
+    e.stopPropagation(); // Prevent triggering the parent click
+    console.log('Removing Metis iQube');
+    setMetisVisible(false);
+    localStorage.setItem('metisRemoved', 'true');
+    localStorage.setItem('metisActive', 'false');
+    
+    // Notify other components
+    const event = new CustomEvent('metisToggled', { 
+      detail: { active: false }
+    });
+    window.dispatchEvent(event);
+    
+    // Dispatch removal event
+    const removalEvent = new CustomEvent('metisRemoved');
+    window.dispatchEvent(removalEvent);
   };
 
   const CubeIcon = () => (
@@ -239,14 +267,21 @@ const Sidebar = () => {
                 className="cursor-pointer hover:bg-iqube-primary/20 transition-colors"
               />
             </div>
-            {metisActivated && (
-              <div className="bg-purple-500/10 rounded-md">
+            {metisVisible && (
+              <div className={`bg-purple-500/10 rounded-md relative ${metisActivated ? '' : 'opacity-70'}`}>
                 <MetaQubeDisplay 
                   metaQube={metisQubeData} 
                   compact={true}
                   onClick={() => handleIQubeClick("Metis iQube")}
                   className="cursor-pointer hover:bg-purple-500/20 transition-colors"
                 />
+                <button 
+                  onClick={removeMetisIQube}
+                  className="absolute top-1 right-1 p-1 rounded-full bg-sidebar hover:bg-sidebar-accent"
+                  title="Remove Metis iQube"
+                >
+                  <X size={12} />
+                </button>
               </div>
             )}
           </>
@@ -263,18 +298,27 @@ const Sidebar = () => {
                 </div>
               </Link>
             </ScoreTooltip>
-            {metisActivated && (
-              <ScoreTooltip type="agentQube">
-                <Link 
-                  to="/settings" 
-                  className="flex items-center justify-center py-3 px-3 rounded-md transition-all hover:bg-purple-500/20 bg-purple-500/10"
-                  onClick={() => handleIQubeClick("Metis iQube")}
+            {metisVisible && (
+              <div className="relative">
+                <ScoreTooltip type="agentQube">
+                  <Link 
+                    to="/settings" 
+                    className={`flex items-center justify-center py-3 px-3 rounded-md transition-all hover:bg-purple-500/20 bg-purple-500/10 ${metisActivated ? '' : 'opacity-70'}`}
+                    onClick={() => handleIQubeClick("Metis iQube")}
+                  >
+                    <div className="text-iqube-primary h-6 w-6">
+                      <CubeIcon />
+                    </div>
+                  </Link>
+                </ScoreTooltip>
+                <button 
+                  onClick={removeMetisIQube}
+                  className="absolute top-0 right-0 p-1 rounded-full bg-sidebar hover:bg-sidebar-accent"
+                  title="Remove Metis iQube"
                 >
-                  <div className="text-iqube-primary h-6 w-6">
-                    <CubeIcon />
-                  </div>
-                </Link>
-              </ScoreTooltip>
+                  <X size={10} />
+                </button>
+              </div>
             )}
           </>
         )}
