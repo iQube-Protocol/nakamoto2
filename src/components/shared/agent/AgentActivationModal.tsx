@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   AlertCircle, 
@@ -58,6 +57,9 @@ const AgentActivationModal = ({
         setTimeout(() => {
           setCurrentStep('complete');
           if (agentName === 'Metis') {
+            console.log('AgentActivationModal: Activating Metis agent after payment');
+            
+            // Store Metis active state in localStorage
             localStorage.setItem('metisActive', 'true');
             
             // Make sure metisRemoved flag is cleared when activating
@@ -66,14 +68,14 @@ const AgentActivationModal = ({
             // Dispatch custom event with additional detail
             const activationEvent = new CustomEvent('metisActivated');
             window.dispatchEvent(activationEvent);
+            console.log('AgentActivationModal: Dispatched metisActivated event');
             
             // Also dispatch the toggle event to ensure all components update
             const toggleEvent = new CustomEvent('metisToggled', {
               detail: { active: true }
             });
             window.dispatchEvent(toggleEvent);
-            
-            console.log('Dispatched metisActivated event');
+            console.log('AgentActivationModal: Dispatched metisToggled event');
           }
         }, 3500);
       } else {

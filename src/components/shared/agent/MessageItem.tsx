@@ -25,6 +25,12 @@ const MessageItem = ({ message, isPlaying, onPlayAudio }: MessageItemProps) => {
     const checkMetisStatus = () => {
       const metisActiveStatus = localStorage.getItem('metisActive');
       const metisRemoved = localStorage.getItem('metisRemoved');
+      
+      console.log('MessageItem: Checking Metis status from localStorage:', {
+        active: metisActiveStatus === 'true',
+        removed: metisRemoved === 'true'
+      });
+      
       setMetisActive(metisActiveStatus === 'true' && metisRemoved !== 'true');
     };
     
@@ -33,15 +39,18 @@ const MessageItem = ({ message, isPlaying, onPlayAudio }: MessageItemProps) => {
     
     // Listen for activation events
     const handleMetisActivated = () => {
+      console.log('MessageItem: Metis agent activated via event');
       setMetisActive(true);
     };
     
     const handleMetisToggled = (e: CustomEvent) => {
       const isActive = e.detail?.active;
+      console.log('MessageItem: Metis toggled event received:', isActive);
       setMetisActive(isActive);
     };
     
     const handleMetisRemoved = () => {
+      console.log('MessageItem: Metis removed event received');
       setMetisActive(false);
     };
     
@@ -104,6 +113,7 @@ const MessageItem = ({ message, isPlaying, onPlayAudio }: MessageItemProps) => {
   };
 
   const handleActivationComplete = () => {
+    console.log('MessageItem: Metis activation completed via modal');
     setMetisActive(true);
     toast({
       title: "Metis Agent Activated",

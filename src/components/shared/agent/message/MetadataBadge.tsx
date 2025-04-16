@@ -28,11 +28,20 @@ const MetadataBadge = ({ metadata }: MetadataBadgeProps) => {
   // Listen for Metis activation/deactivation
   useEffect(() => {
     // Check local storage on mount
-    const metisRemoved = localStorage.getItem('metisRemoved');
-    const storedState = localStorage.getItem('metisActive');
+    const checkMetisStatus = () => {
+      const metisRemoved = localStorage.getItem('metisRemoved');
+      const storedState = localStorage.getItem('metisActive');
+      
+      console.log('MetadataBadge: Checking Metis status from localStorage:', {
+        removed: metisRemoved === 'true',
+        active: storedState === 'true'
+      });
+      
+      setIsMetisRemoved(metisRemoved === 'true');
+      setIsMetisActive(storedState === 'true');
+    };
     
-    setIsMetisRemoved(metisRemoved === 'true');
-    setIsMetisActive(storedState === 'true');
+    checkMetisStatus();
     
     // Listen for toggling events
     const handleMetisToggled = (e: CustomEvent) => {
@@ -49,6 +58,7 @@ const MetadataBadge = ({ metadata }: MetadataBadgeProps) => {
     
     // Listen for removal events
     const handleMetisRemoved = () => {
+      console.log('MetadataBadge: Metis removed event received');
       setIsMetisRemoved(true);
       setIsMetisActive(false);
     };
@@ -63,6 +73,15 @@ const MetadataBadge = ({ metadata }: MetadataBadgeProps) => {
       window.removeEventListener('metisRemoved', handleMetisRemoved as EventListener);
     };
   }, []);
+  
+  useEffect(() => {
+    // This effect will log whenever the Metis state changes
+    console.log('MetadataBadge: Metis state updated:', { 
+      isMetisActive, 
+      isMetisRemoved,
+      metadataMetisActive: metadata?.metisActive 
+    });
+  }, [isMetisActive, isMetisRemoved, metadata?.metisActive]);
   
   if (!metadata) return null;
   
