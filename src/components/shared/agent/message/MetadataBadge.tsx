@@ -8,7 +8,7 @@ import {
   TooltipTrigger
 } from '@/components/ui/tooltip';
 import ScoreTooltip from '../../ScoreTooltips';
-import { Cpu } from 'lucide-react';
+import { Cpu, Brain } from 'lucide-react';
 import MetisAgentBadge from './MetisAgentBadge';
 
 interface MetadataBadgeProps {
@@ -17,6 +17,7 @@ interface MetadataBadgeProps {
     modelUsed?: string;
     contextRetained?: boolean;
     metisActive?: boolean;
+    iqubeType?: 'DataQube' | 'AgentQube';
     [key: string]: any;
   } | null;
 }
@@ -25,6 +26,7 @@ const MetadataBadge = ({ metadata }: MetadataBadgeProps) => {
   if (!metadata) return null;
   
   const isMetisActive = metadata.metisActive === true;
+  const iqubeType = metadata.iqubeType || 'DataQube';
   
   return (
     <TooltipProvider>
@@ -35,9 +37,13 @@ const MetadataBadge = ({ metadata }: MetadataBadgeProps) => {
               <span className="text-muted-foreground">MCP v{metadata.version || '1.0'}</span>
             </Badge>
             {metadata.modelUsed && (
-              <ScoreTooltip type="mlModel">
+              <ScoreTooltip type={iqubeType === 'AgentQube' ? 'agentQube' : 'dataQube'}>
                 <Badge variant="secondary" className="text-[10px] py-0 h-4 flex items-center">
-                  <Cpu className="h-3 w-3 mr-1" />
+                  {iqubeType === 'AgentQube' ? (
+                    <Brain className="h-3 w-3 mr-1" />
+                  ) : (
+                    <Cpu className="h-3 w-3 mr-1" />
+                  )}
                   {metadata.modelUsed}
                 </Badge>
               </ScoreTooltip>
@@ -60,3 +66,4 @@ const MetadataBadge = ({ metadata }: MetadataBadgeProps) => {
 };
 
 export default MetadataBadge;
+

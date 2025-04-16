@@ -1,10 +1,9 @@
-
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { MetaQube } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
-import { Database } from 'lucide-react';
+import { Database, Brain } from 'lucide-react';
 import ScoreTooltip from '@/components/shared/ScoreTooltips';
 
 interface MetaQubeHeaderProps {
@@ -18,27 +17,23 @@ interface DotScoreProps {
 }
 
 const DotScore = ({ value, label, type }: DotScoreProps) => {
-  // Convert score to number of dots (divide by 2 and round up)
   const dotCount = Math.ceil(value / 2);
-  const maxDots = 5; // Max possible dots (10/2 = 5)
+  const maxDots = 5;
   
   const getScoreColor = () => {
     if (type === 'risk' || type === 'sensitivity') {
-      // Risk and Sensitivity: 1-4 green, 5-7 amber, 8-10 red
       return value <= 4 
         ? "bg-green-500" 
         : value <= 7 
           ? "bg-yellow-500" 
           : "bg-red-500";
     } else if (type === 'accuracy' || type === 'verifiability') {
-      // Accuracy and Verifiability: 1-3 red, 4-6 amber, 7-10 green
       return value <= 3 
         ? "bg-red-500" 
         : value <= 6 
           ? "bg-yellow-500" 
           : "bg-green-500";
     } else {
-      // Trust: 5-10 green, 3-4 amber, 1-2 red
       return value >= 5 
         ? "bg-green-500" 
         : value >= 3 
@@ -69,7 +64,6 @@ const DotScore = ({ value, label, type }: DotScoreProps) => {
 
 const MetaQubeHeader = ({ metaQube }: MetaQubeHeaderProps) => {
   const [isActive, setIsActive] = React.useState(true);
-  // Calculate Trust score as the average of Accuracy and Verifiability
   const trustScore = Math.round((metaQube["Accuracy-Score"] + metaQube["Verifiability-Score"]) / 2);
   
   return (
@@ -85,9 +79,13 @@ const MetaQubeHeader = ({ metaQube }: MetaQubeHeaderProps) => {
           </div>
           <span className="text-sm font-medium">{metaQube["iQube-Identifier"]}</span>
         </div>
-        <ScoreTooltip type="dataQube">
+        <ScoreTooltip type={metaQube["iQube-Type"] === 'AgentQube' ? 'agentQube' : 'dataQube'}>
           <Badge variant="outline" className="flex items-center gap-1 bg-iqube-primary/10 text-iqube-primary border-iqube-primary/30">
-            <Database size={14} />
+            {metaQube["iQube-Type"] === 'AgentQube' ? (
+              <Brain size={14} />
+            ) : (
+              <Database size={14} />
+            )}
           </Badge>
         </ScoreTooltip>
       </div>
