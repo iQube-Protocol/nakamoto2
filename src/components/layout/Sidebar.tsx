@@ -12,6 +12,7 @@ import {
   Bot,
   Database,
   Brain,
+  X,
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -100,6 +101,7 @@ const Sidebar = () => {
   const [collapsed, setCollapsed] = useState(isMobile);
   const [mobileOpen, setMobileOpen] = useState(false);
   const [metisActivated, setMetisActivated] = useState(false);
+  const [metisVisible, setMetisVisible] = useState(false);
 
   const toggleSidebar = () => {
     setCollapsed(!collapsed);
@@ -113,6 +115,7 @@ const Sidebar = () => {
     const handleMetisActivated = () => {
       console.log('Sidebar: Metis agent activation detected');
       setMetisActivated(true);
+      setMetisVisible(true);
     };
 
     window.addEventListener('metisActivated', handleMetisActivated);
@@ -120,6 +123,7 @@ const Sidebar = () => {
     const metisActiveStatus = localStorage.getItem('metisActive');
     if (metisActiveStatus === 'true') {
       setMetisActivated(true);
+      setMetisVisible(true);
     }
     
     return () => {
@@ -144,6 +148,13 @@ const Sidebar = () => {
       detail: { iqubeId: iqubeId } 
     });
     window.dispatchEvent(event);
+  };
+
+  // Handler to close and remove the Metis iQube from the sidebar
+  const handleCloseMetisIQube = (e: React.MouseEvent<HTMLButtonElement>) => {
+    e.stopPropagation(); // Prevent the parent click event from triggering
+    setMetisVisible(false);
+    console.log("Metis iQube closed from sidebar");
   };
 
   const CubeIcon = () => (
@@ -227,14 +238,20 @@ const Sidebar = () => {
                 className="cursor-pointer hover:bg-iqube-primary/20 transition-colors"
               />
             </div>
-            {metisActivated && (
-              <div className="bg-purple-500/10 rounded-md">
+            {metisVisible && (
+              <div className="bg-purple-500/10 rounded-md relative">
                 <MetaQubeDisplay 
                   metaQube={metisQubeData} 
                   compact={true}
                   onClick={() => handleIQubeClick("Metis iQube")}
                   className="cursor-pointer hover:bg-purple-500/20 transition-colors"
                 />
+                <button
+                  onClick={handleCloseMetisIQube}
+                  className="absolute top-2 right-2 p-1 rounded-full bg-purple-100 hover:bg-purple-200"
+                >
+                  <X className="h-3 w-3 text-purple-700" />
+                </button>
               </div>
             )}
           </>
@@ -251,18 +268,26 @@ const Sidebar = () => {
                 </div>
               </Link>
             </ScoreTooltip>
-            {metisActivated && (
-              <ScoreTooltip type="agentQube">
-                <Link 
-                  to="/settings" 
-                  className="flex items-center justify-center py-3 px-3 rounded-md transition-all hover:bg-purple-500/20 bg-purple-500/10"
-                  onClick={() => handleIQubeClick("Metis iQube")}
+            {metisVisible && (
+              <div className="relative">
+                <ScoreTooltip type="agentQube">
+                  <Link 
+                    to="/settings" 
+                    className="flex items-center justify-center py-3 px-3 rounded-md transition-all hover:bg-purple-500/20 bg-purple-500/10"
+                    onClick={() => handleIQubeClick("Metis iQube")}
+                  >
+                    <div className="text-iqube-primary h-6 w-6">
+                      <CubeIcon />
+                    </div>
+                  </Link>
+                </ScoreTooltip>
+                <button
+                  onClick={handleCloseMetisIQube}
+                  className="absolute top-0 right-0 p-1 rounded-full bg-purple-100 hover:bg-purple-200"
                 >
-                  <div className="text-iqube-primary h-6 w-6">
-                    <CubeIcon />
-                  </div>
-                </Link>
-              </ScoreTooltip>
+                  <X className="h-3 w-3 text-purple-700" />
+                </button>
+              </div>
             )}
           </>
         )}
