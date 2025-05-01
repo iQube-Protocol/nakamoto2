@@ -1,20 +1,32 @@
 
 import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/use-auth';
 
 export interface InteractionData {
   query: string;
   response: string;
   interactionType: 'learn' | 'earn' | 'connect';
   metadata?: any;
+  user_id?: string; // Make user_id optional in the interface as we'll handle it internally
 }
 
 export const storeUserInteraction = async (data: InteractionData) => {
   try {
+    // Get current user from auth context or session
+    const { data: { session } } = await supabase.auth.getSession();
+    const user_id = data.user_id || session?.user.id;
+    
+    if (!user_id) {
+      console.error('No user ID available for storing interaction');
+      return { success: false, error: new Error('User not authenticated') };
+    }
+
     const { error } = await supabase.from('user_interactions').insert({
       query: data.query,
       response: data.response,
       interaction_type: data.interactionType,
       metadata: data.metadata,
+      user_id // Include the user_id in the insert
     });
 
     if (error) {
@@ -35,9 +47,19 @@ export const getUserInteractions = async (
   offset = 0
 ) => {
   try {
+    // Get current user from auth context or session
+    const { data: { session } } = await supabase.auth.getSession();
+    const user_id = session?.user.id;
+    
+    if (!user_id) {
+      console.error('No user ID available for fetching interactions');
+      return { data: null, error: new Error('User not authenticated') };
+    }
+
     let query = supabase
       .from('user_interactions')
       .select('*')
+      .eq('user_id', user_id) // Filter by the user's ID
       .order('created_at', { ascending: false })
       .limit(limit)
       .range(offset, offset + limit - 1);
@@ -62,6 +84,15 @@ export const getUserInteractions = async (
 
 export const startUserSession = async () => {
   try {
+    // Get current user from auth context or session
+    const { data: { session } } = await supabase.auth.getSession();
+    const user_id = session?.user.id;
+    
+    if (!user_id) {
+      console.error('No user ID available for starting session');
+      return { success: false, error: new Error('User not authenticated') };
+    }
+
     const deviceInfo = {
       userAgent: navigator.userAgent,
       language: navigator.language,
@@ -73,6 +104,7 @@ export const startUserSession = async () => {
     const { error } = await supabase.from('user_sessions').insert({
       device_info: deviceInfo,
       active: true,
+      user_id // Include the user_id in the insert
     });
 
     if (error) {
@@ -89,13 +121,23 @@ export const startUserSession = async () => {
 
 export const endUserSession = async (sessionId: string) => {
   try {
+    // Get current user from auth context or session
+    const { data: { session } } = await supabase.auth.getSession();
+    const user_id = session?.user.id;
+    
+    if (!user_id) {
+      console.error('No user ID available for ending session');
+      return { success: false, error: new Error('User not authenticated') };
+    }
+    
     const { error } = await supabase
       .from('user_sessions')
       .update({
         active: false,
         session_end: new Date().toISOString(),
       })
-      .eq('id', sessionId);
+      .eq('id', sessionId)
+      .eq('user_id', user_id); // Also filter by user_id for extra security
 
     if (error) {
       console.error('Error ending user session:', error);

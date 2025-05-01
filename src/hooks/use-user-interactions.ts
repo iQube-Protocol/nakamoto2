@@ -39,7 +39,11 @@ export const useUserInteractions = (
     if (!user) return { success: false, error: new Error('User not authenticated') };
     
     try {
-      const result = await storeUserInteraction(data);
+      // The user_id will be retrieved inside storeUserInteraction from the session
+      const result = await storeUserInteraction({
+        ...data,
+        user_id: user.id // We can explicitly pass it here as well
+      });
       
       if (result.success) {
         // Refresh the interactions list
