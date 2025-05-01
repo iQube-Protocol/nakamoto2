@@ -61,9 +61,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
-        options: {
-          redirectTo
-        }
       });
 
       if (error) {
