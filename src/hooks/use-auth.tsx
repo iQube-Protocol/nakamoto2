@@ -3,6 +3,7 @@ import { useState, useEffect, createContext, useContext, ReactNode } from 'react
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate } from 'react-router-dom';
+import { toast } from 'sonner';
 
 interface AuthContextProps {
   session: Session | null;
@@ -28,6 +29,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // Determine the current site URL for redirects
+    const siteUrl = window.location.origin;
+    
     // Set up the auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (_, session) => {
@@ -51,9 +55,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signIn = async (email: string, password: string) => {
     try {
+      // Get the current site URL for redirection
+      const redirectTo = `${window.location.origin}/`;
+      
       const { error } = await supabase.auth.signInWithPassword({
         email,
         password,
+        options: {
+          redirectTo
+        }
       });
 
       if (error) {
@@ -71,6 +81,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signUp = async (email: string, password: string, firstName?: string, lastName?: string) => {
     try {
+      // Get the current site URL for redirection
+      const redirectTo = `${window.location.origin}/signin`;
+      
       const { error } = await supabase.auth.signUp({
         email,
         password,
@@ -79,7 +92,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             first_name: firstName || '',
             last_name: lastName || '',
           },
-        },
+          emailRedirectTo: redirectTo
+        }
       });
 
       if (error) {
