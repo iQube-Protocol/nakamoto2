@@ -14,9 +14,10 @@ interface NavItemProps {
   icon: React.ReactNode;
   label: string;
   collapsed: boolean;
+  onClick?: () => void;
 }
 
-const NavItem = ({ to, icon, label, collapsed }: NavItemProps) => {
+const NavItem = ({ to, icon, label, collapsed, onClick }: NavItemProps) => {
   return (
     <NavLink
       to={to}
@@ -26,6 +27,7 @@ const NavItem = ({ to, icon, label, collapsed }: NavItemProps) => {
           isActive ? "bg-iqube-primary/20 text-iqube-primary" : "text-sidebar-foreground"
         )
       }
+      onClick={onClick}
     >
       {collapsed ? (
         <TooltipProvider>

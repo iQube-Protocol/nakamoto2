@@ -1,10 +1,29 @@
 
-import React from 'react';
-import { Link } from 'react-router-dom';
+import React, { useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { ArrowRight, Shield, GraduationCap, Wallet, Users } from 'lucide-react';
+import { useAuth } from '@/hooks/use-auth';
 
 const SplashPage = () => {
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
+  
+  useEffect(() => {
+    // If already logged in, redirect to dashboard
+    if (user && !loading) {
+      navigate('/');
+    }
+  }, [user, loading, navigate]);
+  
+  if (loading) {
+    return (
+      <div className="flex h-screen items-center justify-center">
+        <p className="text-lg">Loading...</p>
+      </div>
+    );
+  }
+  
   return (
     <div className="min-h-screen flex flex-col">
       {/* Hero Section */}
@@ -20,7 +39,7 @@ const SplashPage = () => {
               <Link to="/signin">
                 <Button variant="outline">Sign In</Button>
               </Link>
-              <Link to="/signin">
+              <Link to="/signin?tab=sign-up">
                 <Button>Get Started</Button>
               </Link>
             </div>
