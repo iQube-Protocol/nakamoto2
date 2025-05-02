@@ -32,6 +32,8 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
   const { isApiLoading } = useMCP();
   const [connecting, setConnecting] = useState(false);
   const [apiLoadingState, setApiLoadingState] = useState<'loading' | 'loaded' | 'error'>('loading');
+  const [apiCheckAttempts, setApiCheckAttempts] = useState(0);
+  const maxApiCheckAttempts = 20; // Maximum number of attempts to check if API is loaded
   
   const {
     driveConnected,
@@ -64,12 +66,31 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
     const checkGapiLoaded = () => {
       if ((window as any).gapi && (window as any).google?.accounts) {
         setApiLoadingState('loaded');
+        return true;
       }
+      return false;
     };
 
-    // Set up an interval to check if API is loaded
+    // Initial check
+    if (checkGapiLoaded()) {
+      return; // Already loaded
+    }
+
+    // Set up an interval to check if API is loaded with a maximum number of attempts
     const interval = setInterval(() => {
-      checkGapiLoaded();
+      setApiCheckAttempts(prev => {
+        const newCount = prev + 1;
+        if (newCount >= maxApiCheckAttempts) {
+          clearInterval(interval);
+          setApiLoadingState('error');
+          return newCount;
+        }
+        
+        if (checkGapiLoaded()) {
+          clearInterval(interval);
+        }
+        return newCount;
+      });
     }, 1000);
 
     // Clean up interval
@@ -78,6 +99,12 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
   
   const handleDialogChange = (open: boolean) => {
     setIsOpen(open);
+    
+    // Reset API loading state when reopening the dialog
+    if (open && apiLoadingState === 'error') {
+      setApiLoadingState('loading');
+      setApiCheckAttempts(0);
+    }
   };
   
   const handleFileSelection = (doc: any) => {
@@ -136,6 +163,26 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
             <Info className="h-4 w-4 text-blue-500" />
             <AlertDescription className="mt-2">
               Loading Google API... Please wait.
+              {apiCheckAttempts > 10 && (
+                <p className="text-sm mt-1">
+                  This is taking longer than expected. You may need to refresh the page if it doesn't complete soon.
+                </p>
+              )}
+            </AlertDescription>
+          </Alert>
+        )}
+        
+        {apiLoadingState === 'error' && (
+          <Alert className="bg-red-500/10 border-red-500/30">
+            <Info className="h-4 w-4 text-red-500" />
+            <AlertDescription className="mt-2">
+              Failed to load Google API after several attempts. Please try:
+              <ul className="list-disc pl-5 mt-2 space-y-1 text-sm">
+                <li>Refreshing the page</li>
+                <li>Checking your internet connection</li>
+                <li>Disabling any ad blockers or privacy extensions</li>
+                <li>Using a different browser</li>
+              </ul>
             </AlertDescription>
           </Alert>
         )}
@@ -163,6 +210,7 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
               setApiKey={setApiKey}
               handleConnect={handleConnectClick}
               isLoading={isProcessing}
+              disabled={apiLoadingState !== 'loaded'}
             />
             
             {connectionAttempts > 0 && apiLoadingState !== 'loaded' && (
