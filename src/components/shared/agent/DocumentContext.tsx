@@ -26,10 +26,12 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
     isLoading,
     handleDocumentSelect,
     handleRemoveDocument,
-    handleViewDocument
+    handleViewDocument,
+    forceRefreshDocuments
   } = useDocumentContext({ 
     conversationId, 
-    onDocumentAdded 
+    onDocumentAdded,
+    refreshTrigger
   });
   
   // Debug log for document visibility
@@ -40,13 +42,23 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
   
   // Force refresh the document list
   const handleRefresh = () => {
+    console.log('Manual refresh triggered');
+    forceRefreshDocuments();
     setRefreshTrigger(prev => prev + 1);
   };
+
+  // Initial load when conversationId changes
+  useEffect(() => {
+    if (conversationId) {
+      console.log(`Conversation ID changed to ${conversationId}, refreshing documents`);
+      handleRefresh();
+    }
+  }, [conversationId]);
   
   // Use the refresh trigger to force re-render
   useEffect(() => {
     if (refreshTrigger > 0) {
-      console.log('Manually refreshing document context display');
+      console.log(`Manually refreshing document context display (trigger: ${refreshTrigger})`);
     }
   }, [refreshTrigger]);
 

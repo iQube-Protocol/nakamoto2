@@ -23,6 +23,12 @@ export class ContextManager {
             this.conversationId = existingConversationId;
             console.log(`MCP: Loaded local context for conversation ${existingConversationId}`);
             console.log(`MCP: Context has ${this.context?.documentContext?.length || 0} documents`);
+            
+            // Ensure documentContext is initialized if it doesn't exist
+            if (!this.context.documentContext) {
+              this.context.documentContext = [];
+            }
+            
             return existingConversationId;
           } catch (error) {
             console.error('MCP: Error parsing stored context:', error);
@@ -105,12 +111,20 @@ export class ContextManager {
   public persistContext(): void {
     if (this.context && this.conversationId) {
       try {
+        // Debug log context before saving
+        if (this.context.documentContext) {
+          console.log(`MCP: Persisting context with ${this.context.documentContext.length} documents:`, 
+            this.context.documentContext.map(doc => doc.documentName).join(', '));
+        }
+        
         // Save to local storage for now (in production, would likely use Supabase or other DB)
         localStorage.setItem(`mcp-context-${this.conversationId}`, JSON.stringify(this.context));
         console.log(`MCP: Persisted context for ${this.conversationId} with ${this.context.documentContext?.length || 0} documents`);
       } catch (error) {
         console.error('MCP: Error persisting context:', error);
       }
+    } else {
+      console.warn('MCP: Cannot persist context: Context or conversationId missing');
     }
   }
   
@@ -177,9 +191,9 @@ export class ContextManager {
     }
     
     // Debug log the current document context
-    console.log(`MCP: Current document context has ${this.context.documentContext.length} documents`);
+    console.log(`MCP: Current document context has ${this.context.documentContext.length} documents:`);
     this.context.documentContext.forEach((doc, idx) => {
-      console.log(`MCP: Document ${idx}: ${doc.documentName} (${doc.documentId})`);
+      console.log(`MCP: Document ${idx+1}: ${doc.documentName} (${doc.documentId})`);
     });
     
     this.persistContext();
@@ -190,5 +204,32 @@ export class ContextManager {
    */
   public getConversationId(): string | null {
     return this.conversationId;
+  }
+  
+  /**
+   * Get document by ID from context
+   */
+  public getDocumentById(documentId: string): DocumentContext | undefined {
+    if (this.context?.documentContext) {
+      return this.context.documentContext.find(doc => doc.documentId === documentId);
+    }
+    return undefined;
+  }
+  
+  /**
+   * Check if context has documents
+   */
+  public hasDocuments(): boolean {
+    return !!this.context?.documentContext && this.context.documentContext.length > 0;
+  }
+  
+  /**
+   * Get all documents in context
+   */
+  public getAllDocuments(): DocumentContext[] {
+    if (this.context?.documentContext) {
+      return [...this.context.documentContext];
+    }
+    return [];
   }
 }

@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { useMCP } from '@/hooks/use-mcp';
 import { DocumentContext } from '@/integrations/mcp/types';
@@ -7,26 +7,72 @@ import { DocumentContext } from '@/integrations/mcp/types';
 interface UseDocumentContextProps {
   conversationId: string | null;
   onDocumentAdded?: () => void;
+  refreshTrigger?: number;
 }
 
 /**
  * Custom hook for managing document context
  */
-export default function useDocumentContext({ conversationId, onDocumentAdded }: UseDocumentContextProps) {
+export default function useDocumentContext({ 
+  conversationId, 
+  onDocumentAdded,
+  refreshTrigger = 0
+}: UseDocumentContextProps) {
   const { client, fetchDocument, isLoading } = useMCP();
   const [selectedDocuments, setSelectedDocuments] = useState<any[]>([]);
   const [viewingDocument, setViewingDocument] = useState<{id: string, content: string, name: string, mimeType: string} | null>(null);
   const [contextInitialized, setContextInitialized] = useState(false);
+  const [attemptCount, setAttemptCount] = useState(0);
   
-  // Get documents from context - run on mount and when conversationId or client changes
-  useEffect(() => {
-    const loadDocuments = async () => {
-      if (!client || !conversationId) return;
+  // Force reload documents from MCP context
+  const forceRefreshDocuments = useCallback(() => {
+    if (!client || !conversationId) return;
+    
+    try {
+      const context = client.getModelContext();
+      console.log('Forcing document refresh, context available:', !!context);
       
+      if (context?.documentContext && context.documentContext.length > 0) {
+        console.log(`Found ${context.documentContext.length} documents in context after force refresh`);
+        
+        const docs = context.documentContext.map(doc => ({
+          id: doc.documentId,
+          name: doc.documentName,
+          mimeType: `application/${doc.documentType}`,
+          content: doc.content
+        }));
+        
+        console.log('Refreshed documents:', docs.map(d => d.name).join(', '));
+        setSelectedDocuments(docs);
+      } else if (context) {
+        console.log('No documents in context after force refresh');
+        setSelectedDocuments([]);
+      }
+    } catch (error) {
+      console.error('Error during force refresh:', error);
+    }
+  }, [client, conversationId]);
+  
+  // Get documents from context when component mounts, conversationId changes, or refreshTrigger changes
+  useEffect(() => {
+    if (!client || !conversationId) {
+      console.log('Skip loading documents: client or conversationId missing');
+      return;
+    }
+    
+    const loadDocumentsWithRetry = async () => {
       try {
+        // Initialize context if needed with the current conversationId
+        await client.initializeContext(conversationId);
+        
         const context = client.getModelContext();
+        console.log(`Loading documents for conversation ${conversationId}, context available:`, !!context);
+        
         if (context?.documentContext && context.documentContext.length > 0) {
-          console.log('Documents in context:', context.documentContext.length);
+          console.log(`Found ${context.documentContext.length} documents in MCP context:`);
+          context.documentContext.forEach((doc, idx) => {
+            console.log(`Document ${idx+1}: ${doc.documentName} (${doc.documentId})`);
+          });
           
           const docs = context.documentContext.map(doc => ({
             id: doc.documentId,
@@ -35,8 +81,7 @@ export default function useDocumentContext({ conversationId, onDocumentAdded }: 
             content: doc.content
           }));
           
-          console.log('Setting selected documents:', docs.length, 
-            docs.map(d => d.name).join(', '));
+          console.log('Setting selected documents:', docs.map(d => d.name).join(', '));
           setSelectedDocuments(docs);
         } else {
           console.log('No documents in context or empty context');
@@ -44,37 +89,22 @@ export default function useDocumentContext({ conversationId, onDocumentAdded }: 
         }
       } catch (error) {
         console.error('Error loading document context:', error);
+        
+        // Retry with backoff if needed (up to 3 attempts)
+        if (attemptCount < 3) {
+          console.log(`Retrying document load (attempt ${attemptCount + 1})`);
+          setAttemptCount(prev => prev + 1);
+          setTimeout(() => {
+            forceRefreshDocuments();
+          }, 1000 * (attemptCount + 1));
+        }
       } finally {
         setContextInitialized(true);
       }
     };
     
-    loadDocuments();
-  }, [client, conversationId]);
-  
-  // Refresh document list when context changes
-  useEffect(() => {
-    if (contextInitialized && client && conversationId) {
-      const context = client.getModelContext();
-      if (context?.documentContext) {
-        const newDocsList = context.documentContext.map(doc => ({
-          id: doc.documentId,
-          name: doc.documentName,
-          mimeType: `application/${doc.documentType}`,
-          content: doc.content
-        }));
-        
-        // Only update if there's a difference to avoid infinite loops
-        const currentIds = selectedDocuments.map(doc => doc.id).sort().join(',');
-        const newIds = newDocsList.map(doc => doc.id).sort().join(',');
-        
-        if (currentIds !== newIds) {
-          console.log('Document context changed, updating UI');
-          setSelectedDocuments(newDocsList);
-        }
-      }
-    }
-  }, [contextInitialized, client, conversationId, selectedDocuments]);
+    loadDocumentsWithRetry();
+  }, [client, conversationId, refreshTrigger, attemptCount, forceRefreshDocuments]);
   
   const handleDocumentSelect = async (document: any) => {
     if (!client) {
@@ -94,6 +124,11 @@ export default function useDocumentContext({ conversationId, onDocumentAdded }: 
       // Add content to the document object for local tracking
       document.content = content;
       
+      // Ensure context is initialized with the current conversationId
+      if (!client.getConversationId() && conversationId) {
+        await client.initializeContext(conversationId);
+      }
+      
       // Ensure context manager exists in the MCP client
       const context = client.getModelContext();
       if (context) {
@@ -104,6 +139,9 @@ export default function useDocumentContext({ conversationId, onDocumentAdded }: 
           documentType: document.mimeType.split('/')[1] || 'text',
           content: content
         });
+        
+        // Force client to persist context
+        client.contextManager.persistContext();
         
         // Update local state
         setSelectedDocuments(prev => [...prev, document]);
@@ -164,6 +202,7 @@ export default function useDocumentContext({ conversationId, onDocumentAdded }: 
     isLoading,
     handleDocumentSelect,
     handleRemoveDocument,
-    handleViewDocument
+    handleViewDocument,
+    forceRefreshDocuments
   };
 }

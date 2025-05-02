@@ -1,3 +1,4 @@
+
 import { MCPContext, MCPClientOptions, DocumentContext } from './types';
 import { GoogleApiLoader } from './googleApiLoader';
 import { ContextManager } from './contextManager';
@@ -56,7 +57,9 @@ export class MCPClient {
    * Initializes or retrieves the conversation context
    */
   async initializeContext(existingConversationId?: string): Promise<string> {
-    return this.contextManager.initializeContext(existingConversationId);
+    const conversationId = await this.contextManager.initializeContext(existingConversationId);
+    console.log(`MCP Client initialized context: ${conversationId} (existing ID: ${existingConversationId || 'none'})`);
+    return conversationId;
   }
   
   /**
@@ -155,7 +158,29 @@ export class MCPClient {
    * Convenience method to add document to context
    */
   addDocumentToContext(document: DocumentContext): void {
+    console.log('Adding document to context via client method:', document.documentName);
     this.contextManager.addDocumentToContext(document);
+  }
+  
+  /**
+   * Get all documents in the current context
+   */
+  getDocumentsInContext(): DocumentContext[] {
+    return this.contextManager.getAllDocuments();
+  }
+  
+  /**
+   * Check if there are documents in the context
+   */
+  hasDocumentsInContext(): boolean {
+    return this.contextManager.hasDocuments();
+  }
+  
+  /**
+   * Force persist the context
+   */
+  persistContext(): void {
+    this.contextManager.persistContext();
   }
 }
 
