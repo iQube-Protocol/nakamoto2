@@ -55,11 +55,11 @@ export default function useDocumentContext({ conversationId, onDocumentAdded }: 
       // Add content to the document object for local tracking
       document.content = content;
       
-      // Ensure context exists in the MCP client
+      // Ensure context manager exists in the MCP client
       const context = client.getModelContext();
       if (context) {
-        // Add document to MCP context
-        client.addDocumentToContext({
+        // Add document to MCP context via the contextManager
+        client.contextManager.addDocumentToContext({
           documentId: document.id,
           documentName: document.name,
           documentType: document.mimeType.split('/')[1] || 'text',

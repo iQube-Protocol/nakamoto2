@@ -30,3 +30,13 @@ export interface MCPClientOptions {
   onApiLoadStart?: () => void;
   onApiLoadComplete?: () => void;
 }
+
+// Add document interface for better type safety
+export interface DocumentContext {
+  documentId: string;
+  documentName: string;
+  documentType: string;
+  content: string;
+  summary?: string;
+  lastModified?: string;
+}

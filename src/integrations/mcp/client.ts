@@ -6,13 +6,15 @@ import { DriveService } from './driveService';
 import { ConnectionManager } from './services/connectionManager';
 
 export class MCPClient {
-  private contextManager: ContextManager;
   private googleApiLoader: GoogleApiLoader;
   private driveService: DriveService;
   private connectionManager: ConnectionManager;
   public serverUrl: string;
   private authToken: string | null;
   private metisActive: boolean;
+  
+  // Make contextManager public so it can be accessed directly
+  public contextManager: ContextManager;
   
   constructor(options: MCPClientOptions = {}) {
     this.serverUrl = options.serverUrl || 'https://mcp-gdrive-server.example.com';
@@ -148,6 +150,18 @@ export class MCPClient {
    */
   isConnectedToDrive(): boolean {
     return this.driveService.isConnectedToDrive() || localStorage.getItem('gdrive-connected') === 'true';
+  }
+  
+  /**
+   * Convenience method to add document to context
+   */
+  addDocumentToContext(document: {
+    documentId: string;
+    documentName: string;
+    documentType: string;
+    content: string;
+  }): void {
+    this.contextManager.addDocumentToContext(document);
   }
 }
 
