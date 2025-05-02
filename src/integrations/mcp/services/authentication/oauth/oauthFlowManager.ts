@@ -34,20 +34,28 @@ export class OAuthFlowManager {
             const newScript = document.createElement('script');
             newScript.src = 'https://accounts.google.com/gsi/client';
             newScript.async = true;
-            document.body.appendChild(newScript);
-            
-            // Wait for the script to load
-            setTimeout(() => {
-              if (!(window as any).google?.accounts) {
+            newScript.onload = () => {
+              console.log('GSI script loaded successfully via direct injection');
+              if ((window as any).google?.accounts) {
+                OAuthFlowManager.completeOAuthFlow(clientId, authTimeout, resolve, googleApiLoader);
+              } else {
                 clearTimeout(authTimeout);
+                console.error('Google accounts API still not available after script load');
                 toast.error('Google Sign-In API not available', {
-                  description: 'Please check your internet connection and try again'
+                  description: 'Please try using a different browser or check your internet connection'
                 });
                 resolve(false);
-              } else {
-                OAuthFlowManager.completeOAuthFlow(clientId, authTimeout, resolve, googleApiLoader);
               }
-            }, 3000); // Wait 3 seconds for the script to load
+            };
+            newScript.onerror = () => {
+              clearTimeout(authTimeout);
+              console.error('Failed to load GSI script via direct injection');
+              toast.error('Failed to load authentication components', {
+                description: 'Please check your internet connection and try again'
+              });
+              resolve(false);
+            };
+            document.body.appendChild(newScript);
             return;
           } else {
             clearTimeout(authTimeout);
@@ -81,6 +89,8 @@ export class OAuthFlowManager {
     googleApiLoader: any
   ): void {
     try {
+      console.log('Initializing OAuth token client with client ID:', clientId?.substring(0, 10) + '...');
+      
       const tokenClient = (window as any).google.accounts.oauth2.initTokenClient({
         client_id: clientId,
         scope: 'https://www.googleapis.com/auth/drive.readonly',
@@ -96,12 +106,12 @@ export class OAuthFlowManager {
             tokenUtils.storeToken(gapi);
             
             toast.success('Connected to Google Drive', {
-              description: 'Your Google Drive documents are now available to the AI agents'
+              description: 'Your Google Drive documents are now available'
             });
             console.log('Successfully authenticated with Google Drive');
             resolve(true);
           } else {
-            console.error('Token response missing access token');
+            console.error('Token response missing access token', tokenResponse);
             toast.error('Authentication failed', {
               description: 'Failed to get access token'
             });
@@ -111,8 +121,22 @@ export class OAuthFlowManager {
         error_callback: (error: any) => {
           clearTimeout(authTimeout);
           console.error('OAuth error:', error);
+          
+          let description = 'Failed to authenticate with Google';
+          
+          // Check for specific OAuth errors
+          if (error.type === 'popup_closed') {
+            description = 'The authentication popup was closed before completion';
+          } else if (error.type === 'access_denied') {
+            description = 'You denied access to your Google Drive';
+          } else if (error.type === 'immediate_failed') {
+            description = 'Automatic sign-in failed. Please try again';
+          } else if (error.message) {
+            description = error.message;
+          }
+          
           toast.error('Google authentication failed', {
-            description: error.message || 'Failed to authenticate with Google'
+            description: description
           });
           resolve(false);
         }
@@ -120,8 +144,8 @@ export class OAuthFlowManager {
       
       googleApiLoader.setTokenClient(tokenClient);
       
-      // Request access token
-      console.log('MCP: Requesting access token...');
+      // Request access token - force consent every time to ensure we get a fresh token
+      console.log('MCP: Requesting access token with consent prompt...');
       tokenClient.requestAccessToken({ prompt: 'consent' });
     } catch (error) {
       clearTimeout(authTimeout);

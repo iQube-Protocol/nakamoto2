@@ -13,6 +13,8 @@ export function useDriveConnection() {
   const [connectionInProgress, setConnectionInProgress] = useState(false);
   const [lastConnectionAttempt, setLastConnectionAttempt] = useState(0);
   const [connectionTimeout, setConnectionTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [connectionAttempts, setConnectionAttempts] = useState(0);
+  const [maxAttempts] = useState(3); // Maximum connection attempts before enforcing a longer cooldown
   
   // Load saved credentials from localStorage
   useEffect(() => {
@@ -41,7 +43,18 @@ export function useDriveConnection() {
       console.log('Cleaning up stale connection state on Learn page');
       localStorage.removeItem('gdrive-connected');
     }
-  }, [driveConnected, clientId, apiKey]);
+    
+    // Reset connection attempts counter after 5 minutes of inactivity
+    const resetAttemptsTimer = setTimeout(() => {
+      if (Date.now() - lastConnectionAttempt > 300000) { // 5 minutes
+        setConnectionAttempts(0);
+      }
+    }, 300000);
+    
+    return () => {
+      clearTimeout(resetAttemptsTimer);
+    };
+  }, [driveConnected, clientId, apiKey, lastConnectionAttempt]);
   
   // Handle connection with throttling and better state management
   const handleConnect = useCallback(async () => {
@@ -60,14 +73,18 @@ export function useDriveConnection() {
     
     // Don't allow rapid reconnection attempts
     const now = Date.now();
-    if (now - lastConnectionAttempt < 5000) { // 5 seconds cooldown
-      toast.info('Please wait before retrying connection');
+    const cooldownTime = connectionAttempts >= maxAttempts ? 60000 : 5000; // 1 minute cooldown after max attempts
+    
+    if (now - lastConnectionAttempt < cooldownTime) {
+      const remainingSeconds = Math.ceil((cooldownTime - (now - lastConnectionAttempt)) / 1000);
+      toast.info(`Please wait before retrying connection (${remainingSeconds}s)`);
       return false;
     }
     
     try {
       setConnectionInProgress(true);
       setLastConnectionAttempt(now);
+      setConnectionAttempts(prev => prev + 1);
       
       // Clear any previous connection state to ensure a fresh start
       localStorage.removeItem('gdrive-connected');
@@ -77,7 +94,10 @@ export function useDriveConnection() {
       const timeout = setTimeout(() => {
         console.log('Connection attempt timed out, resetting state');
         setConnectionInProgress(false);
-      }, 30000); // 30 second timeout
+        toast.error('Connection attempt timed out', {
+          description: 'Please try again later'
+        });
+      }, 35000); // 35 second timeout
       
       setConnectionTimeout(timeout);
       
@@ -97,11 +117,20 @@ export function useDriveConnection() {
           id: 'drive-connection',
           description: 'Your documents are now available'
         });
+        setConnectionAttempts(0); // Reset attempts counter on success
       } else {
-        toast.error('Failed to connect to Google Drive', {
-          id: 'drive-connection',
-          description: 'Please check your credentials and try again'
-        });
+        // Check if we've hit the max attempts
+        if (connectionAttempts >= maxAttempts) {
+          toast.error('Multiple connection attempts failed', {
+            id: 'drive-connection',
+            description: 'Please check your credentials or try again later'
+          });
+        } else {
+          toast.error('Failed to connect to Google Drive', {
+            id: 'drive-connection',
+            description: 'Please check your credentials and try again'
+          });
+        }
       }
       
       // Clear the timeout since we completed normally
@@ -120,13 +149,15 @@ export function useDriveConnection() {
     } finally {
       setConnectionInProgress(false);
     }
-  }, [clientId, apiKey, connectToDrive, connectionInProgress, lastConnectionAttempt, connectionTimeout]);
+  }, [clientId, apiKey, connectToDrive, connectionInProgress, lastConnectionAttempt, connectionTimeout, connectionAttempts, maxAttempts]);
   
   // Reset connection state
   const resetConnection = useCallback(() => {
     localStorage.removeItem('gdrive-connected');
     localStorage.removeItem('gdrive-auth-token');
+    setConnectionAttempts(0);
     resetMcpConnection();
+    toast.success('Connection reset complete');
   }, [resetMcpConnection]);
   
   return {
@@ -138,6 +169,8 @@ export function useDriveConnection() {
     apiKey,
     setApiKey,
     handleConnect,
-    resetConnection
+    resetConnection,
+    connectionAttempts,
+    maxAttempts
   };
 }

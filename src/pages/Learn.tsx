@@ -6,8 +6,9 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
 import { useMCP } from '@/hooks/use-mcp';
 import { toast } from 'sonner';
-import { Loader2, AlertCircle } from 'lucide-react';
+import { Loader2, AlertCircle, ExternalLink } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { useDriveConnection } from '@/hooks/useDriveConnection';
 
 // Sample metaQube data
 const metaQubeData: MetaQube = {
@@ -41,9 +42,11 @@ const blakQubeData: BlakQube = {
 
 const Learn = () => {
   const { isApiLoading, driveConnected, resetConnection } = useMCP();
+  const { clientId, apiKey, handleConnect } = useDriveConnection();
   const [apiLoadAttempted, setApiLoadAttempted] = useState(false);
   const [apiLoadError, setApiLoadError] = useState(false);
   const [apiLoadTimeout, setApiLoadTimeout] = useState<NodeJS.Timeout | null>(null);
+  const [isRetrying, setIsRetrying] = useState(false);
   
   // Track API loading state and display appropriate notifications
   useEffect(() => {
@@ -99,6 +102,39 @@ const Learn = () => {
       window.location.reload();
     }, 1000);
   };
+
+  const handleRetryConnection = async () => {
+    setIsRetrying(true);
+    
+    try {
+      // Only attempt connection if we have credentials
+      if (clientId && apiKey) {
+        // Clear local state first
+        localStorage.removeItem('gdrive-connected');
+        localStorage.removeItem('gdrive-auth-token');
+        
+        toast.loading('Retrying connection...', {
+          id: 'retry-connection',
+          duration: 3000
+        });
+        
+        // Wait a bit for cleanup
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        // Force page reload to ensure clean state
+        window.location.reload();
+      } else {
+        toast.error('Missing Google API credentials', {
+          description: 'Please configure your credentials in the document selector'
+        });
+      }
+    } catch (error) {
+      console.error('Error retrying connection:', error);
+      toast.error('Failed to retry connection');
+    } finally {
+      setIsRetrying(false);
+    }
+  };
   
   // Display loading state when API is loading
   if (isApiLoading && !apiLoadError) {
@@ -120,11 +156,13 @@ const Learn = () => {
         <p className="text-gray-600 mb-4 text-center max-w-md">
           There was an issue connecting to Google API. The Learn page will still work, but document features may be limited.
         </p>
-        <div className="flex space-x-4">
+        <div className="flex space-x-4 mb-8">
           <Button 
-            onClick={() => window.location.reload()} 
+            onClick={handleRetryConnection} 
             className="mt-2"
+            disabled={isRetrying}
           >
+            {isRetrying ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : null}
             Retry Connection
           </Button>
           <Button 
@@ -134,6 +172,27 @@ const Learn = () => {
           >
             Reset Connection
           </Button>
+        </div>
+        <div className="bg-amber-50 border border-amber-200 rounded-md p-4 max-w-md">
+          <h3 className="text-amber-700 font-semibold flex items-center gap-1">
+            <AlertCircle className="h-4 w-4" /> Troubleshooting Tips
+          </h3>
+          <ul className="mt-2 text-sm text-amber-700 space-y-1">
+            <li>• Make sure your Google API credentials are correct</li>
+            <li>• Verify that the Google Drive API is enabled in your Google Cloud Console</li>
+            <li>• Check that your OAuth consent screen is properly configured</li>
+            <li>• Try using a different browser or clearing your browser cache</li>
+          </ul>
+          <div className="mt-3 text-sm">
+            <a 
+              href="https://console.cloud.google.com/apis/dashboard" 
+              target="_blank" 
+              rel="noopener noreferrer"
+              className="text-blue-600 hover:text-blue-800 flex items-center gap-1"
+            >
+              Go to Google Cloud Console <ExternalLink className="h-3 w-3" />
+            </a>
+          </div>
         </div>
       </div>
     );
