@@ -182,6 +182,13 @@ export class MCPClient {
   persistContext(): void {
     this.contextManager.persistContext();
   }
+  
+  /**
+   * Reload context from storage
+   */
+  reloadContextFromStorage(): boolean {
+    return this.contextManager.reloadContextFromStorage();
+  }
 }
 
 // Singleton instance for global use

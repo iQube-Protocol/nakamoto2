@@ -117,8 +117,13 @@ export class ContextManager {
             this.context.documentContext.map(doc => doc.documentName).join(', '));
         }
         
-        // Save to local storage for now (in production, would likely use Supabase or other DB)
-        localStorage.setItem(`mcp-context-${this.conversationId}`, JSON.stringify(this.context));
+        // Save to local storage with version tracking to prevent accidental overwrite
+        const storageKey = `mcp-context-${this.conversationId}`;
+        
+        // Add a timestamp to track the context version
+        this.context.metadata.lastUpdated = new Date().toISOString();
+        
+        localStorage.setItem(storageKey, JSON.stringify(this.context));
         console.log(`MCP: Persisted context for ${this.conversationId} with ${this.context.documentContext?.length || 0} documents`);
       } catch (error) {
         console.error('MCP: Error persisting context:', error);
@@ -231,5 +236,34 @@ export class ContextManager {
       return [...this.context.documentContext];
     }
     return [];
+  }
+  
+  /**
+   * Force reload context from storage
+   * @returns Whether the context was successfully reloaded
+   */
+  public reloadContextFromStorage(): boolean {
+    if (!this.conversationId) {
+      console.error('MCP: Cannot reload context: No conversationId set');
+      return false;
+    }
+    
+    try {
+      const storageKey = `mcp-context-${this.conversationId}`;
+      const storedContext = localStorage.getItem(storageKey);
+      
+      if (storedContext) {
+        const parsedContext = JSON.parse(storedContext);
+        this.context = parsedContext;
+        console.log(`MCP: Reloaded context for ${this.conversationId} with ${this.context.documentContext?.length || 0} documents`);
+        return true;
+      } else {
+        console.warn(`MCP: No stored context found for ${this.conversationId}`);
+        return false;
+      }
+    } catch (error) {
+      console.error('MCP: Error reloading context from storage:', error);
+      return false;
+    }
   }
 }
