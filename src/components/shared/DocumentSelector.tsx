@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -10,7 +10,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Info, FileText } from 'lucide-react';
+import { Info, FileText, RefreshCw } from 'lucide-react';
 import { useDriveConnection } from '@/hooks/useDriveConnection';
 import { useDocumentBrowser } from '@/hooks/useDocumentBrowser';
 import ConnectionForm from './document/ConnectionForm';
@@ -18,6 +18,7 @@ import FolderBreadcrumb from './document/FolderBreadcrumb';
 import FileGrid from './document/FileGrid';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { useMCP } from '@/hooks/use-mcp';
 
 interface DocumentSelectorProps {
   onDocumentSelect: (document: any) => void;
@@ -28,9 +29,13 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
   onDocumentSelect,
   triggerButton 
 }) => {
+  const { isApiLoading } = useMCP();
+  const [connecting, setConnecting] = useState(false);
+  
   const {
     driveConnected,
     isLoading: connectionLoading,
+    connectionInProgress,
     clientId,
     setClientId,
     apiKey,
@@ -65,12 +70,21 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
     }
   };
 
+  const handleConnectClick = async () => {
+    setConnecting(true);
+    await handleConnect();
+    setConnecting(false);
+  };
+  
   // If we have credentials stored but haven't fetched documents yet
   useEffect(() => {
     if (driveConnected && isOpen && documents.length === 0 && !documentsLoading) {
       refreshCurrentFolder();
     }
   }, [driveConnected, isOpen, documents.length, documentsLoading, refreshCurrentFolder]);
+  
+  // Loading states
+  const isProcessing = connectionLoading || documentsLoading || isApiLoading || connecting || connectionInProgress;
   
   return (
     <Dialog open={isOpen} onOpenChange={handleDialogChange}>
@@ -114,8 +128,8 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
               setClientId={setClientId}
               apiKey={apiKey}
               setApiKey={setApiKey}
-              handleConnect={handleConnect}
-              isLoading={connectionLoading}
+              handleConnect={handleConnectClick}
+              isLoading={isProcessing}
             />
           </>
         ) : (
@@ -143,7 +157,9 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
           {driveConnected && (
             <>
               <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
-              <Button onClick={refreshCurrentFolder}>
+              <Button onClick={refreshCurrentFolder} disabled={isProcessing} className="gap-1">
+                {isProcessing && <RefreshCw className="h-4 w-4 animate-spin" />}
+                {!isProcessing && <RefreshCw className="h-4 w-4" />}
                 Refresh
               </Button>
             </>
