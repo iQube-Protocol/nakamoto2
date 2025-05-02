@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -25,7 +25,6 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
   const { isApiLoading, resetConnection: resetMcpConnection } = useMCP();
   const [connecting, setConnecting] = useState(false);
   const [connectionError, setConnectionError] = useState<string | null>(null);
-  const [isRefreshing, setIsRefreshing] = useState(false);
   const [connectionAttempts, setConnectionAttempts] = useState(0);
   
   const {
@@ -53,7 +52,8 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
     navigateToRoot,
     refreshCurrentFolder,
     forceRefreshCurrentFolder,
-    fetchError
+    fetchError,
+    isRefreshing
   } = useDocumentBrowser();
   
   const handleDialogChange = (open: boolean) => {
@@ -98,13 +98,8 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
   };
 
   const handleRefresh = async () => {
-    setIsRefreshing(true);
     toast.loading("Refreshing documents...", { id: "refreshing-docs", duration: 2000 });
-    try {
-      await forceRefreshCurrentFolder();
-    } finally {
-      setIsRefreshing(false);
-    }
+    await forceRefreshCurrentFolder();
   };
   
   const handleRetryConnection = () => {
@@ -113,13 +108,6 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
     setConnectionError(null);
     setConnectionAttempts(0);
   };
-  
-  // If we have credentials stored but haven't fetched documents yet
-  useEffect(() => {
-    if (driveConnected && isOpen && documents.length === 0 && !documentsLoading) {
-      refreshCurrentFolder();
-    }
-  }, [driveConnected, isOpen, documents.length, documentsLoading, refreshCurrentFolder]);
   
   // Loading states
   const isProcessing = connectionLoading || documentsLoading || isApiLoading || connecting || connectionInProgress || isRefreshing;
