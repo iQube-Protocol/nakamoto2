@@ -1,3 +1,4 @@
+
 import { toast } from 'sonner';
 import type { MCPClientOptions, MCPContext } from './types';
 import { GoogleApiLoader } from './api/google-api-loader';
@@ -40,9 +41,17 @@ export class MCPClient {
    * Initialize or retrieve the conversation context
    */
   async initializeContext(existingConversationId?: string): Promise<string> {
-    const conversationId = await this.contextManager.initializeContext(existingConversationId);
-    this.conversationId = conversationId;
-    return conversationId;
+    try {
+      const conversationId = await this.contextManager.initializeContext(existingConversationId);
+      this.conversationId = conversationId;
+      return conversationId;
+    } catch (error) {
+      console.error("Error initializing context:", error);
+      // Generate a fallback conversation ID if context initialization fails
+      const fallbackId = `fallback-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
+      this.conversationId = fallbackId;
+      return fallbackId;
+    }
   }
   
   /**
@@ -63,35 +72,74 @@ export class MCPClient {
    * Add document content to context
    */
   addDocumentToContext(documentId: string, documentName: string, documentType: string, content: string): void {
-    return this.contextManager.addDocumentToContext(documentId, documentName, documentType, content);
+    this.contextManager.addDocumentToContext(documentId, documentName, documentType, content);
   }
   
   /**
    * Force persist the current context
    */
   persistContext(): void {
-    this.contextManager.persistContext();
+    try {
+      this.contextManager.persistContext();
+    } catch (error) {
+      console.error("Error persisting context:", error);
+    }
   }
   
   /**
    * Connect to Google Drive
    */
   async connectToDrive(clientId: string, apiKey: string, cachedToken?: string | null): Promise<boolean> {
-    return this.driveOperations.connectToDrive(clientId, apiKey, cachedToken);
+    const result = await this.driveOperations.connectToDrive(clientId, apiKey, cachedToken);
+    
+    // If connection failed, clear any toasts
+    if (!result) {
+      toast.dismiss();
+    }
+    
+    return result;
   }
   
   /**
    * List documents from Google Drive
    */
   async listDocuments(folderId?: string): Promise<any[]> {
-    return this.driveOperations.listDocuments(folderId);
+    try {
+      return await this.driveOperations.listDocuments(folderId);
+    } catch (error) {
+      console.error("Error listing documents:", error);
+      
+      // Clear any existing toasts to prevent persistence
+      toast.dismiss();
+      
+      toast.error('Could not retrieve documents', { 
+        duration: 3000,
+        description: 'Please try reconnecting to Google Drive' 
+      });
+      
+      return [];
+    }
   }
   
   /**
    * Fetch document content
    */
   async fetchDocumentContent(documentId: string): Promise<string | null> {
-    return this.driveOperations.fetchDocumentContent(documentId);
+    try {
+      return await this.driveOperations.fetchDocumentContent(documentId);
+    } catch (error) {
+      console.error("Error fetching document content:", error);
+      
+      // Clear any existing toasts to prevent persistence
+      toast.dismiss();
+      
+      toast.error('Could not fetch document content', { 
+        duration: 3000,
+        description: 'Please try reconnecting to Google Drive' 
+      });
+      
+      return null;
+    }
   }
   
   /**
@@ -148,13 +196,18 @@ export class MCPClient {
    */
   resetDriveConnection(): void {
     console.log('MCP: Resetting Drive connection');
+    
+    // Clear any existing toasts to prevent persistence
+    toast.dismiss();
+    
     this.driveOperations.setAuthenticationState(false);
     
     // Force reload Google API to ensure clean state
     this.apiLoader.reloadGoogleApi();
     
     toast.info('Google Drive connection has been reset', {
-      description: 'You will need to reconnect to access your documents'
+      description: 'You will need to reconnect to access your documents',
+      duration: 3000
     });
   }
   

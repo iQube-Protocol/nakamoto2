@@ -49,7 +49,9 @@ export function useMCP() {
     try {
       // Validate that we have the required credentials
       if (!clientId || !apiKey) {
-        toast.error('Missing Google API credentials');
+        toast.error('Missing Google API credentials', { 
+          duration: 3000 
+        });
         return false;
       }
       
@@ -75,7 +77,8 @@ export function useMCP() {
     } catch (error) {
       console.error('Error connecting to Drive:', error);
       toast.error('Failed to connect to Google Drive', {
-        description: error instanceof Error ? error.message : 'Unknown error occurred'
+        description: error instanceof Error ? error.message : 'Unknown error occurred',
+        duration: 4000
       });
       
       // Make sure we clean up on error
@@ -110,7 +113,8 @@ export function useMCP() {
       }
       
       toast.success('Google Drive connection reset', {
-        description: 'You can now reconnect to Google Drive'
+        description: 'You can now reconnect to Google Drive',
+        duration: 3000
       });
     }
   }, [client]);
@@ -118,18 +122,20 @@ export function useMCP() {
   // Optimized document listing with caching and better error handling
   const listDocuments = useCallback(async (folderId?: string): Promise<any[]> => {
     if (!client || !driveConnected) {
-      toast.error('Not connected to Google Drive');
+      toast.error('Not connected to Google Drive', { 
+        duration: 3000 
+      });
       return [];
     }
     
     const cacheKey = `gdrive-folder-${folderId || 'root'}`;
     const cachedData = sessionStorage.getItem(cacheKey);
     
-    // Use cached data if available and recent (less than 60 seconds old)
+    // Use cached data if available and recent (less than 30 seconds old)
     if (cachedData) {
       try {
         const { docs, timestamp } = JSON.parse(cachedData);
-        const isRecent = Date.now() - timestamp < 60000; // 60 seconds
+        const isRecent = Date.now() - timestamp < 30000; // 30 seconds
         
         if (isRecent) {
           console.log('Using cached folder data');
@@ -156,7 +162,8 @@ export function useMCP() {
     } catch (error) {
       console.error('Error listing documents:', error);
       toast.error('Failed to list documents', {
-        description: error instanceof Error ? error.message : 'Unknown error occurred'
+        description: error instanceof Error ? error.message : 'Unknown error occurred',
+        duration: 4000
       });
       return [];
     } finally {
@@ -167,7 +174,9 @@ export function useMCP() {
   // Optimized document fetching with caching
   const fetchDocument = useCallback(async (documentId: string) => {
     if (!client || !driveConnected) {
-      toast.error('Not connected to Google Drive');
+      toast.error('Not connected to Google Drive', { 
+        duration: 3000 
+      });
       return null;
     }
     
@@ -205,7 +214,8 @@ export function useMCP() {
     } catch (error) {
       console.error(`Error fetching document ${documentId}:`, error);
       toast.error('Failed to fetch document', {
-        description: error instanceof Error ? error.message : 'Unknown error occurred'
+        description: error instanceof Error ? error.message : 'Unknown error occurred',
+        duration: 4000
       });
       return null;
     } finally {
@@ -223,7 +233,9 @@ export function useMCP() {
       return id;
     } catch (error) {
       console.error('Error initializing MCP context:', error);
-      toast.error('Failed to initialize conversation context');
+      toast.error('Failed to initialize conversation context', {
+        duration: 3000
+      });
       return null;
     }
   }, [client]);

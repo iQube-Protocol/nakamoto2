@@ -72,7 +72,8 @@ export function useDriveConnection() {
   const handleConnect = useCallback(async () => {
     if (!clientId || !apiKey) {
       toast.error('Missing Google API credentials', {
-        description: 'Both Client ID and API Key are required'
+        description: 'Both Client ID and API Key are required',
+        duration: 3000
       });
       return false;
     }
@@ -80,7 +81,8 @@ export function useDriveConnection() {
     // Prevent multiple connection attempts
     if (connectionInProgress) {
       toast.info('Connection already in progress', {
-        description: 'Please wait for the current connection attempt to complete'
+        description: 'Please wait for the current connection attempt to complete',
+        duration: 3000
       });
       return false;
     }
@@ -100,7 +102,8 @@ export function useDriveConnection() {
         setConnectionInProgress(false);
         toast.error('Connection timed out', {
           id: 'drive-connection',
-          description: 'The connection attempt took too long. Please try again.'
+          description: 'The connection attempt took too long. Please try again.',
+          duration: 5000
         });
       }, 45000); // 45 seconds timeout
       
@@ -112,7 +115,7 @@ export function useDriveConnection() {
       
       toast.loading('Connecting to Google Drive...', {
         id: 'drive-connection',
-        duration: Infinity
+        duration: 30000 // Shorter duration to avoid persistent toasts
       });
       
       console.log('Starting drive connection with credentials', { clientId, apiKeyLength: apiKey?.length });
@@ -129,12 +132,14 @@ export function useDriveConnection() {
       if (success) {
         toast.success('Connected to Google Drive', {
           id: 'drive-connection',
-          description: 'Your documents are now available'
+          description: 'Your documents are now available',
+          duration: 3000
         });
       } else {
         toast.error('Failed to connect to Google Drive', {
           id: 'drive-connection',
-          description: 'Please check your credentials and try again'
+          description: 'Please check your credentials and try again',
+          duration: 5000
         });
       }
       
@@ -153,19 +158,22 @@ export function useDriveConnection() {
           // After multiple API errors, suggest a reset
           toast.error('Google API not loading properly', {
             id: 'drive-connection',
-            description: 'Try resetting the connection or refreshing the page'
+            description: 'Try resetting the connection or refreshing the page',
+            duration: 5000
           });
         } else {
           toast.error('Google API not available', {
             id: 'drive-connection',
-            description: 'Please wait a moment and try again'
+            description: 'Please wait a moment and try again',
+            duration: 4000
           });
         }
       } else {
         // Generic connection error
         toast.error('Connection error', {
           id: 'drive-connection',
-          description: error instanceof Error ? error.message : 'Unknown error'
+          description: error instanceof Error ? error.message : 'Unknown error',
+          duration: 4000
         });
       }
       
@@ -205,13 +213,15 @@ export function useDriveConnection() {
           localStorage.removeItem('gdrive-auth-token');
           
           toast.success('Connection state reset', {
-            description: 'You can now reconnect to Google Drive'
+            description: 'You can now reconnect to Google Drive',
+            duration: 3000
           });
         }
       } else {
         // Handle case where client isn't available
         toast.info('Resetting connection state', {
-          description: 'No active client detected'
+          description: 'No active client detected',
+          duration: 3000
         });
         
         // Still clear localStorage items
@@ -221,7 +231,8 @@ export function useDriveConnection() {
     } catch (error) {
       console.error('Error during connection reset:', error);
       toast.error('Error resetting connection', {
-        description: 'Please refresh the page and try again'
+        description: 'Please refresh the page and try again',
+        duration: 4000
       });
     }
   }, [client, connectionTimeout, mcpResetConnection]);

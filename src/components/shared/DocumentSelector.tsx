@@ -111,6 +111,14 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
       setApiLoadingState('loading');
       setApiCheckAttempts(0);
     }
+    
+    // Auto-refresh document list when opening the dialog if connected
+    if (open && driveConnected && !documentsLoading) {
+      refreshCurrentFolder().catch(err => {
+        console.error('Failed to refresh folder on dialog open:', err);
+        setConnectionError(true);
+      });
+    }
   };
   
   const handleFileSelection = (doc: any) => {
@@ -154,19 +162,12 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
   useEffect(() => {
     if (driveConnected && isOpen && documents.length === 0 && !documentsLoading) {
       console.log('DocumentSelector: Auto-refreshing documents');
-      // Fix: Make sure we handle potential Promise rejection correctly
-      // The refreshCurrentFolder might not return a Promise in some implementations
       try {
-        const result = refreshCurrentFolder();
-        // If it returns a Promise, add catch handler
-        if (result && typeof result.then === 'function') {
-          result.catch(() => {
-            // If refresh fails, likely due to connection issues
-            setConnectionError(true);
-          });
-        }
+        refreshCurrentFolder().catch(error => {
+          console.error('Error refreshing folder:', error);
+          setConnectionError(true);
+        });
       } catch (error) {
-        // Handle any synchronous errors
         console.error('Error refreshing folder:', error);
         setConnectionError(true);
       }
@@ -231,7 +232,7 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
               </ul>
               <div className="mt-4">
                 <Button 
-                  variant="destructive" 
+                  variant="outline" 
                   size="sm" 
                   onClick={handleResetConnection}
                   className="flex items-center gap-2 mt-2"
@@ -346,14 +347,14 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
                 variant="outline" 
                 size="sm"
                 onClick={handleResetConnection} 
-                className="flex items-center gap-2 text-red-500 hover:text-red-600 hover:bg-red-50"
+                className="flex items-center gap-2 text-purple-500 hover:text-purple-600 hover:bg-purple-50" 
               >
                 <RefreshCw className="h-3.5 w-3.5" />
                 Reset Connection
               </Button>
               <div className="flex gap-2">
                 <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
-                <Button onClick={refreshCurrentFolder} disabled={isProcessing} className="gap-1">
+                <Button onClick={refreshCurrentFolder} disabled={isProcessing} className="gap-1 bg-purple-500 hover:bg-purple-600">
                   {isProcessing && <RefreshCw className="h-4 w-4 animate-spin" />}
                   {!isProcessing && <RefreshCw className="h-4 w-4" />}
                   Refresh
