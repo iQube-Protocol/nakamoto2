@@ -33,6 +33,10 @@ export class DriveConnectionManager {
     const apiLoaded = await this.googleApiLoader.ensureGoogleApiLoaded();
     if (!apiLoaded) {
       console.error('Google API failed to load, attempting to reload...');
+      
+      // Show toast to indicate loading process
+      toast.loading('Loading Google API...', { id: 'loading-google-api', duration: 3000 });
+      
       // Try reloading the API
       this.googleApiLoader.loadGoogleApi();
       
@@ -50,37 +54,34 @@ export class DriveConnectionManager {
     }
     
     const gapi = this.googleApiLoader.getGapi();
-    if (!gapi || !gapi.client) {
-      console.error('Google API client not available, initializing...');
-      
-      // Check if gapi exists but client is not initialized
-      if (gapi && !gapi.client) {
-        return new Promise<boolean>((resolve) => {
-          gapi.load('client', {
-            callback: async () => {
-              console.log('Google client API initialized in connectToDrive');
-              // Continue with authentication after client is loaded
-              const result = await this.authService.authenticateWithDrive(clientId, apiKey, cachedToken);
-              resolve(result);
-            },
-            onerror: () => {
-              console.error('Failed to load Google client API');
-              toast.error('Google API initialization failed', {
-                description: 'Please refresh the page and try again'
-              });
-              resolve(false);
-            },
-            timeout: 10000 // 10 seconds
-          });
-        });
-      }
-      
+    if (!gapi) {
+      console.error('Google API not available after loading');
       toast.error('Google API not available', {
         description: 'Please refresh the page and try again'
       });
       return false;
     }
     
+    // If gapi is available but client is not initialized
+    if (gapi && !gapi.client) {
+      console.log('Gapi available but client not initialized, initializing now');
+      
+      try {
+        // Initialize gapi client
+        const initialized = await ApiInitializer.initializeGapiClient(gapi);
+        if (!initialized) {
+          console.error('Failed to initialize Google API client');
+          toast.error('Failed to initialize Google API');
+          return false;
+        }
+      } catch (error) {
+        console.error('Error initializing Google API client:', error);
+        toast.error('Failed to initialize Google API');
+        return false;
+      }
+    }
+    
+    // Proceed with authentication
     return this.authService.authenticateWithDrive(clientId, apiKey, cachedToken);
   }
   

@@ -20,9 +20,8 @@ export class ApiInitializer {
         onerror: (e: any) => {
           console.error('MCP: Failed to initialize Google API client:', e);
           resolve(false);
-        },
-        // Remove the timeout parameter or provide both timeout and ontimeout
-        // timeout: 10000 // 10 seconds
+        }
+        // Completely removed timeout parameter to avoid the error
       });
     });
   }
