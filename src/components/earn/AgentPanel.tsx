@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { AgentInterface } from '@/components/shared/agent';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
@@ -20,7 +20,27 @@ const AgentPanel = ({
   isPanelCollapsed 
 }: AgentPanelProps) => {
   const { toast } = useToast();
-  const [conversationId, setConversationId] = React.useState<string | null>(null);
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [historicalContext, setHistoricalContext] = useState<string>('');
+  
+  // Load conversation context when component mounts
+  useEffect(() => {
+    const loadContext = async () => {
+      if (conversationId) {
+        const context = await getConversationContext(conversationId, 'earn');
+        if (context.historicalContext) {
+          setHistoricalContext(context.historicalContext);
+          console.log('Loaded historical context for earn agent');
+        }
+        
+        if (context.conversationId !== conversationId) {
+          setConversationId(context.conversationId);
+        }
+      }
+    };
+    
+    loadContext();
+  }, [conversationId]);
 
   const handleAIMessage = async (message: string) => {
     try {
@@ -30,6 +50,11 @@ const AgentPanel = ({
       if (contextResult.conversationId !== conversationId) {
         setConversationId(contextResult.conversationId);
         console.log(`Setting new conversation ID: ${contextResult.conversationId}`);
+      }
+      
+      if (contextResult.historicalContext !== historicalContext) {
+        setHistoricalContext(contextResult.historicalContext);
+        console.log('Updated historical context for earn agent');
       }
       
       const { data, error } = await supabase.functions.invoke('earn-ai', {

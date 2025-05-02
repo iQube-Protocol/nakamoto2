@@ -188,11 +188,13 @@ export const prepareConversationContext = async (
     if (needsSummarization) {
       console.log(`Conversation ${conversationId} needs summarization, triggering...`);
       await triggerConversationSummarize(conversationId, agentType);
+      toast.success('Summarizing your previous conversations for better context.');
     }
   }
   
   // Get historical context regardless of summarization
   const historicalContext = await getHistoricalContextForPrompt(agentType);
+  console.log(`Historical context for ${agentType} (length: ${historicalContext.length}):\n${historicalContext}`);
   
   return {
     conversationId: newConversationId,

@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
@@ -34,7 +35,9 @@ serve(async (req) => {
   }
 
   try {
-    const { message, metaQube, blakQube, conversationId, metisActive } = await req.json();
+    const { message, metaQube, blakQube, conversationId, metisActive, historicalContext } = await req.json();
+    
+    console.log(`Processing request for conversation ${conversationId} with historical context: ${historicalContext ? 'present' : 'none'}`);
     
     // Initialize or retrieve MCP context
     let mcpContext: MCPContext;
@@ -53,7 +56,7 @@ serve(async (req) => {
       }
     } else {
       // Create new conversation context
-      const newConversationId = crypto.randomUUID();
+      const newConversationId = conversationId || crypto.randomUUID();
       mcpContext = {
         conversationId: newConversationId,
         messages: [{
@@ -209,6 +212,12 @@ Additionally, consider the following iQube data for personalization:
   - Web3 Interests: ${blakQube && blakQube["Web3-Interests"] ? blakQube["Web3-Interests"].join(", ") : "Blockchain, DeFi, NFTs"}
   - Tokens of Interest: ${blakQube && blakQube["Tokens-of-Interest"] ? blakQube["Tokens-of-Interest"].join(", ") : "General tokens"}
   - Chain IDs: ${blakQube && blakQube["Chain-IDs"] ? blakQube["Chain-IDs"].join(", ") : "Multiple chains"}`;
+
+    // Add historical context if provided
+    if (historicalContext && historicalContext.length > 0) {
+      console.log('Adding historical context to system prompt');
+      systemPrompt += `\n\n${historicalContext}`;
+    }
 
     // Add Metis capabilities if active
     if (mcpContext.metadata.metisActive) {

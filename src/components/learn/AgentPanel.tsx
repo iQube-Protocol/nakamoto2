@@ -4,7 +4,7 @@ import { AgentInterface } from '@/components/shared/agent';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { MetaQube, BlakQube } from '@/lib/types';
-import { processAgentInteraction } from '@/services/agent-service';
+import { processAgentInteraction, getConversationContext } from '@/services/agent-service';
 
 interface AgentPanelProps {
   metaQube: MetaQube;
@@ -23,6 +23,7 @@ const AgentPanel = ({
 }: AgentPanelProps) => {
   const { toast } = useToast();
   const [metisActive, setMetisActive] = useState<boolean>(false);
+  const [historicalContext, setHistoricalContext] = useState<string>('');
 
   // Listen for Metis activation events
   useEffect(() => {
@@ -45,16 +46,49 @@ const AgentPanel = ({
     };
   }, []);
 
+  // Load conversation context when component mounts or conversationId changes
+  useEffect(() => {
+    const loadContext = async () => {
+      if (conversationId) {
+        const context = await getConversationContext(conversationId, 'learn');
+        if (context.historicalContext) {
+          setHistoricalContext(context.historicalContext);
+          console.log('Loaded historical context for learn agent');
+        }
+        
+        if (context.conversationId !== conversationId) {
+          setConversationId(context.conversationId);
+        }
+      }
+    };
+    
+    loadContext();
+  }, [conversationId, setConversationId]);
+
   const handleAIMessage = async (message: string) => {
     try {
+      // Get conversation context, including history if available
+      const contextResult = await getConversationContext(conversationId, 'learn');
+      
+      if (contextResult.conversationId !== conversationId) {
+        setConversationId(contextResult.conversationId);
+        console.log(`Setting new conversation ID: ${contextResult.conversationId}`);
+      }
+      
+      if (contextResult.historicalContext !== historicalContext) {
+        setHistoricalContext(contextResult.historicalContext);
+        console.log('Updated historical context for learn agent');
+      }
+      
       // Call the edge function to get the AI response
       const { data, error } = await supabase.functions.invoke('learn-ai', {
         body: { 
           message, 
           metaQube,
           blakQube,
-          conversationId,
-          metisActive
+          conversationId: contextResult.conversationId,
+          metisActive,
+          historicalContext: contextResult.historicalContext
         }
       });
       

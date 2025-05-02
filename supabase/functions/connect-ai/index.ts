@@ -34,7 +34,9 @@ serve(async (req) => {
   }
 
   try {
-    const { message, metaQube, blakQube, communityMetrics, conversationId } = await req.json();
+    const { message, metaQube, blakQube, communityMetrics, conversationId, historicalContext } = await req.json();
+    
+    console.log(`Processing request for conversation ${conversationId} with historical context: ${historicalContext ? 'present' : 'none'}`);
     
     // Initialize or retrieve MCP context
     let mcpContext: MCPContext;
@@ -49,7 +51,7 @@ serve(async (req) => {
       });
     } else {
       // Create new conversation context
-      const newConversationId = crypto.randomUUID();
+      const newConversationId = conversationId || crypto.randomUUID();
       mcpContext = {
         conversationId: newConversationId,
         messages: [{
@@ -70,7 +72,7 @@ serve(async (req) => {
     }
     
     // System prompt with incorporated iQube data
-    const systemPrompt = `## **Prompt: MonDAI Connection Aigent**
+    let systemPrompt = `## **Prompt: MonDAI Connection Aigent**
 
 **<role-description>**  
 You are a **Connection Aigent** for MonDAI, specializing in community engagement, networking, and relationship building in web3 spaces. Your purpose is to help users meaningfully connect with others in the ecosystem based on their shared interests, goals, and values as reflected in their iQube data.
@@ -123,6 +125,12 @@ Format your responses to be visually appealing and easy to consume:
 6. Use emojis sparingly to highlight key points 🔗 👥 🌐
 
 Keep your responses conversational but informative, focusing on being helpful without overwhelming the user with jargon.`;
+
+    // Add historical context if provided
+    if (historicalContext && historicalContext.length > 0) {
+      console.log('Adding historical context to system prompt');
+      systemPrompt += `\n\n${historicalContext}`;
+    }
 
     // Convert MCP context to OpenAI message format
     const formattedMessages = [
