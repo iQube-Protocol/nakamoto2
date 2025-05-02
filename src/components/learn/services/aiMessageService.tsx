@@ -1,6 +1,5 @@
 
 import { MetaQube, BlakQube } from '@/lib/types';
-import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { processAgentInteraction, getConversationContext } from '@/services/agent-service';
 import { toast } from 'sonner';
@@ -91,11 +90,7 @@ export async function processAiMessage({
     };
   } catch (error) {
     console.error('Failed to get AI response:', error);
-    toast({
-      title: "AI Service Error",
-      description: "Could not connect to the AI service. Please try again later.",
-      variant: "destructive"
-    });
+    toast.error("AI Service Error: Could not connect to the AI service. Please try again later.");
     
     return {
       id: Date.now().toString(),
