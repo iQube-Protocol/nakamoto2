@@ -1,7 +1,7 @@
 
 import { toast } from 'sonner';
 import type { MCPClientOptions, MCPContext } from './types';
-import { GoogleApiLoader } from './api-loader';
+import { GoogleApiLoader } from './api/google-api-loader';
 import { ContextManager } from './context-manager';
 import { DriveOperations } from './drive-operations';
 
