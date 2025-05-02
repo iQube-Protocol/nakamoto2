@@ -1,4 +1,3 @@
-
 import { toast } from 'sonner';
 
 /**
@@ -20,6 +19,56 @@ export class GoogleApiLoader {
     this.onApiLoadComplete = onApiLoadComplete || null;
     
     // Load Google API script if it's not already loaded
+    this.loadGoogleApi();
+  }
+  
+  /**
+   * Force reload Google API scripts
+   * This is used when resetting the connection
+   */
+  public reloadGoogleApi(): void {
+    if (typeof window === 'undefined') return;
+    
+    console.log('MCP: Forcefully reloading Google API scripts...');
+    
+    // Reset state
+    this.isApiLoaded = false;
+    this.apiLoadPromise = null;
+    
+    if (this.onApiLoadStart) {
+      this.onApiLoadStart();
+    }
+    
+    // Remove any existing scripts first
+    const existingScripts = document.querySelectorAll('script[src*="apis.google.com"], script[src*="accounts.google.com"]');
+    existingScripts.forEach(script => {
+      script.remove();
+    });
+    
+    // Reset global Google API objects
+    if ((window as any).gapi) {
+      try {
+        // Try to clean up any event listeners
+        if ((window as any).gapi.auth && (window as any).gapi.auth.authorize) {
+          (window as any).gapi.auth.authorize = null;
+        }
+      } catch (e) {
+        console.warn('Error cleaning up gapi auth:', e);
+      }
+      
+      // Set gapi to undefined
+      (window as any).gapi = undefined;
+    }
+    
+    if ((window as any).google?.accounts) {
+      try {
+        (window as any).google.accounts = undefined;
+      } catch (e) {
+        console.warn('Error cleaning up Google accounts:', e);
+      }
+    }
+    
+    // Reload the scripts
     this.loadGoogleApi();
   }
   

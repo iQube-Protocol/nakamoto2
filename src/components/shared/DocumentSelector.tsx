@@ -10,7 +10,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Info, FileText, RefreshCw } from 'lucide-react';
+import { Info, FileText, RefreshCw, AlertTriangle } from 'lucide-react';
 import { useDriveConnection } from '@/hooks/useDriveConnection';
 import { useDocumentBrowser } from '@/hooks/useDocumentBrowser';
 import ConnectionForm from './document/ConnectionForm';
@@ -33,6 +33,7 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
   const [connecting, setConnecting] = useState(false);
   const [apiLoadingState, setApiLoadingState] = useState<'loading' | 'loaded' | 'error'>('loading');
   const [apiCheckAttempts, setApiCheckAttempts] = useState(0);
+  const [connectionError, setConnectionError] = useState<boolean>(false);
   const maxApiCheckAttempts = 30; // Increased from 20 to 30 maximum attempts
   
   const {
@@ -45,6 +46,7 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
     apiKey,
     setApiKey,
     handleConnect,
+    resetConnection, // New function we're using
     isApiLoading: hookApiLoading
   } = useDriveConnection();
   
@@ -123,20 +125,38 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
   // Fixed: Now properly returns Promise<boolean>
   const handleConnectClick = async (): Promise<boolean> => {
     setConnecting(true);
+    setConnectionError(false);
     try {
       console.log('DocumentSelector: Initiating connection process');
       const result = await handleConnect();
+      if (!result) {
+        setConnectionError(true);
+      }
       return result; // This properly returns the boolean from handleConnect
+    } catch (error) {
+      setConnectionError(true);
+      return false;
     } finally {
       setConnecting(false);
     }
+  };
+  
+  // Handle reset connection
+  const handleResetConnection = () => {
+    resetConnection();
+    setConnectionError(false);
+    setApiLoadingState('loading');
+    setApiCheckAttempts(0);
   };
   
   // If we have credentials stored but haven't fetched documents yet
   useEffect(() => {
     if (driveConnected && isOpen && documents.length === 0 && !documentsLoading) {
       console.log('DocumentSelector: Auto-refreshing documents');
-      refreshCurrentFolder();
+      refreshCurrentFolder().catch(() => {
+        // If refresh fails, likely due to connection issues
+        setConnectionError(true);
+      });
     }
   }, [driveConnected, isOpen, documents.length, documentsLoading, refreshCurrentFolder]);
   
@@ -196,6 +216,43 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
                 <li>Disabling any ad blockers or privacy extensions</li>
                 <li>Using a different browser</li>
               </ul>
+              <div className="mt-4">
+                <Button 
+                  variant="destructive" 
+                  size="sm" 
+                  onClick={handleResetConnection}
+                  className="flex items-center gap-2 mt-2"
+                >
+                  <RefreshCw className="h-3.5 w-3.5" />
+                  Reset Connection
+                </Button>
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
+        
+        {/* New Connection Error Alert */}
+        {connectionError && driveConnected && (
+          <Alert className="bg-amber-500/10 border-amber-500/30 mb-4">
+            <AlertTriangle className="h-4 w-4 text-amber-500" />
+            <AlertDescription className="mt-2">
+              There seems to be an issue with your Google Drive connection. This might happen if:
+              <ul className="list-disc pl-5 mt-2 space-y-1 text-sm">
+                <li>Your authentication token has expired</li>
+                <li>You revoked access for this application</li>
+                <li>There's a network connectivity issue</li>
+              </ul>
+              <div className="mt-4">
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleResetConnection}
+                  className="flex items-center gap-2 mt-2"
+                >
+                  <RefreshCw className="h-3.5 w-3.5" />
+                  Reset Connection
+                </Button>
+              </div>
             </AlertDescription>
           </Alert>
         )}
@@ -233,6 +290,17 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
                 <AlertDescription className="mt-2">
                   If you're having trouble connecting, try refreshing the page and trying again.
                   Make sure to allow pop-ups for this site, as Google's authentication may appear in a popup window.
+                  <div className="mt-4">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      onClick={handleResetConnection}
+                      className="flex items-center gap-2 mt-2"
+                    >
+                      <RefreshCw className="h-3.5 w-3.5" />
+                      Reset Connection
+                    </Button>
+                  </div>
                 </AlertDescription>
               </Alert>
             )}
@@ -261,12 +329,23 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
         <DialogFooter>
           {driveConnected && (
             <>
-              <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
-              <Button onClick={refreshCurrentFolder} disabled={isProcessing} className="gap-1">
-                {isProcessing && <RefreshCw className="h-4 w-4 animate-spin" />}
-                {!isProcessing && <RefreshCw className="h-4 w-4" />}
-                Refresh
+              <Button 
+                variant="outline" 
+                size="sm"
+                onClick={handleResetConnection} 
+                className="flex items-center gap-2 text-red-500 hover:text-red-600 hover:bg-red-50"
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+                Reset Connection
               </Button>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
+                <Button onClick={refreshCurrentFolder} disabled={isProcessing} className="gap-1">
+                  {isProcessing && <RefreshCw className="h-4 w-4 animate-spin" />}
+                  {!isProcessing && <RefreshCw className="h-4 w-4" />}
+                  Refresh
+                </Button>
+              </div>
             </>
           )}
         </DialogFooter>

@@ -1,10 +1,9 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useMCP } from '@/hooks/use-mcp';
 import { toast } from 'sonner';
 
 export function useDriveConnection() {
-  const { driveConnected, connectToDrive, isLoading, client, isApiLoading } = useMCP();
+  const { driveConnected, connectToDrive, isLoading, client, isApiLoading, resetDriveConnection: mcpResetConnection } = useMCP();
   const [clientId, setClientId] = useState('');
   const [apiKey, setApiKey] = useState('');
   const [connectionInProgress, setConnectionInProgress] = useState(false);
@@ -116,6 +115,35 @@ export function useDriveConnection() {
     }
   }, [clientId, apiKey, connectToDrive, connectionInProgress, connectionTimeout]);
   
+  // Add a reset connection function
+  const resetConnection = useCallback(() => {
+    if (client) {
+      // Clear any existing timeout
+      if (connectionTimeout) {
+        clearTimeout(connectionTimeout);
+        setConnectionTimeout(null);
+      }
+      
+      // Reset connection state
+      setConnectionInProgress(false);
+      setConnectionAttempts(0);
+      
+      // Use MCP reset if available, otherwise do a local reset
+      if (mcpResetConnection) {
+        mcpResetConnection();
+      } else {
+        // Clear connection status in localStorage
+        localStorage.removeItem('gdrive-connected');
+        localStorage.removeItem('gdrive-auth-token');
+        
+        // Keep credentials for convenience, but reset connection status
+        toast.success('Connection state reset', {
+          description: 'You can now reconnect to Google Drive'
+        });
+      }
+    }
+  }, [client, connectionTimeout, mcpResetConnection]);
+  
   return {
     driveConnected,
     isLoading,
@@ -126,6 +154,7 @@ export function useDriveConnection() {
     setClientId,
     apiKey,
     setApiKey,
-    handleConnect
+    handleConnect,
+    resetConnection  // New function to export
   };
 }

@@ -1,4 +1,3 @@
-
 import { toast } from 'sonner';
 import type { MCPClientOptions, MCPContext } from './types';
 import { GoogleApiLoader } from './api-loader';
@@ -142,6 +141,21 @@ export class MCPClient {
    */
   isConnectedToDrive(): boolean {
     return this.driveOperations.isConnectedToDrive();
+  }
+  
+  /**
+   * Reset the drive connection state
+   */
+  resetDriveConnection(): void {
+    console.log('MCP: Resetting Drive connection');
+    this.driveOperations.setAuthenticationState(false);
+    
+    // Force reload Google API to ensure clean state
+    this.apiLoader.reloadGoogleApi();
+    
+    toast.info('Google Drive connection has been reset', {
+      description: 'You will need to reconnect to access your documents'
+    });
   }
   
   // Public getter for api loader's callbacks to support existing code

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { MCPClient, getMCPClient } from '@/integrations/mcp/client';
 import { useAuth } from '@/hooks/use-auth';
@@ -72,6 +71,33 @@ export function useMCP() {
       return false;
     } finally {
       setIsLoading(false);
+    }
+  }, [client]);
+  
+  // Reset drive connection - new function
+  const resetDriveConnection = useCallback(() => {
+    if (client) {
+      // Reset internal state in the client
+      client.resetDriveConnection();
+      
+      // Clear connection status in localStorage
+      localStorage.removeItem('gdrive-connected');
+      localStorage.removeItem('gdrive-auth-token');
+      
+      // Update local state
+      setDriveConnected(false);
+      setDocuments([]);
+      
+      // Clear cache
+      for (const key in sessionStorage) {
+        if (key.startsWith('gdrive-folder-')) {
+          sessionStorage.removeItem(key);
+        }
+      }
+      
+      toast.success('Google Drive connection reset', {
+        description: 'You can now reconnect to Google Drive'
+      });
     }
   }, [client]);
   
@@ -196,6 +222,7 @@ export function useMCP() {
     isLoading,
     isApiLoading,
     connectToDrive,
+    resetDriveConnection, // New function exposed
     listDocuments,
     fetchDocument,
     initializeContext
