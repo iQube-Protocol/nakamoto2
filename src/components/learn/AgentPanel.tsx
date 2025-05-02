@@ -4,6 +4,7 @@ import { AgentInterface } from '@/components/shared/agent';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { MetaQube, BlakQube } from '@/lib/types';
+import { processAgentInteraction } from '@/services/agent-service';
 
 interface AgentPanelProps {
   metaQube: MetaQube;
@@ -46,6 +47,7 @@ const AgentPanel = ({
 
   const handleAIMessage = async (message: string) => {
     try {
+      // Call the edge function to get the AI response
       const { data, error } = await supabase.functions.invoke('learn-ai', {
         body: { 
           message, 
@@ -83,6 +85,18 @@ const AgentPanel = ({
           }
         }
       }
+
+      // Store the interaction in the database for persistence
+      await processAgentInteraction(
+        message,
+        'learn',
+        data.message,
+        {
+          ...(data.mcp || {}),
+          metisActive: metisActive,
+          conversationId: data.conversationId
+        }
+      );
       
       return {
         id: Date.now().toString(),

@@ -27,49 +27,48 @@ export const processAgentInteraction = async (
     const userId = session.user.id;
     console.log(`Agent interaction: Processing for user ID ${userId}`);
     
-    // Store the interaction directly in the database
-    console.log('Direct insert into user_interactions table...');
-    const { data: directData, error: directError } = await supabase
-      .from('user_interactions')
-      .insert({
-        query,
-        response: agentResponse,
-        interaction_type: agentType,
-        metadata,
-        user_id: userId
-      })
-      .select();
+    // Store the interaction in the database using the service method
+    const result = await storeUserInteraction({
+      query,
+      response: agentResponse,
+      interactionType: agentType,
+      metadata,
+      user_id: userId
+    });
     
-    if (directError) {
-      console.error('Direct DB insert failed:', directError);
+    if (!result.success) {
+      console.error('Failed to store interaction:', result.error);
       
-      // Try service method as fallback
-      console.log('Attempting service method fallback...');
-      const result = await storeUserInteraction({
-        query,
-        response: agentResponse,
-        interactionType: agentType,
-        metadata,
-        user_id: userId
-      });
+      // Try direct database insert as fallback
+      console.log('Attempting direct database insert as fallback...');
+      const { data: directData, error: directError } = await supabase
+        .from('user_interactions')
+        .insert({
+          query,
+          response: agentResponse,
+          interaction_type: agentType,
+          metadata,
+          user_id: userId
+        })
+        .select();
       
-      if (!result.success) {
-        console.error('Service fallback also failed:', result.error);
+      if (directError) {
+        console.error('Direct DB insert also failed:', directError);
         toast.error('Failed to save your conversation history');
       } else {
-        console.log('Service fallback succeeded with ID:', result.data?.id);
+        console.log('Direct DB insert succeeded with ID:', directData?.[0]?.id);
         return {
           success: true,
           response: agentResponse,
-          interactionId: result.data?.id
+          interactionId: directData?.[0]?.id
         };
       }
     } else {
-      console.log('Direct DB insert succeeded with ID:', directData?.[0]?.id);
+      console.log('Interaction stored successfully with ID:', result.data?.id);
       return {
         success: true,
         response: agentResponse,
-        interactionId: directData?.[0]?.id
+        interactionId: result.data?.id
       };
     }
     

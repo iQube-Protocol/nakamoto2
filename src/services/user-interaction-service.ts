@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export interface InteractionData {
@@ -48,7 +49,7 @@ export const storeUserInteraction = async (data: InteractionData) => {
   }
 };
 
-// Completely revised getUserInteractions function - focusing on direct table access
+// Revised getUserInteractions function with improved database access
 export const getUserInteractions = async (
   interactionType?: 'learn' | 'earn' | 'connect',
   limit = 50, 
@@ -64,32 +65,42 @@ export const getUserInteractions = async (
       return { data: null, error: new Error('User not authenticated') };
     }
 
-    console.log('DIRECT DB QUERY: Fetching interactions for user:', user_id, 'type:', interactionType || 'all');
+    console.log('DB QUERY: Fetching interactions for user:', user_id, 'type:', interactionType || 'all');
 
-    // Use a raw query to debug what's happening
-    const { data, error } = await supabase
+    // Build the query based on whether we're filtering by interaction type
+    let query = supabase
       .from('user_interactions')
       .select('*')
-      .eq('user_id', user_id)
-      .order('created_at', { ascending: false });
+      .eq('user_id', user_id);
+    
+    if (interactionType) {
+      query = query.eq('interaction_type', interactionType);
+    }
+    
+    const { data, error } = await query
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
 
     if (error) {
-      console.error('Error in direct DB query:', error);
+      console.error('Error fetching user interactions:', error);
       return { data: null, error };
     }
     
-    console.log(`DIRECT DB QUERY returned ${data?.length || 0} total interactions`);
+    console.log(`DB QUERY: Retrieved ${data?.length || 0} interactions for ${interactionType || 'all'} type`);
     
-    // Now apply filters if needed
-    let filteredData = data;
-    if (interactionType && data) {
-      filteredData = data.filter(item => item.interaction_type === interactionType);
-      console.log(`Filtered to ${filteredData?.length || 0} ${interactionType} interactions`);
+    if (data && data.length > 0) {
+      console.log('Sample interaction:', {
+        id: data[0].id,
+        type: data[0].interaction_type, 
+        created_at: data[0].created_at,
+      });
+    } else {
+      console.log('No interactions found for the user');
     }
 
-    return { data: filteredData || [], error: null };
+    return { data: data || [], error: null };
   } catch (error) {
-    console.error('Unexpected error in direct DB query:', error);
+    console.error('Unexpected error fetching user interactions:', error);
     return { data: null, error };
   }
 };

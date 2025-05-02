@@ -24,46 +24,28 @@ export const useUserInteractions = (
     setError(null); // Reset error state before fetching
     
     try {
-      console.log(`EMERGENCY DIRECT QUERY: Fetching for user: ${user.id}, type: ${interactionType || 'all'}`);
+      console.log(`Fetching interactions for user: ${user.id}, type: ${interactionType || 'all'}`);
       
-      // Use completely direct query approach
-      let query = supabase
-        .from('user_interactions')
-        .select('*')
-        .eq('user_id', user.id);
-      
-      // Filter by interaction type if specified
-      if (interactionType) {
-        query = query.eq('interaction_type', interactionType);
-      }
-      
-      // Order by created_at descending
-      const { data, error: fetchError } = await query.order('created_at', { ascending: false });
+      // Use the service method to fetch interactions
+      const { data, error: fetchError } = await getUserInteractions(interactionType);
       
       if (fetchError) {
-        console.error('EMERGENCY DIRECT QUERY ERROR:', fetchError);
+        console.error('Error fetching interactions:', fetchError);
         throw fetchError;
       }
       
-      console.log(`EMERGENCY DIRECT QUERY SUCCESS: Found ${data?.length || 0} interactions`);
+      console.log(`Found ${data?.length || 0} interactions`);
       
       if (data && data.length > 0) {
-        console.log('Sample interaction:', {
-          id: data[0].id,
-          type: data[0].interaction_type,
-          created_at: data[0].created_at,
-          query_length: data[0].query?.length || 0,
-        });
-        
         setInteractions(data);
       } else {
-        console.log('No interactions found through direct query');
+        console.log('No interactions found');
         setInteractions([]);
       }
       
       setError(null);
     } catch (err) {
-      console.error('EMERGENCY DIRECT QUERY FATAL ERROR:', err);
+      console.error('Error fetching interactions:', err);
       setError(err as Error);
       toast.error('Failed to load your interaction history');
       setInteractions([]); // Clear interactions on error

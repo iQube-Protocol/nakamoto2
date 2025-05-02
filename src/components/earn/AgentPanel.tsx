@@ -4,6 +4,7 @@ import { AgentInterface } from '@/components/shared/agent';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { MetaQube, TokenMetrics, BlakQube } from '@/lib/types';
+import { processAgentInteraction } from '@/services/agent-service';
 
 interface AgentPanelProps {
   tokenMetrics: TokenMetrics;
@@ -46,6 +47,17 @@ const AgentPanel = ({
           console.log('MCP metadata:', data.mcp);
         }
       }
+      
+      // Store the interaction in the database for persistence
+      await processAgentInteraction(
+        message,
+        'earn',
+        data.message,
+        {
+          ...(data.mcp || {}),
+          conversationId: data.conversationId
+        }
+      );
       
       return {
         id: Date.now().toString(),
