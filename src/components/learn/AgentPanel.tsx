@@ -28,6 +28,7 @@ const AgentPanel = ({
   const [historicalContext, setHistoricalContext] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const { client: mcpClient, isInitialized } = useMCP();
+  const [documentContextUpdated, setDocumentContextUpdated] = useState<number>(0);
 
   // Listen for Metis activation events
   useEffect(() => {
@@ -85,6 +86,12 @@ const AgentPanel = ({
     loadContext();
   }, [conversationId, setConversationId, mcpClient, isInitialized]);
 
+  // Handle when documents are added or removed
+  const handleDocumentContextUpdated = () => {
+    setDocumentContextUpdated(prev => prev + 1);
+    console.log('Document context updated, triggering refresh');
+  };
+
   const handleAIMessage = async (message: string) => {
     try {
       // Get conversation context, including history if available
@@ -106,7 +113,17 @@ const AgentPanel = ({
         const mcpContext = mcpClient.getModelContext();
         if (mcpContext?.documentContext) {
           documentContext = mcpContext.documentContext;
-          console.log('MCP: Including document context in request', documentContext.length);
+          console.log('MCP: Including document context in request', {
+            documentCount: documentContext.length,
+            documentIds: documentContext.map(doc => doc.documentId),
+            documentNames: documentContext.map(doc => doc.documentName)
+          });
+          
+          // Log a sample of each document's content to verify it's being sent
+          documentContext.forEach((doc, index) => {
+            const contentPreview = doc.content.substring(0, 100) + (doc.content.length > 100 ? '...' : '');
+            console.log(`Document ${index + 1} (${doc.documentName}) content preview:`, contentPreview);
+          });
         }
       }
       
@@ -204,6 +221,9 @@ const AgentPanel = ({
         description="Personalized web3 education based on your iQube data"
         agentType="learn"
         onMessageSubmit={handleAIMessage}
+        onDocumentAdded={handleDocumentContextUpdated}
+        documentContextUpdated={documentContextUpdated}
+        conversationId={conversationId}
         initialMessages={[
           {
             id: "1",

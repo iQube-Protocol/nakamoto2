@@ -195,8 +195,31 @@ export class MCPClient {
     console.log(`MCP: Fetching document content for ${documentId}`);
     
     try {
-      // In production, would fetch the actual document content via Google Drive API
-      const documentContent = "This is simulated document content for document " + documentId;
+      // Enhanced simulated document content with more meaningful information
+      let documentContent = "";
+      let documentName = "";
+      let documentType = "pdf";
+      
+      // Generate more detailed fake content based on document ID
+      switch(documentId) {
+        case 'doc1':
+          documentName = "Web3 Introduction.pdf";
+          documentContent = "# Introduction to Web3\n\nWeb3 represents the next evolution of the internet, focusing on decentralization and user ownership. Key concepts include:\n\n1. Blockchain Technology: Distributed ledger systems that enable trustless transactions\n2. Smart Contracts: Self-executing code that runs on blockchains\n3. Decentralized Applications (DApps): Applications built on blockchain infrastructure\n4. Tokenization: Representing real-world assets as digital tokens\n5. DAOs: Decentralized Autonomous Organizations governed by community members\n\nWeb3 aims to shift power from centralized platforms back to users, enabling greater privacy, ownership of data, and new economic models.";
+          break;
+        case 'doc2':
+          documentName = "DeFi Strategies.docx";
+          documentType = "docx";
+          documentContent = "# DeFi Investment Strategies\n\n## Liquidity Providing\nProviding liquidity to AMMs (Automated Market Makers) can generate yield through trading fees and token incentives. Popular platforms include Uniswap, Curve, and Balancer.\n\n## Yield Farming\nDeploying assets across protocols to maximize returns, often involving governance token rewards. Strategies range from simple single-asset deposits to complex leveraged positions.\n\n## Staking\nLocking tokens to support network security and operations in return for staking rewards. Common in PoS (Proof of Stake) networks like Ethereum 2.0, Solana, and Polkadot.\n\n## Risk Management\nDiversification across protocols, regular auditing of smart contract exposure, and using insurance protocols like Nexus Mutual can help mitigate risks in DeFi investing.";
+          break;
+        case 'doc3':
+          documentName = "NFT Market Analysis.txt";
+          documentType = "txt";
+          documentContent = "NFT MARKET ANALYSIS - Q2 2023\n\nMarket Overview:\nThe NFT market has shown signs of maturation following the speculative bubble of 2021-2022. Trading volumes have stabilized at approximately $450M monthly, down from peaks exceeding $4B but showing more sustainable growth patterns.\n\nKey Segments:\n1. Digital Art - Established artists continue to dominate the high-end market, with increased museum and institutional participation.\n2. Gaming NFTs - Utility-focused gaming assets represent the largest segment by transaction count, with play-to-earn models evolving toward more sustainable play-and-earn approaches.\n3. Membership NFTs - Community-oriented collections offering concrete benefits and utility have outperformed purely speculative projects.\n\nTechnological Developments:\n- Migration to more energy-efficient consensus mechanisms has addressed environmental concerns\n- Layer-2 scaling solutions have significantly reduced transaction costs\n- Cross-chain bridging protocols are improving interoperability between ecosystems\n\nMarket Outlook:\nThe NFT sector is likely to continue its integration with traditional industries, particularly in fashion, music rights, and digital identity solutions. The emphasis has shifted noticeably from speculation to utility and community value.";
+          break;
+        default:
+          documentContent = "This is simulated document content for document " + documentId;
+          documentName = `Document-${documentId}.pdf`;
+      }
       
       // Add to context
       if (this.context) {
@@ -204,15 +227,31 @@ export class MCPClient {
           this.context.documentContext = [];
         }
         
-        this.context.documentContext.push({
-          documentId,
-          documentName: `Document-${documentId}.pdf`, // Would get real name from Drive API
-          documentType: 'pdf', // Would get real type from Drive API
-          content: documentContent,
-          lastModified: new Date().toISOString()
-        });
+        // Check if document already exists in context
+        const existingDocIndex = this.context.documentContext.findIndex(doc => doc.documentId === documentId);
+        
+        if (existingDocIndex >= 0) {
+          // Update existing document
+          this.context.documentContext[existingDocIndex] = {
+            documentId,
+            documentName,
+            documentType,
+            content: documentContent,
+            lastModified: new Date().toISOString()
+          };
+        } else {
+          // Add new document
+          this.context.documentContext.push({
+            documentId,
+            documentName,
+            documentType,
+            content: documentContent,
+            lastModified: new Date().toISOString()
+          });
+        }
         
         this.persistContext();
+        console.log(`MCP: Added/updated document ${documentName} to context`);
       }
       
       return documentContent;

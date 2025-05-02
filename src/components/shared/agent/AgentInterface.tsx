@@ -20,16 +20,22 @@ interface AgentInterfaceProps {
   title: string;
   description: string;
   agentType: 'learn' | 'earn' | 'connect';
+  conversationId?: string | null; 
   initialMessages?: AgentMessage[];
   onMessageSubmit?: (message: string) => Promise<AgentMessage>;
+  onDocumentAdded?: () => void;
+  documentContextUpdated?: number; // Counter to track document context updates
 }
 
 const AgentInterface = ({
   title,
   description,
   agentType,
+  conversationId: externalConversationId,
   initialMessages = [],
   onMessageSubmit,
+  onDocumentAdded,
+  documentContextUpdated = 0,
 }: AgentInterfaceProps) => {
   const [messages, setMessages] = useState<AgentMessage[]>(initialMessages);
   const [inputValue, setInputValue] = useState('');
@@ -41,13 +47,14 @@ const AgentInterface = ({
   const { user } = useAuth();
   const { interactions, refreshInteractions } = useUserInteractions(agentType);
   const { client: mcpClient, initializeContext } = useMCP();
-  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [conversationId, setConversationId] = useState<string | null>(externalConversationId || null);
 
   // Initialize MCP context when component mounts
   useEffect(() => {
     const setupMCP = async () => {
       if (mcpClient) {
-        const convId = await initializeContext();
+        // If external conversation ID is provided, use it, otherwise initialize new
+        const convId = await initializeContext(externalConversationId);
         if (convId) {
           console.log(`MCP: Initialized context for ${agentType} agent with ID: ${convId}`);
           setConversationId(convId);
@@ -56,7 +63,14 @@ const AgentInterface = ({
     };
     
     setupMCP();
-  }, [mcpClient, initializeContext, agentType]);
+  }, [mcpClient, initializeContext, agentType, externalConversationId]);
+  
+  // Update conversationId if external one changes
+  useEffect(() => {
+    if (externalConversationId !== undefined && externalConversationId !== conversationId) {
+      setConversationId(externalConversationId);
+    }
+  }, [externalConversationId, conversationId]);
 
   // Load message history from database when component mounts
   useEffect(() => {
@@ -209,7 +223,22 @@ const AgentInterface = ({
   const handleDocumentAdded = () => {
     // Refresh the messages or notify the user
     toast.success('Document context has been updated');
+    
+    // Call the parent's onDocumentAdded if provided
+    if (onDocumentAdded) {
+      onDocumentAdded();
+    }
+    
+    // Switch to chat tab to encourage interaction with the document
+    setActiveTab('chat');
   };
+
+  // Effect to track document context updates
+  useEffect(() => {
+    if (documentContextUpdated > 0) {
+      console.log(`Document context updated (${documentContextUpdated}), refreshing UI`);
+    }
+  }, [documentContextUpdated]);
 
   return (
     <Card className="flex flex-col h-full overflow-hidden">
