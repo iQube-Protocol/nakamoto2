@@ -18,8 +18,8 @@ interface MCPContext {
     timestamp: string;
   }>;
   metadata: {
-    userProfile: Record<string, any>;
-    environment: string;
+    userProfile?: Record<string, any>;
+    environment?: string;
     modelPreference?: string;
     metisActive?: boolean;
   };

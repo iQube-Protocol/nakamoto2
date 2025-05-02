@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { useMCP } from '@/hooks/use-mcp';
 
@@ -47,11 +47,26 @@ export default function useDocumentContext({ conversationId, onDocumentAdded }: 
     // Fetch document content
     const content = await fetchDocument(document.id);
     if (content) {
-      // Add content to the document object for local tracking
-      document.content = content;
-      setSelectedDocuments(prev => [...prev, document]);
-      toast.success('Document added to context');
-      if (onDocumentAdded) onDocumentAdded();
+      // Extract document type from mimeType
+      const documentType = document.mimeType.split('/')[1] || 'plain';
+      
+      // Add to MCP context
+      if (client) {
+        client.addDocumentToContext(
+          document.id, 
+          document.name, 
+          documentType, 
+          content
+        );
+        
+        // Add content to the document object for local tracking
+        document.content = content;
+        setSelectedDocuments(prev => [...prev, document]);
+        toast.success('Document added to context');
+        
+        // Call callback if provided
+        if (onDocumentAdded) onDocumentAdded();
+      }
     }
   };
   
@@ -63,6 +78,9 @@ export default function useDocumentContext({ conversationId, onDocumentAdded }: 
         context.documentContext = context.documentContext.filter(
           doc => doc.documentId !== documentId
         );
+        
+        // Force persist context to storage
+        client.persistContext();
       }
     }
     

@@ -1,3 +1,4 @@
+
 import { toast } from 'sonner';
 import type { MCPClientOptions, MCPContext } from './types';
 import { GoogleApiLoader } from './api-loader';
@@ -57,6 +58,20 @@ export class MCPClient {
    */
   async addAgentResponse(response: string): Promise<void> {
     return this.contextManager.addAgentResponse(response);
+  }
+  
+  /**
+   * Add document content to context
+   */
+  addDocumentToContext(documentId: string, documentName: string, documentType: string, content: string): void {
+    return this.contextManager.addDocumentToContext(documentId, documentName, documentType, content);
+  }
+  
+  /**
+   * Force persist the current context
+   */
+  persistContext(): void {
+    this.contextManager.persistContext();
   }
   
   /**

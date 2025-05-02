@@ -178,7 +178,9 @@ export function useMCP() {
     if (!client) return null;
     
     try {
-      return await client.initializeContext(conversationId);
+      const id = await client.initializeContext(conversationId);
+      console.log(`MCP: Context initialized with ID: ${id}`);
+      return id;
     } catch (error) {
       console.error('Error initializing MCP context:', error);
       toast.error('Failed to initialize conversation context');
