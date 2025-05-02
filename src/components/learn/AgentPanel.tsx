@@ -24,6 +24,7 @@ const AgentPanel = ({
   const { toast } = useToast();
   const [metisActive, setMetisActive] = useState<boolean>(false);
   const [historicalContext, setHistoricalContext] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(false);
 
   // Listen for Metis activation events
   useEffect(() => {
@@ -49,7 +50,13 @@ const AgentPanel = ({
   // Load conversation context when component mounts or conversationId changes
   useEffect(() => {
     const loadContext = async () => {
-      if (conversationId) {
+      if (!conversationId) {
+        console.log('No conversationId provided, skipping context load');
+        return;
+      }
+      
+      setIsLoading(true);
+      try {
         const context = await getConversationContext(conversationId, 'learn');
         if (context.historicalContext) {
           setHistoricalContext(context.historicalContext);
@@ -59,6 +66,10 @@ const AgentPanel = ({
         if (context.conversationId !== conversationId) {
           setConversationId(context.conversationId);
         }
+      } catch (error) {
+        console.error('Error loading conversation context:', error);
+      } finally {
+        setIsLoading(false);
       }
     };
     
@@ -161,6 +172,10 @@ const AgentPanel = ({
       };
     }
   };
+
+  if (isLoading) {
+    console.log('AgentPanel is loading conversation context...');
+  }
 
   return (
     <div className={`${isPanelCollapsed ? 'lg:col-span-1' : 'lg:col-span-2'} flex flex-col`}>
