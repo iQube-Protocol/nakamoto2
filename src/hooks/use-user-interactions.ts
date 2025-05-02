@@ -30,6 +30,21 @@ export const useUserInteractions = (
       }
       
       console.log(`Fetched interactions: ${data?.length || 0}`);
+      
+      // Add detailed logging
+      if (data && data.length > 0) {
+        console.log('First interaction:', {
+          id: data[0].id,
+          type: data[0].interaction_type,
+          query: data[0].query?.substring(0, 30) + '...',
+          response: data[0].response?.substring(0, 30) + '...',
+          user_id: data[0].user_id,
+          created_at: data[0].created_at
+        });
+      } else {
+        console.log('No interactions found for type:', interactionType);
+      }
+      
       setInteractions(data || []);
       setError(null);
     } catch (err) {
@@ -42,8 +57,10 @@ export const useUserInteractions = (
   }, [interactionType, user]);
 
   useEffect(() => {
-    fetchInteractions();
-  }, [fetchInteractions]);
+    if (user) {
+      fetchInteractions();
+    }
+  }, [fetchInteractions, user]);
 
   const saveInteraction = async (data: Omit<InteractionData, 'user_id'>) => {
     if (!user) {

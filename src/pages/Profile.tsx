@@ -8,11 +8,37 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { format } from 'date-fns';
 import { User, Clock, MessageSquare, Layers, RefreshCw, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 const Profile = () => {
   const { user, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState<'learn' | 'earn' | 'connect'>('learn');
   const { interactions, loading, refreshInteractions, error } = useUserInteractions(activeTab);
+  
+  // Debug current user info
+  useEffect(() => {
+    console.log("Profile component - Current user:", user);
+    
+    // Check database connection to ensure we can access data
+    async function checkConnection() {
+      if (user) {
+        try {
+          const { data, error } = await supabase
+            .from('user_interactions')
+            .select('count(*)')
+            .eq('user_id', user.id)
+            .single();
+          
+          console.log("Direct DB check - Interactions count:", data);
+          if (error) console.error("Direct DB error:", error);
+        } catch (e) {
+          console.error("Failed to check interactions count:", e);
+        }
+      }
+    }
+    
+    checkConnection();
+  }, [user]);
   
   // Refresh interactions when tab changes or component mounts
   useEffect(() => {
@@ -27,8 +53,9 @@ const Profile = () => {
     if (error) {
       console.error('Profile: Error loading interactions:', error);
     }
-    if (interactions.length > 0) {
-      console.log(`Profile: Loaded ${interactions.length} ${activeTab} interactions`);
+    if (interactions) {
+      console.log(`Profile: Loaded ${interactions?.length || 0} ${activeTab} interactions`);
+      console.log('Profile: Interactions data:', interactions);
     }
   }, [interactions, error, activeTab]);
   

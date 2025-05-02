@@ -24,21 +24,30 @@ export const storeUserInteraction = async (data: InteractionData) => {
 
     console.log('Storing interaction for user:', data.user_id, 'type:', data.interactionType);
 
-    const { error } = await supabase.from('user_interactions').insert({
+    // Add more detailed log
+    console.log('Full interaction data being stored:', { 
+      query: data.query,
+      response_length: data.response?.length || 0,
+      interaction_type: data.interactionType,
+      user_id: data.user_id,
+      has_metadata: !!data.metadata
+    });
+
+    const { error, data: insertedData } = await supabase.from('user_interactions').insert({
       query: data.query,
       response: data.response,
       interaction_type: data.interactionType,
       metadata: data.metadata,
       user_id: data.user_id // Include the user_id in the insert
-    });
+    }).select();
 
     if (error) {
       console.error('Error storing user interaction:', error);
       return { success: false, error };
     }
 
-    console.log('Successfully stored user interaction');
-    return { success: true, error: null };
+    console.log('Successfully stored user interaction with ID:', insertedData?.[0]?.id);
+    return { success: true, error: null, data: insertedData?.[0] };
   } catch (error) {
     console.error('Unexpected error storing user interaction:', error);
     return { success: false, error };
@@ -53,7 +62,7 @@ export const getUserInteractions = async (
   try {
     // Get current user from auth context or session
     const { data: { session } } = await supabase.auth.getSession();
-    const user_id = session?.user.id;
+    const user_id = session?.user?.id;
     
     if (!user_id) {
       console.error('No user ID available for fetching interactions');
@@ -62,7 +71,7 @@ export const getUserInteractions = async (
 
     console.log('Fetching interactions for user:', user_id, 'type:', interactionType);
 
-    let query = supabase
+    let queryBuilder = supabase
       .from('user_interactions')
       .select('*')
       .eq('user_id', user_id) // Filter by the user's ID
@@ -71,17 +80,27 @@ export const getUserInteractions = async (
       .range(offset, offset + limit - 1);
 
     if (interactionType) {
-      query = query.eq('interaction_type', interactionType);
+      queryBuilder = queryBuilder.eq('interaction_type', interactionType);
     }
 
-    const { data, error } = await query;
+    const { data, error } = await queryBuilder;
 
     if (error) {
       console.error('Error fetching user interactions:', error);
       return { data: null, error };
     }
 
-    console.log('Fetched interactions:', data?.length || 0);
+    console.log('Fetched interactions:', data?.length || 0, 'for type:', interactionType || 'all');
+    if (data?.length) {
+      console.log('Sample interaction:', {
+        id: data[0].id,
+        type: data[0].interaction_type,
+        created_at: data[0].created_at,
+        query_length: data[0].query?.length || 0,
+        response_length: data[0].response?.length || 0
+      });
+    }
+    
     return { data, error: null };
   } catch (error) {
     console.error('Unexpected error fetching user interactions:', error);
