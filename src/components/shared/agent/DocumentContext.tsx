@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useMCP } from '@/hooks/use-mcp';
 import DocumentSelector from '../DocumentSelector';
-import { FileText, Trash2, Loader2, Eye } from 'lucide-react';
+import { FileText, Trash2, Loader2, Eye, FileSpreadsheet, FilePresentation, File, Image, Video, Headphones } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -28,7 +28,7 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
 }) => {
   const { client, fetchDocument, isLoading } = useMCP();
   const [selectedDocuments, setSelectedDocuments] = useState<any[]>([]);
-  const [viewingDocument, setViewingDocument] = useState<{id: string, content: string, name: string} | null>(null);
+  const [viewingDocument, setViewingDocument] = useState<{id: string, content: string, name: string, mimeType: string} | null>(null);
   
   // Get documents from context
   useEffect(() => {
@@ -70,7 +70,17 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
   };
   
   const handleRemoveDocument = (documentId: string) => {
-    // Note: In a complete implementation, this would also remove from the MCP context
+    // Remove from the client context
+    if (client && conversationId) {
+      const context = client.getModelContext();
+      if (context?.documentContext) {
+        context.documentContext = context.documentContext.filter(
+          doc => doc.documentId !== documentId
+        );
+      }
+    }
+    
+    // Update local state
     setSelectedDocuments(prev => prev.filter(doc => doc.id !== documentId));
     toast.success('Document removed from context');
   };
@@ -79,8 +89,57 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
     setViewingDocument({
       id: document.id,
       name: document.name,
-      content: document.content || "Content not available"
+      content: document.content || "Content not available",
+      mimeType: document.mimeType
     });
+  };
+  
+  // Get icon based on file mime type
+  const getFileIcon = (mimeType: string) => {
+    if (mimeType.includes('pdf')) {
+      return <FileText className="h-4 w-4 text-red-500" />;
+    } else if (mimeType.includes('image')) {
+      return <Image className="h-4 w-4 text-blue-500" />;
+    } else if (mimeType.includes('video')) {
+      return <Video className="h-4 w-4 text-purple-500" />;
+    } else if (mimeType.includes('audio')) {
+      return <Headphones className="h-4 w-4 text-green-500" />;
+    } else if (mimeType.includes('spreadsheet') || mimeType.includes('excel') || mimeType.includes('csv')) {
+      return <FileSpreadsheet className="h-4 w-4 text-emerald-500" />;
+    } else if (mimeType.includes('presentation') || mimeType.includes('powerpoint')) {
+      return <FilePresentation className="h-4 w-4 text-orange-500" />;
+    } else {
+      return <File className="h-4 w-4 text-muted-foreground" />;
+    }
+  };
+  
+  // Format document content based on MIME type
+  const getFormattedContent = () => {
+    if (!viewingDocument) return null;
+    
+    if (viewingDocument.mimeType.includes('image')) {
+      return <div className="text-center">Image preview not available</div>;
+    } else if (viewingDocument.mimeType.includes('pdf')) {
+      return <div className="whitespace-pre-wrap">{viewingDocument.content}</div>;
+    } else {
+      return <div className="whitespace-pre-wrap">{viewingDocument.content}</div>;
+    }
+  };
+  
+  // Get file extension from MIME type
+  const getFileExtension = (mimeType: string) => {
+    if (mimeType.includes('pdf')) return 'pdf';
+    if (mimeType.includes('word') || mimeType.includes('doc')) return 'doc';
+    if (mimeType.includes('spreadsheet') || mimeType.includes('excel')) return 'xls';
+    if (mimeType.includes('csv')) return 'csv';
+    if (mimeType.includes('presentation') || mimeType.includes('powerpoint')) return 'ppt';
+    if (mimeType.includes('text/plain')) return 'txt';
+    if (mimeType.includes('json')) return 'json';
+    if (mimeType.includes('html')) return 'html';
+    
+    // Extract from MIME type
+    const parts = mimeType.split('/');
+    return parts.length > 1 ? parts[1] : 'file';
   };
   
   return (
@@ -109,12 +168,12 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
           {selectedDocuments.map(doc => (
             <Card key={doc.id} className="p-2 flex items-center justify-between">
               <div className="flex items-center gap-2 truncate">
-                <FileText className="h-4 w-4 text-muted-foreground shrink-0" />
+                {getFileIcon(doc.mimeType)}
                 <span className="truncate text-sm">{doc.name}</span>
               </div>
               <div className="flex gap-2 shrink-0">
                 <Badge variant="outline" className="text-xs">
-                  {doc.mimeType.split('/')[1]}
+                  {getFileExtension(doc.mimeType)}
                 </Badge>
                 <Button 
                   variant="ghost" 
@@ -146,14 +205,17 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
       <Dialog open={!!viewingDocument} onOpenChange={(open) => !open && setViewingDocument(null)}>
         <DialogContent className="sm:max-w-[700px] max-h-[80vh] overflow-y-auto">
           <DialogHeader>
-            <DialogTitle>{viewingDocument?.name}</DialogTitle>
+            <DialogTitle className="flex items-center gap-2">
+              {viewingDocument && getFileIcon(viewingDocument.mimeType)}
+              {viewingDocument?.name}
+            </DialogTitle>
             <DialogDescription>
               Document ID: {viewingDocument?.id}
             </DialogDescription>
           </DialogHeader>
           
-          <div className="border rounded-md p-4 bg-muted/30 whitespace-pre-wrap">
-            {viewingDocument?.content}
+          <div className="border rounded-md p-4 bg-muted/30">
+            {getFormattedContent()}
           </div>
         </DialogContent>
       </Dialog>

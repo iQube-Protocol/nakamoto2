@@ -34,11 +34,14 @@ export interface MCPClientOptions {
 
 export class MCPClient {
   private conversationId: string | null = null;
-  // Changed from private to public to fix the error
   public serverUrl: string;
   private authToken: string | null;
   private metisActive: boolean;
   private context: MCPContext | null = null;
+  private gapi: any = null;
+  private tokenClient: any = null;
+  private isApiLoaded: boolean = false;
+  private isAuthenticated: boolean = false;
   
   constructor(options: MCPClientOptions = {}) {
     this.serverUrl = options.serverUrl || 'https://mcp-gdrive-server.example.com';
@@ -49,6 +52,36 @@ export class MCPClient {
       serverUrl: this.serverUrl,
       hasAuthToken: !!this.authToken,
       metisActive: this.metisActive
+    });
+    
+    // Load Google API script if it's not already loaded
+    this.loadGoogleApi();
+  }
+  
+  /**
+   * Load Google API script dynamically
+   */
+  private loadGoogleApi(): void {
+    if (typeof window !== 'undefined' && !this.isApiLoaded) {
+      const script = document.createElement('script');
+      script.src = 'https://apis.google.com/js/api.js';
+      script.onload = () => this.onGapiLoaded();
+      document.body.appendChild(script);
+      
+      const gsiScript = document.createElement('script');
+      gsiScript.src = 'https://accounts.google.com/gsi/client';
+      document.body.appendChild(gsiScript);
+    }
+  }
+  
+  /**
+   * Callback when Google API script is loaded
+   */
+  private onGapiLoaded(): void {
+    this.gapi = (window as any).gapi;
+    this.gapi.load('client', () => {
+      this.isApiLoaded = true;
+      console.log('Google API client loaded');
     });
   }
   
@@ -155,21 +188,52 @@ export class MCPClient {
    * Connect to Google Drive and authorize access
    */
   async connectToDrive(clientId: string, apiKey: string): Promise<boolean> {
-    console.log('MCP: Attempting to connect to Google Drive');
+    console.log('MCP: Connecting to Google Drive with credentials:', { clientId, apiKeyLength: apiKey?.length });
+    
+    if (!this.isApiLoaded) {
+      console.log('Google API not loaded yet, waiting...');
+      await new Promise((resolve) => {
+        const checkApiLoaded = setInterval(() => {
+          if (this.isApiLoaded) {
+            clearInterval(checkApiLoaded);
+            resolve(true);
+          }
+        }, 300);
+      });
+    }
     
     try {
-      // In a real implementation, this would initialize the Google Drive API client
-      // and handle OAuth flow to get access to the user's Google Drive
-      
-      // For demonstration purposes:
-      toast.success('Connected to Google Drive MCP Server', {
-        description: 'Your Google Drive documents are now available to the AI agents'
+      // Initialize the Google API client with provided credentials
+      await this.gapi.client.init({
+        apiKey: apiKey,
+        discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'],
       });
+      
+      // Create token client for OAuth 2.0 flow
+      this.tokenClient = (window as any).google.accounts.oauth2.initTokenClient({
+        client_id: clientId,
+        scope: 'https://www.googleapis.com/auth/drive.readonly',
+        callback: (tokenResponse: any) => {
+          if (tokenResponse && tokenResponse.access_token) {
+            this.isAuthenticated = true;
+            localStorage.setItem('gdrive-connected', 'true');
+            toast.success('Connected to Google Drive', {
+              description: 'Your Google Drive documents are now available to the AI agents'
+            });
+            console.log('Successfully authenticated with Google Drive');
+          }
+        },
+      });
+      
+      // Request access token
+      this.tokenClient.requestAccessToken();
       
       return true;
     } catch (error) {
       console.error('MCP: Error connecting to Google Drive:', error);
-      toast.error('Google Drive connection failed', { description: error.message });
+      toast.error('Google Drive connection failed', { 
+        description: error instanceof Error ? error.message : 'Unknown error' 
+      });
       return false;
     }
   }
@@ -177,15 +241,39 @@ export class MCPClient {
   /**
    * Load document metadata from Google Drive
    */
-  async listDocuments(folderId?: string, pageSize = 10): Promise<any[]> {
+  async listDocuments(folderId?: string): Promise<any[]> {
     console.log(`MCP: Listing documents${folderId ? ' in folder ' + folderId : ''}`);
     
-    // Simulated response - in production, would query Google Drive API
-    return [
-      { id: 'doc1', name: 'Web3 Introduction.pdf', mimeType: 'application/pdf' },
-      { id: 'doc2', name: 'DeFi Strategies.docx', mimeType: 'application/vnd.openxmlformats-officedocument.wordprocessingml.document' },
-      { id: 'doc3', name: 'NFT Market Analysis.txt', mimeType: 'text/plain' }
-    ];
+    if (!this.isAuthenticated) {
+      console.error('MCP: Not authenticated with Google Drive');
+      toast.error('Not connected to Google Drive', { 
+        description: 'Please connect to Google Drive first' 
+      });
+      return [];
+    }
+    
+    try {
+      const query = folderId ? 
+        `'${folderId}' in parents and trashed = false` : 
+        `'root' in parents and trashed = false`;
+      
+      const response = await this.gapi.client.drive.files.list({
+        q: query,
+        fields: 'files(id, name, mimeType, modifiedTime)',
+        orderBy: 'modifiedTime desc',
+        pageSize: 50
+      });
+      
+      const files = response.result.files;
+      console.log(`MCP: Found ${files.length} files in Google Drive`, files);
+      return files;
+    } catch (error) {
+      console.error('MCP: Error listing documents from Google Drive:', error);
+      toast.error('Failed to list documents', { 
+        description: error instanceof Error ? error.message : 'Unknown error' 
+      });
+      return [];
+    }
   }
   
   /**
@@ -194,32 +282,65 @@ export class MCPClient {
   async fetchDocumentContent(documentId: string): Promise<string | null> {
     console.log(`MCP: Fetching document content for ${documentId}`);
     
+    if (!this.isAuthenticated) {
+      console.error('MCP: Not authenticated with Google Drive');
+      toast.error('Not connected to Google Drive', { 
+        description: 'Please connect to Google Drive first' 
+      });
+      return null;
+    }
+    
     try {
-      // Enhanced simulated document content with more meaningful information
-      let documentContent = "";
-      let documentName = "";
-      let documentType = "pdf";
+      // First get the file metadata
+      const fileMetadata = await this.gapi.client.drive.files.get({
+        fileId: documentId,
+        fields: 'name,mimeType'
+      });
       
-      // Generate more detailed fake content based on document ID
-      switch(documentId) {
-        case 'doc1':
-          documentName = "Web3 Introduction.pdf";
-          documentContent = "# Introduction to Web3\n\nWeb3 represents the next evolution of the internet, focusing on decentralization and user ownership. Key concepts include:\n\n1. Blockchain Technology: Distributed ledger systems that enable trustless transactions\n2. Smart Contracts: Self-executing code that runs on blockchains\n3. Decentralized Applications (DApps): Applications built on blockchain infrastructure\n4. Tokenization: Representing real-world assets as digital tokens\n5. DAOs: Decentralized Autonomous Organizations governed by community members\n\nWeb3 aims to shift power from centralized platforms back to users, enabling greater privacy, ownership of data, and new economic models.";
-          break;
-        case 'doc2':
-          documentName = "DeFi Strategies.docx";
-          documentType = "docx";
-          documentContent = "# DeFi Investment Strategies\n\n## Liquidity Providing\nProviding liquidity to AMMs (Automated Market Makers) can generate yield through trading fees and token incentives. Popular platforms include Uniswap, Curve, and Balancer.\n\n## Yield Farming\nDeploying assets across protocols to maximize returns, often involving governance token rewards. Strategies range from simple single-asset deposits to complex leveraged positions.\n\n## Staking\nLocking tokens to support network security and operations in return for staking rewards. Common in PoS (Proof of Stake) networks like Ethereum 2.0, Solana, and Polkadot.\n\n## Risk Management\nDiversification across protocols, regular auditing of smart contract exposure, and using insurance protocols like Nexus Mutual can help mitigate risks in DeFi investing.";
-          break;
-        case 'doc3':
-          documentName = "NFT Market Analysis.txt";
-          documentType = "txt";
-          documentContent = "NFT MARKET ANALYSIS - Q2 2023\n\nMarket Overview:\nThe NFT market has shown signs of maturation following the speculative bubble of 2021-2022. Trading volumes have stabilized at approximately $450M monthly, down from peaks exceeding $4B but showing more sustainable growth patterns.\n\nKey Segments:\n1. Digital Art - Established artists continue to dominate the high-end market, with increased museum and institutional participation.\n2. Gaming NFTs - Utility-focused gaming assets represent the largest segment by transaction count, with play-to-earn models evolving toward more sustainable play-and-earn approaches.\n3. Membership NFTs - Community-oriented collections offering concrete benefits and utility have outperformed purely speculative projects.\n\nTechnological Developments:\n- Migration to more energy-efficient consensus mechanisms has addressed environmental concerns\n- Layer-2 scaling solutions have significantly reduced transaction costs\n- Cross-chain bridging protocols are improving interoperability between ecosystems\n\nMarket Outlook:\nThe NFT sector is likely to continue its integration with traditional industries, particularly in fashion, music rights, and digital identity solutions. The emphasis has shifted noticeably from speculation to utility and community value.";
-          break;
-        default:
-          documentContent = "This is simulated document content for document " + documentId;
-          documentName = `Document-${documentId}.pdf`;
+      const fileName = fileMetadata.result.name;
+      const mimeType = fileMetadata.result.mimeType;
+      
+      // Handle different file types
+      let documentContent = '';
+      
+      // For Google Docs, Sheets, and Slides, we need to export them in a readable format
+      if (mimeType.includes('google-apps')) {
+        const exportMimeType = this.getExportMimeType(mimeType);
+        const exportResponse = await this.gapi.client.drive.files.export({
+          fileId: documentId,
+          mimeType: exportMimeType
+        });
+        
+        documentContent = exportResponse.body;
+      } else {
+        // For other file types, use the files.get method with alt=media
+        const response = await fetch(
+          `https://www.googleapis.com/drive/v3/files/${documentId}?alt=media`,
+          {
+            headers: {
+              'Authorization': `Bearer ${this.gapi.auth.getToken().access_token}`
+            }
+          }
+        );
+        
+        // Check if response is ok and get content
+        if (response.ok) {
+          // For text-based files
+          if (mimeType.includes('text') || mimeType.includes('json') || 
+              mimeType.includes('javascript') || mimeType.includes('xml') ||
+              mimeType.includes('html') || mimeType.includes('css')) {
+            documentContent = await response.text();
+          } else {
+            // For binary files, we can only provide basic info
+            documentContent = `This file (${fileName}) is a binary file of type ${mimeType} and cannot be displayed as text.`;
+          }
+        } else {
+          throw new Error(`Failed to fetch file content: ${response.statusText}`);
+        }
       }
+      
+      // Extract document type from mimeType
+      const documentType = this.getDocumentType(mimeType);
       
       // Add to context
       if (this.context) {
@@ -234,7 +355,7 @@ export class MCPClient {
           // Update existing document
           this.context.documentContext[existingDocIndex] = {
             documentId,
-            documentName,
+            documentName: fileName,
             documentType,
             content: documentContent,
             lastModified: new Date().toISOString()
@@ -243,7 +364,7 @@ export class MCPClient {
           // Add new document
           this.context.documentContext.push({
             documentId,
-            documentName,
+            documentName: fileName,
             documentType,
             content: documentContent,
             lastModified: new Date().toISOString()
@@ -251,14 +372,48 @@ export class MCPClient {
         }
         
         this.persistContext();
-        console.log(`MCP: Added/updated document ${documentName} to context`);
+        console.log(`MCP: Added/updated document ${fileName} to context`);
       }
       
       return documentContent;
     } catch (error) {
       console.error(`MCP: Error fetching document ${documentId}:`, error);
+      toast.error('Failed to fetch document', { 
+        description: error instanceof Error ? error.message : 'Unknown error' 
+      });
       return null;
     }
+  }
+  
+  /**
+   * Get the appropriate export MIME type for Google Workspace files
+   */
+  private getExportMimeType(originalMimeType: string): string {
+    switch (originalMimeType) {
+      case 'application/vnd.google-apps.document':
+        return 'text/plain';
+      case 'application/vnd.google-apps.spreadsheet':
+        return 'text/csv';
+      case 'application/vnd.google-apps.presentation':
+        return 'text/plain';
+      default:
+        return 'text/plain';
+    }
+  }
+  
+  /**
+   * Get simplified document type from MIME type
+   */
+  private getDocumentType(mimeType: string): string {
+    if (mimeType.includes('pdf')) return 'pdf';
+    if (mimeType.includes('word') || mimeType.includes('document')) return 'doc';
+    if (mimeType.includes('sheet') || mimeType.includes('excel') || mimeType.includes('csv')) return 'sheet';
+    if (mimeType.includes('presentation') || mimeType.includes('powerpoint')) return 'slide';
+    if (mimeType.includes('text') || mimeType.includes('txt')) return 'txt';
+    if (mimeType.includes('image')) return 'image';
+    if (mimeType.includes('audio')) return 'audio';
+    if (mimeType.includes('video')) return 'video';
+    return 'file';
   }
   
   /**

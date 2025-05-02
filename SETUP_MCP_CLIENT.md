@@ -9,7 +9,7 @@ This document outlines the implementation of the Model Context Protocol client i
    - Core MCP client implementation
    - Context management for conversations
    - Document fetching and storage
-   - Google Drive integration
+   - Google Drive API integration
 
 2. **MCP Hook (`src/hooks/use-mcp.ts`)**
    - React hook for accessing MCP functionality
@@ -37,25 +37,49 @@ This context is persisted locally and passed to the AI models.
 
 ### Google Drive Integration
 
-The current implementation simulates Google Drive integration. In a production environment, you would:
+The application integrates with the Google Drive API to:
+1. Authenticate users with their Google account
+2. Browse folders and files in their Drive
+3. Select documents to be analyzed by the AI agent
+4. Extract content from various file types
 
-1. Set up OAuth 2.0 authentication with Google
-2. Use the Google Drive API to list and fetch documents
-3. Process and store document content securely
+### Setup Requirements
+
+To use the Google Drive integration, you need:
+
+1. **Google Cloud Project**
+   - Go to [Google Cloud Console](https://console.cloud.google.com)
+   - Create a new project if needed
+   - Enable the Google Drive API
+
+2. **API Credentials**
+   - Create OAuth 2.0 Client ID credentials
+   - Create API Key credentials
+   - Configure allowed origins and redirect URIs
+
+3. **Application Configuration**
+   - Enter your Google API credentials in the Document Selector dialog
+   - Authenticate with your Google account
 
 ### Document Processing
 
-Documents are stored in the MCP context and passed to the AI model with each request. The AI model can then reference and analyze these documents in its responses.
+When a document is selected:
+1. The content is fetched using the Google Drive API
+2. The document is stored in the MCP context
+3. The AI model can reference and analyze the document in its responses
 
-## Configuration
+### Supported Document Types
 
-To use this feature, users need:
-1. A Google account with documents in Google Drive
-2. API credentials for Google Drive API
-   - Client ID
-   - API Key
+The integration supports various document types:
+- Text files (.txt)
+- PDFs
+- Google Docs (exported as plain text)
+- Google Sheets (exported as CSV)
+- Google Slides (exported as plain text)
+- Microsoft Office documents
+- Various text-based formats (JSON, HTML, etc.)
 
-## Security Considerations
+### Security Considerations
 
 - Document content is currently stored in localStorage for demo purposes
 - In production, this should be replaced with secure storage
@@ -63,8 +87,8 @@ To use this feature, users need:
 
 ## Future Improvements
 
-1. Implement actual Google Drive API integration
-2. Add document type processing (PDF, DOCX, etc.)
-3. Add document summarization capabilities
-4. Implement secure token management
-5. Add version control for documents
+1. Add document summarization capabilities
+2. Implement secure token management
+3. Add version control for documents
+4. Improve parsing for various document types
+5. Add support for image analysis and OCR

@@ -35,21 +35,29 @@ export function useMCP() {
     
     setIsLoading(true);
     try {
-      // Use provided credentials or default ones (in production, would get from env or user input)
-      const success = await client.connectToDrive(
-        clientId || 'google-client-id', 
-        apiKey || 'google-api-key'
-      );
+      // Validate that we have the required credentials
+      if (!clientId || !apiKey) {
+        toast.error('Missing Google API credentials', {
+          description: 'Both Client ID and API Key are required'
+        });
+        return false;
+      }
+      
+      // Connect to Google Drive with the provided credentials
+      const success = await client.connectToDrive(clientId, apiKey);
       
       if (success) {
         localStorage.setItem('gdrive-connected', 'true');
         setDriveConnected(true);
+        return true;
+      } else {
+        return false;
       }
-      
-      return success;
     } catch (error) {
       console.error('Error connecting to Drive:', error);
-      toast.error('Failed to connect to Google Drive');
+      toast.error('Failed to connect to Google Drive', {
+        description: error instanceof Error ? error.message : 'Unknown error occurred'
+      });
       return false;
     } finally {
       setIsLoading(false);
@@ -70,7 +78,9 @@ export function useMCP() {
       return docs;
     } catch (error) {
       console.error('Error listing documents:', error);
-      toast.error('Failed to list documents');
+      toast.error('Failed to list documents', {
+        description: error instanceof Error ? error.message : 'Unknown error occurred'
+      });
       return [];
     } finally {
       setIsLoading(false);
@@ -89,7 +99,9 @@ export function useMCP() {
       return await client.fetchDocumentContent(documentId);
     } catch (error) {
       console.error(`Error fetching document ${documentId}:`, error);
-      toast.error('Failed to fetch document');
+      toast.error('Failed to fetch document', {
+        description: error instanceof Error ? error.message : 'Unknown error occurred'
+      });
       return null;
     } finally {
       setIsLoading(false);
