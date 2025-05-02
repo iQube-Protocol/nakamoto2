@@ -1,5 +1,4 @@
-
-import { MCPContext, MCPClientOptions } from './types';
+import { MCPContext, MCPClientOptions, DocumentContext } from './types';
 import { GoogleApiLoader } from './googleApiLoader';
 import { ContextManager } from './contextManager';
 import { DriveService } from './driveService';
@@ -155,12 +154,7 @@ export class MCPClient {
   /**
    * Convenience method to add document to context
    */
-  addDocumentToContext(document: {
-    documentId: string;
-    documentName: string;
-    documentType: string;
-    content: string;
-  }): void {
+  addDocumentToContext(document: DocumentContext): void {
     this.contextManager.addDocumentToContext(document);
   }
 }

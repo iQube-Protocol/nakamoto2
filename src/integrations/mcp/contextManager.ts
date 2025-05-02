@@ -1,5 +1,5 @@
 
-import { MCPContext } from './types';
+import { MCPContext, DocumentContext } from './types';
 
 /**
  * Manages conversation context for the MCP client
@@ -18,10 +18,15 @@ export class ContextManager {
         // Try to fetch existing context from server or local storage
         const storedContext = localStorage.getItem(`mcp-context-${existingConversationId}`);
         if (storedContext) {
-          this.context = JSON.parse(storedContext);
-          this.conversationId = existingConversationId;
-          console.log(`MCP: Loaded local context for conversation ${existingConversationId}`);
-          return existingConversationId;
+          try {
+            this.context = JSON.parse(storedContext);
+            this.conversationId = existingConversationId;
+            console.log(`MCP: Loaded local context for conversation ${existingConversationId}`);
+            console.log(`MCP: Context has ${this.context?.documentContext?.length || 0} documents`);
+            return existingConversationId;
+          } catch (error) {
+            console.error('MCP: Error parsing stored context:', error);
+          }
         }
         
         // If not found locally, create a new one
@@ -97,11 +102,12 @@ export class ContextManager {
   /**
    * Save context to persistence store
    */
-  private persistContext(): void {
+  public persistContext(): void {
     if (this.context && this.conversationId) {
       try {
         // Save to local storage for now (in production, would likely use Supabase or other DB)
         localStorage.setItem(`mcp-context-${this.conversationId}`, JSON.stringify(this.context));
+        console.log(`MCP: Persisted context for ${this.conversationId} with ${this.context.documentContext?.length || 0} documents`);
       } catch (error) {
         console.error('MCP: Error persisting context:', error);
       }
@@ -138,12 +144,7 @@ export class ContextManager {
   /**
    * Add document to context or update if it already exists
    */
-  public addDocumentToContext(document: {
-    documentId: string;
-    documentName: string;
-    documentType: string;
-    content: string;
-  }): void {
+  public addDocumentToContext(document: DocumentContext): void {
     if (!this.context) {
       console.error('MCP: Cannot add document to context: Context not initialized');
       return;

@@ -2,6 +2,7 @@
 import { useState, useEffect } from 'react';
 import { toast } from 'sonner';
 import { useMCP } from '@/hooks/use-mcp';
+import { DocumentContext } from '@/integrations/mcp/types';
 
 interface UseDocumentContextProps {
   conversationId: string | null;
@@ -17,25 +18,63 @@ export default function useDocumentContext({ conversationId, onDocumentAdded }: 
   const [viewingDocument, setViewingDocument] = useState<{id: string, content: string, name: string, mimeType: string} | null>(null);
   const [contextInitialized, setContextInitialized] = useState(false);
   
-  // Get documents from context
+  // Get documents from context - run on mount and when conversationId or client changes
   useEffect(() => {
-    if (client && conversationId) {
+    const loadDocuments = async () => {
+      if (!client || !conversationId) return;
+      
+      try {
+        const context = client.getModelContext();
+        if (context?.documentContext && context.documentContext.length > 0) {
+          console.log('Documents in context:', context.documentContext.length);
+          
+          const docs = context.documentContext.map(doc => ({
+            id: doc.documentId,
+            name: doc.documentName,
+            mimeType: `application/${doc.documentType}`,
+            content: doc.content
+          }));
+          
+          console.log('Setting selected documents:', docs.length, 
+            docs.map(d => d.name).join(', '));
+          setSelectedDocuments(docs);
+        } else {
+          console.log('No documents in context or empty context');
+          setSelectedDocuments([]);
+        }
+      } catch (error) {
+        console.error('Error loading document context:', error);
+      } finally {
+        setContextInitialized(true);
+      }
+    };
+    
+    loadDocuments();
+  }, [client, conversationId]);
+  
+  // Refresh document list when context changes
+  useEffect(() => {
+    if (contextInitialized && client && conversationId) {
       const context = client.getModelContext();
       if (context?.documentContext) {
-        console.log('Documents in context:', context.documentContext.length);
-        const docs = context.documentContext.map(doc => ({
+        const newDocsList = context.documentContext.map(doc => ({
           id: doc.documentId,
           name: doc.documentName,
           mimeType: `application/${doc.documentType}`,
           content: doc.content
         }));
-        setSelectedDocuments(docs);
-        setContextInitialized(true);
-      } else if (!contextInitialized) {
-        console.log('No documents in context or context not initialized');
+        
+        // Only update if there's a difference to avoid infinite loops
+        const currentIds = selectedDocuments.map(doc => doc.id).sort().join(',');
+        const newIds = newDocsList.map(doc => doc.id).sort().join(',');
+        
+        if (currentIds !== newIds) {
+          console.log('Document context changed, updating UI');
+          setSelectedDocuments(newDocsList);
+        }
       }
     }
-  }, [client, conversationId, contextInitialized]);
+  }, [contextInitialized, client, conversationId, selectedDocuments]);
   
   const handleDocumentSelect = async (document: any) => {
     if (!client) {
@@ -70,6 +109,13 @@ export default function useDocumentContext({ conversationId, onDocumentAdded }: 
         setSelectedDocuments(prev => [...prev, document]);
         toast.success('Document added to context');
         
+        // Debug for verification
+        console.log('Document added to context:', document.name);
+        const updatedContext = client.getModelContext();
+        if (updatedContext?.documentContext) {
+          console.log('Current document context count:', updatedContext.documentContext.length);
+        }
+        
         // Notify parent component
         if (onDocumentAdded) onDocumentAdded();
       } else {
@@ -79,14 +125,22 @@ export default function useDocumentContext({ conversationId, onDocumentAdded }: 
   };
   
   const handleRemoveDocument = (documentId: string) => {
+    if (!client || !conversationId) {
+      toast.error('MCP client not initialized');
+      return;
+    }
+    
     // Remove from the client context
-    if (client && conversationId) {
-      const context = client.getModelContext();
-      if (context?.documentContext) {
-        context.documentContext = context.documentContext.filter(
-          doc => doc.documentId !== documentId
-        );
-      }
+    const context = client.getModelContext();
+    if (context?.documentContext) {
+      // Update the context in MCP client
+      context.documentContext = context.documentContext.filter(
+        doc => doc.documentId !== documentId
+      );
+      
+      // Force client to save the updated context
+      client.contextManager.persistContext();
+      console.log('Document removed from context, remaining:', context.documentContext.length);
     }
     
     // Update local state
