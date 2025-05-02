@@ -22,8 +22,14 @@ export function useMCP() {
       const mcpClient = getMCPClient({
         // Check for metisActive status from localStorage
         metisActive: localStorage.getItem('metisActive') === 'true',
-        onApiLoadStart: () => setIsApiLoading(true),
-        onApiLoadComplete: () => setIsApiLoading(false)
+        onApiLoadStart: () => {
+          console.log('MCP API loading started');
+          setIsApiLoading(true);
+        },
+        onApiLoadComplete: () => {
+          console.log('MCP API loading completed');
+          setIsApiLoading(false);
+        }
       });
       
       setClient(mcpClient);
@@ -47,6 +53,7 @@ export function useMCP() {
       // Use cached token if available
       const cachedToken = localStorage.getItem('gdrive-auth-token');
       
+      console.log('useMCP: Connecting to Drive with clientId, apiKey, and cachedToken');
       // Connect to Google Drive with the provided credentials
       const success = await client.connectToDrive(clientId, apiKey, cachedToken);
       

@@ -33,7 +33,7 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
   const [connecting, setConnecting] = useState(false);
   const [apiLoadingState, setApiLoadingState] = useState<'loading' | 'loaded' | 'error'>('loading');
   const [apiCheckAttempts, setApiCheckAttempts] = useState(0);
-  const maxApiCheckAttempts = 20; // Maximum number of attempts to check if API is loaded
+  const maxApiCheckAttempts = 30; // Increased from 20 to 30 maximum attempts
   
   const {
     driveConnected,
@@ -44,7 +44,8 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
     setClientId,
     apiKey,
     setApiKey,
-    handleConnect
+    handleConnect,
+    isApiLoading: hookApiLoading
   } = useDriveConnection();
   
   const {
@@ -65,6 +66,7 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
     // Check if Google API is available
     const checkGapiLoaded = () => {
       if ((window as any).gapi && (window as any).google?.accounts) {
+        console.log('DocumentSelector: Google API detected as loaded');
         setApiLoadingState('loaded');
         return true;
       }
@@ -80,6 +82,8 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
     const interval = setInterval(() => {
       setApiCheckAttempts(prev => {
         const newCount = prev + 1;
+        console.log(`API load check attempt: ${newCount}/${maxApiCheckAttempts}`);
+        
         if (newCount >= maxApiCheckAttempts) {
           clearInterval(interval);
           setApiLoadingState('error');
@@ -95,7 +99,7 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
 
     // Clean up interval
     return () => clearInterval(interval);
-  }, []);
+  }, [maxApiCheckAttempts]);
   
   const handleDialogChange = (open: boolean) => {
     setIsOpen(open);
@@ -116,10 +120,11 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
     }
   };
 
-  // Fixed: Make sure this function returns a Promise<boolean>
+  // Fixed: Now properly returns Promise<boolean>
   const handleConnectClick = async (): Promise<boolean> => {
     setConnecting(true);
     try {
+      console.log('DocumentSelector: Initiating connection process');
       const result = await handleConnect();
       return result; // This properly returns the boolean from handleConnect
     } finally {
@@ -130,9 +135,17 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
   // If we have credentials stored but haven't fetched documents yet
   useEffect(() => {
     if (driveConnected && isOpen && documents.length === 0 && !documentsLoading) {
+      console.log('DocumentSelector: Auto-refreshing documents');
       refreshCurrentFolder();
     }
   }, [driveConnected, isOpen, documents.length, documentsLoading, refreshCurrentFolder]);
+  
+  // Determine overall API loading state
+  useEffect(() => {
+    if (hookApiLoading || isApiLoading) {
+      setApiLoadingState('loading');
+    }
+  }, [hookApiLoading, isApiLoading]);
   
   // Loading states
   const isProcessing = connectionLoading || documentsLoading || isApiLoading || connecting || connectionInProgress;
@@ -211,6 +224,7 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
               handleConnect={handleConnectClick}
               isLoading={isProcessing}
               disabled={apiLoadingState !== 'loaded'}
+              isApiLoading={apiLoadingState === 'loading'}
             />
             
             {connectionAttempts > 0 && apiLoadingState !== 'loaded' && (

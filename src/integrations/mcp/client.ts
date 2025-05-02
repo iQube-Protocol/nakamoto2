@@ -47,7 +47,7 @@ export class MCPClient {
   private apiLoadPromise: Promise<boolean> | null = null;
   private onApiLoadStart: (() => void) | null = null;
   private onApiLoadComplete: (() => void) | null = null;
-  private apiLoadTimeout: number = 20000; // 20 second timeout for API loading
+  private apiLoadTimeout: number = 30000; // Increased from 20s to 30s for API loading
   
   constructor(options: MCPClientOptions = {}) {
     this.serverUrl = options.serverUrl || 'https://mcp-gdrive-server.example.com';
@@ -77,15 +77,28 @@ export class MCPClient {
         this.onApiLoadStart();
       }
       
+      // First check if APIs are already loaded
+      if ((window as any).gapi && (window as any).google?.accounts) {
+        console.log('MCP: Google APIs already loaded');
+        this.isApiLoaded = true;
+        if (this.onApiLoadComplete) {
+          this.onApiLoadComplete();
+        }
+        this.apiLoadPromise = Promise.resolve(true);
+        return;
+      }
+      
       // Create a promise that resolves when both scripts are loaded or rejects on timeout
       this.apiLoadPromise = new Promise((resolve, reject) => {
         let gapiLoaded = false;
         let gsiLoaded = false;
+        let timeoutTriggered = false;
         
         // Set a timeout to prevent hanging if scripts fail to load
         const timeoutId = setTimeout(() => {
           if (!gapiLoaded || !gsiLoaded) {
             console.error('MCP: Google API loading timed out after', this.apiLoadTimeout / 1000, 'seconds');
+            timeoutTriggered = true;
             if (this.onApiLoadComplete) {
               this.onApiLoadComplete();
             }
@@ -94,8 +107,9 @@ export class MCPClient {
         }, this.apiLoadTimeout);
         
         const checkAllLoaded = () => {
-          if (gapiLoaded && gsiLoaded) {
+          if (gapiLoaded && gsiLoaded && !timeoutTriggered) {
             clearTimeout(timeoutId);
+            console.log('MCP: Both Google APIs loaded successfully');
             if (this.onApiLoadComplete) {
               this.onApiLoadComplete();
             }
@@ -108,7 +122,9 @@ export class MCPClient {
         const script = document.createElement('script');
         script.src = 'https://apis.google.com/js/api.js';
         script.async = true;
+        script.defer = true; // Add defer attribute to ensure proper loading
         script.onload = () => {
+          console.log('MCP: Google API script loaded');
           this.gapi = (window as any).gapi;
           if (this.gapi) {
             this.gapi.load('client', {
@@ -119,53 +135,73 @@ export class MCPClient {
               },
               onerror: (e: any) => {
                 console.error('MCP: Failed to load Google API client:', e);
-                clearTimeout(timeoutId);
-                if (this.onApiLoadComplete) {
-                  this.onApiLoadComplete();
+                if (!timeoutTriggered) {
+                  clearTimeout(timeoutId);
+                  if (this.onApiLoadComplete) {
+                    this.onApiLoadComplete();
+                  }
+                  reject(e);
                 }
-                reject(e);
               },
-              timeout: 10000, // 10 seconds
+              timeout: 20000, // 20 seconds
+              ontimeout: () => {
+                console.error('MCP: Google API client load timed out');
+                if (!timeoutTriggered) {
+                  clearTimeout(timeoutId);
+                  if (this.onApiLoadComplete) {
+                    this.onApiLoadComplete();
+                  }
+                  reject(new Error('Google API client load timed out'));
+                }
+              }
             });
           } else {
             console.error('MCP: Google API failed to load');
-            clearTimeout(timeoutId);
-            if (this.onApiLoadComplete) {
-              this.onApiLoadComplete();
+            if (!timeoutTriggered) {
+              clearTimeout(timeoutId);
+              if (this.onApiLoadComplete) {
+                this.onApiLoadComplete();
+              }
+              reject(new Error('Google API failed to load'));
             }
-            reject(new Error('Google API failed to load'));
           }
         };
         script.onerror = (e) => {
           console.error('Failed to load Google API script:', e);
-          clearTimeout(timeoutId);
-          toast.error('Failed to load Google API script', {
-            description: 'Please check your internet connection and try again.'
-          });
-          if (this.onApiLoadComplete) {
-            this.onApiLoadComplete();
+          if (!timeoutTriggered) {
+            clearTimeout(timeoutId);
+            toast.error('Failed to load Google API script', {
+              description: 'Please check your internet connection and try again.'
+            });
+            if (this.onApiLoadComplete) {
+              this.onApiLoadComplete();
+            }
+            reject(e);
           }
-          reject(e);
         };
         
         // Add GSI script in parallel 
         const gsiScript = document.createElement('script');
         gsiScript.src = 'https://accounts.google.com/gsi/client';
         gsiScript.async = true;
+        gsiScript.defer = true; // Add defer attribute to ensure proper loading
         gsiScript.onload = () => {
+          console.log('MCP: Google Sign-In script loaded');
           gsiLoaded = true;
           checkAllLoaded();
         };
         gsiScript.onerror = (e) => {
           console.error('Failed to load Google Sign-In script:', e);
-          clearTimeout(timeoutId);
-          toast.error('Failed to load Google Sign-In script', {
-            description: 'Please check your internet connection and try again.'
-          });
-          if (this.onApiLoadComplete) {
-            this.onApiLoadComplete();
+          if (!timeoutTriggered) {
+            clearTimeout(timeoutId);
+            toast.error('Failed to load Google Sign-In script', {
+              description: 'Please check your internet connection and try again.'
+            });
+            if (this.onApiLoadComplete) {
+              this.onApiLoadComplete();
+            }
+            reject(e);
           }
-          reject(e);
         };
         
         // Add both scripts to document
@@ -179,7 +215,15 @@ export class MCPClient {
    * Ensures Google API is loaded before proceeding with proper timeout
    */
   private async ensureGoogleApiLoaded(): Promise<boolean> {
-    if (this.isApiLoaded) return true;
+    // Quick check if API is already loaded
+    if (this.isApiLoaded || (
+      window && (window as any).gapi && 
+      (window as any).gapi.client && 
+      (window as any).google?.accounts
+    )) {
+      this.isApiLoaded = true;
+      return true;
+    }
     
     if (this.apiLoadPromise) {
       try {
@@ -198,9 +242,23 @@ export class MCPClient {
         });
         return false;
       }
+    } else {
+      // If apiLoadPromise doesn't exist yet, start loading process
+      this.loadGoogleApi();
+      
+      if (!this.apiLoadPromise) {
+        console.error('Failed to initialize API loading process');
+        return false;
+      }
+      
+      try {
+        const result = await this.apiLoadPromise;
+        return result;
+      } catch (e) {
+        console.error('Error starting Google API load:', e);
+        return false;
+      }
     }
-    
-    return false;
   }
   
   /**
@@ -341,6 +399,7 @@ export class MCPClient {
           apiKey: apiKey,
           discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'],
         });
+        console.log('MCP: Google API client initialized successfully');
       } catch (error) {
         console.error('Failed to initialize Google API client:', error);
         toast.error('Failed to initialize Google API client', {
@@ -352,6 +411,7 @@ export class MCPClient {
       // If we have a cached token, try to use it directly
       if (cachedToken) {
         try {
+          console.log('MCP: Trying cached token');
           this.gapi.client.setToken(JSON.parse(cachedToken));
           
           // Test if the token is still valid with a simple API call
@@ -395,44 +455,45 @@ export class MCPClient {
           resolve(false);
         }, 30000); // 30 second timeout
         
-        this.tokenClient = googleAccounts.oauth2.initTokenClient({
-          client_id: clientId,
-          scope: 'https://www.googleapis.com/auth/drive.readonly',
-          callback: (tokenResponse: any) => {
-            clearTimeout(authTimeout);
-            if (tokenResponse && tokenResponse.access_token) {
-              this.isAuthenticated = true;
-              localStorage.setItem('gdrive-connected', 'true');
-              
-              // Cache the token
-              try {
-                localStorage.setItem('gdrive-auth-token', JSON.stringify(this.gapi.client.getToken()));
-              } catch (e) {
-                console.error('Failed to cache token:', e);
+        try {
+          this.tokenClient = googleAccounts.oauth2.initTokenClient({
+            client_id: clientId,
+            scope: 'https://www.googleapis.com/auth/drive.readonly',
+            callback: (tokenResponse: any) => {
+              clearTimeout(authTimeout);
+              if (tokenResponse && tokenResponse.access_token) {
+                this.isAuthenticated = true;
+                localStorage.setItem('gdrive-connected', 'true');
+                
+                // Cache the token
+                try {
+                  localStorage.setItem('gdrive-auth-token', JSON.stringify(this.gapi.client.getToken()));
+                } catch (e) {
+                  console.error('Failed to cache token:', e);
+                }
+                
+                toast.success('Connected to Google Drive', {
+                  description: 'Your Google Drive documents are now available to the AI agents'
+                });
+                console.log('Successfully authenticated with Google Drive');
+                resolve(true);
+              } else {
+                resolve(false);
               }
-              
-              toast.success('Connected to Google Drive', {
-                description: 'Your Google Drive documents are now available to the AI agents'
+            },
+            error_callback: (error: any) => {
+              clearTimeout(authTimeout);
+              console.error('OAuth error:', error);
+              toast.error('Google authentication failed', {
+                description: error.message || 'Failed to authenticate with Google'
               });
-              console.log('Successfully authenticated with Google Drive');
-              resolve(true);
-            } else {
               resolve(false);
             }
-          },
-          error_callback: (error: any) => {
-            clearTimeout(authTimeout);
-            console.error('OAuth error:', error);
-            toast.error('Google authentication failed', {
-              description: error.message || 'Failed to authenticate with Google'
-            });
-            resolve(false);
-          }
-        });
-        
-        // Request access token
-        try {
-          this.tokenClient.requestAccessToken({ prompt: '' });
+          });
+          
+          // Request access token
+          console.log('MCP: Requesting OAuth token');
+          this.tokenClient.requestAccessToken({ prompt: 'consent' }); // Changed from '' to 'consent' to ensure proper auth flow
         } catch (e) {
           clearTimeout(authTimeout);
           console.error('Error requesting access token:', e);
@@ -703,6 +764,14 @@ export const getMCPClient = (options?: MCPClientOptions): MCPClient => {
     if (options.serverUrl) mcpClientInstance.setServerUrl(options.serverUrl);
     if (options.authToken) mcpClientInstance.setAuthToken(options.authToken);
     if (options.metisActive !== undefined) mcpClientInstance.setMetisActive(options.metisActive);
+    
+    // Handle API loading callbacks
+    if (options.onApiLoadStart) {
+      mcpClientInstance.onApiLoadStart = options.onApiLoadStart;
+    }
+    if (options.onApiLoadComplete) {
+      mcpClientInstance.onApiLoadComplete = options.onApiLoadComplete;
+    }
   }
   
   return mcpClientInstance;

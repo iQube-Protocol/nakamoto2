@@ -12,6 +12,7 @@ interface ConnectionFormProps {
   handleConnect: () => Promise<boolean>;
   isLoading: boolean;
   disabled?: boolean;
+  isApiLoading?: boolean;
 }
 
 const ConnectionForm: React.FC<ConnectionFormProps> = ({
@@ -21,8 +22,17 @@ const ConnectionForm: React.FC<ConnectionFormProps> = ({
   setApiKey,
   handleConnect,
   isLoading,
-  disabled = false
+  disabled = false,
+  isApiLoading = false
 }) => {
+  const isButtonDisabled = disabled || isLoading || isApiLoading || !clientId || !apiKey;
+  const getButtonText = () => {
+    if (disabled) return 'Waiting for Google API...';
+    if (isApiLoading) return 'Loading Google API...';
+    if (isLoading) return 'Connecting...';
+    return 'Connect to Drive';
+  };
+
   return (
     <div className="grid gap-4 py-4">
       <div className="space-y-2">
@@ -32,7 +42,7 @@ const ConnectionForm: React.FC<ConnectionFormProps> = ({
           value={clientId}
           onChange={(e) => setClientId(e.target.value)}
           placeholder="Enter your Google API Client ID"
-          disabled={disabled || isLoading}
+          disabled={disabled || isLoading || isApiLoading}
         />
       </div>
       <div className="space-y-2">
@@ -43,18 +53,18 @@ const ConnectionForm: React.FC<ConnectionFormProps> = ({
           onChange={(e) => setApiKey(e.target.value)}
           placeholder="Enter your Google API Key"
           type="password"
-          disabled={disabled || isLoading}
+          disabled={disabled || isLoading || isApiLoading}
         />
       </div>
       <Button 
         onClick={handleConnect} 
-        disabled={disabled || isLoading || !clientId || !apiKey} 
+        disabled={isButtonDisabled}
         className="mt-2"
       >
-        {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-        {disabled ? 'Waiting for Google API...' : 'Connect to Drive'}
+        {(isLoading || isApiLoading) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+        {getButtonText()}
       </Button>
-      {disabled && (
+      {(disabled || isApiLoading) && (
         <p className="text-xs text-muted-foreground">
           Please wait while we load the Google API. This may take a few moments.
         </p>

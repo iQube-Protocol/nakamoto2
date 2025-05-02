@@ -4,7 +4,7 @@ import { useMCP } from '@/hooks/use-mcp';
 import { toast } from 'sonner';
 
 export function useDriveConnection() {
-  const { driveConnected, connectToDrive, isLoading, client } = useMCP();
+  const { driveConnected, connectToDrive, isLoading, client, isApiLoading } = useMCP();
   const [clientId, setClientId] = useState('');
   const [apiKey, setApiKey] = useState('');
   const [connectionInProgress, setConnectionInProgress] = useState(false);
@@ -42,13 +42,16 @@ export function useDriveConnection() {
     
     // Prevent multiple connection attempts
     if (connectionInProgress) {
-      toast.info('Connection already in progress');
+      toast.info('Connection already in progress', {
+        description: 'Please wait for the current connection attempt to complete'
+      });
       return false;
     }
     
     // Clear any existing timeout
     if (connectionTimeout) {
       clearTimeout(connectionTimeout);
+      setConnectionTimeout(null);
     }
     
     try {
@@ -62,7 +65,7 @@ export function useDriveConnection() {
           id: 'drive-connection',
           description: 'The connection attempt took too long. Please try again.'
         });
-      }, 40000); // 40 second timeout
+      }, 45000); // Increased from 40 to 45 seconds timeout
       
       setConnectionTimeout(timeout);
       
@@ -75,7 +78,9 @@ export function useDriveConnection() {
         duration: Infinity
       });
       
+      console.log('Starting drive connection with credentials', { clientId, apiKeyLength: apiKey?.length });
       const success = await connectToDrive(clientId, apiKey);
+      console.log('Drive connection result:', success);
       
       // Clear the timeout as we got a response
       clearTimeout(timeout);
@@ -95,6 +100,7 @@ export function useDriveConnection() {
       
       return success;
     } catch (error) {
+      console.error('Connection error:', error);
       toast.error('Connection error', {
         id: 'drive-connection',
         description: error instanceof Error ? error.message : 'Unknown error'
@@ -113,6 +119,7 @@ export function useDriveConnection() {
   return {
     driveConnected,
     isLoading,
+    isApiLoading,
     connectionInProgress,
     connectionAttempts,
     clientId,
