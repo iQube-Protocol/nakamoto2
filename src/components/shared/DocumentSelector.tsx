@@ -13,7 +13,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from '@/components/ui/input';
-import { Loader2, FileText, FolderOpen, File, Image, Video, Headphones, FileSpreadsheet, FilePresentation } from 'lucide-react';
+import { Loader2, FileText, FolderOpen, File, Image, Video, Headphones, FileSpreadsheet, Presentation } from 'lucide-react';
 
 interface DocumentSelectorProps {
   onDocumentSelect: (document: any) => void;
@@ -107,7 +107,7 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
     } else if (mimeType.includes('spreadsheet') || mimeType.includes('excel') || mimeType.includes('csv')) {
       return <FileSpreadsheet className="h-5 w-5 text-emerald-500" />;
     } else if (mimeType.includes('presentation') || mimeType.includes('powerpoint')) {
-      return <FilePresentation className="h-5 w-5 text-orange-500" />;
+      return <Presentation className="h-5 w-5 text-orange-500" />;
     } else {
       return <File className="h-5 w-5 text-muted-foreground" />;
     }

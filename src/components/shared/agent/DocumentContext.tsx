@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useMCP } from '@/hooks/use-mcp';
 import DocumentSelector from '../DocumentSelector';
-import { FileText, Trash2, Loader2, Eye, FileSpreadsheet, FilePresentation, File, Image, Video, Headphones } from 'lucide-react';
+import { FileText, Trash2, Loader2, Eye, FileSpreadsheet, Presentation, File, Image, Video, Headphones } from 'lucide-react';
 import {
   Dialog,
   DialogContent,
@@ -107,7 +107,7 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
     } else if (mimeType.includes('spreadsheet') || mimeType.includes('excel') || mimeType.includes('csv')) {
       return <FileSpreadsheet className="h-4 w-4 text-emerald-500" />;
     } else if (mimeType.includes('presentation') || mimeType.includes('powerpoint')) {
-      return <FilePresentation className="h-4 w-4 text-orange-500" />;
+      return <Presentation className="h-4 w-4 text-orange-500" />;
     } else {
       return <File className="h-4 w-4 text-muted-foreground" />;
     }
