@@ -89,10 +89,15 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
     }
   };
 
-  const handleConnectClick = async () => {
+  // Fixed: Make sure this function returns a Promise<boolean>
+  const handleConnectClick = async (): Promise<boolean> => {
     setConnecting(true);
-    await handleConnect();
-    setConnecting(false);
+    try {
+      const result = await handleConnect();
+      return result; // This properly returns the boolean from handleConnect
+    } finally {
+      setConnecting(false);
+    }
   };
   
   // If we have credentials stored but haven't fetched documents yet
