@@ -27,6 +27,7 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const [connectionAttempts, setConnectionAttempts] = useState(0);
   const [connectionCooldown, setConnectionCooldown] = useState(false);
+  const [lastErrorTime, setLastErrorTime] = useState(0);
   
   const {
     driveConnected,
@@ -70,6 +71,21 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
     };
   }, [connectionCooldown]);
   
+  // Check for connection issues
+  useEffect(() => {
+    if (fetchError) {
+      const now = Date.now();
+      setLastErrorTime(now);
+      
+      // If we get consistent errors, suggest a reset
+      if (now - lastErrorTime < 10000) { // Within 10 seconds
+        toast.error('Connection issues detected', {
+          description: 'Consider resetting your Google Drive connection'
+        });
+      }
+    }
+  }, [fetchError, lastErrorTime]);
+  
   const handleDialogChange = (open: boolean) => {
     setIsOpen(open);
     // Reset any connection errors when closing the dialog
@@ -93,6 +109,10 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
       toast.info('Please wait before trying to connect again');
       return false;
     }
+    
+    // Clear any stale connection state
+    localStorage.removeItem('gdrive-connected');
+    localStorage.removeItem('gdrive-auth-token');
     
     setConnecting(true);
     setConnectionError(null);
@@ -129,6 +149,10 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
       return;
     }
     
+    // Force clean reset
+    localStorage.removeItem('gdrive-connected');
+    localStorage.removeItem('gdrive-auth-token');
+    
     resetConnection();
     resetMcpConnection();
     setConnectionError(null);
@@ -138,6 +162,12 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
     toast.success('Connection reset', {
       description: 'Ready to reconnect to Google Drive'
     });
+    
+    // Force dialog refresh
+    setTimeout(() => {
+      setIsOpen(false);
+      setTimeout(() => setIsOpen(true), 100);
+    }, 300);
   };
   
   // Loading states

@@ -33,6 +33,16 @@ export function useDriveConnection() {
     };
   }, [client]);
   
+  // Clear any stale connection state
+  useEffect(() => {
+    // If we're on the Learn page and we have credentials but aren't connected,
+    // ensure connection state is clean
+    if (!driveConnected && clientId && apiKey && window.location.pathname.includes('/learn')) {
+      console.log('Cleaning up stale connection state on Learn page');
+      localStorage.removeItem('gdrive-connected');
+    }
+  }, [driveConnected, clientId, apiKey]);
+  
   // Handle connection with throttling and better state management
   const handleConnect = useCallback(async () => {
     if (!clientId || !apiKey) {
@@ -58,6 +68,10 @@ export function useDriveConnection() {
     try {
       setConnectionInProgress(true);
       setLastConnectionAttempt(now);
+      
+      // Clear any previous connection state to ensure a fresh start
+      localStorage.removeItem('gdrive-connected');
+      localStorage.removeItem('gdrive-auth-token');
       
       // Set a timeout to automatically clear the connection state if it takes too long
       const timeout = setTimeout(() => {
@@ -110,6 +124,8 @@ export function useDriveConnection() {
   
   // Reset connection state
   const resetConnection = useCallback(() => {
+    localStorage.removeItem('gdrive-connected');
+    localStorage.removeItem('gdrive-auth-token');
     resetMcpConnection();
   }, [resetMcpConnection]);
   

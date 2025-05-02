@@ -40,7 +40,7 @@ const blakQubeData: BlakQube = {
 };
 
 const Learn = () => {
-  const { isApiLoading, driveConnected } = useMCP();
+  const { isApiLoading, driveConnected, resetConnection } = useMCP();
   const [apiLoadAttempted, setApiLoadAttempted] = useState(false);
   const [apiLoadError, setApiLoadError] = useState(false);
   const [apiLoadTimeout, setApiLoadTimeout] = useState<NodeJS.Timeout | null>(null);
@@ -49,6 +49,14 @@ const Learn = () => {
   useEffect(() => {
     if (isApiLoading) {
       setApiLoadAttempted(true);
+      
+      // Clean up any stale connection state
+      if (localStorage.getItem('gdrive-connected') === 'true' && !driveConnected) {
+        console.log('Inconsistent connection state detected - resetting');
+        localStorage.removeItem('gdrive-connected');
+        localStorage.removeItem('gdrive-auth-token');
+      }
+      
       // Set a timeout to detect stuck API loading
       if (apiLoadTimeout) clearTimeout(apiLoadTimeout);
       
@@ -77,7 +85,20 @@ const Learn = () => {
         clearTimeout(apiLoadTimeout);
       }
     };
-  }, [isApiLoading, apiLoadAttempted]);
+  }, [isApiLoading, apiLoadAttempted, driveConnected]);
+
+  const handleResetConnection = () => {
+    resetConnection();
+    setApiLoadError(false);
+    toast.success('Connection state reset', {
+      description: 'You can now try connecting again'
+    });
+    
+    // Force reload after a short delay
+    setTimeout(() => {
+      window.location.reload();
+    }, 1000);
+  };
   
   // Display loading state when API is loading
   if (isApiLoading && !apiLoadError) {
@@ -99,12 +120,21 @@ const Learn = () => {
         <p className="text-gray-600 mb-4 text-center max-w-md">
           There was an issue connecting to Google API. The Learn page will still work, but document features may be limited.
         </p>
-        <Button 
-          onClick={() => window.location.reload()} 
-          className="mt-2"
-        >
-          Retry Connection
-        </Button>
+        <div className="flex space-x-4">
+          <Button 
+            onClick={() => window.location.reload()} 
+            className="mt-2"
+          >
+            Retry Connection
+          </Button>
+          <Button 
+            onClick={handleResetConnection} 
+            className="mt-2"
+            variant="outline"
+          >
+            Reset Connection
+          </Button>
+        </div>
       </div>
     );
   }
@@ -115,12 +145,20 @@ const Learn = () => {
         <h2 className="text-lg font-semibold text-red-700 mb-2">Error in Learn Page</h2>
         <p className="mb-2">There was a problem loading the Learn page. This might be due to Google API connectivity issues.</p>
         <p className="text-sm text-gray-600">Try refreshing the page or checking your internet connection.</p>
-        <Button 
-          onClick={() => window.location.reload()} 
-          className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
-        >
-          Reload Page
-        </Button>
+        <div className="flex space-x-4 mt-4">
+          <Button 
+            onClick={() => window.location.reload()} 
+            className="px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+          >
+            Reload Page
+          </Button>
+          <Button 
+            onClick={handleResetConnection} 
+            variant="outline"
+          >
+            Reset Connection
+          </Button>
+        </div>
       </div>
     }>
       <TooltipProvider>
