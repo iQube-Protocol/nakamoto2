@@ -29,34 +29,41 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Determine the current site URL for redirects
-    const siteUrl = window.location.origin;
+    // Set loading to true when effect runs
+    setLoading(true);
+    
+    console.log("AuthProvider: Setting up auth state listener");
     
     // Set up the auth state listener first
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (_, session) => {
-        setSession(session);
-        setUser(session?.user ?? null);
+      (event, newSession) => {
+        console.log("Auth state changed:", event, newSession?.user?.email);
+        setSession(newSession);
+        setUser(newSession?.user ?? null);
         setLoading(false);
       }
     );
 
     // Then check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setSession(session);
-      setUser(session?.user ?? null);
+    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
+      console.log("Got existing session:", currentSession?.user?.email);
+      setSession(currentSession);
+      setUser(currentSession?.user ?? null);
+      setLoading(false);
+    }).catch(error => {
+      console.error("Error getting session:", error);
       setLoading(false);
     });
 
     return () => {
+      console.log("Cleaning up auth subscription");
       subscription.unsubscribe();
     };
   }, []);
 
   const signIn = async (email: string, password: string) => {
     try {
-      // Get the current site URL for redirection
-      const redirectTo = `${window.location.origin}/`;
+      console.log("Attempting sign in for:", email);
       
       const { error } = await supabase.auth.signInWithPassword({
         email,
@@ -68,7 +75,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return { error, success: false };
       }
 
-      navigate('/');
+      console.log("Sign in successful");
       return { error: null, success: true };
     } catch (error) {
       console.error('Unexpected error during sign in:', error);
@@ -80,6 +87,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     try {
       // Get the current site URL for redirection
       const redirectTo = `${window.location.origin}/signin`;
+      
+      console.log("Attempting sign up for:", email);
       
       const { error } = await supabase.auth.signUp({
         email,
@@ -98,6 +107,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return { error, success: false };
       }
 
+      console.log("Sign up successful");
       return { error: null, success: true };
     } catch (error) {
       console.error('Unexpected error during sign up:', error);
@@ -106,8 +116,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   const signOut = async () => {
-    await supabase.auth.signOut();
-    navigate('/signin');
+    console.log("Signing out");
+    try {
+      await supabase.auth.signOut();
+      navigate('/signin');
+    } catch (error) {
+      console.error("Error during sign out:", error);
+      toast.error("Error signing out. Please try again.");
+    }
   };
 
   return (

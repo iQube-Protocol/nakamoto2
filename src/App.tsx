@@ -14,7 +14,7 @@ import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import SplashPage from "./pages/SplashPage";
 import SignIn from "./pages/SignIn";
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { AuthProvider, useAuth } from "./hooks/use-auth";
 
@@ -31,23 +31,34 @@ const queryClient = new QueryClient({
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   
+  console.log("ProtectedRoute - User:", user?.email, "Loading:", loading);
+  
   if (loading) {
-    return <div className="flex h-screen items-center justify-center">Loading...</div>;
+    return <div className="flex h-screen items-center justify-center">Loading authentication...</div>;
   }
   
   if (!user) {
+    console.log("No user, redirecting to signin");
     return <Navigate to="/signin" replace />;
   }
   
+  console.log("User authenticated, rendering protected content");
   return <>{children}</>;
 };
 
 // Router component with Auth provider
 const AppRouter = () => {
+  const [initialized, setInitialized] = useState(false);
+  
   // Set document title
   useEffect(() => {
     document.title = "Aigent MonDAI";
+    setInitialized(true);
   }, []);
+
+  if (!initialized) {
+    return <div className="flex h-screen items-center justify-center">Initializing application...</div>;
+  }
 
   return (
     <AuthProvider>
@@ -126,6 +137,8 @@ const AppRouter = () => {
 };
 
 const App = () => {
+  console.log("Rendering App component");
+  
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
