@@ -315,7 +315,8 @@ export class GoogleApiLoader {
         // Try again if we haven't exceeded max attempts
         if (this.loadAttempts < this.maxLoadAttempts) {
           this.apiLoadPromise = null;
-          return this.loadGoogleApi();
+          // FIX: Return the result of loadGoogleApi instead of calling it without returning
+          return this.ensureGoogleApiLoaded();
         }
         
         return false;
