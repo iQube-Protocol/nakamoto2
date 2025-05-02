@@ -26,81 +26,46 @@ export const useUserInteractions = (
     try {
       console.log(`Fetching interactions for user: ${user.id} type: ${interactionType || 'all'}`);
       
-      // First try with the service function
-      const { data, error } = await getUserInteractions(interactionType);
-      
-      if (error) {
-        console.error('Error fetching interactions:', error);
-        throw error;
+      // Direct DB query for reliability
+      const { data: directData, error: directError } = await supabase
+        .from('user_interactions')
+        .select('*')
+        .eq('user_id', user.id)
+        .order('created_at', { ascending: false });
+        
+      if (directError) {
+        console.error('Direct DB query error:', directError);
+        throw directError;
       }
       
-      if (!data || data.length === 0) {
-        console.log(`No interactions found using service, trying direct DB query`);
+      console.log(`Direct DB query returned ${directData?.length || 0} total interactions`);
+      
+      // Filter by interaction type if specified
+      let filteredData = directData || [];
+      if (interactionType && filteredData.length > 0) {
+        filteredData = filteredData.filter(item => item.interaction_type === interactionType);
+        console.log(`Filtered to ${filteredData.length} ${interactionType} interactions`);
+      }
+      
+      // If still no data and this isn't the initial load, create a test interaction
+      if (filteredData.length === 0) {
+        console.log('No interactions found, checking if we should create a test one');
         
-        // If no data returned, try a direct DB query as a fallback
-        const { data: directData, error: directError } = await supabase
-          .from('user_interactions')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-          
-        if (directError) {
-          console.error('Direct DB query error:', directError);
-          throw directError;
-        }
-        
-        if (interactionType && directData) {
-          const filtered = directData.filter(item => item.interaction_type === interactionType) || [];
-          console.log(`Direct DB query results (filtered): ${filtered.length} interactions`);
-          
-          // If still no data, create a test interaction
-          if (filtered.length === 0) {
-            console.log('No interactions found after direct query, creating test interaction');
-            const testResult = await storeUserInteraction({
-              query: 'Test query from profile page',
-              response: 'This is a test response to verify database functionality',
-              interactionType: interactionType,
-              user_id: user.id
-            });
-            
-            if (testResult.success && testResult.data) {
-              console.log('Test interaction created successfully:', testResult.data.id);
-              toast.success('Test interaction created. Please reload the page.');
-              
-              // Add the test interaction to the filtered list
-              filtered.push({
-                ...testResult.data,
-                interaction_type: interactionType,
-                created_at: new Date().toISOString()
-              });
-            }
-          }
-          
-          setInteractions(filtered);
-        } else if (directData) {
-          console.log(`Direct DB query results: ${directData.length || 0} interactions`);
-          setInteractions(directData || []);
-        } else {
-          setInteractions([]);
-        }
+        // Only create test interaction if specifically requested (we'll do this in the Profile component)
+        setInteractions([]);
       } else {
-        console.log(`Fetched interactions: ${data.length || 0}`);
+        console.log(`Setting ${filteredData.length} interactions in state`);
         
-        // Add detailed logging
-        if (data && data.length > 0) {
+        if (filteredData.length > 0) {
           console.log('First interaction:', {
-            id: data[0].id,
-            type: data[0].interaction_type,
-            query: data[0].query?.substring(0, 30) + '...',
-            response: data[0].response?.substring(0, 30) + '...',
-            user_id: data[0].user_id,
-            created_at: data[0].created_at
+            id: filteredData[0].id,
+            type: filteredData[0].interaction_type,
+            created_at: filteredData[0].created_at,
+            query_length: filteredData[0].query?.length || 0,
           });
-        } else {
-          console.log('No interactions found for type:', interactionType);
         }
         
-        setInteractions(data || []);
+        setInteractions(filteredData);
       }
       
       setError(null);
@@ -108,6 +73,7 @@ export const useUserInteractions = (
       console.error('Error fetching interactions:', err);
       setError(err as Error);
       toast.error('Failed to load your interaction history');
+      setInteractions([]); // Clear interactions on error
     } finally {
       setLoading(false);
     }
@@ -155,11 +121,36 @@ export const useUserInteractions = (
     }
   };
 
+  // Add a function to create a test interaction
+  const createTestInteraction = async (type?: 'learn' | 'earn' | 'connect') => {
+    if (!user) return;
+    
+    const testType = type || interactionType || 'learn';
+    console.log(`Creating test ${testType} interaction`);
+    
+    const result = await storeUserInteraction({
+      query: `Test ${testType} query from profile page`,
+      response: `This is a test ${testType} response to verify database functionality`,
+      interactionType: testType,
+      user_id: user.id
+    });
+    
+    if (result.success) {
+      toast.success('Test interaction created successfully');
+      fetchInteractions(); // Refresh to show the new interaction
+      return result;
+    } else {
+      toast.error('Failed to create test interaction');
+      return result;
+    }
+  };
+
   return {
     interactions,
     loading,
     error,
     saveInteraction,
-    refreshInteractions: fetchInteractions
+    refreshInteractions: fetchInteractions,
+    createTestInteraction
   };
 };

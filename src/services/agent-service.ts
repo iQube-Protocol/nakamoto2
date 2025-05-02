@@ -26,7 +26,7 @@ export const processAgentInteraction = async (
     
     console.log(`Agent interaction: Storing for user ID ${session.user.id}`);
     
-    // Add direct database check to verify we can write to the table but use correct syntax
+    // Add direct database check to verify we can write to the table but use safer syntax
     const { data: testData, error: testError } = await supabase
       .from('user_interactions')
       .select('id')

@@ -6,15 +6,22 @@ import { Button } from '@/components/ui/button';
 import { useUserInteractions } from '@/hooks/use-user-interactions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { format } from 'date-fns';
-import { User, Clock, MessageSquare, Layers, RefreshCw, Loader2, Bug } from 'lucide-react';
+import { User, Clock, MessageSquare, Layers, RefreshCw, Loader2, Bug, Plus } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
 const Profile = () => {
   const { user, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState<'learn' | 'earn' | 'connect'>('learn');
-  const { interactions, loading, refreshInteractions, error } = useUserInteractions(activeTab);
+  const { 
+    interactions, 
+    loading, 
+    refreshInteractions, 
+    error, 
+    createTestInteraction 
+  } = useUserInteractions(activeTab);
   const [debugMode, setDebugMode] = useState(false);
+  const [refreshCount, setRefreshCount] = useState(0);
   
   // Debug current user info
   useEffect(() => {
@@ -26,9 +33,8 @@ const Profile = () => {
         try {
           const { data, error } = await supabase
             .from('user_interactions')
-            .select('count(*)')
-            .eq('user_id', user.id)
-            .single();
+            .select('count')
+            .eq('user_id', user.id);
           
           console.log("Direct DB check - Interactions count:", data);
           if (error) console.error("Direct DB error:", error);
@@ -49,7 +55,7 @@ const Profile = () => {
     }
     
     checkConnection();
-  }, [user, activeTab]); // Add activeTab as dependency to re-check on tab change
+  }, [user, activeTab, refreshCount]); // Add refreshCount to re-run this check when user manually refreshes
   
   // Force refresh interactions whenever tab changes or component mounts
   useEffect(() => {
@@ -67,7 +73,7 @@ const Profile = () => {
     }
     if (interactions) {
       console.log(`Profile: Loaded ${interactions?.length || 0} ${activeTab} interactions`);
-      console.log('Profile: Interactions data:', interactions);
+      console.log('Profile: Interactions data sample:', interactions.slice(0, 3));
     }
   }, [interactions, error, activeTab]);
   
@@ -85,11 +91,19 @@ const Profile = () => {
   
   const handleRefresh = async () => {
     toast.success('Refreshing your interaction history');
+    setRefreshCount(prev => prev + 1); // Increment to trigger the useEffect
     await refreshInteractions();
   };
   
   const toggleDebugMode = () => {
     setDebugMode(!debugMode);
+  };
+  
+  const handleCreateTest = async () => {
+    const result = await createTestInteraction(activeTab);
+    if (result?.success) {
+      toast.success(`Created test ${activeTab} interaction`);
+    }
   };
   
   return (
@@ -152,22 +166,31 @@ const Profile = () => {
                 <CardTitle className="flex items-center">
                   <MessageSquare className="h-5 w-5 mr-2" /> Interaction History
                 </CardTitle>
-                <Button 
-                  variant="outline" 
-                  size="sm" 
-                  onClick={handleRefresh}
-                  disabled={loading}
-                >
-                  {loading ? (
-                    <>
-                      <Loader2 className="h-4 w-4 mr-1 animate-spin" /> Loading...
-                    </>
-                  ) : (
-                    <>
-                      <RefreshCw className="h-4 w-4 mr-1" /> Refresh
-                    </>
-                  )}
-                </Button>
+                <div className="flex space-x-2">
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleCreateTest}
+                  >
+                    <Plus className="h-4 w-4 mr-1" /> Test Interaction
+                  </Button>
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    onClick={handleRefresh}
+                    disabled={loading}
+                  >
+                    {loading ? (
+                      <>
+                        <Loader2 className="h-4 w-4 mr-1 animate-spin" /> Loading...
+                      </>
+                    ) : (
+                      <>
+                        <RefreshCw className="h-4 w-4 mr-1" /> Refresh
+                      </>
+                    )}
+                  </Button>
+                </div>
               </div>
               <CardDescription>Your recent interactions with MonDAI</CardDescription>
             </CardHeader>
@@ -218,7 +241,7 @@ const Profile = () => {
                               </p>
                               <p className="text-sm">
                                 <span className="font-medium">A:</span> 
-                                {interaction.response.length > 150 
+                                {interaction.response?.length > 150 
                                   ? `${interaction.response.substring(0, 150)}...` 
                                   : interaction.response
                                 }
@@ -235,6 +258,15 @@ const Profile = () => {
                       <p className="mt-1 text-sm text-muted-foreground">
                         Try using the {activeTab} feature to create some interactions
                       </p>
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        className="mt-4"
+                        onClick={handleCreateTest}
+                      >
+                        <Plus className="h-4 w-4 mr-1" /> Create Test Interaction
+                      </Button>
+                      
                       {debugMode && (
                         <div className="mt-4 p-4 border border-dashed rounded-md text-left">
                           <h3 className="font-bold mb-2">Debug Information</h3>
@@ -242,6 +274,8 @@ const Profile = () => {
                           <p className="text-sm mb-2">Active tab: {activeTab}</p>
                           <p className="text-sm mb-2">Loading state: {loading ? 'Loading' : 'Not loading'}</p>
                           <p className="text-sm mb-2">Error: {error?.message || 'No error'}</p>
+                          <p className="text-sm mb-2">Refresh count: {refreshCount}</p>
+                          <p className="text-sm mb-2">Interactions found: {interactions?.length || 0}</p>
                           <Button
                             variant="secondary"
                             size="sm"

@@ -71,7 +71,7 @@ export const storeUserInteraction = async (data: InteractionData) => {
 
 export const getUserInteractions = async (
   interactionType?: 'learn' | 'earn' | 'connect',
-  limit = 10,
+  limit = 50, // Increased to show more interactions
   offset = 0
 ) => {
   try {
@@ -114,6 +114,14 @@ export const getUserInteractions = async (
       return { data: null, error };
     }
 
+    // Debug logging
+    console.log('Raw query result:', {
+      query: 'user_interactions',
+      filter: interactionType || 'all',
+      user_id,
+      result_count: data?.length || 0
+    });
+    
     // Log results
     console.log('Fetched interactions:', data?.length || 0, 'for type:', interactionType || 'all');
     if (data?.length) {
@@ -126,25 +134,12 @@ export const getUserInteractions = async (
         user_id: data[0].user_id
       });
     } else {
-      // If no data found, log the exact query used
       console.log('No interactions found. Query details:', {
         user_id,
         interaction_type: interactionType,
         limit,
         offset
       });
-      
-      // Add a direct test insert to help troubleshoot
-      console.log('Attempting test interaction insert...');
-      const testInsert = await storeUserInteraction({
-        query: "Test query from troubleshooting",
-        response: "Test response from profile troubleshooting",
-        interactionType: interactionType || 'learn',
-        user_id
-      });
-      
-      console.log('Test insert result:', testInsert.success ? 'Success' : 'Failed', 
-        testInsert.data ? `ID: ${testInsert.data.id}` : '');
     }
     
     return { data, error: null };
