@@ -26,38 +26,56 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [initialized, setInitialized] = useState(false);
   const navigate = useNavigate();
 
   useEffect(() => {
-    // Set loading to true when effect runs
-    setLoading(true);
-    
-    console.log("AuthProvider: Setting up auth state listener");
-    
-    // Set up the auth state listener first
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, newSession) => {
-        console.log("Auth state changed:", event, newSession?.user?.email);
-        setSession(newSession);
-        setUser(newSession?.user ?? null);
+    const initAuth = async () => {
+      console.log("Initializing auth provider");
+      try {
+        // Set loading to true when effect runs
+        setLoading(true);
+        
+        // Set up the auth state listener first
+        const { data: { subscription } } = supabase.auth.onAuthStateChange(
+          (event, newSession) => {
+            console.log("Auth state changed:", event, newSession?.user?.email);
+            setSession(newSession);
+            setUser(newSession?.user ?? null);
+            setLoading(false);
+            setInitialized(true);
+          }
+        );
+
+        // Then check for existing session
+        const { data, error } = await supabase.auth.getSession();
+        if (error) {
+          throw error;
+        }
+        
+        console.log("Got existing session:", data.session?.user?.email);
+        setSession(data.session);
+        setUser(data.session?.user ?? null);
         setLoading(false);
+        setInitialized(true);
+        
+        return subscription;
+      } catch (error) {
+        console.error("Error initializing auth:", error);
+        setLoading(false);
+        setInitialized(true);
+        return { unsubscribe: () => {} };
       }
-    );
+    };
 
-    // Then check for existing session
-    supabase.auth.getSession().then(({ data: { session: currentSession } }) => {
-      console.log("Got existing session:", currentSession?.user?.email);
-      setSession(currentSession);
-      setUser(currentSession?.user ?? null);
-      setLoading(false);
-    }).catch(error => {
-      console.error("Error getting session:", error);
-      setLoading(false);
-    });
-
+    const subscription = initAuth();
+    
     return () => {
-      console.log("Cleaning up auth subscription");
-      subscription.unsubscribe();
+      // Clean up subscription when component unmounts
+      subscription.then(sub => {
+        console.log("Cleaning up auth subscription");
+        sub.unsubscribe();
+      });
     };
   }, []);
 
@@ -125,6 +143,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       toast.error("Error signing out. Please try again.");
     }
   };
+
+  // Don't render children until auth is initialized
+  if (!initialized) {
+    return <div className="flex h-screen items-center justify-center">Initializing authentication...</div>;
+  }
 
   return (
     <AuthContext.Provider

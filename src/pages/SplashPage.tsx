@@ -6,12 +6,17 @@ import { ArrowRight, Shield, GraduationCap, Wallet, Users } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 
 const SplashPage = () => {
+  console.log("Rendering SplashPage component");
   const { user, loading } = useAuth();
   const navigate = useNavigate();
   
   useEffect(() => {
+    // Mark splash as seen to prevent redirect loops
+    localStorage.setItem('splashSeen', 'true');
+    
     // If already logged in, redirect to dashboard
     if (user && !loading) {
+      console.log("User already logged in, redirecting to home from splash");
       navigate('/');
     }
   }, [user, loading, navigate]);

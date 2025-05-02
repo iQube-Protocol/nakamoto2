@@ -18,16 +18,20 @@ import { useEffect, useState } from "react";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { AuthProvider, useAuth } from "./hooks/use-auth";
 
+// Create query client with error handling
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1,
       refetchOnWindowFocus: false,
+      onError: (error) => {
+        console.error("Query error:", error);
+      }
     },
   },
 });
 
-// Protected route component
+// Protected route component with proper error handling
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   
@@ -46,14 +50,25 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-// Router component with Auth provider
+// Router component with Auth provider and better initialization
 const AppRouter = () => {
   const [initialized, setInitialized] = useState(false);
   
-  // Set document title
+  // Set document title and handle initialization
   useEffect(() => {
-    document.title = "Aigent MonDAI";
-    setInitialized(true);
+    try {
+      console.log("Initializing AppRouter");
+      document.title = "Aigent MonDAI";
+      // Short delay to ensure all initialization is complete
+      const timer = setTimeout(() => {
+        setInitialized(true);
+        console.log("App initialization complete");
+      }, 100);
+      return () => clearTimeout(timer);
+    } catch (error) {
+      console.error("Error during initialization:", error);
+      setInitialized(true); // Still set to true to avoid getting stuck
+    }
   }, []);
 
   if (!initialized) {
@@ -63,77 +78,139 @@ const AppRouter = () => {
   return (
     <AuthProvider>
       <Routes>
-        {/* Public routes */}
-        <Route path="/splash" element={<SplashPage />} />
-        <Route path="/signin" element={<SignIn />} />
+        {/* Public routes with fallbacks */}
+        <Route path="/splash" element={
+          <ErrorBoundaryWrapper>
+            <SplashPage />
+          </ErrorBoundaryWrapper>
+        } />
+        
+        <Route path="/signin" element={
+          <ErrorBoundaryWrapper>
+            <SignIn />
+          </ErrorBoundaryWrapper>
+        } />
         
         {/* Protected routes */}
         <Route 
           path="/" 
           element={
             <ProtectedRoute>
-              <MainLayout>
-                <Index />
-              </MainLayout>
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/learn" 
-          element={
-            <ProtectedRoute>
-              <MainLayout>
-                <Learn />
-              </MainLayout>
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/earn" 
-          element={
-            <ProtectedRoute>
-              <MainLayout>
-                <Earn />
-              </MainLayout>
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/connect" 
-          element={
-            <ProtectedRoute>
-              <MainLayout>
-                <Connect />
-              </MainLayout>
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/settings" 
-          element={
-            <ProtectedRoute>
-              <MainLayout>
-                <Settings />
-              </MainLayout>
-            </ProtectedRoute>
-          } 
-        />
-        <Route 
-          path="/profile" 
-          element={
-            <ProtectedRoute>
-              <MainLayout>
-                <Profile />
-              </MainLayout>
+              <ErrorBoundaryWrapper>
+                <MainLayout>
+                  <Index />
+                </MainLayout>
+              </ErrorBoundaryWrapper>
             </ProtectedRoute>
           } 
         />
         
-        {/* Catch-all route */}
-        <Route path="*" element={<NotFound />} />
+        <Route 
+          path="/learn" 
+          element={
+            <ProtectedRoute>
+              <ErrorBoundaryWrapper>
+                <MainLayout>
+                  <Learn />
+                </MainLayout>
+              </ErrorBoundaryWrapper>
+            </ProtectedRoute>
+          } 
+        />
+        
+        <Route 
+          path="/earn" 
+          element={
+            <ProtectedRoute>
+              <ErrorBoundaryWrapper>
+                <MainLayout>
+                  <Earn />
+                </MainLayout>
+              </ErrorBoundaryWrapper>
+            </ProtectedRoute>
+          } 
+        />
+        
+        <Route 
+          path="/connect" 
+          element={
+            <ProtectedRoute>
+              <ErrorBoundaryWrapper>
+                <MainLayout>
+                  <Connect />
+                </MainLayout>
+              </ErrorBoundaryWrapper>
+            </ProtectedRoute>
+          } 
+        />
+        
+        <Route 
+          path="/settings" 
+          element={
+            <ProtectedRoute>
+              <ErrorBoundaryWrapper>
+                <MainLayout>
+                  <Settings />
+                </MainLayout>
+              </ErrorBoundaryWrapper>
+            </ProtectedRoute>
+          } 
+        />
+        
+        <Route 
+          path="/profile" 
+          element={
+            <ProtectedRoute>
+              <ErrorBoundaryWrapper>
+                <MainLayout>
+                  <Profile />
+                </MainLayout>
+              </ErrorBoundaryWrapper>
+            </ProtectedRoute>
+          } 
+        />
+        
+        {/* Catch-all route with fallback */}
+        <Route path="*" element={
+          <ErrorBoundaryWrapper>
+            <NotFound />
+          </ErrorBoundaryWrapper>
+        } />
       </Routes>
     </AuthProvider>
   );
+};
+
+// Simple error boundary component to prevent blank screens
+const ErrorBoundaryWrapper = ({ children }: { children: React.ReactNode }) => {
+  const [hasError, setHasError] = useState(false);
+
+  useEffect(() => {
+    const errorHandler = (event: ErrorEvent) => {
+      console.error("Uncaught error:", event.error);
+      setHasError(true);
+    };
+
+    window.addEventListener('error', errorHandler);
+    return () => window.removeEventListener('error', errorHandler);
+  }, []);
+
+  if (hasError) {
+    return (
+      <div className="flex h-screen flex-col items-center justify-center p-4 text-center">
+        <h2 className="mb-2 text-2xl font-bold">Something went wrong</h2>
+        <p className="mb-4">We encountered an error while rendering this page.</p>
+        <button 
+          className="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
+          onClick={() => window.location.reload()}
+        >
+          Reload Page
+        </button>
+      </div>
+    );
+  }
+
+  return <>{children}</>;
 };
 
 const App = () => {
