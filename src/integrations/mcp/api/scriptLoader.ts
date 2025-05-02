@@ -26,7 +26,7 @@ export class ScriptLoader {
           resolve(true);
         };
         
-        script.onerror = (e) => {
+        script.onerror = (e: Event) => {
           if (options.onError) {
             options.onError(e);
           }
