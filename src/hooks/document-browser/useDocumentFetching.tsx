@@ -10,12 +10,20 @@ export function useDocumentFetching(listDocuments: (folderId?: string) => Promis
   const [retryCount, setRetryCount] = useState(0);
   const [refreshAttempts, setRefreshAttempts] = useState(0);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [forceRefreshInProgress, setForceRefreshInProgress] = useState(false);
   
   const forceRefreshCurrentFolder = useCallback(async (currentFolder: string) => {
+    // Prevent recursive force refreshes
+    if (forceRefreshInProgress) {
+      console.log('Force refresh already in progress, preventing recursive call');
+      return [];
+    }
+    
     setFetchError(null);
     setRetryCount(0);
     setRefreshAttempts(prev => prev + 1);
     setIsRefreshing(true);
+    setForceRefreshInProgress(true);
     
     toast.loading("Forcing document refresh...", { id: "refreshing-docs", duration: 1500 });
     
@@ -45,6 +53,7 @@ export function useDocumentFetching(listDocuments: (folderId?: string) => Promis
       return [];
     } finally {
       setIsRefreshing(false);
+      setForceRefreshInProgress(false);
     }
   }, [forceRefreshDocuments, refreshAttempts]);
   
@@ -63,7 +72,8 @@ export function useDocumentFetching(listDocuments: (folderId?: string) => Promis
         console.log(`Folder ${currentFolder || 'root'} is empty or not accessible`);
         
         // If we get an empty result multiple times, try force refreshing
-        if (retryCount >= 2) {
+        // But ONLY if we're not already in a force refresh to prevent loops
+        if (retryCount >= 2 && !forceRefreshInProgress) {
           console.log('Multiple empty results, trying force refresh');
           setRetryCount(0);
           return forceRefreshCurrentFolder(currentFolder);
@@ -85,7 +95,7 @@ export function useDocumentFetching(listDocuments: (folderId?: string) => Promis
       });
       return [];
     }
-  }, [driveConnected, listDocuments, retryCount, forceRefreshCurrentFolder]);
+  }, [driveConnected, listDocuments, retryCount, forceRefreshCurrentFolder, forceRefreshInProgress]);
 
   return {
     fetchError,

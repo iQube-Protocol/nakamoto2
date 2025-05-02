@@ -136,13 +136,29 @@ export class GoogleApiLoader {
             return false;
           }
           
-          // Initialize client
-          const success = await ApiInitializer.initializeGapiClient(this.client.getGapi());
-          if (success) {
-            this.state.setInitialized(true);
-            this.state.setLoaded(true);
+          // Initialize client with timeout
+          try {
+            // Race the initialization with a timeout
+            const initPromise = ApiInitializer.initializeGapiClient(this.client.getGapi());
+            const timeoutPromise = new Promise<boolean>(resolve => {
+              setTimeout(() => {
+                console.warn('Client initialization timed out in ensureGoogleApiLoaded');
+                resolve(false);
+              }, 5000);
+            });
+            
+            const success = await Promise.race([initPromise, timeoutPromise]);
+            
+            if (success) {
+              this.state.setInitialized(true);
+              this.state.setLoaded(true);
+            }
+            
+            return success;
+          } catch (error) {
+            console.error('Error initializing Google API client:', error);
+            return false;
           }
-          return success;
         }
         
         return !!loadResult;

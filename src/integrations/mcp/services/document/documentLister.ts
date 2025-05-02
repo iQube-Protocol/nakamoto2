@@ -1,3 +1,4 @@
+
 import { toast } from 'sonner';
 import { GoogleApiLoader } from '../../googleApiLoader';
 
@@ -9,6 +10,8 @@ export class DocumentLister {
   private requestInProgress: boolean = false;
   private requestTimeout: NodeJS.Timeout | null = null;
   private driveApiInitAttempted: boolean = false;
+  private lastRequestTime: number = 0;
+  private requestCooldown: number = 2000; // 2 seconds between requests
   
   constructor(googleApiLoader: GoogleApiLoader) {
     this.googleApiLoader = googleApiLoader;
@@ -19,6 +22,13 @@ export class DocumentLister {
    */
   public async listDocuments(folderId?: string): Promise<any[]> {
     console.log(`MCP: Listing documents${folderId ? ' in folder ' + folderId : ''}`);
+    
+    // Enforce cooldown between requests
+    const now = Date.now();
+    if (now - this.lastRequestTime < this.requestCooldown) {
+      console.log('Request attempted too soon, enforcing cooldown');
+      await new Promise(resolve => setTimeout(resolve, this.requestCooldown));
+    }
     
     // Prevent concurrent requests
     if (this.requestInProgress) {
@@ -34,6 +44,7 @@ export class DocumentLister {
     }
     
     this.requestInProgress = true;
+    this.lastRequestTime = Date.now();
     
     // Set a timeout for the entire operation
     const operationPromise = this.executeListOperation(folderId);
@@ -224,6 +235,18 @@ export class DocumentLister {
       }
       
       return [];
+    }
+  }
+  
+  /**
+   * Reset state for a new session
+   */
+  public reset(): void {
+    this.driveApiInitAttempted = false;
+    this.requestInProgress = false;
+    if (this.requestTimeout) {
+      clearTimeout(this.requestTimeout);
+      this.requestTimeout = null;
     }
   }
 }

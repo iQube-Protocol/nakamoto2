@@ -1,9 +1,11 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import LearnInterface from '@/components/learn/LearnInterface';
 import { MetaQube, BlakQube } from '@/lib/types';
 import { TooltipProvider } from '@/components/ui/tooltip';
 import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
+import { useMCP } from '@/hooks/use-mcp';
+import { toast } from 'sonner';
 
 // Sample metaQube data
 const metaQubeData: MetaQube = {
@@ -36,6 +38,21 @@ const blakQubeData: BlakQube = {
 };
 
 const Learn = () => {
+  const { isApiLoading } = useMCP();
+  const [apiLoadAttempted, setApiLoadAttempted] = useState(false);
+  
+  // Track if Google API loading has been attempted
+  useEffect(() => {
+    if (isApiLoading) {
+      setApiLoadAttempted(true);
+    } else if (apiLoadAttempted) {
+      // API loading finished after being attempted
+      toast.success('Learn page loaded', {
+        description: 'Document features are now available'
+      });
+    }
+  }, [isApiLoading, apiLoadAttempted]);
+  
   return (
     <ErrorBoundary fallback={
       <div className="p-4 border border-red-300 bg-red-50 rounded">
