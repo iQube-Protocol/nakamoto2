@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -45,8 +46,9 @@ export class MCPClient {
   private isApiLoaded: boolean = false;
   private isAuthenticated: boolean = false;
   private apiLoadPromise: Promise<boolean> | null = null;
-  private onApiLoadStart: (() => void) | null = null;
-  private onApiLoadComplete: (() => void) | null = null;
+  // Changed from private to public to resolve access issue
+  public onApiLoadStart: (() => void) | null = null;
+  public onApiLoadComplete: (() => void) | null = null;
   private apiLoadTimeout: number = 30000; // Increased from 20s to 30s for API loading
   
   constructor(options: MCPClientOptions = {}) {
@@ -765,7 +767,7 @@ export const getMCPClient = (options?: MCPClientOptions): MCPClient => {
     if (options.authToken) mcpClientInstance.setAuthToken(options.authToken);
     if (options.metisActive !== undefined) mcpClientInstance.setMetisActive(options.metisActive);
     
-    // Handle API loading callbacks
+    // Now we can access these properties because they're public
     if (options.onApiLoadStart) {
       mcpClientInstance.onApiLoadStart = options.onApiLoadStart;
     }
