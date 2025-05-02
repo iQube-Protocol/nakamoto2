@@ -1,4 +1,3 @@
-
 import { toast } from 'sonner';
 import type { MCPClientOptions, MCPContext } from './types';
 import { GoogleApiLoader } from './api/google-api-loader';
@@ -22,10 +21,10 @@ export class MCPClient {
     this.authToken = options.authToken || null;
     
     // Initialize sub-modules
-    this.apiLoader = new GoogleApiLoader(
-      options.onApiLoadStart || null,
-      options.onApiLoadComplete || null
-    );
+    this.apiLoader = new GoogleApiLoader({
+      onApiLoadStart: options.onApiLoadStart || null,
+      onApiLoadComplete: options.onApiLoadComplete || null
+    });
     
     this.contextManager = new ContextManager(options.metisActive || false);
     this.driveOperations = new DriveOperations(this.apiLoader, this.contextManager);
