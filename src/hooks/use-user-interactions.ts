@@ -1,6 +1,6 @@
 
 import { useEffect, useState, useCallback } from 'react';
-import { getUserInteractions, storeUserInteraction } from '@/services/user-interaction-service';
+import { getUserInteractions, storeUserInteraction, InteractionData } from '@/services/user-interaction-service';
 import { useAuth } from './use-auth';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
