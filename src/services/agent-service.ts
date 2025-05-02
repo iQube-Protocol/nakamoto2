@@ -29,7 +29,7 @@ export const processAgentInteraction = async (
     // Add direct database check to verify we can write to the table
     const testQuery = await supabase
       .from('user_interactions')
-      .select('count(*)')
+      .select('count')
       .eq('user_id', session.user.id);
       
     if (testQuery.error) {
@@ -42,7 +42,9 @@ export const processAgentInteraction = async (
       };
     }
     
-    console.log('Table access check passed. Count:', testQuery.data?.[0]?.count);
+    // Fixed: Check if data exists before trying to access count property
+    const interactionCount = testQuery.data ? testQuery.data[0]?.count : 0;
+    console.log('Table access check passed. Count:', interactionCount);
     
     // Store the interaction in the database with explicit user ID
     const result = await storeUserInteraction({
