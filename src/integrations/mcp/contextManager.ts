@@ -1,4 +1,3 @@
-
 import { MCPContext, DocumentContext } from './types';
 
 /**
@@ -50,7 +49,8 @@ export class ContextManager {
           environment: "web3_education",
           modelPreference: "gpt-4o-mini",
           metisActive: false,
-          source: 'google-drive'
+          source: 'google-drive',
+          lastUpdated: new Date().toISOString()
         },
         documentContext: [] // Initialize empty document array
       };
@@ -121,6 +121,9 @@ export class ContextManager {
         const storageKey = `mcp-context-${this.conversationId}`;
         
         // Add a timestamp to track the context version
+        if (!this.context.metadata) {
+          this.context.metadata = {};
+        }
         this.context.metadata.lastUpdated = new Date().toISOString();
         
         localStorage.setItem(storageKey, JSON.stringify(this.context));

@@ -9,7 +9,7 @@ import { useDocumentContextUpdates } from './hooks/useDocumentContextUpdates';
 import { useMCP } from '@/hooks/use-mcp';
 
 const LearnInterface = ({ metaQube, blakQube }) => {
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [activeTab, setActiveTab] = useState('courses');
   const [sidebar, setSidebar] = useState(true);
   const { documentContextUpdated, handleDocumentContextUpdated } = useDocumentContextUpdates();
   const { client } = useMCP();
@@ -41,27 +41,39 @@ const LearnInterface = ({ metaQube, blakQube }) => {
       {sidebar ? (
         <div className="w-[350px] border-r overflow-y-auto">
           <AgentPanel 
+            metaQube={metaQube}
+            blakQube={blakQube}
+            conversationId={null}
+            setConversationId={() => {}}
+            isPanelCollapsed={false}
             onDocumentAdded={handleDocumentAdded} 
             documentContextUpdated={documentContextUpdated} 
           />
         </div>
       ) : (
-        <CollapsedSidebar onExpand={() => setSidebar(true)} />
+        <CollapsedSidebar 
+          activeTab={activeTab} 
+          handleTabClick={setActiveTab} 
+          togglePanelCollapse={() => setSidebar(true)} 
+        />
       )}
 
       <div className="flex-1 flex flex-col overflow-hidden">
         <TabsNavigation 
           activeTab={activeTab} 
-          onTabChange={setActiveTab} 
-          onToggleSidebar={() => setSidebar(!sidebar)} 
-          sidebarVisible={sidebar}
+          handleTabClick={setActiveTab} 
         />
 
         <div className="flex-1 overflow-y-auto p-4">
           <ContentDisplay 
-            activeTab={activeTab} 
-            metaQube={metaQube} 
-            blakQube={blakQube} 
+            activeTab={activeTab}
+            currentItemIndex={0}
+            courses={[]}
+            certifications={[]}
+            achievements={[]}
+            goToPrev={() => {}}
+            goToNext={() => {}}
+            onCollapse={() => setSidebar(false)}
           />
         </div>
       </div>
