@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { MCPClient, getMCPClient } from '@/integrations/mcp/client';
 import { useAuth } from '@/hooks/use-auth';
@@ -10,6 +11,7 @@ export function useMCP() {
   const [documents, setDocuments] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [isApiLoading, setIsApiLoading] = useState(false);
+  const [apiLoadError, setApiLoadError] = useState<Error | null>(null);
   const { user } = useAuth();
   
   // Initialize MCP client
@@ -24,6 +26,7 @@ export function useMCP() {
         onApiLoadStart: () => {
           console.log('MCP API loading started');
           setIsApiLoading(true);
+          setApiLoadError(null);
         },
         onApiLoadComplete: () => {
           console.log('MCP API loading completed');
@@ -74,7 +77,7 @@ export function useMCP() {
     }
   }, [client]);
   
-  // Reset drive connection - new function
+  // Reset drive connection with improved handling
   const resetDriveConnection = useCallback(() => {
     if (client) {
       // Reset internal state in the client
@@ -87,6 +90,7 @@ export function useMCP() {
       // Update local state
       setDriveConnected(false);
       setDocuments([]);
+      setApiLoadError(null);
       
       // Clear cache
       for (const key in sessionStorage) {
@@ -101,8 +105,8 @@ export function useMCP() {
     }
   }, [client]);
   
-  // Optimized document listing with caching
-  const listDocuments = useCallback(async (folderId?: string) => {
+  // Optimized document listing with caching and better error handling
+  const listDocuments = useCallback(async (folderId?: string): Promise<any[]> => {
     if (!client || !driveConnected) {
       toast.error('Not connected to Google Drive');
       return [];
@@ -214,6 +218,17 @@ export function useMCP() {
     }
   }, [client]);
   
+  // Check API status
+  const checkApiStatus = useCallback(() => {
+    if (!client) return false;
+    
+    // Check if Google API is loaded successfully
+    const isLoaded = client.isApiLoaded?.();
+    console.log('MCP API loaded status:', isLoaded);
+    
+    return isLoaded;
+  }, [client]);
+
   return {
     client,
     isInitialized,
@@ -221,10 +236,12 @@ export function useMCP() {
     documents,
     isLoading,
     isApiLoading,
+    apiLoadError,
     connectToDrive,
-    resetDriveConnection, // New function exposed
+    resetDriveConnection,
     listDocuments,
     fetchDocument,
-    initializeContext
+    initializeContext,
+    checkApiStatus
   };
 }

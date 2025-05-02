@@ -34,7 +34,7 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
   const [apiLoadingState, setApiLoadingState] = useState<'loading' | 'loaded' | 'error'>('loading');
   const [apiCheckAttempts, setApiCheckAttempts] = useState(0);
   const [connectionError, setConnectionError] = useState<boolean>(false);
-  const maxApiCheckAttempts = 30; // Increased from 20 to 30 maximum attempts
+  const maxApiCheckAttempts = 30; // Maximum attempts to check API loading
   
   const {
     driveConnected,
@@ -122,7 +122,7 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
     }
   };
 
-  // Fixed: Now properly returns Promise<boolean>
+  // Handle connection with better Promise handling
   const handleConnectClick = async (): Promise<boolean> => {
     setConnecting(true);
     setConnectionError(false);
@@ -132,8 +132,9 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
       if (!result) {
         setConnectionError(true);
       }
-      return result; // This properly returns the boolean from handleConnect
+      return result;
     } catch (error) {
+      console.error('Connection error:', error);
       setConnectionError(true);
       return false;
     } finally {
@@ -243,7 +244,7 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
           </Alert>
         )}
         
-        {/* New Connection Error Alert */}
+        {/* Connection Error Alert */}
         {connectionError && driveConnected && (
           <Alert className="bg-amber-500/10 border-amber-500/30 mb-4">
             <AlertTriangle className="h-4 w-4 text-amber-500" />

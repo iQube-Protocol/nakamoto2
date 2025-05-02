@@ -1,3 +1,4 @@
+
 import { toast } from 'sonner';
 import type { MCPClientOptions, MCPContext } from './types';
 import { GoogleApiLoader } from './api-loader';
@@ -156,6 +157,27 @@ export class MCPClient {
     toast.info('Google Drive connection has been reset', {
       description: 'You will need to reconnect to access your documents'
     });
+  }
+  
+  /**
+   * Check if API is loaded
+   */
+  isApiLoaded(): boolean {
+    return this.apiLoader.isLoaded();
+  }
+  
+  /**
+   * Get current API load attempt count
+   */
+  getApiLoadAttempts(): number {
+    return this.apiLoader.getLoadAttempts();
+  }
+  
+  /**
+   * Reset API load attempts counter
+   */
+  resetApiLoadAttempts(): void {
+    this.apiLoader.resetLoadAttempts();
   }
   
   // Public getter for api loader's callbacks to support existing code

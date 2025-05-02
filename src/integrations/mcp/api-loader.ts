@@ -1,3 +1,4 @@
+
 import { toast } from 'sonner';
 
 /**
@@ -10,6 +11,8 @@ export class GoogleApiLoader {
   public onApiLoadStart: (() => void) | null = null;
   public onApiLoadComplete: (() => void) | null = null;
   private apiLoadTimeout: number = 30000; // 30s timeout for API loading
+  private loadAttempts: number = 0;
+  private maxLoadAttempts: number = 3;
   
   constructor(
     onApiLoadStart?: () => void,
@@ -34,6 +37,7 @@ export class GoogleApiLoader {
     // Reset state
     this.isApiLoaded = false;
     this.apiLoadPromise = null;
+    this.loadAttempts = 0;
     
     if (this.onApiLoadStart) {
       this.onApiLoadStart();
@@ -77,7 +81,20 @@ export class GoogleApiLoader {
    */
   private loadGoogleApi(): void {
     if (typeof window !== 'undefined' && !this.isApiLoaded && !this.apiLoadPromise) {
-      console.log('MCP: Loading Google API scripts...');
+      // Check if we've exceeded max attempts
+      if (this.loadAttempts >= this.maxLoadAttempts) {
+        console.error(`MCP: Failed to load Google API after ${this.maxLoadAttempts} attempts`);
+        if (this.onApiLoadComplete) {
+          this.onApiLoadComplete();
+        }
+        toast.error('Failed to load Google API', {
+          description: 'Please refresh the page and try again'
+        });
+        return;
+      }
+      
+      this.loadAttempts++;
+      console.log(`MCP: Loading Google API scripts... (Attempt ${this.loadAttempts}/${this.maxLoadAttempts})`);
       
       if (this.onApiLoadStart) {
         this.onApiLoadStart();
@@ -108,7 +125,15 @@ export class GoogleApiLoader {
             if (this.onApiLoadComplete) {
               this.onApiLoadComplete();
             }
-            reject(new Error('Google API loading timed out'));
+            
+            // Try again if we haven't exceeded max attempts
+            if (this.loadAttempts < this.maxLoadAttempts) {
+              console.log(`MCP: Retrying Google API load (Attempt ${this.loadAttempts + 1}/${this.maxLoadAttempts})`);
+              this.apiLoadPromise = null; // Reset the promise so we can try again
+              this.loadGoogleApi(); // Recursive call to try loading again
+            } else {
+              reject(new Error('Google API loading timed out after maximum attempts'));
+            }
           }
         }, this.apiLoadTimeout);
         
@@ -146,7 +171,15 @@ export class GoogleApiLoader {
                   if (this.onApiLoadComplete) {
                     this.onApiLoadComplete();
                   }
-                  reject(e);
+                  
+                  // Retry logic
+                  if (this.loadAttempts < this.maxLoadAttempts) {
+                    console.log(`MCP: Retrying Google API load (Attempt ${this.loadAttempts + 1}/${this.maxLoadAttempts})`);
+                    this.apiLoadPromise = null;
+                    this.loadGoogleApi();
+                  } else {
+                    reject(e);
+                  }
                 }
               },
               timeout: 20000, // 20 seconds
@@ -157,7 +190,15 @@ export class GoogleApiLoader {
                   if (this.onApiLoadComplete) {
                     this.onApiLoadComplete();
                   }
-                  reject(new Error('Google API client load timed out'));
+                  
+                  // Retry logic
+                  if (this.loadAttempts < this.maxLoadAttempts) {
+                    console.log(`MCP: Retrying Google API load after timeout (Attempt ${this.loadAttempts + 1}/${this.maxLoadAttempts})`);
+                    this.apiLoadPromise = null;
+                    this.loadGoogleApi();
+                  } else {
+                    reject(new Error('Google API client load timed out after maximum attempts'));
+                  }
                 }
               }
             });
@@ -168,7 +209,15 @@ export class GoogleApiLoader {
               if (this.onApiLoadComplete) {
                 this.onApiLoadComplete();
               }
-              reject(new Error('Google API failed to load'));
+              
+              // Retry logic
+              if (this.loadAttempts < this.maxLoadAttempts) {
+                console.log(`MCP: Retrying Google API load (Attempt ${this.loadAttempts + 1}/${this.maxLoadAttempts})`);
+                this.apiLoadPromise = null;
+                this.loadGoogleApi();
+              } else {
+                reject(new Error('Google API failed to load after maximum attempts'));
+              }
             }
           }
         };
@@ -182,7 +231,15 @@ export class GoogleApiLoader {
             if (this.onApiLoadComplete) {
               this.onApiLoadComplete();
             }
-            reject(e);
+            
+            // Retry logic
+            if (this.loadAttempts < this.maxLoadAttempts) {
+              console.log(`MCP: Retrying Google API load after error (Attempt ${this.loadAttempts + 1}/${this.maxLoadAttempts})`);
+              this.apiLoadPromise = null;
+              this.loadGoogleApi();
+            } else {
+              reject(e);
+            }
           }
         };
         
@@ -206,7 +263,15 @@ export class GoogleApiLoader {
             if (this.onApiLoadComplete) {
               this.onApiLoadComplete();
             }
-            reject(e);
+            
+            // Retry logic
+            if (this.loadAttempts < this.maxLoadAttempts) {
+              console.log(`MCP: Retrying Google API load after GSI error (Attempt ${this.loadAttempts + 1}/${this.maxLoadAttempts})`);
+              this.apiLoadPromise = null;
+              this.loadGoogleApi();
+            } else {
+              reject(e);
+            }
           }
         };
         
@@ -246,6 +311,13 @@ export class GoogleApiLoader {
         toast.error('Failed to load Google API', {
           description: 'Please refresh the page and try again'
         });
+        
+        // Try again if we haven't exceeded max attempts
+        if (this.loadAttempts < this.maxLoadAttempts) {
+          this.apiLoadPromise = null;
+          return this.loadGoogleApi();
+        }
+        
         return false;
       }
     } else {
@@ -279,5 +351,19 @@ export class GoogleApiLoader {
    */
   public isLoaded(): boolean {
     return this.isApiLoaded;
+  }
+  
+  /**
+   * Get current load attempt count
+   */
+  public getLoadAttempts(): number {
+    return this.loadAttempts;
+  }
+  
+  /**
+   * Reset load attempts counter
+   */
+  public resetLoadAttempts(): void {
+    this.loadAttempts = 0;
   }
 }
