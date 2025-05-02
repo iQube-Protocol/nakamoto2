@@ -24,7 +24,6 @@ const queryClient = new QueryClient({
     queries: {
       retry: 1,
       refetchOnWindowFocus: false,
-      // Using the updated API for error handling
       meta: {
         onError: (error: Error) => {
           console.error("Query error:", error);
@@ -38,72 +37,37 @@ const queryClient = new QueryClient({
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   
-  console.log("ProtectedRoute - User:", user?.email, "Loading:", loading);
-  
   if (loading) {
     return <div className="flex h-screen items-center justify-center">Loading authentication...</div>;
   }
   
   if (!user) {
-    console.log("No user, redirecting to signin");
     return <Navigate to="/signin" replace />;
   }
   
-  console.log("User authenticated, rendering protected content");
   return <>{children}</>;
 };
 
 // Router component with Auth provider and better initialization
 const AppRouter = () => {
-  const [initialized, setInitialized] = useState(false);
+  // Remove initialization delay to prevent blank screens
+  console.log("Rendering AppRouter");
   
-  // Set document title and handle initialization
-  useEffect(() => {
-    try {
-      console.log("Initializing AppRouter");
-      document.title = "Aigent MonDAI";
-      // Short delay to ensure all initialization is complete
-      const timer = setTimeout(() => {
-        setInitialized(true);
-        console.log("App initialization complete");
-      }, 100);
-      return () => clearTimeout(timer);
-    } catch (error) {
-      console.error("Error during initialization:", error);
-      setInitialized(true); // Still set to true to avoid getting stuck
-    }
-  }, []);
-
-  if (!initialized) {
-    return <div className="flex h-screen items-center justify-center">Initializing application...</div>;
-  }
-
   return (
     <AuthProvider>
       <Routes>
         {/* Public routes with fallbacks */}
-        <Route path="/splash" element={
-          <ErrorBoundaryWrapper>
-            <SplashPage />
-          </ErrorBoundaryWrapper>
-        } />
-        
-        <Route path="/signin" element={
-          <ErrorBoundaryWrapper>
-            <SignIn />
-          </ErrorBoundaryWrapper>
-        } />
+        <Route path="/splash" element={<SplashPage />} />
+        <Route path="/signin" element={<SignIn />} />
         
         {/* Protected routes */}
         <Route 
           path="/" 
           element={
             <ProtectedRoute>
-              <ErrorBoundaryWrapper>
-                <MainLayout>
-                  <Index />
-                </MainLayout>
-              </ErrorBoundaryWrapper>
+              <MainLayout>
+                <Index />
+              </MainLayout>
             </ProtectedRoute>
           } 
         />
@@ -112,11 +76,9 @@ const AppRouter = () => {
           path="/learn" 
           element={
             <ProtectedRoute>
-              <ErrorBoundaryWrapper>
-                <MainLayout>
-                  <Learn />
-                </MainLayout>
-              </ErrorBoundaryWrapper>
+              <MainLayout>
+                <Learn />
+              </MainLayout>
             </ProtectedRoute>
           } 
         />
@@ -125,11 +87,9 @@ const AppRouter = () => {
           path="/earn" 
           element={
             <ProtectedRoute>
-              <ErrorBoundaryWrapper>
-                <MainLayout>
-                  <Earn />
-                </MainLayout>
-              </ErrorBoundaryWrapper>
+              <MainLayout>
+                <Earn />
+              </MainLayout>
             </ProtectedRoute>
           } 
         />
@@ -138,11 +98,9 @@ const AppRouter = () => {
           path="/connect" 
           element={
             <ProtectedRoute>
-              <ErrorBoundaryWrapper>
-                <MainLayout>
-                  <Connect />
-                </MainLayout>
-              </ErrorBoundaryWrapper>
+              <MainLayout>
+                <Connect />
+              </MainLayout>
             </ProtectedRoute>
           } 
         />
@@ -151,11 +109,9 @@ const AppRouter = () => {
           path="/settings" 
           element={
             <ProtectedRoute>
-              <ErrorBoundaryWrapper>
-                <MainLayout>
-                  <Settings />
-                </MainLayout>
-              </ErrorBoundaryWrapper>
+              <MainLayout>
+                <Settings />
+              </MainLayout>
             </ProtectedRoute>
           } 
         />
@@ -164,56 +120,18 @@ const AppRouter = () => {
           path="/profile" 
           element={
             <ProtectedRoute>
-              <ErrorBoundaryWrapper>
-                <MainLayout>
-                  <Profile />
-                </MainLayout>
-              </ErrorBoundaryWrapper>
+              <MainLayout>
+                <Profile />
+              </MainLayout>
             </ProtectedRoute>
           } 
         />
         
         {/* Catch-all route with fallback */}
-        <Route path="*" element={
-          <ErrorBoundaryWrapper>
-            <NotFound />
-          </ErrorBoundaryWrapper>
-        } />
+        <Route path="*" element={<NotFound />} />
       </Routes>
     </AuthProvider>
   );
-};
-
-// Simple error boundary component to prevent blank screens
-const ErrorBoundaryWrapper = ({ children }: { children: React.ReactNode }) => {
-  const [hasError, setHasError] = useState(false);
-
-  useEffect(() => {
-    const errorHandler = (event: ErrorEvent) => {
-      console.error("Uncaught error:", event.error);
-      setHasError(true);
-    };
-
-    window.addEventListener('error', errorHandler);
-    return () => window.removeEventListener('error', errorHandler);
-  }, []);
-
-  if (hasError) {
-    return (
-      <div className="flex h-screen flex-col items-center justify-center p-4 text-center">
-        <h2 className="mb-2 text-2xl font-bold">Something went wrong</h2>
-        <p className="mb-4">We encountered an error while rendering this page.</p>
-        <button 
-          className="rounded bg-blue-500 px-4 py-2 text-white hover:bg-blue-600"
-          onClick={() => window.location.reload()}
-        >
-          Reload Page
-        </button>
-      </div>
-    );
-  }
-
-  return <>{children}</>;
 };
 
 const App = () => {

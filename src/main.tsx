@@ -21,23 +21,17 @@ if (storedTheme) {
   localStorage.setItem('theme', 'dark');
 }
 
-// Redirect to splash page by default if user hasn't seen it yet
+// Initialize the React application immediately to prevent blank screens
+console.log("Initializing React application");
+createRoot(rootElement ?? document.getElementById("root")!).render(<App />);
+
+// Handle splash page redirect after rendering to prevent issues
 try {
   if (!localStorage.getItem('splashSeen') && window.location.pathname === '/') {
+    console.log("Setting splash seen flag");
     localStorage.setItem('splashSeen', 'true');
-    window.location.href = '/splash';
+    // Don't redirect, just let the router handle it
   }
 } catch (error) {
-  console.error("Error handling splash page redirect:", error);
-}
-
-// Initialize the React application
-try {
-  console.log("Initializing React application");
-  createRoot(rootElement ?? document.getElementById("root")!).render(<App />);
-} catch (error) {
-  console.error("Failed to render the application:", error);
-  if (rootElement) {
-    rootElement.innerHTML = '<div class="error">Failed to load application. Please refresh the page.</div>';
-  }
+  console.error("Error handling splash page logic:", error);
 }
