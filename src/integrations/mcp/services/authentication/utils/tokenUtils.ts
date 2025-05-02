@@ -9,7 +9,12 @@ export const tokenUtils = {
   storeToken: (gapi: any): void => {
     try {
       if (gapi && gapi.client) {
-        localStorage.setItem('gdrive-auth-token', JSON.stringify(gapi.client.getToken()));
+        const token = gapi.client.getToken();
+        if (token) {
+          console.log('Storing Google Drive token in localStorage');
+          localStorage.setItem('gdrive-auth-token', JSON.stringify(token));
+          localStorage.setItem('gdrive-connected', 'true');
+        }
       }
     } catch (e) {
       console.error('Failed to cache token:', e);
@@ -34,6 +39,7 @@ export const tokenUtils = {
   clearCachedToken: (): void => {
     try {
       localStorage.removeItem('gdrive-auth-token');
+      localStorage.removeItem('gdrive-connected');
     } catch (e) {
       console.error('Error clearing cached token:', e);
     }

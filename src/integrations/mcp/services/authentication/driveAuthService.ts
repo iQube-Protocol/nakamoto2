@@ -17,6 +17,11 @@ export class DriveAuthService extends BaseService {
   constructor(googleApiLoader: GoogleApiLoader) {
     super();
     this.googleApiLoader = googleApiLoader;
+    
+    // Check if we're already authenticated based on localStorage
+    if (localStorage.getItem('gdrive-connected') === 'true' && tokenUtils.getCachedToken()) {
+      this.isAuthenticated = true;
+    }
   }
   
   /**
