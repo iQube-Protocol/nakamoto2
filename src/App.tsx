@@ -14,7 +14,6 @@ import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
 import SplashPage from "./pages/SplashPage";
 import SignIn from "./pages/SignIn";
-import { useEffect, useState } from "react";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { AuthProvider, useAuth } from "./hooks/use-auth";
 
@@ -24,16 +23,14 @@ const queryClient = new QueryClient({
     queries: {
       retry: 1,
       refetchOnWindowFocus: false,
-      meta: {
-        onError: (error: Error) => {
-          console.error("Query error:", error);
-        }
-      }
     },
+    mutations: {
+      retry: 1,
+    }
   },
 });
 
-// Protected route component with proper error handling
+// Protected route component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   const { user, loading } = useAuth();
   
@@ -48,15 +45,14 @@ const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
   return <>{children}</>;
 };
 
-// Router component with Auth provider and better initialization
+// Router component with Auth provider
 const AppRouter = () => {
-  // Remove initialization delay to prevent blank screens
-  console.log("Rendering AppRouter");
+  console.log("Rendering app router");
   
   return (
     <AuthProvider>
       <Routes>
-        {/* Public routes with fallbacks */}
+        {/* Public routes */}
         <Route path="/splash" element={<SplashPage />} />
         <Route path="/signin" element={<SignIn />} />
         
@@ -127,7 +123,7 @@ const AppRouter = () => {
           } 
         />
         
-        {/* Catch-all route with fallback */}
+        {/* Catch-all route */}
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AuthProvider>
@@ -135,17 +131,17 @@ const AppRouter = () => {
 };
 
 const App = () => {
-  console.log("Rendering App component");
+  console.log("Rendering root App component");
   
   return (
     <QueryClientProvider client={queryClient}>
       <ThemeProvider>
         <TooltipProvider>
-          <Toaster />
-          <Sonner />
           <BrowserRouter>
             <AppRouter />
           </BrowserRouter>
+          <Toaster />
+          <Sonner />
         </TooltipProvider>
       </ThemeProvider>
     </QueryClientProvider>
