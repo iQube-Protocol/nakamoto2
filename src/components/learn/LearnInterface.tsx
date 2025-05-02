@@ -11,6 +11,7 @@ import { useMCP } from '@/hooks/use-mcp';
 const LearnInterface = ({ metaQube, blakQube }) => {
   const [activeTab, setActiveTab] = useState('courses');
   const [sidebar, setSidebar] = useState(true);
+  const [conversationId, setConversationId] = useState<string | null>(null);
   const { documentContextUpdated, handleDocumentContextUpdated } = useDocumentContextUpdates();
   const { client } = useMCP();
 
@@ -43,8 +44,8 @@ const LearnInterface = ({ metaQube, blakQube }) => {
           <AgentPanel 
             metaQube={metaQube}
             blakQube={blakQube}
-            conversationId={null}
-            setConversationId={() => {}}
+            conversationId={conversationId}
+            setConversationId={setConversationId}
             isPanelCollapsed={false}
             onDocumentAdded={handleDocumentAdded} 
             documentContextUpdated={documentContextUpdated} 
