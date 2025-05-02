@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -63,13 +62,26 @@ export class MCPClient {
    */
   private loadGoogleApi(): void {
     if (typeof window !== 'undefined' && !this.isApiLoaded) {
+      console.log('MCP: Loading Google API scripts...');
       const script = document.createElement('script');
       script.src = 'https://apis.google.com/js/api.js';
       script.onload = () => this.onGapiLoaded();
+      script.onerror = (e) => {
+        console.error('Failed to load Google API script:', e);
+        toast.error('Failed to load Google API script', {
+          description: 'Please check your internet connection and try again.'
+        });
+      };
       document.body.appendChild(script);
       
       const gsiScript = document.createElement('script');
       gsiScript.src = 'https://accounts.google.com/gsi/client';
+      gsiScript.onerror = (e) => {
+        console.error('Failed to load Google Sign-In script:', e);
+        toast.error('Failed to load Google Sign-In script', {
+          description: 'Please check your internet connection and try again.'
+        });
+      };
       document.body.appendChild(gsiScript);
     }
   }
@@ -79,9 +91,23 @@ export class MCPClient {
    */
   private onGapiLoaded(): void {
     this.gapi = (window as any).gapi;
-    this.gapi.load('client', () => {
-      this.isApiLoaded = true;
-      console.log('Google API client loaded');
+    if (!this.gapi) {
+      console.error('MCP: Google API client failed to load');
+      toast.error('Google API failed to load');
+      return;
+    }
+    
+    this.gapi.load('client', {
+      callback: () => {
+        this.isApiLoaded = true;
+        console.log('MCP: Google API client loaded successfully');
+      },
+      onerror: (e: any) => {
+        console.error('MCP: Failed to load Google API client:', e);
+        toast.error('Failed to load Google API client', {
+          description: 'Please try again or check your internet connection.'
+        });
+      }
     });
   }
   
@@ -190,16 +216,37 @@ export class MCPClient {
   async connectToDrive(clientId: string, apiKey: string): Promise<boolean> {
     console.log('MCP: Connecting to Google Drive with credentials:', { clientId, apiKeyLength: apiKey?.length });
     
+    if (!clientId || !apiKey) {
+      toast.error('Missing Google API credentials', {
+        description: 'Both Client ID and API Key are required'
+      });
+      return false;
+    }
+    
     if (!this.isApiLoaded) {
       console.log('Google API not loaded yet, waiting...');
-      await new Promise((resolve) => {
-        const checkApiLoaded = setInterval(() => {
-          if (this.isApiLoaded) {
-            clearInterval(checkApiLoaded);
-            resolve(true);
-          }
-        }, 300);
-      });
+      toast.loading('Loading Google API...');
+      try {
+        await new Promise((resolve, reject) => {
+          const timeout = setTimeout(() => {
+            reject('Timed out waiting for Google API to load');
+          }, 10000); // 10-second timeout
+          
+          const checkApiLoaded = setInterval(() => {
+            if (this.isApiLoaded) {
+              clearInterval(checkApiLoaded);
+              clearTimeout(timeout);
+              resolve(true);
+            }
+          }, 300);
+        });
+      } catch (error) {
+        console.error('MCP: Timed out waiting for Google API to load:', error);
+        toast.error('Google API failed to load in time', {
+          description: 'Please refresh the page and try again.'
+        });
+        return false;
+      }
     }
     
     try {
@@ -210,7 +257,7 @@ export class MCPClient {
       });
       
       // Create token client for OAuth 2.0 flow
-      this.tokenClient = (window as any).google.accounts.oauth2.initTokenClient({
+      this.tokenClient = (window as any).google?.accounts?.oauth2?.initTokenClient({
         client_id: clientId,
         scope: 'https://www.googleapis.com/auth/drive.readonly',
         callback: (tokenResponse: any) => {
@@ -223,9 +270,24 @@ export class MCPClient {
             console.log('Successfully authenticated with Google Drive');
           }
         },
+        error_callback: (error: any) => {
+          console.error('OAuth error:', error);
+          toast.error('Google authentication failed', {
+            description: error.message || 'Failed to authenticate with Google'
+          });
+        }
       });
       
+      if (!this.tokenClient) {
+        console.error('Failed to initialize Google token client');
+        toast.error('Failed to initialize Google authentication', {
+          description: 'Google OAuth client initialization failed'
+        });
+        return false;
+      }
+      
       // Request access token
+      toast.loading('Authenticating with Google...');
       this.tokenClient.requestAccessToken();
       
       return true;
@@ -463,6 +525,13 @@ export class MCPClient {
    */
   setServerUrl(url: string): void {
     this.serverUrl = url;
+  }
+  
+  /**
+   * Check if connected to Google Drive
+   */
+  isConnectedToDrive(): boolean {
+    return this.isAuthenticated || localStorage.getItem('gdrive-connected') === 'true';
   }
 }
 
