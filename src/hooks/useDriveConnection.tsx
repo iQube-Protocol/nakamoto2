@@ -12,6 +12,7 @@ export function useDriveConnection() {
   const [apiKey, setApiKey] = useState('');
   const [connectionInProgress, setConnectionInProgress] = useState(false);
   const [lastConnectionAttempt, setLastConnectionAttempt] = useState(0);
+  const [connectionTimeout, setConnectionTimeout] = useState<NodeJS.Timeout | null>(null);
   
   // Load saved credentials from localStorage
   useEffect(() => {
@@ -24,6 +25,12 @@ export function useDriveConnection() {
     if (client?.isConnectedToDrive()) {
       console.log('Drive is already connected based on client state');
     }
+    
+    return () => {
+      if (connectionTimeout) {
+        clearTimeout(connectionTimeout);
+      }
+    };
   }, [client]);
   
   // Handle connection with throttling and better state management
@@ -43,7 +50,7 @@ export function useDriveConnection() {
     
     // Don't allow rapid reconnection attempts
     const now = Date.now();
-    if (now - lastConnectionAttempt < 3000) {
+    if (now - lastConnectionAttempt < 5000) { // 5 seconds cooldown
       toast.info('Please wait before retrying connection');
       return false;
     }
@@ -51,6 +58,14 @@ export function useDriveConnection() {
     try {
       setConnectionInProgress(true);
       setLastConnectionAttempt(now);
+      
+      // Set a timeout to automatically clear the connection state if it takes too long
+      const timeout = setTimeout(() => {
+        console.log('Connection attempt timed out, resetting state');
+        setConnectionInProgress(false);
+      }, 30000); // 30 second timeout
+      
+      setConnectionTimeout(timeout);
       
       // Save credentials for convenience
       localStorage.setItem('gdrive-client-id', clientId);
@@ -75,6 +90,12 @@ export function useDriveConnection() {
         });
       }
       
+      // Clear the timeout since we completed normally
+      if (connectionTimeout) {
+        clearTimeout(connectionTimeout);
+        setConnectionTimeout(null);
+      }
+      
       return success;
     } catch (error) {
       toast.error('Connection error', {
@@ -85,7 +106,7 @@ export function useDriveConnection() {
     } finally {
       setConnectionInProgress(false);
     }
-  }, [clientId, apiKey, connectToDrive, connectionInProgress, lastConnectionAttempt]);
+  }, [clientId, apiKey, connectToDrive, connectionInProgress, lastConnectionAttempt, connectionTimeout]);
   
   // Reset connection state
   const resetConnection = useCallback(() => {

@@ -11,6 +11,7 @@ export class DriveConnectionManager {
   private googleApiLoader: GoogleApiLoader;
   private authService: DriveAuthService;
   private connectionTimeout: NodeJS.Timeout | null = null;
+  private connectionInProgress: boolean = false;
   
   constructor(googleApiLoader: GoogleApiLoader) {
     this.googleApiLoader = googleApiLoader;
@@ -30,36 +31,48 @@ export class DriveConnectionManager {
       return false;
     }
     
-    // Clear any existing timeouts
-    if (this.connectionTimeout) {
-      clearTimeout(this.connectionTimeout);
-      this.connectionTimeout = null;
+    // Prevent multiple concurrent connection attempts
+    if (this.connectionInProgress) {
+      console.log('Connection already in progress, ignoring duplicate request');
+      return false;
     }
     
-    // Set a global timeout for the entire connection process
-    const timeoutPromise = new Promise<boolean>((resolve) => {
-      this.connectionTimeout = setTimeout(() => {
-        console.error('MCP: Connection process timed out');
-        toast.error('Connection timed out', {
-          description: 'Please try again'
-        });
-        resolve(false);
-      }, 25000); // 25 second timeout
-    });
+    this.connectionInProgress = true;
     
-    // The actual connection process
-    const connectionPromise = this.executeConnection(clientId, apiKey, cachedToken);
-    
-    // Race the connection against the timeout
-    const result = await Promise.race([connectionPromise, timeoutPromise]);
-    
-    // Clear the timeout if connection completed
-    if (this.connectionTimeout) {
-      clearTimeout(this.connectionTimeout);
-      this.connectionTimeout = null;
+    try {
+      // Clear any existing timeouts
+      if (this.connectionTimeout) {
+        clearTimeout(this.connectionTimeout);
+        this.connectionTimeout = null;
+      }
+      
+      // Set a global timeout for the entire connection process
+      const timeoutPromise = new Promise<boolean>((resolve) => {
+        this.connectionTimeout = setTimeout(() => {
+          console.error('MCP: Connection process timed out');
+          toast.error('Connection timed out', {
+            description: 'Please try again'
+          });
+          resolve(false);
+        }, 25000); // 25 second timeout
+      });
+      
+      // The actual connection process
+      const connectionPromise = this.executeConnection(clientId, apiKey, cachedToken);
+      
+      // Race the connection against the timeout
+      const result = await Promise.race([connectionPromise, timeoutPromise]);
+      
+      // Clear the timeout if connection completed
+      if (this.connectionTimeout) {
+        clearTimeout(this.connectionTimeout);
+        this.connectionTimeout = null;
+      }
+      
+      return result;
+    } finally {
+      this.connectionInProgress = false;
     }
-    
-    return result;
   }
   
   /**
