@@ -6,7 +6,6 @@ import { toast } from 'sonner';
 import AgentHeader from './AgentHeader';
 import AgentTabs from './tabs/AgentTabs';
 import { useAgentMessages } from './hooks/useAgentMessages';
-import { useMCP } from '@/hooks/use-mcp';
 
 interface AgentInterfaceProps {
   title: string;
@@ -30,7 +29,6 @@ const AgentInterface = ({
   documentContextUpdated = 0,
 }: AgentInterfaceProps) => {
   const [activeTab, setActiveTab] = useState<'chat' | 'knowledge' | 'documents'>('chat');
-  const { client } = useMCP();
   
   const {
     messages,
@@ -62,21 +60,12 @@ const AgentInterface = ({
     setActiveTab('chat');
   };
 
-  // Effect to track document context updates and ensure context is properly loaded
+  // Effect to track document context updates
   useEffect(() => {
-    if (documentContextUpdated > 0 && client && conversationId) {
+    if (documentContextUpdated > 0) {
       console.log(`Document context updated (${documentContextUpdated}), refreshing UI`);
-      
-      // Force reload of context
-      client.initializeContext(conversationId).then(() => {
-        // Check if documents were loaded
-        const context = client.getModelContext();
-        if (context?.documentContext) {
-          console.log(`Agent has access to ${context.documentContext.length} documents`);
-        }
-      });
     }
-  }, [documentContextUpdated, client, conversationId]);
+  }, [documentContextUpdated]);
 
   return (
     <Card className="flex flex-col h-full overflow-hidden">

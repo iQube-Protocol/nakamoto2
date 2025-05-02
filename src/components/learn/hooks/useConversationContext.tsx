@@ -30,20 +30,8 @@ export function useConversationContext(conversationId: string | null, setConvers
         
         // Initialize MCP with this conversation ID
         if (mcpClient && isInitialized) {
-          // Wait for MCP initialization to complete
           await mcpClient.initializeContext(context.conversationId);
           console.log(`MCP context initialized for conversation ${context.conversationId}`);
-          
-          // Double-check that document context is available
-          const mcpContext = mcpClient.getModelContext();
-          if (mcpContext?.documentContext) {
-            console.log(`Found ${mcpContext.documentContext.length} documents in MCP context after initialization`);
-            mcpContext.documentContext.forEach((doc, idx) => {
-              console.log(`Document ${idx+1}: ${doc.documentName}`);
-            });
-          } else {
-            console.log('No document context available after MCP initialization');
-          }
         }
       } catch (error) {
         console.error('Error loading conversation context:', error);

@@ -1,82 +1,101 @@
 
-import React, { useState, useEffect } from 'react';
-import AgentPanel from './AgentPanel';
+import React, { useState } from 'react';
+import { MetaQube, BlakQube } from '@/lib/types';
 import ContentDisplay from './ContentDisplay';
-import TabsNavigation from './TabsNavigation';
+import { defaultCourses } from './CourseList';
+import { defaultCertifications } from './CertificationsList';
+import { defaultAchievements } from './AchievementsList';
+import AgentPanel from './AgentPanel';
 import CollapsedSidebar from './CollapsedSidebar';
-import { toast } from 'sonner';
-import { useDocumentContextUpdates } from './hooks/useDocumentContextUpdates';
-import { useMCP } from '@/hooks/use-mcp';
+import TabsNavigation from './TabsNavigation';
 
-const LearnInterface = ({ metaQube, blakQube }) => {
-  const [activeTab, setActiveTab] = useState('courses');
-  const [sidebar, setSidebar] = useState(true);
+interface LearnInterfaceProps {
+  metaQube: MetaQube;
+  blakQube?: BlakQube;
+}
+
+const LearnInterface = ({ metaQube, blakQube }: LearnInterfaceProps) => {
   const [conversationId, setConversationId] = useState<string | null>(null);
-  const { documentContextUpdated, handleDocumentContextUpdated } = useDocumentContextUpdates();
-  const { client } = useMCP();
+  const [currentItemIndex, setCurrentItemIndex] = useState<number>(0);
+  const [activeTab, setActiveTab] = useState<string | null>(null);
+  const [isPanelCollapsed, setIsPanelCollapsed] = useState<boolean>(true);
+  
+  const courses = defaultCourses;
+  const certifications = defaultCertifications;
+  const achievements = defaultAchievements;
 
-  // Force document context refresh when component mounts
-  useEffect(() => {
-    if (client && client.getConversationId()) {
-      const conversationId = client.getConversationId();
-      console.log(`LearnInterface: Refreshing document context for conversation ${conversationId}`);
-      
-      // Force reload context from storage
-      if (client.reloadContextFromStorage()) {
-        console.log('LearnInterface: Successfully reloaded context from storage');
-        handleDocumentContextUpdated();
-      }
+  const getCurrentItems = () => {
+    switch(activeTab) {
+      case 'courses':
+        return courses;
+      case 'certifications':
+        return certifications;
+      case 'achievements':
+        return achievements;
+      default:
+        return [];
     }
-  }, [client]);
+  };
 
-  const handleDocumentAdded = () => {
-    // Update the document context
-    toast.success('Document added to context', {
-      description: 'The agent now has access to this document'
-    });
-    handleDocumentContextUpdated();
+  const currentItems = getCurrentItems();
+  
+  const goToPrev = () => {
+    setCurrentItemIndex((prevIndex) => 
+      prevIndex === 0 ? currentItems.length - 1 : prevIndex - 1
+    );
+  };
+
+  const goToNext = () => {
+    setCurrentItemIndex((prevIndex) => 
+      prevIndex === currentItems.length - 1 ? 0 : prevIndex + 1
+    );
+  };
+
+  const handleTabClick = (value: string) => {
+    setActiveTab(prevTab => prevTab === value ? null : value);
+    setCurrentItemIndex(0);
+    setIsPanelCollapsed(false);
+  };
+
+  const togglePanelCollapse = () => {
+    setIsPanelCollapsed(!isPanelCollapsed);
   };
 
   return (
-    <div className="flex h-full">
-      {sidebar ? (
-        <div className="w-[350px] border-r overflow-y-auto">
-          <AgentPanel 
-            metaQube={metaQube}
-            blakQube={blakQube}
-            conversationId={conversationId}
-            setConversationId={setConversationId}
-            isPanelCollapsed={false}
-            onDocumentAdded={handleDocumentAdded} 
-            documentContextUpdated={documentContextUpdated} 
-          />
-        </div>
-      ) : (
+    <div className={`grid ${isPanelCollapsed ? 'grid-cols-1 lg:grid-cols-[1fr,auto]' : 'grid-cols-1 lg:grid-cols-3'} gap-6 h-full`}>
+      <AgentPanel 
+        metaQube={metaQube}
+        blakQube={blakQube}
+        conversationId={conversationId} 
+        setConversationId={setConversationId}
+        isPanelCollapsed={isPanelCollapsed}
+      />
+
+      {isPanelCollapsed ? (
         <CollapsedSidebar 
           activeTab={activeTab} 
-          handleTabClick={setActiveTab} 
-          togglePanelCollapse={() => setSidebar(true)} 
+          handleTabClick={handleTabClick} 
+          togglePanelCollapse={togglePanelCollapse}
         />
+      ) : (
+        <div className="space-y-6 flex flex-col">
+          <div className="flex-grow">
+            <ContentDisplay
+              activeTab={activeTab}
+              currentItemIndex={currentItemIndex}
+              courses={courses}
+              certifications={certifications}
+              achievements={achievements}
+              goToPrev={goToPrev}
+              goToNext={goToNext}
+              onCollapse={togglePanelCollapse}
+            />
+          </div>
+        </div>
       )}
 
-      <div className="flex-1 flex flex-col overflow-hidden">
-        <TabsNavigation 
-          activeTab={activeTab} 
-          handleTabClick={setActiveTab} 
-        />
-
-        <div className="flex-1 overflow-y-auto p-4">
-          <ContentDisplay 
-            activeTab={activeTab}
-            currentItemIndex={0}
-            courses={[]}
-            certifications={[]}
-            achievements={[]}
-            goToPrev={() => {}}
-            goToNext={() => {}}
-            onCollapse={() => setSidebar(false)}
-          />
-        </div>
+      <div className="lg:col-span-3">
+        <TabsNavigation activeTab={activeTab} handleTabClick={handleTabClick} />
       </div>
     </div>
   );

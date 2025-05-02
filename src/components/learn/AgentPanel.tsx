@@ -13,8 +13,6 @@ interface AgentPanelProps {
   conversationId: string | null;
   setConversationId: (id: string | null) => void;
   isPanelCollapsed: boolean;
-  onDocumentAdded?: () => void; // Make this prop optional
-  documentContextUpdated?: number; // Add this prop as optional
 }
 
 const AgentPanel = ({ 
@@ -22,12 +20,10 @@ const AgentPanel = ({
   blakQube,
   conversationId, 
   setConversationId,
-  isPanelCollapsed,
-  onDocumentAdded,
-  documentContextUpdated = 0
+  isPanelCollapsed 
 }: AgentPanelProps) => {
   const { metisActive, setMetisActive } = useMetisActivation();
-  const { handleDocumentContextUpdated } = useDocumentContextUpdates();
+  const { documentContextUpdated, handleDocumentContextUpdated } = useDocumentContextUpdates();
   const { historicalContext, isLoading, mcpClient } = useConversationContext(
     conversationId, 
     setConversationId
@@ -62,17 +58,6 @@ const AgentPanel = ({
     return response;
   };
 
-  // Handle document added callback
-  const handleDocumentAdded = () => {
-    // Call the parent's onDocumentAdded if provided
-    if (onDocumentAdded) {
-      onDocumentAdded();
-    }
-    
-    // Update local document context
-    handleDocumentContextUpdated();
-  };
-
   if (isLoading) {
     console.log('AgentPanel is loading conversation context...');
   }
@@ -84,7 +69,7 @@ const AgentPanel = ({
         description="Personalized web3 education based on your iQube data"
         agentType="learn"
         onMessageSubmit={handleAIMessage}
-        onDocumentAdded={handleDocumentAdded}
+        onDocumentAdded={handleDocumentContextUpdated}
         documentContextUpdated={documentContextUpdated}
         conversationId={conversationId}
         initialMessages={[
