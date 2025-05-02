@@ -50,7 +50,7 @@ export class GoogleApiLoader {
       }, 15000); // 15 second overall timeout
       
       // Create a promise that resolves when both scripts are loaded
-      this.apiLoadPromise = new Promise((resolve, reject) => {
+      this.apiLoadPromise = new Promise<boolean>((resolve, reject) => {
         let gapiLoaded = false;
         let gsiLoaded = false;
         
@@ -100,7 +100,7 @@ export class GoogleApiLoader {
       }).catch((error) => {
         console.error('MCP: Error loading Google API scripts:', error);
         this.reset();
-        return false;
+        return false; // Explicitly return a boolean value here
       });
     }
   }
@@ -115,7 +115,8 @@ export class GoogleApiLoader {
     // If we're in the process of loading, wait for it
     if (this.apiLoadPromise) {
       try {
-        await this.apiLoadPromise;
+        // Explicitly cast the result to boolean to ensure type safety
+        const loadResult: boolean = await this.apiLoadPromise;
         
         // After scripts are loaded, ensure client is initialized
         if (!this.apiInitialized) {
@@ -136,7 +137,7 @@ export class GoogleApiLoader {
           return success;
         }
         
-        return true;
+        return loadResult;
       } catch (e) {
         console.error('Error ensuring Google API loaded:', e);
         // If promise failed, reset it so we can try loading again
