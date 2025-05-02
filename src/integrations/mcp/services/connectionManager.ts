@@ -1,47 +1,48 @@
 
-import { toast } from 'sonner';
 import { GoogleApiLoader } from '../googleApiLoader';
 import { DriveService } from '../driveService';
-import { BaseService } from './baseService';
 import { ContextManager } from '../contextManager';
+import { toast } from 'sonner';
 
 /**
- * Manages Google Drive connections and document operations
+ * Service for managing connections to external services
  */
-export class ConnectionManager extends BaseService {
+export class ConnectionManager {
   private googleApiLoader: GoogleApiLoader;
   private driveService: DriveService;
-  private connectionTimeouts: Record<string, NodeJS.Timeout> = {};
+  private contextManager: ContextManager;
   
   constructor(googleApiLoader: GoogleApiLoader, driveService: DriveService) {
-    super();
     this.googleApiLoader = googleApiLoader;
     this.driveService = driveService;
+    this.contextManager = new ContextManager();
   }
-
+  
   /**
    * Load Google API with retry mechanism
    */
   public loadGoogleApiWithRetry(retryCount = 0): void {
+    if (retryCount > 3) {
+      console.error('MCP: Failed to load Google API after multiple retries');
+      toast.error('Connection error', {
+        description: 'Failed to load Google API after multiple attempts'
+      });
+      return;
+    }
+    
     try {
       this.googleApiLoader.loadGoogleApi();
-      
-      // Clear any previous timeout
-      if (this.connectionTimeouts['loadApi']) {
-        clearTimeout(this.connectionTimeouts['loadApi']);
-      }
-      
-      // Set timeout to check if API was loaded successfully
-      this.connectionTimeouts['loadApi'] = setTimeout(() => {
-        if (!this.googleApiLoader.isLoaded() && retryCount < 2) {
-          console.log(`MCP: Google API failed to load, retrying (${retryCount + 1}/2)...`);
-          this.loadGoogleApiWithRetry(retryCount + 1);
-        } else if (!this.googleApiLoader.isLoaded()) {
-          console.error('MCP: Google API failed to load after multiple attempts');
-        }
-      }, 5000); // Check after 5 seconds
+      console.log('MCP: Google API loading initiated');
     } catch (error) {
       console.error('MCP: Error loading Google API:', error);
+      
+      // Retry with exponential backoff
+      const timeout = Math.pow(2, retryCount) * 1000;
+      console.log(`MCP: Retrying in ${timeout}ms...`);
+      
+      setTimeout(() => {
+        this.loadGoogleApiWithRetry(retryCount + 1);
+      }, timeout);
     }
   }
   
@@ -50,35 +51,24 @@ export class ConnectionManager extends BaseService {
    */
   public async connectToDrive(clientId: string, apiKey: string, cachedToken?: string | null): Promise<boolean> {
     try {
-      // Clear any connection timeout
-      if (this.connectionTimeouts['connect']) {
-        clearTimeout(this.connectionTimeouts['connect']);
+      console.log('MCP: Attempting to connect to Drive with credentials');
+      const success = await this.driveService.connectToDrive(clientId, apiKey, cachedToken);
+      
+      if (success) {
+        console.log('MCP: Successfully connected to Google Drive');
+        localStorage.setItem('gdrive-connected', 'true');
+        toast.success('Connected to Google Drive');
+        return true;
+      } else {
+        console.error('MCP: Failed to connect to Google Drive');
+        localStorage.removeItem('gdrive-connected');
+        toast.error('Failed to connect to Google Drive');
+        return false;
       }
-      
-      // Set a timeout to prevent hanging
-      const timeoutPromise = new Promise<boolean>((resolve) => {
-        this.connectionTimeouts['connect'] = setTimeout(() => {
-          console.error('MCP: Connection to Google Drive timed out');
-          toast.error('Connection timed out', {
-            description: 'Please check your network and try again'
-          });
-          resolve(false);
-        }, 15000); // 15 seconds timeout
-      });
-      
-      // Race between the actual connection and timeout
-      const result = await Promise.race([
-        this.driveService.connectToDrive(clientId, apiKey, cachedToken),
-        timeoutPromise
-      ]);
-      
-      // Clear the timeout if connection completed
-      clearTimeout(this.connectionTimeouts['connect']);
-      
-      return result;
     } catch (error) {
-      console.error('MCP: Error in connectToDrive:', error);
-      toast.error('Connection failed', {
+      console.error('MCP: Error connecting to Drive:', error);
+      localStorage.removeItem('gdrive-connected');
+      toast.error('Connection error', {
         description: error instanceof Error ? error.message : 'Unknown error occurred'
       });
       return false;
@@ -86,38 +76,13 @@ export class ConnectionManager extends BaseService {
   }
   
   /**
-   * Load document metadata from Google Drive with timeout and error handling
+   * List documents with error handling
    */
   public async listDocuments(folderId?: string): Promise<any[]> {
     try {
-      // Clear any listing timeout
-      if (this.connectionTimeouts['listDocs']) {
-        clearTimeout(this.connectionTimeouts['listDocs']);
-      }
-      
-      // Set a timeout to prevent hanging
-      const timeoutPromise = new Promise<any[]>((resolve) => {
-        this.connectionTimeouts['listDocs'] = setTimeout(() => {
-          console.error('MCP: Listing documents timed out');
-          toast.error('Document listing timed out', {
-            description: 'Please check your network and try again'
-          });
-          resolve([]);
-        }, 10000); // 10 seconds timeout
-      });
-      
-      // Race between the actual listing and timeout
-      const result = await Promise.race([
-        this.driveService.listDocuments(folderId),
-        timeoutPromise
-      ]);
-      
-      // Clear the timeout if listing completed
-      clearTimeout(this.connectionTimeouts['listDocs']);
-      
-      return result;
+      return await this.driveService.listDocuments(folderId);
     } catch (error) {
-      console.error('MCP: Error in listDocuments:', error);
+      console.error('MCP: Error listing documents:', error);
       toast.error('Failed to list documents', {
         description: error instanceof Error ? error.message : 'Unknown error occurred'
       });
@@ -126,48 +91,25 @@ export class ConnectionManager extends BaseService {
   }
   
   /**
-   * Fetch a specific document and add its content to the context with improved error handling
+   * Fetch document content with error handling
    */
   public async fetchDocumentContent(documentId: string, contextManager: ContextManager): Promise<string | null> {
     try {
-      // Clear any fetch timeout
-      if (this.connectionTimeouts['fetchDoc']) {
-        clearTimeout(this.connectionTimeouts['fetchDoc']);
-      }
+      const docContent = await this.driveService.fetchDocumentContent(documentId);
       
-      // Set a timeout to prevent hanging
-      const timeoutPromise = new Promise<null>((resolve) => {
-        this.connectionTimeouts['fetchDoc'] = setTimeout(() => {
-          console.error('MCP: Document fetch timed out');
-          toast.error('Document fetch timed out', {
-            description: 'Please check your network and try again'
-          });
-          resolve(null);
-        }, 12000); // 12 seconds timeout
-      });
-      
-      // Race between the actual fetch and timeout
-      const result = await Promise.race([
-        this.driveService.fetchDocumentContent(documentId),
-        timeoutPromise
-      ]);
-      
-      // Clear the timeout if fetch completed
-      clearTimeout(this.connectionTimeouts['fetchDoc']);
-      
-      if (!result) return null;
+      if (!docContent) return null;
       
       // Add to context
       contextManager.addDocumentToContext({
         documentId,
-        documentName: result.fileName,
-        documentType: result.documentType,
-        content: result.content
+        documentName: docContent.fileName,
+        documentType: docContent.documentType,
+        content: docContent.content
       });
       
-      return result.content;
+      return docContent.content;
     } catch (error) {
-      console.error(`MCP: Error fetching document ${documentId}:`, error);
+      console.error('MCP: Error fetching document:', error);
       toast.error('Failed to fetch document', {
         description: error instanceof Error ? error.message : 'Unknown error occurred'
       });
@@ -179,16 +121,9 @@ export class ConnectionManager extends BaseService {
    * Reset connection state
    */
   public resetConnection(): void {
-    // Clear all timeouts
-    Object.values(this.connectionTimeouts).forEach(timeout => clearTimeout(timeout));
-    this.connectionTimeouts = {};
-    
-    // Reset services
-    this.driveService.setAuthenticated(false);
     localStorage.removeItem('gdrive-connected');
     localStorage.removeItem('gdrive-auth-token');
-    
-    // Reload the Google API
-    this.loadGoogleApiWithRetry();
+    this.driveService.setAuthenticated(false);
+    toast.success('Connection reset');
   }
 }
