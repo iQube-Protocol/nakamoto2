@@ -34,7 +34,7 @@ serve(async (req) => {
   }
 
   try {
-    const { message, metaQube, blakQube, tokenMetrics, conversationId } = await req.json();
+    const { message, metaQube, blakQube, tokenMetrics, conversationId, historicalContext } = await req.json();
     
     // Initialize or retrieve MCP context
     let mcpContext: MCPContext;
@@ -49,7 +49,7 @@ serve(async (req) => {
       });
     } else {
       // Create new conversation context
-      const newConversationId = crypto.randomUUID();
+      const newConversationId = conversationId || crypto.randomUUID();
       mcpContext = {
         conversationId: newConversationId,
         messages: [{
@@ -69,7 +69,7 @@ serve(async (req) => {
       };
     }
     
-    // System prompt with incorporated iQube data
+    // System prompt with incorporated iQube data and historical context
     const systemPrompt = `## **Prompt: MonDAI Earning Aigent**
 
 **<role-description>**  
@@ -103,6 +103,8 @@ Be conversational, friendly and personalized. Tailor your responses based on the
 - BlakQube Information (if available):
   - Web3 Interests: ${blakQube && blakQube["Web3-Interests"] ? blakQube["Web3-Interests"].join(", ") : "DeFi, NFTs, DAOs"}
   - Tokens of Interest: ${blakQube && blakQube["Tokens-of-Interest"] ? blakQube["Tokens-of-Interest"].join(", ") : "ETH, BTC, SOL"}
+
+${historicalContext || ''}
 
 ---
 

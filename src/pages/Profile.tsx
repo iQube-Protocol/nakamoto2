@@ -6,9 +6,8 @@ import { Button } from '@/components/ui/button';
 import { useUserInteractions } from '@/hooks/use-user-interactions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { format } from 'date-fns';
-import { User, Clock, MessageSquare, Layers, RefreshCw, Loader2, Bug, Plus, Database } from 'lucide-react';
+import { User, Clock, MessageSquare, Layers, RefreshCw, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
 
 const Profile = () => {
   const { user, signOut } = useAuth();
@@ -17,46 +16,8 @@ const Profile = () => {
     interactions, 
     loading, 
     refreshInteractions, 
-    error, 
-    createTestInteraction 
+    error 
   } = useUserInteractions(activeTab);
-  const [debugMode, setDebugMode] = useState(true);
-  const [refreshCount, setRefreshCount] = useState(0);
-  const [directDbResults, setDirectDbResults] = useState<any[]>([]);
-  const [directDbLoading, setDirectDbLoading] = useState(false);
-  
-  // Check directly with the database on mount
-  useEffect(() => {
-    const checkDatabase = async () => {
-      if (!user) return;
-      
-      setDirectDbLoading(true);
-      try {
-        console.log(`VERIFICATION CHECK: Querying DB directly for user ${user.id}`);
-        
-        // Direct query to see what's in the database
-        const { data, error } = await supabase
-          .from('user_interactions')
-          .select('*')
-          .eq('user_id', user.id)
-          .order('created_at', { ascending: false });
-        
-        if (error) {
-          console.error('VERIFICATION ERROR:', error);
-          toast.error('DB verification failed');
-        } else {
-          console.log(`VERIFICATION SUCCESS: Found ${data?.length || 0} total interactions in DB`);
-          setDirectDbResults(data || []);
-        }
-      } catch (err) {
-        console.error('VERIFICATION FATAL ERROR:', err);
-      } finally {
-        setDirectDbLoading(false);
-      }
-    };
-    
-    checkDatabase();
-  }, [user, refreshCount]);
   
   // Force refresh interactions whenever tab changes or component mounts
   useEffect(() => {
@@ -66,7 +27,7 @@ const Profile = () => {
     }
   }, [activeTab, user, refreshInteractions]);
 
-  // Log any errors or interactions for debugging
+  // Log any errors for debugging
   useEffect(() => {
     if (error) {
       console.error('Profile: Error loading interactions:', error);
@@ -74,9 +35,6 @@ const Profile = () => {
     }
     
     console.log(`Profile: Loaded ${interactions?.length || 0} ${activeTab} interactions`);
-    if (interactions && interactions.length > 0) {
-      console.log('Profile: Interactions data sample:', interactions.slice(0, 3));
-    }
   }, [interactions, error, activeTab]);
   
   if (!user) {
@@ -93,19 +51,7 @@ const Profile = () => {
   
   const handleRefresh = async () => {
     toast.success('Refreshing your interaction history');
-    setRefreshCount(prev => prev + 1); // Increment to trigger the useEffect
     await refreshInteractions();
-  };
-  
-  const toggleDebugMode = () => {
-    setDebugMode(!debugMode);
-  };
-  
-  const handleCreateTest = async () => {
-    const result = await createTestInteraction(activeTab);
-    if (result?.success) {
-      toast.success(`Created test ${activeTab} interaction`);
-    }
   };
   
   return (
@@ -146,16 +92,6 @@ const Profile = () => {
               >
                 Sign Out
               </Button>
-              
-              <Button
-                variant="outline"
-                className="mt-2 w-full"
-                size="sm"
-                onClick={toggleDebugMode}
-              >
-                <Bug className="h-4 w-4 mr-1" />
-                {debugMode ? 'Hide Debug Info' : 'Show Debug Info'}
-              </Button>
             </div>
           </CardContent>
         </Card>
@@ -168,31 +104,22 @@ const Profile = () => {
                 <CardTitle className="flex items-center">
                   <MessageSquare className="h-5 w-5 mr-2" /> Interaction History
                 </CardTitle>
-                <div className="flex space-x-2">
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={handleCreateTest}
-                  >
-                    <Plus className="h-4 w-4 mr-1" /> Test Interaction
-                  </Button>
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    onClick={handleRefresh}
-                    disabled={loading}
-                  >
-                    {loading ? (
-                      <>
-                        <Loader2 className="h-4 w-4 mr-1 animate-spin" /> Loading...
-                      </>
-                    ) : (
-                      <>
-                        <RefreshCw className="h-4 w-4 mr-1" /> Refresh
-                      </>
-                    )}
-                  </Button>
-                </div>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleRefresh}
+                  disabled={loading}
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-1 animate-spin" /> Loading...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-1" /> Refresh
+                    </>
+                  )}
+                </Button>
               </div>
               <CardDescription>Your recent interactions with MonDAI</CardDescription>
             </CardHeader>
@@ -260,80 +187,6 @@ const Profile = () => {
                       <p className="mt-1 text-sm text-muted-foreground">
                         Try using the {activeTab} feature to create some interactions
                       </p>
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        className="mt-4"
-                        onClick={handleCreateTest}
-                      >
-                        <Plus className="h-4 w-4 mr-1" /> Create Test Interaction
-                      </Button>
-                    </div>
-                  )}
-                  
-                  {/* DB Verification Panel */}
-                  <div className="mt-4 p-4 border border-dashed rounded-md border-yellow-500 bg-yellow-50">
-                    <h3 className="font-bold mb-2 flex items-center">
-                      <Database className="h-4 w-4 mr-2" /> Database Verification
-                    </h3>
-                    
-                    {directDbLoading ? (
-                      <div className="flex items-center justify-center py-4">
-                        <Loader2 className="animate-spin h-5 w-5 mr-2" />
-                        <span>Checking database...</span>
-                      </div>
-                    ) : (
-                      <>
-                        <p className="text-sm mb-2">Direct database query found: <strong>{directDbResults.length}</strong> total interactions</p>
-                        {directDbResults.length > 0 ? (
-                          <>
-                            <p className="text-sm mb-2">First result:</p>
-                            <div className="bg-white p-2 rounded text-xs">
-                              <p>ID: {directDbResults[0].id}</p>
-                              <p>Type: {directDbResults[0].interaction_type}</p>
-                              <p>Created: {directDbResults[0].created_at}</p>
-                              <p>Query: {directDbResults[0].query?.substring(0, 50)}...</p>
-                            </div>
-                          </>
-                        ) : (
-                          <p className="text-sm text-red-500">No interactions found in database for your user ID.</p>
-                        )}
-                      </>
-                    )}
-                    
-                    <Button
-                      variant="secondary"
-                      size="sm"
-                      className="mt-2"
-                      onClick={handleRefresh}
-                    >
-                      Refresh Database Check
-                    </Button>
-                  </div>
-                  
-                  {/* Always show debug info if enabled */}
-                  {debugMode && (
-                    <div className="mt-4 p-4 border border-dashed rounded-md text-left">
-                      <h3 className="font-bold mb-2">Debug Information</h3>
-                      <p className="text-sm mb-2">Current user ID: {user?.id || 'Not logged in'}</p>
-                      <p className="text-sm mb-2">Active tab: {activeTab}</p>
-                      <p className="text-sm mb-2">Loading state: {loading ? 'Loading' : 'Not loading'}</p>
-                      <p className="text-sm mb-2">Error: {error?.message || 'No error'}</p>
-                      <p className="text-sm mb-2">Refresh count: {refreshCount}</p>
-                      <p className="text-sm mb-2">Hook interactions found: {interactions?.length || 0}</p>
-                      <p className="text-sm mb-2">DB interactions found: {directDbResults.length}</p>
-                      <p className="text-sm mb-2">Interactions data:</p>
-                      <pre className="text-xs bg-gray-100 p-2 rounded max-h-40 overflow-auto">
-                        {JSON.stringify(interactions, null, 2)}
-                      </pre>
-                      <Button
-                        variant="secondary"
-                        size="sm"
-                        className="mt-2"
-                        onClick={handleRefresh}
-                      >
-                        Force Refresh
-                      </Button>
                     </div>
                   )}
                 </TabsContent>

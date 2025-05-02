@@ -2,6 +2,7 @@
 import { storeUserInteraction } from './user-interaction-service';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { prepareConversationContext } from './conversation-summarizer';
 
 export const processAgentInteraction = async (
   query: string,
@@ -82,6 +83,31 @@ export const processAgentInteraction = async (
     return {
       success: false,
       error,
+    };
+  }
+};
+
+export const getConversationContext = async (
+  conversationId: string | null,
+  agentType: 'learn' | 'earn' | 'connect'
+) => {
+  try {
+    // Prepare conversation context, including summaries if needed
+    const context = await prepareConversationContext(agentType, conversationId);
+    
+    return {
+      success: true,
+      conversationId: context.conversationId,
+      historicalContext: context.historicalContext
+    };
+  } catch (error) {
+    console.error('Error preparing conversation context:', error);
+    // Return a new conversation ID even if there's an error
+    return {
+      success: false,
+      conversationId: conversationId || crypto.randomUUID(),
+      historicalContext: '',
+      error
     };
   }
 };

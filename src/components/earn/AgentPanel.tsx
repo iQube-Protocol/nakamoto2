@@ -4,7 +4,7 @@ import { AgentInterface } from '@/components/shared/agent';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { MetaQube, TokenMetrics, BlakQube } from '@/lib/types';
-import { processAgentInteraction } from '@/services/agent-service';
+import { processAgentInteraction, getConversationContext } from '@/services/agent-service';
 
 interface AgentPanelProps {
   tokenMetrics: TokenMetrics;
@@ -24,13 +24,22 @@ const AgentPanel = ({
 
   const handleAIMessage = async (message: string) => {
     try {
+      // Get conversation context, including history if available
+      const contextResult = await getConversationContext(conversationId, 'earn');
+      
+      if (contextResult.conversationId !== conversationId) {
+        setConversationId(contextResult.conversationId);
+        console.log(`Setting new conversation ID: ${contextResult.conversationId}`);
+      }
+      
       const { data, error } = await supabase.functions.invoke('earn-ai', {
         body: { 
           message, 
           metaQube,
           blakQube,
           tokenMetrics,
-          conversationId 
+          conversationId: contextResult.conversationId,
+          historicalContext: contextResult.historicalContext
         }
       });
       
