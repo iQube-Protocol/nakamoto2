@@ -1,6 +1,5 @@
-
 import { toast } from 'sonner';
-import { MCPClientOptions, MCPContext } from './types';
+import type { MCPClientOptions, MCPContext } from './types';
 import { GoogleApiLoader } from './api-loader';
 import { ContextManager } from './context-manager';
 import { DriveOperations } from './drive-operations';
@@ -175,5 +174,5 @@ export const getMCPClient = (options?: MCPClientOptions): MCPClient => {
   return mcpClientInstance;
 };
 
-// Re-export the interfaces for convenience
-export { MCPContext, MCPClientOptions } from './types';
+// Re-export the types as type-only exports
+export type { MCPContext, MCPClientOptions } from './types';
