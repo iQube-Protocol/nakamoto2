@@ -12,7 +12,12 @@ const useDocumentContext = ({ conversationId, onDocumentAdded }: UseDocumentCont
   const [selectedDocuments, setSelectedDocuments] = useState<any[]>([]);
   const [viewingDocument, setViewingDocument] = useState<any | null>(null);
   const [isLoading, setIsLoading] = useState(false);
-  const { addDocumentToContext, getDocumentsInContext, removeDocumentFromContext } = useMCP();
+  const { 
+    addDocumentToContext, 
+    getDocumentsInContext, 
+    removeDocumentFromContext,
+    isLoading: mcpIsLoading 
+  } = useMCP();
   
   // Load documents for the current conversation when component mounts or conversation changes
   const loadDocumentsForConversation = useCallback(async () => {
@@ -65,6 +70,7 @@ const useDocumentContext = ({ conversationId, onDocumentAdded }: UseDocumentCont
   useEffect(() => {
     if (conversationId && selectedDocuments.length > 0) {
       localStorage.setItem(`docs-${conversationId}`, JSON.stringify(selectedDocuments));
+      console.log(`Saved ${selectedDocuments.length} documents to localStorage for conversation ${conversationId}`);
     }
   }, [conversationId, selectedDocuments]);
   
@@ -83,17 +89,21 @@ const useDocumentContext = ({ conversationId, onDocumentAdded }: UseDocumentCont
     
     setIsLoading(true);
     try {
-      await addDocumentToContext(conversationId, document);
+      const success = await addDocumentToContext(conversationId, document);
       
-      // Update local state
-      setSelectedDocuments(prev => [...prev, document]);
-      
-      // Notify parent component
-      if (onDocumentAdded) {
-        onDocumentAdded();
+      if (success) {
+        // Update local state
+        setSelectedDocuments(prev => [...prev, document]);
+        
+        // Notify parent component
+        if (onDocumentAdded) {
+          onDocumentAdded();
+        }
+        
+        toast.success('Document added to context');
+      } else {
+        toast.error('Failed to add document');
       }
-      
-      toast.success('Document added to context');
     } catch (error) {
       console.error('Error adding document to context:', error);
       toast.error('Failed to add document');
@@ -107,12 +117,15 @@ const useDocumentContext = ({ conversationId, onDocumentAdded }: UseDocumentCont
     
     setIsLoading(true);
     try {
-      await removeDocumentFromContext(conversationId, documentId);
+      const success = await removeDocumentFromContext(conversationId, documentId);
       
-      // Update local state
-      setSelectedDocuments(prev => prev.filter(doc => doc.id !== documentId));
-      
-      toast.success('Document removed from context');
+      if (success) {
+        // Update local state
+        setSelectedDocuments(prev => prev.filter(doc => doc.id !== documentId));
+        toast.success('Document removed from context');
+      } else {
+        toast.error('Failed to remove document');
+      }
     } catch (error) {
       console.error('Error removing document:', error);
       toast.error('Failed to remove document');
@@ -134,7 +147,7 @@ const useDocumentContext = ({ conversationId, onDocumentAdded }: UseDocumentCont
     selectedDocuments,
     viewingDocument,
     setViewingDocument,
-    isLoading,
+    isLoading: isLoading || mcpIsLoading,
     handleDocumentSelect,
     handleRemoveDocument,
     handleViewDocument,
