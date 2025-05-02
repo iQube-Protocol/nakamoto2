@@ -11,23 +11,25 @@ export interface InteractionData {
 
 export const storeUserInteraction = async (data: InteractionData) => {
   try {
-    // Get current user from auth context or session
-    const { data: { session } } = await supabase.auth.getSession();
-    const user_id = data.user_id || session?.user.id;
+    // Get current user from auth context or session if not provided explicitly
+    if (!data.user_id) {
+      const { data: { session } } = await supabase.auth.getSession();
+      data.user_id = session?.user.id;
+    }
     
-    if (!user_id) {
+    if (!data.user_id) {
       console.error('No user ID available for storing interaction');
       return { success: false, error: new Error('User not authenticated') };
     }
 
-    console.log('Storing interaction for user:', user_id, 'type:', data.interactionType);
+    console.log('Storing interaction for user:', data.user_id, 'type:', data.interactionType);
 
     const { error } = await supabase.from('user_interactions').insert({
       query: data.query,
       response: data.response,
       interaction_type: data.interactionType,
       metadata: data.metadata,
-      user_id // Include the user_id in the insert
+      user_id: data.user_id // Include the user_id in the insert
     });
 
     if (error) {

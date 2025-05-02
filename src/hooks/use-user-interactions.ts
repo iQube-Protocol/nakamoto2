@@ -14,19 +14,22 @@ export const useUserInteractions = (
 
   const fetchInteractions = useCallback(async () => {
     if (!user) {
+      console.log('No user found, skipping fetch interactions');
       setLoading(false);
       return;
     }
     
     setLoading(true);
     try {
-      console.log('Fetching interactions for type:', interactionType);
+      console.log(`Fetching interactions for user: ${user.id} type: ${interactionType}`);
       const { data, error } = await getUserInteractions(interactionType);
       
       if (error) {
+        console.error('Error fetching interactions:', error);
         throw error;
       }
       
+      console.log(`Fetched interactions: ${data?.length || 0}`);
       setInteractions(data || []);
       setError(null);
     } catch (err) {
@@ -43,19 +46,25 @@ export const useUserInteractions = (
   }, [fetchInteractions]);
 
   const saveInteraction = async (data: Omit<InteractionData, 'user_id'>) => {
-    if (!user) return { success: false, error: new Error('User not authenticated') };
+    if (!user) {
+      console.error('Cannot save interaction: No authenticated user');
+      return { success: false, error: new Error('User not authenticated') };
+    }
     
     try {
-      // The user_id will be retrieved inside storeUserInteraction from the session
+      console.log(`Saving interaction for user: ${user.id} type: ${data.interactionType}`);
+      // Explicitly pass the user ID from the current auth context
       const result = await storeUserInteraction({
         ...data,
-        user_id: user.id // We can explicitly pass it here as well
+        user_id: user.id
       });
       
       if (result.success) {
+        console.log('Interaction saved successfully, refreshing list');
         // Refresh the interactions list
         fetchInteractions();
       } else {
+        console.error('Failed to save interaction:', result.error);
         toast.error('Failed to save your interaction');
       }
       

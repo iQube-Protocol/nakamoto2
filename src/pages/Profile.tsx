@@ -6,20 +6,31 @@ import { Button } from '@/components/ui/button';
 import { useUserInteractions } from '@/hooks/use-user-interactions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { format } from 'date-fns';
-import { User, Clock, MessageSquare, Layers, RefreshCw } from 'lucide-react';
+import { User, Clock, MessageSquare, Layers, RefreshCw, Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 
 const Profile = () => {
   const { user, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState<'learn' | 'earn' | 'connect'>('learn');
-  const { interactions, loading, refreshInteractions } = useUserInteractions(activeTab);
+  const { interactions, loading, refreshInteractions, error } = useUserInteractions(activeTab);
   
   // Refresh interactions when tab changes or component mounts
   useEffect(() => {
     if (user) {
+      console.log(`Profile: Refreshing ${activeTab} interactions for user ${user.id}`);
       refreshInteractions();
     }
   }, [activeTab, user, refreshInteractions]);
+
+  // Log any errors or interactions for debugging
+  useEffect(() => {
+    if (error) {
+      console.error('Profile: Error loading interactions:', error);
+    }
+    if (interactions.length > 0) {
+      console.log(`Profile: Loaded ${interactions.length} ${activeTab} interactions`);
+    }
+  }, [interactions, error, activeTab]);
   
   if (!user) {
     return (
@@ -32,6 +43,11 @@ const Profile = () => {
       </div>
     );
   }
+  
+  const handleRefresh = () => {
+    refreshInteractions();
+    toast.success('Refreshing your interaction history');
+  };
   
   return (
     <div className="container p-4">
@@ -86,12 +102,18 @@ const Profile = () => {
                 <Button 
                   variant="outline" 
                   size="sm" 
-                  onClick={() => {
-                    refreshInteractions();
-                    toast.success('Refreshed interaction history');
-                  }}
+                  onClick={handleRefresh}
+                  disabled={loading}
                 >
-                  <RefreshCw className="h-4 w-4 mr-1" /> Refresh
+                  {loading ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-1 animate-spin" /> Loading...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-1" /> Refresh
+                    </>
+                  )}
                 </Button>
               </div>
               <CardDescription>Your recent interactions with MonDAI</CardDescription>
@@ -110,10 +132,23 @@ const Profile = () => {
                 
                 <TabsContent value={activeTab}>
                   {loading ? (
-                    <div className="py-8 text-center text-muted-foreground">
-                      Loading your {activeTab} history...
+                    <div className="py-8 text-center text-muted-foreground flex flex-col items-center justify-center">
+                      <Loader2 className="h-8 w-8 animate-spin mb-2" />
+                      <p>Loading your {activeTab} history...</p>
                     </div>
-                  ) : interactions.length > 0 ? (
+                  ) : error ? (
+                    <div className="py-8 text-center text-red-500">
+                      <p>Error loading interactions: {error.message}</p>
+                      <Button 
+                        variant="outline" 
+                        size="sm"
+                        onClick={handleRefresh}
+                        className="mt-2"
+                      >
+                        Try Again
+                      </Button>
+                    </div>
+                  ) : interactions && interactions.length > 0 ? (
                     <div className="space-y-4">
                       {interactions.slice(0, 5).map((interaction) => (
                         <Card key={interaction.id}>
@@ -144,6 +179,9 @@ const Profile = () => {
                     <div className="py-8 text-center">
                       <Layers className="mx-auto h-8 w-8 text-muted-foreground" />
                       <p className="mt-2 text-muted-foreground">No {activeTab} interactions yet.</p>
+                      <p className="mt-1 text-sm text-muted-foreground">
+                        Try using the {activeTab} feature to create some interactions
+                      </p>
                     </div>
                   )}
                 </TabsContent>
