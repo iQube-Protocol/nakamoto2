@@ -34,7 +34,8 @@ export interface MCPClientOptions {
 
 export class MCPClient {
   private conversationId: string | null = null;
-  private serverUrl: string;
+  // Changed from private to public to fix the error
+  public serverUrl: string;
   private authToken: string | null;
   private metisActive: boolean;
   private context: MCPContext | null = null;
@@ -262,6 +263,13 @@ export class MCPClient {
   setAuthToken(token: string): void {
     this.authToken = token;
   }
+  
+  /**
+   * Set the server URL
+   */
+  setServerUrl(url: string): void {
+    this.serverUrl = url;
+  }
 }
 
 // Singleton instance for global use
@@ -275,7 +283,7 @@ export const getMCPClient = (options?: MCPClientOptions): MCPClient => {
     mcpClientInstance = new MCPClient(options);
   } else if (options) {
     // Update existing instance with new options if provided
-    if (options.serverUrl) mcpClientInstance.serverUrl = options.serverUrl;
+    if (options.serverUrl) mcpClientInstance.setServerUrl(options.serverUrl);
     if (options.authToken) mcpClientInstance.setAuthToken(options.authToken);
     if (options.metisActive !== undefined) mcpClientInstance.setMetisActive(options.metisActive);
   }
