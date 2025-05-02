@@ -33,14 +33,20 @@ const SignIn = () => {
     e.preventDefault();
     setIsLoading(true);
     
-    const { error, success } = await signIn(email, password);
-    
-    setIsLoading(false);
-    
-    if (success) {
-      toast.success('Signed in successfully');
-    } else if (error) {
-      toast.error(`Sign in failed: ${error.message}`);
+    try {
+      const { error, success } = await signIn(email, password);
+      
+      if (success) {
+        toast.success('Signed in successfully');
+        navigate('/');
+      } else if (error) {
+        toast.error(`Sign in failed: ${error.message}`);
+      }
+    } catch (err) {
+      console.error('Sign in error:', err);
+      toast.error('An unexpected error occurred. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
@@ -54,23 +60,28 @@ const SignIn = () => {
     
     setIsRegisterLoading(true);
     
-    const { error, success } = await signUp(
-      registerEmail, 
-      registerPassword,
-      firstName,
-      lastName
-    );
-    
-    setIsRegisterLoading(false);
-    
-    if (success) {
-      toast.success('Account created successfully! Please check your email to confirm your registration.');
-      // Switch to sign in tab
-      document.getElementById('sign-in-tab')?.click();
-      // Pre-fill the email field
-      setEmail(registerEmail);
-    } else if (error) {
-      toast.error(`Registration failed: ${error.message}`);
+    try {
+      const { error, success } = await signUp(
+        registerEmail, 
+        registerPassword,
+        firstName,
+        lastName
+      );
+      
+      if (success) {
+        toast.success('Account created successfully! Please check your email to confirm your registration.');
+        // Switch to sign in tab
+        document.getElementById('sign-in-tab')?.click();
+        // Pre-fill the email field
+        setEmail(registerEmail);
+      } else if (error) {
+        toast.error(`Registration failed: ${error.message}`);
+      }
+    } catch (err) {
+      console.error('Registration error:', err);
+      toast.error('An unexpected error occurred. Please try again.');
+    } finally {
+      setIsRegisterLoading(false);
     }
   };
 
@@ -79,14 +90,20 @@ const SignIn = () => {
     setEmail('demo@mondai.io');
     setPassword('demo123');
     
-    const { error, success } = await signIn('demo@mondai.io', 'demo123');
-    
-    setIsLoading(false);
-    
-    if (success) {
-      toast.success('Signed in with demo account');
-    } else if (error) {
-      toast.error(`Demo sign in failed: ${error.message}`);
+    try {
+      const { error, success } = await signIn('demo@mondai.io', 'demo123');
+      
+      if (success) {
+        toast.success('Signed in with demo account');
+        navigate('/');
+      } else if (error) {
+        toast.error(`Demo sign in failed: ${error.message}`);
+      }
+    } catch (err) {
+      console.error('Demo sign in error:', err);
+      toast.error('An unexpected error occurred. Please try again.');
+    } finally {
+      setIsLoading(false);
     }
   };
 
