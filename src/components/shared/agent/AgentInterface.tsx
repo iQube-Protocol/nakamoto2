@@ -8,11 +8,13 @@ import MessageList from './MessageList';
 import AgentInputBar from './AgentInputBar';
 import EmptyConversation from './EmptyConversation';
 import KnowledgeBase from './KnowledgeBase';
+import DocumentContext from './DocumentContext';
 import { useUserInteractions } from '@/hooks/use-user-interactions';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
 import { processAgentInteraction } from '@/services/agent-service';
 import { toast } from 'sonner';
+import { useMCP } from '@/hooks/use-mcp';
 
 interface AgentInterfaceProps {
   title: string;
@@ -32,12 +34,29 @@ const AgentInterface = ({
   const [messages, setMessages] = useState<AgentMessage[]>(initialMessages);
   const [inputValue, setInputValue] = useState('');
   const [isProcessing, setIsProcessing] = useState(false);
-  const [activeTab, setActiveTab] = useState<'chat' | 'knowledge'>('chat');
+  const [activeTab, setActiveTab] = useState<'chat' | 'knowledge' | 'documents'>('chat');
   const [playing, setPlaying] = useState<string | null>(null);
   const [isHistoryLoaded, setIsHistoryLoaded] = useState(false);
   const messagesEndRef = useRef<HTMLDivElement>(null);
   const { user } = useAuth();
   const { interactions, refreshInteractions } = useUserInteractions(agentType);
+  const { client: mcpClient, initializeContext } = useMCP();
+  const [conversationId, setConversationId] = useState<string | null>(null);
+
+  // Initialize MCP context when component mounts
+  useEffect(() => {
+    const setupMCP = async () => {
+      if (mcpClient) {
+        const convId = await initializeContext();
+        if (convId) {
+          console.log(`MCP: Initialized context for ${agentType} agent with ID: ${convId}`);
+          setConversationId(convId);
+        }
+      }
+    };
+    
+    setupMCP();
+  }, [mcpClient, initializeContext, agentType]);
 
   // Load message history from database when component mounts
   useEffect(() => {
@@ -105,9 +124,20 @@ const AgentInterface = ({
     setInputValue('');
     setIsProcessing(true);
 
+    // Add user message to MCP context if available
+    if (mcpClient && conversationId) {
+      await mcpClient.addUserMessage(userMessage.message);
+    }
+
     try {
       if (onMessageSubmit) {
         const agentResponse = await onMessageSubmit(userMessage.message);
+        
+        // Add agent response to MCP context if available
+        if (mcpClient && conversationId) {
+          await mcpClient.addAgentResponse(agentResponse.message);
+        }
+        
         setMessages(prev => [...prev, agentResponse]);
       } else {
         // Fallback for when no onMessageSubmit is provided
@@ -176,6 +206,11 @@ const AgentInterface = ({
     }
   };
 
+  const handleDocumentAdded = () => {
+    // Refresh the messages or notify the user
+    toast.success('Document context has been updated');
+  };
+
   return (
     <Card className="flex flex-col h-full overflow-hidden">
       <AgentHeader 
@@ -186,12 +221,13 @@ const AgentInterface = ({
 
       <Tabs 
         value={activeTab} 
-        onValueChange={(v) => setActiveTab(v as 'chat' | 'knowledge')}
+        onValueChange={(v) => setActiveTab(v as 'chat' | 'knowledge' | 'documents')}
         className="flex-1 flex flex-col"
       >
         <div className="border-b px-4">
           <TabsList className="h-10">
             <TabsTrigger value="chat" className="data-[state=active]:bg-iqube-primary/20">Chat</TabsTrigger>
+            <TabsTrigger value="documents" className="data-[state=active]:bg-iqube-primary/20">Documents</TabsTrigger>
             <TabsTrigger value="knowledge" className="data-[state=active]:bg-iqube-primary/20">Knowledge Base</TabsTrigger>
           </TabsList>
         </div>
@@ -215,6 +251,13 @@ const AgentInterface = ({
             handleSubmit={handleSubmit}
             isProcessing={isProcessing}
             agentType={agentType}
+          />
+        </TabsContent>
+        
+        <TabsContent value="documents" className="flex-1 p-4 m-0 overflow-y-auto">
+          <DocumentContext 
+            conversationId={conversationId}
+            onDocumentAdded={handleDocumentAdded}
           />
         </TabsContent>
 

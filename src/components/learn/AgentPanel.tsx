@@ -5,6 +5,8 @@ import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { MetaQube, BlakQube } from '@/lib/types';
 import { processAgentInteraction, getConversationContext } from '@/services/agent-service';
+import { useMCP } from '@/hooks/use-mcp';
+import { toast } from 'sonner';
 
 interface AgentPanelProps {
   metaQube: MetaQube;
@@ -25,6 +27,7 @@ const AgentPanel = ({
   const [metisActive, setMetisActive] = useState<boolean>(false);
   const [historicalContext, setHistoricalContext] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
+  const { client: mcpClient, isInitialized } = useMCP();
 
   // Listen for Metis activation events
   useEffect(() => {
@@ -66,6 +69,12 @@ const AgentPanel = ({
         if (context.conversationId !== conversationId) {
           setConversationId(context.conversationId);
         }
+        
+        // Initialize MCP with this conversation ID
+        if (mcpClient && isInitialized) {
+          await mcpClient.initializeContext(context.conversationId);
+          console.log(`MCP context initialized for conversation ${context.conversationId}`);
+        }
       } catch (error) {
         console.error('Error loading conversation context:', error);
       } finally {
@@ -74,7 +83,7 @@ const AgentPanel = ({
     };
     
     loadContext();
-  }, [conversationId, setConversationId]);
+  }, [conversationId, setConversationId, mcpClient, isInitialized]);
 
   const handleAIMessage = async (message: string) => {
     try {
@@ -91,6 +100,16 @@ const AgentPanel = ({
         console.log('Updated historical context for learn agent');
       }
       
+      // Get MCP context if available
+      let documentContext = [];
+      if (mcpClient) {
+        const mcpContext = mcpClient.getModelContext();
+        if (mcpContext?.documentContext) {
+          documentContext = mcpContext.documentContext;
+          console.log('MCP: Including document context in request', documentContext.length);
+        }
+      }
+      
       // Call the edge function to get the AI response
       const { data, error } = await supabase.functions.invoke('learn-ai', {
         body: { 
@@ -99,7 +118,8 @@ const AgentPanel = ({
           blakQube,
           conversationId: contextResult.conversationId,
           metisActive,
-          historicalContext: contextResult.historicalContext
+          historicalContext: contextResult.historicalContext,
+          documentContext: documentContext
         }
       });
       
@@ -188,7 +208,7 @@ const AgentPanel = ({
           {
             id: "1",
             sender: "agent",
-            message: "Hi there! I'm your Learning Assistant, here to help you explore the world of Web3 and blockchain. Based on your iQube profile, I see you're interested in several Web3 topics. What aspects of blockchain or Web3 are you curious about today? Or is there something specific you'd like to learn?",
+            message: "Hi there! I'm your Learning Assistant, here to help you explore the world of Web3 and blockchain. Based on your iQube profile, I see you're interested in several Web3 topics. You can now add Google Drive documents to our conversation for me to analyze. What aspects of blockchain or Web3 are you curious about today?",
             timestamp: new Date().toISOString(),
             metadata: {
               version: "1.0",
