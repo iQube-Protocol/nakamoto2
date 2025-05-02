@@ -129,6 +129,14 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
         setConnectionError(true);
       });
     }
+    
+    // If closing dialog, dismiss any persistent toasts
+    if (!open) {
+      // Dismiss any lingering toasts
+      toast.dismiss('google-api-loading');
+      toast.dismiss('drive-connection');
+      toast.dismiss('reset-connection');
+    }
   };
   
   const handleFileSelection = (doc: any) => {
@@ -210,6 +218,9 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
   // Loading states
   const isProcessing = connectionLoading || documentsLoading || isApiLoading || connecting || connectionInProgress;
   
+  // Import toast from sonner at the component level to prevent circular dependency
+  const { toast } = require('sonner');
+
   return (
     <Dialog open={isOpen} onOpenChange={handleDialogChange}>
       <DialogTrigger asChild>
@@ -261,7 +272,7 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
                   variant="outline" 
                   size="sm" 
                   onClick={handleResetConnection}
-                  className="flex items-center gap-2 mt-2"
+                  className="flex items-center gap-2 mt-2 bg-purple-500 hover:bg-purple-600 text-white"
                 >
                   <RefreshCw className="h-3.5 w-3.5" />
                   Reset Connection
@@ -287,7 +298,7 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
                   variant="outline" 
                   size="sm" 
                   onClick={handleResetConnection}
-                  className="flex items-center gap-2 mt-2"
+                  className="flex items-center gap-2 mt-2 bg-purple-500 hover:bg-purple-600 text-white"
                 >
                   <RefreshCw className="h-3.5 w-3.5" />
                   Reset Connection
@@ -335,7 +346,7 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
                       variant="outline" 
                       size="sm" 
                       onClick={handleResetConnection}
-                      className="flex items-center gap-2 mt-2 text-purple-500 hover:text-purple-600 hover:bg-purple-50"
+                      className="flex items-center gap-2 mt-2 bg-purple-500 hover:bg-purple-600 text-white"
                     >
                       <RefreshCw className="h-3.5 w-3.5" />
                       Reset Connection
@@ -373,7 +384,7 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
                 variant="outline" 
                 size="sm"
                 onClick={handleResetConnection} 
-                className="flex items-center gap-2 text-purple-500 hover:text-purple-600 hover:bg-purple-50" 
+                className="flex items-center gap-2 bg-purple-500 hover:bg-purple-600 text-white" 
               >
                 <RefreshCw className="h-3.5 w-3.5" />
                 Reset Connection
@@ -383,7 +394,7 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
                 <Button 
                   onClick={handleRefreshDocuments} 
                   disabled={isProcessing} 
-                  className="gap-1 bg-purple-500 hover:bg-purple-600"
+                  className="gap-1 bg-purple-500 hover:bg-purple-600 text-white"
                 >
                   {isProcessing && <RefreshCw className="h-4 w-4 animate-spin" />}
                   {!isProcessing && <RefreshCw className="h-4 w-4" />}

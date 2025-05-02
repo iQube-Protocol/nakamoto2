@@ -43,7 +43,7 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
         <DocumentSelector 
           onDocumentSelect={handleDocumentSelect}
           triggerButton={
-            <Button variant="outline" size="sm" className="gap-1">
+            <Button variant="outline" size="sm" className="gap-1 bg-purple-500 hover:bg-purple-600 text-white">
               <FileText className="h-3.5 w-3.5" />
               Add Document
             </Button>

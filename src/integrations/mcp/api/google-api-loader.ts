@@ -19,6 +19,7 @@ export class GoogleApiLoader {
   public onApiLoadComplete: (() => void) | null = null;
   private apiLoadTimeout: number = DEFAULT_TIMEOUT;
   private apiLoadListeners: Array<() => void> = [];
+  private isReloading: boolean = false;
   
   constructor(callbacks?: ApiLoadCallbacks) {
     this.onApiLoadStart = callbacks?.onApiLoadStart || null;
@@ -56,10 +57,16 @@ export class GoogleApiLoader {
    * This is used when resetting the connection
    */
   public reloadGoogleApi(): void {
-    if (typeof window === 'undefined') return;
+    if (typeof window === 'undefined' || this.isReloading) return;
     
     console.log('MCP: Forcefully reloading Google API scripts...');
+    
+    // Prevent multiple simultaneous reloads
+    this.isReloading = true;
+    
+    // Dismiss any persistent toasts
     toast.dismiss('google-api-loading');
+    toast.dismiss('reset-connection');
     
     // Reset state
     this.stateManager.resetState();
@@ -79,14 +86,17 @@ export class GoogleApiLoader {
     // Reset the load attempts to ensure we try again
     this.stateManager.resetLoadAttempts();
     
-    // Reload the scripts with a small delay to ensure cleanup is complete
-    setTimeout(() => this.loadGoogleApi(), 100);
-    
-    // Show a loading toast
+    // Show brief toast notification that will auto-dismiss
     toast.loading('Reloading Google API...', {
       id: 'google-api-loading',
       duration: 3000,
     });
+    
+    // Reload the scripts with a small delay to ensure cleanup is complete
+    setTimeout(() => {
+      this.loadGoogleApi();
+      this.isReloading = false;
+    }, 500);
   }
   
   /**
@@ -152,6 +162,7 @@ export class GoogleApiLoader {
           toast.error('Google API loading timed out', {
             description: 'Please refresh the page and try again',
             duration: 5000,
+            id: 'api-timeout-error', // Unique ID for this specific error
           });
           
           // Try again if we haven't exceeded max attempts
@@ -179,9 +190,11 @@ export class GoogleApiLoader {
           // Notify any listeners
           this.notifyLoadListeners();
           
+          // Short duration toast that auto-dismisses
           toast.dismiss('google-api-loading');
           toast.success('Google API loaded successfully', {
             duration: 2000,
+            id: 'api-loaded-success',
           });
           
           resolve(true);
@@ -293,10 +306,11 @@ export class GoogleApiLoader {
       // Dismiss any existing toasts to prevent stacking
       toast.dismiss('google-api-loading');
       
-      // Toast error message
+      // Toast error message with auto-dismiss
       toast.error('Failed to load Google API script', {
         description: 'Please check your internet connection and try again.',
-        duration: 5000
+        duration: 5000,
+        id: 'script-load-error', // Unique ID for this error
       });
       
       // Retry logic
@@ -336,7 +350,7 @@ export class GoogleApiLoader {
     // Show a loading toast with short duration to prevent persistence
     toast.loading('Loading Google API...', {
       id: 'google-api-loading',
-      duration: 10000,
+      duration: 10000, // Auto-dismiss after 10 seconds even if still loading
     });
     
     const currentPromise = this.stateManager.getApiLoadPromise();
@@ -367,9 +381,11 @@ export class GoogleApiLoader {
         // Dismiss the loading toast
         toast.dismiss('google-api-loading');
         
+        // Non-persistent toast
         toast.error('Failed to load Google API', {
           description: 'Please refresh the page and try again',
-          duration: 5000
+          duration: 5000,
+          id: 'api-ensure-error',
         });
         
         // Try again if we haven't exceeded max attempts

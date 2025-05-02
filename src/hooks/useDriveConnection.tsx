@@ -128,6 +128,12 @@ export function useDriveConnection() {
       setConnectionTimeout(null);
     }
     
+    // Dismiss any lingering toast notifications
+    toast.dismiss('drive-connection');
+    toast.dismiss('drive-connection-timeout');
+    toast.dismiss('drive-connect-error');
+    toast.dismiss('reset-connection');
+    
     try {
       setConnectionInProgress(true);
       setConnectionAttempts(prev => prev + 1);
@@ -144,7 +150,7 @@ export function useDriveConnection() {
           duration: 5000,
           id: 'drive-connection-timeout',
         });
-      }, 45000); // 45 seconds timeout
+      }, 30000); // 30 seconds timeout (reduced from 45s)
       
       setConnectionTimeout(timeout);
       
@@ -230,7 +236,13 @@ export function useDriveConnection() {
         setConnectionTimeout(null);
       }
       
-      // Show a resetting toast
+      // Dismiss any lingering toast notifications
+      toast.dismiss('reset-connection');
+      toast.dismiss('drive-connection');
+      toast.dismiss('api-error');
+      toast.dismiss('connection-error');
+      
+      // Show a resetting toast that will auto-dismiss
       toast.loading('Resetting connection...', {
         id: 'reset-connection',
         duration: 3000,
@@ -241,6 +253,7 @@ export function useDriveConnection() {
         if (mcpResetConnection) {
           mcpResetConnection();
           
+          // Short-lived success toast
           toast.dismiss('reset-connection');
           toast.success('Connection reset complete', {
             description: 'You can now reconnect to Google Drive',

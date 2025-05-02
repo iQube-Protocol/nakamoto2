@@ -1,14 +1,15 @@
 
 import React from 'react';
+import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Loader2 } from 'lucide-react';
 
 interface ConnectionFormProps {
   clientId: string;
-  setClientId: (value: string) => void;
+  setClientId: (id: string) => void;
   apiKey: string;
-  setApiKey: (value: string) => void;
+  setApiKey: (key: string) => void;
   handleConnect: () => Promise<boolean>;
   isLoading: boolean;
   disabled?: boolean;
@@ -25,50 +26,56 @@ const ConnectionForm: React.FC<ConnectionFormProps> = ({
   disabled = false,
   isApiLoading = false
 }) => {
-  const isButtonDisabled = disabled || isLoading || isApiLoading || !clientId || !apiKey;
-  const getButtonText = () => {
-    if (disabled) return 'Waiting for Google API...';
-    if (isApiLoading) return 'Loading Google API...';
-    if (isLoading) return 'Connecting...';
-    return 'Connect to Drive';
-  };
-
   return (
-    <div className="grid gap-4 py-4">
+    <div className="space-y-4">
       <div className="space-y-2">
-        <label htmlFor="client-id" className="text-sm font-medium">Google Client ID</label>
+        <Label htmlFor="clientId">Google OAuth Client ID</Label>
         <Input
-          id="client-id"
+          id="clientId"
+          placeholder="Your Google OAuth Client ID"
           value={clientId}
           onChange={(e) => setClientId(e.target.value)}
-          placeholder="Enter your Google API Client ID"
-          disabled={disabled || isLoading || isApiLoading}
+          disabled={isLoading}
         />
+        <p className="text-xs text-muted-foreground">
+          From your Google Cloud Console project
+        </p>
       </div>
+      
       <div className="space-y-2">
-        <label htmlFor="api-key" className="text-sm font-medium">API Key</label>
+        <Label htmlFor="apiKey">Google API Key</Label>
         <Input
-          id="api-key"
+          id="apiKey"
+          placeholder="Your Google API Key"
           value={apiKey}
           onChange={(e) => setApiKey(e.target.value)}
-          placeholder="Enter your Google API Key"
+          disabled={isLoading}
           type="password"
-          disabled={disabled || isLoading || isApiLoading}
         />
-      </div>
-      <Button 
-        onClick={handleConnect} 
-        disabled={isButtonDisabled}
-        className="mt-2"
-      >
-        {(isLoading || isApiLoading) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-        {getButtonText()}
-      </Button>
-      {(disabled || isApiLoading) && (
         <p className="text-xs text-muted-foreground">
-          Please wait while we load the Google API. This may take a few moments.
+          From your Google Cloud Console project
         </p>
-      )}
+      </div>
+      
+      <Button
+        onClick={handleConnect}
+        disabled={isLoading || disabled || !clientId || !apiKey || isApiLoading}
+        className="w-full bg-purple-500 hover:bg-purple-600 text-white"
+      >
+        {isLoading ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
+            Connecting...
+          </>
+        ) : isApiLoading ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
+            Loading API...
+          </>
+        ) : (
+          'Connect to Google Drive'
+        )}
+      </Button>
     </div>
   );
 };

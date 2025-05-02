@@ -35,6 +35,22 @@ export default function useDocumentContext({ conversationId, onDocumentAdded }: 
       console.log(`Loading documents for conversation: ${conversationId}`);
       
       try {
+        // First check if the client has a method to get document context directly (new API)
+        if (client.getDocumentContext) {
+          const docs = client.getDocumentContext(conversationId);
+          if (docs && docs.length > 0) {
+            console.log(`Found ${docs.length} documents using getDocumentContext for conversation: ${conversationId}`);
+            setSelectedDocuments(docs);
+            setDocumentCache(prev => ({
+              ...prev,
+              [conversationId]: docs
+            }));
+            setLoadedConversationId(conversationId);
+            return;
+          }
+        }
+        
+        // Fall back to old method if new API doesn't return documents
         // Initialize context for the current conversation to ensure it's loaded
         await client.initializeContext(conversationId);
         
@@ -124,7 +140,7 @@ export default function useDocumentContext({ conversationId, onDocumentAdded }: 
     // Show loading toast with ID to allow dismissing later
     toast.loading('Fetching document...', { 
       id: `doc-loading-${document.id}`,
-      duration: 10000, // Prevent persistence
+      duration: 10000, // Auto-dismiss after 10s if it hangs
     });
     
     // Fetch document content
@@ -190,7 +206,31 @@ export default function useDocumentContext({ conversationId, onDocumentAdded }: 
     }
     
     try {
-      // Remove from the client context
+      // Try to use new removeDocumentFromContext method if available
+      if (typeof client.removeDocumentFromContext === 'function') {
+        const removed = client.removeDocumentFromContext(documentId);
+        
+        if (removed) {
+          console.log(`Removed document ${documentId} from context using direct method`);
+          
+          // Update local state
+          setSelectedDocuments(prev => prev.filter(doc => doc.id !== documentId));
+          
+          // Update the cache
+          setDocumentCache(prev => ({
+            ...prev,
+            [conversationId]: prev[conversationId]?.filter(doc => doc.id !== documentId) || []
+          }));
+          
+          toast.success('Document removed from context', { 
+            duration: 2000,
+            id: 'doc-removed',
+          });
+          return;
+        }
+      }
+      
+      // Fall back to old method
       const context = client.getModelContext();
       if (context?.documentContext) {
         context.documentContext = context.documentContext.filter(
@@ -238,8 +278,14 @@ export default function useDocumentContext({ conversationId, onDocumentAdded }: 
     setDocumentCache({});
     setSelectedDocuments([]);
     setLoadedConversationId(null);
+    
+    // If the client has a method to clear document cache, use it
+    if (client && typeof client.clearDocumentContextCache === 'function') {
+      client.clearDocumentContextCache();
+    }
+    
     console.log('Document context cache cleared');
-  }, []);
+  }, [client]);
 
   return {
     selectedDocuments,
