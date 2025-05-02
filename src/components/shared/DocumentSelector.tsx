@@ -3,23 +3,15 @@ import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Info, FileText, RefreshCw, AlertCircle, Loader2 } from 'lucide-react';
+import { FileText } from 'lucide-react';
 import { useDriveConnection } from '@/hooks/useDriveConnection';
 import { useDocumentBrowser } from '@/hooks/useDocumentBrowser';
-import ConnectionForm from './document/ConnectionForm';
-import FolderBreadcrumb from './document/FolderBreadcrumb';
-import FileGrid from './document/FileGrid';
-import { Separator } from '@/components/ui/separator';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useMCP } from '@/hooks/use-mcp';
 import { toast } from 'sonner';
+import ConnectionDialog from './document/ConnectionDialog';
+import DocumentBrowserDialog from './document/DocumentBrowserDialog';
 
 interface DocumentSelectorProps {
   onDocumentSelect: (document: any) => void;
@@ -143,126 +135,39 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
         )}
       </DialogTrigger>
       
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>Select a document from Google Drive</DialogTitle>
-          <DialogDescription>
-            {driveConnected 
-              ? "Choose a document to analyze with your agent" 
-              : "Connect to Google Drive to access your documents"}
-          </DialogDescription>
-        </DialogHeader>
-        
-        {!driveConnected ? (
-          <>
-            <Alert>
-              <Info className="h-4 w-4" />
-              <AlertDescription className="mt-2">
-                To connect to your Google Drive, you'll need to create Google API credentials:
-                <ol className="list-decimal pl-5 mt-2 space-y-1 text-sm">
-                  <li>Go to <a href="https://console.cloud.google.com" target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">Google Cloud Console</a></li>
-                  <li>Create a project and enable the Google Drive API</li>
-                  <li>Create an OAuth client ID (Web application type)</li>
-                  <li>Add authorized redirect URIs: {window.location.origin}</li>
-                  <li>Create an API Key</li>
-                  <li>Enter these credentials below</li>
-                </ol>
-              </AlertDescription>
-            </Alert>
-            
-            {connectionError && (
-              <Alert variant="destructive" className="mt-2">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription className="mt-2">
-                  {connectionError}
-                  <Button 
-                    variant="outline" 
-                    size="sm" 
-                    className="mt-2 w-full" 
-                    onClick={handleRetryConnection}
-                  >
-                    Try again
-                  </Button>
-                </AlertDescription>
-              </Alert>
-            )}
-            
-            <Separator className="my-2" />
-            <ConnectionForm 
-              clientId={clientId}
-              setClientId={setClientId}
-              apiKey={apiKey}
-              setApiKey={setApiKey}
-              handleConnect={handleConnectClick}
-              isLoading={isProcessing}
-            />
-          </>
-        ) : (
-          <div className="py-4 h-[300px] overflow-y-auto">
-            {/* Breadcrumb navigation */}
-            <FolderBreadcrumb
-              currentFolder={currentFolder}
-              folderHistory={folderHistory}
-              navigateToFolder={navigateToFolder}
-              navigateToRoot={navigateToRoot}
-            />
-            
-            {fetchError && (
-              <Alert variant="destructive" className="mb-2">
-                <AlertCircle className="h-4 w-4" />
-                <AlertDescription className="mt-2">
-                  {fetchError}
-                  <div className="flex gap-2 mt-2">
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="flex-1" 
-                      onClick={refreshCurrentFolder}
-                    >
-                      Try again
-                    </Button>
-                    <Button 
-                      variant="outline" 
-                      size="sm" 
-                      className="flex-1" 
-                      onClick={handleRetryConnection}
-                    >
-                      Reset connection
-                    </Button>
-                  </div>
-                </AlertDescription>
-              </Alert>
-            )}
-            
-            {/* File grid */}
-            <FileGrid
-              documents={documents}
-              isLoading={documentsLoading || isRefreshing}
-              currentFolder={currentFolder}
-              handleDocumentClick={handleFileSelection}
-              handleBack={handleBack}
-              onRefresh={handleRefresh}
-            />
-          </div>
-        )}
-        
-        <DialogFooter>
-          {driveConnected && (
-            <>
-              <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
-              <Button variant="outline" onClick={handleRetryConnection}>Reset Connection</Button>
-              <Button onClick={handleRefresh} disabled={isProcessing} className="gap-1">
-                {isRefreshing ? (
-                  <Loader2 className="h-4 w-4 animate-spin" />
-                ) : (
-                  <RefreshCw className={`h-4 w-4 ${isProcessing ? "animate-spin" : ""}`} />
-                )}
-                Refresh
-              </Button>
-            </>
-          )}
-        </DialogFooter>
-      </DialogContent>
+      {!driveConnected ? (
+        <ConnectionDialog 
+          isOpen={isOpen}
+          onOpenChange={handleDialogChange}
+          clientId={clientId}
+          setClientId={setClientId}
+          apiKey={apiKey}
+          setApiKey={setApiKey}
+          handleConnect={handleConnectClick}
+          isProcessing={isProcessing}
+          connectionError={connectionError}
+          handleRetryConnection={handleRetryConnection}
+        />
+      ) : (
+        <DocumentBrowserDialog
+          documents={documents}
+          currentFolder={currentFolder}
+          folderHistory={folderHistory}
+          documentsLoading={documentsLoading}
+          fetchError={fetchError}
+          isRefreshing={isRefreshing}
+          isProcessing={isProcessing}
+          navigateToFolder={navigateToFolder}
+          navigateToRoot={navigateToRoot}
+          refreshCurrentFolder={refreshCurrentFolder}
+          handleRefresh={handleRefresh}
+          handleFileSelection={handleFileSelection}
+          handleBack={handleBack}
+          handleRetryConnection={handleRetryConnection}
+          setIsOpen={setIsOpen}
+          resetConnection={handleRetryConnection}
+        />
+      )}
     </Dialog>
   );
 };
