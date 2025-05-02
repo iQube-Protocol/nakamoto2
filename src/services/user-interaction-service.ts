@@ -47,6 +47,22 @@ export const storeUserInteraction = async (data: InteractionData) => {
     }
 
     console.log('Successfully stored user interaction with ID:', insertedData?.[0]?.id);
+    
+    // Double-check if the interaction was inserted correctly
+    if (insertedData && insertedData.length > 0) {
+      const { data: checkData, error: checkError } = await supabase
+        .from('user_interactions')
+        .select('id, user_id, interaction_type')
+        .eq('id', insertedData[0].id)
+        .single();
+        
+      if (checkError) {
+        console.error('Error verifying inserted interaction:', checkError);
+      } else {
+        console.log('Verified inserted interaction:', checkData);
+      }
+    }
+    
     return { success: true, error: null, data: insertedData?.[0] };
   } catch (error) {
     console.error('Unexpected error storing user interaction:', error);
@@ -69,18 +85,25 @@ export const getUserInteractions = async (
       return { data: null, error: new Error('User not authenticated') };
     }
 
-    console.log('Fetching interactions for user:', user_id, 'type:', interactionType);
+    console.log('Fetching interactions for user:', user_id, 'type:', interactionType || 'all');
 
     let queryBuilder = supabase
       .from('user_interactions')
       .select('*')
       .eq('user_id', user_id) // Filter by the user's ID
-      .order('created_at', { ascending: false })
-      .limit(limit)
-      .range(offset, offset + limit - 1);
+      .order('created_at', { ascending: false });
 
     if (interactionType) {
+      console.log(`Applying filter for interaction type: ${interactionType}`);
       queryBuilder = queryBuilder.eq('interaction_type', interactionType);
+    }
+    
+    if (limit) {
+      queryBuilder = queryBuilder.limit(limit);
+    }
+    
+    if (offset !== undefined) {
+      queryBuilder = queryBuilder.range(offset, offset + limit - 1);
     }
 
     const { data, error } = await queryBuilder;
@@ -97,7 +120,16 @@ export const getUserInteractions = async (
         type: data[0].interaction_type,
         created_at: data[0].created_at,
         query_length: data[0].query?.length || 0,
-        response_length: data[0].response?.length || 0
+        response_length: data[0].response?.length || 0,
+        user_id: data[0].user_id
+      });
+    } else {
+      // If no data found, log the exact query used
+      console.log('No interactions found. Query details:', {
+        user_id,
+        interaction_type: interactionType,
+        limit,
+        offset
       });
     }
     
@@ -112,7 +144,7 @@ export const startUserSession = async () => {
   try {
     // Get current user from auth context or session
     const { data: { session } } = await supabase.auth.getSession();
-    const user_id = session?.user.id;
+    const user_id = session?.user?.id;
     
     if (!user_id) {
       console.error('No user ID available for starting session');
@@ -149,7 +181,7 @@ export const endUserSession = async (sessionId: string) => {
   try {
     // Get current user from auth context or session
     const { data: { session } } = await supabase.auth.getSession();
-    const user_id = session?.user.id;
+    const user_id = session?.user?.id;
     
     if (!user_id) {
       console.error('No user ID available for ending session');

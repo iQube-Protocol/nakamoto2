@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { useUserInteractions } from '@/hooks/use-user-interactions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { format } from 'date-fns';
-import { User, Clock, MessageSquare, Layers, RefreshCw, Loader2 } from 'lucide-react';
+import { User, Clock, MessageSquare, Layers, RefreshCw, Loader2, Bug } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -14,6 +14,7 @@ const Profile = () => {
   const { user, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState<'learn' | 'earn' | 'connect'>('learn');
   const { interactions, loading, refreshInteractions, error } = useUserInteractions(activeTab);
+  const [debugMode, setDebugMode] = useState(false);
   
   // Debug current user info
   useEffect(() => {
@@ -31,6 +32,16 @@ const Profile = () => {
           
           console.log("Direct DB check - Interactions count:", data);
           if (error) console.error("Direct DB error:", error);
+          
+          // Also fetch some raw data to diagnose issues
+          const { data: rawData, error: rawError } = await supabase
+            .from('user_interactions')
+            .select('*')
+            .eq('user_id', user.id)
+            .limit(5);
+            
+          console.log("Raw interaction data:", rawData);
+          if (rawError) console.error("Raw interaction data error:", rawError);
         } catch (e) {
           console.error("Failed to check interactions count:", e);
         }
@@ -38,12 +49,12 @@ const Profile = () => {
     }
     
     checkConnection();
-  }, [user]);
+  }, [user, activeTab]); // Add activeTab as dependency to re-check on tab change
   
-  // Refresh interactions when tab changes or component mounts
+  // Force refresh interactions whenever tab changes or component mounts
   useEffect(() => {
     if (user) {
-      console.log(`Profile: Refreshing ${activeTab} interactions for user ${user.id}`);
+      console.log(`Profile: Force refreshing ${activeTab} interactions for user ${user.id}`);
       refreshInteractions();
     }
   }, [activeTab, user, refreshInteractions]);
@@ -52,6 +63,7 @@ const Profile = () => {
   useEffect(() => {
     if (error) {
       console.error('Profile: Error loading interactions:', error);
+      toast.error(`Error loading interactions: ${error.message}`);
     }
     if (interactions) {
       console.log(`Profile: Loaded ${interactions?.length || 0} ${activeTab} interactions`);
@@ -71,9 +83,13 @@ const Profile = () => {
     );
   }
   
-  const handleRefresh = () => {
-    refreshInteractions();
+  const handleRefresh = async () => {
     toast.success('Refreshing your interaction history');
+    await refreshInteractions();
+  };
+  
+  const toggleDebugMode = () => {
+    setDebugMode(!debugMode);
   };
   
   return (
@@ -113,6 +129,16 @@ const Profile = () => {
                 }}
               >
                 Sign Out
+              </Button>
+              
+              <Button
+                variant="outline"
+                className="mt-2 w-full"
+                size="sm"
+                onClick={toggleDebugMode}
+              >
+                <Bug className="h-4 w-4 mr-1" />
+                {debugMode ? 'Hide Debug Info' : 'Show Debug Info'}
               </Button>
             </div>
           </CardContent>
@@ -209,6 +235,23 @@ const Profile = () => {
                       <p className="mt-1 text-sm text-muted-foreground">
                         Try using the {activeTab} feature to create some interactions
                       </p>
+                      {debugMode && (
+                        <div className="mt-4 p-4 border border-dashed rounded-md text-left">
+                          <h3 className="font-bold mb-2">Debug Information</h3>
+                          <p className="text-sm mb-2">Current user ID: {user?.id || 'Not logged in'}</p>
+                          <p className="text-sm mb-2">Active tab: {activeTab}</p>
+                          <p className="text-sm mb-2">Loading state: {loading ? 'Loading' : 'Not loading'}</p>
+                          <p className="text-sm mb-2">Error: {error?.message || 'No error'}</p>
+                          <Button
+                            variant="secondary"
+                            size="sm"
+                            className="mt-2"
+                            onClick={handleRefresh}
+                          >
+                            Force Refresh
+                          </Button>
+                        </div>
+                      )}
                     </div>
                   )}
                 </TabsContent>

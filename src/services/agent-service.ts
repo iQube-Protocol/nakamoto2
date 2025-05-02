@@ -26,6 +26,24 @@ export const processAgentInteraction = async (
     
     console.log(`Agent interaction: Storing for user ID ${session.user.id}`);
     
+    // Add direct database check to verify we can write to the table
+    const testQuery = await supabase
+      .from('user_interactions')
+      .select('count(*)')
+      .eq('user_id', session.user.id);
+      
+    if (testQuery.error) {
+      console.error('Error checking user_interactions table access:', testQuery.error);
+      toast.error('Database access error. Please try again.');
+      return {
+        success: false,
+        error: testQuery.error,
+        response: agentResponse,
+      };
+    }
+    
+    console.log('Table access check passed. Count:', testQuery.data?.[0]?.count);
+    
     // Store the interaction in the database with explicit user ID
     const result = await storeUserInteraction({
       query,
@@ -38,6 +56,26 @@ export const processAgentInteraction = async (
     if (!result.success) {
       console.error('Failed to store agent interaction:', result.error);
       toast.error('Failed to save your conversation history');
+      
+      // Try direct database insert as fallback
+      const { data: directData, error: directError } = await supabase.from('user_interactions').insert({
+        query,
+        response: agentResponse,
+        interaction_type: agentType,
+        metadata,
+        user_id: session.user.id
+      }).select();
+      
+      if (directError) {
+        console.error('Direct DB insert also failed:', directError);
+      } else {
+        console.log('Direct DB insert succeeded with ID:', directData?.[0]?.id);
+        return {
+          success: true,
+          response: agentResponse,
+          interactionId: directData?.[0]?.id
+        };
+      }
     } else {
       console.log('Successfully stored agent interaction with ID:', result.data?.id);
     }

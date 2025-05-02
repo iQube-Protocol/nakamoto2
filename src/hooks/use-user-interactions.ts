@@ -3,6 +3,7 @@ import { useEffect, useState, useCallback } from 'react';
 import { getUserInteractions, InteractionData, storeUserInteraction } from '@/services/user-interaction-service';
 import { useAuth } from './use-auth';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 export const useUserInteractions = (
   interactionType?: 'learn' | 'earn' | 'connect'
@@ -20,8 +21,12 @@ export const useUserInteractions = (
     }
     
     setLoading(true);
+    setError(null); // Reset error state before fetching
+    
     try {
-      console.log(`Fetching interactions for user: ${user.id} type: ${interactionType}`);
+      console.log(`Fetching interactions for user: ${user.id} type: ${interactionType || 'all'}`);
+      
+      // First try with the service function
       const { data, error } = await getUserInteractions(interactionType);
       
       if (error) {
@@ -29,23 +34,48 @@ export const useUserInteractions = (
         throw error;
       }
       
-      console.log(`Fetched interactions: ${data?.length || 0}`);
-      
-      // Add detailed logging
-      if (data && data.length > 0) {
-        console.log('First interaction:', {
-          id: data[0].id,
-          type: data[0].interaction_type,
-          query: data[0].query?.substring(0, 30) + '...',
-          response: data[0].response?.substring(0, 30) + '...',
-          user_id: data[0].user_id,
-          created_at: data[0].created_at
-        });
+      if (!data || data.length === 0) {
+        console.log(`No interactions found using service, trying direct DB query`);
+        
+        // If no data returned, try a direct DB query as a fallback
+        const { data: directData, error: directError } = await supabase
+          .from('user_interactions')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+          
+        if (interactionType) {
+          const filtered = directData?.filter(item => item.interaction_type === interactionType) || [];
+          console.log(`Direct DB query results (filtered): ${filtered.length} interactions`);
+          setInteractions(filtered);
+        } else {
+          console.log(`Direct DB query results: ${directData?.length || 0} interactions`);
+          setInteractions(directData || []);
+        }
+        
+        if (directError) {
+          throw directError;
+        }
       } else {
-        console.log('No interactions found for type:', interactionType);
+        console.log(`Fetched interactions: ${data.length || 0}`);
+        
+        // Add detailed logging
+        if (data && data.length > 0) {
+          console.log('First interaction:', {
+            id: data[0].id,
+            type: data[0].interaction_type,
+            query: data[0].query?.substring(0, 30) + '...',
+            response: data[0].response?.substring(0, 30) + '...',
+            user_id: data[0].user_id,
+            created_at: data[0].created_at
+          });
+        } else {
+          console.log('No interactions found for type:', interactionType);
+        }
+        
+        setInteractions(data || []);
       }
       
-      setInteractions(data || []);
       setError(null);
     } catch (err) {
       console.error('Error fetching interactions:', err);
@@ -59,6 +89,11 @@ export const useUserInteractions = (
   useEffect(() => {
     if (user) {
       fetchInteractions();
+    } else {
+      // Reset state if user is not logged in
+      setInteractions([]);
+      setError(null);
+      setLoading(false);
     }
   }, [fetchInteractions, user]);
 
