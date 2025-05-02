@@ -10,7 +10,7 @@ export const processAgentInteraction = async (
   metadata: any = null
 ) => {
   try {
-    console.log(`Processing ${agentType} agent interaction`);
+    console.log(`==== PROCESSING ${agentType} AGENT INTERACTION ====`);
     
     // Get the current user session to ensure we have a user_id
     const { data: { session } } = await supabase.auth.getSession();
@@ -24,48 +24,58 @@ export const processAgentInteraction = async (
       };
     }
     
-    console.log(`Agent interaction: Storing for user ID ${session.user.id}`);
+    const userId = session.user.id;
+    console.log(`Agent interaction: Processing for user ID ${userId}`);
     
-    // Store the interaction in the database with explicit user ID
-    const result = await storeUserInteraction({
-      query,
-      response: agentResponse,
-      interactionType: agentType,
-      metadata,
-      user_id: session.user.id
-    });
-    
-    if (!result.success) {
-      console.error('Failed to store agent interaction:', result.error);
-      toast.error('Failed to save your conversation history');
-      
-      // Try direct database insert as fallback
-      const { data: directData, error: directError } = await supabase.from('user_interactions').insert({
+    // Store the interaction directly in the database
+    console.log('Direct insert into user_interactions table...');
+    const { data: directData, error: directError } = await supabase
+      .from('user_interactions')
+      .insert({
         query,
         response: agentResponse,
         interaction_type: agentType,
         metadata,
-        user_id: session.user.id
-      }).select();
+        user_id: userId
+      })
+      .select();
+    
+    if (directError) {
+      console.error('Direct DB insert failed:', directError);
       
-      if (directError) {
-        console.error('Direct DB insert also failed:', directError);
+      // Try service method as fallback
+      console.log('Attempting service method fallback...');
+      const result = await storeUserInteraction({
+        query,
+        response: agentResponse,
+        interactionType: agentType,
+        metadata,
+        user_id: userId
+      });
+      
+      if (!result.success) {
+        console.error('Service fallback also failed:', result.error);
+        toast.error('Failed to save your conversation history');
       } else {
-        console.log('Direct DB insert succeeded with ID:', directData?.[0]?.id);
+        console.log('Service fallback succeeded with ID:', result.data?.id);
         return {
           success: true,
           response: agentResponse,
-          interactionId: directData?.[0]?.id
+          interactionId: result.data?.id
         };
       }
     } else {
-      console.log('Successfully stored agent interaction with ID:', result.data?.id);
+      console.log('Direct DB insert succeeded with ID:', directData?.[0]?.id);
+      return {
+        success: true,
+        response: agentResponse,
+        interactionId: directData?.[0]?.id
+      };
     }
     
     return {
       success: true,
       response: agentResponse,
-      interactionId: result.data?.id
     };
   } catch (error) {
     console.error('Error in agent interaction process:', error);

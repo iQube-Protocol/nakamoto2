@@ -1,6 +1,6 @@
 
 import { useEffect, useState, useCallback } from 'react';
-import { getUserInteractions, InteractionData, storeUserInteraction } from '@/services/user-interaction-service';
+import { getUserInteractions, storeUserInteraction } from '@/services/user-interaction-service';
 import { useAuth } from './use-auth';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -24,9 +24,9 @@ export const useUserInteractions = (
     setError(null); // Reset error state before fetching
     
     try {
-      console.log(`Fetching interactions for user: ${user.id} type: ${interactionType || 'all'}`);
+      console.log(`EMERGENCY DIRECT QUERY: Fetching for user: ${user.id}, type: ${interactionType || 'all'}`);
       
-      // Build query
+      // Use completely direct query approach
       let query = supabase
         .from('user_interactions')
         .select('*')
@@ -34,7 +34,6 @@ export const useUserInteractions = (
       
       // Filter by interaction type if specified
       if (interactionType) {
-        console.log(`Filtering by interaction type: ${interactionType}`);
         query = query.eq('interaction_type', interactionType);
       }
       
@@ -42,14 +41,14 @@ export const useUserInteractions = (
       const { data, error: fetchError } = await query.order('created_at', { ascending: false });
       
       if (fetchError) {
-        console.error('Error fetching interactions:', fetchError);
+        console.error('EMERGENCY DIRECT QUERY ERROR:', fetchError);
         throw fetchError;
       }
       
-      console.log(`Direct DB query returned ${data?.length || 0} total interactions`);
+      console.log(`EMERGENCY DIRECT QUERY SUCCESS: Found ${data?.length || 0} interactions`);
       
       if (data && data.length > 0) {
-        console.log('First interaction:', {
+        console.log('Sample interaction:', {
           id: data[0].id,
           type: data[0].interaction_type,
           created_at: data[0].created_at,
@@ -58,13 +57,13 @@ export const useUserInteractions = (
         
         setInteractions(data);
       } else {
-        console.log('No interactions found in database for this user and type');
+        console.log('No interactions found through direct query');
         setInteractions([]);
       }
       
       setError(null);
     } catch (err) {
-      console.error('Error fetching interactions:', err);
+      console.error('EMERGENCY DIRECT QUERY FATAL ERROR:', err);
       setError(err as Error);
       toast.error('Failed to load your interaction history');
       setInteractions([]); // Clear interactions on error

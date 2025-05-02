@@ -6,8 +6,9 @@ import { Button } from '@/components/ui/button';
 import { useUserInteractions } from '@/hooks/use-user-interactions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { format } from 'date-fns';
-import { User, Clock, MessageSquare, Layers, RefreshCw, Loader2, Bug, Plus } from 'lucide-react';
+import { User, Clock, MessageSquare, Layers, RefreshCw, Loader2, Bug, Plus, Database } from 'lucide-react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 const Profile = () => {
   const { user, signOut } = useAuth();
@@ -19,8 +20,43 @@ const Profile = () => {
     error, 
     createTestInteraction 
   } = useUserInteractions(activeTab);
-  const [debugMode, setDebugMode] = useState(true); // Set debug mode on by default to help troubleshoot
+  const [debugMode, setDebugMode] = useState(true);
   const [refreshCount, setRefreshCount] = useState(0);
+  const [directDbResults, setDirectDbResults] = useState<any[]>([]);
+  const [directDbLoading, setDirectDbLoading] = useState(false);
+  
+  // Check directly with the database on mount
+  useEffect(() => {
+    const checkDatabase = async () => {
+      if (!user) return;
+      
+      setDirectDbLoading(true);
+      try {
+        console.log(`VERIFICATION CHECK: Querying DB directly for user ${user.id}`);
+        
+        // Direct query to see what's in the database
+        const { data, error } = await supabase
+          .from('user_interactions')
+          .select('*')
+          .eq('user_id', user.id)
+          .order('created_at', { ascending: false });
+        
+        if (error) {
+          console.error('VERIFICATION ERROR:', error);
+          toast.error('DB verification failed');
+        } else {
+          console.log(`VERIFICATION SUCCESS: Found ${data?.length || 0} total interactions in DB`);
+          setDirectDbResults(data || []);
+        }
+      } catch (err) {
+        console.error('VERIFICATION FATAL ERROR:', err);
+      } finally {
+        setDirectDbLoading(false);
+      }
+    };
+    
+    checkDatabase();
+  }, [user, refreshCount]);
   
   // Force refresh interactions whenever tab changes or component mounts
   useEffect(() => {
@@ -235,6 +271,46 @@ const Profile = () => {
                     </div>
                   )}
                   
+                  {/* DB Verification Panel */}
+                  <div className="mt-4 p-4 border border-dashed rounded-md border-yellow-500 bg-yellow-50">
+                    <h3 className="font-bold mb-2 flex items-center">
+                      <Database className="h-4 w-4 mr-2" /> Database Verification
+                    </h3>
+                    
+                    {directDbLoading ? (
+                      <div className="flex items-center justify-center py-4">
+                        <Loader2 className="animate-spin h-5 w-5 mr-2" />
+                        <span>Checking database...</span>
+                      </div>
+                    ) : (
+                      <>
+                        <p className="text-sm mb-2">Direct database query found: <strong>{directDbResults.length}</strong> total interactions</p>
+                        {directDbResults.length > 0 ? (
+                          <>
+                            <p className="text-sm mb-2">First result:</p>
+                            <div className="bg-white p-2 rounded text-xs">
+                              <p>ID: {directDbResults[0].id}</p>
+                              <p>Type: {directDbResults[0].interaction_type}</p>
+                              <p>Created: {directDbResults[0].created_at}</p>
+                              <p>Query: {directDbResults[0].query?.substring(0, 50)}...</p>
+                            </div>
+                          </>
+                        ) : (
+                          <p className="text-sm text-red-500">No interactions found in database for your user ID.</p>
+                        )}
+                      </>
+                    )}
+                    
+                    <Button
+                      variant="secondary"
+                      size="sm"
+                      className="mt-2"
+                      onClick={handleRefresh}
+                    >
+                      Refresh Database Check
+                    </Button>
+                  </div>
+                  
                   {/* Always show debug info if enabled */}
                   {debugMode && (
                     <div className="mt-4 p-4 border border-dashed rounded-md text-left">
@@ -244,7 +320,8 @@ const Profile = () => {
                       <p className="text-sm mb-2">Loading state: {loading ? 'Loading' : 'Not loading'}</p>
                       <p className="text-sm mb-2">Error: {error?.message || 'No error'}</p>
                       <p className="text-sm mb-2">Refresh count: {refreshCount}</p>
-                      <p className="text-sm mb-2">Interactions found: {interactions?.length || 0}</p>
+                      <p className="text-sm mb-2">Hook interactions found: {interactions?.length || 0}</p>
+                      <p className="text-sm mb-2">DB interactions found: {directDbResults.length}</p>
                       <p className="text-sm mb-2">Interactions data:</p>
                       <pre className="text-xs bg-gray-100 p-2 rounded max-h-40 overflow-auto">
                         {JSON.stringify(interactions, null, 2)}
