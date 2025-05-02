@@ -4,10 +4,12 @@ import { useMCP } from '@/hooks/use-mcp';
 import { useDocumentNavigation } from './document-browser/useDocumentNavigation';
 import { useDocumentFetching } from './document-browser/useDocumentFetching';
 import { useInitialLoad } from './document-browser/useInitialLoad';
+import { toast } from 'sonner';
 
 export function useDocumentBrowser() {
   const { documents, isLoading, driveConnected, listDocuments, forceRefreshDocuments } = useMCP();
   const [isOpen, setIsOpen] = useState(false);
+  const [apiErrorCount, setApiErrorCount] = useState(0);
   
   const {
     currentFolder,
@@ -25,14 +27,43 @@ export function useDocumentBrowser() {
     forceRefreshCurrentFolder: fetchForceRefreshCurrentFolder
   } = useDocumentFetching(listDocuments, forceRefreshDocuments, driveConnected);
   
+  // Reset error count when dialog closes
+  useEffect(() => {
+    if (!isOpen) {
+      setApiErrorCount(0);
+    }
+  }, [isOpen]);
+  
   // Create a callback for refreshing the current folder
   const refreshCurrentFolder = useCallback(() => {
-    return fetchRefreshCurrentFolder(currentFolder);
-  }, [fetchRefreshCurrentFolder, currentFolder]);
+    if (apiErrorCount > 3) {
+      console.log('Too many API errors, preventing further requests');
+      toast.error('Google Drive connection issues', {
+        description: 'Please try reconnecting to Google Drive'
+      });
+      return Promise.resolve([]);
+    }
+    
+    return fetchRefreshCurrentFolder(currentFolder)
+      .catch(err => {
+        console.error('Error refreshing folder:', err);
+        setApiErrorCount(prev => prev + 1);
+        return [];
+      });
+  }, [fetchRefreshCurrentFolder, currentFolder, apiErrorCount]);
   
   // Create a callback for force refreshing the current folder
   const forceRefreshCurrentFolder = useCallback(() => {
-    return fetchForceRefreshCurrentFolder(currentFolder);
+    if (apiErrorCount > 3) {
+      setApiErrorCount(0); // Reset on manual refresh
+    }
+    
+    return fetchForceRefreshCurrentFolder(currentFolder)
+      .catch(err => {
+        console.error('Error force refreshing folder:', err);
+        setApiErrorCount(prev => prev + 1);
+        return [];
+      });
   }, [fetchForceRefreshCurrentFolder, currentFolder]);
   
   // Use the initialLoad hook with the refreshCurrentFolder callback
@@ -45,10 +76,10 @@ export function useDocumentBrowser() {
   
   // If we have credentials stored but haven't fetched documents yet
   useEffect(() => {
-    if (driveConnected && isOpen && documents.length === 0 && !isLoading && !isInitialLoad) {
+    if (driveConnected && isOpen && documents.length === 0 && !isLoading && !isInitialLoad && apiErrorCount < 3) {
       refreshCurrentFolder();
     }
-  }, [driveConnected, isOpen, documents.length, isLoading, isInitialLoad, refreshCurrentFolder]);
+  }, [driveConnected, isOpen, documents.length, isLoading, isInitialLoad, refreshCurrentFolder, apiErrorCount]);
 
   return {
     documents,
@@ -64,6 +95,7 @@ export function useDocumentBrowser() {
     refreshCurrentFolder,
     forceRefreshCurrentFolder,
     fetchError,
-    isRefreshing
+    isRefreshing,
+    apiErrorCount
   };
 }

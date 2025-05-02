@@ -13,6 +13,8 @@ export class GoogleApiLoader {
   private client: GoogleApiClient;
   private state: GoogleApiState;
   private events: GoogleApiEvents;
+  private lastLoadAttemptTime: number = 0;
+  private loadAttemptCooldown: number = 5000; // 5 seconds between load attempts
   
   constructor(options: GoogleApiLoaderOptions = {}) {
     this.client = new GoogleApiClient();
@@ -24,8 +26,21 @@ export class GoogleApiLoader {
    * Load Google API script dynamically with improved error handling and retry logic
    */
   public loadGoogleApi(): void {
-    if (typeof window !== 'undefined' && !this.state.isLoaded() && !this.state.getApiLoadPromise() && !this.state.isInInitializingState()) {
+    // Only attempt to load if we're not already loading and cooldown period has passed
+    const now = Date.now();
+    if (now - this.lastLoadAttemptTime < this.loadAttemptCooldown) {
+      console.log('MCP: Ignoring load attempt due to cooldown period');
+      return;
+    }
+    
+    // Return early if already loaded or loading in progress
+    if (typeof window !== 'undefined' && 
+        !this.state.isLoaded() && 
+        !this.state.getApiLoadPromise() && 
+        !this.state.isInInitializingState()) {
+      
       console.log('MCP: Loading Google API scripts...');
+      this.lastLoadAttemptTime = now;
       
       this.state.setInitializing(true);
       this.events.triggerLoadStart();
@@ -56,6 +71,7 @@ export class GoogleApiLoader {
           src: 'https://apis.google.com/js/api.js',
           async: true,
           onLoad: () => {
+            console.log('GAPI script loaded successfully');
             this.state.resetLoadAttempts();
             this.onGapiLoaded();
             gapiLoaded = true;
@@ -67,6 +83,7 @@ export class GoogleApiLoader {
             resolve(false);
           }
         }, this.state.getMaxLoadAttempts()).catch(() => {
+          console.log('GAPI script loading failed after retries');
           this.state.setInitializing(false);
           resolve(false);
         });
@@ -76,6 +93,7 @@ export class GoogleApiLoader {
           src: 'https://accounts.google.com/gsi/client',
           async: true,
           onLoad: () => {
+            console.log('GSI script loaded successfully');
             gsiLoaded = true;
             checkAllLoaded();
           },
@@ -85,14 +103,13 @@ export class GoogleApiLoader {
             resolve(false);
           }
         }, 2).catch(() => {
+          console.log('GSI script loading failed after retries');
           this.state.setInitializing(false);
           resolve(false);
         }); // Only retry once for GSI
-      }).catch((error) => {
-        console.error('MCP: Error loading Google API scripts:', error);
+      }).finally(() => {
+        // Always clean up, whether successful or not
         this.state.setInitializing(false);
-        this.reset();
-        return false; // Explicitly return a boolean value here
       }));
     }
   }
@@ -107,11 +124,10 @@ export class GoogleApiLoader {
     // If we're in the process of loading, wait for it
     if (this.state.getApiLoadPromise()) {
       try {
-        // Explicitly cast the result to boolean to ensure type safety
-        const loadResult: boolean = await this.state.getApiLoadPromise()!;
+        const loadResult = await this.state.getApiLoadPromise();
         
         // After scripts are loaded, ensure client is initialized
-        if (!this.state.isInitialized()) {
+        if (loadResult && !this.state.isInitialized()) {
           this.client.setGapi((window as any).gapi);
           
           // Check if gapi is available now
@@ -129,7 +145,7 @@ export class GoogleApiLoader {
           return success;
         }
         
-        return loadResult;
+        return !!loadResult;
       } catch (e) {
         console.error('Error ensuring Google API loaded:', e);
         // If promise failed, reset it so we can try loading again
