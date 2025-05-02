@@ -83,6 +83,7 @@ export class GoogleApiLoader {
     // First check if APIs are already loaded
     if (this.stateManager.checkGoogleApiGlobals()) {
       console.log('MCP: Google APIs already loaded');
+      this.gapi = (window as any).gapi;
       this.stateManager.setLoaded(true);
       if (this.onApiLoadComplete) {
         this.onApiLoadComplete();
@@ -121,6 +122,7 @@ export class GoogleApiLoader {
         if (gapiLoaded && gsiLoaded && !timeoutTriggered) {
           clearTimeout(timeoutId);
           console.log('MCP: Both Google APIs loaded successfully');
+          this.gapi = (window as any).gapi;
           if (this.onApiLoadComplete) {
             this.onApiLoadComplete();
           }
@@ -236,14 +238,26 @@ export class GoogleApiLoader {
    */
   public async ensureGoogleApiLoaded(): Promise<boolean> {
     // Quick check if API is already loaded
-    if (this.stateManager.isLoaded() || this.stateManager.checkGoogleApiGlobals()) {
+    if (this.stateManager.isLoaded() && this.stateManager.checkGoogleApiGlobals()) {
+      console.log('MCP: Google API already loaded, returning true immediately');
+      this.gapi = (window as any).gapi;
+      return true;
+    }
+    
+    // Check if gapi is available in window
+    if ((window as any).gapi && (window as any).google?.accounts) {
+      console.log('MCP: Google APIs detected in window, setting loaded state');
+      this.gapi = (window as any).gapi;
       this.stateManager.setLoaded(true);
       return true;
     }
     
+    console.log('MCP: Ensuring Google API is loaded...');
+    
     const currentPromise = this.stateManager.getApiLoadPromise();
     if (currentPromise) {
       try {
+        console.log('MCP: Waiting for existing API load promise to resolve...');
         const loadTimeout = new Promise<boolean>((_, reject) => {
           setTimeout(() => reject(new Error('Google API loading timed out')), this.apiLoadTimeout);
         });
@@ -251,6 +265,7 @@ export class GoogleApiLoader {
         // Race between the loading promise and timeout
         const result = await Promise.race([currentPromise, loadTimeout]);
         this.stateManager.setLoaded(result);
+        console.log('MCP: API load promise resolved with result:', result);
         return result;
       } catch (e) {
         console.error('Error waiting for Google API to load:', e);
@@ -260,6 +275,7 @@ export class GoogleApiLoader {
         
         // Try again if we haven't exceeded max attempts
         if (this.stateManager.getLoadAttempts() < this.stateManager.getState().maxLoadAttempts) {
+          console.log('MCP: Retrying API load after failure');
           this.stateManager.setApiLoadPromise(null);
           // Return the result of recursive call
           return this.ensureGoogleApiLoaded();
@@ -269,6 +285,7 @@ export class GoogleApiLoader {
       }
     } else {
       // If apiLoadPromise doesn't exist yet, start loading process
+      console.log('MCP: No existing load promise, initiating API loading');
       this.loadGoogleApi();
       
       const newPromise = this.stateManager.getApiLoadPromise();
@@ -278,7 +295,9 @@ export class GoogleApiLoader {
       }
       
       try {
+        console.log('MCP: Waiting for new API load promise to resolve...');
         const result = await newPromise;
+        console.log('MCP: New API load promise resolved with result:', result);
         return result;
       } catch (e) {
         console.error('Error starting Google API load:', e);
@@ -291,6 +310,10 @@ export class GoogleApiLoader {
    * Get the Google API client
    */
   public getGapiClient() {
+    // Make sure we always return the most up-to-date gapi reference
+    if ((window as any).gapi) {
+      this.gapi = (window as any).gapi;
+    }
     return this.gapi;
   }
   
@@ -298,7 +321,21 @@ export class GoogleApiLoader {
    * Get the load state
    */
   public isLoaded(): boolean {
-    return this.stateManager.isLoaded();
+    // First check the state manager
+    if (this.stateManager.isLoaded()) {
+      return true;
+    }
+    
+    // Also check if APIs are available in window 
+    // (they might have been loaded by another script)
+    const apisAvailable = this.stateManager.checkGoogleApiGlobals();
+    if (apisAvailable) {
+      // Update our state
+      this.stateManager.setLoaded(true);
+      this.gapi = (window as any).gapi;
+    }
+    
+    return apisAvailable;
   }
   
   /**

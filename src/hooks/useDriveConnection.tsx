@@ -11,6 +11,7 @@ export function useDriveConnection() {
   const [connectionAttempts, setConnectionAttempts] = useState(0);
   const [connectionTimeout, setConnectionTimeout] = useState<NodeJS.Timeout | null>(null);
   const [apiErrorCount, setApiErrorCount] = useState(0);
+  const [lastConnectionResult, setLastConnectionResult] = useState<boolean | null>(null);
   
   // Try to load saved credentials from localStorage
   useEffect(() => {
@@ -48,6 +49,24 @@ export function useDriveConnection() {
       return () => clearInterval(interval);
     }
   }, [apiErrorCount, client]);
+  
+  // Auto-reconnect if we have cached credentials and still show connected status
+  useEffect(() => {
+    const savedClientId = localStorage.getItem('gdrive-client-id');
+    const savedApiKey = localStorage.getItem('gdrive-api-key');
+    const cachedToken = localStorage.getItem('gdrive-auth-token');
+    
+    // If we have credentials, connection status is true, but last result was false
+    // try to reconnect once
+    if (savedClientId && savedApiKey && cachedToken && 
+        driveConnected && lastConnectionResult === false && 
+        client && !connectionInProgress) {
+      console.log('Drive appears connected but last attempt failed. Trying auto-reconnect...');
+      
+      // Try to reconnect with cached credentials
+      handleConnect();
+    }
+  }, [client, driveConnected, lastConnectionResult]);
   
   // Optimized connection handler with better error handling and timeout
   const handleConnect = useCallback(async () => {
@@ -100,6 +119,9 @@ export function useDriveConnection() {
       const success = await connectToDrive(clientId, apiKey);
       console.log('Drive connection result:', success);
       
+      // Save the last connection result
+      setLastConnectionResult(success);
+      
       // Clear the timeout as we got a response
       clearTimeout(timeout);
       setConnectionTimeout(null);
@@ -119,6 +141,7 @@ export function useDriveConnection() {
       return success;
     } catch (error) {
       console.error('Connection error:', error);
+      setLastConnectionResult(false);
       
       // Check if this might be an API loading issue
       if (error instanceof Error && (error.message.includes('gapi') || 
@@ -171,6 +194,7 @@ export function useDriveConnection() {
         setConnectionInProgress(false);
         setConnectionAttempts(0);
         setApiErrorCount(0);
+        setLastConnectionResult(null);
         
         // Use MCP reset if available, otherwise do a local reset
         if (mcpResetConnection) {

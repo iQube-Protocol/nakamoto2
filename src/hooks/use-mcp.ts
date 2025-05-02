@@ -19,6 +19,7 @@ export function useMCP() {
     if (user) {
       // Check if we already have a connection to Google Drive
       const hasConnection = localStorage.getItem('gdrive-connected') === 'true';
+      console.log('useMCP: Initial connection state from localStorage:', hasConnection);
       
       const mcpClient = getMCPClient({
         // Check for metisActive status from localStorage
@@ -54,16 +55,21 @@ export function useMCP() {
       
       // Use cached token if available
       const cachedToken = localStorage.getItem('gdrive-auth-token');
+      console.log('useMCP: Cached auth token exists:', !!cachedToken);
       
       console.log('useMCP: Connecting to Drive with clientId, apiKey, and cachedToken');
       // Connect to Google Drive with the provided credentials
       const success = await client.connectToDrive(clientId, apiKey, cachedToken);
       
+      console.log('useMCP: Drive connection result:', success);
       if (success) {
         localStorage.setItem('gdrive-connected', 'true');
         setDriveConnected(true);
         return true;
       } else {
+        // Make sure we clean up any stale state if connection failed
+        localStorage.setItem('gdrive-connected', 'false');
+        setDriveConnected(false);
         return false;
       }
     } catch (error) {
@@ -71,6 +77,10 @@ export function useMCP() {
       toast.error('Failed to connect to Google Drive', {
         description: error instanceof Error ? error.message : 'Unknown error occurred'
       });
+      
+      // Make sure we clean up on error
+      localStorage.setItem('gdrive-connected', 'false');
+      setDriveConnected(false);
       return false;
     } finally {
       setIsLoading(false);
@@ -228,6 +238,22 @@ export function useMCP() {
     
     return isLoaded;
   }, [client]);
+
+  // Monitor drive connection status
+  useEffect(() => {
+    if (client && driveConnected) {
+      // Periodically verify the connection is still valid
+      const intervalId = setInterval(() => {
+        const isConnected = client.isConnectedToDrive();
+        if (driveConnected !== isConnected) {
+          console.log('useMCP: Connection state changed:', isConnected);
+          setDriveConnected(isConnected);
+        }
+      }, 30000); // Check every 30 seconds
+      
+      return () => clearInterval(intervalId);
+    }
+  }, [client, driveConnected]);
 
   return {
     client,

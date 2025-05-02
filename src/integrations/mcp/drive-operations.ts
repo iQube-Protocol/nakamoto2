@@ -1,6 +1,6 @@
 
 import { toast } from 'sonner';
-import { GoogleApiLoader } from './api-loader';
+import { GoogleApiLoader } from './api/google-api-loader';
 import { ContextManager } from './context-manager';
 
 /**
@@ -14,6 +14,12 @@ export class DriveOperations {
   constructor(apiLoader: GoogleApiLoader, contextManager: ContextManager) {
     this.apiLoader = apiLoader;
     this.contextManager = contextManager;
+    
+    // Check if we already have a connection to Google Drive from localStorage
+    if (typeof window !== 'undefined') {
+      this.isAuthenticated = localStorage.getItem('gdrive-connected') === 'true';
+      console.log('MCP: Drive connection state from localStorage:', this.isAuthenticated);
+    }
   }
   
   /**
@@ -74,12 +80,13 @@ export class DriveOperations {
           
           // Test if the token is still valid with a simple API call
           try {
-            await gapi.client.drive.files.list({
+            const response = await gapi.client.drive.files.list({
               pageSize: 1,
               fields: 'files(id)'
             });
             
             // If we got here, the token is valid
+            console.log('MCP: Successfully authenticated with Google Drive using cached token', response);
             this.isAuthenticated = true;
             localStorage.setItem('gdrive-connected', 'true');
             console.log('Successfully authenticated with Google Drive using cached token');
@@ -87,6 +94,9 @@ export class DriveOperations {
           } catch (e) {
             // Token is invalid, proceed with normal flow
             console.log('Cached token is invalid, proceeding with regular auth flow');
+            // Clear the invalid token
+            localStorage.removeItem('gdrive-auth-token');
+            gapi.client.setToken(null);
           }
         } catch (e) {
           console.error('Error parsing cached token:', e);
@@ -120,22 +130,45 @@ export class DriveOperations {
             callback: (tokenResponse: any) => {
               clearTimeout(authTimeout);
               if (tokenResponse && tokenResponse.access_token) {
+                console.log('MCP: Received access token from Google OAuth', tokenResponse);
                 this.isAuthenticated = true;
                 localStorage.setItem('gdrive-connected', 'true');
                 
                 // Cache the token
                 try {
-                  localStorage.setItem('gdrive-auth-token', JSON.stringify(gapi.client.getToken()));
+                  const currentToken = gapi.client.getToken();
+                  console.log('MCP: Caching token to localStorage', currentToken);
+                  localStorage.setItem('gdrive-auth-token', JSON.stringify(currentToken));
                 } catch (e) {
                   console.error('Failed to cache token:', e);
                 }
                 
-                toast.success('Connected to Google Drive', {
-                  description: 'Your Google Drive documents are now available to the AI agents'
+                // Verify the connection by making a test API call
+                gapi.client.drive.files.list({
+                  pageSize: 1,
+                  fields: 'files(id)'
+                })
+                .then(() => {
+                  console.log('MCP: Test API call successful, connection verified');
+                  toast.success('Connected to Google Drive', {
+                    description: 'Your Google Drive documents are now available to the AI agents'
+                  });
+                  resolve(true);
+                })
+                .catch(error => {
+                  console.error('MCP: Test API call failed after authentication:', error);
+                  toast.error('Authentication succeeded but API access failed', {
+                    description: 'Please try again or check your Google Drive permissions'
+                  });
+                  this.isAuthenticated = false;
+                  localStorage.setItem('gdrive-connected', 'false');
+                  resolve(false);
                 });
-                console.log('Successfully authenticated with Google Drive');
-                resolve(true);
               } else {
+                console.error('MCP: No access token received from Google OAuth');
+                toast.error('Authentication failed', {
+                  description: 'No access token received'
+                });
                 resolve(false);
               }
             },
@@ -151,7 +184,7 @@ export class DriveOperations {
           
           // Request access token
           console.log('MCP: Requesting OAuth token');
-          tokenClient.requestAccessToken({ prompt: 'consent' }); // Changed from '' to 'consent' to ensure proper auth flow
+          tokenClient.requestAccessToken({ prompt: 'consent' });
         } catch (e) {
           clearTimeout(authTimeout);
           console.error('Error requesting access token:', e);
@@ -328,7 +361,21 @@ export class DriveOperations {
    * Check if connected to Google Drive
    */
   isConnectedToDrive(): boolean {
-    return this.isAuthenticated || localStorage.getItem('gdrive-connected') === 'true';
+    // First check the instance variable
+    if (this.isAuthenticated) {
+      return true;
+    }
+    
+    // Then check localStorage as a fallback
+    const localStorageConnected = localStorage.getItem('gdrive-connected') === 'true';
+    
+    // If localStorage says we're connected but our instance doesn't reflect that,
+    // update the instance variable
+    if (localStorageConnected && !this.isAuthenticated) {
+      this.isAuthenticated = true;
+    }
+    
+    return this.isAuthenticated;
   }
   
   /**
@@ -336,5 +383,11 @@ export class DriveOperations {
    */
   setAuthenticationState(state: boolean): void {
     this.isAuthenticated = state;
+    localStorage.setItem('gdrive-connected', state ? 'true' : 'false');
+    
+    // If setting to false, also clear any cached auth token
+    if (!state) {
+      localStorage.removeItem('gdrive-auth-token');
+    }
   }
 }
