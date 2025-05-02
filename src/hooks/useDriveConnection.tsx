@@ -3,14 +3,17 @@ import { useState, useEffect, useCallback } from 'react';
 import { useMCP } from '@/hooks/use-mcp';
 import { toast } from 'sonner';
 
+/**
+ * Hook for managing Google Drive connection and credentials
+ */
 export function useDriveConnection() {
-  const { driveConnected, connectToDrive, isLoading, client } = useMCP();
+  const { driveConnected, connectToDrive, isLoading, client, resetConnection: resetMcpConnection } = useMCP();
   const [clientId, setClientId] = useState('');
   const [apiKey, setApiKey] = useState('');
   const [connectionInProgress, setConnectionInProgress] = useState(false);
   const [lastConnectionAttempt, setLastConnectionAttempt] = useState(0);
   
-  // Try to load saved credentials from localStorage
+  // Load saved credentials from localStorage
   useEffect(() => {
     const savedClientId = localStorage.getItem('gdrive-client-id');
     const savedApiKey = localStorage.getItem('gdrive-api-key');
@@ -23,7 +26,7 @@ export function useDriveConnection() {
     }
   }, [client]);
   
-  // Optimized connection handler with debounce and better state management
+  // Handle connection with throttling and better state management
   const handleConnect = useCallback(async () => {
     if (!clientId || !apiKey) {
       toast.error('Missing Google API credentials', {
@@ -38,7 +41,7 @@ export function useDriveConnection() {
       return false;
     }
     
-    // Don't allow rapid reconnection attempts (throttle to once per 3 seconds)
+    // Don't allow rapid reconnection attempts
     const now = Date.now();
     if (now - lastConnectionAttempt < 3000) {
       toast.info('Please wait before retrying connection');
@@ -84,28 +87,10 @@ export function useDriveConnection() {
     }
   }, [clientId, apiKey, connectToDrive, connectionInProgress, lastConnectionAttempt]);
   
-  // Reset connection state to allow reconnecting with improved cleanup
+  // Reset connection state
   const resetConnection = useCallback(() => {
-    if (client) {
-      localStorage.removeItem('gdrive-connected');
-      localStorage.removeItem('gdrive-auth-token');
-      // We don't clear the client ID and API key to make reconnection easier
-      
-      // Clear all cached folder data
-      const keys = [];
-      for (let i = 0; i < sessionStorage.length; i++) {
-        const key = sessionStorage.key(i);
-        if (key && key.startsWith('gdrive-folder-')) {
-          keys.push(key);
-        }
-      }
-      keys.forEach(key => sessionStorage.removeItem(key));
-      
-      toast.info('Google Drive connection reset', {
-        description: 'Please reconnect to continue'
-      });
-    }
-  }, [client]);
+    resetMcpConnection();
+  }, [resetMcpConnection]);
   
   return {
     driveConnected,
