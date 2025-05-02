@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export interface InteractionData {
@@ -13,7 +14,7 @@ export const storeUserInteraction = async (data: InteractionData) => {
     // Get current user from auth context or session if not provided explicitly
     if (!data.user_id) {
       const { data: { session } } = await supabase.auth.getSession();
-      data.user_id = session?.user.id;
+      data.user_id = session?.user?.id;
     }
     
     if (!data.user_id) {
@@ -23,22 +24,17 @@ export const storeUserInteraction = async (data: InteractionData) => {
 
     console.log('Storing interaction for user:', data.user_id, 'type:', data.interactionType);
 
-    // Add more detailed log
-    console.log('Full interaction data being stored:', { 
-      query: data.query,
-      response_length: data.response?.length || 0,
-      interaction_type: data.interactionType,
-      user_id: data.user_id,
-      has_metadata: !!data.metadata
-    });
-
-    const { error, data: insertedData } = await supabase.from('user_interactions').insert({
-      query: data.query,
-      response: data.response,
-      interaction_type: data.interactionType,
-      metadata: data.metadata,
-      user_id: data.user_id // Include the user_id in the insert
-    }).select();
+    // Insert the interaction into the database
+    const { error, data: insertedData } = await supabase
+      .from('user_interactions')
+      .insert({
+        query: data.query,
+        response: data.response,
+        interaction_type: data.interactionType,
+        metadata: data.metadata,
+        user_id: data.user_id
+      })
+      .select();
 
     if (error) {
       console.error('Error storing user interaction:', error);
@@ -46,22 +42,6 @@ export const storeUserInteraction = async (data: InteractionData) => {
     }
 
     console.log('Successfully stored user interaction with ID:', insertedData?.[0]?.id);
-    
-    // Double-check if the interaction was inserted correctly
-    if (insertedData && insertedData.length > 0) {
-      const { data: checkData, error: checkError } = await supabase
-        .from('user_interactions')
-        .select('id, user_id, interaction_type')
-        .eq('id', insertedData[0].id)
-        .single();
-        
-      if (checkError) {
-        console.error('Error verifying inserted interaction:', checkError);
-      } else {
-        console.log('Verified inserted interaction:', checkData);
-      }
-    }
-    
     return { success: true, error: null, data: insertedData?.[0] };
   } catch (error) {
     console.error('Unexpected error storing user interaction:', error);
@@ -71,7 +51,7 @@ export const storeUserInteraction = async (data: InteractionData) => {
 
 export const getUserInteractions = async (
   interactionType?: 'learn' | 'earn' | 'connect',
-  limit = 50, // Increased to show more interactions
+  limit = 50, 
   offset = 0
 ) => {
   try {
@@ -90,13 +70,13 @@ export const getUserInteractions = async (
     let queryBuilder = supabase
       .from('user_interactions')
       .select('*')
-      .eq('user_id', user_id) // Filter by the user's ID
-      .order('created_at', { ascending: false });
+      .eq('user_id', user_id);
 
     if (interactionType) {
-      console.log(`Applying filter for interaction type: ${interactionType}`);
       queryBuilder = queryBuilder.eq('interaction_type', interactionType);
     }
+    
+    queryBuilder = queryBuilder.order('created_at', { ascending: false });
     
     if (limit) {
       queryBuilder = queryBuilder.limit(limit);
@@ -114,34 +94,7 @@ export const getUserInteractions = async (
       return { data: null, error };
     }
 
-    // Debug logging
-    console.log('Raw query result:', {
-      query: 'user_interactions',
-      filter: interactionType || 'all',
-      user_id,
-      result_count: data?.length || 0
-    });
-    
-    // Log results
     console.log('Fetched interactions:', data?.length || 0, 'for type:', interactionType || 'all');
-    if (data?.length) {
-      console.log('Sample interaction:', {
-        id: data[0].id,
-        type: data[0].interaction_type,
-        created_at: data[0].created_at,
-        query_length: data[0].query?.length || 0,
-        response_length: data[0].response?.length || 0,
-        user_id: data[0].user_id
-      });
-    } else {
-      console.log('No interactions found. Query details:', {
-        user_id,
-        interaction_type: interactionType,
-        limit,
-        offset
-      });
-    }
-    
     return { data, error: null };
   } catch (error) {
     console.error('Unexpected error fetching user interactions:', error);
@@ -171,7 +124,7 @@ export const startUserSession = async () => {
     const { error } = await supabase.from('user_sessions').insert({
       device_info: deviceInfo,
       active: true,
-      user_id // Include the user_id in the insert
+      user_id
     });
 
     if (error) {
@@ -204,7 +157,7 @@ export const endUserSession = async (sessionId: string) => {
         session_end: new Date().toISOString(),
       })
       .eq('id', sessionId)
-      .eq('user_id', user_id); // Also filter by user_id for extra security
+      .eq('user_id', user_id);
 
     if (error) {
       console.error('Error ending user session:', error);

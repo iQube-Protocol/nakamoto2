@@ -8,7 +8,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { format } from 'date-fns';
 import { User, Clock, MessageSquare, Layers, RefreshCw, Loader2, Bug, Plus } from 'lucide-react';
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
 
 const Profile = () => {
   const { user, signOut } = useAuth();
@@ -20,42 +19,8 @@ const Profile = () => {
     error, 
     createTestInteraction 
   } = useUserInteractions(activeTab);
-  const [debugMode, setDebugMode] = useState(false);
+  const [debugMode, setDebugMode] = useState(true); // Set debug mode on by default to help troubleshoot
   const [refreshCount, setRefreshCount] = useState(0);
-  
-  // Debug current user info
-  useEffect(() => {
-    console.log("Profile component - Current user:", user);
-    
-    // Check database connection to ensure we can access data
-    async function checkConnection() {
-      if (user) {
-        try {
-          const { data, error } = await supabase
-            .from('user_interactions')
-            .select('count')
-            .eq('user_id', user.id);
-          
-          console.log("Direct DB check - Interactions count:", data);
-          if (error) console.error("Direct DB error:", error);
-          
-          // Also fetch some raw data to diagnose issues
-          const { data: rawData, error: rawError } = await supabase
-            .from('user_interactions')
-            .select('*')
-            .eq('user_id', user.id)
-            .limit(5);
-            
-          console.log("Raw interaction data:", rawData);
-          if (rawError) console.error("Raw interaction data error:", rawError);
-        } catch (e) {
-          console.error("Failed to check interactions count:", e);
-        }
-      }
-    }
-    
-    checkConnection();
-  }, [user, activeTab, refreshCount]); // Add refreshCount to re-run this check when user manually refreshes
   
   // Force refresh interactions whenever tab changes or component mounts
   useEffect(() => {
@@ -71,8 +36,9 @@ const Profile = () => {
       console.error('Profile: Error loading interactions:', error);
       toast.error(`Error loading interactions: ${error.message}`);
     }
-    if (interactions) {
-      console.log(`Profile: Loaded ${interactions?.length || 0} ${activeTab} interactions`);
+    
+    console.log(`Profile: Loaded ${interactions?.length || 0} ${activeTab} interactions`);
+    if (interactions && interactions.length > 0) {
       console.log('Profile: Interactions data sample:', interactions.slice(0, 3));
     }
   }, [interactions, error, activeTab]);
@@ -226,7 +192,7 @@ const Profile = () => {
                     </div>
                   ) : interactions && interactions.length > 0 ? (
                     <div className="space-y-4">
-                      {interactions.slice(0, 5).map((interaction) => (
+                      {interactions.map((interaction) => (
                         <Card key={interaction.id}>
                           <CardContent className="p-4">
                             <div className="flex justify-between items-center mb-2">
@@ -266,26 +232,31 @@ const Profile = () => {
                       >
                         <Plus className="h-4 w-4 mr-1" /> Create Test Interaction
                       </Button>
-                      
-                      {debugMode && (
-                        <div className="mt-4 p-4 border border-dashed rounded-md text-left">
-                          <h3 className="font-bold mb-2">Debug Information</h3>
-                          <p className="text-sm mb-2">Current user ID: {user?.id || 'Not logged in'}</p>
-                          <p className="text-sm mb-2">Active tab: {activeTab}</p>
-                          <p className="text-sm mb-2">Loading state: {loading ? 'Loading' : 'Not loading'}</p>
-                          <p className="text-sm mb-2">Error: {error?.message || 'No error'}</p>
-                          <p className="text-sm mb-2">Refresh count: {refreshCount}</p>
-                          <p className="text-sm mb-2">Interactions found: {interactions?.length || 0}</p>
-                          <Button
-                            variant="secondary"
-                            size="sm"
-                            className="mt-2"
-                            onClick={handleRefresh}
-                          >
-                            Force Refresh
-                          </Button>
-                        </div>
-                      )}
+                    </div>
+                  )}
+                  
+                  {/* Always show debug info if enabled */}
+                  {debugMode && (
+                    <div className="mt-4 p-4 border border-dashed rounded-md text-left">
+                      <h3 className="font-bold mb-2">Debug Information</h3>
+                      <p className="text-sm mb-2">Current user ID: {user?.id || 'Not logged in'}</p>
+                      <p className="text-sm mb-2">Active tab: {activeTab}</p>
+                      <p className="text-sm mb-2">Loading state: {loading ? 'Loading' : 'Not loading'}</p>
+                      <p className="text-sm mb-2">Error: {error?.message || 'No error'}</p>
+                      <p className="text-sm mb-2">Refresh count: {refreshCount}</p>
+                      <p className="text-sm mb-2">Interactions found: {interactions?.length || 0}</p>
+                      <p className="text-sm mb-2">Interactions data:</p>
+                      <pre className="text-xs bg-gray-100 p-2 rounded max-h-40 overflow-auto">
+                        {JSON.stringify(interactions, null, 2)}
+                      </pre>
+                      <Button
+                        variant="secondary"
+                        size="sm"
+                        className="mt-2"
+                        onClick={handleRefresh}
+                      >
+                        Force Refresh
+                      </Button>
                     </div>
                   )}
                 </TabsContent>

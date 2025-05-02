@@ -26,26 +26,6 @@ export const processAgentInteraction = async (
     
     console.log(`Agent interaction: Storing for user ID ${session.user.id}`);
     
-    // Add direct database check to verify we can write to the table but use safer syntax
-    const { data: testData, error: testError } = await supabase
-      .from('user_interactions')
-      .select('id')
-      .eq('user_id', session.user.id)
-      .limit(1);
-      
-    if (testError) {
-      console.error('Error checking user_interactions table access:', testError);
-      toast.error('Database access error. Please try again.');
-      return {
-        success: false,
-        error: testError,
-        response: agentResponse,
-      };
-    }
-    
-    // Log the check result
-    console.log('Table access check passed. Found rows:', testData?.length || 0);
-    
     // Store the interaction in the database with explicit user ID
     const result = await storeUserInteraction({
       query,

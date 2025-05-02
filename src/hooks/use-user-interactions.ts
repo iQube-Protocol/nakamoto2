@@ -26,46 +26,40 @@ export const useUserInteractions = (
     try {
       console.log(`Fetching interactions for user: ${user.id} type: ${interactionType || 'all'}`);
       
-      // Direct DB query for reliability
-      const { data: directData, error: directError } = await supabase
+      // Build query
+      let query = supabase
         .from('user_interactions')
         .select('*')
-        .eq('user_id', user.id)
-        .order('created_at', { ascending: false });
-        
-      if (directError) {
-        console.error('Direct DB query error:', directError);
-        throw directError;
-      }
-      
-      console.log(`Direct DB query returned ${directData?.length || 0} total interactions`);
+        .eq('user_id', user.id);
       
       // Filter by interaction type if specified
-      let filteredData = directData || [];
-      if (interactionType && filteredData.length > 0) {
-        filteredData = filteredData.filter(item => item.interaction_type === interactionType);
-        console.log(`Filtered to ${filteredData.length} ${interactionType} interactions`);
+      if (interactionType) {
+        console.log(`Filtering by interaction type: ${interactionType}`);
+        query = query.eq('interaction_type', interactionType);
       }
       
-      // If still no data and this isn't the initial load, create a test interaction
-      if (filteredData.length === 0) {
-        console.log('No interactions found, checking if we should create a test one');
+      // Order by created_at descending
+      const { data, error: fetchError } = await query.order('created_at', { ascending: false });
+      
+      if (fetchError) {
+        console.error('Error fetching interactions:', fetchError);
+        throw fetchError;
+      }
+      
+      console.log(`Direct DB query returned ${data?.length || 0} total interactions`);
+      
+      if (data && data.length > 0) {
+        console.log('First interaction:', {
+          id: data[0].id,
+          type: data[0].interaction_type,
+          created_at: data[0].created_at,
+          query_length: data[0].query?.length || 0,
+        });
         
-        // Only create test interaction if specifically requested (we'll do this in the Profile component)
-        setInteractions([]);
+        setInteractions(data);
       } else {
-        console.log(`Setting ${filteredData.length} interactions in state`);
-        
-        if (filteredData.length > 0) {
-          console.log('First interaction:', {
-            id: filteredData[0].id,
-            type: filteredData[0].interaction_type,
-            created_at: filteredData[0].created_at,
-            query_length: filteredData[0].query?.length || 0,
-          });
-        }
-        
-        setInteractions(filteredData);
+        console.log('No interactions found in database for this user and type');
+        setInteractions([]);
       }
       
       setError(null);
