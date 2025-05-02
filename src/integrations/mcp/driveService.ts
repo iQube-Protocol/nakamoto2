@@ -2,6 +2,7 @@
 import { GoogleApiLoader } from './googleApiLoader';
 import { DriveConnectionService } from './services/driveConnectionService';
 import { DriveDocumentService } from './services/driveDocumentService';
+import { DocumentContent } from './services/document/documentTypes';
 
 /**
  * Facade Service for Google Drive operations
@@ -39,11 +40,7 @@ export class DriveService {
   /**
    * Fetch a specific document content
    */
-  public async fetchDocumentContent(documentId: string): Promise<{
-    content: string;
-    fileName: string;
-    documentType: string;
-  } | null> {
+  public async fetchDocumentContent(documentId: string): Promise<DocumentContent | null> {
     return this.documentService.fetchDocumentContent(documentId);
   }
   
