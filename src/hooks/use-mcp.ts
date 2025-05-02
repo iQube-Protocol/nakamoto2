@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { MCPClient, getMCPClient } from '@/integrations/mcp/client';
+import { MCPClient, getMCPClient } from '@/integrations/mcp';
 import { useAuth } from '@/hooks/use-auth';
 import { toast } from 'sonner';
 
