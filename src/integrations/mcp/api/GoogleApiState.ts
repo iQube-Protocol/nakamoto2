@@ -9,6 +9,7 @@ export class GoogleApiState {
   private maxLoadAttempts: number = 3;
   private loadTimeout: NodeJS.Timeout | null = null;
   private apiLoadPromise: Promise<boolean> | null = null;
+  private isInitializing: boolean = false;
   
   /**
    * Check if API is loaded
@@ -36,6 +37,20 @@ export class GoogleApiState {
    */
   public setInitialized(initialized: boolean): void {
     this.apiInitialized = initialized;
+  }
+
+  /**
+   * Check if API is currently initializing
+   */
+  public isInInitializingState(): boolean {
+    return this.isInitializing;
+  }
+
+  /**
+   * Set API initializing state
+   */
+  public setInitializing(initializing: boolean): void {
+    this.isInitializing = initializing;
   }
   
   /**
@@ -108,6 +123,7 @@ export class GoogleApiState {
     this.apiInitialized = false;
     this.apiLoadPromise = null;
     this.scriptLoadAttempts = 0;
+    this.isInitializing = false;
     this.clearLoadTimeout();
   }
 }

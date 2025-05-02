@@ -24,9 +24,10 @@ export class GoogleApiLoader {
    * Load Google API script dynamically with improved error handling and retry logic
    */
   public loadGoogleApi(): void {
-    if (typeof window !== 'undefined' && !this.state.isLoaded() && !this.state.getApiLoadPromise()) {
+    if (typeof window !== 'undefined' && !this.state.isLoaded() && !this.state.getApiLoadPromise() && !this.state.isInInitializingState()) {
       console.log('MCP: Loading Google API scripts...');
       
+      this.state.setInitializing(true);
       this.events.triggerLoadStart();
       
       // Set a global timeout to prevent hanging
@@ -37,13 +38,14 @@ export class GoogleApiLoader {
       }, 15000)); // 15 second overall timeout
       
       // Create a promise that resolves when both scripts are loaded
-      this.state.setApiLoadPromise(new Promise<boolean>((resolve, reject) => {
+      this.state.setApiLoadPromise(new Promise<boolean>((resolve) => {
         let gapiLoaded = false;
         let gsiLoaded = false;
         
         const checkAllLoaded = () => {
           if (gapiLoaded && gsiLoaded) {
             this.state.clearLoadTimeout();
+            this.state.setInitializing(false);
             this.events.triggerLoadComplete();
             resolve(true);
           }
@@ -61,9 +63,13 @@ export class GoogleApiLoader {
           },
           onError: (e) => {
             console.error('Failed to load Google API script:', e);
-            reject(e);
+            this.state.setInitializing(false);
+            resolve(false);
           }
-        }, this.state.getMaxLoadAttempts()).catch(reject);
+        }, this.state.getMaxLoadAttempts()).catch(() => {
+          this.state.setInitializing(false);
+          resolve(false);
+        });
         
         // Load GSI script
         ScriptLoader.loadScript({
@@ -75,11 +81,16 @@ export class GoogleApiLoader {
           },
           onError: (e) => {
             console.error('Failed to load Google Sign-In script:', e);
-            reject(e);
+            this.state.setInitializing(false);
+            resolve(false);
           }
-        }, 2).catch(reject); // Only retry once for GSI
+        }, 2).catch(() => {
+          this.state.setInitializing(false);
+          resolve(false);
+        }); // Only retry once for GSI
       }).catch((error) => {
         console.error('MCP: Error loading Google API scripts:', error);
+        this.state.setInitializing(false);
         this.reset();
         return false; // Explicitly return a boolean value here
       }));
@@ -123,6 +134,7 @@ export class GoogleApiLoader {
         console.error('Error ensuring Google API loaded:', e);
         // If promise failed, reset it so we can try loading again
         this.state.setApiLoadPromise(null);
+        this.state.setInitializing(false);
         return false;
       }
     }
