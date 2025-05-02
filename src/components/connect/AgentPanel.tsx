@@ -4,7 +4,7 @@ import { AgentInterface } from '@/components/shared/agent';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { MetaQube, CommunityMetrics, BlakQube } from '@/lib/types';
-import { processAgentInteraction } from '@/services/agent-service';
+import { processAgentInteraction, getConversationContext } from '@/services/agent-service';
 
 interface AgentPanelProps {
   communityMetrics: CommunityMetrics;
@@ -24,13 +24,22 @@ const AgentPanel = ({
 
   const handleAIMessage = async (message: string) => {
     try {
+      // Get conversation context, including history if available
+      const contextResult = await getConversationContext(conversationId, 'connect');
+      
+      if (contextResult.conversationId !== conversationId) {
+        setConversationId(contextResult.conversationId);
+        console.log(`Setting new conversation ID: ${contextResult.conversationId}`);
+      }
+      
       const { data, error } = await supabase.functions.invoke('connect-ai', {
         body: { 
           message, 
           metaQube,
           blakQube,
           communityMetrics,
-          conversationId 
+          conversationId: contextResult.conversationId,
+          historicalContext: contextResult.historicalContext
         }
       });
       

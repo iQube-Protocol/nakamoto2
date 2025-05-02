@@ -9,6 +9,39 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      conversation_summaries: {
+        Row: {
+          conversation_id: string
+          conversation_type: string
+          created_at: string
+          id: string
+          included_interaction_ids: string[]
+          summary_text: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          conversation_id: string
+          conversation_type: string
+          created_at?: string
+          id?: string
+          included_interaction_ids?: string[]
+          summary_text: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          conversation_id?: string
+          conversation_type?: string
+          created_at?: string
+          id?: string
+          included_interaction_ids?: string[]
+          summary_text?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_interactions: {
         Row: {
           created_at: string | null
@@ -17,6 +50,7 @@ export type Database = {
           metadata: Json | null
           query: string
           response: string
+          summarized: boolean
           user_id: string
         }
         Insert: {
@@ -26,6 +60,7 @@ export type Database = {
           metadata?: Json | null
           query: string
           response: string
+          summarized?: boolean
           user_id: string
         }
         Update: {
@@ -35,6 +70,7 @@ export type Database = {
           metadata?: Json | null
           query?: string
           response?: string
+          summarized?: boolean
           user_id?: string
         }
         Relationships: [
