@@ -18,16 +18,37 @@ export class GoogleApiLoader {
   public onApiLoadStart: (() => void) | null = null;
   public onApiLoadComplete: (() => void) | null = null;
   private apiLoadTimeout: number = DEFAULT_TIMEOUT;
+  private apiLoadListeners: Array<() => void> = [];
   
-  constructor(
-    callbacks?: ApiLoadCallbacks
-  ) {
+  constructor(callbacks?: ApiLoadCallbacks) {
     this.onApiLoadStart = callbacks?.onApiLoadStart || null;
     this.onApiLoadComplete = callbacks?.onApiLoadComplete || null;
     this.stateManager = new ApiStateManager();
     
-    // Load Google API script if it's not already loaded
-    this.loadGoogleApi();
+    // Check if we're in a browser environment before trying to load the API
+    if (typeof window !== 'undefined') {
+      // Try to load API immediately, but don't block
+      setTimeout(() => this.loadGoogleApi(), 0);
+      
+      // Also set up a listener for when the page is fully loaded
+      if (document.readyState === 'complete') {
+        this.loadGoogleApi();
+      } else {
+        window.addEventListener('load', () => this.loadGoogleApi());
+      }
+    }
+  }
+  
+  /**
+   * Register a listener to be notified when the API is loaded
+   */
+  public addLoadListener(callback: () => void): void {
+    if (this.isLoaded()) {
+      // If already loaded, call the callback immediately
+      setTimeout(callback, 0);
+    } else {
+      this.apiLoadListeners.push(callback);
+    }
   }
   
   /**
@@ -38,6 +59,7 @@ export class GoogleApiLoader {
     if (typeof window === 'undefined') return;
     
     console.log('MCP: Forcefully reloading Google API scripts...');
+    toast.dismiss('google-api-loading');
     
     // Reset state
     this.stateManager.resetState();
@@ -50,22 +72,37 @@ export class GoogleApiLoader {
     ScriptLoader.removeGoogleApiScripts();
     ScriptLoader.resetGoogleApiGlobals();
     
-    // Reload the scripts
-    this.loadGoogleApi();
+    // Clear any cached tokens
+    localStorage.removeItem('gdrive-auth-token');
+    localStorage.removeItem('gdrive-connected');
+    
+    // Reset the load attempts to ensure we try again
+    this.stateManager.resetLoadAttempts();
+    
+    // Reload the scripts with a small delay to ensure cleanup is complete
+    setTimeout(() => this.loadGoogleApi(), 100);
+    
+    // Show a loading toast
+    toast.loading('Reloading Google API...', {
+      id: 'google-api-loading',
+      duration: 3000,
+    });
   }
   
   /**
    * Load Google API script dynamically with improved error handling
    */
   private loadGoogleApi(): void {
-    if (typeof window === 'undefined' || 
-        this.stateManager.isLoaded() || 
-        this.stateManager.getApiLoadPromise()) {
+    if (typeof window === 'undefined') return;
+    
+    // If already loaded or loading is in progress, don't start again
+    if (this.stateManager.isLoaded() || this.stateManager.getApiLoadPromise()) {
       return;
     }
     
     // Check if we've exceeded max attempts
     if (!this.stateManager.incrementLoadAttempts()) {
+      console.error('MCP: Maximum API load attempts reached');
       if (this.onApiLoadComplete) {
         this.onApiLoadComplete();
       }
@@ -88,6 +125,10 @@ export class GoogleApiLoader {
       if (this.onApiLoadComplete) {
         this.onApiLoadComplete();
       }
+      
+      // Notify any listeners
+      this.notifyLoadListeners();
+      
       this.stateManager.setApiLoadPromise(Promise.resolve(true));
       return;
     }
@@ -107,6 +148,12 @@ export class GoogleApiLoader {
             this.onApiLoadComplete();
           }
           
+          toast.dismiss('google-api-loading');
+          toast.error('Google API loading timed out', {
+            description: 'Please refresh the page and try again',
+            duration: 5000,
+          });
+          
           // Try again if we haven't exceeded max attempts
           if (this.stateManager.getLoadAttempts() < this.stateManager.getState().maxLoadAttempts) {
             console.log(`MCP: Retrying Google API load (Attempt ${this.stateManager.getLoadAttempts() + 1}/${this.stateManager.getState().maxLoadAttempts})`);
@@ -123,10 +170,20 @@ export class GoogleApiLoader {
           clearTimeout(timeoutId);
           console.log('MCP: Both Google APIs loaded successfully');
           this.gapi = (window as any).gapi;
+          this.stateManager.setLoaded(true);
+          
           if (this.onApiLoadComplete) {
             this.onApiLoadComplete();
           }
-          this.stateManager.setLoaded(true);
+          
+          // Notify any listeners
+          this.notifyLoadListeners();
+          
+          toast.dismiss('google-api-loading');
+          toast.success('Google API loaded successfully', {
+            duration: 2000,
+          });
+          
           resolve(true);
         }
       };
@@ -149,6 +206,22 @@ export class GoogleApiLoader {
     });
     
     this.stateManager.setApiLoadPromise(loadPromise);
+  }
+  
+  /**
+   * Notify all listeners that the API has loaded
+   */
+  private notifyLoadListeners(): void {
+    const listeners = [...this.apiLoadListeners];
+    this.apiLoadListeners = []; // Clear the list to prevent duplicate notifications
+    
+    listeners.forEach(callback => {
+      try {
+        callback();
+      } catch (e) {
+        console.error('Error in API load listener:', e);
+      }
+    });
   }
   
   /**
@@ -217,16 +290,22 @@ export class GoogleApiLoader {
         this.onApiLoadComplete();
       }
       
+      // Dismiss any existing toasts to prevent stacking
+      toast.dismiss('google-api-loading');
+      
       // Toast error message
       toast.error('Failed to load Google API script', {
-        description: 'Please check your internet connection and try again.'
+        description: 'Please check your internet connection and try again.',
+        duration: 5000
       });
       
       // Retry logic
       if (this.stateManager.getLoadAttempts() < this.stateManager.getState().maxLoadAttempts) {
         console.log(`MCP: Retrying Google API load after error (Attempt ${this.stateManager.getLoadAttempts() + 1}/${this.stateManager.getState().maxLoadAttempts})`);
         this.stateManager.setApiLoadPromise(null);
-        this.loadGoogleApi();
+        
+        // Add a small delay before retrying
+        setTimeout(() => this.loadGoogleApi(), 1000);
       } else {
         reject(error);
       }
@@ -254,23 +333,43 @@ export class GoogleApiLoader {
     
     console.log('MCP: Ensuring Google API is loaded...');
     
+    // Show a loading toast with short duration to prevent persistence
+    toast.loading('Loading Google API...', {
+      id: 'google-api-loading',
+      duration: 10000,
+    });
+    
     const currentPromise = this.stateManager.getApiLoadPromise();
     if (currentPromise) {
       try {
         console.log('MCP: Waiting for existing API load promise to resolve...');
+        
+        // Create a timeout promise to race against the API loading
         const loadTimeout = new Promise<boolean>((_, reject) => {
           setTimeout(() => reject(new Error('Google API loading timed out')), this.apiLoadTimeout);
         });
         
         // Race between the loading promise and timeout
-        const result = await Promise.race([currentPromise, loadTimeout]);
-        this.stateManager.setLoaded(result);
+        const result = await Promise.race([currentPromise, loadTimeout]).catch(e => {
+          console.error('MCP: API loading promise rejected:', e);
+          return false;
+        });
+        
+        // Dismiss the loading toast
+        toast.dismiss('google-api-loading');
+        
+        this.stateManager.setLoaded(!!result);
         console.log('MCP: API load promise resolved with result:', result);
-        return result;
+        return !!result;
       } catch (e) {
         console.error('Error waiting for Google API to load:', e);
+        
+        // Dismiss the loading toast
+        toast.dismiss('google-api-loading');
+        
         toast.error('Failed to load Google API', {
-          description: 'Please refresh the page and try again'
+          description: 'Please refresh the page and try again',
+          duration: 5000
         });
         
         // Try again if we haven't exceeded max attempts
@@ -291,16 +390,31 @@ export class GoogleApiLoader {
       const newPromise = this.stateManager.getApiLoadPromise();
       if (!newPromise) {
         console.error('Failed to initialize API loading process');
+        
+        // Dismiss the loading toast
+        toast.dismiss('google-api-loading');
+        
         return false;
       }
       
       try {
         console.log('MCP: Waiting for new API load promise to resolve...');
-        const result = await newPromise;
+        const result = await newPromise.catch(e => {
+          console.error('MCP: New API load promise rejected:', e);
+          return false;
+        });
+        
+        // Dismiss the loading toast
+        toast.dismiss('google-api-loading');
+        
         console.log('MCP: New API load promise resolved with result:', result);
-        return result;
+        return !!result;
       } catch (e) {
         console.error('Error starting Google API load:', e);
+        
+        // Dismiss the loading toast
+        toast.dismiss('google-api-loading');
+        
         return false;
       }
     }

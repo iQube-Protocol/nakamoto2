@@ -90,12 +90,9 @@ export class MCPClient {
    * Connect to Google Drive
    */
   async connectToDrive(clientId: string, apiKey: string, cachedToken?: string | null): Promise<boolean> {
-    const result = await this.driveOperations.connectToDrive(clientId, apiKey, cachedToken);
+    toast.dismiss(); // Dismiss any existing toasts to prevent stacking
     
-    // If connection failed, clear any toasts
-    if (!result) {
-      toast.dismiss();
-    }
+    const result = await this.driveOperations.connectToDrive(clientId, apiKey, cachedToken);
     
     return result;
   }
@@ -104,17 +101,17 @@ export class MCPClient {
    * List documents from Google Drive
    */
   async listDocuments(folderId?: string): Promise<any[]> {
+    toast.dismiss(); // Dismiss any existing toasts to prevent stacking
+    
     try {
       return await this.driveOperations.listDocuments(folderId);
     } catch (error) {
       console.error("Error listing documents:", error);
       
-      // Clear any existing toasts to prevent persistence
-      toast.dismiss();
-      
       toast.error('Could not retrieve documents', { 
         duration: 3000,
-        description: 'Please try reconnecting to Google Drive' 
+        description: 'Please try reconnecting to Google Drive',
+        id: 'list-documents-error',
       });
       
       return [];
@@ -125,17 +122,17 @@ export class MCPClient {
    * Fetch document content
    */
   async fetchDocumentContent(documentId: string): Promise<string | null> {
+    toast.dismiss(`doc-content-${documentId}`); // Dismiss document-specific toast
+    
     try {
       return await this.driveOperations.fetchDocumentContent(documentId);
     } catch (error) {
       console.error("Error fetching document content:", error);
       
-      // Clear any existing toasts to prevent persistence
-      toast.dismiss();
-      
       toast.error('Could not fetch document content', { 
         duration: 3000,
-        description: 'Please try reconnecting to Google Drive' 
+        description: 'Please try reconnecting to Google Drive',
+        id: 'fetch-document-error',
       });
       
       return null;
@@ -192,6 +189,13 @@ export class MCPClient {
   }
   
   /**
+   * Get the current connection status
+   */
+  getConnectionStatus(): 'disconnected' | 'connecting' | 'connected' | 'error' {
+    return this.driveOperations.getConnectionStatus();
+  }
+  
+  /**
    * Reset the drive connection state
    */
   resetDriveConnection(): void {
@@ -205,9 +209,15 @@ export class MCPClient {
     // Force reload Google API to ensure clean state
     this.apiLoader.reloadGoogleApi();
     
+    // Clean up any timers or intervals
+    if (typeof this.driveOperations.cleanup === 'function') {
+      this.driveOperations.cleanup();
+    }
+    
     toast.info('Google Drive connection has been reset', {
       description: 'You will need to reconnect to access your documents',
-      duration: 3000
+      duration: 3000,
+      id: 'connection-reset',
     });
   }
   
@@ -230,6 +240,21 @@ export class MCPClient {
    */
   resetApiLoadAttempts(): void {
     this.apiLoader.resetLoadAttempts();
+  }
+  
+  /**
+   * Add a listener for API loaded event
+   */
+  addApiLoadListener(callback: () => void): void {
+    if (typeof this.apiLoader.addLoadListener === 'function') {
+      this.apiLoader.addLoadListener(callback);
+    } else {
+      console.warn('MCP: addLoadListener not available in this version');
+      // Still try to call the callback if the API is already loaded
+      if (this.isApiLoaded()) {
+        setTimeout(callback, 0);
+      }
+    }
   }
   
   // Public getter for api loader's callbacks to support existing code

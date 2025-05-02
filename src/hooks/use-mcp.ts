@@ -12,6 +12,9 @@ export function useMCP() {
   const [isLoading, setIsLoading] = useState(false);
   const [isApiLoading, setIsApiLoading] = useState(false);
   const [apiLoadError, setApiLoadError] = useState<Error | null>(null);
+  const [connectionStatus, setConnectionStatus] = useState<'disconnected' | 'connecting' | 'connected' | 'error'>('disconnected');
+  const [loadedContextIds, setLoadedContextIds] = useState<string[]>([]);
+  
   const { user } = useAuth();
   
   // Initialize MCP client
@@ -38,6 +41,7 @@ export function useMCP() {
       setClient(mcpClient);
       setIsInitialized(true);
       setDriveConnected(hasConnection);
+      setConnectionStatus(hasConnection ? 'connected' : 'disconnected');
     }
   }, [user]);
   
@@ -46,12 +50,16 @@ export function useMCP() {
     if (!client) return false;
     
     setIsLoading(true);
+    setConnectionStatus('connecting');
+    
     try {
       // Validate that we have the required credentials
       if (!clientId || !apiKey) {
         toast.error('Missing Google API credentials', { 
-          duration: 3000 
+          duration: 3000,
+          id: 'mcp-credentials-error',
         });
+        setConnectionStatus('error');
         return false;
       }
       
@@ -60,6 +68,10 @@ export function useMCP() {
       console.log('useMCP: Cached auth token exists:', !!cachedToken);
       
       console.log('useMCP: Connecting to Drive with clientId, apiKey, and cachedToken');
+      
+      // Clear any existing connection-related toasts
+      toast.dismiss('mcp-connect');
+      
       // Connect to Google Drive with the provided credentials
       const success = await client.connectToDrive(clientId, apiKey, cachedToken);
       
@@ -67,23 +79,29 @@ export function useMCP() {
       if (success) {
         localStorage.setItem('gdrive-connected', 'true');
         setDriveConnected(true);
+        setConnectionStatus('connected');
         return true;
       } else {
         // Make sure we clean up any stale state if connection failed
         localStorage.setItem('gdrive-connected', 'false');
         setDriveConnected(false);
+        setConnectionStatus('error');
         return false;
       }
     } catch (error) {
       console.error('Error connecting to Drive:', error);
+      
+      toast.dismiss('mcp-connect');
       toast.error('Failed to connect to Google Drive', {
         description: error instanceof Error ? error.message : 'Unknown error occurred',
-        duration: 4000
+        duration: 4000,
+        id: 'mcp-connect-error',
       });
       
       // Make sure we clean up on error
       localStorage.setItem('gdrive-connected', 'false');
       setDriveConnected(false);
+      setConnectionStatus('error');
       return false;
     } finally {
       setIsLoading(false);
@@ -104,6 +122,7 @@ export function useMCP() {
       setDriveConnected(false);
       setDocuments([]);
       setApiLoadError(null);
+      setConnectionStatus('disconnected');
       
       // Clear cache
       for (const key in sessionStorage) {
@@ -111,20 +130,32 @@ export function useMCP() {
           sessionStorage.removeItem(key);
         }
       }
-      
-      toast.success('Google Drive connection reset', {
-        description: 'You can now reconnect to Google Drive',
-        duration: 3000
-      });
     }
   }, [client]);
+  
+  // Get the current connection status from the client
+  const getConnectionStatus = useCallback((): 'disconnected' | 'connecting' | 'connected' | 'error' => {
+    if (!client) return 'disconnected';
+    
+    // Check if the DriveOperations class has a status getter method
+    if (typeof client.getConnectionStatus === 'function') {
+      return client.getConnectionStatus();
+    }
+    
+    // Default to the driveConnected state if method is not available
+    return driveConnected ? 'connected' : 'disconnected';
+  }, [client, driveConnected]);
   
   // Optimized document listing with caching and better error handling
   const listDocuments = useCallback(async (folderId?: string): Promise<any[]> => {
     if (!client || !driveConnected) {
-      toast.error('Not connected to Google Drive', { 
-        duration: 3000 
-      });
+      // If error toast is already visible, don't show another one
+      if (client) {
+        toast.error('Not connected to Google Drive', { 
+          duration: 3000,
+          id: 'mcp-list-error',
+        });
+      }
       return [];
     }
     
@@ -161,21 +192,35 @@ export function useMCP() {
       return docs;
     } catch (error) {
       console.error('Error listing documents:', error);
+      
+      // Clear persistent toasts
+      toast.dismiss('mcp-list');
+      
       toast.error('Failed to list documents', {
         description: error instanceof Error ? error.message : 'Unknown error occurred',
-        duration: 4000
+        duration: 4000,
+        id: 'mcp-list-error',
       });
+      
+      // Check if this is due to authentication failure
+      if (error instanceof Error && 
+          (error.message.includes('auth') || error.message.includes('token'))) {
+        // Reset drive connection
+        resetDriveConnection();
+      }
+      
       return [];
     } finally {
       setIsLoading(false);
     }
-  }, [client, driveConnected]);
+  }, [client, driveConnected, resetDriveConnection]);
   
   // Optimized document fetching with caching
   const fetchDocument = useCallback(async (documentId: string) => {
     if (!client || !driveConnected) {
       toast.error('Not connected to Google Drive', { 
-        duration: 3000 
+        duration: 3000,
+        id: 'mcp-fetch-error',
       });
       return null;
     }
@@ -202,6 +247,9 @@ export function useMCP() {
     try {
       const content = await client.fetchDocumentContent(documentId);
       
+      // Clear any persistent toasts
+      toast.dismiss(`doc-${documentId}`);
+      
       // Cache the results
       if (content) {
         localStorage.setItem(cacheKey, JSON.stringify({
@@ -213,32 +261,49 @@ export function useMCP() {
       return content;
     } catch (error) {
       console.error(`Error fetching document ${documentId}:`, error);
+      
+      toast.dismiss(`doc-${documentId}`);
       toast.error('Failed to fetch document', {
         description: error instanceof Error ? error.message : 'Unknown error occurred',
-        duration: 4000
+        duration: 4000,
+        id: 'mcp-fetch-error',
       });
+      
       return null;
     } finally {
       setIsLoading(false);
     }
   }, [client, driveConnected]);
   
-  // Initialize or get context for a conversation
+  // Initialize or get context for a conversation with tracking to avoid duplicate initialization
   const initializeContext = useCallback(async (conversationId?: string) => {
     if (!client) return null;
     
     try {
+      // Check if we've already loaded this context to prevent duplicate loads
+      if (conversationId && loadedContextIds.includes(conversationId)) {
+        console.log(`MCP: Context already loaded for conversation: ${conversationId}`);
+        return conversationId;
+      }
+      
       const id = await client.initializeContext(conversationId);
       console.log(`MCP: Context initialized with ID: ${id}`);
+      
+      // Track that we've loaded this context
+      if (id && !loadedContextIds.includes(id)) {
+        setLoadedContextIds(prev => [...prev, id]);
+      }
+      
       return id;
     } catch (error) {
       console.error('Error initializing MCP context:', error);
       toast.error('Failed to initialize conversation context', {
-        duration: 3000
+        duration: 3000,
+        id: 'mcp-init-error',
       });
       return null;
     }
-  }, [client]);
+  }, [client, loadedContextIds]);
   
   // Check API status
   const checkApiStatus = useCallback(() => {
@@ -260,12 +325,30 @@ export function useMCP() {
         if (driveConnected !== isConnected) {
           console.log('useMCP: Connection state changed:', isConnected);
           setDriveConnected(isConnected);
+          setConnectionStatus(isConnected ? 'connected' : 'disconnected');
         }
       }, 30000); // Check every 30 seconds
       
       return () => clearInterval(intervalId);
     }
   }, [client, driveConnected]);
+  
+  // Update state based on localStorage changes (in case of multi-tab operation)
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === 'gdrive-connected') {
+        const newConnected = e.newValue === 'true';
+        if (driveConnected !== newConnected) {
+          console.log('useMCP: Connection state changed via localStorage:', newConnected);
+          setDriveConnected(newConnected);
+          setConnectionStatus(newConnected ? 'connected' : 'disconnected');
+        }
+      }
+    };
+    
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, [driveConnected]);
 
   return {
     client,
@@ -275,6 +358,8 @@ export function useMCP() {
     isLoading,
     isApiLoading,
     apiLoadError,
+    connectionStatus,
+    getConnectionStatus,
     connectToDrive,
     resetDriveConnection,
     listDocuments,

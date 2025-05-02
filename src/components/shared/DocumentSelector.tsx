@@ -29,11 +29,12 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
   onDocumentSelect,
   triggerButton 
 }) => {
-  const { isApiLoading } = useMCP();
+  const { isApiLoading, checkApiStatus } = useMCP();
   const [connecting, setConnecting] = useState(false);
   const [apiLoadingState, setApiLoadingState] = useState<'loading' | 'loaded' | 'error'>('loading');
   const [apiCheckAttempts, setApiCheckAttempts] = useState(0);
   const [connectionError, setConnectionError] = useState<boolean>(false);
+  const [refreshAttempts, setRefreshAttempts] = useState(0);
   const maxApiCheckAttempts = 30; // Maximum attempts to check API loading
   
   const {
@@ -41,6 +42,7 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
     isLoading: connectionLoading,
     connectionInProgress,
     connectionAttempts,
+    connectionStatus,
     clientId,
     setClientId,
     apiKey,
@@ -72,6 +74,14 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
         setApiLoadingState('loaded');
         return true;
       }
+      
+      // If we have access to the MCP API status check, use that too
+      if (checkApiStatus && checkApiStatus()) {
+        console.log('DocumentSelector: Google API detected as loaded via MCP');
+        setApiLoadingState('loaded');
+        return true;
+      }
+      
       return false;
     };
 
@@ -101,7 +111,7 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
 
     // Clean up interval
     return () => clearInterval(interval);
-  }, [maxApiCheckAttempts]);
+  }, [maxApiCheckAttempts, checkApiStatus]);
   
   const handleDialogChange = (open: boolean) => {
     setIsOpen(open);
@@ -150,29 +160,45 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
     }
   };
   
-  // Handle reset connection
+  // Handle reset connection with consistent UI feedback
   const handleResetConnection = () => {
-    resetConnection();
-    setConnectionError(false);
+    // First reset API loading state
     setApiLoadingState('loading');
     setApiCheckAttempts(0);
+    setConnectionError(false);
+    
+    // Then reset the connection
+    resetConnection();
+  };
+  
+  // Handle refresh with retry count and error handling
+  const handleRefreshDocuments = async () => {
+    try {
+      setRefreshAttempts(prev => prev + 1);
+      await refreshCurrentFolder();
+      setConnectionError(false);
+    } catch (error) {
+      console.error('Error refreshing documents:', error);
+      setConnectionError(true);
+    }
   };
   
   // If we have credentials stored but haven't fetched documents yet
   useEffect(() => {
     if (driveConnected && isOpen && documents.length === 0 && !documentsLoading) {
       console.log('DocumentSelector: Auto-refreshing documents');
-      try {
-        refreshCurrentFolder().catch(error => {
-          console.error('Error refreshing folder:', error);
-          setConnectionError(true);
-        });
-      } catch (error) {
-        console.error('Error refreshing folder:', error);
-        setConnectionError(true);
-      }
+      handleRefreshDocuments();
     }
-  }, [driveConnected, isOpen, documents.length, documentsLoading, refreshCurrentFolder]);
+  }, [driveConnected, isOpen, documents.length, documentsLoading]);
+  
+  // Reset connection error if connection status changes
+  useEffect(() => {
+    if (connectionStatus === 'connected') {
+      setConnectionError(false);
+    } else if (connectionStatus === 'error') {
+      setConnectionError(true);
+    }
+  }, [connectionStatus]);
   
   // Determine overall API loading state
   useEffect(() => {
@@ -221,7 +247,7 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
         
         {apiLoadingState === 'error' && (
           <Alert className="bg-red-500/10 border-red-500/30">
-            <Info className="h-4 w-4 text-red-500" />
+            <AlertTriangle className="h-4 w-4 text-red-500" />
             <AlertDescription className="mt-2">
               Failed to load Google API after several attempts. Please try:
               <ul className="list-disc pl-5 mt-2 space-y-1 text-sm">
@@ -309,7 +335,7 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
                       variant="outline" 
                       size="sm" 
                       onClick={handleResetConnection}
-                      className="flex items-center gap-2 mt-2"
+                      className="flex items-center gap-2 mt-2 text-purple-500 hover:text-purple-600 hover:bg-purple-50"
                     >
                       <RefreshCw className="h-3.5 w-3.5" />
                       Reset Connection
@@ -354,7 +380,11 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
               </Button>
               <div className="flex gap-2">
                 <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
-                <Button onClick={refreshCurrentFolder} disabled={isProcessing} className="gap-1 bg-purple-500 hover:bg-purple-600">
+                <Button 
+                  onClick={handleRefreshDocuments} 
+                  disabled={isProcessing} 
+                  className="gap-1 bg-purple-500 hover:bg-purple-600"
+                >
                   {isProcessing && <RefreshCw className="h-4 w-4 animate-spin" />}
                   {!isProcessing && <RefreshCw className="h-4 w-4" />}
                   Refresh

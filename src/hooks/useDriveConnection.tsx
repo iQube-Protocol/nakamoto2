@@ -4,7 +4,16 @@ import { useMCP } from '@/hooks/use-mcp';
 import { toast } from 'sonner';
 
 export function useDriveConnection() {
-  const { driveConnected, connectToDrive, isLoading, client, isApiLoading, resetDriveConnection: mcpResetConnection } = useMCP();
+  const { 
+    driveConnected, 
+    connectToDrive, 
+    isLoading, 
+    client, 
+    isApiLoading, 
+    resetDriveConnection: mcpResetConnection,
+    getConnectionStatus 
+  } = useMCP();
+  
   const [clientId, setClientId] = useState('');
   const [apiKey, setApiKey] = useState('');
   const [connectionInProgress, setConnectionInProgress] = useState(false);
@@ -12,6 +21,7 @@ export function useDriveConnection() {
   const [connectionTimeout, setConnectionTimeout] = useState<NodeJS.Timeout | null>(null);
   const [apiErrorCount, setApiErrorCount] = useState(0);
   const [lastConnectionResult, setLastConnectionResult] = useState<boolean | null>(null);
+  const [connectionStatus, setConnectionStatus] = useState<'disconnected' | 'connecting' | 'connected' | 'error'>('disconnected');
   
   // Try to load saved credentials from localStorage
   useEffect(() => {
@@ -32,6 +42,29 @@ export function useDriveConnection() {
       }
     };
   }, [client, connectionTimeout]);
+  
+  // Sync connection status with MCP client
+  useEffect(() => {
+    if (client && typeof getConnectionStatus === 'function') {
+      const status = getConnectionStatus();
+      
+      // Only update if different
+      if (status !== connectionStatus) {
+        setConnectionStatus(status);
+        
+        // If status changed to error or disconnected, reset connection in progress
+        if (status === 'error' || status === 'disconnected') {
+          setConnectionInProgress(false);
+        } else if (status === 'connected') {
+          // Successfully connected
+          setConnectionInProgress(false);
+        }
+      }
+    } else {
+      // Default connection status based on driveConnected flag
+      setConnectionStatus(driveConnected ? 'connected' : 'disconnected');
+    }
+  }, [client, driveConnected, getConnectionStatus, connectionStatus]);
   
   // Check API status periodically if errors occur
   useEffect(() => {
@@ -73,7 +106,8 @@ export function useDriveConnection() {
     if (!clientId || !apiKey) {
       toast.error('Missing Google API credentials', {
         description: 'Both Client ID and API Key are required',
-        duration: 3000
+        duration: 3000,
+        id: 'drive-connect-validation',
       });
       return false;
     }
@@ -82,7 +116,8 @@ export function useDriveConnection() {
     if (connectionInProgress) {
       toast.info('Connection already in progress', {
         description: 'Please wait for the current connection attempt to complete',
-        duration: 3000
+        duration: 3000,
+        id: 'drive-connect-inprogress',
       });
       return false;
     }
@@ -96,14 +131,18 @@ export function useDriveConnection() {
     try {
       setConnectionInProgress(true);
       setConnectionAttempts(prev => prev + 1);
+      setConnectionStatus('connecting');
       
       // Set a timeout to prevent indefinite waiting
       const timeout = setTimeout(() => {
         setConnectionInProgress(false);
+        setConnectionStatus('error');
+        
+        toast.dismiss('drive-connection');
         toast.error('Connection timed out', {
-          id: 'drive-connection',
           description: 'The connection attempt took too long. Please try again.',
-          duration: 5000
+          duration: 5000,
+          id: 'drive-connection-timeout',
         });
       }, 45000); // 45 seconds timeout
       
@@ -112,11 +151,6 @@ export function useDriveConnection() {
       // Save credentials for convenience
       localStorage.setItem('gdrive-client-id', clientId);
       localStorage.setItem('gdrive-api-key', apiKey);
-      
-      toast.loading('Connecting to Google Drive...', {
-        id: 'drive-connection',
-        duration: 30000 // Shorter duration to avoid persistent toasts
-      });
       
       console.log('Starting drive connection with credentials', { clientId, apiKeyLength: apiKey?.length });
       const success = await connectToDrive(clientId, apiKey);
@@ -129,24 +163,14 @@ export function useDriveConnection() {
       clearTimeout(timeout);
       setConnectionTimeout(null);
       
-      if (success) {
-        toast.success('Connected to Google Drive', {
-          id: 'drive-connection',
-          description: 'Your documents are now available',
-          duration: 3000
-        });
-      } else {
-        toast.error('Failed to connect to Google Drive', {
-          id: 'drive-connection',
-          description: 'Please check your credentials and try again',
-          duration: 5000
-        });
-      }
+      // Update connection status
+      setConnectionStatus(success ? 'connected' : 'error');
       
       return success;
     } catch (error) {
       console.error('Connection error:', error);
       setLastConnectionResult(false);
+      setConnectionStatus('error');
       
       // Check if this might be an API loading issue
       if (error instanceof Error && (error.message.includes('gapi') || 
@@ -154,26 +178,28 @@ export function useDriveConnection() {
           error.message.includes('not loaded'))) {
         setApiErrorCount(prev => prev + 1);
         
+        toast.dismiss('drive-connection');
         if (apiErrorCount >= 2) {
           // After multiple API errors, suggest a reset
           toast.error('Google API not loading properly', {
-            id: 'drive-connection',
             description: 'Try resetting the connection or refreshing the page',
-            duration: 5000
+            duration: 5000,
+            id: 'api-error',
           });
         } else {
           toast.error('Google API not available', {
-            id: 'drive-connection',
             description: 'Please wait a moment and try again',
-            duration: 4000
+            duration: 4000,
+            id: 'api-error',
           });
         }
       } else {
         // Generic connection error
+        toast.dismiss('drive-connection');
         toast.error('Connection error', {
-          id: 'drive-connection',
           description: error instanceof Error ? error.message : 'Unknown error',
-          duration: 4000
+          duration: 4000,
+          id: 'connection-error',
         });
       }
       
@@ -191,48 +217,82 @@ export function useDriveConnection() {
   // Add a reset connection function with improved error handling
   const resetConnection = useCallback(() => {
     try {
+      // Clear any UI state
+      setConnectionInProgress(false);
+      setConnectionAttempts(0);
+      setApiErrorCount(0);
+      setLastConnectionResult(null);
+      setConnectionStatus('disconnected');
+      
+      // Clear any existing timeout
+      if (connectionTimeout) {
+        clearTimeout(connectionTimeout);
+        setConnectionTimeout(null);
+      }
+      
+      // Show a resetting toast
+      toast.loading('Resetting connection...', {
+        id: 'reset-connection',
+        duration: 3000,
+      });
+      
       if (client) {
-        // Clear any existing timeout
-        if (connectionTimeout) {
-          clearTimeout(connectionTimeout);
-          setConnectionTimeout(null);
-        }
-        
-        // Reset connection state
-        setConnectionInProgress(false);
-        setConnectionAttempts(0);
-        setApiErrorCount(0);
-        setLastConnectionResult(null);
-        
-        // Use MCP reset if available, otherwise do a local reset
+        // Use MCP reset if available
         if (mcpResetConnection) {
           mcpResetConnection();
+          
+          toast.dismiss('reset-connection');
+          toast.success('Connection reset complete', {
+            description: 'You can now reconnect to Google Drive',
+            duration: 3000,
+            id: 'reset-success',
+          });
         } else {
-          // Clear connection status in localStorage
+          // Clear connection status in localStorage as fallback
           localStorage.removeItem('gdrive-connected');
           localStorage.removeItem('gdrive-auth-token');
           
+          toast.dismiss('reset-connection');
           toast.success('Connection state reset', {
             description: 'You can now reconnect to Google Drive',
-            duration: 3000
+            duration: 3000,
+            id: 'reset-success',
           });
         }
       } else {
         // Handle case where client isn't available
-        toast.info('Resetting connection state', {
-          description: 'No active client detected',
-          duration: 3000
-        });
-        
-        // Still clear localStorage items
         localStorage.removeItem('gdrive-connected');
         localStorage.removeItem('gdrive-auth-token');
+        
+        toast.dismiss('reset-connection');
+        toast.info('Resetting connection state', {
+          description: 'No active client detected',
+          duration: 3000,
+          id: 'reset-info',
+        });
+      }
+      
+      // Clear API-related cached data
+      for (const key in localStorage) {
+        if (key.startsWith('gdrive-') || key.includes('token')) {
+          localStorage.removeItem(key);
+        }
+      }
+      
+      // Clear folder cache
+      for (const key in sessionStorage) {
+        if (key.startsWith('gdrive-folder-')) {
+          sessionStorage.removeItem(key);
+        }
       }
     } catch (error) {
       console.error('Error during connection reset:', error);
+      
+      toast.dismiss('reset-connection');
       toast.error('Error resetting connection', {
         description: 'Please refresh the page and try again',
-        duration: 4000
+        duration: 4000,
+        id: 'reset-error',
       });
     }
   }, [client, connectionTimeout, mcpResetConnection]);
@@ -243,6 +303,7 @@ export function useDriveConnection() {
     isApiLoading,
     connectionInProgress,
     connectionAttempts,
+    connectionStatus,
     clientId,
     setClientId,
     apiKey,
