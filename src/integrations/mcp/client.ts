@@ -1,6 +1,8 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
+// Define interfaces for our MCP client
 export interface MCPContext {
   conversationId: string;
   documentContext?: {
@@ -94,9 +96,24 @@ export class MCPClient {
         script.src = 'https://apis.google.com/js/api.js';
         script.async = true;
         script.onload = () => {
-          this.onGapiLoaded();
-          gapiLoaded = true;
-          checkAllLoaded();
+          this.gapi = (window as any).gapi;
+          if (this.gapi) {
+            this.gapi.load('client', {
+              callback: () => {
+                console.log('MCP: Google API client loaded successfully');
+                gapiLoaded = true;
+                checkAllLoaded();
+              },
+              onerror: (e: any) => {
+                console.error('MCP: Failed to load Google API client:', e);
+                reject(e);
+              },
+              timeout: 10000, // 10 seconds
+            });
+          } else {
+            console.error('MCP: Google API failed to load');
+            reject(new Error('Google API failed to load'));
+          }
         };
         script.onerror = (e) => {
           console.error('Failed to load Google API script:', e);
@@ -143,8 +160,11 @@ export class MCPClient {
     
     if (this.apiLoadPromise) {
       try {
-        return await this.apiLoadPromise;
+        const result = await this.apiLoadPromise;
+        this.isApiLoaded = result;
+        return result;
       } catch (e) {
+        console.error('Error waiting for Google API to load:', e);
         return false;
       }
     }
@@ -153,33 +173,7 @@ export class MCPClient {
   }
   
   /**
-   * Callback when Google API script is loaded
-   */
-  private onGapiLoaded(): void {
-    this.gapi = (window as any).gapi;
-    if (!this.gapi) {
-      console.error('MCP: Google API client failed to load');
-      toast.error('Google API failed to load');
-      return;
-    }
-    
-    this.gapi.load('client', {
-      callback: () => {
-        this.isApiLoaded = true;
-        console.log('MCP: Google API client loaded successfully');
-      },
-      onerror: (e: any) => {
-        console.error('MCP: Failed to load Google API client:', e);
-        toast.error('Failed to load Google API client', {
-          description: 'Please try again or check your internet connection.'
-        });
-      },
-      timeout: 10000, // 10 seconds
-    });
-  }
-  
-  /**
-   * Initializes or retrieves the conversation context
+   * Initialize or retrieve the conversation context
    */
   async initializeContext(existingConversationId?: string): Promise<string> {
     try {
@@ -290,16 +284,26 @@ export class MCPClient {
       return false;
     }
     
-    const apiLoaded = await this.ensureGoogleApiLoaded();
-    if (!apiLoaded) {
-      console.error('Google API failed to load after waiting');
-      toast.error('Google API failed to load', {
-        description: 'Please refresh the page and try again.'
-      });
-      return false;
-    }
-    
     try {
+      // Wait for API to be loaded
+      const apiLoaded = await this.ensureGoogleApiLoaded();
+      if (!apiLoaded) {
+        console.error('Google API failed to load after waiting');
+        toast.error('Google API failed to load', {
+          description: 'Please refresh the page and try again.'
+        });
+        return false;
+      }
+      
+      // Check if gapi is available
+      if (!this.gapi || !this.gapi.client) {
+        console.error('Google API client not available');
+        toast.error('Google API client not available', {
+          description: 'Please refresh the page and try again.'
+        });
+        return false;
+      }
+      
       // Initialize the Google API client with provided credentials
       await this.gapi.client.init({
         apiKey: apiKey,

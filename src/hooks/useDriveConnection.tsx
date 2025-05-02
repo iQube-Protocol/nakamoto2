@@ -8,6 +8,7 @@ export function useDriveConnection() {
   const [clientId, setClientId] = useState('');
   const [apiKey, setApiKey] = useState('');
   const [connectionInProgress, setConnectionInProgress] = useState(false);
+  const [connectionAttempts, setConnectionAttempts] = useState(0);
   
   // Try to load saved credentials from localStorage
   useEffect(() => {
@@ -22,7 +23,7 @@ export function useDriveConnection() {
     }
   }, [client]);
   
-  // Optimized connection handler with debounce and better state management
+  // Optimized connection handler with better error handling
   const handleConnect = useCallback(async () => {
     if (!clientId || !apiKey) {
       toast.error('Missing Google API credentials', {
@@ -39,6 +40,7 @@ export function useDriveConnection() {
     
     try {
       setConnectionInProgress(true);
+      setConnectionAttempts(prev => prev + 1);
       
       // Save credentials for convenience
       localStorage.setItem('gdrive-client-id', clientId);
@@ -79,6 +81,7 @@ export function useDriveConnection() {
     driveConnected,
     isLoading,
     connectionInProgress,
+    connectionAttempts,
     clientId,
     setClientId,
     apiKey,

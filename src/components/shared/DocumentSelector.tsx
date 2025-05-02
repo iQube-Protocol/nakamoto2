@@ -31,11 +31,13 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
 }) => {
   const { isApiLoading } = useMCP();
   const [connecting, setConnecting] = useState(false);
+  const [apiLoadingState, setApiLoadingState] = useState<'loading' | 'loaded' | 'error'>('loading');
   
   const {
     driveConnected,
     isLoading: connectionLoading,
     connectionInProgress,
+    connectionAttempts,
     clientId,
     setClientId,
     apiKey,
@@ -56,6 +58,23 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
     navigateToRoot,
     refreshCurrentFolder
   } = useDocumentBrowser();
+  
+  useEffect(() => {
+    // Check if Google API is available
+    const checkGapiLoaded = () => {
+      if ((window as any).gapi && (window as any).google?.accounts) {
+        setApiLoadingState('loaded');
+      }
+    };
+
+    // Set up an interval to check if API is loaded
+    const interval = setInterval(() => {
+      checkGapiLoaded();
+    }, 1000);
+
+    // Clean up interval
+    return () => clearInterval(interval);
+  }, []);
   
   const handleDialogChange = (open: boolean) => {
     setIsOpen(open);
@@ -107,6 +126,15 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
           </DialogDescription>
         </DialogHeader>
         
+        {apiLoadingState === 'loading' && (
+          <Alert className="bg-blue-500/10 border-blue-500/30">
+            <Info className="h-4 w-4 text-blue-500" />
+            <AlertDescription className="mt-2">
+              Loading Google API... Please wait.
+            </AlertDescription>
+          </Alert>
+        )}
+        
         {!driveConnected ? (
           <>
             <Alert>
@@ -131,6 +159,16 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
               handleConnect={handleConnectClick}
               isLoading={isProcessing}
             />
+            
+            {connectionAttempts > 0 && apiLoadingState !== 'loaded' && (
+              <Alert className="bg-yellow-500/10 border-yellow-500/30 mt-2">
+                <Info className="h-4 w-4 text-yellow-500" />
+                <AlertDescription className="mt-2">
+                  If you're having trouble connecting, try refreshing the page and trying again.
+                  Make sure to allow pop-ups for this site, as Google's authentication may appear in a popup window.
+                </AlertDescription>
+              </Alert>
+            )}
           </>
         ) : (
           <div className="py-4 h-[300px] overflow-y-auto">
