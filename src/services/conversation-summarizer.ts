@@ -83,7 +83,10 @@ export const getConversationSummaries = async (
     }
     
     console.log(`Retrieved ${summaries?.length || 0} summaries for ${agentType} agent`);
-    return summaries || [];
+    
+    // Type assertion to ensure compatibility with our ConversationSummary interface
+    // This is safe because we've filtered by agentType which ensures conversation_type is valid
+    return (summaries || []) as ConversationSummary[];
   } catch (error) {
     console.error('Error in getConversationSummaries:', error);
     return [];
