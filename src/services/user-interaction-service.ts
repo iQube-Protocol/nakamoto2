@@ -20,6 +20,8 @@ export const storeUserInteraction = async (data: InteractionData) => {
       return { success: false, error: new Error('User not authenticated') };
     }
 
+    console.log('Storing interaction for user:', user_id, 'type:', data.interactionType);
+
     const { error } = await supabase.from('user_interactions').insert({
       query: data.query,
       response: data.response,
@@ -33,6 +35,7 @@ export const storeUserInteraction = async (data: InteractionData) => {
       return { success: false, error };
     }
 
+    console.log('Successfully stored user interaction');
     return { success: true, error: null };
   } catch (error) {
     console.error('Unexpected error storing user interaction:', error);
@@ -55,6 +58,8 @@ export const getUserInteractions = async (
       return { data: null, error: new Error('User not authenticated') };
     }
 
+    console.log('Fetching interactions for user:', user_id, 'type:', interactionType);
+
     let query = supabase
       .from('user_interactions')
       .select('*')
@@ -74,6 +79,7 @@ export const getUserInteractions = async (
       return { data: null, error };
     }
 
+    console.log('Fetched interactions:', data?.length || 0);
     return { data, error: null };
   } catch (error) {
     console.error('Unexpected error fetching user interactions:', error);

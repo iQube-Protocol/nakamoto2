@@ -1,7 +1,8 @@
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useCallback } from 'react';
 import { getUserInteractions, InteractionData, storeUserInteraction } from '@/services/user-interaction-service';
 import { useAuth } from './use-auth';
+import { toast } from 'sonner';
 
 export const useUserInteractions = (
   interactionType?: 'learn' | 'earn' | 'connect'
@@ -11,29 +12,35 @@ export const useUserInteractions = (
   const [error, setError] = useState<Error | null>(null);
   const { user } = useAuth();
 
-  useEffect(() => {
-    const fetchInteractions = async () => {
-      if (!user) return;
+  const fetchInteractions = useCallback(async () => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
+    
+    setLoading(true);
+    try {
+      console.log('Fetching interactions for type:', interactionType);
+      const { data, error } = await getUserInteractions(interactionType);
       
-      setLoading(true);
-      try {
-        const { data, error } = await getUserInteractions(interactionType);
-        
-        if (error) {
-          throw error;
-        }
-        
-        setInteractions(data || []);
-        setError(null);
-      } catch (err) {
-        setError(err as Error);
-      } finally {
-        setLoading(false);
+      if (error) {
+        throw error;
       }
-    };
-
-    fetchInteractions();
+      
+      setInteractions(data || []);
+      setError(null);
+    } catch (err) {
+      console.error('Error fetching interactions:', err);
+      setError(err as Error);
+      toast.error('Failed to load your interaction history');
+    } finally {
+      setLoading(false);
+    }
   }, [interactionType, user]);
+
+  useEffect(() => {
+    fetchInteractions();
+  }, [fetchInteractions]);
 
   const saveInteraction = async (data: Omit<InteractionData, 'user_id'>) => {
     if (!user) return { success: false, error: new Error('User not authenticated') };
@@ -47,14 +54,15 @@ export const useUserInteractions = (
       
       if (result.success) {
         // Refresh the interactions list
-        const { data: updatedData } = await getUserInteractions(interactionType);
-        if (updatedData) {
-          setInteractions(updatedData);
-        }
+        fetchInteractions();
+      } else {
+        toast.error('Failed to save your interaction');
       }
       
       return result;
     } catch (err) {
+      console.error('Error saving interaction:', err);
+      toast.error('Failed to save your interaction');
       return { success: false, error: err as Error };
     }
   };
@@ -64,5 +72,6 @@ export const useUserInteractions = (
     loading,
     error,
     saveInteraction,
+    refreshInteractions: fetchInteractions
   };
 };

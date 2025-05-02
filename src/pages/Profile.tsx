@@ -6,13 +6,20 @@ import { Button } from '@/components/ui/button';
 import { useUserInteractions } from '@/hooks/use-user-interactions';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { format } from 'date-fns';
-import { User, Clock, MessageSquare, Layers } from 'lucide-react';
+import { User, Clock, MessageSquare, Layers, RefreshCw } from 'lucide-react';
 import { toast } from 'sonner';
 
 const Profile = () => {
   const { user, signOut } = useAuth();
   const [activeTab, setActiveTab] = useState<'learn' | 'earn' | 'connect'>('learn');
-  const { interactions, loading } = useUserInteractions(activeTab);
+  const { interactions, loading, refreshInteractions } = useUserInteractions(activeTab);
+  
+  // Refresh interactions when tab changes or component mounts
+  useEffect(() => {
+    if (user) {
+      refreshInteractions();
+    }
+  }, [activeTab, user, refreshInteractions]);
   
   if (!user) {
     return (
@@ -72,9 +79,21 @@ const Profile = () => {
         <div className="md:col-span-2">
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center">
-                <MessageSquare className="h-5 w-5 mr-2" /> Interaction History
-              </CardTitle>
+              <div className="flex items-center justify-between">
+                <CardTitle className="flex items-center">
+                  <MessageSquare className="h-5 w-5 mr-2" /> Interaction History
+                </CardTitle>
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={() => {
+                    refreshInteractions();
+                    toast.success('Refreshed interaction history');
+                  }}
+                >
+                  <RefreshCw className="h-4 w-4 mr-1" /> Refresh
+                </Button>
+              </div>
               <CardDescription>Your recent interactions with MonDAI</CardDescription>
             </CardHeader>
             <CardContent>
