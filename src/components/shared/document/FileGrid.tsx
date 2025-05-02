@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card } from '@/components/ui/card';
-import { Loader2, FolderOpen, AlertCircle } from 'lucide-react';
+import { Loader2, FolderOpen, AlertCircle, RefreshCw } from 'lucide-react';
 import FileIcon from '@/components/shared/agent/document/FileIcon';
 import { Button } from '@/components/ui/button';
 
@@ -11,6 +11,7 @@ interface FileGridProps {
   currentFolder: string;
   handleDocumentClick: (doc: any) => void;
   handleBack: () => void;
+  onRefresh?: () => void;
 }
 
 const FileGrid: React.FC<FileGridProps> = ({
@@ -18,7 +19,8 @@ const FileGrid: React.FC<FileGridProps> = ({
   isLoading,
   currentFolder,
   handleDocumentClick,
-  handleBack
+  handleBack,
+  onRefresh
 }) => {
   if (isLoading) {
     return (
@@ -49,9 +51,17 @@ const FileGrid: React.FC<FileGridProps> = ({
           {currentFolder ? (
             <>
               <p>This folder is empty or you don't have permission to view its contents.</p>
-              <Button variant="outline" size="sm" className="mt-4" onClick={handleBack}>
-                Go Back
-              </Button>
+              <div className="flex gap-2 mt-4">
+                <Button variant="outline" size="sm" onClick={handleBack}>
+                  Go Back
+                </Button>
+                {onRefresh && (
+                  <Button variant="outline" size="sm" onClick={onRefresh} className="flex items-center gap-1">
+                    <RefreshCw className="h-3.5 w-3.5" />
+                    Refresh
+                  </Button>
+                )}
+              </div>
             </>
           ) : (
             <>
@@ -65,6 +75,12 @@ const FileGrid: React.FC<FileGridProps> = ({
                   <li>API not properly enabled in Google Cloud Console</li>
                 </ul>
               </div>
+              {onRefresh && (
+                <Button variant="outline" size="sm" onClick={onRefresh} className="mt-4 flex items-center gap-1">
+                  <RefreshCw className="h-3.5 w-3.5" />
+                  Refresh Folder
+                </Button>
+              )}
             </>
           )}
         </div>

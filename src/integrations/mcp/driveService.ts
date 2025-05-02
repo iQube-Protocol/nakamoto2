@@ -47,8 +47,47 @@ export class DriveService {
     }
     
     const gapi = this.googleApiLoader.getGapi();
-    if (!gapi) {
-      toast.error('Google API not available');
+    if (!gapi || !gapi.client) {
+      console.error('Google API client not available, initializing...');
+      
+      // Check if gapi exists but client is not initialized
+      if (gapi && !gapi.client) {
+        return new Promise<boolean>((resolve) => {
+          gapi.load('client', {
+            callback: async () => {
+              console.log('Google client API initialized in connectToDrive');
+              // Continue with initialization after client is loaded
+              const result = await this.finishDriveConnection(clientId, apiKey, cachedToken);
+              resolve(result);
+            },
+            onerror: () => {
+              console.error('Failed to load Google client API');
+              toast.error('Google API initialization failed', {
+                description: 'Please refresh the page and try again'
+              });
+              resolve(false);
+            },
+            timeout: 10000 // 10 seconds
+          });
+        });
+      }
+      
+      toast.error('Google API not available', {
+        description: 'Please refresh the page and try again'
+      });
+      return false;
+    }
+    
+    return this.finishDriveConnection(clientId, apiKey, cachedToken);
+  }
+  
+  /**
+   * Completes Drive connection after ensuring API is initialized
+   */
+  private async finishDriveConnection(clientId: string, apiKey: string, cachedToken?: string | null): Promise<boolean> {
+    const gapi = this.googleApiLoader.getGapi();
+    if (!gapi || !gapi.client) {
+      toast.error('Google API client still not available');
       return false;
     }
     
@@ -232,6 +271,48 @@ export class DriveService {
       return [];
     }
     
+    // Check if client is initialized and available
+    if (!gapi.client) {
+      console.error('Google client not initialized, attempting to initialize');
+      
+      return new Promise<any[]>((resolve) => {
+        gapi.load('client', {
+          callback: async () => {
+            console.log('Client API loaded in listDocuments, attempting to list documents');
+            try {
+              const docs = await this.executeListDocuments(folderId);
+              resolve(docs);
+            } catch (err) {
+              console.error('Error listing documents after client initialization:', err);
+              resolve([]);
+            }
+          },
+          onerror: () => {
+            console.error('Failed to load client API in listDocuments');
+            toast.error('Failed to initialize Google API client');
+            resolve([]);
+          },
+          timeout: 10000
+        });
+      });
+    }
+    
+    return this.executeListDocuments(folderId);
+  }
+  
+  /**
+   * Execute document listing once client is initialized
+   */
+  private async executeListDocuments(folderId?: string): Promise<any[]> {
+    const gapi = this.googleApiLoader.getGapi();
+    if (!gapi || !gapi.client || !gapi.client.drive) {
+      console.error('Google Drive API not available');
+      toast.error('Google Drive API not available', {
+        description: 'Please check if the Drive API is enabled in your Google Cloud Console'
+      });
+      return [];
+    }
+    
     try {
       const query = folderId ? 
         `'${folderId}' in parents and trashed = false` : 
@@ -245,7 +326,6 @@ export class DriveService {
         fields: 'files(id, name, mimeType, modifiedTime)',
         orderBy: 'modifiedTime desc',
         pageSize: 50,
-        // Enable HTTP request batching
         supportsAllDrives: false
       });
       

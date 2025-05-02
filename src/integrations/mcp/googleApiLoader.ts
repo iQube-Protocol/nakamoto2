@@ -11,6 +11,7 @@ export class GoogleApiLoader {
   private onApiLoadComplete: (() => void) | null = null;
   private scriptLoadAttempts: number = 0;
   private maxLoadAttempts: number = 3;
+  private apiInitialized: boolean = false;
   
   constructor(options: { 
     onApiLoadStart?: () => void; 
@@ -121,14 +122,46 @@ export class GoogleApiLoader {
   }
   
   /**
-   * Ensures Google API is loaded before proceeding
+   * Ensures Google API is loaded and initialized before proceeding
    */
   public async ensureGoogleApiLoaded(): Promise<boolean> {
-    if (this.isApiLoaded) return true;
+    // If API is already fully loaded and initialized
+    if (this.isApiLoaded && this.apiInitialized) return true;
     
+    // If we're in the process of loading, wait for it
     if (this.apiLoadPromise) {
       try {
-        return await this.apiLoadPromise;
+        await this.apiLoadPromise;
+        
+        // After scripts are loaded, ensure client is initialized
+        if (!this.apiInitialized) {
+          this.gapi = (window as any).gapi;
+          
+          // Check if gapi is available now
+          if (!this.gapi) {
+            console.error('MCP: Google API client not available after loading');
+            return false;
+          }
+          
+          // Initialize client
+          return new Promise<boolean>((resolve) => {
+            this.gapi.load('client', {
+              callback: () => {
+                this.apiInitialized = true;
+                this.isApiLoaded = true;
+                console.log('MCP: Google API client initialized successfully');
+                resolve(true);
+              },
+              onerror: () => {
+                console.error('MCP: Failed to initialize Google API client');
+                resolve(false);
+              },
+              timeout: 10000
+            });
+          });
+        }
+        
+        return true;
       } catch (e) {
         console.error('Error ensuring Google API loaded:', e);
         // If promise failed, reset it so we can try loading again
@@ -137,6 +170,8 @@ export class GoogleApiLoader {
       }
     }
     
+    // If not loaded at all, start loading
+    this.loadGoogleApi();
     return false;
   }
   
@@ -153,6 +188,7 @@ export class GoogleApiLoader {
     this.gapi.load('client', {
       callback: () => {
         this.isApiLoaded = true;
+        this.apiInitialized = true;
         console.log('MCP: Google API client loaded successfully');
       },
       onerror: (e: any) => {
@@ -163,6 +199,7 @@ export class GoogleApiLoader {
         this.gapi.load('client', {
           callback: () => {
             this.isApiLoaded = true;
+            this.apiInitialized = true;
             console.log('MCP: Google API client loaded successfully on retry');
           },
           onerror: (retryError: any) => {
@@ -176,10 +213,19 @@ export class GoogleApiLoader {
   }
   
   /**
+   * Check if API is fully initialized and ready for use
+   */
+  public isClientInitialized(): boolean {
+    return this.isApiLoaded && this.apiInitialized && 
+           this.gapi && this.gapi.client;
+  }
+  
+  /**
    * Reset API loader state
    */
   public reset(): void {
     this.isApiLoaded = false;
+    this.apiInitialized = false;
     this.apiLoadPromise = null;
     this.scriptLoadAttempts = 0;
   }

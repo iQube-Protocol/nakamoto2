@@ -34,6 +34,7 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
   const [connecting, setConnecting] = useState(false);
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const [isRefreshing, setIsRefreshing] = useState(false);
+  const [connectionAttempts, setConnectionAttempts] = useState(0);
   
   const {
     driveConnected,
@@ -83,10 +84,16 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
   const handleConnectClick = async (): Promise<boolean> => {
     setConnecting(true);
     setConnectionError(null);
+    setConnectionAttempts(prev => prev + 1);
+    
     try {
       const result = await handleConnect();
       if (!result) {
-        setConnectionError("Failed to connect to Google Drive. Please check your credentials.");
+        const errorMsg = connectionAttempts > 1 
+          ? "Connection failed multiple times. Please verify your credentials and check if the Google Drive API is enabled in your Google Cloud Console."
+          : "Failed to connect to Google Drive. Please check your credentials.";
+        
+        setConnectionError(errorMsg);
       }
       return result;
     } catch (error) {
@@ -112,6 +119,7 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
     resetConnection();
     resetMcpConnection();
     setConnectionError(null);
+    setConnectionAttempts(0);
   };
   
   // If we have credentials stored but haven't fetched documents yet
@@ -233,6 +241,7 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
               currentFolder={currentFolder}
               handleDocumentClick={handleFileSelection}
               handleBack={handleBack}
+              onRefresh={handleRefresh}
             />
           </div>
         )}

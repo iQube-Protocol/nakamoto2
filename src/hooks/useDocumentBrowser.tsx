@@ -14,13 +14,18 @@ export function useDocumentBrowser() {
   const [folderHistory, setFolderHistory] = useState<FolderHistory[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   const [fetchError, setFetchError] = useState<string | null>(null);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   
   // Fetch documents when dialog opens or folder changes
   useEffect(() => {
     if (isOpen && driveConnected) {
       refreshCurrentFolder();
+      // After first load, set initial load to false
+      if (isInitialLoad) {
+        setIsInitialLoad(false);
+      }
     }
-  }, [isOpen, driveConnected, currentFolder]);
+  }, [isOpen, driveConnected, currentFolder, isInitialLoad]);
 
   const handleDocumentClick = (doc: any) => {
     if (doc.mimeType.includes('folder')) {
@@ -70,18 +75,29 @@ export function useDocumentBrowser() {
   
   // Add retry counter to handle potential connection issues
   const [retryCount, setRetryCount] = useState(0);
+  const [refreshAttempts, setRefreshAttempts] = useState(0);
   
   // Use force refresh to bypass cache and get fresh data
   const forceRefreshCurrentFolder = useCallback(async () => {
     setFetchError(null);
     setRetryCount(0);
+    setRefreshAttempts(prev => prev + 1);
+    
     toast.loading("Forcing document refresh...", { id: "refreshing-docs", duration: 1500 });
     
     try {
       const result = await forceRefreshDocuments(currentFolder);
       
-      if (result.length === 0) {
+      if (!result || result.length === 0) {
         console.log(`Folder ${currentFolder || 'root'} might be empty or not accessible`);
+        
+        // Show more specific error message after multiple attempts
+        if (refreshAttempts > 2) {
+          setFetchError("Multiple refresh attempts failed. Please check your Google API connection and credentials.");
+        }
+      } else {
+        // Reset refresh attempts counter on success
+        setRefreshAttempts(0);
       }
     } catch (error) {
       console.error("Error refreshing folder:", error);
@@ -91,7 +107,7 @@ export function useDocumentBrowser() {
         description: errorMessage
       });
     }
-  }, [currentFolder, forceRefreshDocuments]);
+  }, [currentFolder, forceRefreshDocuments, refreshAttempts]);
   
   const refreshCurrentFolder = useCallback(async () => {
     if (!driveConnected) {
@@ -104,7 +120,7 @@ export function useDocumentBrowser() {
     try {
       const result = await listDocuments(currentFolder);
       
-      if (result.length === 0) {
+      if (!result || result.length === 0) {
         console.log(`Folder ${currentFolder || 'root'} is empty or not accessible`);
         
         // If we get an empty result multiple times, try force refreshing
