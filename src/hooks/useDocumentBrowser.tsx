@@ -66,8 +66,9 @@ export function useDocumentBrowser() {
     setFolderHistory([]);
   };
   
-  const refreshCurrentFolder = () => {
-    listDocuments(currentFolder);
+  // Updated to return a Promise so it can be properly caught
+  const refreshCurrentFolder = (): Promise<any[]> => {
+    return listDocuments(currentFolder);
   };
 
   return {

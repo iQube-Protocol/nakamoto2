@@ -46,7 +46,7 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
     apiKey,
     setApiKey,
     handleConnect,
-    resetConnection, // New function we're using
+    resetConnection,
     isApiLoading: hookApiLoading
   } = useDriveConnection();
   
@@ -153,10 +153,22 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
   useEffect(() => {
     if (driveConnected && isOpen && documents.length === 0 && !documentsLoading) {
       console.log('DocumentSelector: Auto-refreshing documents');
-      refreshCurrentFolder().catch(() => {
-        // If refresh fails, likely due to connection issues
+      // Fix: Make sure we handle potential Promise rejection correctly
+      // The refreshCurrentFolder might not return a Promise in some implementations
+      try {
+        const result = refreshCurrentFolder();
+        // If it returns a Promise, add catch handler
+        if (result && typeof result.then === 'function') {
+          result.catch(() => {
+            // If refresh fails, likely due to connection issues
+            setConnectionError(true);
+          });
+        }
+      } catch (error) {
+        // Handle any synchronous errors
+        console.error('Error refreshing folder:', error);
         setConnectionError(true);
-      });
+      }
     }
   }, [driveConnected, isOpen, documents.length, documentsLoading, refreshCurrentFolder]);
   
