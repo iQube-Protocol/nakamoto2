@@ -51,6 +51,9 @@ export class ConnectionManager {
    */
   public async connectToDrive(clientId: string, apiKey: string, cachedToken?: string | null): Promise<boolean> {
     try {
+      // Ensure API is loaded before attempting connection
+      await this.googleApiLoader.ensureGoogleApiLoaded();
+      
       console.log('MCP: Attempting to connect to Drive with credentials');
       const success = await this.driveService.connectToDrive(clientId, apiKey, cachedToken);
       
