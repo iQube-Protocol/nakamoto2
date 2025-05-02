@@ -15,12 +15,14 @@ export default function useDocumentContext({ conversationId, onDocumentAdded }: 
   const { client, fetchDocument, isLoading } = useMCP();
   const [selectedDocuments, setSelectedDocuments] = useState<any[]>([]);
   const [viewingDocument, setViewingDocument] = useState<{id: string, content: string, name: string, mimeType: string} | null>(null);
+  const [contextInitialized, setContextInitialized] = useState(false);
   
   // Get documents from context
   useEffect(() => {
     if (client && conversationId) {
       const context = client.getModelContext();
       if (context?.documentContext) {
+        console.log('Documents in context:', context.documentContext.length);
         const docs = context.documentContext.map(doc => ({
           id: doc.documentId,
           name: doc.documentName,
@@ -28,9 +30,12 @@ export default function useDocumentContext({ conversationId, onDocumentAdded }: 
           content: doc.content
         }));
         setSelectedDocuments(docs);
+        setContextInitialized(true);
+      } else if (!contextInitialized) {
+        console.log('No documents in context or context not initialized');
       }
     }
-  }, [client, conversationId]);
+  }, [client, conversationId, contextInitialized]);
   
   const handleDocumentSelect = async (document: any) => {
     if (!client) {
@@ -49,9 +54,27 @@ export default function useDocumentContext({ conversationId, onDocumentAdded }: 
     if (content) {
       // Add content to the document object for local tracking
       document.content = content;
-      setSelectedDocuments(prev => [...prev, document]);
-      toast.success('Document added to context');
-      if (onDocumentAdded) onDocumentAdded();
+      
+      // Ensure context exists in the MCP client
+      const context = client.getModelContext();
+      if (context) {
+        // Add document to MCP context
+        client.addDocumentToContext({
+          documentId: document.id,
+          documentName: document.name,
+          documentType: document.mimeType.split('/')[1] || 'text',
+          content: content
+        });
+        
+        // Update local state
+        setSelectedDocuments(prev => [...prev, document]);
+        toast.success('Document added to context');
+        
+        // Notify parent component
+        if (onDocumentAdded) onDocumentAdded();
+      } else {
+        toast.error('Failed to initialize document context');
+      }
     }
   };
   

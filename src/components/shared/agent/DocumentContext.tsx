@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { FileText } from 'lucide-react';
@@ -26,6 +26,12 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
     handleRemoveDocument,
     handleViewDocument
   } = useDocumentContext({ conversationId, onDocumentAdded });
+  
+  // Debug log for document visibility
+  useEffect(() => {
+    console.log('Documents in context component:', selectedDocuments.length, 
+      selectedDocuments.map(d => d.name).join(', '));
+  }, [selectedDocuments]);
   
   return (
     <div className="space-y-4">

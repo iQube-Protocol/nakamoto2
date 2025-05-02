@@ -33,7 +33,7 @@ export function useDriveConnection() {
         clearTimeout(connectionTimeout);
       }
     };
-  }, [client]);
+  }, [client, connectionTimeout]);
   
   // Clear any stale connection state
   useEffect(() => {

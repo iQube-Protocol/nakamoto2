@@ -40,7 +40,8 @@ export class ContextManager {
           modelPreference: "gpt-4o-mini",
           metisActive: false,
           source: 'google-drive'
-        }
+        },
+        documentContext: [] // Initialize empty document array
       };
       
       console.log(`MCP: Created new conversation context with ID: ${newConversationId}`);
@@ -143,8 +144,12 @@ export class ContextManager {
     documentType: string;
     content: string;
   }): void {
-    if (!this.context) return;
+    if (!this.context) {
+      console.error('MCP: Cannot add document to context: Context not initialized');
+      return;
+    }
     
+    // Initialize documentContext if it doesn't exist
     if (!this.context.documentContext) {
       this.context.documentContext = [];
     }
@@ -160,13 +165,21 @@ export class ContextManager {
         ...document,
         lastModified: new Date().toISOString()
       };
+      console.log(`MCP: Updated existing document in context: ${document.documentName}`);
     } else {
       // Add new document
       this.context.documentContext.push({
         ...document,
         lastModified: new Date().toISOString()
       });
+      console.log(`MCP: Added new document to context: ${document.documentName}`);
     }
+    
+    // Debug log the current document context
+    console.log(`MCP: Current document context has ${this.context.documentContext.length} documents`);
+    this.context.documentContext.forEach((doc, idx) => {
+      console.log(`MCP: Document ${idx}: ${doc.documentName} (${doc.documentId})`);
+    });
     
     this.persistContext();
   }
