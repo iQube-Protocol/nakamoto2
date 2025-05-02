@@ -9,7 +9,7 @@ interface FolderHistory {
 }
 
 export function useDocumentBrowser() {
-  const { listDocuments, documents, isLoading, driveConnected } = useMCP();
+  const { listDocuments, documents, isLoading, driveConnected, forceRefreshDocuments } = useMCP();
   const [currentFolder, setCurrentFolder] = useState('');
   const [folderHistory, setFolderHistory] = useState<FolderHistory[]>([]);
   const [isOpen, setIsOpen] = useState(false);
@@ -20,7 +20,7 @@ export function useDocumentBrowser() {
     if (isOpen && driveConnected) {
       refreshCurrentFolder();
     }
-  }, [isOpen, driveConnected, currentFolder]); // Remove listDocuments dependency to prevent excessive calls
+  }, [isOpen, driveConnected, currentFolder]);
 
   const handleDocumentClick = (doc: any) => {
     if (doc.mimeType.includes('folder')) {
@@ -68,6 +68,31 @@ export function useDocumentBrowser() {
     setFolderHistory([]);
   };
   
+  // Add retry counter to handle potential connection issues
+  const [retryCount, setRetryCount] = useState(0);
+  
+  // Use force refresh to bypass cache and get fresh data
+  const forceRefreshCurrentFolder = useCallback(async () => {
+    setFetchError(null);
+    setRetryCount(0);
+    toast.loading("Forcing document refresh...", { id: "refreshing-docs", duration: 1500 });
+    
+    try {
+      const result = await forceRefreshDocuments(currentFolder);
+      
+      if (result.length === 0) {
+        console.log(`Folder ${currentFolder || 'root'} might be empty or not accessible`);
+      }
+    } catch (error) {
+      console.error("Error refreshing folder:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to fetch documents";
+      setFetchError(errorMessage);
+      toast.error("Failed to load documents", { 
+        description: errorMessage
+      });
+    }
+  }, [currentFolder, forceRefreshDocuments]);
+  
   const refreshCurrentFolder = useCallback(async () => {
     if (!driveConnected) {
       setFetchError("Not connected to Google Drive");
@@ -80,8 +105,19 @@ export function useDocumentBrowser() {
       const result = await listDocuments(currentFolder);
       
       if (result.length === 0) {
-        // This could be a legitimate empty folder, so we don't set an error
         console.log(`Folder ${currentFolder || 'root'} is empty or not accessible`);
+        
+        // If we get an empty result multiple times, try force refreshing
+        if (retryCount >= 2) {
+          console.log('Multiple empty results, trying force refresh');
+          setRetryCount(0);
+          await forceRefreshCurrentFolder();
+        } else {
+          setRetryCount(prev => prev + 1);
+        }
+      } else {
+        // Reset retry count on success
+        setRetryCount(0);
       }
     } catch (error) {
       console.error("Error refreshing folder:", error);
@@ -91,7 +127,7 @@ export function useDocumentBrowser() {
         description: errorMessage
       });
     }
-  }, [driveConnected, listDocuments, currentFolder]);
+  }, [driveConnected, listDocuments, currentFolder, retryCount, forceRefreshCurrentFolder]);
 
   return {
     documents,
@@ -105,6 +141,7 @@ export function useDocumentBrowser() {
     navigateToFolder,
     navigateToRoot,
     refreshCurrentFolder,
+    forceRefreshCurrentFolder,
     fetchError
   };
 }

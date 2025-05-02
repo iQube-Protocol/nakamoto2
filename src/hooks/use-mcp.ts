@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { MCPClient, getMCPClient } from '@/integrations/mcp';
 import { useAuth } from '@/hooks/use-auth';
@@ -29,8 +28,19 @@ export function useMCP() {
       setClient(mcpClient);
       setIsInitialized(true);
       setDriveConnected(hasConnection);
+      
+      // Periodically verify the connection status
+      const interval = setInterval(() => {
+        const currentStatus = localStorage.getItem('gdrive-connected') === 'true';
+        if (currentStatus !== driveConnected) {
+          console.log('MCP: Drive connection status changed to', currentStatus);
+          setDriveConnected(currentStatus);
+        }
+      }, 5000);
+      
+      return () => clearInterval(interval);
     }
-  }, [user]);
+  }, [user, driveConnected]);
   
   // Connect to Google Drive with optimized flow
   const connectToDrive = useCallback(async (clientId?: string, apiKey?: string) => {
@@ -38,6 +48,8 @@ export function useMCP() {
     
     setIsLoading(true);
     try {
+      console.log('MCP: Starting Drive connection with', { clientId, apiKeyProvided: !!apiKey });
+      
       // Validate that we have the required credentials
       if (!clientId || !apiKey) {
         toast.error('Missing Google API credentials');
@@ -46,9 +58,11 @@ export function useMCP() {
       
       // Use cached token if available
       const cachedToken = localStorage.getItem('gdrive-auth-token');
+      console.log('MCP: Cached token available:', !!cachedToken);
       
       // Connect to Google Drive with the provided credentials
       const success = await client.connectToDrive(clientId, apiKey, cachedToken);
+      console.log('MCP: Connection result:', success);
       
       if (success) {
         localStorage.setItem('gdrive-connected', 'true');
@@ -68,9 +82,40 @@ export function useMCP() {
     }
   }, [client]);
   
-  // Optimized document listing with caching
+  // Reset connection state
+  const resetConnection = useCallback(() => {
+    if (!client) return;
+    
+    console.log('MCP: Resetting Drive connection');
+    client.resetConnection();
+    setDriveConnected(false);
+    
+    // Clear cached documents
+    setDocuments([]);
+    
+    // Clear all cached folder data
+    const keys = [];
+    for (let i = 0; i < sessionStorage.length; i++) {
+      const key = sessionStorage.key(i);
+      if (key && key.startsWith('gdrive-folder-')) {
+        keys.push(key);
+      }
+    }
+    keys.forEach(key => sessionStorage.removeItem(key));
+    
+    toast.success('Connection reset', {
+      description: 'Google Drive connection has been reset'
+    });
+  }, [client]);
+  
+  // Optimized document listing with better error handling
   const listDocuments = useCallback(async (folderId?: string) => {
-    if (!client || !driveConnected) {
+    if (!client) {
+      toast.error('MCP Client not initialized');
+      return [];
+    }
+    
+    if (!driveConnected) {
       toast.error('Not connected to Google Drive');
       return [];
     }
@@ -78,32 +123,38 @@ export function useMCP() {
     const cacheKey = `gdrive-folder-${folderId || 'root'}`;
     const cachedData = sessionStorage.getItem(cacheKey);
     
-    // Use cached data if available and recent (less than 60 seconds old)
+    // Use cached data if available and recent (less than 30 seconds old)
     if (cachedData) {
       try {
         const { docs, timestamp } = JSON.parse(cachedData);
-        const isRecent = Date.now() - timestamp < 60000; // 60 seconds
+        const isRecent = Date.now() - timestamp < 30000; // 30 seconds
         
         if (isRecent) {
           console.log('Using cached folder data');
           setDocuments(docs);
           return docs;
+        } else {
+          console.log('Cached folder data expired');
         }
       } catch (e) {
-        console.error('Error parsing cached folder data');
+        console.error('Error parsing cached folder data:', e);
       }
     }
     
     setIsLoading(true);
     try {
+      console.log(`MCP: Listing documents in folder ${folderId || 'root'}`);
       const docs = await client.listDocuments(folderId);
       setDocuments(docs);
       
-      // Cache the results
-      sessionStorage.setItem(cacheKey, JSON.stringify({
-        docs,
-        timestamp: Date.now()
-      }));
+      // Only cache if successful
+      if (docs && docs.length > 0) {
+        // Cache the results
+        sessionStorage.setItem(cacheKey, JSON.stringify({
+          docs,
+          timestamp: Date.now()
+        }));
+      }
       
       return docs;
     } catch (error) {
@@ -116,6 +167,16 @@ export function useMCP() {
       setIsLoading(false);
     }
   }, [client, driveConnected]);
+  
+  // Force refresh by clearing cache and reloading
+  const forceRefreshDocuments = useCallback(async (folderId?: string) => {
+    // Clear cache for this folder
+    const cacheKey = `gdrive-folder-${folderId || 'root'}`;
+    sessionStorage.removeItem(cacheKey);
+    
+    // Reload documents
+    return listDocuments(folderId);
+  }, [listDocuments]);
   
   // Optimized document fetching with caching
   const fetchDocument = useCallback(async (documentId: string) => {
@@ -188,7 +249,9 @@ export function useMCP() {
     isApiLoading,
     connectToDrive,
     listDocuments,
+    forceRefreshDocuments,
     fetchDocument,
-    initializeContext
+    initializeContext,
+    resetConnection
   };
 }

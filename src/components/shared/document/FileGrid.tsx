@@ -3,6 +3,7 @@ import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Loader2, FolderOpen, AlertCircle } from 'lucide-react';
 import FileIcon from '@/components/shared/agent/document/FileIcon';
+import { Button } from '@/components/ui/button';
 
 interface FileGridProps {
   documents: any[];
@@ -21,8 +22,9 @@ const FileGrid: React.FC<FileGridProps> = ({
 }) => {
   if (isLoading) {
     return (
-      <div className="flex h-full items-center justify-center py-10">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className="flex flex-col h-full items-center justify-center py-10">
+        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground mb-3" />
+        <p className="text-sm text-muted-foreground">Loading documents...</p>
       </div>
     );
   }
@@ -44,12 +46,27 @@ const FileGrid: React.FC<FileGridProps> = ({
       {documents.length === 0 && (
         <div className="col-span-2 text-center py-8 text-muted-foreground flex flex-col items-center">
           <AlertCircle className="h-6 w-6 mb-2 text-muted-foreground" />
-          {currentFolder ? 
-            'This folder is empty or you don\'t have permission to view its contents.' : 
-            'No documents found in your Google Drive root folder or permission issues.'}
-          <p className="text-sm mt-2">
-            Try refreshing or checking your Google Drive permissions.
-          </p>
+          {currentFolder ? (
+            <>
+              <p>This folder is empty or you don't have permission to view its contents.</p>
+              <Button variant="outline" size="sm" className="mt-4" onClick={handleBack}>
+                Go Back
+              </Button>
+            </>
+          ) : (
+            <>
+              <p>No documents found in your Google Drive root folder.</p>
+              <div className="max-w-xs mt-2 text-xs">
+                <p>Possible reasons:</p>
+                <ul className="list-disc pl-5 mt-1 text-left">
+                  <li>Your root folder is empty</li>
+                  <li>Permission issues with Google API</li>
+                  <li>Google API quota exceeded</li>
+                  <li>API not properly enabled in Google Cloud Console</li>
+                </ul>
+              </div>
+            </>
+          )}
         </div>
       )}
       

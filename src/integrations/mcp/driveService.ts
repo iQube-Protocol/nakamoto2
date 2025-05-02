@@ -26,13 +26,24 @@ export class DriveService {
       return false;
     }
     
+    // Ensure API is loaded or try loading it
     const apiLoaded = await this.googleApiLoader.ensureGoogleApiLoaded();
     if (!apiLoaded) {
-      console.error('Google API failed to load after waiting');
-      toast.error('Google API failed to load', {
-        description: 'Please refresh the page and try again.'
-      });
-      return false;
+      console.error('Google API failed to load, attempting to reload...');
+      // Try reloading the API
+      this.googleApiLoader.loadGoogleApi();
+      
+      // Wait a bit and check again
+      await new Promise(resolve => setTimeout(resolve, 2000));
+      const reloaded = await this.googleApiLoader.ensureGoogleApiLoaded();
+      
+      if (!reloaded) {
+        console.error('Google API failed to load after reload attempt');
+        toast.error('Google API failed to load', {
+          description: 'Please refresh the page and try again.'
+        });
+        return false;
+      }
     }
     
     const gapi = this.googleApiLoader.getGapi();
@@ -51,10 +62,12 @@ export class DriveService {
       // If we have a cached token, try to use it directly
       if (cachedToken) {
         try {
+          console.log('MCP: Attempting to use cached token');
           gapi.client.setToken(JSON.parse(cachedToken));
           
           // Test if the token is still valid with a simple API call
           try {
+            console.log('MCP: Testing cached token validity');
             await gapi.client.drive.files.list({
               pageSize: 1,
               fields: 'files(id)'
@@ -68,60 +81,127 @@ export class DriveService {
           } catch (e) {
             // Token is invalid, proceed with normal flow
             console.log('Cached token is invalid, proceeding with regular auth flow');
+            
+            // Check for specific error types and show user-friendly messages
+            const error = e as any;
+            if (error.status === 401) {
+              console.log('Token expired, need to re-authenticate');
+            } else if (error.status === 403) {
+              console.log('Permission denied, check API Key and scopes');
+              toast.error('Google API access denied', {
+                description: 'Please check your API key and permissions'
+              });
+              return false;
+            }
           }
         } catch (e) {
-          console.error('Error parsing cached token:', e);
+          console.error('Error parsing or using cached token:', e);
+          // Clear invalid token
+          localStorage.removeItem('gdrive-auth-token');
         }
       }
       
       // Create token client for OAuth 2.0 flow (only if cached token didn't work)
       const googleAccounts = (window as any).google?.accounts;
       if (!googleAccounts) {
-        toast.error('Google Sign-In API not available', {
-          description: 'Please check your internet connection and try again'
-        });
-        return false;
+        console.error('Google Sign-In API not available, checking if script loaded');
+        
+        // Check if gsi script is in DOM but not initialized yet
+        const gsiScript = document.querySelector('script[src*="gsi/client"]');
+        if (!gsiScript) {
+          console.log('GSI script not found in DOM, trying to reload it');
+          // Try reloading the GSI script directly
+          const newScript = document.createElement('script');
+          newScript.src = 'https://accounts.google.com/gsi/client';
+          newScript.async = true;
+          document.body.appendChild(newScript);
+          
+          // Wait for the script to load
+          await new Promise((resolve) => {
+            newScript.onload = resolve;
+            setTimeout(resolve, 3000); // Timeout after 3 seconds
+          });
+          
+          // Check again after loading
+          if (!(window as any).google?.accounts) {
+            toast.error('Google Sign-In API not available', {
+              description: 'Please check your internet connection and try again'
+            });
+            return false;
+          }
+        } else {
+          toast.error('Google Sign-In API not available', {
+            description: 'Please check your internet connection and try again'
+          });
+          return false;
+        }
       }
       
-      // Use a promise to track the OAuth flow
-      return new Promise((resolve) => {
-        const tokenClient = googleAccounts.oauth2.initTokenClient({
-          client_id: clientId,
-          scope: 'https://www.googleapis.com/auth/drive.readonly',
-          callback: (tokenResponse: any) => {
-            if (tokenResponse && tokenResponse.access_token) {
-              this.isAuthenticated = true;
-              localStorage.setItem('gdrive-connected', 'true');
+      // Use a promise with timeout to track the OAuth flow
+      return new Promise<boolean>((resolve) => {
+        // Set a timeout for the whole auth process
+        const authTimeout = setTimeout(() => {
+          console.error('OAuth flow timed out');
+          toast.error('Authentication timed out', {
+            description: 'Please try again later'
+          });
+          resolve(false);
+        }, 30000); // 30 seconds timeout
+        
+        try {
+          const tokenClient = (window as any).google.accounts.oauth2.initTokenClient({
+            client_id: clientId,
+            scope: 'https://www.googleapis.com/auth/drive.readonly',
+            callback: (tokenResponse: any) => {
+              clearTimeout(authTimeout);
               
-              // Cache the token
-              try {
-                localStorage.setItem('gdrive-auth-token', JSON.stringify(gapi.client.getToken()));
-              } catch (e) {
-                console.error('Failed to cache token:', e);
+              if (tokenResponse && tokenResponse.access_token) {
+                this.isAuthenticated = true;
+                localStorage.setItem('gdrive-connected', 'true');
+                
+                // Cache the token
+                try {
+                  localStorage.setItem('gdrive-auth-token', JSON.stringify(gapi.client.getToken()));
+                } catch (e) {
+                  console.error('Failed to cache token:', e);
+                }
+                
+                toast.success('Connected to Google Drive', {
+                  description: 'Your Google Drive documents are now available to the AI agents'
+                });
+                console.log('Successfully authenticated with Google Drive');
+                resolve(true);
+              } else {
+                console.error('Token response missing access token');
+                toast.error('Authentication failed', {
+                  description: 'Failed to get access token'
+                });
+                resolve(false);
               }
-              
-              toast.success('Connected to Google Drive', {
-                description: 'Your Google Drive documents are now available to the AI agents'
+            },
+            error_callback: (error: any) => {
+              clearTimeout(authTimeout);
+              console.error('OAuth error:', error);
+              toast.error('Google authentication failed', {
+                description: error.message || 'Failed to authenticate with Google'
               });
-              console.log('Successfully authenticated with Google Drive');
-              resolve(true);
-            } else {
               resolve(false);
             }
-          },
-          error_callback: (error: any) => {
-            console.error('OAuth error:', error);
-            toast.error('Google authentication failed', {
-              description: error.message || 'Failed to authenticate with Google'
-            });
-            resolve(false);
-          }
-        });
-        
-        this.googleApiLoader.setTokenClient(tokenClient);
-        
-        // Request access token with a timeout for better UX
-        tokenClient.requestAccessToken({ prompt: '' });
+          });
+          
+          this.googleApiLoader.setTokenClient(tokenClient);
+          
+          // Request access token
+          console.log('MCP: Requesting access token...');
+          tokenClient.requestAccessToken({ prompt: 'consent' });
+        } catch (error) {
+          clearTimeout(authTimeout);
+          console.error('Error initializing token client:', error);
+          toast.error('Authentication initialization failed', {
+            description: error instanceof Error ? error.message : 'Unknown error'
+          });
+          resolve(false);
+        }
       });
     } catch (error) {
       console.error('MCP: Error connecting to Google Drive:', error);
@@ -157,6 +237,8 @@ export class DriveService {
         `'${folderId}' in parents and trashed = false` : 
         `'root' in parents and trashed = false`;
       
+      console.log(`MCP: Executing Drive query: ${query}`);
+      
       // Use batching for faster response
       const response = await gapi.client.drive.files.list({
         q: query,
@@ -168,13 +250,50 @@ export class DriveService {
       });
       
       const files = response.result.files;
-      console.log(`MCP: Found ${files.length} files in Google Drive`, files);
-      return files;
+      console.log(`MCP: Found ${files?.length || 0} files in Google Drive`, files || []);
+      
+      // If no files were returned, check if it's due to permission issues
+      if (!files || files.length === 0) {
+        console.log('MCP: No files found, checking if it\'s a permission issue');
+        try {
+          // Try to get Drive user info to check if connection is working
+          await gapi.client.drive.about.get({
+            fields: 'user'
+          });
+          // If we got here, the connection works but folder might be empty
+          console.log('MCP: Drive connection is working, folder may be empty');
+        } catch (error) {
+          console.error('MCP: Error checking Drive connection:', error);
+          // Token might be expired, clear connection state
+          if ((error as any).status === 401) {
+            localStorage.removeItem('gdrive-auth-token');
+            this.isAuthenticated = false;
+            localStorage.setItem('gdrive-connected', 'false');
+            toast.error('Google Drive session expired', {
+              description: 'Please reconnect to Google Drive'
+            });
+          }
+        }
+      }
+      
+      return files || [];
     } catch (error) {
       console.error('MCP: Error listing documents from Google Drive:', error);
-      toast.error('Failed to list documents', { 
-        description: error instanceof Error ? error.message : 'Unknown error' 
-      });
+      
+      // Check if it's an authentication error
+      if ((error as any).status === 401) {
+        localStorage.removeItem('gdrive-auth-token');
+        this.isAuthenticated = false;
+        localStorage.setItem('gdrive-connected', 'false');
+        toast.error('Google Drive session expired', {
+          description: 'Please reconnect to Google Drive'
+        });
+      } else {
+        toast.error('Failed to list documents', { 
+          description: error instanceof Error ? error.message : 'Unknown error' 
+        });
+      }
+      
       return [];
     }
   }
@@ -312,5 +431,8 @@ export class DriveService {
    */
   public setAuthenticated(authenticated: boolean): void {
     this.isAuthenticated = authenticated;
+    if (!authenticated) {
+      localStorage.setItem('gdrive-connected', 'false');
+    }
   }
 }
