@@ -18,14 +18,17 @@ import { useEffect, useState } from "react";
 import { ThemeProvider } from "./contexts/ThemeContext";
 import { AuthProvider, useAuth } from "./hooks/use-auth";
 
-// Create query client with error handling
+// Create query client with error handling compatible with @tanstack/react-query v5+
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
       retry: 1,
       refetchOnWindowFocus: false,
-      onError: (error) => {
-        console.error("Query error:", error);
+      // Using the updated API for error handling
+      meta: {
+        onError: (error: Error) => {
+          console.error("Query error:", error);
+        }
       }
     },
   },
