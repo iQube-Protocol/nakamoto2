@@ -16,6 +16,7 @@ export class GoogleApiLoader {
   private scriptLoadAttempts: number = 0;
   private maxLoadAttempts: number = 3;
   private apiInitialized: boolean = false;
+  private loadTimeout: NodeJS.Timeout | null = null;
   
   constructor(options: GoogleApiLoaderOptions = {}) {
     this.onApiLoadStart = options.onApiLoadStart || null;
@@ -33,6 +34,21 @@ export class GoogleApiLoader {
         this.onApiLoadStart();
       }
       
+      // Cancel any previous load timeout
+      if (this.loadTimeout) {
+        clearTimeout(this.loadTimeout);
+        this.loadTimeout = null;
+      }
+      
+      // Set a global timeout to prevent hanging
+      this.loadTimeout = setTimeout(() => {
+        console.error('MCP: Google API scripts loading timed out');
+        this.reset();
+        if (this.onApiLoadComplete) {
+          this.onApiLoadComplete();
+        }
+      }, 15000); // 15 second overall timeout
+      
       // Create a promise that resolves when both scripts are loaded
       this.apiLoadPromise = new Promise((resolve, reject) => {
         let gapiLoaded = false;
@@ -40,6 +56,11 @@ export class GoogleApiLoader {
         
         const checkAllLoaded = () => {
           if (gapiLoaded && gsiLoaded) {
+            if (this.loadTimeout) {
+              clearTimeout(this.loadTimeout);
+              this.loadTimeout = null;
+            }
+            
             if (this.onApiLoadComplete) {
               this.onApiLoadComplete();
             }
@@ -76,6 +97,10 @@ export class GoogleApiLoader {
             reject(e);
           }
         }, 2).catch(reject); // Only retry once for GSI
+      }).catch((error) => {
+        console.error('MCP: Error loading Google API scripts:', error);
+        this.reset();
+        return false;
       });
     }
   }
@@ -135,7 +160,19 @@ export class GoogleApiLoader {
       return;
     }
     
-    ApiInitializer.initializeGapiClient(this.gapi).then((success) => {
+    // Initialize gapi client with a timeout to prevent hanging
+    const initPromise = ApiInitializer.initializeGapiClient(this.gapi);
+    
+    // Add a timeout for initialization
+    const timeoutPromise = new Promise<boolean>((resolve) => {
+      setTimeout(() => {
+        console.warn('MCP: Client initialization timed out, continuing...');
+        resolve(false);
+      }, 5000);
+    });
+    
+    // Race the initialization against the timeout
+    Promise.race([initPromise, timeoutPromise]).then((success) => {
       this.isApiLoaded = success;
       this.apiInitialized = success;
       
@@ -165,6 +202,11 @@ export class GoogleApiLoader {
     this.apiInitialized = false;
     this.apiLoadPromise = null;
     this.scriptLoadAttempts = 0;
+    
+    if (this.loadTimeout) {
+      clearTimeout(this.loadTimeout);
+      this.loadTimeout = null;
+    }
   }
   
   public getGapi(): any {

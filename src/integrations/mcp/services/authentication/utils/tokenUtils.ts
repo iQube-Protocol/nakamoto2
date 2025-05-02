@@ -43,5 +43,15 @@ export const tokenUtils = {
     } catch (e) {
       console.error('Error clearing cached token:', e);
     }
+  },
+  
+  /**
+   * Check if token has expired
+   */
+  isTokenExpired: (token: any): boolean => {
+    if (!token || !token.expires_at) return true;
+    
+    // Check if token expires in less than 5 minutes
+    return token.expires_at - Date.now() < 5 * 60 * 1000;
   }
 };

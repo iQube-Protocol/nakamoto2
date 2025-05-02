@@ -7,6 +7,8 @@ import { GoogleApiLoader } from '../../googleApiLoader';
  */
 export class DocumentLister {
   private googleApiLoader: GoogleApiLoader;
+  private requestInProgress: boolean = false;
+  private requestTimeout: NodeJS.Timeout | null = null;
   
   constructor(googleApiLoader: GoogleApiLoader) {
     this.googleApiLoader = googleApiLoader;
@@ -18,6 +20,51 @@ export class DocumentLister {
   public async listDocuments(folderId?: string): Promise<any[]> {
     console.log(`MCP: Listing documents${folderId ? ' in folder ' + folderId : ''}`);
     
+    // Prevent concurrent requests
+    if (this.requestInProgress) {
+      console.log('Request already in progress, waiting...');
+      await new Promise(resolve => setTimeout(resolve, 500));
+      return this.listDocuments(folderId);
+    }
+    
+    // Clear any existing timeouts
+    if (this.requestTimeout) {
+      clearTimeout(this.requestTimeout);
+      this.requestTimeout = null;
+    }
+    
+    this.requestInProgress = true;
+    
+    // Set a timeout for the entire operation
+    const operationPromise = this.executeListOperation(folderId);
+    const timeoutPromise = new Promise<any[]>((resolve) => {
+      this.requestTimeout = setTimeout(() => {
+        console.error('Document listing operation timed out');
+        toast.error('Document listing timed out', {
+          description: 'Please try again'
+        });
+        this.requestInProgress = false;
+        resolve([]);
+      }, 15000); // 15 second timeout
+    });
+    
+    // Race the operation against the timeout
+    const result = await Promise.race([operationPromise, timeoutPromise]);
+    
+    // Clean up
+    this.requestInProgress = false;
+    if (this.requestTimeout) {
+      clearTimeout(this.requestTimeout);
+      this.requestTimeout = null;
+    }
+    
+    return result;
+  }
+  
+  /**
+   * Execute the document listing operation
+   */
+  private async executeListOperation(folderId?: string): Promise<any[]> {
     const gapi = this.googleApiLoader.getGapi();
     if (!gapi) {
       toast.error('Google API not available');
@@ -29,8 +76,14 @@ export class DocumentLister {
       console.error('Google client not initialized, attempting to initialize');
       
       return new Promise<any[]>((resolve) => {
+        const timeoutId = setTimeout(() => {
+          console.error('Client initialization in listDocuments timed out');
+          resolve([]);
+        }, 8000);
+        
         gapi.load('client', {
           callback: async () => {
+            clearTimeout(timeoutId);
             console.log('Client API loaded in listDocuments, attempting to list documents');
             try {
               const docs = await this.executeListDocuments(folderId);
@@ -41,11 +94,11 @@ export class DocumentLister {
             }
           },
           onerror: () => {
+            clearTimeout(timeoutId);
             console.error('Failed to load client API in listDocuments');
             toast.error('Failed to initialize Google API client');
             resolve([]);
-          },
-          timeout: 10000
+          }
         });
       });
     }
@@ -58,12 +111,26 @@ export class DocumentLister {
    */
   private async executeListDocuments(folderId?: string): Promise<any[]> {
     const gapi = this.googleApiLoader.getGapi();
-    if (!gapi || !gapi.client || !gapi.client.drive) {
-      console.error('Google Drive API not available');
-      toast.error('Google Drive API not available', {
-        description: 'Please check if the Drive API is enabled in your Google Cloud Console'
-      });
+    if (!gapi || !gapi.client) {
+      console.error('Google API client not available');
       return [];
+    }
+    
+    // Check if Drive API is available
+    if (!gapi.client.drive) {
+      console.error('Google Drive API not available');
+      
+      // Try to initialize Drive API
+      try {
+        await gapi.client.load('drive', 'v3');
+        console.log('Drive API loaded successfully');
+      } catch (e) {
+        console.error('Failed to load Drive API:', e);
+        toast.error('Google Drive API not available', {
+          description: 'Please check if the Drive API is enabled in your Google Cloud Console'
+        });
+        return [];
+      }
     }
     
     try {
@@ -73,14 +140,21 @@ export class DocumentLister {
       
       console.log(`MCP: Executing Drive query: ${query}`);
       
-      // Use batching for faster response
-      const response = await gapi.client.drive.files.list({
+      // Use a timeout for the API call
+      const apiCallPromise = gapi.client.drive.files.list({
         q: query,
         fields: 'files(id, name, mimeType, modifiedTime)',
         orderBy: 'modifiedTime desc',
-        pageSize: 50,
+        pageSize: 30, // Reduced page size for faster response
         supportsAllDrives: false
       });
+      
+      const timeoutPromise = new Promise((_, reject) => {
+        setTimeout(() => reject(new Error('API call timed out')), 10000);
+      });
+      
+      // Race the API call against a timeout
+      const response = await Promise.race([apiCallPromise, timeoutPromise]);
       
       const files = response.result.files;
       console.log(`MCP: Found ${files?.length || 0} files in Google Drive`, files || []);
@@ -118,6 +192,10 @@ export class DocumentLister {
         localStorage.setItem('gdrive-connected', 'false');
         toast.error('Google Drive session expired', {
           description: 'Please reconnect to Google Drive'
+        });
+      } else if (error.message === 'API call timed out') {
+        toast.error('Google Drive request timed out', {
+          description: 'Please try again'
         });
       } else {
         toast.error('Failed to list documents', { 

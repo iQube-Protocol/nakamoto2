@@ -13,6 +13,7 @@ import { tokenUtils } from './utils/tokenUtils';
 export class DriveAuthService extends BaseService {
   private googleApiLoader: GoogleApiLoader;
   private isAuthenticated: boolean = false;
+  private authTimeoutId: NodeJS.Timeout | null = null;
   
   constructor(googleApiLoader: GoogleApiLoader) {
     super();
@@ -28,36 +29,87 @@ export class DriveAuthService extends BaseService {
    * Completes Drive connection after ensuring API is initialized
    */
   public async authenticateWithDrive(clientId: string, apiKey: string, cachedToken?: string | null): Promise<boolean> {
+    // Clear any existing timeouts
+    if (this.authTimeoutId) {
+      clearTimeout(this.authTimeoutId);
+      this.authTimeoutId = null;
+    }
+    
+    // Set a global timeout to prevent hanging
+    const timeoutPromise = new Promise<boolean>((resolve) => {
+      this.authTimeoutId = setTimeout(() => {
+        console.error('MCP: Authentication process timed out');
+        toast.error('Authentication timed out', { 
+          description: 'Please try again' 
+        });
+        resolve(false);
+      }, 20000); // 20 second timeout
+    });
+    
+    // The actual authentication process
+    const authPromise = this.executeAuthentication(clientId, apiKey, cachedToken);
+    
+    // Race the authentication against the timeout
+    const result = await Promise.race([authPromise, timeoutPromise]);
+    
+    // Clear the timeout if authentication completed
+    if (this.authTimeoutId) {
+      clearTimeout(this.authTimeoutId);
+      this.authTimeoutId = null;
+    }
+    
+    return result;
+  }
+  
+  /**
+   * Execute the actual authentication process
+   */
+  private async executeAuthentication(clientId: string, apiKey: string, cachedToken?: string | null): Promise<boolean> {
     const gapi = this.googleApiLoader.getGapi();
-    if (!gapi || !gapi.client) {
+    if (!gapi) {
       console.error('Google API client not available, attempting to initialize...');
       
-      // Check if gapi exists but client is not initialized
-      if (gapi && !gapi.client) {
-        console.log('GAPI exists but client not initialized, initializing now');
-        return new Promise<boolean>((resolve) => {
-          gapi.load('client', {
-            callback: async () => {
-              console.log('Google client API initialized in authenticateWithDrive');
-              // Continue with authentication after client is loaded
-              const result = await this.completeAuthentication(clientId, apiKey, cachedToken);
-              resolve(result);
-            },
-            onerror: () => {
-              console.error('Failed to load Google client API');
-              toast.error('Google API initialization failed', {
-                description: 'Please refresh the page and try again'
-              });
-              resolve(false);
-            }
-          });
-        });
-      }
+      // Wait for API to load with a timeout
+      const apiLoaded = await Promise.race([
+        this.googleApiLoader.ensureGoogleApiLoaded(),
+        new Promise<boolean>(resolve => setTimeout(() => resolve(false), 10000))
+      ]);
       
-      toast.error('Google API not available', {
-        description: 'Please refresh the page and try again'
+      if (!apiLoaded) {
+        toast.error('Google API failed to load', {
+          description: 'Please refresh the page and try again'
+        });
+        return false;
+      }
+    }
+    
+    // Check if gapi exists but client is not initialized
+    if (gapi && !gapi.client) {
+      console.log('GAPI exists but client not initialized, initializing now');
+      return new Promise<boolean>((resolve) => {
+        const timeoutId = setTimeout(() => {
+          console.error('Client initialization timed out');
+          resolve(false);
+        }, 8000);
+        
+        gapi.load('client', {
+          callback: async () => {
+            clearTimeout(timeoutId);
+            console.log('Google client API initialized in authenticateWithDrive');
+            // Continue with authentication after client is loaded
+            const result = await this.completeAuthentication(clientId, apiKey, cachedToken);
+            resolve(result);
+          },
+          onerror: () => {
+            clearTimeout(timeoutId);
+            console.error('Failed to load Google client API');
+            toast.error('Google API initialization failed', {
+              description: 'Please refresh the page and try again'
+            });
+            resolve(false);
+          }
+        });
       });
-      return false;
     }
     
     return this.completeAuthentication(clientId, apiKey, cachedToken);

@@ -18,13 +18,38 @@ export class ApiClientInitializer {
     
     try {
       console.log('Initializing Google API client with provided credentials');
-      // Initialize the Google API client with provided credentials
-      await gapi.client.init({
-        apiKey: apiKey,
-        discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'],
+      
+      // Setup a timeout to prevent hanging
+      const timeoutPromise = new Promise<boolean>((resolve) => {
+        setTimeout(() => {
+          console.warn('API client initialization timed out');
+          resolve(false);
+        }, 8000); // 8 second timeout
       });
       
-      return true;
+      // The actual initialization
+      const initPromise = (async () => {
+        try {
+          // Initialize the Google API client with provided credentials
+          await gapi.client.init({
+            apiKey: apiKey,
+            discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'],
+          });
+          return true;
+        } catch (e) {
+          console.error('Error in client.init():', e);
+          return false;
+        }
+      })();
+      
+      // Race the initialization against the timeout
+      const result = await Promise.race([initPromise, timeoutPromise]);
+      
+      if (!result) {
+        toast.error('Google API client initialization timed out');
+      }
+      
+      return result;
     } catch (error) {
       console.error('MCP: Error initializing Google API client:', error);
       toast.error('Google Drive initialization failed', { 
