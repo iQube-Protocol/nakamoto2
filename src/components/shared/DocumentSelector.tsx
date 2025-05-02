@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -19,6 +18,7 @@ import FileGrid from './document/FileGrid';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useMCP } from '@/hooks/use-mcp';
+import { toast } from 'sonner';
 
 interface DocumentSelectorProps {
   onDocumentSelect: (document: any) => void;
@@ -218,9 +218,6 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
   // Loading states
   const isProcessing = connectionLoading || documentsLoading || isApiLoading || connecting || connectionInProgress;
   
-  // Import toast from sonner at the component level to prevent circular dependency
-  const { toast } = require('sonner');
-
   return (
     <Dialog open={isOpen} onOpenChange={handleDialogChange}>
       <DialogTrigger asChild>
