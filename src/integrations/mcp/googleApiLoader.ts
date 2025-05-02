@@ -2,68 +2,49 @@
 import { GoogleApiLoaderOptions } from './api/types';
 import { ScriptLoader } from './api/scriptLoader';
 import { ApiInitializer } from './api/apiInitializer';
+import { GoogleApiEvents } from './api/GoogleApiEvents';
+import { GoogleApiState } from './api/GoogleApiState';
+import { GoogleApiClient } from './api/GoogleApiClient';
 
 /**
  * Helper for loading and managing Google API scripts
  */
 export class GoogleApiLoader {
-  private gapi: any = null;
-  private tokenClient: any = null;
-  private isApiLoaded: boolean = false;
-  private apiLoadPromise: Promise<boolean> | null = null;
-  private onApiLoadStart: (() => void) | null = null;
-  private onApiLoadComplete: (() => void) | null = null;
-  private scriptLoadAttempts: number = 0;
-  private maxLoadAttempts: number = 3;
-  private apiInitialized: boolean = false;
-  private loadTimeout: NodeJS.Timeout | null = null;
+  private client: GoogleApiClient;
+  private state: GoogleApiState;
+  private events: GoogleApiEvents;
   
   constructor(options: GoogleApiLoaderOptions = {}) {
-    this.onApiLoadStart = options.onApiLoadStart || null;
-    this.onApiLoadComplete = options.onApiLoadComplete || null;
+    this.client = new GoogleApiClient();
+    this.state = new GoogleApiState();
+    this.events = new GoogleApiEvents(options.onApiLoadStart, options.onApiLoadComplete);
   }
   
   /**
    * Load Google API script dynamically with improved error handling and retry logic
    */
   public loadGoogleApi(): void {
-    if (typeof window !== 'undefined' && !this.isApiLoaded && !this.apiLoadPromise) {
+    if (typeof window !== 'undefined' && !this.state.isLoaded() && !this.state.getApiLoadPromise()) {
       console.log('MCP: Loading Google API scripts...');
       
-      if (this.onApiLoadStart) {
-        this.onApiLoadStart();
-      }
-      
-      // Cancel any previous load timeout
-      if (this.loadTimeout) {
-        clearTimeout(this.loadTimeout);
-        this.loadTimeout = null;
-      }
+      this.events.triggerLoadStart();
       
       // Set a global timeout to prevent hanging
-      this.loadTimeout = setTimeout(() => {
+      this.state.setLoadTimeout(setTimeout(() => {
         console.error('MCP: Google API scripts loading timed out');
         this.reset();
-        if (this.onApiLoadComplete) {
-          this.onApiLoadComplete();
-        }
-      }, 15000); // 15 second overall timeout
+        this.events.triggerLoadComplete();
+      }, 15000)); // 15 second overall timeout
       
       // Create a promise that resolves when both scripts are loaded
-      this.apiLoadPromise = new Promise<boolean>((resolve, reject) => {
+      this.state.setApiLoadPromise(new Promise<boolean>((resolve, reject) => {
         let gapiLoaded = false;
         let gsiLoaded = false;
         
         const checkAllLoaded = () => {
           if (gapiLoaded && gsiLoaded) {
-            if (this.loadTimeout) {
-              clearTimeout(this.loadTimeout);
-              this.loadTimeout = null;
-            }
-            
-            if (this.onApiLoadComplete) {
-              this.onApiLoadComplete();
-            }
+            this.state.clearLoadTimeout();
+            this.events.triggerLoadComplete();
             resolve(true);
           }
         };
@@ -73,7 +54,7 @@ export class GoogleApiLoader {
           src: 'https://apis.google.com/js/api.js',
           async: true,
           onLoad: () => {
-            this.scriptLoadAttempts = 0; // Reset attempts counter on success
+            this.state.resetLoadAttempts();
             this.onGapiLoaded();
             gapiLoaded = true;
             checkAllLoaded();
@@ -82,7 +63,7 @@ export class GoogleApiLoader {
             console.error('Failed to load Google API script:', e);
             reject(e);
           }
-        }, this.maxLoadAttempts).catch(reject);
+        }, this.state.getMaxLoadAttempts()).catch(reject);
         
         // Load GSI script
         ScriptLoader.loadScript({
@@ -101,7 +82,7 @@ export class GoogleApiLoader {
         console.error('MCP: Error loading Google API scripts:', error);
         this.reset();
         return false; // Explicitly return a boolean value here
-      });
+      }));
     }
   }
   
@@ -110,29 +91,29 @@ export class GoogleApiLoader {
    */
   public async ensureGoogleApiLoaded(): Promise<boolean> {
     // If API is already fully loaded and initialized
-    if (this.isApiLoaded && this.apiInitialized) return true;
+    if (this.state.isLoaded() && this.state.isInitialized()) return true;
     
     // If we're in the process of loading, wait for it
-    if (this.apiLoadPromise) {
+    if (this.state.getApiLoadPromise()) {
       try {
         // Explicitly cast the result to boolean to ensure type safety
-        const loadResult: boolean = await this.apiLoadPromise;
+        const loadResult: boolean = await this.state.getApiLoadPromise()!;
         
         // After scripts are loaded, ensure client is initialized
-        if (!this.apiInitialized) {
-          this.gapi = (window as any).gapi;
+        if (!this.state.isInitialized()) {
+          this.client.setGapi((window as any).gapi);
           
           // Check if gapi is available now
-          if (!this.gapi) {
+          if (!this.client.getGapi()) {
             console.error('MCP: Google API client not available after loading');
             return false;
           }
           
           // Initialize client
-          const success = await ApiInitializer.initializeGapiClient(this.gapi);
+          const success = await ApiInitializer.initializeGapiClient(this.client.getGapi());
           if (success) {
-            this.apiInitialized = true;
-            this.isApiLoaded = true;
+            this.state.setInitialized(true);
+            this.state.setLoaded(true);
           }
           return success;
         }
@@ -141,7 +122,7 @@ export class GoogleApiLoader {
       } catch (e) {
         console.error('Error ensuring Google API loaded:', e);
         // If promise failed, reset it so we can try loading again
-        this.apiLoadPromise = null;
+        this.state.setApiLoadPromise(null);
         return false;
       }
     }
@@ -155,14 +136,14 @@ export class GoogleApiLoader {
    * Callback when Google API script is loaded
    */
   private onGapiLoaded(): void {
-    this.gapi = (window as any).gapi;
-    if (!this.gapi) {
+    this.client.setGapi((window as any).gapi);
+    if (!this.client.getGapi()) {
       console.error('MCP: Google API client failed to load');
       return;
     }
     
     // Initialize gapi client with a timeout to prevent hanging
-    const initPromise = ApiInitializer.initializeGapiClient(this.gapi);
+    const initPromise = ApiInitializer.initializeGapiClient(this.client.getGapi());
     
     // Add a timeout for initialization
     const timeoutPromise = new Promise<boolean>((resolve) => {
@@ -174,14 +155,14 @@ export class GoogleApiLoader {
     
     // Race the initialization against the timeout
     Promise.race([initPromise, timeoutPromise]).then((success) => {
-      this.isApiLoaded = success;
-      this.apiInitialized = success;
+      this.state.setLoaded(success);
+      this.state.setInitialized(success);
       
       if (!success) {
         // Retry once
-        ApiInitializer.retryInitialization(this.gapi).then((retrySuccess) => {
-          this.isApiLoaded = retrySuccess;
-          this.apiInitialized = retrySuccess;
+        ApiInitializer.retryInitialization(this.client.getGapi()).then((retrySuccess) => {
+          this.state.setLoaded(retrySuccess);
+          this.state.setInitialized(retrySuccess);
         });
       }
     });
@@ -191,38 +172,31 @@ export class GoogleApiLoader {
    * Check if API is fully initialized and ready for use
    */
   public isClientInitialized(): boolean {
-    return this.isApiLoaded && this.apiInitialized && 
-           this.gapi && this.gapi.client;
+    return this.state.isLoaded() && this.state.isInitialized() && 
+           this.client.isClientInitialized();
   }
   
   /**
    * Reset API loader state
    */
   public reset(): void {
-    this.isApiLoaded = false;
-    this.apiInitialized = false;
-    this.apiLoadPromise = null;
-    this.scriptLoadAttempts = 0;
-    
-    if (this.loadTimeout) {
-      clearTimeout(this.loadTimeout);
-      this.loadTimeout = null;
-    }
+    this.state.reset();
+    this.client.reset();
   }
   
   public getGapi(): any {
-    return this.gapi;
+    return this.client.getGapi();
   }
   
   public setTokenClient(tokenClient: any): void {
-    this.tokenClient = tokenClient;
+    this.client.setTokenClient(tokenClient);
   }
   
   public getTokenClient(): any {
-    return this.tokenClient;
+    return this.client.getTokenClient();
   }
   
   public isLoaded(): boolean {
-    return this.isApiLoaded;
+    return this.state.isLoaded();
   }
 }
