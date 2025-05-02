@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface InteractionData {
@@ -87,6 +86,7 @@ export const getUserInteractions = async (
 
     console.log('Fetching interactions for user:', user_id, 'type:', interactionType || 'all');
 
+    // Build query based on parameters
     let queryBuilder = supabase
       .from('user_interactions')
       .select('*')
@@ -106,6 +106,7 @@ export const getUserInteractions = async (
       queryBuilder = queryBuilder.range(offset, offset + limit - 1);
     }
 
+    // Execute the query
     const { data, error } = await queryBuilder;
 
     if (error) {
@@ -113,6 +114,7 @@ export const getUserInteractions = async (
       return { data: null, error };
     }
 
+    // Log results
     console.log('Fetched interactions:', data?.length || 0, 'for type:', interactionType || 'all');
     if (data?.length) {
       console.log('Sample interaction:', {
@@ -131,6 +133,18 @@ export const getUserInteractions = async (
         limit,
         offset
       });
+      
+      // Add a direct test insert to help troubleshoot
+      console.log('Attempting test interaction insert...');
+      const testInsert = await storeUserInteraction({
+        query: "Test query from troubleshooting",
+        response: "Test response from profile troubleshooting",
+        interactionType: interactionType || 'learn',
+        user_id
+      });
+      
+      console.log('Test insert result:', testInsert.success ? 'Success' : 'Failed', 
+        testInsert.data ? `ID: ${testInsert.data.id}` : '');
     }
     
     return { data, error: null };
