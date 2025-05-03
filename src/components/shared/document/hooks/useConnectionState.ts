@@ -28,7 +28,15 @@ export const useConnectionState = () => {
       // Use clientId and apiKey from the hook if available, otherwise use empty strings
       const clientId = localStorage.getItem('gdrive-client-id') || '';
       const apiKey = localStorage.getItem('gdrive-api-key') || '';
+      
+      console.log('useConnectionState: Connecting with stored credentials', {
+        hasClientId: !!clientId,
+        hasApiKey: !!apiKey
+      });
+      
       const result = await connectToDrive(clientId, apiKey);
+      console.log('Connection result:', result);
+      
       if (!result) {
         setConnectionError(true);
       }

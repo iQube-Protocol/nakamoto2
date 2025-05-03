@@ -7,7 +7,7 @@ import { ApiStateManager } from './api-state-manager';
 // Constants
 const GAPI_SCRIPT_URL = 'https://apis.google.com/js/api.js';
 const GSI_SCRIPT_URL = 'https://accounts.google.com/gsi/client';
-const DEFAULT_TIMEOUT = 30000; // 30 seconds
+const DEFAULT_TIMEOUT = 45000; // Increased from 30s to 45s
 
 /**
  * Manages loading of Google APIs
@@ -28,8 +28,8 @@ export class GoogleApiLoader {
     
     // Check if we're in a browser environment before trying to load the API
     if (typeof window !== 'undefined') {
-      // Try to load API immediately, but don't block
-      setTimeout(() => this.loadGoogleApi(), 0);
+      // Try to load API immediately with a small delay to let the page initialize
+      setTimeout(() => this.loadGoogleApi(), 100);
       
       // Also set up a listener for when the page is fully loaded
       if (document.readyState === 'complete') {
@@ -167,9 +167,9 @@ export class GoogleApiLoader {
           
           // Try again if we haven't exceeded max attempts
           if (this.stateManager.getLoadAttempts() < this.stateManager.getState().maxLoadAttempts) {
-            console.log(`MCP: Retrying Google API load (Attempt ${this.stateManager.getLoadAttempts() + 1}/${this.stateManager.getState().maxLoadAttempts})`);
+            console.log(`MCP: Retrying Google API load after timeout (Attempt ${this.stateManager.getLoadAttempts() + 1}/${this.stateManager.getState().maxLoadAttempts})`);
             this.stateManager.setApiLoadPromise(null); // Reset the promise so we can try again
-            this.loadGoogleApi(); // Recursive call to try loading again
+            setTimeout(() => this.loadGoogleApi(), 1000); // Add a small delay before retrying
           } else {
             reject(new Error('Google API loading timed out after maximum attempts'));
           }
@@ -247,28 +247,39 @@ export class GoogleApiLoader {
       timeout: this.apiLoadTimeout
     }).then(() => {
       console.log('MCP: Google API script loaded');
-      this.gapi = (window as any).gapi;
       
-      if (!this.gapi) {
-        return Promise.reject(new Error('Google API failed to load'));
-      }
-      
+      // Give a short delay to ensure script is initialized
       return new Promise<void>((resolve, reject) => {
-        this.gapi.load('client', {
-          callback: () => {
-            console.log('MCP: Google API client loaded successfully');
-            resolve();
-          },
-          onerror: (e: any) => {
-            console.error('MCP: Failed to load Google API client:', e);
-            reject(e);
-          },
-          timeout: 20000, // 20 seconds
-          ontimeout: () => {
-            console.error('MCP: Google API client load timed out');
-            reject(new Error('Google API client load timed out'));
+        setTimeout(() => {
+          this.gapi = (window as any).gapi;
+          
+          if (!this.gapi) {
+            console.error('MCP: Google API not found in window after loading script');
+            reject(new Error('Google API failed to load'));
+            return;
           }
-        });
+          
+          try {
+            this.gapi.load('client', {
+              callback: () => {
+                console.log('MCP: Google API client loaded successfully');
+                resolve();
+              },
+              onerror: (e: any) => {
+                console.error('MCP: Failed to load Google API client:', e);
+                reject(e);
+              },
+              timeout: 20000, // 20 seconds
+              ontimeout: () => {
+                console.error('MCP: Google API client load timed out');
+                reject(new Error('Google API client load timed out'));
+              }
+            });
+          } catch (err) {
+            console.error('MCP: Error calling gapi.load:', err);
+            reject(err);
+          }
+        }, 100); // Short delay to let gapi initialize
       });
     });
   }
@@ -319,7 +330,7 @@ export class GoogleApiLoader {
         this.stateManager.setApiLoadPromise(null);
         
         // Add a small delay before retrying
-        setTimeout(() => this.loadGoogleApi(), 1000);
+        setTimeout(() => this.loadGoogleApi(), 1500); // Increased delay to 1.5s for more stability
       } else {
         reject(error);
       }

@@ -1,5 +1,6 @@
 
 import React, { createContext, useContext } from 'react';
+import { toast } from 'sonner';
 import { DocumentSelectorContextProps } from './types/documentSelectorTypes';
 import { useDocumentSelectorState } from './hooks/useDocumentSelectorState';
 
@@ -28,6 +29,7 @@ const DocumentSelectorContext = createContext<DocumentSelectorContextProps | und
 export const useDocumentSelectorContext = () => {
   const context = useContext(DocumentSelectorContext);
   if (context === undefined) {
+    console.error('useDocumentSelectorContext must be used within a DocumentSelectorProvider');
     throw new Error('useDocumentSelectorContext must be used within a DocumentSelectorProvider');
   }
   return context;
@@ -46,6 +48,11 @@ export const DocumentSelectorProvider: React.FC<{ children: React.ReactNode }> =
     );
   } catch (error) {
     console.error("Error in DocumentSelectorProvider:", error);
+    toast.error("Error initializing document selector", {
+      description: error instanceof Error ? error.message : "Unknown error occurred",
+      id: "document-selector-error",
+    });
+    
     // Provide default safe values on error
     return (
       <DocumentSelectorContext.Provider value={defaultContextValue as DocumentSelectorContextProps}>

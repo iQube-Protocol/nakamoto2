@@ -35,7 +35,7 @@ export const useGoogleApiStatus = () => {
     }
 
     // Set up an interval to check if API is loaded with a maximum number of attempts
-    const maxApiCheckAttempts = 30;
+    const maxApiCheckAttempts = 40; // Increase from 30 to 40
     const interval = setInterval(() => {
       setApiCheckAttempts(prev => {
         const newCount = prev + 1;
@@ -57,6 +57,16 @@ export const useGoogleApiStatus = () => {
     // Clean up interval
     return () => clearInterval(interval);
   }, [checkApiStatus]);
+  
+  useEffect(() => {
+    // If isApiLoading is false, double check our own state
+    if (!isApiLoading && apiLoadingState === 'loading') {
+      if ((window as any).gapi && (window as any).google?.accounts) {
+        console.log('DocumentSelector: Google API detected as loaded after MCP reported loading complete');
+        setApiLoadingState('loaded');
+      }
+    }
+  }, [isApiLoading, apiLoadingState]);
   
   return {
     apiLoadingState,
