@@ -4,7 +4,12 @@ import { useMCP } from '@/hooks/mcp/use-mcp';
 import { useDocumentBrowser } from '@/hooks/useDocumentBrowser';
 
 export const useDocumentOperations = () => {
-  const { refreshCurrentFolder, documents, isLoading: documentsLoading } = useDocumentBrowser();
+  const { driveConnected, connectionStatus } = useMCP();
+  const { 
+    documents, 
+    isLoading: documentsLoading, 
+    refreshCurrentFolder 
+  } = useDocumentBrowser();
   
   // Handle refresh with retry count and error handling
   const handleRefreshDocuments = useCallback(async () => {
@@ -20,6 +25,8 @@ export const useDocumentOperations = () => {
   return {
     documents,
     documentsLoading,
-    handleRefreshDocuments
+    handleRefreshDocuments,
+    driveConnected,
+    connectionStatus
   };
 };

@@ -5,10 +5,7 @@ import { useMCP } from '@/hooks/mcp/use-mcp';
 import { useDriveConnection } from '@/hooks/useDriveConnection';
 
 export const useConnectionState = () => {
-  const { 
-    isApiLoading, 
-    checkApiStatus 
-  } = useMCP();
+  const { checkApiStatus } = useMCP();
   
   const {
     connectionInProgress,
@@ -18,8 +15,6 @@ export const useConnectionState = () => {
   } = useDriveConnection();
   
   const [connecting, setConnecting] = useState(false);
-  const [apiLoadingState, setApiLoadingState] = useState<'loading' | 'loaded' | 'error'>('loading');
-  const [apiCheckAttempts, setApiCheckAttempts] = useState(0);
   const [connectionError, setConnectionError] = useState<boolean>(false);
   const [refreshAttempts, setRefreshAttempts] = useState(0);
   
@@ -45,26 +40,17 @@ export const useConnectionState = () => {
   
   // Handle reset connection with consistent UI feedback
   const handleResetConnection = useCallback(() => {
-    // First reset API loading state
-    setApiLoadingState('loading');
-    setApiCheckAttempts(0);
-    setConnectionError(false);
-    
-    // Then reset the connection
+    // Reset the connection
     resetConnection();
+    setConnectionError(false);
   }, [resetConnection]);
 
   return {
     connecting,
-    apiLoadingState,
-    setApiLoadingState,
-    apiCheckAttempts,
-    setApiCheckAttempts,
     connectionError,
     setConnectionError,
     refreshAttempts,
     setRefreshAttempts,
-    isApiLoading,
     checkApiStatus,
     connectionInProgress,
     connectionAttempts,
