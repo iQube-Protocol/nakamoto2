@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { useMCP } from '@/hooks/use-mcp';
+import { useMCP } from '@/hooks/mcp/use-mcp';
 import { toast } from 'sonner';
 
 interface UseDocumentContextProps {
@@ -14,82 +14,6 @@ const useDocumentContext = ({ conversationId, onDocumentAdded }: UseDocumentCont
   const [isLoading, setIsLoading] = useState(false);
   const mcpContext = useMCP();
   
-  // Create safe method wrappers that handle missing MCP methods
-  const addDocumentToContext = async (conversationId: string, document: any): Promise<boolean> => {
-    if (mcpContext.client && typeof mcpContext.client.addDocumentToContext === 'function') {
-      try {
-        // The MCP client expects 4 parameters: documentId, documentName, documentType, content
-        const documentType = document.mimeType?.split('/')[1] || 'plain';
-        mcpContext.client.addDocumentToContext(
-          document.id, 
-          document.name, 
-          documentType, 
-          document.content || ''
-        );
-        return true;
-      } catch (error) {
-        console.error('Error in addDocumentToContext:', error);
-        return false;
-      }
-    } else {
-      console.log('addDocumentToContext not available, using localStorage fallback');
-      // Fallback to localStorage if MCP method is not available
-      const updatedDocs = [...selectedDocuments, document];
-      setSelectedDocuments(updatedDocs);
-      if (conversationId) {
-        localStorage.setItem(`docs-${conversationId}`, JSON.stringify(updatedDocs));
-      }
-      return true;
-    }
-  };
-  
-  const getDocumentsInContext = async (conversationId: string): Promise<any[]> => {
-    if (mcpContext.client && typeof mcpContext.client.getDocumentContext === 'function') {
-      try {
-        // Using the correct method name: getDocumentContext instead of getDocumentsInContext
-        return mcpContext.client.getDocumentContext(conversationId) || [];
-      } catch (error) {
-        console.error('Error in getDocumentsInContext:', error);
-        return [];
-      }
-    } else {
-      console.log('getDocumentContext not available, using localStorage fallback');
-      // Fallback to localStorage if MCP method is not available
-      if (conversationId) {
-        const storedDocs = localStorage.getItem(`docs-${conversationId}`);
-        if (storedDocs) {
-          try {
-            return JSON.parse(storedDocs);
-          } catch (e) {
-            console.error('Error parsing stored documents:', e);
-          }
-        }
-      }
-      return [];
-    }
-  };
-  
-  const removeDocumentFromContext = async (conversationId: string, documentId: string): Promise<boolean> => {
-    if (mcpContext.client && typeof mcpContext.client.removeDocumentFromContext === 'function') {
-      try {
-        // The removeDocumentFromContext method only expects one argument: documentId
-        return mcpContext.client.removeDocumentFromContext(documentId) || false;
-      } catch (error) {
-        console.error('Error in removeDocumentFromContext:', error);
-        return false;
-      }
-    } else {
-      console.log('removeDocumentFromContext not available, using localStorage fallback');
-      // Fallback to localStorage if MCP method is not available
-      const updatedDocs = selectedDocuments.filter(doc => doc.id !== documentId);
-      setSelectedDocuments(updatedDocs);
-      if (conversationId) {
-        localStorage.setItem(`docs-${conversationId}`, JSON.stringify(updatedDocs));
-      }
-      return true;
-    }
-  };
-  
   // Load documents for the current conversation when component mounts or conversation changes
   const loadDocumentsForConversation = useCallback(async () => {
     if (!conversationId) return;
@@ -97,7 +21,7 @@ const useDocumentContext = ({ conversationId, onDocumentAdded }: UseDocumentCont
     setIsLoading(true);
     try {
       console.log(`Loading documents for conversation: ${conversationId}`);
-      const documents = await getDocumentsInContext(conversationId);
+      const documents = await mcpContext.getDocumentsInContext(conversationId);
       if (documents && Array.isArray(documents)) {
         console.log(`Found ${documents.length} documents in context`);
         setSelectedDocuments(documents);
@@ -111,7 +35,7 @@ const useDocumentContext = ({ conversationId, onDocumentAdded }: UseDocumentCont
     } finally {
       setIsLoading(false);
     }
-  }, [conversationId]);
+  }, [conversationId, mcpContext]);
   
   // Initial load and reload when conversation changes
   useEffect(() => {
@@ -160,7 +84,7 @@ const useDocumentContext = ({ conversationId, onDocumentAdded }: UseDocumentCont
     
     setIsLoading(true);
     try {
-      const success = await addDocumentToContext(conversationId, document);
+      const success = await mcpContext.addDocumentToContext(conversationId, document);
       
       if (success) {
         // Update local state
@@ -188,7 +112,7 @@ const useDocumentContext = ({ conversationId, onDocumentAdded }: UseDocumentCont
     
     setIsLoading(true);
     try {
-      const success = await removeDocumentFromContext(conversationId, documentId);
+      const success = await mcpContext.removeDocumentFromContext(conversationId, documentId);
       
       if (success) {
         // Update local state
