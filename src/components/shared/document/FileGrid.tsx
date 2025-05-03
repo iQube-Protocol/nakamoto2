@@ -4,7 +4,6 @@ import { Card } from '@/components/ui/card';
 import { Loader2, FolderOpen } from 'lucide-react';
 import FileIcon from '@/components/shared/agent/document/FileIcon';
 import { useDocumentSelectorContext } from './DocumentSelectorContext';
-import { useDocumentBrowser } from '@/hooks/useDocumentBrowser';
 
 interface FileGridProps {
   handleDocumentClick: (doc: any) => void;
@@ -15,7 +14,7 @@ const FileGrid: React.FC<FileGridProps> = ({
   handleDocumentClick,
   handleBack
 }) => {
-  const { documents, isLoading, currentFolder } = useDocumentBrowser();
+  const { documents, documentsLoading: isLoading, currentFolder } = useDocumentSelectorContext();
   
   if (isLoading) {
     return (

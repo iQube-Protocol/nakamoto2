@@ -1,6 +1,7 @@
 
-import { useState, useEffect } from 'react';
-import { useMCP } from '@/hooks/use-mcp';
+import { useState, useEffect, useCallback } from 'react';
+import { useMCP } from '@/hooks/mcp/use-mcp';
+import { useDocumentSelectorContext } from '@/components/shared/document/DocumentSelectorContext';
 
 interface FolderHistory {
   id: string;
@@ -11,7 +12,10 @@ export function useDocumentBrowser() {
   const { listDocuments, documents, isLoading, driveConnected } = useMCP();
   const [currentFolder, setCurrentFolder] = useState('');
   const [folderHistory, setFolderHistory] = useState<FolderHistory[]>([]);
-  const [isOpen, setIsOpen] = useState(false);
+  
+  // Get isOpen from context if available, otherwise use local state
+  const contextValue = useContext();
+  const isOpen = contextValue?.isOpen ?? false;
   
   // Fetch documents when dialog opens or folder changes
   useEffect(() => {
@@ -20,7 +24,7 @@ export function useDocumentBrowser() {
     }
   }, [isOpen, driveConnected, currentFolder, listDocuments]);
 
-  const handleDocumentClick = (doc: any) => {
+  const handleDocumentClick = useCallback((doc: any) => {
     if (doc.mimeType.includes('folder')) {
       // Save current folder to history before navigating
       if (currentFolder) {
@@ -36,9 +40,9 @@ export function useDocumentBrowser() {
       setCurrentFolder(doc.id);
     }
     return doc;
-  };
+  }, [currentFolder, documents, folderHistory]);
 
-  const handleBack = () => {
+  const handleBack = useCallback(() => {
     if (folderHistory.length > 0) {
       // Go back to the previous folder
       const newHistory = [...folderHistory];
@@ -49,9 +53,9 @@ export function useDocumentBrowser() {
       // Go back to root
       setCurrentFolder('');
     }
-  };
+  }, [folderHistory]);
   
-  const navigateToFolder = (folderId: string, historyIndex?: number) => {
+  const navigateToFolder = useCallback((folderId: string, historyIndex?: number) => {
     if (historyIndex !== undefined) {
       // Navigate to specific folder in history
       setCurrentFolder(folderId);
@@ -59,17 +63,17 @@ export function useDocumentBrowser() {
     } else {
       setCurrentFolder(folderId);
     }
-  };
+  }, [folderHistory]);
   
-  const navigateToRoot = () => {
+  const navigateToRoot = useCallback(() => {
     setCurrentFolder('');
     setFolderHistory([]);
-  };
+  }, []);
   
   // Updated to return a Promise so it can be properly caught
-  const refreshCurrentFolder = (): Promise<any[]> => {
+  const refreshCurrentFolder = useCallback((): Promise<any[]> => {
     return listDocuments(currentFolder);
-  };
+  }, [listDocuments, currentFolder]);
 
   return {
     documents,
@@ -77,11 +81,20 @@ export function useDocumentBrowser() {
     currentFolder,
     folderHistory,
     isOpen,
-    setIsOpen,
     handleDocumentClick,
     handleBack,
     navigateToFolder,
     navigateToRoot,
     refreshCurrentFolder
   };
+}
+
+// Helper hook to safely access context even when outside provider
+function useContext() {
+  try {
+    return useDocumentSelectorContext();
+  } catch (e) {
+    // Return null if context is not available (component is used outside provider)
+    return null;
+  }
 }

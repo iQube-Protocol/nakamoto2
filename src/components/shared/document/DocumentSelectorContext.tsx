@@ -1,7 +1,8 @@
-
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
-import { useMCP } from '@/hooks/use-mcp';
+import { useMCP } from '@/hooks/mcp/use-mcp';
+import { useDriveConnection } from '@/hooks/mcp/use-drive-connection';
+import { useDocumentBrowser } from '@/hooks/useDocumentBrowser';
 
 interface DocumentSelectorContextProps {
   isOpen: boolean;

@@ -3,7 +3,6 @@ import React from 'react';
 import FolderBreadcrumb from './FolderBreadcrumb';
 import FileGrid from './FileGrid';
 import { useDocumentSelectorContext } from './DocumentSelectorContext';
-import { useDocumentBrowser } from '@/hooks/useDocumentBrowser';
 
 const DocumentBrowser: React.FC = () => {
   const { handleFileSelection } = useDocumentSelectorContext();
@@ -13,7 +12,7 @@ const DocumentBrowser: React.FC = () => {
     navigateToFolder, 
     navigateToRoot, 
     handleBack 
-  } = useDocumentBrowser();
+  } = useDocumentSelectorContext();
   
   return (
     <div className="py-4 h-[300px] overflow-y-auto">
