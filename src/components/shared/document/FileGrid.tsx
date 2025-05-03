@@ -3,22 +3,20 @@ import React from 'react';
 import { Card } from '@/components/ui/card';
 import { Loader2, FolderOpen } from 'lucide-react';
 import FileIcon from '@/components/shared/agent/document/FileIcon';
+import { useDocumentSelectorContext } from './DocumentSelectorContext';
+import { useDocumentBrowser } from '@/hooks/useDocumentBrowser';
 
 interface FileGridProps {
-  documents: any[];
-  isLoading: boolean;
-  currentFolder: string;
   handleDocumentClick: (doc: any) => void;
   handleBack: () => void;
 }
 
 const FileGrid: React.FC<FileGridProps> = ({
-  documents,
-  isLoading,
-  currentFolder,
   handleDocumentClick,
   handleBack
 }) => {
+  const { documents, isLoading, currentFolder } = useDocumentBrowser();
+  
   if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center">
