@@ -1,4 +1,3 @@
-
 import { ConnectionStatus, DriveOperationsConfig } from './types';
 import { AuthManager } from './auth-manager';
 import { ConnectionMonitor } from './connection-monitor';
@@ -30,17 +29,49 @@ export class DriveOperations {
   }
   
   /**
-   * Connect to Google Drive 
+   * Connect to Google Drive with improved error handling
    */
   async connectToDrive(clientId: string, apiKey: string, cachedToken?: string | null): Promise<boolean> {
-    const result = await this.authManager.connectToDrive(clientId, apiKey, cachedToken);
-    
-    // If connection was successful, set up monitoring
-    if (result) {
-      this.connectionMonitor.setupConnectionMonitoring();
+    // Verify Google API is fully loaded before attempting to connect
+    if (!this.apiLoader.isLoaded()) {
+      console.log('MCP: Google API not fully loaded, attempting to load before connecting');
+      try {
+        const loaded = await this.apiLoader.ensureGoogleApiLoaded();
+        if (!loaded) {
+          console.error('MCP: Failed to load Google API');
+          return false;
+        }
+      } catch (error) {
+        console.error('MCP: Error loading Google API:', error);
+        return false;
+      }
     }
     
-    return result;
+    // Verify GAPI client is available
+    if (!this.apiLoader.getGapiClient()) {
+      console.error('Google API client not available');
+      return false;
+    }
+    
+    try {
+      // Log connection attempt
+      console.log('MCP: Connecting to Google Drive with credentials:', { 
+        clientId, 
+        apiKeyLength: apiKey ? apiKey.length : 0 
+      });
+      
+      const result = await this.authManager.connectToDrive(clientId, apiKey, cachedToken);
+      
+      // If connection was successful, set up monitoring
+      if (result) {
+        this.connectionMonitor.setupConnectionMonitoring();
+      }
+      
+      return result;
+    } catch (error) {
+      console.error('MCP: Error connecting to Google Drive:', error);
+      return false;
+    }
   }
   
   /**

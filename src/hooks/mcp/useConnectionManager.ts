@@ -17,6 +17,26 @@ export function useConnectionManager(
   const [lastConnectionResult, setLastConnectionResult] = useState<boolean | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<'disconnected' | 'connecting' | 'connected' | 'error'>('disconnected');
   
+  // Add a retry count to allow internal retries for connection
+  const [retryCount, setRetryCount] = useState(0);
+  const MAX_AUTO_RETRIES = 2;
+  
+  // Function to retry a connection automatically
+  const retryConnection = useCallback(async (): Promise<boolean> => {
+    if (retryCount >= MAX_AUTO_RETRIES) {
+      console.log('Maximum auto-retry attempts reached');
+      return false;
+    }
+    
+    console.log(`Auto-retrying connection (attempt ${retryCount + 1}/${MAX_AUTO_RETRIES})...`);
+    setRetryCount(prevCount => prevCount + 1);
+    
+    // Small delay before retry
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    return handleConnect();
+  }, [retryCount, clientId, apiKey]);
+  
   // Optimized connection handler with better error handling and timeout
   const handleConnect = useCallback(async () => {
     if (!clientId || !apiKey) {
@@ -88,6 +108,12 @@ export function useConnectionManager(
       // Update connection status
       setConnectionStatus(success ? 'connected' : 'error');
       
+      // If failed but we have retries left, try again
+      if (!success && retryCount < MAX_AUTO_RETRIES) {
+        console.log('Connection failed, attempting retry...');
+        return retryConnection();
+      }
+      
       return success;
     } catch (error) {
       console.error('Connection error:', error);
@@ -114,6 +140,12 @@ export function useConnectionManager(
             duration: 4000,
             id: 'api-error',
           });
+          
+          // If this is an API loading issue and we have retries left, try again
+          if (retryCount < MAX_AUTO_RETRIES) {
+            console.log('API loading issue, attempting retry...');
+            return retryConnection();
+          }
         }
       } else {
         // Generic connection error
@@ -134,7 +166,7 @@ export function useConnectionManager(
       }
       setConnectionInProgress(false);
     }
-  }, [clientId, apiKey, connectToDrive, connectionInProgress, connectionTimeout, apiErrorCount]);
+  }, [clientId, apiKey, connectToDrive, connectionInProgress, connectionTimeout, apiErrorCount, retryCount, retryConnection]);
 
   return {
     // State
@@ -149,6 +181,7 @@ export function useConnectionManager(
     lastConnectionResult,
     connectionStatus,
     setConnectionStatus,
+    retryCount,
     
     // Actions
     setConnectionInProgress,
@@ -156,8 +189,10 @@ export function useConnectionManager(
     setConnectionTimeout,
     setApiErrorCount,
     setLastConnectionResult,
+    setRetryCount,
     
     // Main handlers
-    handleConnect
+    handleConnect,
+    retryConnection
   };
 }

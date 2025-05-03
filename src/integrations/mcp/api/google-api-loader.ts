@@ -40,20 +40,33 @@ export class GoogleApiLoader {
    * Check if the API is loaded
    */
   isLoaded(): boolean {
-    // Check if window.gapi exists
-    return this.isApiLoaded || (
-      typeof window !== 'undefined' && 
-      !!(window as any).gapi && 
-      !!(window as any).google?.accounts
-    );
+    // More thorough check for GAPI availability
+    const gapiAvailable = typeof window !== 'undefined' && 
+                         (window as any).gapi && 
+                         (window as any).gapi.client && 
+                         typeof (window as any).gapi.client === 'object';
+    
+    const gsiAvailable = typeof window !== 'undefined' && 
+                        (window as any).google && 
+                        (window as any).google.accounts;
+    
+    const isApiReady = gapiAvailable && gsiAvailable;
+    
+    // Update our internal state if APIs are available
+    if (isApiReady && !this.isApiLoaded) {
+      console.log('GoogleApiLoader: APIs detected as available, updating internal state');
+      this.isApiLoaded = true;
+    }
+    
+    return this.isApiLoaded || isApiReady;
   }
   
   /**
    * Get the GAPI client if available
    */
   getGapiClient(): any {
-    if (typeof window !== 'undefined' && (window as any).gapi) {
-      return (window as any).gapi;
+    if (typeof window !== 'undefined' && (window as any).gapi && (window as any).gapi.client) {
+      return (window as any).gapi.client;
     }
     return null;
   }
@@ -109,7 +122,14 @@ export class GoogleApiLoader {
     
     // If already loading, return existing promise
     if (this.loadPromise && !forceReload) {
-      return this.loadPromise.then(() => true);
+      try {
+        await this.loadPromise;
+        return this.isLoaded();
+      } catch (error) {
+        console.error('Existing Google API load promise failed:', error);
+        // Continue with a new load attempt
+        this.loadPromise = null;
+      }
     }
     
     // Increase load attempts counter
@@ -131,6 +151,19 @@ export class GoogleApiLoader {
     
     try {
       await this.loadPromise;
+      
+      // Double check that APIs are actually available
+      if (!this.isLoaded()) {
+        console.warn('Google API scripts loaded but API objects not detected, waiting...');
+        
+        // Give browser a bit more time to initialize the API objects
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        if (!this.isLoaded()) {
+          throw new Error('Google API scripts loaded but API objects not available');
+        }
+      }
+      
       this.markAsLoaded();
       
       // Call the onApiLoadComplete callback if provided

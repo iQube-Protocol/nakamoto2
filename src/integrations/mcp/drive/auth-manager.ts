@@ -25,19 +25,108 @@ export class AuthManager {
    * Connect to Google Drive with auth flow
    */
   async connectToDrive(clientId: string, apiKey: string, cachedToken?: string | null): Promise<boolean> {
-    // Implementation moved to DriveOperations class
-    // This is a stub to maintain the API
-    console.error('AuthManager: connectToDrive should be called from DriveOperations');
-    return false;
+    try {
+      // Ensure Google API is loaded and available
+      if (!this.apiLoader.isLoaded()) {
+        throw new Error('Google API not loaded');
+      }
+      
+      // Access GAPI client
+      const gapi = this.apiLoader.getGapiClient();
+      if (!gapi) {
+        throw new Error('Google API client not available');
+      }
+      
+      // Initialize the client with API key
+      await new Promise<void>((resolve, reject) => {
+        try {
+          gapi.setApiKey(apiKey);
+          resolve();
+        } catch (error) {
+          reject(new Error(`Failed to set API key: ${error instanceof Error ? error.message : String(error)}`));
+        }
+      });
+      
+      // Initialize auth2 client with the OAuth client ID
+      await new Promise<void>((resolve, reject) => {
+        try {
+          gapi.load('client:auth2', () => {
+            gapi.client.init({
+              clientId: clientId,
+              scope: 'https://www.googleapis.com/auth/drive.readonly',
+              discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest']
+            })
+            .then(() => {
+              resolve();
+            })
+            .catch((error: any) => {
+              reject(new Error(`Error initializing Google API client: ${error.message || String(error)}`));
+            });
+          });
+        } catch (error) {
+          reject(new Error(`Error loading Google API client:auth2: ${error instanceof Error ? error.message : String(error)}`));
+        }
+      });
+      
+      // Check if user is already signed in
+      const isSignedIn = gapi.auth2?.getAuthInstance()?.isSignedIn?.get();
+      
+      // If not signed in, prompt user to sign in
+      if (!isSignedIn) {
+        await gapi.auth2.getAuthInstance().signIn();
+      }
+      
+      // Update authentication state
+      this.setAuthenticationState(true);
+      
+      // Cache the token in localStorage
+      const authToken = gapi.auth2.getAuthInstance().currentUser.get().getAuthResponse().id_token;
+      if (typeof window !== 'undefined') {
+        localStorage.setItem('gdrive-auth-token', authToken);
+      }
+      
+      return true;
+    } catch (error) {
+      console.error('AuthManager: Failed to connect to Google Drive:', error);
+      this.setAuthenticationState(false);
+      return false;
+    }
   }
   
   /**
    * Verify connection is still valid
    */
   async verifyConnection(): Promise<boolean> {
-    // Implementation moved to DriveOperations class
-    // This is a stub to maintain the API
-    return this.isAuthenticated;
+    if (!this.isAuthenticated) {
+      return false;
+    }
+    
+    try {
+      // Get GAPI client
+      const gapi = this.apiLoader.getGapiClient();
+      if (!gapi) {
+        console.warn('AuthManager: GAPI client not available for verification');
+        return false;
+      }
+      
+      // Check if auth2 is initialized
+      if (!gapi.auth2 || !gapi.auth2.getAuthInstance) {
+        console.warn('AuthManager: GAPI auth2 not initialized');
+        return false;
+      }
+      
+      // Check if signed in
+      const isSignedIn = gapi.auth2.getAuthInstance().isSignedIn.get();
+      
+      // Update authentication state
+      this.setAuthenticationState(isSignedIn);
+      
+      return isSignedIn;
+    } catch (error) {
+      console.error('AuthManager: Error verifying connection:', error);
+      this.setAuthenticationState(false);
+      return false;
+    }
   }
   
   /**
