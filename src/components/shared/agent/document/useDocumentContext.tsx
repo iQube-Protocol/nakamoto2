@@ -1,6 +1,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { useMCP } from '@/hooks/mcp/use-mcp';
+import { useMCP } from '@/hooks/use-mcp';
 import { toast } from 'sonner';
 
 interface UseDocumentContextProps {
@@ -21,7 +21,7 @@ const useDocumentContext = ({ conversationId, onDocumentAdded }: UseDocumentCont
     setIsLoading(true);
     try {
       console.log(`Loading documents for conversation: ${conversationId}`);
-      const documents = await mcpContext.getDocumentsInContext(conversationId);
+      const documents = await mcpContext.getDocumentsInContext(); // Fixed: removed argument
       if (documents && Array.isArray(documents)) {
         console.log(`Found ${documents.length} documents in context`);
         setSelectedDocuments(documents);
@@ -84,6 +84,7 @@ const useDocumentContext = ({ conversationId, onDocumentAdded }: UseDocumentCont
     
     setIsLoading(true);
     try {
+      // Fixed: Added necessary arguments (passing conversationId and document)
       const success = await mcpContext.addDocumentToContext(conversationId, document);
       
       if (success) {

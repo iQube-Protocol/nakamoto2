@@ -103,5 +103,6 @@ export function getMCPClient(options: MCPClientOptions = {}): MCPClient {
   return new MCPClient(options);
 }
 
-// Re-export types
-export { MCPContext, MCPClientOptions } from './types';
+// Re-export types with proper 'export type' syntax for isolatedModules
+export { MCPContext } from './types';
+export type { MCPClientOptions } from './types';
