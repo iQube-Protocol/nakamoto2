@@ -1,14 +1,16 @@
 
-// Types for drive operations
+import { GoogleApiLoader } from '../api/google-api-loader';
+import { ContextManager } from '../context-manager';
 
-export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
-
+/**
+ * Configuration options for DriveOperations
+ */
 export interface DriveOperationsConfig {
-  apiLoader: any; // GoogleApiLoader 
-  contextManager: any; // ContextManager
+  apiLoader: GoogleApiLoader;
+  contextManager: ContextManager;
 }
 
-export interface DocumentExportOptions {
-  mimeType: string;
-  exportFormat?: string;
-}
+/**
+ * Connection status for drive operations
+ */
+export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
