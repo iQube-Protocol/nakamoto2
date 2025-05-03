@@ -1,7 +1,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { useMCP } from '@/hooks/mcp/use-mcp';
-import { useDocumentSelectorContext } from '@/components/shared/document/DocumentSelectorContext';
 
 interface FolderHistory {
   id: string;
@@ -10,10 +9,10 @@ interface FolderHistory {
 
 export function useDocumentBrowser() {
   try {
-    // Access MCP directly instead of through context
+    // Access MCP directly without trying to use the context
     const mcp = useMCP();
     
-    // Create a local documents state to manage documents when mcp.documents is not available
+    // Create a local documents state to manage documents
     const [localDocuments, setLocalDocuments] = useState<any[]>([]);
     
     // Add default values to handle undefined properties
@@ -21,7 +20,7 @@ export function useDocumentBrowser() {
       listDocuments = () => Promise.resolve([]), 
       driveConnected = false,
       isLoading: mcpIsLoading = false,
-      documents: mcpDocuments = [] // Extract documents from MCP with default empty array
+      documents: mcpDocuments = []
     } = mcp || {};
     
     // Use MCP documents if available, otherwise use local documents state
@@ -30,20 +29,16 @@ export function useDocumentBrowser() {
     
     const [currentFolder, setCurrentFolder] = useState<string>('');
     const [folderHistory, setFolderHistory] = useState<FolderHistory[]>([]);
+    const [isOpen, setIsOpen] = useState(false);
     
-    // Get isOpen from context if available, otherwise use local state
-    const [isOpenLocal, setIsOpenLocal] = useState(false);
-    const contextValue = useDocumentSelectorContextSafe();
-    const isOpen = contextValue?.isOpen ?? isOpenLocal;
-    
-    // Fetch documents when dialog opens or folder changes
+    // Fetch documents when folder changes
     useEffect(() => {
       if (!mcp || !listDocuments) {
         console.error("MCP or listDocuments is not available");
         return;
       }
       
-      if (isOpen && driveConnected) {
+      if (driveConnected) {
         console.log("Loading documents for folder:", currentFolder || 'root');
         listDocuments(currentFolder)
           .then(docs => {
@@ -55,7 +50,7 @@ export function useDocumentBrowser() {
             console.error("Error listing documents:", error);
           });
       }
-    }, [isOpen, driveConnected, currentFolder, listDocuments, mcp]);
+    }, [driveConnected, currentFolder, listDocuments, mcp]);
 
     const handleDocumentClick = useCallback((doc: any) => {
       if (!doc) return doc;
@@ -131,7 +126,7 @@ export function useDocumentBrowser() {
       currentFolder,
       folderHistory,
       isOpen,
-      setIsOpen: setIsOpenLocal,
+      setIsOpen,
       handleDocumentClick,
       handleBack,
       navigateToFolder,
@@ -154,15 +149,5 @@ export function useDocumentBrowser() {
       navigateToRoot: () => {},
       refreshCurrentFolder: async () => {}
     };
-  }
-}
-
-// Helper hook to safely access context even when outside provider
-function useDocumentSelectorContextSafe() {
-  try {
-    return useDocumentSelectorContext();
-  } catch (e) {
-    // Return null if context is not available (component is used outside provider)
-    return null;
   }
 }

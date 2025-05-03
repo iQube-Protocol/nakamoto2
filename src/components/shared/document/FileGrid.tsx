@@ -15,12 +15,21 @@ const FileGrid: React.FC<FileGridProps> = ({
   handleBack
 }) => {
   try {
-    const contextValue = useDocumentSelectorContext();
+    // Get context value safely
+    let documents: any[] = [];
+    let isLoading = false;
+    let currentFolder = '';
     
-    // Safely extract values with defaults
-    const documents = Array.isArray(contextValue?.documents) ? contextValue.documents : [];
-    const isLoading = contextValue?.documentsLoading || false;
-    const currentFolder = contextValue?.currentFolder || '';
+    try {
+      const contextValue = useDocumentSelectorContext();
+      // Safely extract values with defaults
+      documents = Array.isArray(contextValue?.documents) ? contextValue.documents : [];
+      isLoading = contextValue?.documentsLoading || false;
+      currentFolder = contextValue?.currentFolder || '';
+    } catch (error) {
+      console.error("Could not access document selector context:", error);
+      // Continue with default values
+    }
     
     if (isLoading) {
       return (

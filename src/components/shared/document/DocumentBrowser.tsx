@@ -6,25 +6,27 @@ import { useDocumentSelectorContext } from './DocumentSelectorContext';
 
 const DocumentBrowser: React.FC = () => {
   try {
-    const { 
-      currentFolder, 
-      folderHistory = [], 
-      navigateToFolder, 
-      navigateToRoot, 
-      handleBack,
-      handleFileSelection,
-      documents = [],
-      documentsLoading = false
-    } = useDocumentSelectorContext();
+    // Access context safely
+    let currentFolder = '';
+    let folderHistory: Array<{id: string, name: string}> = [];
+    let navigateToFolder = (folderId: string) => {};
+    let navigateToRoot = () => {};
+    let handleBack = () => {};
+    let handleFileSelection = (doc: any) => doc;
     
-    // Add comprehensive null checks
-    if (!navigateToFolder || !navigateToRoot || !handleBack || !handleFileSelection) {
-      console.error("Document browser context missing required functions");
-      return (
-        <div className="py-4 text-center text-muted-foreground">
-          Error: Unable to load document browser - missing required functions
-        </div>
-      );
+    try {
+      const contextValue = useDocumentSelectorContext();
+      
+      // Safely extract values with defaults
+      currentFolder = contextValue?.currentFolder || '';
+      folderHistory = contextValue?.folderHistory || [];
+      navigateToFolder = contextValue?.navigateToFolder || (() => {});
+      navigateToRoot = contextValue?.navigateToRoot || (() => {});
+      handleBack = contextValue?.handleBack || (() => {});
+      handleFileSelection = contextValue?.handleFileSelection || ((doc) => doc);
+    } catch (error) {
+      console.error("Could not access document selector context:", error);
+      // Continue with default values
     }
     
     return (
