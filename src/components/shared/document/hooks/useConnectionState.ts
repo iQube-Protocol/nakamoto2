@@ -7,10 +7,11 @@ import { useDriveConnection } from '@/hooks/useDriveConnection';
 export const useConnectionState = () => {
   const { checkApiStatus } = useMCP();
   
+  // Extract only the properties we actually need from useDriveConnection
   const {
     connectionInProgress,
     connectionAttempts,
-    handleConnect,
+    connectToDrive, // Use this function directly instead of accessing handleConnect
     resetConnection
   } = useDriveConnection();
   
@@ -18,13 +19,16 @@ export const useConnectionState = () => {
   const [connectionError, setConnectionError] = useState<boolean>(false);
   const [refreshAttempts, setRefreshAttempts] = useState(0);
   
-  // Handle connection with better Promise handling
+  // Use connectToDrive instead of handleConnect
   const handleConnectClick = useCallback(async (): Promise<boolean> => {
     setConnecting(true);
     setConnectionError(false);
     try {
       console.log('DocumentSelector: Initiating connection process');
-      const result = await handleConnect();
+      // Use clientId and apiKey from the hook if available, otherwise use empty strings
+      const clientId = localStorage.getItem('gdrive-client-id') || '';
+      const apiKey = localStorage.getItem('gdrive-api-key') || '';
+      const result = await connectToDrive(clientId, apiKey);
       if (!result) {
         setConnectionError(true);
       }
@@ -36,7 +40,7 @@ export const useConnectionState = () => {
     } finally {
       setConnecting(false);
     }
-  }, [handleConnect]);
+  }, [connectToDrive]);
   
   // Handle reset connection with consistent UI feedback
   const handleResetConnection = useCallback(() => {

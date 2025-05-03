@@ -67,8 +67,8 @@ export function useDriveConnection() {
     return () => clearInterval(interval);
   }, [client, driveConnected]);
   
-  // Connect to Google Drive
-  const handleConnect = async (): Promise<boolean> => {
+  // Connect to Google Drive - explicitly exported for useConnectionState
+  const connectToDrive = async (clientIdParam?: string, apiKeyParam?: string): Promise<boolean> => {
     if (!client || connectionInProgress) return false;
     
     try {
@@ -76,14 +76,18 @@ export function useDriveConnection() {
       setConnectionAttempts(prev => prev + 1);
       setConnectionStatus('connecting');
       
+      // Use provided parameters or the state values
+      const finalClientId = clientIdParam || clientId;
+      const finalApiKey = apiKeyParam || apiKey;
+      
       // Save credentials to localStorage
-      localStorage.setItem('gdrive-client-id', clientId);
-      localStorage.setItem('gdrive-api-key', apiKey);
+      localStorage.setItem('gdrive-client-id', finalClientId);
+      localStorage.setItem('gdrive-api-key', finalApiKey);
       
       const cachedToken = localStorage.getItem('gdrive-auth-token');
       
       console.log('Connecting to Google Drive...');
-      const result = await client.connectToDrive(clientId, apiKey, cachedToken);
+      const result = await client.connectToDrive(finalClientId, finalApiKey, cachedToken);
       
       setDriveConnected(result);
       setConnectionStatus(result ? 'connected' : 'error');
@@ -150,7 +154,7 @@ export function useDriveConnection() {
     connectionStatus,
     getConnectionStatus,
     checkApiStatus,
-    connectToDrive: handleConnect,
+    connectToDrive, // Explicitly expose this function for useConnectionState
     resetConnection,
     
     // Connection parameters

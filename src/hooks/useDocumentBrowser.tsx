@@ -13,13 +13,19 @@ export function useDocumentBrowser() {
     // Access MCP directly instead of through context
     const mcp = useMCP();
     
+    // Create a local documents state to manage documents when mcp.documents is not available
+    const [localDocuments, setLocalDocuments] = useState<any[]>([]);
+    
     // Add default values to handle undefined properties
     const { 
       listDocuments = () => Promise.resolve([]), 
-      documents = [], 
-      isLoading = false, 
-      driveConnected = false 
+      driveConnected = false,
+      isLoading: mcpIsLoading = false
     } = mcp || {};
+    
+    // Use local documents state when mcp.documents is not available
+    const documents = Array.isArray(mcp?.documents) ? mcp.documents : localDocuments;
+    const isLoading = mcpIsLoading;
     
     const [currentFolder, setCurrentFolder] = useState<string>('');
     const [folderHistory, setFolderHistory] = useState<FolderHistory[]>([]);
@@ -38,9 +44,15 @@ export function useDocumentBrowser() {
       
       if (isOpen && driveConnected) {
         console.log("Loading documents for folder:", currentFolder || 'root');
-        listDocuments(currentFolder).catch(error => {
-          console.error("Error listing documents:", error);
-        });
+        listDocuments(currentFolder)
+          .then(docs => {
+            if (Array.isArray(docs)) {
+              setLocalDocuments(docs);
+            }
+          })
+          .catch(error => {
+            console.error("Error listing documents:", error);
+          });
       }
     }, [isOpen, driveConnected, currentFolder, listDocuments, mcp]);
 
@@ -100,7 +112,13 @@ export function useDocumentBrowser() {
         console.error("MCP or listDocuments function is not available");
         return Promise.reject("MCP or listDocuments function is not available");
       }
-      return listDocuments(currentFolder);
+      
+      return listDocuments(currentFolder).then(docs => {
+        if (Array.isArray(docs)) {
+          setLocalDocuments(docs);
+        }
+        return docs;
+      });
     }, [listDocuments, currentFolder, mcp]);
 
     return {

@@ -15,6 +15,7 @@ export function useMCP() {
   const [isApiLoading, setIsApiLoading] = useState(false);
   const [apiLoadError, setApiLoadError] = useState<Error | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<'disconnected' | 'connecting' | 'connected' | 'error'>('disconnected');
+  const [documents, setDocuments] = useState<any[]>([]);
   
   // Initialize client on first load
   useEffect(() => {
@@ -97,7 +98,9 @@ export function useMCP() {
     
     try {
       setIsLoading(true);
-      return await client.listDocuments(folderId);
+      const fetchedDocuments = await client.listDocuments(folderId);
+      setDocuments(fetchedDocuments); // Store documents in local state
+      return fetchedDocuments;
     } catch (error) {
       console.error('Error listing documents:', error);
       return [];
@@ -183,5 +186,6 @@ export function useMCP() {
     getDocumentsInContext,
     addDocumentToContext,
     removeDocumentFromContext,
+    documents, // Explicitly expose documents
   };
 }
