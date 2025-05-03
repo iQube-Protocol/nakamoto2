@@ -14,7 +14,7 @@ export function useDocumentBrowser() {
   const [folderHistory, setFolderHistory] = useState<FolderHistory[]>([]);
   
   // Get isOpen from context if available, otherwise use local state
-  const contextValue = useContext();
+  const contextValue = useContextSafely();
   const isOpen = contextValue?.isOpen ?? false;
   
   // Fetch documents when dialog opens or folder changes
@@ -29,7 +29,7 @@ export function useDocumentBrowser() {
       // Save current folder to history before navigating
       if (currentFolder) {
         // Find the current folder name from documents
-        const currentFolderDoc = documents.find(d => d.id === currentFolder);
+        const currentFolderDoc = documents?.find(d => d.id === currentFolder);
         if (currentFolderDoc) {
           setFolderHistory([...folderHistory, {
             id: currentFolder,
@@ -90,7 +90,7 @@ export function useDocumentBrowser() {
 }
 
 // Helper hook to safely access context even when outside provider
-function useContext() {
+function useContextSafely() {
   try {
     return useDocumentSelectorContext();
   } catch (e) {
