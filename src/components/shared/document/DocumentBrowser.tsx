@@ -5,55 +5,58 @@ import FileGrid from './FileGrid';
 import { useDocumentSelectorContext } from './DocumentSelectorContext';
 
 const DocumentBrowser: React.FC = () => {
+  // Create default values for when context isn't available
+  const defaultValues = {
+    currentFolder: '',
+    folderHistory: [],
+    navigateToFolder: (folderId: string) => {},
+    navigateToRoot: () => {},
+    handleBack: () => {},
+    handleFileSelection: (doc: any) => doc
+  };
+  
+  // Local state to track if the component is mounted within a provider
+  const [contextAvailable, setContextAvailable] = React.useState<boolean>(true);
+  
+  // Try to access context but don't throw if unavailable
+  let contextValue;
   try {
-    // Access context safely
-    let currentFolder = '';
-    let folderHistory: Array<{id: string, name: string}> = [];
-    let navigateToFolder = (folderId: string) => {};
-    let navigateToRoot = () => {};
-    let handleBack = () => {};
-    let handleFileSelection = (doc: any) => doc;
-    
-    try {
-      const contextValue = useDocumentSelectorContext();
-      
-      // Safely extract values with defaults
-      currentFolder = contextValue?.currentFolder || '';
-      folderHistory = contextValue?.folderHistory || [];
-      navigateToFolder = contextValue?.navigateToFolder || (() => {});
-      navigateToRoot = contextValue?.navigateToRoot || (() => {});
-      handleBack = contextValue?.handleBack || (() => {});
-      handleFileSelection = contextValue?.handleFileSelection || ((doc) => doc);
-    } catch (error) {
-      console.error("Could not access document selector context:", error);
-      // Continue with default values
-    }
-    
-    return (
-      <div className="py-4 h-[300px] overflow-y-auto">
-        {/* Breadcrumb navigation */}
-        <FolderBreadcrumb
-          currentFolder={currentFolder}
-          folderHistory={folderHistory}
-          navigateToFolder={navigateToFolder}
-          navigateToRoot={navigateToRoot}
-        />
-      
-        {/* File grid with fallback for missing props */}
-        <FileGrid
-          handleDocumentClick={handleFileSelection}
-          handleBack={handleBack}
-        />
-      </div>
-    );
+    contextValue = useDocumentSelectorContext();
+    // If we get here, the context is available
   } catch (error) {
-    console.error("Error rendering DocumentBrowser:", error);
-    return (
-      <div className="py-4 text-center text-muted-foreground">
-        Error loading document browser. Please try refreshing the page.
-      </div>
-    );
+    // If we get here, the context is not available
+    if (contextAvailable) {
+      console.warn("DocumentBrowser: DocumentSelectorContext not available, using defaults");
+      setContextAvailable(false);
+    }
+    // Continue with default values
   }
+  
+  // Extract values safely, using defaults as fallback
+  const currentFolder = contextValue?.currentFolder || defaultValues.currentFolder;
+  const folderHistory = contextValue?.folderHistory || defaultValues.folderHistory;
+  const navigateToFolder = contextValue?.navigateToFolder || defaultValues.navigateToFolder;
+  const navigateToRoot = contextValue?.navigateToRoot || defaultValues.navigateToRoot;
+  const handleBack = contextValue?.handleBack || defaultValues.handleBack;
+  const handleFileSelection = contextValue?.handleFileSelection || defaultValues.handleFileSelection;
+  
+  return (
+    <div className="py-4 h-[300px] overflow-y-auto">
+      {/* Breadcrumb navigation */}
+      <FolderBreadcrumb
+        currentFolder={currentFolder}
+        folderHistory={folderHistory}
+        navigateToFolder={navigateToFolder}
+        navigateToRoot={navigateToRoot}
+      />
+    
+      {/* File grid with fallback for missing props */}
+      <FileGrid
+        handleDocumentClick={handleFileSelection}
+        handleBack={handleBack}
+      />
+    </div>
+  );
 };
 
 export default DocumentBrowser;
