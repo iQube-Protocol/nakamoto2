@@ -111,7 +111,7 @@ export class DriveOperations {
   }
   
   /**
-   * Completely reset the Drive connection
+   * Reset connection to Drive - completely cleans up all connection state
    */
   resetConnection(): void {
     // Reset authentication state
