@@ -22,10 +22,11 @@ export class DriveOperations {
     });
     
     // Initialize file operations
-    this.fileOperations = new FileOperations({
-      apiLoader: config.apiLoader,
-      authManager: this.authManager
-    });
+    this.fileOperations = new FileOperations(
+      config.apiLoader,
+      config.contextManager,
+      this.authManager
+    );
     
     // Initialize connection monitor
     this.connectionMonitor = new ConnectionMonitor({

@@ -1,4 +1,3 @@
-
 import { ConnectionStatus } from './types';
 import { GoogleApiLoader } from '../api/google-api-loader';
 
@@ -10,8 +9,8 @@ export class AuthManager {
   private isAuthenticated: boolean = false;
   private connectionStatus: ConnectionStatus = 'disconnected';
   
-  constructor(apiLoader: GoogleApiLoader) {
-    this.apiLoader = apiLoader;
+  constructor(config: { apiLoader: GoogleApiLoader }) {
+    this.apiLoader = config.apiLoader;
     
     // Check if we already have a connection to Google Drive from localStorage
     if (typeof window !== 'undefined') {
@@ -127,6 +126,21 @@ export class AuthManager {
       this.setAuthenticationState(false);
       return false;
     }
+  }
+  
+  /**
+   * Reset authentication state
+   */
+  resetAuth(): void {
+    // Clear authentication state
+    this.setAuthenticationState(false);
+    
+    // Clean up any cached tokens
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('gdrive-auth-token');
+    }
+    
+    console.log('AuthManager: Authentication state reset');
   }
   
   /**

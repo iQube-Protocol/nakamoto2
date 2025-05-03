@@ -2,7 +2,6 @@
 import { MCPClientOptions } from './types';
 import { DriveClientExtension } from './client/drive-client-extension';
 import { ApiOperations } from './client/api-operations';
-import { ContextOperations } from './client/context-operations';
 
 /**
  * Main class for interacting with the MCP (Meta-Contextual Processor) server

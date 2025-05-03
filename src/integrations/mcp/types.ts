@@ -6,6 +6,10 @@ import { MCPClient } from './client';
  */
 export interface MCPClientOptions {
   metisActive?: boolean;
+  debug?: boolean;
+  apiLoadTimeout?: number;
+  onApiLoadStart?: () => void;
+  onApiLoadComplete?: () => void;
 }
 
 /**
