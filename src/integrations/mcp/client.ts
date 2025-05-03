@@ -15,6 +15,55 @@ export class MCPClient extends DriveClientExtension {
     // Initialize Drive operations (conditionally after API is loaded)
     this.initializeDriveOperations();
   }
+
+  // Context operations
+  async initializeContext(existingConversationId?: string): Promise<string> {
+    return this.contextManager.initializeContext(existingConversationId);
+  }
+  
+  async getDocumentsInContext(conversationId?: string): Promise<any[]> {
+    if (conversationId) {
+      // If a conversation ID is provided, set it first
+      this.contextManager.setConversationId(conversationId);
+    }
+    
+    const documents = this.contextManager.getDocumentContext() || [];
+    return Promise.resolve(documents);
+  }
+  
+  async addDocumentToContext(conversationId: string, document: any, documentType?: string, content?: string): Promise<boolean> {
+    // First set the conversation ID to ensure we're in the right context
+    this.contextManager.setConversationId(conversationId);
+    
+    // Then add the document
+    this.contextManager.addDocument(
+      document.id, 
+      document.name || document.title, 
+      document.mimeType || documentType || 'unknown',
+      content || ''
+    );
+    
+    return Promise.resolve(true);
+  }
+  
+  async removeDocumentFromContext(conversationId: string, documentId: string): Promise<boolean> {
+    // First set the conversation ID to ensure we're in the right context
+    this.contextManager.setConversationId(conversationId);
+    
+    // Then remove the document
+    this.contextManager.removeDocument(documentId);
+    
+    return Promise.resolve(true);
+  }
+
+  // Additional context methods
+  async addUserMessage(message: string): Promise<void> {
+    await this.contextManager.addUserMessage(message);
+  }
+  
+  async addAgentResponse(response: string): Promise<void> {
+    await this.contextManager.addAgentResponse(response);
+  }
 }
 
 /**

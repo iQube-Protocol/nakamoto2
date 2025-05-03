@@ -1,32 +1,66 @@
-
-import { ConnectionStatus, DriveOperationsConfig } from './types';
+import { DriveOperationsConfig, ConnectionStatus } from './types';
 import { AuthManager } from './auth-manager';
-import { ConnectionMonitor } from './connection-monitor';
 import { FileOperations } from './file-operations';
-import { GoogleApiLoader } from '../api/google-api-loader';
-import { ContextManager } from '../context-manager';
+import { ConnectionMonitor } from './connection-monitor';
 
 /**
- * Manages operations with Google Drive
+ * Drive operations for the MCP client
  */
 export class DriveOperations {
-  private apiLoader: GoogleApiLoader;
-  private contextManager: ContextManager;
+  private config: DriveOperationsConfig;
   private authManager: AuthManager;
-  private connectionMonitor: ConnectionMonitor;
   private fileOperations: FileOperations;
+  private connectionMonitor: ConnectionMonitor;
+  private connectionStatus: ConnectionStatus = 'disconnected';
+
+  constructor(config: DriveOperationsConfig) {
+    this.config = config;
+    
+    // Initialize auth manager
+    this.authManager = new AuthManager({
+      apiLoader: config.apiLoader
+    });
+    
+    // Initialize file operations
+    this.fileOperations = new FileOperations({
+      apiLoader: config.apiLoader,
+      authManager: this.authManager
+    });
+    
+    // Initialize connection monitor
+    this.connectionMonitor = new ConnectionMonitor({
+      authManager: this.authManager,
+      onStatusChange: this.handleStatusChange.bind(this)
+    });
+    
+    // Start monitoring connection
+    this.connectionMonitor.startMonitoring();
+  }
   
-  constructor(apiLoader: GoogleApiLoader, contextManager: ContextManager) {
-    this.apiLoader = apiLoader;
-    this.contextManager = contextManager;
+  /**
+   * Reset the connection state completely
+   */
+  resetConnection(): void {
+    // Reset auth state
+    this.authManager.resetAuth();
     
-    // Initialize managers
-    this.authManager = new AuthManager(apiLoader);
-    this.connectionMonitor = new ConnectionMonitor(this.authManager);
-    this.fileOperations = new FileOperations(apiLoader, contextManager, this.authManager);
+    // Full reset for API loader
+    this.config.apiLoader.fullReset();
     
-    // Setup connection monitoring
-    this.connectionMonitor.setupConnectionMonitoring();
+    // Cleanup connection monitor
+    this.connectionMonitor.stopMonitoring();
+    this.connectionMonitor.startMonitoring();
+    
+    // Reset connection status
+    this.connectionStatus = 'disconnected';
+  }
+  
+  /**
+   * Handler for connection status changes
+   */
+  private handleStatusChange(status: ConnectionStatus): void {
+    this.connectionStatus = status;
+    console.log(`Drive connection status changed to: ${status}`);
   }
   
   /**
@@ -34,10 +68,10 @@ export class DriveOperations {
    */
   async connectToDrive(clientId: string, apiKey: string, cachedToken?: string | null): Promise<boolean> {
     // Verify Google API is fully loaded before attempting to connect
-    if (!this.apiLoader.isLoaded()) {
+    if (!this.config.apiLoader.isLoaded()) {
       console.log('MCP: Google API not fully loaded, attempting to load before connecting');
       try {
-        const loaded = await this.apiLoader.ensureGoogleApiLoaded();
+        const loaded = await this.config.apiLoader.ensureGoogleApiLoaded();
         if (!loaded) {
           console.error('MCP: Failed to load Google API');
           return false;
@@ -49,7 +83,7 @@ export class DriveOperations {
     }
     
     // Verify GAPI client is available
-    if (!this.apiLoader.getGapiClient()) {
+    if (!this.config.apiLoader.getGapiClient()) {
       console.error('Google API client not available');
       return false;
     }
@@ -100,7 +134,7 @@ export class DriveOperations {
    * Get the current connection status
    */
   getConnectionStatus(): ConnectionStatus {
-    return this.authManager.getConnectionStatus();
+    return this.connectionStatus;
   }
   
   /**
@@ -108,22 +142,6 @@ export class DriveOperations {
    */
   setAuthenticationState(state: boolean): void {
     this.authManager.setAuthenticationState(state);
-  }
-  
-  /**
-   * Reset connection to Drive - completely cleans up all connection state
-   */
-  resetConnection(): void {
-    // Reset authentication state
-    this.authManager.setAuthenticationState(false);
-    
-    // Reset API loader state
-    this.apiLoader.fullReset();
-    
-    // Clean up connection monitor
-    this.connectionMonitor.cleanup();
-    
-    console.log('DriveOperations: Drive connection fully reset');
   }
   
   /**
@@ -135,8 +153,8 @@ export class DriveOperations {
 }
 
 /**
- * Factory function to create a new DriveOperations instance
+ * Create drive operations
  */
 export function createDriveOperations(config: DriveOperationsConfig): DriveOperations {
-  return new DriveOperations(config.apiLoader, config.contextManager);
+  return new DriveOperations(config);
 }
