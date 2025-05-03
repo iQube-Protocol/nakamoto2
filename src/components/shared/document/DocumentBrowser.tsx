@@ -15,45 +15,55 @@ const DocumentBrowser: React.FC = () => {
     handleFileSelection: (doc: any) => doc
   };
   
-  // Local state to track if the component is mounted within a provider
-  const [contextAvailable, setContextAvailable] = React.useState<boolean>(true);
+  // Use state to avoid re-renders when context check fails
+  const [contextState, setContextState] = React.useState<{
+    available: boolean;
+    currentFolder: string;
+    folderHistory: any[];
+    navigateToFolder: (folderId: string) => void;
+    navigateToRoot: () => void;
+    handleBack: () => void;
+    handleFileSelection: (doc: any) => any;
+  }>({
+    available: true,
+    ...defaultValues
+  });
   
-  // Try to access context but don't throw if unavailable
-  let contextValue;
-  try {
-    contextValue = useDocumentSelectorContext();
-    // If we get here, the context is available
-  } catch (error) {
-    // If we get here, the context is not available
-    if (contextAvailable) {
+  // Try to access context just once on mount to avoid re-renders
+  React.useEffect(() => {
+    try {
+      const contextValue = useDocumentSelectorContext();
+      if (contextValue) {
+        setContextState({
+          available: true,
+          currentFolder: contextValue.currentFolder || '',
+          folderHistory: contextValue.folderHistory || [],
+          navigateToFolder: contextValue.navigateToFolder || defaultValues.navigateToFolder,
+          navigateToRoot: contextValue.navigateToRoot || defaultValues.navigateToRoot,
+          handleBack: contextValue.handleBack || defaultValues.handleBack,
+          handleFileSelection: contextValue.handleFileSelection || defaultValues.handleFileSelection
+        });
+      }
+    } catch (error) {
       console.warn("DocumentBrowser: DocumentSelectorContext not available, using defaults");
-      setContextAvailable(false);
+      setContextState(prev => ({ ...prev, available: false }));
     }
-    // Continue with default values
-  }
-  
-  // Extract values safely, using defaults as fallback
-  const currentFolder = contextValue?.currentFolder || defaultValues.currentFolder;
-  const folderHistory = contextValue?.folderHistory || defaultValues.folderHistory;
-  const navigateToFolder = contextValue?.navigateToFolder || defaultValues.navigateToFolder;
-  const navigateToRoot = contextValue?.navigateToRoot || defaultValues.navigateToRoot;
-  const handleBack = contextValue?.handleBack || defaultValues.handleBack;
-  const handleFileSelection = contextValue?.handleFileSelection || defaultValues.handleFileSelection;
+  }, []);
   
   return (
     <div className="py-4 h-[300px] overflow-y-auto">
       {/* Breadcrumb navigation */}
       <FolderBreadcrumb
-        currentFolder={currentFolder}
-        folderHistory={folderHistory}
-        navigateToFolder={navigateToFolder}
-        navigateToRoot={navigateToRoot}
+        currentFolder={contextState.currentFolder}
+        folderHistory={contextState.folderHistory}
+        navigateToFolder={contextState.navigateToFolder}
+        navigateToRoot={contextState.navigateToRoot}
       />
     
       {/* File grid with fallback for missing props */}
       <FileGrid
-        handleDocumentClick={handleFileSelection}
-        handleBack={handleBack}
+        handleDocumentClick={contextState.handleFileSelection}
+        handleBack={contextState.handleBack}
       />
     </div>
   );

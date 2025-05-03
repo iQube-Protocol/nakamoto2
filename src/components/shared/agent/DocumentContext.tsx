@@ -41,17 +41,15 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-medium">Documents in Context</h3>
-        <DocumentSelectorProvider>
-          <DocumentSelector 
-            onDocumentSelect={handleDocumentSelect}
-            triggerButton={
-              <Button variant="outline" size="sm" className="gap-1 bg-purple-500 hover:bg-purple-600 text-white">
-                <FileText className="h-3.5 w-3.5" />
-                Add Document
-              </Button>
-            }
-          />
-        </DocumentSelectorProvider>
+        <DocumentSelector 
+          onDocumentSelect={handleDocumentSelect}
+          triggerButton={
+            <Button variant="outline" size="sm" className="gap-1 bg-purple-500 hover:bg-purple-600 text-white">
+              <FileText className="h-3.5 w-3.5" />
+              Add Document
+            </Button>
+          }
+        />
       </div>
       
       <Separator />

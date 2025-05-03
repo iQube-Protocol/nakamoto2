@@ -32,13 +32,14 @@ export const checkIfSummarizationNeeded = async (
     }
     
     // Count unsummarized interactions for this conversation
+    // Fix: Use proper JSON syntax for the filter
     const { data: interactions, error } = await supabase
       .from('user_interactions')
       .select('id')
       .eq('user_id', session.user.id)
       .eq('interaction_type', agentType)
       .eq('summarized', false)
-      .filter('metadata->conversationId', 'eq', conversationId);
+      .filter('metadata', 'cs', `{"conversationId":"${conversationId}"}`);
     
     if (error) {
       console.error('Error checking for summarization:', error);
@@ -194,14 +195,19 @@ export const prepareConversationContext = async (
     // If we have an existing conversation ID, check if summarization is needed
     if (conversationId) {
       try {
-        const needsSummarization = await checkIfSummarizationNeeded(conversationId, agentType);
-        
-        if (needsSummarization) {
-          console.log(`Conversation ${conversationId} needs summarization, triggering...`);
-          await triggerConversationSummarize(conversationId, agentType).catch(err => {
-            console.error('Failed to summarize conversation, continuing anyway:', err);
-          });
-          toast.success('Summarizing your previous conversations for better context.');
+        // Validate conversationId format before checking summarization
+        if (typeof conversationId === 'string' && conversationId.match(/^[0-9a-f-]+$/)) {
+          const needsSummarization = await checkIfSummarizationNeeded(conversationId, agentType);
+          
+          if (needsSummarization) {
+            console.log(`Conversation ${conversationId} needs summarization, triggering...`);
+            await triggerConversationSummarize(conversationId, agentType).catch(err => {
+              console.error('Failed to summarize conversation, continuing anyway:', err);
+            });
+            toast.success('Summarizing your previous conversations for better context.');
+          }
+        } else {
+          console.warn('Invalid conversationId format:', conversationId);
         }
       } catch (error) {
         console.error('Error checking if summarization needed, continuing anyway:', error);
