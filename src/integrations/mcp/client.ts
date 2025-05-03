@@ -28,6 +28,7 @@ export class MCPClient extends ContextOperations {
         apiLoader: this.apiLoader,
         contextManager: this.contextManager
       });
+      console.log('Drive operations initialized successfully');
     }).catch(error => {
       console.error('Failed to load Google API, Drive operations not available', error);
     });
@@ -38,7 +39,22 @@ export class MCPClient extends ContextOperations {
    */
   async connectToDrive(clientId: string, apiKey: string, cachedToken?: string | null): Promise<boolean> {
     if (!this.driveOperations) {
-      console.warn('Drive operations not initialized, ensure API is loaded');
+      console.warn('Drive operations not initialized, ensuring API is loaded...');
+      try {
+        // Try to load API and initialize drive operations
+        await this.apiLoader.ensureGoogleApiLoaded();
+        this.driveOperations = createDriveOperations({
+          apiLoader: this.apiLoader,
+          contextManager: this.contextManager
+        });
+      } catch (e) {
+        console.error('Failed to initialize drive operations:', e);
+        return false;
+      }
+    }
+    
+    if (!this.driveOperations) {
+      console.error('Failed to initialize drive operations after retry');
       return false;
     }
     
@@ -50,7 +66,22 @@ export class MCPClient extends ContextOperations {
    */
   async listDocuments(folderId?: string): Promise<any[]> {
     if (!this.driveOperations) {
-      console.warn('Drive operations not initialized, ensure API is loaded');
+      console.warn('Drive operations not initialized, ensuring API is loaded...');
+      try {
+        // Try to load API and initialize drive operations
+        await this.apiLoader.ensureGoogleApiLoaded();
+        this.driveOperations = createDriveOperations({
+          apiLoader: this.apiLoader,
+          contextManager: this.contextManager
+        });
+      } catch (e) {
+        console.error('Failed to initialize drive operations:', e);
+        return [];
+      }
+    }
+    
+    if (!this.driveOperations) {
+      console.error('Failed to initialize drive operations for listing documents');
       return [];
     }
     
@@ -62,7 +93,22 @@ export class MCPClient extends ContextOperations {
    */
   async fetchDocumentContent(documentId: string): Promise<string | null> {
     if (!this.driveOperations) {
-      console.warn('Drive operations not initialized, ensure API is loaded');
+      console.warn('Drive operations not initialized, ensuring API is loaded...');
+      try {
+        // Try to load API and initialize drive operations
+        await this.apiLoader.ensureGoogleApiLoaded();
+        this.driveOperations = createDriveOperations({
+          apiLoader: this.apiLoader,
+          contextManager: this.contextManager
+        });
+      } catch (e) {
+        console.error('Failed to initialize drive operations:', e);
+        return null;
+      }
+    }
+    
+    if (!this.driveOperations) {
+      console.error('Failed to initialize drive operations for fetching document');
       return null;
     }
     
@@ -95,6 +141,20 @@ export class MCPClient extends ContextOperations {
    */
   cleanup(): void {
     this.driveOperations?.cleanup();
+  }
+  
+  /**
+   * Check if API is loaded
+   */
+  isApiLoaded(): boolean {
+    return this.apiLoader.isLoaded();
+  }
+  
+  /**
+   * Force reload the Google API
+   */
+  reloadGoogleApi(): void {
+    return this.apiLoader.reloadGoogleApi();
   }
 }
 

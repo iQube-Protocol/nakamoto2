@@ -10,7 +10,9 @@ interface FolderHistory {
 
 export function useDocumentBrowser() {
   try {
+    // Access MCP directly instead of through context
     const mcp = useMCP();
+    
     // Add default values to handle undefined properties
     const { 
       listDocuments = () => Promise.resolve([]), 
@@ -19,21 +21,28 @@ export function useDocumentBrowser() {
       driveConnected = false 
     } = mcp || {};
     
-    const [currentFolder, setCurrentFolder] = useState('');
+    const [currentFolder, setCurrentFolder] = useState<string>('');
     const [folderHistory, setFolderHistory] = useState<FolderHistory[]>([]);
     
     // Get isOpen from context if available, otherwise use local state
+    const [isOpenLocal, setIsOpenLocal] = useState(false);
     const contextValue = useDocumentSelectorContextSafe();
-    const isOpen = contextValue?.isOpen ?? false;
+    const isOpen = contextValue?.isOpen ?? isOpenLocal;
     
     // Fetch documents when dialog opens or folder changes
     useEffect(() => {
-      if (isOpen && driveConnected && typeof listDocuments === 'function') {
+      if (!mcp || !listDocuments) {
+        console.error("MCP or listDocuments is not available");
+        return;
+      }
+      
+      if (isOpen && driveConnected) {
+        console.log("Loading documents for folder:", currentFolder || 'root');
         listDocuments(currentFolder).catch(error => {
           console.error("Error listing documents:", error);
         });
       }
-    }, [isOpen, driveConnected, currentFolder, listDocuments]);
+    }, [isOpen, driveConnected, currentFolder, listDocuments, mcp]);
 
     const handleDocumentClick = useCallback((doc: any) => {
       if (!doc) return doc;
@@ -46,7 +55,7 @@ export function useDocumentBrowser() {
             documents.find(d => d.id === currentFolder) : null;
             
           if (currentFolderDoc) {
-            setFolderHistory([...folderHistory, {
+            setFolderHistory(prev => [...prev, {
               id: currentFolder,
               name: currentFolderDoc.name
             }]);
@@ -55,7 +64,7 @@ export function useDocumentBrowser() {
         setCurrentFolder(doc.id);
       }
       return doc;
-    }, [currentFolder, documents, folderHistory]);
+    }, [currentFolder, documents]);
 
     const handleBack = useCallback(() => {
       if (folderHistory.length > 0) {
@@ -74,11 +83,11 @@ export function useDocumentBrowser() {
       if (historyIndex !== undefined) {
         // Navigate to specific folder in history
         setCurrentFolder(folderId);
-        setFolderHistory(folderHistory.slice(0, historyIndex));
+        setFolderHistory(prev => prev.slice(0, historyIndex));
       } else {
         setCurrentFolder(folderId);
       }
-    }, [folderHistory]);
+    }, []);
     
     const navigateToRoot = useCallback(() => {
       setCurrentFolder('');
@@ -87,12 +96,12 @@ export function useDocumentBrowser() {
     
     // Updated to return a Promise so it can be properly caught
     const refreshCurrentFolder = useCallback((): Promise<any[]> => {
-      if (typeof listDocuments !== 'function') {
-        console.error("listDocuments function is not available");
-        return Promise.reject("listDocuments function is not available");
+      if (!mcp || !listDocuments) {
+        console.error("MCP or listDocuments function is not available");
+        return Promise.reject("MCP or listDocuments function is not available");
       }
       return listDocuments(currentFolder);
-    }, [listDocuments, currentFolder]);
+    }, [listDocuments, currentFolder, mcp]);
 
     return {
       documents: Array.isArray(documents) ? documents : [],
@@ -100,6 +109,7 @@ export function useDocumentBrowser() {
       currentFolder,
       folderHistory,
       isOpen,
+      setIsOpen: setIsOpenLocal,
       handleDocumentClick,
       handleBack,
       navigateToFolder,
@@ -115,6 +125,7 @@ export function useDocumentBrowser() {
       currentFolder: '',
       folderHistory: [],
       isOpen: false,
+      setIsOpen: () => {},
       handleDocumentClick: (doc: any) => doc,
       handleBack: () => {},
       navigateToFolder: () => {},
