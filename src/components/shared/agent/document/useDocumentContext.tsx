@@ -1,160 +1,157 @@
+
 import { useState, useEffect, useCallback } from 'react';
-import { useMCP } from '@/hooks/use-mcp';
 import { toast } from 'sonner';
+import { useMCP } from '@/hooks/mcp/use-mcp';
 
-interface UseDocumentContextProps {
-  conversationId: string | null;
-  onDocumentAdded?: () => void;
-}
-
-const useDocumentContext = ({ conversationId, onDocumentAdded }: UseDocumentContextProps) => {
-  const [selectedDocuments, setSelectedDocuments] = useState<any[]>([]);
-  const [viewingDocument, setViewingDocument] = useState<any | null>(null);
-  const [isLoading, setIsLoading] = useState(false);
-  const mcpContext = useMCP();
+export function useDocumentContext(conversationId?: string) {
+  const [documents, setDocuments] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  const [selectedDocument, setSelectedDocument] = useState<any | null>(null);
+  const [documentContent, setDocumentContent] = useState<string | null>(null);
   
-  // Load documents for the current conversation when component mounts or conversation changes
-  const loadDocumentsForConversation = useCallback(async () => {
-    if (!conversationId) return;
+  const { 
+    client, 
+    driveConnected,
+    addDocumentToContext, 
+    removeDocumentFromContext, 
+    getDocumentsInContext 
+  } = useMCP();
+  
+  // Fetch documents in context when component mounts or conversationId changes
+  useEffect(() => {
+    if (!client || !conversationId) return;
     
-    setIsLoading(true);
-    try {
-      console.log(`Loading documents for conversation: ${conversationId}`);
-      // Pass the conversationId to getDocumentsInContext
-      const documents = await mcpContext.getDocumentsInContext(conversationId);
-      if (documents && Array.isArray(documents)) {
-        console.log(`Found ${documents.length} documents in context`);
-        setSelectedDocuments(documents);
-      } else {
-        console.log('No documents found or invalid response');
-        setSelectedDocuments([]);
+    const fetchDocumentsInContext = async () => {
+      try {
+        setIsLoading(true);
+        // Call getDocumentsInContext with the conversationId parameter
+        const contextDocuments = await getDocumentsInContext(conversationId);
+        setDocuments(contextDocuments || []);
+      } catch (error) {
+        console.error("Error fetching documents in context:", error);
+        toast.error("Could not fetch document context");
+      } finally {
+        setIsLoading(false);
       }
+    };
+    
+    fetchDocumentsInContext();
+  }, [client, conversationId, getDocumentsInContext]);
+  
+  // Add document to context
+  const addDocument = useCallback(async (doc: any) => {
+    if (!client || !conversationId || !driveConnected) {
+      toast.error("Cannot add document: Client not initialized or Drive not connected");
+      return false;
+    }
+    
+    try {
+      setIsLoading(true);
+      console.log("Fetching content for document:", doc.id);
+      
+      // Fetch the content of the document
+      const content = await client.fetchDocumentContent(doc.id);
+      
+      if (!content) {
+        toast.error("Could not fetch document content");
+        return false;
+      }
+      
+      console.log("Adding document to context:", doc.name);
+      
+      // Add the document to the context
+      await addDocumentToContext(conversationId, doc, doc.mimeType, content);
+      
+      // Refresh the documents list
+      const updatedDocs = await getDocumentsInContext(conversationId);
+      setDocuments(updatedDocs || []);
+      
+      toast.success(`Added ${doc.name} to context`);
+      return true;
     } catch (error) {
-      console.error('Error loading documents:', error);
-      toast.error('Failed to load documents');
+      console.error("Error adding document to context:", error);
+      toast.error("Could not add document to context");
+      return false;
     } finally {
       setIsLoading(false);
     }
-  }, [conversationId, mcpContext]);
+  }, [client, conversationId, driveConnected, addDocumentToContext, getDocumentsInContext]);
   
-  // Initial load and reload when conversation changes
-  useEffect(() => {
-    loadDocumentsForConversation();
+  // Remove document from context
+  const removeDocument = useCallback(async (docId: string) => {
+    if (!client || !conversationId) {
+      toast.error("Cannot remove document: Client not initialized");
+      return false;
+    }
     
-    // Set up localStorage backup for this conversation's documents
-    if (conversationId) {
-      const storedDocs = localStorage.getItem(`docs-${conversationId}`);
-      if (storedDocs) {
-        try {
-          const parsedDocs = JSON.parse(storedDocs);
-          if (Array.isArray(parsedDocs) && parsedDocs.length > 0) {
-            console.log(`Loaded ${parsedDocs.length} documents from localStorage backup`);
-            setSelectedDocuments(prevDocs => {
-              // Only use localStorage if we don't have docs already
-              return prevDocs.length > 0 ? prevDocs : parsedDocs;
-            });
-          }
-        } catch (e) {
-          console.error('Error parsing stored documents:', e);
-        }
+    try {
+      setIsLoading(true);
+      
+      // If the selected document is being removed, clear it
+      if (selectedDocument && selectedDocument.id === docId) {
+        setSelectedDocument(null);
+        setDocumentContent(null);
       }
+      
+      // Remove the document from the context
+      await removeDocumentFromContext(conversationId, docId);
+      
+      // Refresh the documents list
+      const updatedDocs = await getDocumentsInContext(conversationId);
+      setDocuments(updatedDocs || []);
+      
+      toast.success("Document removed from context");
+      return true;
+    } catch (error) {
+      console.error("Error removing document from context:", error);
+      toast.error("Could not remove document from context");
+      return false;
+    } finally {
+      setIsLoading(false);
     }
-  }, [conversationId, loadDocumentsForConversation]);
+  }, [client, conversationId, selectedDocument, removeDocumentFromContext, getDocumentsInContext]);
   
-  // Store documents in localStorage when they change
-  useEffect(() => {
-    if (conversationId && selectedDocuments.length > 0) {
-      localStorage.setItem(`docs-${conversationId}`, JSON.stringify(selectedDocuments));
-      console.log(`Saved ${selectedDocuments.length} documents to localStorage for conversation ${conversationId}`);
-    }
-  }, [conversationId, selectedDocuments]);
-  
-  const handleDocumentSelect = async (document: any) => {
-    if (!conversationId) {
-      toast.error('No active conversation');
+  // Function to view a document's content
+  const viewDocument = useCallback(async (doc: any) => {
+    if (!client || !doc?.id) {
+      toast.error("Cannot view document: Client not initialized or invalid document");
       return;
     }
     
-    // Check if document is already in the context
-    const isAlreadySelected = selectedDocuments.some(doc => doc.id === document.id);
-    if (isAlreadySelected) {
-      toast.info('Document already in context');
-      return;
-    }
-    
-    setIsLoading(true);
     try {
-      // Ensure we pass all required arguments - the expected signature has 4 parameters
-      // Using null for optional parameters that may not be needed
-      const success = await mcpContext.addDocumentToContext(
-        conversationId,
-        document,
-        null,  // Add third parameter (likely documentContent)
-        null   // Add fourth parameter (likely options)
-      );
+      setIsLoading(true);
+      setSelectedDocument(doc);
       
-      if (success) {
-        // Update local state
-        setSelectedDocuments(prev => [...prev, document]);
-        
-        // Notify parent component
-        if (onDocumentAdded) {
-          onDocumentAdded();
-        }
-        
-        toast.success('Document added to context');
+      // Check if we already have the document content
+      if (doc.content) {
+        setDocumentContent(doc.content);
       } else {
-        toast.error('Failed to add document');
+        // Fetch the content
+        const content = await client.fetchDocumentContent(doc.id);
+        setDocumentContent(content);
       }
     } catch (error) {
-      console.error('Error adding document to context:', error);
-      toast.error('Failed to add document');
+      console.error("Error viewing document:", error);
+      toast.error("Could not fetch document content");
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [client]);
   
-  const handleRemoveDocument = async (documentId: string) => {
-    if (!conversationId) return;
-    
-    setIsLoading(true);
-    try {
-      const success = await mcpContext.removeDocumentFromContext(conversationId, documentId);
-      
-      if (success) {
-        // Update local state
-        setSelectedDocuments(prev => prev.filter(doc => doc.id !== documentId));
-        toast.success('Document removed from context');
-      } else {
-        toast.error('Failed to remove document');
-      }
-    } catch (error) {
-      console.error('Error removing document:', error);
-      toast.error('Failed to remove document');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-  
-  const handleViewDocument = (document: any) => {
-    setViewingDocument(document);
-  };
-  
-  // Force refresh documents
-  const refreshDocuments = () => {
-    loadDocumentsForConversation();
-  };
+  // Close document viewer
+  const closeDocumentViewer = useCallback(() => {
+    setSelectedDocument(null);
+    setDocumentContent(null);
+  }, []);
   
   return {
-    selectedDocuments,
-    viewingDocument,
-    setViewingDocument,
-    isLoading: isLoading || mcpContext.isLoading,
-    handleDocumentSelect,
-    handleRemoveDocument,
-    handleViewDocument,
-    refreshDocuments
+    documents,
+    isLoading,
+    selectedDocument,
+    documentContent,
+    addDocument,
+    removeDocument,
+    viewDocument,
+    closeDocumentViewer
   };
-};
-
-export default useDocumentContext;
+}

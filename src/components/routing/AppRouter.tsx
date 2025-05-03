@@ -24,17 +24,16 @@ const AppRouterContent: React.FC = () => {
     // Log the current route for debugging
     console.log(`AppRouter - Current route: ${location.pathname}`);
     
-    // Check for redirect after login
-    const handleRedirectAfterLogin = () => {
+    // Only handle redirect after login if we're not already on the signin page
+    // This prevents redirect loops
+    if (location.pathname !== '/signin') {
       const redirectPath = sessionStorage.getItem('redirectAfterLogin');
       if (redirectPath) {
         console.log(`AppRouter - Redirecting to previously attempted path: ${redirectPath}`);
         sessionStorage.removeItem('redirectAfterLogin');
         navigate(redirectPath);
       }
-    };
-    
-    handleRedirectAfterLogin();
+    }
   }, [navigate, location.pathname]);
 
   return (
