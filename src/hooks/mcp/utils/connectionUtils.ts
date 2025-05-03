@@ -34,6 +34,23 @@ export function loadCredentials(): { clientId: string; apiKey: string } {
 }
 
 /**
+ * Clear all connection-related storage items
+ */
+export function clearConnectionStorage(): void {
+  try {
+    // Remove all Google Drive connection related items
+    localStorage.removeItem('gdrive-client-id');
+    localStorage.removeItem('gdrive-api-key');
+    localStorage.removeItem('gdrive-connected');
+    localStorage.removeItem('gdrive-auth-token');
+    
+    console.log('Connection storage cleared');
+  } catch (e) {
+    console.error('Failed to clear connection storage:', e);
+  }
+}
+
+/**
  * Dismiss all connection-related toast notifications
  */
 export function dismissConnectionToasts(): void {
