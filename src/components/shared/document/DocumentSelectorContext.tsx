@@ -35,10 +35,10 @@ export const useDocumentSelectorContext = () => {
   return context;
 };
 
-// Provider component
+// Provider component with improved error handling
 export const DocumentSelectorProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  // Get all state and handlers from our custom hook
   try {
+    // Get all state and handlers from our custom hook
     const contextValue = useDocumentSelectorState();
 
     return (
@@ -48,14 +48,33 @@ export const DocumentSelectorProvider: React.FC<{ children: React.ReactNode }> =
     );
   } catch (error) {
     console.error("Error in DocumentSelectorProvider:", error);
+    
+    // Dismiss any existing toasts to prevent duplicate errors
+    toast.dismiss("document-selector-error");
+    
     toast.error("Error initializing document selector", {
       description: error instanceof Error ? error.message : "Unknown error occurred",
       id: "document-selector-error",
+      duration: 5000, // Auto dismiss after 5 seconds
     });
     
-    // Provide default safe values on error
+    // Provide default safe values on error that match the expected interface
     return (
-      <DocumentSelectorContext.Provider value={defaultContextValue as DocumentSelectorContextProps}>
+      <DocumentSelectorContext.Provider 
+        value={{ 
+          ...defaultContextValue, 
+          // Add required functions with safe implementations
+          handleDialogChange: () => {},
+          handleFileSelection: (doc) => doc,
+          handleRefreshDocuments: async () => { return [] },
+          handleConnectClick: async () => false,
+          handleResetConnection: () => {},
+          navigateToFolder: () => {},
+          navigateToRoot: () => {},
+          handleBack: () => {},
+          setIsOpen: () => {},
+        } as DocumentSelectorContextProps}
+      >
         {children}
       </DocumentSelectorContext.Provider>
     );
