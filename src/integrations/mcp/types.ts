@@ -15,6 +15,33 @@ export interface MCPClientOptions {
 }
 
 /**
+ * Internal context data structure
+ */
+export interface MCPContextData {
+  conversationId: string;
+  messages: Array<{
+    role: string;
+    content: string;
+    timestamp: string;
+  }>;
+  metadata: {
+    environment: string;
+    modelPreference?: string;
+    metisActive?: boolean;
+    source?: string;
+    userProfile?: Record<string, any>;
+    [key: string]: any;
+  };
+  documentContext?: Array<{
+    documentId: string;
+    documentName: string;
+    documentType: string;
+    content: string;
+    lastModified?: string;
+  }>;
+}
+
+/**
  * Context for MCP operations
  */
 export interface MCPContext {

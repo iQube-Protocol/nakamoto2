@@ -30,7 +30,7 @@ export interface DocumentSelectorContextProps {
   handleResetConnection: () => void;
 }
 
-// Add the missing FolderHistory type
+// FolderHistory interface
 export interface FolderHistory {
   id: string;
   name: string;

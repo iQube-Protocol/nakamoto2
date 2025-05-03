@@ -1,11 +1,12 @@
-import { MCPContext } from './types';
+
+import { MCPContext, MCPContextData } from './types';
 
 /**
  * Manages conversation context and document storage
  */
 export class ContextManager {
   private conversationId: string | null = null;
-  private context: MCPContext | null = null;
+  private context: MCPContextData | null = null;
   private metisActive: boolean = false;
   
   constructor(metisActive: boolean = false) {
@@ -242,7 +243,7 @@ export class ContextManager {
   /**
    * Get the current context
    */
-  getContext(): MCPContext {
+  getContext(): MCPContextData {
     if (!this.context) {
       throw new Error('Context not initialized');
     }
@@ -277,7 +278,7 @@ export class ContextManager {
     
     try {
       // Create a minimal version of the context without document content
-      const minimalContext: MCPContext = {
+      const minimalContext: MCPContextData = {
         conversationId: this.context.conversationId,
         messages: this.context.messages.slice(-10), // Keep only the last 10 messages
         metadata: this.context.metadata
