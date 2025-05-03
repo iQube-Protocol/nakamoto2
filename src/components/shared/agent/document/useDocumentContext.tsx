@@ -3,7 +3,12 @@ import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { useMCP } from '@/hooks/mcp/use-mcp';
 
-export function useDocumentContext({ conversationId, onDocumentAdded }: { conversationId?: string | null, onDocumentAdded?: () => void }) {
+interface UseDocumentContextProps {
+  conversationId?: string | null;
+  onDocumentAdded?: () => void;
+}
+
+export function useDocumentContext({ conversationId, onDocumentAdded }: UseDocumentContextProps) {
   const [selectedDocuments, setSelectedDocuments] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [viewingDocument, setViewingDocument] = useState<any | null>(null);
