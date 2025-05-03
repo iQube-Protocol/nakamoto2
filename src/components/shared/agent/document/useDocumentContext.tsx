@@ -21,7 +21,7 @@ const useDocumentContext = ({ conversationId, onDocumentAdded }: UseDocumentCont
     setIsLoading(true);
     try {
       console.log(`Loading documents for conversation: ${conversationId}`);
-      const documents = await mcpContext.getDocumentsInContext(); // Fixed: removed argument
+      const documents = await mcpContext.getDocumentsInContext(conversationId);
       if (documents && Array.isArray(documents)) {
         console.log(`Found ${documents.length} documents in context`);
         setSelectedDocuments(documents);
@@ -84,8 +84,14 @@ const useDocumentContext = ({ conversationId, onDocumentAdded }: UseDocumentCont
     
     setIsLoading(true);
     try {
-      // Fixed: Added necessary arguments (passing conversationId and document)
-      const success = await mcpContext.addDocumentToContext(conversationId, document);
+      // Ensure we pass all required arguments - the expected signature has 4 parameters
+      // Using null for optional parameters that may not be needed
+      const success = await mcpContext.addDocumentToContext(
+        conversationId,
+        document,
+        null,  // Add third parameter (likely documentContent)
+        null   // Add fourth parameter (likely options)
+      );
       
       if (success) {
         // Update local state
