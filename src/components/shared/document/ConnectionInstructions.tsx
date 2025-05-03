@@ -49,11 +49,11 @@ const ConnectionInstructions: React.FC = () => {
         setApiKey={setApiKey}
         handleConnect={handleConnectClick}
         isLoading={isProcessing}
-        disabled={apiLoadingState !== 'loaded'}
+        disabled={apiLoadingState !== 'ready'}
         isApiLoading={apiLoadingState === 'loading'}
       />
       
-      {connectionAttempts > 0 && apiLoadingState !== 'loaded' && (
+      {connectionAttempts > 0 && apiLoadingState !== 'ready' && (
         <Alert className="bg-yellow-500/10 border-yellow-500/30 mt-2">
           <Info className="h-4 w-4 text-yellow-500" />
           <AlertDescription className="mt-2">
