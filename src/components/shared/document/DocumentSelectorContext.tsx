@@ -1,28 +1,11 @@
+
 import React, { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { useMCP } from '@/hooks/mcp/use-mcp';
-import { useDriveConnection } from '@/hooks/mcp/use-drive-connection';
-import { useDocumentBrowser } from '@/hooks/useDocumentBrowser';
-
-interface DocumentSelectorContextProps {
-  isOpen: boolean;
-  setIsOpen: (open: boolean) => void;
-  apiLoadingState: 'loading' | 'loaded' | 'error';
-  apiCheckAttempts: number;
-  connecting: boolean;
-  connectionError: boolean;
-  refreshAttempts: number;
-  handleConnectClick: () => Promise<boolean>;
-  handleResetConnection: () => void;
-  handleRefreshDocuments: () => Promise<void>;
-  handleDialogChange: (open: boolean) => void;
-  handleFileSelection: (doc: any) => void;
-  documents: any[];
-  documentsLoading: boolean;
-  isProcessing: boolean;
-  driveConnected: boolean;
-  connectionStatus: 'disconnected' | 'connecting' | 'connected' | 'error';
-}
+import { useFolderNavigation } from './hooks/useFolderNavigation';
+import { useConnectionState } from './hooks/useConnectionState';
+import { useDocumentOperations } from './hooks/useDocumentOperations';
+import { DocumentSelectorContextProps } from './types/documentSelectorTypes';
 
 const DocumentSelectorContext = createContext<DocumentSelectorContextProps | undefined>(undefined);
 
@@ -35,30 +18,46 @@ export const useDocumentSelectorContext = () => {
 };
 
 export const DocumentSelectorProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
-  const { isApiLoading, checkApiStatus } = useMCP();
-  const [connecting, setConnecting] = useState(false);
-  const [apiLoadingState, setApiLoadingState] = useState<'loading' | 'loaded' | 'error'>('loading');
-  const [apiCheckAttempts, setApiCheckAttempts] = useState(0);
-  const [connectionError, setConnectionError] = useState<boolean>(false);
-  const [refreshAttempts, setRefreshAttempts] = useState(0);
-  const [isOpen, setIsOpen] = useState(false);
-
+  // Get folder navigation state and functions
   const {
-    driveConnected,
-    isLoading: connectionLoading,
+    currentFolder,
+    folderHistory,
+    navigateToFolder,
+    navigateToRoot,
+    handleBack,
+    handleFolderClick
+  } = useFolderNavigation();
+  
+  // Get connection state and functions
+  const {
+    connecting,
+    apiLoadingState,
+    setApiLoadingState,
+    apiCheckAttempts,
+    setApiCheckAttempts,
+    connectionError,
+    setConnectionError,
+    refreshAttempts,
+    setRefreshAttempts,
+    isApiLoading,
+    checkApiStatus,
     connectionInProgress,
     connectionAttempts,
-    connectionStatus,
-    handleConnect,
-    resetConnection,
-  } = useDriveConnection();
+    handleConnectClick,
+    handleResetConnection
+  } = useConnectionState();
   
+  // Get document operations
   const {
     documents,
-    isLoading: documentsLoading,
-    handleDocumentClick,
-    refreshCurrentFolder
-  } = useDocumentBrowser();
+    documentsLoading,
+    handleRefreshDocuments
+  } = useDocumentOperations();
+  
+  // MCP and drive connection state
+  const { driveConnected, connectionStatus } = useMCP();
+  
+  const [isOpen, setIsOpen] = useState(false);
   
   useEffect(() => {
     // Check if Google API is available
@@ -106,7 +105,7 @@ export const DocumentSelectorProvider: React.FC<{ children: React.ReactNode }> =
 
     // Clean up interval
     return () => clearInterval(interval);
-  }, [checkApiStatus]);
+  }, [checkApiStatus, setApiLoadingState, setApiCheckAttempts]);
   
   const handleDialogChange = useCallback((open: boolean) => {
     setIsOpen(open);
@@ -119,7 +118,7 @@ export const DocumentSelectorProvider: React.FC<{ children: React.ReactNode }> =
     
     // Auto-refresh document list when opening the dialog if connected
     if (open && driveConnected && !documentsLoading) {
-      refreshCurrentFolder().catch(err => {
+      handleRefreshDocuments().catch(err => {
         console.error('Failed to refresh folder on dialog open:', err);
         setConnectionError(true);
       });
@@ -132,58 +131,38 @@ export const DocumentSelectorProvider: React.FC<{ children: React.ReactNode }> =
       toast.dismiss('drive-connection');
       toast.dismiss('reset-connection');
     }
-  }, [apiLoadingState, driveConnected, documentsLoading, refreshCurrentFolder]);
-
-  // Handle connection with better Promise handling
-  const handleConnectClick = useCallback(async (): Promise<boolean> => {
-    setConnecting(true);
-    setConnectionError(false);
-    try {
-      console.log('DocumentSelector: Initiating connection process');
-      const result = await handleConnect();
-      if (!result) {
-        setConnectionError(true);
-      }
-      return result;
-    } catch (error) {
-      console.error('Connection error:', error);
-      setConnectionError(true);
-      return false;
-    } finally {
-      setConnecting(false);
-    }
-  }, [handleConnect]);
+  }, [
+    apiLoadingState, 
+    setApiLoadingState, 
+    setApiCheckAttempts, 
+    driveConnected, 
+    documentsLoading, 
+    handleRefreshDocuments, 
+    setConnectionError
+  ]);
   
-  // Handle reset connection with consistent UI feedback
-  const handleResetConnection = useCallback(() => {
-    // First reset API loading state
-    setApiLoadingState('loading');
-    setApiCheckAttempts(0);
-    setConnectionError(false);
+  const handleFileSelection = useCallback((doc: any) => {
+    // Handle folder navigation
+    const isFolder = handleFolderClick(doc, documents);
     
-    // Then reset the connection
-    resetConnection();
-  }, [resetConnection]);
-  
-  // Handle refresh with retry count and error handling
-  const handleRefreshDocuments = useCallback(async () => {
-    try {
-      setRefreshAttempts(prev => prev + 1);
-      await refreshCurrentFolder();
-      setConnectionError(false);
-    } catch (error) {
-      console.error('Error refreshing documents:', error);
-      setConnectionError(true);
+    // If not a folder, document was selected
+    if (!isFolder) {
+      setIsOpen(false);
     }
-  }, [refreshCurrentFolder]);
+    
+    return doc;
+  }, [handleFolderClick, documents]);
   
   // If we have credentials stored but haven't fetched documents yet
   useEffect(() => {
     if (driveConnected && isOpen && documents.length === 0 && !documentsLoading) {
       console.log('DocumentSelector: Auto-refreshing documents');
-      handleRefreshDocuments();
+      handleRefreshDocuments().catch(err => {
+        console.error('Failed to auto-refresh documents:', err);
+        setConnectionError(true);
+      });
     }
-  }, [driveConnected, isOpen, documents.length, documentsLoading, handleRefreshDocuments]);
+  }, [driveConnected, isOpen, documents, documentsLoading, handleRefreshDocuments, setConnectionError]);
   
   // Reset connection error if connection status changes
   useEffect(() => {
@@ -192,29 +171,19 @@ export const DocumentSelectorProvider: React.FC<{ children: React.ReactNode }> =
     } else if (connectionStatus === 'error') {
       setConnectionError(true);
     }
-  }, [connectionStatus]);
+  }, [connectionStatus, setConnectionError]);
   
   // Determine overall API loading state
   useEffect(() => {
     if (isApiLoading) {
       setApiLoadingState('loading');
     }
-  }, [isApiLoading]);
-  
-  const handleFileSelection = useCallback((doc: any) => {
-    const result = handleDocumentClick(doc);
-    // If not a folder, close the dialog
-    if (!doc.mimeType.includes('folder')) {
-      setIsOpen(false);
-      return result;
-    }
-    return result;
-  }, [handleDocumentClick]);
+  }, [isApiLoading, setApiLoadingState]);
 
   // Loading states
-  const isProcessing = connectionLoading || documentsLoading || isApiLoading || connecting || connectionInProgress;
+  const isProcessing = documentsLoading || isApiLoading || connecting || connectionInProgress;
 
-  const value = {
+  const value: DocumentSelectorContextProps = {
     isOpen,
     setIsOpen,
     apiLoadingState,
@@ -232,6 +201,17 @@ export const DocumentSelectorProvider: React.FC<{ children: React.ReactNode }> =
     isProcessing,
     driveConnected,
     connectionStatus,
+    
+    // Add folder navigation props
+    currentFolder,
+    folderHistory,
+    navigateToFolder,
+    navigateToRoot,
+    handleBack,
+    
+    // Add connection props
+    connectionInProgress,
+    connectionAttempts
   };
 
   return (

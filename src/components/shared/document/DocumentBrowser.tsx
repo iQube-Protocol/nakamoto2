@@ -5,13 +5,13 @@ import FileGrid from './FileGrid';
 import { useDocumentSelectorContext } from './DocumentSelectorContext';
 
 const DocumentBrowser: React.FC = () => {
-  const { handleFileSelection } = useDocumentSelectorContext();
   const { 
     currentFolder, 
     folderHistory, 
     navigateToFolder, 
     navigateToRoot, 
-    handleBack 
+    handleBack,
+    handleFileSelection 
   } = useDocumentSelectorContext();
   
   return (
