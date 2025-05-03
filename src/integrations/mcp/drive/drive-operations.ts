@@ -1,3 +1,5 @@
+
+import { toast } from 'sonner';
 import { DriveOperationsConfig, ConnectionStatus } from './types';
 import { AuthManager } from './auth-manager';
 import { FileOperations } from './file-operations';
@@ -35,7 +37,7 @@ export class DriveOperations {
     });
     
     // Start monitoring connection
-    this.connectionMonitor.startMonitoring();
+    this.connectionMonitor.setupConnectionMonitoring();
   }
   
   /**
@@ -50,7 +52,7 @@ export class DriveOperations {
     
     // Cleanup connection monitor
     this.connectionMonitor.stopMonitoring();
-    this.connectionMonitor.startMonitoring();
+    this.connectionMonitor.setupConnectionMonitoring();
     
     // Reset connection status
     this.connectionStatus = 'disconnected';
@@ -68,28 +70,46 @@ export class DriveOperations {
    * Connect to Google Drive with improved error handling
    */
   async connectToDrive(clientId: string, apiKey: string, cachedToken?: string | null): Promise<boolean> {
-    // Verify Google API is fully loaded before attempting to connect
-    if (!this.config.apiLoader.isLoaded()) {
-      console.log('MCP: Google API not fully loaded, attempting to load before connecting');
-      try {
-        const loaded = await this.config.apiLoader.ensureGoogleApiLoaded();
-        if (!loaded) {
-          console.error('MCP: Failed to load Google API');
+    try {
+      // Show a loading toast
+      toast.loading('Setting up Google Drive connection...', {
+        id: 'drive-connect',
+        duration: 15000
+      });
+
+      // Verify Google API is fully loaded before attempting to connect
+      if (!this.config.apiLoader.isLoaded()) {
+        console.log('MCP: Google API not fully loaded, attempting to load before connecting');
+        try {
+          const loaded = await this.config.apiLoader.ensureGoogleApiLoaded();
+          if (!loaded) {
+            toast.error('Failed to load Google API', {
+              description: 'Please refresh the page and try again',
+              duration: 4000,
+              id: 'drive-connect-error',
+            });
+            return false;
+          }
+        } catch (error) {
+          toast.error('Error loading Google API', {
+            description: error instanceof Error ? error.message : 'Unknown error',
+            duration: 4000,
+            id: 'drive-connect-error',
+          });
           return false;
         }
-      } catch (error) {
-        console.error('MCP: Error loading Google API:', error);
+      }
+      
+      // Verify GAPI client is available
+      if (!this.config.apiLoader.getGapiClient()) {
+        toast.error('Google API client not available', {
+          description: 'Please refresh the page and try again',
+          duration: 4000,
+          id: 'drive-connect-error',
+        });
         return false;
       }
-    }
-    
-    // Verify GAPI client is available
-    if (!this.config.apiLoader.getGapiClient()) {
-      console.error('Google API client not available');
-      return false;
-    }
-    
-    try {
+      
       // Log connection attempt
       console.log('MCP: Connecting to Google Drive with credentials:', { 
         clientId, 
@@ -98,14 +118,33 @@ export class DriveOperations {
       
       const result = await this.authManager.connectToDrive(clientId, apiKey, cachedToken);
       
-      // If connection was successful, set up monitoring
       if (result) {
-        this.connectionMonitor.setupConnectionMonitoring();
+        toast.dismiss('drive-connect');
+        toast.success('Connected to Google Drive', {
+          description: 'Your Google Drive documents are now available',
+          duration: 3000,
+          id: 'drive-connect-success',
+        });
+      } else {
+        toast.dismiss('drive-connect');
+        toast.error('Failed to connect to Google Drive', {
+          description: 'Please check your credentials and try again',
+          duration: 4000,
+          id: 'drive-connect-error',
+        });
       }
       
       return result;
     } catch (error) {
       console.error('MCP: Error connecting to Google Drive:', error);
+      
+      toast.dismiss('drive-connect');
+      toast.error('Google Drive connection failed', { 
+        description: error instanceof Error ? error.message : 'Unknown error',
+        duration: 4000,
+        id: 'drive-connect-error',
+      });
+      
       return false;
     }
   }

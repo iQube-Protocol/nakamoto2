@@ -75,11 +75,6 @@ export function useMCP(): MCPContext {
     return Promise.resolve(checkApiStatus());
   };
 
-  const refreshDocumentsAsync = async (): Promise<void> => {
-    const docs = await listDocuments();
-    return Promise.resolve();
-  };
-
   return {
     client,
     isInitialized,
@@ -94,7 +89,7 @@ export function useMCP(): MCPContext {
     checkApiStatus: checkApiStatusAsync,
     listDocuments,
     fetchDocument,
-    forceRefreshDocuments: refreshDocumentsAsync,
+    forceRefreshDocuments,
     initializeContext,
     getDocumentsInContext,
     addDocumentToContext,

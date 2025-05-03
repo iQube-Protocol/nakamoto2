@@ -1,27 +1,5 @@
 
 /**
- * Check if an error is an authentication error
- */
-export function isAuthError(error: any): boolean {
-  if (!error) return false;
-  
-  // Check for common auth error patterns
-  if (typeof error === 'object') {
-    const errorStr = JSON.stringify(error).toLowerCase();
-    return errorStr.includes('auth') && (
-      errorStr.includes('unauthorized') ||
-      errorStr.includes('unauthenticated') ||
-      errorStr.includes('invalid') ||
-      errorStr.includes('expired') ||
-      errorStr.includes('revoked') ||
-      errorStr.includes('permission')
-    );
-  }
-  
-  return false;
-}
-
-/**
  * Get the appropriate export MIME type for Google Workspace files
  */
 export function getExportMimeType(originalMimeType: string): string {
@@ -53,27 +31,23 @@ export function getDocumentType(mimeType: string): string {
 }
 
 /**
- * Safely stringify an object for local storage
+ * Check if an error is an authentication error
  */
-export function safeStringify(obj: any): string {
-  try {
-    return JSON.stringify(obj);
-  } catch (e) {
-    console.error('Error stringifying object:', e);
-    return '{}';
-  }
-}
-
-/**
- * Safely parse a string from local storage
- */
-export function safeParse<T>(str: string | null, defaultValue: T): T {
-  if (!str) return defaultValue;
+export function isAuthError(error: any): boolean {
+  if (!error) return false;
   
-  try {
-    return JSON.parse(str) as T;
-  } catch (e) {
-    console.error('Error parsing string:', e);
-    return defaultValue;
+  // Check for common auth error patterns
+  if (typeof error === 'object') {
+    const errorStr = JSON.stringify(error).toLowerCase();
+    return errorStr.includes('auth') && (
+      errorStr.includes('unauthorized') ||
+      errorStr.includes('unauthenticated') ||
+      errorStr.includes('invalid') ||
+      errorStr.includes('expired') ||
+      errorStr.includes('revoked') ||
+      errorStr.includes('permission')
+    );
   }
+  
+  return false;
 }

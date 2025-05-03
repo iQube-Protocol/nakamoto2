@@ -1,5 +1,7 @@
+
 import { ConnectionStatus } from './types';
 import { GoogleApiLoader } from '../api/google-api-loader';
+import { toast } from 'sonner';
 
 /**
  * Manages authentication with Google Drive
@@ -8,6 +10,9 @@ export class AuthManager {
   private apiLoader: GoogleApiLoader;
   private isAuthenticated: boolean = false;
   private connectionStatus: ConnectionStatus = 'disconnected';
+  private authToken: string | null = null;
+  private lastConnectionAttempt: number = 0;
+  private connectionTimer: NodeJS.Timeout | null = null;
   
   constructor(config: { apiLoader: GoogleApiLoader }) {
     this.apiLoader = config.apiLoader;
@@ -16,6 +21,21 @@ export class AuthManager {
     if (typeof window !== 'undefined') {
       this.isAuthenticated = localStorage.getItem('gdrive-connected') === 'true';
       this.connectionStatus = this.isAuthenticated ? 'connected' : 'disconnected';
+      
+      if (this.isAuthenticated) {
+        // Load the cached token
+        const cachedToken = localStorage.getItem('gdrive-auth-token');
+        if (cachedToken) {
+          try {
+            this.authToken = cachedToken;
+            console.log('MCP: Found cached auth token');
+          } catch (e) {
+            console.error('MCP: Error parsing cached token:', e);
+            this.isAuthenticated = false;
+          }
+        }
+      }
+      
       console.log('AuthManager: Initial authentication state:', this.isAuthenticated);
     }
   }
@@ -24,6 +44,15 @@ export class AuthManager {
    * Connect to Google Drive with auth flow
    */
   async connectToDrive(clientId: string, apiKey: string, cachedToken?: string | null): Promise<boolean> {
+    // Prevent rapid reconnection attempts
+    const now = Date.now();
+    if (now - this.lastConnectionAttempt < 2000) {
+      console.log('MCP: Throttling connection attempts');
+      toast.info('Connection in progress, please wait', { duration: 2000 });
+      return false;
+    }
+    this.lastConnectionAttempt = now;
+    
     try {
       // Ensure Google API is loaded and available
       if (!this.apiLoader.isLoaded()) {
@@ -36,98 +65,245 @@ export class AuthManager {
         throw new Error('Google API client not available');
       }
       
-      // Initialize the client with API key
-      await new Promise<void>((resolve, reject) => {
-        try {
-          gapi.setApiKey(apiKey);
-          resolve();
-        } catch (error) {
-          reject(new Error(`Failed to set API key: ${error instanceof Error ? error.message : String(error)}`));
-        }
-      });
+      // Clean up any previous connection attempt
+      if (this.connectionTimer) {
+        clearTimeout(this.connectionTimer);
+        this.connectionTimer = null;
+      }
       
-      // Initialize auth2 client with the OAuth client ID
-      await new Promise<void>((resolve, reject) => {
+      // Set up connection timeout
+      this.connectionTimer = setTimeout(() => {
+        toast.dismiss('drive-connect');
+        toast.error('Connection attempt timed out', {
+          description: 'Please try again or refresh the page',
+          duration: 4000,
+          id: 'drive-connect-error',
+        });
+        this.connectionStatus = 'error';
+      }, 45000);
+      
+      // If we have a cached token, try to use it directly
+      if (cachedToken) {
         try {
-          gapi.load('client:auth2', () => {
-            gapi.client.init({
-              clientId: clientId,
-              scope: 'https://www.googleapis.com/auth/drive.readonly',
-              discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest']
-            })
-            .then(() => {
-              resolve();
-            })
-            .catch((error: any) => {
-              reject(new Error(`Error initializing Google API client: ${error.message || String(error)}`));
-            });
+          console.log('MCP: Trying cached token');
+          gapi.client.setToken(JSON.parse(cachedToken));
+          this.authToken = cachedToken;
+          
+          toast.loading('Verifying saved credentials...', { 
+            id: 'drive-connect',
+            duration: 10000 
           });
-        } catch (error) {
-          reject(new Error(`Error loading Google API client:auth2: ${error instanceof Error ? error.message : String(error)}`));
+          
+          // Test if the token is still valid with a simple API call
+          try {
+            const response = await gapi.client.drive.files.list({
+              pageSize: 1,
+              fields: 'files(id)'
+            });
+            
+            // If we got here, the token is valid
+            console.log('MCP: Successfully authenticated with Google Drive using cached token', response);
+            
+            // Clear timeout
+            if (this.connectionTimer) {
+              clearTimeout(this.connectionTimer);
+              this.connectionTimer = null;
+            }
+            
+            this.isAuthenticated = true;
+            localStorage.setItem('gdrive-connected', 'true');
+            this.connectionStatus = 'connected';
+            
+            return true;
+          } catch (e) {
+            // Token is invalid, proceed with normal flow
+            console.log('Cached token is invalid, proceeding with regular auth flow');
+            // Clear the invalid token
+            localStorage.removeItem('gdrive-auth-token');
+            gapi.client.setToken(null);
+            this.authToken = null;
+          }
+        } catch (e) {
+          console.error('Error parsing cached token:', e);
+        }
+      }
+      
+      // Initialize the Google API client with provided credentials
+      try {
+        await gapi.client.init({
+          apiKey: apiKey,
+          discoveryDocs: ['https://www.googleapis.com/discovery/v1/apis/drive/v3/rest'],
+        });
+        console.log('MCP: Google API client initialized successfully');
+      } catch (error) {
+        console.error('Failed to initialize Google API client:', error);
+        
+        // Clear timeout
+        if (this.connectionTimer) {
+          clearTimeout(this.connectionTimer);
+          this.connectionTimer = null;
+        }
+        
+        this.connectionStatus = 'error';
+        return false;
+      }
+      
+      // Create token client for OAuth 2.0 flow
+      const googleAccounts = (window as any).google?.accounts;
+      if (!googleAccounts) {
+        // Clear timeout
+        if (this.connectionTimer) {
+          clearTimeout(this.connectionTimer);
+          this.connectionTimer = null;
+        }
+        
+        this.connectionStatus = 'error';
+        return false;
+      }
+      
+      // Use a promise to track the OAuth flow with a timeout
+      return new Promise((resolve) => {
+        try {
+          const tokenClient = googleAccounts.oauth2.initTokenClient({
+            client_id: clientId,
+            scope: 'https://www.googleapis.com/auth/drive.readonly',
+            callback: (tokenResponse: any) => {
+              // Clear connection timeout
+              if (this.connectionTimer) {
+                clearTimeout(this.connectionTimer);
+                this.connectionTimer = null;
+              }
+              
+              if (tokenResponse && tokenResponse.access_token) {
+                console.log('MCP: Received access token from Google OAuth', tokenResponse);
+                this.isAuthenticated = true;
+                localStorage.setItem('gdrive-connected', 'true');
+                this.connectionStatus = 'connected';
+                
+                // Cache the token
+                try {
+                  const currentToken = gapi.client.getToken();
+                  console.log('MCP: Caching token to localStorage', currentToken);
+                  const tokenStr = JSON.stringify(currentToken);
+                  localStorage.setItem('gdrive-auth-token', tokenStr);
+                  this.authToken = tokenStr;
+                } catch (e) {
+                  console.error('Failed to cache token:', e);
+                }
+                
+                // Verify the connection by making a test API call
+                gapi.client.drive.files.list({
+                  pageSize: 1,
+                  fields: 'files(id)'
+                })
+                .then(() => {
+                  console.log('MCP: Test API call successful, connection verified');
+                  resolve(true);
+                })
+                .catch(error => {
+                  console.error('MCP: Test API call failed after authentication:', error);
+                  this.isAuthenticated = false;
+                  localStorage.setItem('gdrive-connected', 'false');
+                  this.connectionStatus = 'error';
+                  resolve(false);
+                });
+              } else {
+                console.error('MCP: No access token received from Google OAuth');
+                this.connectionStatus = 'error';
+                resolve(false);
+              }
+            },
+            error_callback: (error: any) => {
+              // Clear connection timeout
+              if (this.connectionTimer) {
+                clearTimeout(this.connectionTimer);
+                this.connectionTimer = null;
+              }
+              
+              console.error('OAuth error:', error);
+              this.connectionStatus = 'error';
+              resolve(false);
+            }
+          });
+          
+          // Request access token
+          console.log('MCP: Requesting OAuth token');
+          tokenClient.requestAccessToken({ prompt: 'consent' });
+        } catch (e) {
+          // Clear connection timeout
+          if (this.connectionTimer) {
+            clearTimeout(this.connectionTimer);
+            this.connectionTimer = null;
+          }
+          
+          console.error('Error requesting access token:', e);
+          this.connectionStatus = 'error';
+          resolve(false);
         }
       });
-      
-      // Check if user is already signed in
-      const isSignedIn = gapi.auth2?.getAuthInstance()?.isSignedIn?.get();
-      
-      // If not signed in, prompt user to sign in
-      if (!isSignedIn) {
-        await gapi.auth2.getAuthInstance().signIn();
-      }
-      
-      // Update authentication state
-      this.setAuthenticationState(true);
-      
-      // Cache the token in localStorage
-      const authToken = gapi.auth2.getAuthInstance().currentUser.get().getAuthResponse().id_token;
-      if (typeof window !== 'undefined') {
-        localStorage.setItem('gdrive-auth-token', authToken);
-      }
-      
-      return true;
     } catch (error) {
-      console.error('AuthManager: Failed to connect to Google Drive:', error);
-      this.setAuthenticationState(false);
+      console.error('MCP: Error connecting to Google Drive:', error);
+      
+      // Clear connection timeout
+      if (this.connectionTimer) {
+        clearTimeout(this.connectionTimer);
+        this.connectionTimer = null;
+      }
+      
+      this.connectionStatus = 'error';
       return false;
     }
   }
-  
+
   /**
-   * Verify connection is still valid
+   * Verify that the connection to Drive is still valid
    */
   async verifyConnection(): Promise<boolean> {
-    if (!this.isAuthenticated) {
-      return false;
-    }
+    if (!this.isAuthenticated) return false;
+    
+    const gapi = this.apiLoader.getGapiClient();
+    if (!gapi || !gapi.client) return false;
     
     try {
-      // Get GAPI client
-      const gapi = this.apiLoader.getGapiClient();
-      if (!gapi) {
-        console.warn('AuthManager: GAPI client not available for verification');
-        return false;
-      }
+      // Make a lightweight API call to verify connection
+      await gapi.client.drive.about.get({
+        fields: 'user'
+      });
       
-      // Check if auth2 is initialized
-      if (!gapi.auth2 || !gapi.auth2.getAuthInstance) {
-        console.warn('AuthManager: GAPI auth2 not initialized');
-        return false;
-      }
-      
-      // Check if signed in
-      const isSignedIn = gapi.auth2.getAuthInstance().isSignedIn.get();
-      
-      // Update authentication state
-      this.setAuthenticationState(isSignedIn);
-      
-      return isSignedIn;
+      // If we get here, connection is valid
+      return true;
     } catch (error) {
-      console.error('AuthManager: Error verifying connection:', error);
-      this.setAuthenticationState(false);
-      return false;
+      console.warn('MCP: Connection verification failed, token may be invalid:', error);
+      
+      // If verification fails, try to use the cached token
+      const cachedToken = localStorage.getItem('gdrive-auth-token');
+      if (cachedToken && cachedToken !== this.authToken) {
+        try {
+          console.log('MCP: Trying to restore connection with cached token');
+          gapi.client.setToken(JSON.parse(cachedToken));
+          this.authToken = cachedToken;
+          
+          // Test the restored connection
+          await gapi.client.drive.about.get({
+            fields: 'user'
+          });
+          
+          console.log('MCP: Connection restored with cached token');
+          return true;
+        } catch (e) {
+          console.error('MCP: Failed to restore connection with cached token:', e);
+          // Mark as disconnected
+          this.setAuthenticationState(false);
+          return false;
+        }
+      } else {
+        // Mark as disconnected
+        this.setAuthenticationState(false);
+        return false;
+      }
     }
   }
-  
+
   /**
    * Reset authentication state
    */
