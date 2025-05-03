@@ -11,7 +11,7 @@ export const useConnectionState = () => {
   const {
     connectionInProgress,
     connectionAttempts,
-    connectToDrive, // This is the correct function name to use
+    connectToDrive,
     resetConnection
   } = useDriveConnection();
   
@@ -19,7 +19,7 @@ export const useConnectionState = () => {
   const [connectionError, setConnectionError] = useState<boolean>(false);
   const [refreshAttempts, setRefreshAttempts] = useState(0);
   
-  // Use connectToDrive instead of handleConnect
+  // Use connectToDrive to handle connection
   const handleConnectClick = useCallback(async (): Promise<boolean> => {
     setConnecting(true);
     setConnectionError(false);

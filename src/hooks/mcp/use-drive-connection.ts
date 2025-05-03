@@ -79,12 +79,6 @@ export function useDriveConnection(): DriveConnectionHook {
     }
   }, [connectionManager.apiErrorCount, client]);
   
-  // Create a wrapper for connectToDrive that can be exported
-  const connectToDrive = async (clientId: string, apiKey: string): Promise<boolean> => {
-    console.log("Drive connection: Connecting with credentials", { clientId: clientId?.substring(0, 10) + '...', apiKey: apiKey ? '[PROVIDED]' : '[MISSING]' });
-    return mcpConnectToDrive(clientId, apiKey);
-  };
-  
   return {
     driveConnected,
     isLoading,
@@ -96,7 +90,13 @@ export function useDriveConnection(): DriveConnectionHook {
     apiKey,
     setClientId,
     setApiKey,
-    connectToDrive, // Explicitly expose this function for external use
+    connectToDrive: async (clientId: string, apiKey: string): Promise<boolean> => {
+      console.log("Drive connection: Connecting with credentials", { 
+        clientIdLength: clientId?.length, 
+        apiKeyLength: apiKey ? '[PROVIDED]' : '[MISSING]'
+      });
+      return mcpConnectToDrive(clientId, apiKey);
+    },
     resetConnection,
     
     // These are included to satisfy the TypeScript interface but not used directly

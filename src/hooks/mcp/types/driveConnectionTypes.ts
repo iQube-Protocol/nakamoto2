@@ -17,7 +17,7 @@ export interface DriveConnectionState {
 export interface DriveConnectionActions {
   setClientId: (id: string) => void;
   setApiKey: (key: string) => void;
-  handleConnect: () => Promise<boolean>;
+  connectToDrive: (clientId: string, apiKey: string) => Promise<boolean>;
   resetConnection: () => void;
 }
 
