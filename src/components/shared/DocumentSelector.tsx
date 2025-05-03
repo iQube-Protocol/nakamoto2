@@ -33,14 +33,12 @@ const DocumentSelectorContent: React.FC<{ onDocumentSelect: (document: any) => v
     if (!contextValue) {
       console.error("Document selector context is undefined");
       return (
-        <Dialog>
-          <DialogContent>
-            <div className="flex flex-col items-center gap-4 py-8">
-              <AlertCircle className="h-10 w-10 text-red-500" />
-              <p>Unable to load document selector - context is missing</p>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <DialogContent>
+          <div className="flex flex-col items-center gap-4 py-8">
+            <AlertCircle className="h-10 w-10 text-red-500" />
+            <p>Unable to load document selector - context is missing</p>
+          </div>
+        </DialogContent>
       );
     }
     
@@ -75,44 +73,40 @@ const DocumentSelectorContent: React.FC<{ onDocumentSelect: (document: any) => v
     };
 
     return (
-      <Dialog open={isOpen} onOpenChange={handleDialogChange || (() => {})}>
-        <DialogContent className="sm:max-w-[500px]">
-          <DialogHeader>
-            <DialogTitle>Select a document from Google Drive</DialogTitle>
-            <DialogDescription>
-              {driveConnected 
-                ? "Choose a document to analyze with your agent" 
-                : "Connect to Google Drive to access your documents"}
-            </DialogDescription>
-          </DialogHeader>
-          
-          {apiLoadingState === 'loading' && <ApiLoadingAlert />}
-          
-          {apiLoadingState === 'error' && <ApiErrorAlert />}
-          
-          <ConnectionErrorAlert />
-          
-          {!driveConnected ? (
-            <ConnectionInstructions />
-          ) : (
-            <DocumentBrowser />
-          )}
-          
-          <DocumentDialogFooter />
-        </DialogContent>
-      </Dialog>
+      <DialogContent className="sm:max-w-[500px]">
+        <DialogHeader>
+          <DialogTitle>Select a document from Google Drive</DialogTitle>
+          <DialogDescription>
+            {driveConnected 
+              ? "Choose a document to analyze with your agent" 
+              : "Connect to Google Drive to access your documents"}
+          </DialogDescription>
+        </DialogHeader>
+        
+        {apiLoadingState === 'loading' && <ApiLoadingAlert />}
+        
+        {apiLoadingState === 'error' && <ApiErrorAlert />}
+        
+        <ConnectionErrorAlert />
+        
+        {!driveConnected ? (
+          <ConnectionInstructions />
+        ) : (
+          <DocumentBrowser />
+        )}
+        
+        <DocumentDialogFooter />
+      </DialogContent>
     );
   } catch (error) {
     console.error("Error in DocumentSelectorContent:", error);
     return (
-      <Dialog>
-        <DialogContent>
-          <div className="flex flex-col items-center gap-4 py-8">
-            <AlertCircle className="h-10 w-10 text-red-500" />
-            <p>An error occurred while loading the document selector</p>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <DialogContent>
+        <div className="flex flex-col items-center gap-4 py-8">
+          <AlertCircle className="h-10 w-10 text-red-500" />
+          <p>An error occurred while loading the document selector</p>
+        </div>
+      </DialogContent>
     );
   }
 };
@@ -122,17 +116,21 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
   onDocumentSelect,
   triggerButton 
 }) => {
+  const [open, setOpen] = React.useState(false);
+  
   return (
     <DocumentSelectorProvider>
-      <DialogTrigger asChild>
-        {triggerButton || (
-          <Button className="flex gap-2">
-            <FileText className="h-4 w-4" />
-            Select Document
-          </Button>
-        )}
-      </DialogTrigger>
-      <DocumentSelectorContent onDocumentSelect={onDocumentSelect} />
+      <Dialog open={open} onOpenChange={setOpen}>
+        <DialogTrigger asChild>
+          {triggerButton || (
+            <Button className="flex gap-2">
+              <FileText className="h-4 w-4" />
+              Select Document
+            </Button>
+          )}
+        </DialogTrigger>
+        <DocumentSelectorContent onDocumentSelect={onDocumentSelect} />
+      </Dialog>
     </DocumentSelectorProvider>
   );
 };
