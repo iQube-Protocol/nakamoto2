@@ -6,7 +6,7 @@ import { FileText } from 'lucide-react';
 import DocumentSelector from '../DocumentSelector';
 import DocumentList from './document/DocumentList';
 import DocumentViewer from './document/DocumentViewer';
-import useDocumentContext from './document/useDocumentContext';
+import { useDocumentContext } from './document/useDocumentContext';
 
 interface DocumentContextProps {
   conversationId: string | null;

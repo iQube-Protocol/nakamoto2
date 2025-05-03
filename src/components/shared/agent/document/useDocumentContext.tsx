@@ -3,11 +3,10 @@ import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { useMCP } from '@/hooks/mcp/use-mcp';
 
-export function useDocumentContext(conversationId?: string) {
-  const [documents, setDocuments] = useState<any[]>([]);
+export function useDocumentContext({ conversationId, onDocumentAdded }: { conversationId?: string | null, onDocumentAdded?: () => void }) {
+  const [selectedDocuments, setSelectedDocuments] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const [selectedDocument, setSelectedDocument] = useState<any | null>(null);
-  const [documentContent, setDocumentContent] = useState<string | null>(null);
+  const [viewingDocument, setViewingDocument] = useState<any | null>(null);
   
   const { 
     client, 
@@ -26,7 +25,7 @@ export function useDocumentContext(conversationId?: string) {
         setIsLoading(true);
         // Call getDocumentsInContext with the conversationId parameter
         const contextDocuments = await getDocumentsInContext(conversationId);
-        setDocuments(contextDocuments || []);
+        setSelectedDocuments(contextDocuments || []);
       } catch (error) {
         console.error("Error fetching documents in context:", error);
         toast.error("Could not fetch document context");
@@ -39,7 +38,7 @@ export function useDocumentContext(conversationId?: string) {
   }, [client, conversationId, getDocumentsInContext]);
   
   // Add document to context
-  const addDocument = useCallback(async (doc: any) => {
+  const handleDocumentSelect = useCallback(async (doc: any) => {
     if (!client || !conversationId || !driveConnected) {
       toast.error("Cannot add document: Client not initialized or Drive not connected");
       return false;
@@ -64,9 +63,15 @@ export function useDocumentContext(conversationId?: string) {
       
       // Refresh the documents list
       const updatedDocs = await getDocumentsInContext(conversationId);
-      setDocuments(updatedDocs || []);
+      setSelectedDocuments(updatedDocs || []);
       
       toast.success(`Added ${doc.name} to context`);
+      
+      // Call the callback if provided
+      if (onDocumentAdded) {
+        onDocumentAdded();
+      }
+      
       return true;
     } catch (error) {
       console.error("Error adding document to context:", error);
@@ -75,10 +80,10 @@ export function useDocumentContext(conversationId?: string) {
     } finally {
       setIsLoading(false);
     }
-  }, [client, conversationId, driveConnected, addDocumentToContext, getDocumentsInContext]);
+  }, [client, conversationId, driveConnected, addDocumentToContext, getDocumentsInContext, onDocumentAdded]);
   
   // Remove document from context
-  const removeDocument = useCallback(async (docId: string) => {
+  const handleRemoveDocument = useCallback(async (docId: string) => {
     if (!client || !conversationId) {
       toast.error("Cannot remove document: Client not initialized");
       return false;
@@ -87,10 +92,9 @@ export function useDocumentContext(conversationId?: string) {
     try {
       setIsLoading(true);
       
-      // If the selected document is being removed, clear it
-      if (selectedDocument && selectedDocument.id === docId) {
-        setSelectedDocument(null);
-        setDocumentContent(null);
+      // If the viewing document is being removed, clear it
+      if (viewingDocument && viewingDocument.id === docId) {
+        setViewingDocument(null);
       }
       
       // Remove the document from the context
@@ -98,7 +102,7 @@ export function useDocumentContext(conversationId?: string) {
       
       // Refresh the documents list
       const updatedDocs = await getDocumentsInContext(conversationId);
-      setDocuments(updatedDocs || []);
+      setSelectedDocuments(updatedDocs || []);
       
       toast.success("Document removed from context");
       return true;
@@ -109,10 +113,10 @@ export function useDocumentContext(conversationId?: string) {
     } finally {
       setIsLoading(false);
     }
-  }, [client, conversationId, selectedDocument, removeDocumentFromContext, getDocumentsInContext]);
+  }, [client, conversationId, viewingDocument, removeDocumentFromContext, getDocumentsInContext]);
   
   // Function to view a document's content
-  const viewDocument = useCallback(async (doc: any) => {
+  const handleViewDocument = useCallback(async (doc: any) => {
     if (!client || !doc?.id) {
       toast.error("Cannot view document: Client not initialized or invalid document");
       return;
@@ -120,15 +124,18 @@ export function useDocumentContext(conversationId?: string) {
     
     try {
       setIsLoading(true);
-      setSelectedDocument(doc);
+      setViewingDocument(doc);
       
       // Check if we already have the document content
       if (doc.content) {
-        setDocumentContent(doc.content);
+        // Document already has content, no need to fetch
       } else {
-        // Fetch the content
+        // Fetch the content if not available
         const content = await client.fetchDocumentContent(doc.id);
-        setDocumentContent(content);
+        if (content) {
+          // Update the document with content
+          setViewingDocument(prev => prev ? {...prev, content} : null);
+        }
       }
     } catch (error) {
       console.error("Error viewing document:", error);
@@ -138,20 +145,13 @@ export function useDocumentContext(conversationId?: string) {
     }
   }, [client]);
   
-  // Close document viewer
-  const closeDocumentViewer = useCallback(() => {
-    setSelectedDocument(null);
-    setDocumentContent(null);
-  }, []);
-  
   return {
-    documents,
+    selectedDocuments,
     isLoading,
-    selectedDocument,
-    documentContent,
-    addDocument,
-    removeDocument,
-    viewDocument,
-    closeDocumentViewer
+    viewingDocument,
+    setViewingDocument,
+    handleDocumentSelect,
+    handleRemoveDocument,
+    handleViewDocument
   };
 }
