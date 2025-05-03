@@ -61,12 +61,12 @@ export function useConnectionReset(
           if (typeof window !== 'undefined' && window.google?.accounts) {
             try {
               console.log('Signing out of Google accounts');
-              window.google.accounts.id.disableAutoSelect();
+              window.google.accounts.id.disableAutoSelect?.();
               // Additional Google sign-out if available
               if (window.gapi?.auth2) {
-                const auth2 = window.gapi.auth2.getAuthInstance();
+                const auth2 = window.gapi.auth2.getAuthInstance?.();
                 if (auth2) {
-                  auth2.signOut().then(() => {
+                  auth2.signOut?.().then(() => {
                     console.log('User signed out of Google Auth.');
                   });
                 }

@@ -318,10 +318,10 @@ export class AuthManager {
       // Attempt to sign out of Google Auth if available
       if (window.gapi?.auth2) {
         try {
-          const authInstance = window.gapi.auth2.getAuthInstance();
+          const authInstance = window.gapi.auth2.getAuthInstance?.();
           if (authInstance) {
             console.log('AuthManager: Signing out of Google Auth');
-            authInstance.signOut().catch((e: any) => {
+            authInstance.signOut?.().catch((e: any) => {
               console.warn('AuthManager: Error during Google Auth signout:', e);
             });
           }
@@ -334,8 +334,8 @@ export class AuthManager {
       if (window.google?.accounts?.id) {
         try {
           console.log('AuthManager: Disabling Google Identity auto select');
-          window.google.accounts.id.disableAutoSelect();
-          window.google.accounts.id.cancel();
+          window.google.accounts.id.disableAutoSelect?.();
+          window.google.accounts.id.cancel?.();
         } catch (e) {
           console.warn('AuthManager: Error disabling Google Identity auto select', e);
         }
