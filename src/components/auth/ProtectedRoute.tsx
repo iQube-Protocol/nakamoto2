@@ -11,19 +11,22 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   const { user, loading, session } = useAuth();
   const location = useLocation();
   
-  console.log("ProtectedRoute - Auth status:", { 
-    user: !!user, 
-    session: !!session, 
-    loading, 
-    path: location.pathname 
-  });
-  
+  // Debug authentication status
   useEffect(() => {
+    console.log("ProtectedRoute - Auth status:", { 
+      user: !!user, 
+      session: !!session, 
+      loading, 
+      path: location.pathname 
+    });
+    
     // Log authentication state for debugging
     if (!user && !loading) {
       console.log("ProtectedRoute - No user detected, should redirect to signin");
+    } else if (user) {
+      console.log("ProtectedRoute - User authenticated:", user.id);
     }
-  }, [user, loading, location.pathname]);
+  }, [user, loading, session, location.pathname]);
   
   if (loading) {
     return (

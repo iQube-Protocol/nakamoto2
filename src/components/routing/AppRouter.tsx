@@ -1,6 +1,6 @@
 
 import React, { useEffect } from "react";
-import { Routes, Route, Navigate, useNavigate } from "react-router-dom";
+import { Routes, Route, Navigate, useNavigate, useLocation } from "react-router-dom";
 import { AuthProvider } from "@/hooks/use-auth";
 import ProtectedRoute from "@/components/auth/ProtectedRoute";
 import MainLayout from "@/components/layout/MainLayout";
@@ -18,8 +18,12 @@ import SignIn from "@/pages/SignIn";
 
 const AppRouterContent: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   
   useEffect(() => {
+    // Log the current route for debugging
+    console.log(`AppRouter - Current route: ${location.pathname}`);
+    
     // Check for redirect after login
     const handleRedirectAfterLogin = () => {
       const redirectPath = sessionStorage.getItem('redirectAfterLogin');
@@ -31,7 +35,7 @@ const AppRouterContent: React.FC = () => {
     };
     
     handleRedirectAfterLogin();
-  }, [navigate]);
+  }, [navigate, location.pathname]);
 
   return (
     <Routes>
@@ -39,18 +43,16 @@ const AppRouterContent: React.FC = () => {
       <Route path="/splash" element={<SplashPage />} />
       <Route path="/signin" element={<SignIn />} />
       
-      {/* Protected routes */}
-      <Route 
-        path="/" 
-        element={
-          <ProtectedRoute>
-            <MainLayout>
-              <Index />
-            </MainLayout>
-          </ProtectedRoute>
-        } 
-      />
+      {/* Root redirect */}
+      <Route path="/" element={
+        <ProtectedRoute>
+          <MainLayout>
+            <Index />
+          </MainLayout>
+        </ProtectedRoute>
+      } />
       
+      {/* Protected routes */}
       <Route 
         path="/learn" 
         element={
