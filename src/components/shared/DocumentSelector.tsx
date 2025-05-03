@@ -9,7 +9,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { FileText } from 'lucide-react';
+import { FileText, AlertCircle } from 'lucide-react';
 import { DocumentSelectorProvider, useDocumentSelectorContext } from './document/DocumentSelectorContext';
 import ApiLoadingAlert from './document/ApiLoadingAlert';
 import ApiErrorAlert from './document/ApiErrorAlert';
@@ -27,53 +27,73 @@ interface DocumentSelectorProps {
 const DocumentSelectorContent: React.FC<{ onDocumentSelect: (document: any) => void }> = ({ 
   onDocumentSelect 
 }) => {
-  const { 
-    isOpen, 
-    handleDialogChange, 
-    apiLoadingState, 
-    driveConnected, 
-    handleFileSelection
-  } = useDocumentSelectorContext();
+  try {
+    const { 
+      isOpen, 
+      handleDialogChange, 
+      apiLoadingState, 
+      driveConnected, 
+      handleFileSelection
+    } = useDocumentSelectorContext();
 
-  // Wrap the document selection handler to pass the document to the parent component
-  const handleDocSelect = (doc: any) => {
-    if (!doc) return;
-    
-    const result = handleFileSelection(doc);
-    // Only pass non-folder documents to the parent
-    if (doc.mimeType && !doc.mimeType.includes('folder')) {
-      onDocumentSelect(result);
-    }
-  };
+    // Wrap the document selection handler to pass the document to the parent component
+    const handleDocSelect = (doc: any) => {
+      if (!doc) return;
+      
+      try {
+        const result = handleFileSelection(doc);
+        // Only pass non-folder documents to the parent
+        if (doc.mimeType && !doc.mimeType.includes('folder')) {
+          onDocumentSelect(result);
+        }
+        return result;
+      } catch (error) {
+        console.error("Error in handleDocSelect:", error);
+        return doc;
+      }
+    };
 
-  return (
-    <Dialog open={isOpen} onOpenChange={handleDialogChange}>
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>Select a document from Google Drive</DialogTitle>
-          <DialogDescription>
-            {driveConnected 
-              ? "Choose a document to analyze with your agent" 
-              : "Connect to Google Drive to access your documents"}
-          </DialogDescription>
-        </DialogHeader>
-        
-        {apiLoadingState === 'loading' && <ApiLoadingAlert />}
-        
-        {apiLoadingState === 'error' && <ApiErrorAlert />}
-        
-        <ConnectionErrorAlert />
-        
-        {!driveConnected ? (
-          <ConnectionInstructions />
-        ) : (
-          <DocumentBrowser />
-        )}
-        
-        <DocumentDialogFooter />
-      </DialogContent>
-    </Dialog>
-  );
+    return (
+      <Dialog open={isOpen} onOpenChange={handleDialogChange}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Select a document from Google Drive</DialogTitle>
+            <DialogDescription>
+              {driveConnected 
+                ? "Choose a document to analyze with your agent" 
+                : "Connect to Google Drive to access your documents"}
+            </DialogDescription>
+          </DialogHeader>
+          
+          {apiLoadingState === 'loading' && <ApiLoadingAlert />}
+          
+          {apiLoadingState === 'error' && <ApiErrorAlert />}
+          
+          <ConnectionErrorAlert />
+          
+          {!driveConnected ? (
+            <ConnectionInstructions />
+          ) : (
+            <DocumentBrowser />
+          )}
+          
+          <DocumentDialogFooter />
+        </DialogContent>
+      </Dialog>
+    );
+  } catch (error) {
+    console.error("Error in DocumentSelectorContent:", error);
+    return (
+      <Dialog>
+        <DialogContent>
+          <div className="flex flex-col items-center gap-4 py-8">
+            <AlertCircle className="h-10 w-10 text-red-500" />
+            <p>An error occurred while loading the document selector</p>
+          </div>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 };
 
 // Main component with context provider
