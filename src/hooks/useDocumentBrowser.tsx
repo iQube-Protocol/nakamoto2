@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { useMCP } from '@/hooks/mcp/use-mcp';
 import { useDocumentSelectorContext } from '@/components/shared/document/DocumentSelectorContext';
@@ -106,19 +107,22 @@ export function useDocumentBrowser() {
       setFolderHistory([]);
     }, []);
     
-    // Updated to return a Promise so it can be properly caught
-    const refreshCurrentFolder = useCallback((): Promise<any[]> => {
+    // Updated to return a Promise<void> so it matches the expected type
+    const refreshCurrentFolder = useCallback(async (): Promise<void> => {
       if (!mcp || !listDocuments) {
         console.error("MCP or listDocuments function is not available");
-        return Promise.reject("MCP or listDocuments function is not available");
+        throw new Error("MCP or listDocuments function is not available");
       }
       
-      return listDocuments(currentFolder).then(docs => {
+      try {
+        const docs = await listDocuments(currentFolder);
         if (Array.isArray(docs)) {
           setLocalDocuments(docs);
         }
-        return docs;
-      });
+      } catch (error) {
+        console.error("Error refreshing folder:", error);
+        throw error;
+      }
     }, [listDocuments, currentFolder, mcp]);
 
     return {
@@ -148,7 +152,7 @@ export function useDocumentBrowser() {
       handleBack: () => {},
       navigateToFolder: () => {},
       navigateToRoot: () => {},
-      refreshCurrentFolder: () => Promise.resolve([])
+      refreshCurrentFolder: async () => {}
     };
   }
 }

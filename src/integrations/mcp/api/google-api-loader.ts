@@ -1,504 +1,263 @@
 
-import { toast } from 'sonner';
-import { ApiLoadCallbacks } from './types';
 import { ScriptLoader } from './script-loader';
-import { ApiStateManager } from './api-state-manager';
 
-// Constants
-const GAPI_SCRIPT_URL = 'https://apis.google.com/js/api.js';
-const GSI_SCRIPT_URL = 'https://accounts.google.com/gsi/client';
-const DEFAULT_TIMEOUT = 45000; // Increased from 30s to 45s
+// Define callback types
+export type LoadCallback = () => void;
 
 /**
- * Manages loading of Google APIs
+ * Handles loading of the Google API
  */
 export class GoogleApiLoader {
-  private gapi: any = null;
-  private stateManager: ApiStateManager;
-  public onApiLoadStart: (() => void) | null = null;
-  public onApiLoadComplete: (() => void) | null = null;
-  private apiLoadTimeout: number = DEFAULT_TIMEOUT;
-  private apiLoadListeners: Array<() => void> = [];
-  private isReloading: boolean = false;
-  
-  constructor(callbacks?: ApiLoadCallbacks) {
-    this.onApiLoadStart = callbacks?.onApiLoadStart || null;
-    this.onApiLoadComplete = callbacks?.onApiLoadComplete || null;
-    this.stateManager = new ApiStateManager();
-    
-    // Check if we're in a browser environment before trying to load the API
-    if (typeof window !== 'undefined') {
-      // Try to load API immediately with a small delay to let the page initialize
-      setTimeout(() => this.loadGoogleApi(), 100);
-      
-      // Also set up a listener for when the page is fully loaded
-      if (document.readyState === 'complete') {
-        this.loadGoogleApi();
-      } else {
-        window.addEventListener('load', () => this.loadGoogleApi());
-      }
-    }
-  }
+  private isApiLoaded: boolean = false;
+  private loadPromise: Promise<void> | null = null;
+  private loadAttempts: number = 0;
+  private maxLoadAttempts: number = 3;
+  private apiLoadTimeout: number = 30000; // 30 seconds default timeout
+  private scriptLoader: ScriptLoader;
+  private onApiLoadStart: LoadCallback | undefined;
+  private onApiLoadComplete: LoadCallback | undefined;
   
   /**
-   * Register a listener to be notified when the API is loaded
+   * Create a new Google API loader
    */
-  public addLoadListener(callback: () => void): void {
-    if (this.isLoaded()) {
-      // If already loaded, call the callback immediately
-      setTimeout(callback, 0);
-    } else {
-      this.apiLoadListeners.push(callback);
-    }
-  }
-  
-  /**
-   * Force reload Google API scripts
-   * This is used when resetting the connection
-   */
-  public reloadGoogleApi(): void {
-    if (typeof window === 'undefined' || this.isReloading) return;
-    
-    console.log('MCP: Forcefully reloading Google API scripts...');
-    
-    // Prevent multiple simultaneous reloads
-    this.isReloading = true;
-    
-    // Dismiss any persistent toasts
-    toast.dismiss('google-api-loading');
-    toast.dismiss('reset-connection');
-    
-    // Reset state
-    this.stateManager.resetState();
-    
-    if (this.onApiLoadStart) {
-      this.onApiLoadStart();
-    }
-    
-    // Remove existing scripts and reset globals
-    ScriptLoader.removeGoogleApiScripts();
-    ScriptLoader.resetGoogleApiGlobals();
-    
-    // Clear any cached tokens
-    localStorage.removeItem('gdrive-auth-token');
-    localStorage.removeItem('gdrive-connected');
-    
-    // Reset the load attempts to ensure we try again
-    this.stateManager.resetLoadAttempts();
-    
-    // Show brief toast notification that will auto-dismiss
-    toast.loading('Reloading Google API...', {
-      id: 'google-api-loading',
-      duration: 3000,
-    });
-    
-    // Reload the scripts with a small delay to ensure cleanup is complete
-    setTimeout(() => {
-      this.loadGoogleApi();
-      this.isReloading = false;
-    }, 500);
-  }
-  
-  /**
-   * Load Google API script dynamically with improved error handling
-   */
-  private loadGoogleApi(): void {
-    if (typeof window === 'undefined') return;
-    
-    // If already loaded or loading is in progress, don't start again
-    if (this.stateManager.isLoaded() || this.stateManager.getApiLoadPromise()) {
-      return;
-    }
-    
-    // Check if we've exceeded max attempts
-    if (!this.stateManager.incrementLoadAttempts()) {
-      console.error('MCP: Maximum API load attempts reached');
-      if (this.onApiLoadComplete) {
-        this.onApiLoadComplete();
-      }
-      return;
-    }
-    
-    const attempts = this.stateManager.getLoadAttempts();
-    const maxAttempts = this.stateManager.getState().maxLoadAttempts;
-    console.log(`MCP: Loading Google API scripts... (Attempt ${attempts}/${maxAttempts})`);
-    
-    if (this.onApiLoadStart) {
-      this.onApiLoadStart();
-    }
-    
-    // First check if APIs are already loaded
-    if (this.stateManager.checkGoogleApiGlobals()) {
-      console.log('MCP: Google APIs already loaded');
-      this.gapi = (window as any).gapi;
-      this.stateManager.setLoaded(true);
-      if (this.onApiLoadComplete) {
-        this.onApiLoadComplete();
-      }
-      
-      // Notify any listeners
-      this.notifyLoadListeners();
-      
-      this.stateManager.setApiLoadPromise(Promise.resolve(true));
-      return;
-    }
-    
-    // Create a promise that resolves when both scripts are loaded or rejects on timeout
-    const loadPromise = new Promise<boolean>((resolve, reject) => {
-      let gapiLoaded = false;
-      let gsiLoaded = false;
-      let timeoutTriggered = false;
-      
-      // Set a timeout to prevent hanging if scripts fail to load
-      const timeoutId = setTimeout(() => {
-        if (!gapiLoaded || !gsiLoaded) {
-          console.error('MCP: Google API loading timed out after', this.apiLoadTimeout / 1000, 'seconds');
-          timeoutTriggered = true;
-          if (this.onApiLoadComplete) {
-            this.onApiLoadComplete();
-          }
-          
-          toast.dismiss('google-api-loading');
-          toast.error('Google API loading timed out', {
-            description: 'Please refresh the page and try again',
-            duration: 5000,
-            id: 'api-timeout-error', // Unique ID for this specific error
-          });
-          
-          // Try again if we haven't exceeded max attempts
-          if (this.stateManager.getLoadAttempts() < this.stateManager.getState().maxLoadAttempts) {
-            console.log(`MCP: Retrying Google API load after timeout (Attempt ${this.stateManager.getLoadAttempts() + 1}/${this.stateManager.getState().maxLoadAttempts})`);
-            this.stateManager.setApiLoadPromise(null); // Reset the promise so we can try again
-            setTimeout(() => this.loadGoogleApi(), 1000); // Add a small delay before retrying
-          } else {
-            reject(new Error('Google API loading timed out after maximum attempts'));
-          }
-        }
-      }, this.apiLoadTimeout);
-      
-      const checkAllLoaded = () => {
-        if (gapiLoaded && gsiLoaded && !timeoutTriggered) {
-          clearTimeout(timeoutId);
-          console.log('MCP: Both Google APIs loaded successfully');
-          this.gapi = (window as any).gapi;
-          this.stateManager.setLoaded(true);
-          
-          if (this.onApiLoadComplete) {
-            this.onApiLoadComplete();
-          }
-          
-          // Notify any listeners
-          this.notifyLoadListeners();
-          
-          // Short duration toast that auto-dismisses
-          toast.dismiss('google-api-loading');
-          toast.success('Google API loaded successfully', {
-            duration: 2000,
-            id: 'api-loaded-success',
-          });
-          
-          resolve(true);
-        }
-      };
-      
-      // Load GAPI script
-      this.loadGapiScript()
-        .then(() => {
-          gapiLoaded = true;
-          checkAllLoaded();
-        })
-        .catch((e) => this.handleScriptLoadError(e, timeoutId, timeoutTriggered, reject));
-      
-      // Load GSI script in parallel
-      this.loadGsiScript()
-        .then(() => {
-          gsiLoaded = true;
-          checkAllLoaded();
-        })
-        .catch((e) => this.handleScriptLoadError(e, timeoutId, timeoutTriggered, reject));
-    });
-    
-    this.stateManager.setApiLoadPromise(loadPromise);
-  }
-  
-  /**
-   * Notify all listeners that the API has loaded
-   */
-  private notifyLoadListeners(): void {
-    const listeners = [...this.apiLoadListeners];
-    this.apiLoadListeners = []; // Clear the list to prevent duplicate notifications
-    
-    listeners.forEach(callback => {
-      try {
-        callback();
-      } catch (e) {
-        console.error('Error in API load listener:', e);
-      }
-    });
-  }
-  
-  /**
-   * Load Google API Client script
-   */
-  private loadGapiScript(): Promise<void> {
-    return ScriptLoader.loadScript(GAPI_SCRIPT_URL, {
-      async: true, 
-      defer: true,
-      timeout: this.apiLoadTimeout
-    }).then(() => {
-      console.log('MCP: Google API script loaded');
-      
-      // Give a short delay to ensure script is initialized
-      return new Promise<void>((resolve, reject) => {
-        setTimeout(() => {
-          this.gapi = (window as any).gapi;
-          
-          if (!this.gapi) {
-            console.error('MCP: Google API not found in window after loading script');
-            reject(new Error('Google API failed to load'));
-            return;
-          }
-          
-          try {
-            this.gapi.load('client', {
-              callback: () => {
-                console.log('MCP: Google API client loaded successfully');
-                resolve();
-              },
-              onerror: (e: any) => {
-                console.error('MCP: Failed to load Google API client:', e);
-                reject(e);
-              },
-              timeout: 20000, // 20 seconds
-              ontimeout: () => {
-                console.error('MCP: Google API client load timed out');
-                reject(new Error('Google API client load timed out'));
-              }
-            });
-          } catch (err) {
-            console.error('MCP: Error calling gapi.load:', err);
-            reject(err);
-          }
-        }, 100); // Short delay to let gapi initialize
-      });
-    });
-  }
-  
-  /**
-   * Load Google Sign-In script
-   */
-  private loadGsiScript(): Promise<void> {
-    return ScriptLoader.loadScript(GSI_SCRIPT_URL, {
-      async: true, 
-      defer: true,
-      timeout: this.apiLoadTimeout
-    }).then(() => {
-      console.log('MCP: Google Sign-In script loaded');
-    });
-  }
-  
-  /**
-   * Handle script load error with retry logic
-   */
-  private handleScriptLoadError(
-    error: Error, 
-    timeoutId: NodeJS.Timeout | null,
-    timeoutTriggered: boolean,
-    reject: (reason: Error) => void
-  ): void {
-    console.error('MCP: Script load error:', error);
-    
-    if (!timeoutTriggered && timeoutId) {
-      clearTimeout(timeoutId);
-      if (this.onApiLoadComplete) {
-        this.onApiLoadComplete();
-      }
-      
-      // Dismiss any existing toasts to prevent stacking
-      toast.dismiss('google-api-loading');
-      
-      // Toast error message with auto-dismiss
-      toast.error('Failed to load Google API script', {
-        description: 'Please check your internet connection and try again.',
-        duration: 5000,
-        id: 'script-load-error', // Unique ID for this error
-      });
-      
-      // Retry logic
-      if (this.stateManager.getLoadAttempts() < this.stateManager.getState().maxLoadAttempts) {
-        console.log(`MCP: Retrying Google API load after error (Attempt ${this.stateManager.getLoadAttempts() + 1}/${this.stateManager.getState().maxLoadAttempts})`);
-        this.stateManager.setApiLoadPromise(null);
-        
-        // Add a small delay before retrying
-        setTimeout(() => this.loadGoogleApi(), 1500); // Increased delay to 1.5s for more stability
-      } else {
-        reject(error);
-      }
-    }
-  }
-  
-  /**
-   * Ensures Google API is loaded before proceeding with proper timeout
-   */
-  public async ensureGoogleApiLoaded(): Promise<boolean> {
-    // Quick check if API is already loaded
-    if (this.stateManager.isLoaded() && this.stateManager.checkGoogleApiGlobals()) {
-      console.log('MCP: Google API already loaded, returning true immediately');
-      this.gapi = (window as any).gapi;
-      return true;
-    }
-    
-    // Check if gapi is available in window
-    if ((window as any).gapi && (window as any).google?.accounts) {
-      console.log('MCP: Google APIs detected in window, setting loaded state');
-      this.gapi = (window as any).gapi;
-      this.stateManager.setLoaded(true);
-      return true;
-    }
-    
-    console.log('MCP: Ensuring Google API is loaded...');
-    
-    // Show a loading toast with short duration to prevent persistence
-    toast.loading('Loading Google API...', {
-      id: 'google-api-loading',
-      duration: 10000, // Auto-dismiss after 10 seconds even if still loading
-    });
-    
-    const currentPromise = this.stateManager.getApiLoadPromise();
-    if (currentPromise) {
-      try {
-        console.log('MCP: Waiting for existing API load promise to resolve...');
-        
-        // Create a timeout promise to race against the API loading
-        const loadTimeout = new Promise<boolean>((_, reject) => {
-          setTimeout(() => reject(new Error('Google API loading timed out')), this.apiLoadTimeout);
-        });
-        
-        // Race between the loading promise and timeout
-        const result = await Promise.race([currentPromise, loadTimeout]).catch(e => {
-          console.error('MCP: API loading promise rejected:', e);
-          return false;
-        });
-        
-        // Dismiss the loading toast
-        toast.dismiss('google-api-loading');
-        
-        this.stateManager.setLoaded(!!result);
-        console.log('MCP: API load promise resolved with result:', result);
-        return !!result;
-      } catch (e) {
-        console.error('Error waiting for Google API to load:', e);
-        
-        // Dismiss the loading toast
-        toast.dismiss('google-api-loading');
-        
-        // Non-persistent toast
-        toast.error('Failed to load Google API', {
-          description: 'Please refresh the page and try again',
-          duration: 5000,
-          id: 'api-ensure-error',
-        });
-        
-        // Try again if we haven't exceeded max attempts
-        if (this.stateManager.getLoadAttempts() < this.stateManager.getState().maxLoadAttempts) {
-          console.log('MCP: Retrying API load after failure');
-          this.stateManager.setApiLoadPromise(null);
-          // Return the result of recursive call
-          return this.ensureGoogleApiLoaded();
-        }
-        
-        return false;
-      }
-    } else {
-      // If apiLoadPromise doesn't exist yet, start loading process
-      console.log('MCP: No existing load promise, initiating API loading');
-      this.loadGoogleApi();
-      
-      const newPromise = this.stateManager.getApiLoadPromise();
-      if (!newPromise) {
-        console.error('Failed to initialize API loading process');
-        
-        // Dismiss the loading toast
-        toast.dismiss('google-api-loading');
-        
-        return false;
-      }
-      
-      try {
-        console.log('MCP: Waiting for new API load promise to resolve...');
-        const result = await newPromise.catch(e => {
-          console.error('MCP: New API load promise rejected:', e);
-          return false;
-        });
-        
-        // Dismiss the loading toast
-        toast.dismiss('google-api-loading');
-        
-        console.log('MCP: New API load promise resolved with result:', result);
-        return !!result;
-      } catch (e) {
-        console.error('Error starting Google API load:', e);
-        
-        // Dismiss the loading toast
-        toast.dismiss('google-api-loading');
-        
-        return false;
-      }
-    }
-  }
-  
-  /**
-   * Get the Google API client
-   */
-  public getGapiClient() {
-    // Make sure we always return the most up-to-date gapi reference
-    if ((window as any).gapi) {
-      this.gapi = (window as any).gapi;
-    }
-    return this.gapi;
-  }
-  
-  /**
-   * Get the load state
-   */
-  public isLoaded(): boolean {
-    // First check the state manager
-    if (this.stateManager.isLoaded()) {
-      return true;
-    }
-    
-    // Also check if APIs are available in window 
-    // (they might have been loaded by another script)
-    const apisAvailable = this.stateManager.checkGoogleApiGlobals();
-    if (apisAvailable) {
-      // Update our state
-      this.stateManager.setLoaded(true);
-      this.gapi = (window as any).gapi;
-    }
-    
-    return apisAvailable;
-  }
-  
-  /**
-   * Get current load attempt count
-   */
-  public getLoadAttempts(): number {
-    return this.stateManager.getLoadAttempts();
-  }
-  
-  /**
-   * Reset load attempts counter
-   */
-  public resetLoadAttempts(): void {
-    this.stateManager.resetLoadAttempts();
+  constructor(options?: {
+    onApiLoadStart?: LoadCallback;
+    onApiLoadComplete?: LoadCallback;
+  }) {
+    this.scriptLoader = new ScriptLoader();
+    this.onApiLoadStart = options?.onApiLoadStart;
+    this.onApiLoadComplete = options?.onApiLoadComplete;
   }
   
   /**
    * Set the API load timeout
    */
-  public setApiLoadTimeout(timeout: number): void {
-    if (timeout > 0) {
-      this.apiLoadTimeout = timeout;
+  setApiLoadTimeout(timeout: number): void {
+    this.apiLoadTimeout = timeout;
+  }
+  
+  /**
+   * Check if the API is loaded
+   */
+  isLoaded(): boolean {
+    // Check if window.gapi exists
+    return this.isApiLoaded || (
+      typeof window !== 'undefined' && 
+      !!(window as any).gapi && 
+      !!(window as any).google?.accounts
+    );
+  }
+  
+  /**
+   * Set a flag to prevent multiple simultaneous load attempts
+   */
+  markAsLoaded(): void {
+    this.isApiLoaded = true;
+  }
+  
+  /**
+   * Reset the loaded state - useful for testing or forcing a reload
+   */
+  resetLoadedState(): void {
+    this.isApiLoaded = false;
+    this.loadPromise = null;
+  }
+  
+  /**
+   * Get the number of load attempts
+   */
+  getLoadAttempts(): number {
+    return this.loadAttempts;
+  }
+  
+  /**
+   * Reset load attempts counter
+   */
+  resetLoadAttempts(): void {
+    this.loadAttempts = 0;
+  }
+  
+  /**
+   * Force reload the Google API
+   */
+  reloadGoogleApi(): void {
+    this.resetLoadedState();
+    this.resetLoadAttempts();
+    this.ensureGoogleApiLoaded(true)
+      .then(() => console.log('Google API reloaded successfully'))
+      .catch(error => console.error('Failed to reload Google API:', error));
+  }
+  
+  /**
+   * Ensure that the Google API is loaded
+   */
+  async ensureGoogleApiLoaded(forceReload: boolean = false): Promise<void> {
+    // If already loaded and not force reloading, return immediately
+    if (this.isLoaded() && !forceReload) {
+      return Promise.resolve();
     }
+    
+    // If already loading, return existing promise
+    if (this.loadPromise && !forceReload) {
+      return this.loadPromise;
+    }
+    
+    // Increase load attempts counter
+    this.loadAttempts++;
+    
+    // If we've exceeded max attempts, throw error
+    if (this.loadAttempts > this.maxLoadAttempts) {
+      console.error(`Failed to load Google API after ${this.maxLoadAttempts} attempts`);
+      return Promise.reject(new Error(`Failed to load Google API after ${this.maxLoadAttempts} attempts`));
+    }
+    
+    // Call the onApiLoadStart callback if provided
+    if (this.onApiLoadStart) {
+      this.onApiLoadStart();
+    }
+    
+    // Create a new promise to load both gapi and google libraries
+    this.loadPromise = this.loadGoogleApi();
+    
+    try {
+      await this.loadPromise;
+      this.markAsLoaded();
+      
+      // Call the onApiLoadComplete callback if provided
+      if (this.onApiLoadComplete) {
+        this.onApiLoadComplete();
+      }
+      
+      return Promise.resolve();
+    } catch (error) {
+      // Reset the load promise so we can try again
+      this.loadPromise = null;
+      
+      // If we still have attempts left, try again with backoff
+      if (this.loadAttempts < this.maxLoadAttempts) {
+        console.warn(`Google API load attempt ${this.loadAttempts} failed, retrying...`);
+        const backoffDelay = Math.pow(2, this.loadAttempts) * 1000;
+        
+        return new Promise((resolve, reject) => {
+          setTimeout(() => {
+            this.ensureGoogleApiLoaded()
+              .then(resolve)
+              .catch(reject);
+          }, backoffDelay);
+        });
+      }
+      
+      return Promise.reject(error);
+    }
+  }
+  
+  /**
+   * Load the Google API
+   */
+  private loadGoogleApi(): Promise<void> {
+    return Promise.all([
+      this.loadPromise || this.loadGapiScript(),
+      this.loadGsiScript()
+    ]).then(() => {
+      console.log('Both GAPI and GSI scripts loaded successfully');
+      return;
+    });
+  }
+  
+  /**
+   * Load the GAPI script
+   */
+  private loadGapiScript(): Promise<void> {
+    const gapiLoadPromise = new Promise<void>((resolve, reject) => {
+      try {
+        // If script is already loaded, resolve immediately
+        if (typeof window !== 'undefined' && (window as any).gapi) {
+          console.log('GAPI already loaded');
+          resolve();
+          return;
+        }
+        
+        // Set up timeout
+        const timeoutId = setTimeout(() => {
+          reject(new Error('GAPI loading timed out'));
+        }, this.apiLoadTimeout);
+        
+        // Load the script
+        this.scriptLoader.loadScript('https://apis.google.com/js/api.js')
+          .then(() => {
+            clearTimeout(timeoutId);
+            console.log('GAPI script loaded');
+            resolve();
+          })
+          .catch(error => {
+            clearTimeout(timeoutId);
+            reject(new Error(`Failed to load GAPI script: ${error.message}`));
+          });
+      } catch (error) {
+        reject(new Error(`Error during GAPI script load: ${error instanceof Error ? error.message : String(error)}`));
+      }
+    });
+    
+    // Add error handling and timeout
+    return this.withTimeout(gapiLoadPromise, 'GAPI script load', this.apiLoadTimeout);
+  }
+  
+  /**
+   * Load the GSI script
+   */
+  private loadGsiScript(): Promise<void> {
+    const gsiLoadPromise = new Promise<void>((resolve, reject) => {
+      try {
+        // If script is already loaded, resolve immediately
+        if (typeof window !== 'undefined' && (window as any).google?.accounts) {
+          console.log('GSI already loaded');
+          resolve();
+          return;
+        }
+        
+        // Set up timeout
+        const timeoutId = setTimeout(() => {
+          reject(new Error('GSI loading timed out'));
+        }, this.apiLoadTimeout);
+        
+        // Load the script
+        this.scriptLoader.loadScript('https://accounts.google.com/gsi/client')
+          .then(() => {
+            clearTimeout(timeoutId);
+            console.log('GSI script loaded');
+            resolve();
+          })
+          .catch(error => {
+            clearTimeout(timeoutId);
+            reject(new Error(`Failed to load GSI script: ${error.message}`));
+          });
+      } catch (error) {
+        reject(new Error(`Error during GSI script load: ${error instanceof Error ? error.message : String(error)}`));
+      }
+    });
+    
+    // Add error handling and timeout
+    return this.withTimeout(gsiLoadPromise, 'GSI script load', this.apiLoadTimeout);
+  }
+  
+  /**
+   * Add timeout to a promise
+   */
+  private withTimeout<T>(promise: Promise<T>, name: string, timeout: number): Promise<T> {
+    return new Promise<T>((resolve, reject) => {
+      const timeoutId = setTimeout(() => {
+        reject(new Error(`${name} timed out after ${timeout}ms`));
+      }, timeout);
+      
+      promise
+        .then(result => {
+          clearTimeout(timeoutId);
+          resolve(result);
+        })
+        .catch(error => {
+          clearTimeout(timeoutId);
+          reject(error);
+        });
+    });
   }
 }

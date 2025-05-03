@@ -12,7 +12,7 @@ export const useDocumentOperations = () => {
   } = useDocumentBrowser();
   
   // Handle refresh with retry count and error handling
-  const handleRefreshDocuments = useCallback(async () => {
+  const handleRefreshDocuments = useCallback(async (): Promise<void> => {
     try {
       await refreshCurrentFolder();
       // Return void to match the expected return type in DocumentSelectorContextProps
