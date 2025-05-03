@@ -10,7 +10,7 @@ export interface DocumentSelectorContextProps {
   connecting: boolean;
   connectionError: boolean;
   refreshAttempts: number;
-  apiLoadingState: 'loading' | 'loaded' | 'error';
+  apiLoadingState: 'loading' | 'ready' | 'error';
   apiCheckAttempts: number;
   connectionInProgress: boolean;
   connectionAttempts: number;

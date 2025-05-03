@@ -8,7 +8,7 @@ import { toast } from 'sonner';
  */
 export const useGoogleApiStatus = () => {
   const { isApiLoading = false, checkApiStatus } = useMCP() || {};
-  const [apiLoadingState, setApiLoadingState] = useState<'loading' | 'loaded' | 'error'>('loading');
+  const [apiLoadingState, setApiLoadingState] = useState<'loading' | 'ready' | 'error'>('loading');
   const [apiCheckAttempts, setApiCheckAttempts] = useState(0);
   
   useEffect(() => {
@@ -20,14 +20,14 @@ export const useGoogleApiStatus = () => {
       
       if ((window as any).gapi && (window as any).google?.accounts) {
         console.log('DocumentSelector: Google API detected as loaded');
-        setApiLoadingState('loaded');
+        setApiLoadingState('ready');
         return true;
       }
       
       // If we have access to the MCP API status check, use that too
       if (checkApiStatus && checkApiStatus()) {
         console.log('DocumentSelector: Google API detected as loaded via MCP');
-        setApiLoadingState('loaded');
+        setApiLoadingState('ready');
         return true;
       }
       
@@ -83,7 +83,7 @@ export const useGoogleApiStatus = () => {
     if (isApiLoading === false && apiLoadingState === 'loading') {
       if ((window as any).gapi && (window as any).google?.accounts) {
         console.log('DocumentSelector: Google API detected as loaded after MCP reported loading complete');
-        setApiLoadingState('loaded');
+        setApiLoadingState('ready');
       }
     }
   }, [isApiLoading, apiLoadingState]);
