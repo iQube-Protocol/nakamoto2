@@ -1,51 +1,46 @@
 
-import { toast } from 'sonner';
-import { ScriptLoadOptions } from './types';
-
 /**
- * Utility functions for loading external scripts
+ * Utility class for loading scripts dynamically
  */
 export class ScriptLoader {
   /**
-   * Load a script with proper error handling and timeouts
+   * Load a script asynchronously
    */
-  static loadScript(
-    src: string, 
-    options: ScriptLoadOptions = {}
-  ): Promise<HTMLScriptElement> {
+  static loadScript(url: string, options: {
+    async?: boolean;
+    defer?: boolean;
+    timeout?: number;
+  }): Promise<void> {
     return new Promise((resolve, reject) => {
       // Check if script already exists
-      const existingScript = document.querySelector(`script[src="${src}"]`) as HTMLScriptElement;
+      const existingScript = document.querySelector(`script[src="${url}"]`);
       if (existingScript) {
-        console.log(`Script already loaded: ${src}`);
-        resolve(existingScript);
-        return;
+        return resolve();
       }
       
-      // Create new script element
+      // Create script element
       const script = document.createElement('script');
-      script.src = src;
-      script.async = options.async ?? true;
-      script.defer = options.defer ?? true;
+      script.src = url;
+      script.type = 'text/javascript';
+      
+      if (options.async) script.async = true;
+      if (options.defer) script.defer = true;
       
       // Set up timeout
       const timeoutId = options.timeout 
-        ? setTimeout(() => {
-            reject(new Error(`Script load timeout: ${src}`));
-          }, options.timeout)
+        ? setTimeout(() => reject(new Error(`Script load timed out for ${url}`)), options.timeout)
         : null;
       
-      // Set up event handlers
+      // Event handlers
       script.onload = () => {
-        console.log(`Script loaded successfully: ${src}`);
         if (timeoutId) clearTimeout(timeoutId);
-        resolve(script);
+        resolve();
       };
       
-      script.onerror = (event) => {
-        console.error(`Failed to load script: ${src}`, event);
+      script.onerror = () => {
         if (timeoutId) clearTimeout(timeoutId);
-        reject(new Error(`Failed to load script: ${src}`));
+        document.body.removeChild(script);
+        reject(new Error(`Error loading script: ${url}`));
       };
       
       // Add to document
@@ -54,55 +49,29 @@ export class ScriptLoader {
   }
   
   /**
-   * Remove script from document
-   */
-  static removeScript(src: string): void {
-    const script = document.querySelector(`script[src="${src}"]`);
-    if (script) {
-      script.remove();
-      console.log(`Removed script: ${src}`);
-    }
-  }
-  
-  /**
-   * Clean up Google API scripts from the document
+   * Remove Google API scripts from the DOM
    */
   static removeGoogleApiScripts(): void {
     const scripts = document.querySelectorAll('script[src*="apis.google.com"], script[src*="accounts.google.com"]');
     scripts.forEach(script => {
-      script.remove();
+      script.parentNode?.removeChild(script);
     });
-    console.log(`Removed ${scripts.length} Google API scripts`);
   }
   
   /**
-   * Reset global Google API objects
+   * Reset Google API globals
    */
   static resetGoogleApiGlobals(): void {
-    // Reset gapi
-    if ((window as any).gapi) {
-      try {
-        // Try to clean up any event listeners
-        if ((window as any).gapi.auth && (window as any).gapi.auth.authorize) {
-          (window as any).gapi.auth.authorize = null;
-        }
-      } catch (e) {
-        console.warn('Error cleaning up gapi auth:', e);
+    if (typeof window !== 'undefined') {
+      // Clear the gapi property
+      if ((window as any).gapi) {
+        (window as any).gapi = undefined;
       }
       
-      // Set gapi to undefined
-      (window as any).gapi = undefined;
-    }
-    
-    // Reset google accounts
-    if ((window as any).google?.accounts) {
-      try {
+      // Clear google accounts
+      if ((window as any).google?.accounts) {
         (window as any).google.accounts = undefined;
-      } catch (e) {
-        console.warn('Error cleaning up Google accounts:', e);
       }
     }
-    
-    console.log('Reset Google API globals');
   }
 }

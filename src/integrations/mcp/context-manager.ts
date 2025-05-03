@@ -54,7 +54,7 @@ export class ContextManager {
       this.persistContext();
       
       return newConversationId;
-    } catch (error) {
+    } catch (error: any) {
       console.error('MCP: Error initializing context:', error);
       throw new Error(`MCP initialization error: ${error.message}`);
     }
@@ -99,9 +99,9 @@ export class ContextManager {
   }
   
   /**
-   * Add document content to context
+   * Add document to the context
    */
-  addDocumentToContext(documentId: string, documentName: string, documentType: string, content: string): void {
+  addDocument(documentId: string, documentName: string, documentType: string, content: string): void {
     if (!this.context) {
       throw new Error('Cannot add document: Context not initialized');
     }
@@ -138,6 +138,119 @@ export class ContextManager {
   }
   
   /**
+   * Remove document from context
+   */
+  removeDocument(documentId: string): void {
+    if (!this.context || !this.context.documentContext) return;
+    
+    const initialLength = this.context.documentContext.length;
+    this.context.documentContext = this.context.documentContext.filter(doc => doc.documentId !== documentId);
+    
+    if (this.context.documentContext.length < initialLength) {
+      this.persistContext();
+      console.log(`MCP: Removed document ${documentId} from context`);
+    }
+  }
+  
+  /**
+   * Clear all documents from context
+   */
+  clearDocuments(): void {
+    if (!this.context) return;
+    
+    if (this.context.documentContext && this.context.documentContext.length > 0) {
+      this.context.documentContext = [];
+      this.persistContext();
+      console.log('MCP: Cleared all documents from context');
+    }
+  }
+  
+  /**
+   * Get the document context
+   */
+  getDocumentContext(): Array<{
+    documentId: string;
+    documentName: string;
+    documentType: string;
+    content: string;
+    lastModified?: string;
+  }> | undefined {
+    return this.context?.documentContext;
+  }
+  
+  /**
+   * Set conversation ID
+   */
+  setConversationId(id: string): void {
+    this.conversationId = id;
+    if (this.context) {
+      this.context.conversationId = id;
+      this.persistContext();
+    }
+  }
+  
+  /**
+   * Add message to context
+   */
+  addMessage(role: string, content: string): void {
+    if (!this.context) return;
+    
+    this.context.messages.push({
+      role,
+      content,
+      timestamp: new Date().toISOString()
+    });
+    
+    this.persistContext();
+  }
+  
+  /**
+   * Clear all messages from context
+   */
+  clearMessages(): void {
+    if (!this.context) return;
+    
+    if (this.context.messages.length > 0) {
+      this.context.messages = [];
+      this.persistContext();
+    }
+  }
+  
+  /**
+   * Set user profile in context metadata
+   */
+  setUserProfile(userProfile: Record<string, any>): void {
+    if (!this.context) return;
+    
+    this.context.metadata.userProfile = userProfile;
+    this.persistContext();
+  }
+  
+  /**
+   * Set metadata in context
+   */
+  setMetadata(metadata: Record<string, any>): void {
+    if (!this.context) return;
+    
+    this.context.metadata = {
+      ...this.context.metadata,
+      ...metadata
+    };
+    
+    this.persistContext();
+  }
+  
+  /**
+   * Get the current context
+   */
+  getContext(): MCPContext {
+    if (!this.context) {
+      throw new Error('Context not initialized');
+    }
+    return this.context;
+  }
+  
+  /**
    * Save context to persistence store
    */
   persistContext(): void {
@@ -152,10 +265,10 @@ export class ContextManager {
   }
   
   /**
-   * Get the current context for use in AI models
+   * Get the conversation ID
    */
-  getModelContext(): MCPContext | null {
-    return this.context;
+  getConversationId(): string | null {
+    return this.conversationId;
   }
   
   /**
@@ -177,12 +290,5 @@ export class ContextManager {
       this.context.metadata.metisActive = active;
       this.persistContext();
     }
-  }
-  
-  /**
-   * Get the conversation ID
-   */
-  getConversationId(): string | null {
-    return this.conversationId;
   }
 }

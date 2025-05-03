@@ -1,117 +1,98 @@
 
-import { toast } from 'sonner';
-import { ApiLoaderState } from './types';
-
 /**
- * Manages the state of the Google API loader
+ * Manages API loading state
  */
 export class ApiStateManager {
-  private state: ApiLoaderState = {
-    isApiLoaded: false,
+  private state = {
+    loaded: false,
+    loading: false,
     loadAttempts: 0,
-    maxLoadAttempts: 3,
-    apiLoadPromise: null
+    maxLoadAttempts: 5,
+    lastLoadTime: 0
   };
   
+  private apiLoadPromise: Promise<boolean> | null = null;
+  
   /**
-   * Get current loader state
+   * Check if Google API globals are available
    */
-  getState(): ApiLoaderState {
-    return { ...this.state };
+  checkGoogleApiGlobals(): boolean {
+    if (typeof window === 'undefined') return false;
+    
+    const hasGapi = typeof (window as any).gapi !== 'undefined';
+    const hasGoogleAccounts = typeof (window as any).google?.accounts !== 'undefined';
+    
+    return hasGapi && hasGoogleAccounts;
   }
   
   /**
-   * Check if the API is loaded
+   * Check if API is loaded
    */
   isLoaded(): boolean {
-    return this.state.isApiLoaded;
+    return this.state.loaded;
   }
   
   /**
-   * Set the API loaded state
+   * Set loaded state
    */
   setLoaded(loaded: boolean): void {
-    this.state.isApiLoaded = loaded;
-    
-    // Reset load attempts if successfully loaded
+    this.state.loaded = loaded;
     if (loaded) {
-      this.resetLoadAttempts();
+      this.state.loading = false;
+      this.state.lastLoadTime = Date.now();
     }
   }
   
   /**
-   * Check if global Google API objects are available
-   */
-  checkGoogleApiGlobals(): boolean {
-    return !!(
-      typeof window !== 'undefined' && 
-      (window as any).gapi && 
-      (window as any).google?.accounts
-    );
-  }
-  
-  /**
-   * Get current load attempt count
+   * Get current load attempts
    */
   getLoadAttempts(): number {
     return this.state.loadAttempts;
   }
   
   /**
-   * Increment load attempts
-   * @returns {boolean} True if max attempts not yet reached
+   * Increment load attempts and return whether we can try again
    */
   incrementLoadAttempts(): boolean {
     this.state.loadAttempts++;
-    
-    // Check if we've hit max attempts
-    if (this.state.loadAttempts > this.state.maxLoadAttempts) {
-      console.error(`Failed to load Google API after ${this.state.maxLoadAttempts} attempts`);
-      toast.error('Failed to load Google API', {
-        description: 'Please refresh the page and try again'
-      });
-      return false;
-    }
-    
-    return true;
+    return this.state.loadAttempts <= this.state.maxLoadAttempts;
   }
   
   /**
-   * Reset load attempts counter
+   * Reset load attempts
    */
   resetLoadAttempts(): void {
     this.state.loadAttempts = 0;
   }
   
   /**
-   * Set the promise for API loading
-   */
-  setApiLoadPromise(promise: Promise<boolean> | null): void {
-    this.state.apiLoadPromise = promise;
-  }
-  
-  /**
-   * Get the current API load promise
-   */
-  getApiLoadPromise(): Promise<boolean> | null {
-    return this.state.apiLoadPromise;
-  }
-  
-  /**
-   * Reset the state for a fresh load attempt
+   * Reset state
    */
   resetState(): void {
-    this.state.isApiLoaded = false;
-    this.state.apiLoadPromise = null;
-    this.resetLoadAttempts();
+    this.state.loaded = false;
+    this.state.loading = false;
+    this.apiLoadPromise = null;
   }
   
   /**
-   * Set the maximum number of load attempts
+   * Get API load promise
    */
-  setMaxLoadAttempts(max: number): void {
-    if (max > 0) {
-      this.state.maxLoadAttempts = max;
-    }
+  getApiLoadPromise(): Promise<boolean> | null {
+    return this.apiLoadPromise;
+  }
+  
+  /**
+   * Set API load promise
+   */
+  setApiLoadPromise(promise: Promise<boolean> | null): void {
+    this.apiLoadPromise = promise;
+    this.state.loading = !!promise;
+  }
+  
+  /**
+   * Get current state
+   */
+  getState() {
+    return { ...this.state };
   }
 }
