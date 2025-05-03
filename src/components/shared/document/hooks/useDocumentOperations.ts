@@ -15,7 +15,8 @@ export const useDocumentOperations = () => {
   const handleRefreshDocuments = useCallback(async () => {
     try {
       await refreshCurrentFolder();
-      return; // Return void to match the expected return type
+      // Return void to match the expected return type in DocumentSelectorContextProps
+      return;
     } catch (error) {
       console.error('Error refreshing documents:', error);
       throw error;

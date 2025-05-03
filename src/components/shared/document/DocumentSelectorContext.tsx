@@ -61,19 +61,24 @@ export const DocumentSelectorProvider: React.FC<{ children: React.ReactNode }> =
     // Provide default safe values on error that match the expected interface
     return (
       <DocumentSelectorContext.Provider 
-        value={{ 
-          ...defaultContextValue, 
-          // Add required functions with safe implementations
-          handleDialogChange: () => {},
-          handleFileSelection: (doc) => doc,
-          handleRefreshDocuments: async () => { return [] },
-          handleConnectClick: async () => false,
-          handleResetConnection: () => {},
-          navigateToFolder: () => {},
-          navigateToRoot: () => {},
-          handleBack: () => {},
-          setIsOpen: () => {},
-        } as DocumentSelectorContextProps}
+        value={
+          {
+            ...defaultContextValue, 
+            // Add required functions with safe implementations
+            handleDialogChange: () => {},
+            handleFileSelection: (doc) => doc,
+            handleRefreshDocuments: async () => { 
+              // Return void to match the expected type
+              return Promise.resolve();
+            },
+            handleConnectClick: async () => false,
+            handleResetConnection: () => {},
+            navigateToFolder: () => {},
+            navigateToRoot: () => {},
+            handleBack: () => {},
+            setIsOpen: () => {},
+          } as DocumentSelectorContextProps
+        }
       >
         {children}
       </DocumentSelectorContext.Provider>
