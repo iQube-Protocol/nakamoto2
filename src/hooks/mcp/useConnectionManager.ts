@@ -63,14 +63,18 @@ export function useConnectionManager(
           duration: 5000,
           id: 'drive-connection-timeout',
         });
-      }, 30000); // 30 seconds timeout (reduced from 45s)
+      }, 30000); // 30 seconds timeout
       
       setConnectionTimeout(timeout);
       
-      // Save credentials for convenience
+      // Save credentials for convenience - moved before connect to ensure credentials are saved
       saveCredentials(clientId, apiKey);
       
-      console.log('Starting drive connection with credentials', { clientId, apiKeyLength: apiKey?.length });
+      console.log('Starting drive connection with credentials', { 
+        clientId, 
+        apiKeyLength: apiKey ? apiKey.length : 0
+      });
+      
       const success = await connectToDrive(clientId, apiKey);
       console.log('Drive connection result:', success);
       

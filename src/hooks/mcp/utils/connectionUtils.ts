@@ -1,56 +1,67 @@
 
-import { toast } from 'sonner';
-
 /**
- * Utility functions for drive connection management
+ * Save Google Drive credentials to localStorage
  */
-
-/**
- * Clear any lingering toasts related to drive connection
- */
-export const dismissConnectionToasts = (): void => {
-  toast.dismiss('drive-connection');
-  toast.dismiss('drive-connection-timeout');
-  toast.dismiss('drive-connect-error');
-  toast.dismiss('reset-connection');
-  toast.dismiss('api-error');
-  toast.dismiss('connection-error');
-  toast.dismiss('google-api-loading');
-};
-
-/**
- * Clear connection-related items from storage
- */
-export const clearConnectionStorage = (): void => {
-  // Clear API-related cached data
-  for (const key in localStorage) {
-    if (key.startsWith('gdrive-') || key.includes('token')) {
-      localStorage.removeItem(key);
+export function saveCredentials(clientId: string, apiKey: string): void {
+  try {
+    if (clientId) {
+      localStorage.setItem('gdrive-client-id', clientId);
     }
-  }
-  
-  // Clear folder cache
-  for (const key in sessionStorage) {
-    if (key.startsWith('gdrive-folder-')) {
-      sessionStorage.removeItem(key);
+    
+    if (apiKey) {
+      localStorage.setItem('gdrive-api-key', apiKey);
     }
+    
+    console.log('Connection credentials saved to localStorage');
+  } catch (e) {
+    console.error('Failed to save credentials to localStorage:', e);
   }
-};
+}
 
 /**
- * Save credentials to local storage
+ * Load Google Drive credentials from localStorage
  */
-export const saveCredentials = (clientId: string, apiKey: string): void => {
-  localStorage.setItem('gdrive-client-id', clientId);
-  localStorage.setItem('gdrive-api-key', apiKey);
-};
+export function loadCredentials(): { clientId: string; apiKey: string } {
+  try {
+    const clientId = localStorage.getItem('gdrive-client-id') || '';
+    const apiKey = localStorage.getItem('gdrive-api-key') || '';
+    
+    return { clientId, apiKey };
+  } catch (e) {
+    console.error('Failed to load credentials from localStorage:', e);
+    return { clientId: '', apiKey: '' };
+  }
+}
 
 /**
- * Load credentials from local storage
+ * Dismiss all connection-related toast notifications
  */
-export const loadCredentials = (): { clientId: string; apiKey: string } => {
-  const savedClientId = localStorage.getItem('gdrive-client-id') || '';
-  const savedApiKey = localStorage.getItem('gdrive-api-key') || '';
+export function dismissConnectionToasts(): void {
+  // Dismiss any existing toasts to prevent duplicate errors
+  const toastIdsToRemove = [
+    'drive-connect', 
+    'drive-connect-error', 
+    'drive-connect-success',
+    'drive-connect-inprogress', 
+    'drive-connect-validation',
+    'drive-connection',
+    'drive-connection-timeout',
+    'api-error',
+    'connection-error',
+    'missing-credentials'
+  ];
   
-  return { clientId: savedClientId, apiKey: savedApiKey };
-};
+  try {
+    // Toast library might expose a function to get all active toasts
+    if (typeof window !== 'undefined') {
+      const { toast } = require('sonner');
+      
+      // If sonner has a dismiss method, use it
+      if (toast && typeof toast.dismiss === 'function') {
+        toastIdsToRemove.forEach(id => toast.dismiss(id));
+      }
+    }
+  } catch (e) {
+    console.error('Failed to dismiss toasts:', e);
+  }
+}

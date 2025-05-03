@@ -26,8 +26,22 @@ const ConnectionForm: React.FC<ConnectionFormProps> = ({
   disabled = false,
   isApiLoading = false
 }) => {
+  // Local validation
+  const isValid = Boolean(clientId && apiKey);
+  
+  // Handle form submission
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Save credentials to localStorage to ensure they're available for connection
+    if (clientId) localStorage.setItem('gdrive-client-id', clientId);
+    if (apiKey) localStorage.setItem('gdrive-api-key', apiKey);
+    
+    await handleConnect();
+  };
+  
   return (
-    <div className="space-y-4">
+    <form className="space-y-4" onSubmit={onSubmit}>
       <div className="space-y-2">
         <Label htmlFor="clientId">Google OAuth Client ID</Label>
         <Input
@@ -36,6 +50,7 @@ const ConnectionForm: React.FC<ConnectionFormProps> = ({
           value={clientId}
           onChange={(e) => setClientId(e.target.value)}
           disabled={isLoading}
+          required
         />
         <p className="text-xs text-muted-foreground">
           From your Google Cloud Console project
@@ -51,6 +66,7 @@ const ConnectionForm: React.FC<ConnectionFormProps> = ({
           onChange={(e) => setApiKey(e.target.value)}
           disabled={isLoading}
           type="password"
+          required
         />
         <p className="text-xs text-muted-foreground">
           From your Google Cloud Console project
@@ -58,8 +74,8 @@ const ConnectionForm: React.FC<ConnectionFormProps> = ({
       </div>
       
       <Button
-        onClick={handleConnect}
-        disabled={isLoading || disabled || !clientId || !apiKey || isApiLoading}
+        type="submit"
+        disabled={isLoading || disabled || !isValid || isApiLoading}
         className="w-full bg-purple-500 hover:bg-purple-600 text-white"
       >
         {isLoading ? (
@@ -76,7 +92,7 @@ const ConnectionForm: React.FC<ConnectionFormProps> = ({
           'Connect to Google Drive'
         )}
       </Button>
-    </div>
+    </form>
   );
 };
 
