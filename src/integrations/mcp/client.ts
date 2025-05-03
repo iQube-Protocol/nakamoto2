@@ -1,553 +1,263 @@
-import { toast } from 'sonner';
-import type { MCPClientOptions, MCPContext } from './types';
+import axios, { AxiosInstance } from 'axios';
+import { MCPContext, MCPClientOptions } from './types';
 import { GoogleApiLoader } from './api/google-api-loader';
 import { ContextManager } from './context-manager';
-import { DriveOperations } from './drive-operations';
+import { DriveOperations, createDriveOperations } from './drive/index';
 
 /**
- * Model Context Protocol Client for managing conversation context
- * and document interactions with Google Drive
+ * Main class for interacting with the MCP (Meta-Contextual Processor) server
  */
 export class MCPClient {
-  private conversationId: string | null = null;
-  public serverUrl: string;
+  private serverUrl: string;
   private authToken: string | null;
+  private axiosInstance: AxiosInstance;
   private apiLoader: GoogleApiLoader;
   private contextManager: ContextManager;
-  private driveOperations: DriveOperations;
-  private documentCacheEnabled: boolean = true;
-  private documentContextCache: Record<string, any[]> = {};
-  private connectionCheckInterval: NodeJS.Timeout | null = null;
+  private driveOperations: DriveOperations | null = null;
+  private metisActive: boolean;
+  private options: MCPClientOptions;
   
   constructor(options: MCPClientOptions = {}) {
-    this.serverUrl = options.serverUrl || 'https://mcp-gdrive-server.example.com';
-    this.authToken = options.authToken || null;
+    this.serverUrl = options.serverUrl || process.env.NEXT_PUBLIC_MCP_SERVER_URL || 'http://localhost:8000';
+    this.authToken = options.authToken || process.env.NEXT_PUBLIC_MCP_AUTH_TOKEN || null;
+    this.metisActive = options.metisActive !== undefined ? options.metisActive : localStorage.getItem('metisActive') === 'true';
+    this.options = options;
     
-    // Initialize sub-modules
+    // Initialize Axios instance
+    this.axiosInstance = axios.create({
+      baseURL: this.serverUrl,
+      timeout: 10000,
+      headers: {
+        'Content-Type': 'application/json',
+        ...(this.authToken ? { 'Authorization': `Bearer ${this.authToken}` } : {}),
+      },
+    });
+    
+    // Initialize Google API loader
     this.apiLoader = new GoogleApiLoader({
-      onApiLoadStart: options.onApiLoadStart || null,
-      onApiLoadComplete: options.onApiLoadComplete || null
+      onLoadStart: options.onApiLoadStart,
+      onLoadComplete: options.onApiLoadComplete
     });
     
-    this.contextManager = new ContextManager(options.metisActive || false);
-    this.driveOperations = new DriveOperations(this.apiLoader, this.contextManager);
+    // Initialize context manager
+    this.contextManager = new ContextManager();
     
-    console.log('MCP Client initialized with options:', {
-      serverUrl: this.serverUrl,
-      hasAuthToken: !!this.authToken,
-      metisActive: options.metisActive || false
+    // Initialize Drive operations (conditionally after API is loaded)
+    this.initializeDriveOperations();
+  }
+  
+  /**
+   * Initialize Google Drive operations
+   */
+  private initializeDriveOperations(): void {
+    // Ensure Google API is loaded before initializing DriveOperations
+    this.apiLoader.ensureGoogleApiLoaded().then(() => {
+      this.driveOperations = createDriveOperations({
+        apiLoader: this.apiLoader,
+        contextManager: this.contextManager
+      });
+    }).catch(error => {
+      console.error('Failed to load Google API, Drive operations not available', error);
     });
-    
-    // Try to restore any cached document context from localStorage
-    this.loadDocumentContextCache();
-    
-    // Set up connection monitoring
-    this.setupConnectionMonitoring();
   }
   
   /**
-   * Load document context cache from localStorage if available
-   */
-  private loadDocumentContextCache(): void {
-    try {
-      const cachedData = localStorage.getItem('document-context-cache');
-      if (cachedData) {
-        this.documentContextCache = JSON.parse(cachedData);
-        console.log('MCP: Loaded document context cache with', Object.keys(this.documentContextCache).length, 'entries');
-      }
-    } catch (error) {
-      console.error("Error loading document context cache:", error);
-    }
-  }
-  
-  /**
-   * Save document context cache to localStorage
-   */
-  private saveDocumentContextCache(): void {
-    if (!this.documentCacheEnabled) return;
-    
-    try {
-      localStorage.setItem('document-context-cache', JSON.stringify(this.documentContextCache));
-      console.log('MCP: Saved document context cache with', Object.keys(this.documentContextCache).length, 'entries');
-    } catch (error) {
-      console.error("Error saving document context cache:", error);
-    }
-  }
-  
-  /**
-   * Setup periodic connection monitoring
-   */
-  private setupConnectionMonitoring(): void {
-    // Clear any existing interval
-    if (this.connectionCheckInterval) {
-      clearInterval(this.connectionCheckInterval);
-    }
-    
-    // Check connection every minute
-    this.connectionCheckInterval = setInterval(() => {
-      if (this.isConnectedToDrive()) {
-        // If we're connected, verify the API is still loaded
-        if (!this.apiLoader.isLoaded()) {
-          console.log('MCP: API no longer loaded but connection state is true. Resetting connection state.');
-          localStorage.setItem('gdrive-connected', 'false');
-        }
-      }
-    }, 60000); // Check every minute
-  }
-  
-  /**
-   * Initialize or retrieve the conversation context
-   */
-  async initializeContext(existingConversationId?: string): Promise<string> {
-    try {
-      const conversationId = await this.contextManager.initializeContext(existingConversationId);
-      this.conversationId = conversationId;
-      
-      // If we have cached document context for this conversation, restore it
-      if (this.documentCacheEnabled && conversationId && this.documentContextCache[conversationId]) {
-        const cachedDocs = this.documentContextCache[conversationId];
-        console.log(`MCP: Restoring ${cachedDocs.length} cached documents for conversation ${conversationId}`);
-        
-        // Apply cached docs to the context
-        cachedDocs.forEach(doc => {
-          this.contextManager.addDocumentToContext(
-            doc.id,
-            doc.name,
-            doc.documentType || doc.mimeType.split('/')[1] || 'plain',
-            doc.content
-          );
-        });
-      }
-      
-      return conversationId;
-    } catch (error) {
-      console.error("Error initializing context:", error);
-      // Generate a fallback conversation ID if context initialization fails
-      const fallbackId = `fallback-${Date.now()}-${Math.floor(Math.random() * 1000)}`;
-      this.conversationId = fallbackId;
-      return fallbackId;
-    }
-  }
-  
-  /**
-   * Add a user message to the context
-   */
-  async addUserMessage(message: string): Promise<void> {
-    return this.contextManager.addUserMessage(message);
-  }
-  
-  /**
-   * Add an agent response to the context
-   */
-  async addAgentResponse(response: string): Promise<void> {
-    return this.contextManager.addAgentResponse(response);
-  }
-  
-  /**
-   * Add document content to context and cache it
-   */
-  addDocumentToContext(documentId: string, documentName: string, documentType: string, content: string): void {
-    this.contextManager.addDocumentToContext(documentId, documentName, documentType, content);
-    
-    // Cache the document for this conversation
-    if (this.documentCacheEnabled && this.conversationId) {
-      if (!this.documentContextCache[this.conversationId]) {
-        this.documentContextCache[this.conversationId] = [];
-      }
-      
-      // Check if it's already in the cache
-      const existingIndex = this.documentContextCache[this.conversationId].findIndex(doc => doc.id === documentId);
-      
-      if (existingIndex === -1) {
-        // Add to cache if not already present
-        this.documentContextCache[this.conversationId].push({
-          id: documentId,
-          name: documentName,
-          documentType: documentType,
-          mimeType: `application/${documentType}`,
-          content: content
-        });
-        
-        // Save to localStorage
-        this.saveDocumentContextCache();
-        console.log(`MCP: Added document ${documentId} to context cache for conversation ${this.conversationId}`);
-      }
-    }
-  }
-  
-  /**
-   * Remove a document from context and cache
-   */
-  removeDocumentFromContext(documentId: string): boolean {
-    const context = this.contextManager.getModelContext();
-    let removed = false;
-    
-    if (context?.documentContext) {
-      // Filter out the document to remove
-      const originalLength = context.documentContext.length;
-      context.documentContext = context.documentContext.filter(doc => doc.documentId !== documentId);
-      removed = originalLength !== context.documentContext.length;
-      
-      // Update cache if document was removed
-      if (removed && this.documentCacheEnabled && this.conversationId) {
-        if (this.documentContextCache[this.conversationId]) {
-          this.documentContextCache[this.conversationId] = 
-            this.documentContextCache[this.conversationId].filter(doc => doc.id !== documentId);
-          
-          // Save updated cache
-          this.saveDocumentContextCache();
-          console.log(`MCP: Removed document ${documentId} from context cache for conversation ${this.conversationId}`);
-        }
-      }
-    }
-    
-    return removed;
-  }
-  
-  /**
-   * Get document context for current conversation
-   */
-  getDocumentContext(conversationId?: string): any[] {
-    const targetId = conversationId || this.conversationId;
-    
-    if (!targetId) return [];
-    
-    // First check if we have cached context
-    if (this.documentCacheEnabled && this.documentContextCache[targetId]) {
-      return this.documentContextCache[targetId];
-    }
-    
-    // Otherwise try to get from active context
-    const context = this.contextManager.getModelContext();
-    if (context?.documentContext) {
-      return context.documentContext.map(doc => ({
-        id: doc.documentId,
-        name: doc.documentName,
-        documentType: doc.documentType,
-        mimeType: `application/${doc.documentType}`,
-        content: doc.content
-      }));
-    }
-    
-    return [];
-  }
-  
-  /**
-   * Force persist the current context
-   */
-  persistContext(): void {
-    try {
-      this.contextManager.persistContext();
-      
-      // Also save document cache
-      if (this.documentCacheEnabled) {
-        this.saveDocumentContextCache();
-      }
-    } catch (error) {
-      console.error("Error persisting context:", error);
-    }
-  }
-  
-  /**
-   * Connect to Google Drive
+   * Connect to Google Drive and authorize access
    */
   async connectToDrive(clientId: string, apiKey: string, cachedToken?: string | null): Promise<boolean> {
-    // Dismiss any existing toasts to prevent stacking
-    toast.dismiss(); 
-    
-    // Show a short-lived loading toast
-    toast.loading('Connecting to Google Drive...', {
-      id: 'drive-connection',
-      duration: 15000, // Auto-dismiss after 15 seconds if connection hangs
-    });
-    
-    try {
-      const result = await this.driveOperations.connectToDrive(clientId, apiKey, cachedToken);
-      
-      // Dismiss the loading toast
-      toast.dismiss('drive-connection');
-      
-      if (result) {
-        // Connection successful, clear existing document cache
-        localStorage.setItem('gdrive-connected', 'true');
-        toast.success('Connected to Google Drive', {
-          duration: 3000,
-          id: 'drive-connected',
-        });
-      } else {
-        // Connection failed
-        localStorage.setItem('gdrive-connected', 'false');
-        toast.error('Failed to connect to Google Drive', {
-          duration: 5000,
-          id: 'drive-connect-failed',
-        });
-      }
-      
-      return result;
-    } catch (error) {
-      console.error("Error connecting to Drive:", error);
-      
-      // Dismiss the loading toast
-      toast.dismiss('drive-connection');
-      
-      // Show error toast
-      toast.error('Connection error', {
-        description: error instanceof Error ? error.message : 'Unknown error',
-        duration: 5000,
-        id: 'drive-connect-error',
-      });
-      
-      // Ensure connection state is false
-      localStorage.setItem('gdrive-connected', 'false');
-      
+    if (!this.driveOperations) {
+      console.warn('Drive operations not initialized, ensure API is loaded');
       return false;
     }
+    
+    return this.driveOperations.connectToDrive(clientId, apiKey, cachedToken);
   }
   
   /**
    * List documents from Google Drive
    */
   async listDocuments(folderId?: string): Promise<any[]> {
-    // Dismiss any existing list-documents toasts to prevent stacking
-    toast.dismiss('list-documents'); 
-    
-    try {
-      return await this.driveOperations.listDocuments(folderId);
-    } catch (error) {
-      console.error("Error listing documents:", error);
-      
-      toast.error('Could not retrieve documents', { 
-        duration: 3000,
-        description: 'Please try reconnecting to Google Drive',
-        id: 'list-documents-error',
-      });
-      
+    if (!this.driveOperations) {
+      console.warn('Drive operations not initialized, ensure API is loaded');
       return [];
     }
+    
+    return this.driveOperations.listDocuments(folderId);
   }
   
   /**
-   * Fetch document content
+   * Fetch a specific document and add its content to the context
    */
   async fetchDocumentContent(documentId: string): Promise<string | null> {
-    // Dismiss any document-specific toasts
-    toast.dismiss(`doc-content-${documentId}`);
-    
-    try {
-      const content = await this.driveOperations.fetchDocumentContent(documentId);
-      return content;
-    } catch (error) {
-      console.error("Error fetching document content:", error);
-      
-      toast.error('Could not fetch document content', { 
-        duration: 3000,
-        description: 'Please try again or check file permissions',
-        id: 'fetch-document-error',
-      });
-      
+    if (!this.driveOperations) {
+      console.warn('Drive operations not initialized, ensure API is loaded');
       return null;
     }
-  }
-  
-  /**
-   * Get the current context for use in AI models
-   */
-  getModelContext(): MCPContext | null {
-    return this.contextManager.getModelContext();
-  }
-  
-  /**
-   * Update model preferences in the context
-   */
-  setModelPreference(model: string): void {
-    this.contextManager.setModelPreference(model);
-  }
-  
-  /**
-   * Enable or disable Metis capabilities
-   */
-  setMetisActive(active: boolean): void {
-    this.contextManager.setMetisActive(active);
-  }
-  
-  /**
-   * Get the conversation ID
-   */
-  getConversationId(): string | null {
-    return this.contextManager.getConversationId();
-  }
-  
-  /**
-   * Set the authentication token
-   */
-  setAuthToken(token: string): void {
-    this.authToken = token;
-  }
-  
-  /**
-   * Set the server URL
-   */
-  setServerUrl(url: string): void {
-    this.serverUrl = url;
-  }
-  
-  /**
-   * Enable or disable document context caching
-   */
-  setDocumentCacheEnabled(enabled: boolean): void {
-    this.documentCacheEnabled = enabled;
     
-    if (!enabled) {
-      // Clear cache if disabling
-      this.documentContextCache = {};
-      localStorage.removeItem('document-context-cache');
-    }
+    return this.driveOperations.fetchDocumentContent(documentId);
   }
   
   /**
    * Check if connected to Google Drive
    */
   isConnectedToDrive(): boolean {
-    return this.driveOperations.isConnectedToDrive();
+    return this.driveOperations?.isConnectedToDrive() || false;
   }
   
   /**
    * Get the current connection status
    */
   getConnectionStatus(): 'disconnected' | 'connecting' | 'connected' | 'error' {
-    return this.driveOperations.getConnectionStatus();
+    return this.driveOperations?.getConnectionStatus() || 'disconnected';
   }
   
   /**
-   * Reset the drive connection state
+   * Reset the Google Drive connection
    */
   resetDriveConnection(): void {
-    console.log('MCP: Resetting Drive connection');
-    
-    // Clear any existing toasts to prevent persistence
-    toast.dismiss();
-    
-    this.driveOperations.setAuthenticationState(false);
-    
-    // Force reload Google API to ensure clean state
-    this.apiLoader.reloadGoogleApi();
-    
-    // Clean up any timers or intervals
-    if (typeof this.driveOperations.cleanup === 'function') {
-      this.driveOperations.cleanup();
-    }
-    
-    // Show a non-persistent toast
-    toast.info('Google Drive connection has been reset', {
-      description: 'You will need to reconnect to access your documents',
-      duration: 5000, // Auto-dismiss after 5 seconds
-      id: 'connection-reset',
-    });
+    this.driveOperations?.setAuthenticationState(false);
   }
   
   /**
-   * Check if API is loaded
+   * Check if the Google API is loaded
    */
   isApiLoaded(): boolean {
-    return this.apiLoader.isLoaded();
+    return this.apiLoader.isApiLoaded();
   }
   
   /**
-   * Get current API load attempt count
+   * Get the GAPI client
    */
-  getApiLoadAttempts(): number {
-    return this.apiLoader.getLoadAttempts();
+  getGapiClient(): any {
+    return this.apiLoader.getGapiClient();
   }
   
   /**
-   * Reset API load attempts counter
+   * Add document to the current context
    */
-  resetApiLoadAttempts(): void {
-    this.apiLoader.resetLoadAttempts();
+  addDocumentToContext(documentId: string, documentName: string, documentType: string, content: string): void {
+    this.contextManager.addDocument(documentId, documentName, documentType, content);
   }
   
   /**
-   * Add a listener for API loaded event
+   * Remove document from the current context
    */
-  addApiLoadListener(callback: () => void): void {
-    if (typeof this.apiLoader.addLoadListener === 'function') {
-      this.apiLoader.addLoadListener(callback);
-    } else {
-      console.warn('MCP: addLoadListener not available in this version');
-      // Still try to call the callback if the API is already loaded
-      if (this.isApiLoaded()) {
-        setTimeout(callback, 0);
-      }
+  removeDocumentFromContext(documentId: string): void {
+    this.contextManager.removeDocument(documentId);
+  }
+  
+  /**
+   * Clear all documents from the current context
+   */
+  clearDocumentsFromContext(): void {
+    this.contextManager.clearDocuments();
+  }
+  
+  /**
+   * Set the conversation ID for the current context
+   */
+  setConversationId(conversationId: string): void {
+    this.contextManager.setConversationId(conversationId);
+  }
+  
+  /**
+   * Add a message to the current context
+   */
+  addMessageToContext(role: string, content: string): void {
+    this.contextManager.addMessage(role, content);
+  }
+  
+  /**
+   * Clear all messages from the current context
+   */
+  clearMessagesFromContext(): void {
+    this.contextManager.clearMessages();
+  }
+  
+  /**
+   * Set user profile data in the current context
+   */
+  setUserProfile(userProfile: Record<string, any>): void {
+    this.contextManager.setUserProfile(userProfile);
+  }
+  
+  /**
+   * Set metadata in the current context
+   */
+  setMetadata(metadata: Record<string, any>): void {
+    this.contextManager.setMetadata(metadata);
+  }
+  
+  /**
+   * Get the current context
+   */
+  getContext(): MCPContext {
+    return this.contextManager.getContext();
+  }
+  
+  /**
+   * Submit the current context to the MCP server
+   */
+  async submitContext(context?: MCPContext): Promise<any> {
+    try {
+      const contextToSubmit = context || this.getContext();
+      console.log('Submitting context to MCP server:', contextToSubmit);
+      
+      const response = await this.axiosInstance.post('/context', contextToSubmit);
+      console.log('Context submission successful', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('Failed to submit context to MCP server:', error.message, error.response?.data);
+      throw error;
     }
   }
   
   /**
-   * Clear document context cache for all conversations
+   * Submit a query to the MCP server
    */
-  clearDocumentContextCache(): void {
-    this.documentContextCache = {};
-    localStorage.removeItem('document-context-cache');
-    console.log('MCP: Cleared document context cache');
+  async submitQuery(query: string, context?: MCPContext): Promise<any> {
+    try {
+      const contextToSubmit = context || this.getContext();
+      console.log('Submitting query to MCP server:', query, contextToSubmit);
+      
+      const response = await this.axiosInstance.post('/query', {
+        query: query,
+        context: contextToSubmit
+      });
+      
+      console.log('Query submission successful', response.data);
+      return response.data;
+    } catch (error: any) {
+      console.error('Failed to submit query to MCP server:', error.message, error.response?.data);
+      throw error;
+    }
   }
   
   /**
-   * Cleanup resources when no longer needed
+   * Enable or disable metisActive mode
+   */
+  setMetisActive(value: boolean): void {
+    this.metisActive = value;
+    localStorage.setItem('metisActive', value.toString());
+    this.contextManager.setMetadata({ metisActive: value });
+  }
+  
+  /**
+   * Get the current metisActive status
+   */
+  getMetisActive(): boolean {
+    return this.metisActive;
+  }
+  
+  /**
+   * Clean up resources
    */
   cleanup(): void {
-    if (this.connectionCheckInterval) {
-      clearInterval(this.connectionCheckInterval);
-      this.connectionCheckInterval = null;
-    }
-    
-    if (typeof this.driveOperations.cleanup === 'function') {
-      this.driveOperations.cleanup();
-    }
-  }
-  
-  // Public getter for api loader's callbacks to support existing code
-  public get onApiLoadStart(): (() => void) | null {
-    return this.apiLoader.onApiLoadStart;
-  }
-  
-  public set onApiLoadStart(callback: (() => void) | null) {
-    this.apiLoader.onApiLoadStart = callback;
-  }
-  
-  public get onApiLoadComplete(): (() => void) | null {
-    return this.apiLoader.onApiLoadComplete;
-  }
-  
-  public set onApiLoadComplete(callback: (() => void) | null) {
-    this.apiLoader.onApiLoadComplete = callback;
+    this.driveOperations?.cleanup();
   }
 }
 
-// Singleton instance for global use
-let mcpClientInstance: MCPClient | null = null;
-
-/**
- * Get the global MCP client instance
- */
-export const getMCPClient = (options?: MCPClientOptions): MCPClient => {
-  if (!mcpClientInstance) {
-    mcpClientInstance = new MCPClient(options);
-  } else if (options) {
-    // Update existing instance with new options if provided
-    if (options.serverUrl) mcpClientInstance.setServerUrl(options.serverUrl);
-    if (options.authToken) mcpClientInstance.setAuthToken(options.authToken);
-    if (options.metisActive !== undefined) mcpClientInstance.setMetisActive(options.metisActive);
-    
-    // Handle API loading callbacks
-    if (options.onApiLoadStart) {
-      mcpClientInstance.onApiLoadStart = options.onApiLoadStart;
-    }
-    if (options.onApiLoadComplete) {
-      mcpClientInstance.onApiLoadComplete = options.onApiLoadComplete;
-    }
-  }
-  
-  return mcpClientInstance;
-};
-
-// Re-export the types as type-only exports
-export type { MCPContext, MCPClientOptions } from './types';
+// Function to create a new MCP client
+export function getMCPClient(options: MCPClientOptions = {}): MCPClient {
+  return new MCPClient(options);
+}
