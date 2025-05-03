@@ -10,17 +10,25 @@ interface FolderHistory {
 
 export function useDocumentBrowser() {
   try {
-    const { listDocuments, documents = [], isLoading = false, driveConnected = false } = useMCP();
+    const mcp = useMCP();
+    // Add default values to handle undefined properties
+    const { 
+      listDocuments = () => Promise.resolve([]), 
+      documents = [], 
+      isLoading = false, 
+      driveConnected = false 
+    } = mcp || {};
+    
     const [currentFolder, setCurrentFolder] = useState('');
     const [folderHistory, setFolderHistory] = useState<FolderHistory[]>([]);
     
     // Get isOpen from context if available, otherwise use local state
-    const contextValue = useDocumentSelectorContextSafely();
+    const contextValue = useDocumentSelectorContextSafe();
     const isOpen = contextValue?.isOpen ?? false;
     
     // Fetch documents when dialog opens or folder changes
     useEffect(() => {
-      if (isOpen && driveConnected && listDocuments) {
+      if (isOpen && driveConnected && typeof listDocuments === 'function') {
         listDocuments(currentFolder).catch(error => {
           console.error("Error listing documents:", error);
         });
@@ -79,7 +87,7 @@ export function useDocumentBrowser() {
     
     // Updated to return a Promise so it can be properly caught
     const refreshCurrentFolder = useCallback((): Promise<any[]> => {
-      if (!listDocuments) {
+      if (typeof listDocuments !== 'function') {
         console.error("listDocuments function is not available");
         return Promise.reject("listDocuments function is not available");
       }
@@ -117,7 +125,7 @@ export function useDocumentBrowser() {
 }
 
 // Helper hook to safely access context even when outside provider
-function useDocumentSelectorContextSafely() {
+function useDocumentSelectorContextSafe() {
   try {
     return useDocumentSelectorContext();
   } catch (e) {

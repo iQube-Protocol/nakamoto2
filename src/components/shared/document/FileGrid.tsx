@@ -15,11 +15,16 @@ const FileGrid: React.FC<FileGridProps> = ({
   handleBack
 }) => {
   try {
-    const { documents = [], documentsLoading: isLoading, currentFolder } = useDocumentSelectorContext();
+    const contextValue = useDocumentSelectorContext();
+    
+    // Safely extract values with defaults
+    const documents = Array.isArray(contextValue?.documents) ? contextValue.documents : [];
+    const isLoading = contextValue?.documentsLoading || false;
+    const currentFolder = contextValue?.currentFolder || '';
     
     if (isLoading) {
       return (
-        <div className="flex h-full items-center justify-center">
+        <div className="flex h-full items-center justify-center py-12">
           <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
         </div>
       );
@@ -45,20 +50,22 @@ const FileGrid: React.FC<FileGridProps> = ({
           </div>
         )}
         
-        {documents && Array.isArray(documents) && documents.map((doc) => (
-          doc && doc.id ? (
+        {documents && Array.isArray(documents) && documents.map((doc) => {
+          if (!doc || !doc.id) return null;
+          
+          return (
             <Card 
               key={doc.id} 
               className="p-4 cursor-pointer hover:bg-accent"
               onClick={() => handleDocumentClick(doc)}
             >
               <div className="flex items-center gap-2">
-                <FileIcon mimeType={doc.mimeType} />
-                <span className="truncate text-sm">{doc.name}</span>
+                <FileIcon mimeType={doc.mimeType || 'unknown'} />
+                <span className="truncate text-sm">{doc.name || 'Unnamed document'}</span>
               </div>
             </Card>
-          ) : null
-        ))}
+          );
+        })}
       </div>
     );
   } catch (error) {

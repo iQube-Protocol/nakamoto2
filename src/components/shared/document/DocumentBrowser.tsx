@@ -12,12 +12,19 @@ const DocumentBrowser: React.FC = () => {
       navigateToFolder, 
       navigateToRoot, 
       handleBack,
-      handleFileSelection 
+      handleFileSelection,
+      documents = [],
+      documentsLoading = false
     } = useDocumentSelectorContext();
     
+    // Add comprehensive null checks
     if (!navigateToFolder || !navigateToRoot || !handleBack || !handleFileSelection) {
       console.error("Document browser context missing required functions");
-      return <div className="py-4 text-center text-muted-foreground">Error: Unable to load document browser</div>;
+      return (
+        <div className="py-4 text-center text-muted-foreground">
+          Error: Unable to load document browser - missing required functions
+        </div>
+      );
     }
     
     return (
@@ -30,7 +37,7 @@ const DocumentBrowser: React.FC = () => {
           navigateToRoot={navigateToRoot}
         />
       
-        {/* File grid */}
+        {/* File grid with fallback for missing props */}
         <FileGrid
           handleDocumentClick={handleFileSelection}
           handleBack={handleBack}
@@ -39,7 +46,11 @@ const DocumentBrowser: React.FC = () => {
     );
   } catch (error) {
     console.error("Error rendering DocumentBrowser:", error);
-    return <div className="py-4 text-center text-muted-foreground">Error loading document browser</div>;
+    return (
+      <div className="py-4 text-center text-muted-foreground">
+        Error loading document browser. Please try refreshing the page.
+      </div>
+    );
   }
 };
 

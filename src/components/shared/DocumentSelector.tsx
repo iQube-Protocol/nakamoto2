@@ -28,19 +28,40 @@ const DocumentSelectorContent: React.FC<{ onDocumentSelect: (document: any) => v
   onDocumentSelect 
 }) => {
   try {
+    const contextValue = useDocumentSelectorContext();
+    
+    if (!contextValue) {
+      console.error("Document selector context is undefined");
+      return (
+        <Dialog>
+          <DialogContent>
+            <div className="flex flex-col items-center gap-4 py-8">
+              <AlertCircle className="h-10 w-10 text-red-500" />
+              <p>Unable to load document selector - context is missing</p>
+            </div>
+          </DialogContent>
+        </Dialog>
+      );
+    }
+    
     const { 
       isOpen, 
       handleDialogChange, 
-      apiLoadingState, 
-      driveConnected, 
-      handleFileSelection
-    } = useDocumentSelectorContext();
+      apiLoadingState = 'loading', 
+      driveConnected = false, 
+      handleFileSelection 
+    } = contextValue;
 
     // Wrap the document selection handler to pass the document to the parent component
     const handleDocSelect = (doc: any) => {
       if (!doc) return;
       
       try {
+        if (!handleFileSelection) {
+          console.error("handleFileSelection function is not available");
+          return doc;
+        }
+        
         const result = handleFileSelection(doc);
         // Only pass non-folder documents to the parent
         if (doc.mimeType && !doc.mimeType.includes('folder')) {
@@ -54,7 +75,7 @@ const DocumentSelectorContent: React.FC<{ onDocumentSelect: (document: any) => v
     };
 
     return (
-      <Dialog open={isOpen} onOpenChange={handleDialogChange}>
+      <Dialog open={isOpen} onOpenChange={handleDialogChange || (() => {})}>
         <DialogContent className="sm:max-w-[500px]">
           <DialogHeader>
             <DialogTitle>Select a document from Google Drive</DialogTitle>

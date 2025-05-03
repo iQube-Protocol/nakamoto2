@@ -1,74 +1,84 @@
 
-import axios, { AxiosInstance } from 'axios';
 import { GoogleApiLoader } from '../api/google-api-loader';
 import { ContextManager } from '../context-manager';
-import { MCPClientOptions, MCPContext } from '../types';
+import { MCPClientOptions } from '../types';
 
 /**
- * Base client class with core functionality
+ * Base class for the MCP client providing shared functionality
  */
 export class MCPClientBase {
-  protected serverUrl: string;
-  protected authToken: string | null;
-  protected axiosInstance: AxiosInstance;
   protected apiLoader: GoogleApiLoader;
   protected contextManager: ContextManager;
-  protected metisActive: boolean;
-  protected options: MCPClientOptions;
+  protected debugMode: boolean = false;
   
   constructor(options: MCPClientOptions = {}) {
-    this.serverUrl = options.serverUrl || process.env.NEXT_PUBLIC_MCP_SERVER_URL || 'http://localhost:8000';
-    this.authToken = options.authToken || process.env.NEXT_PUBLIC_MCP_AUTH_TOKEN || null;
-    this.metisActive = options.metisActive !== undefined ? options.metisActive : localStorage.getItem('metisActive') === 'true';
-    this.options = options;
-    
-    // Initialize Axios instance
-    this.axiosInstance = axios.create({
-      baseURL: this.serverUrl,
-      timeout: 10000,
-      headers: {
-        'Content-Type': 'application/json',
-        ...(this.authToken ? { 'Authorization': `Bearer ${this.authToken}` } : {}),
-      },
-    });
-    
-    // Initialize Google API loader
+    // Initialize components
     this.apiLoader = new GoogleApiLoader({
       onApiLoadStart: options.onApiLoadStart,
       onApiLoadComplete: options.onApiLoadComplete
     });
+    this.contextManager = new ContextManager();
     
-    // Initialize context manager
-    this.contextManager = new ContextManager(this.metisActive);
+    // Set debug mode based on options or environment
+    if (options.debug !== undefined) {
+      this.debugMode = options.debug;
+    } else {
+      // Use a browser-safe approach to check for development mode
+      this.debugMode = 
+        (typeof window !== 'undefined') && 
+        (window.location.hostname === 'localhost' || 
+         window.location.hostname === '127.0.0.1');
+    }
+    
+    // Set API load timeout if specified
+    if (options.apiLoadTimeout && options.apiLoadTimeout > 0) {
+      this.apiLoader.setApiLoadTimeout(options.apiLoadTimeout);
+    }
   }
   
   /**
-   * Get the current metisActive status
+   * Helper method for debug logging
    */
-  getMetisActive(): boolean {
-    return this.metisActive;
+  protected log(message: string, ...args: any[]): void {
+    if (this.debugMode) {
+      console.log(`[MCP] ${message}`, ...args);
+    }
   }
   
   /**
-   * Set metisActive status
+   * Helper method for debug error logging
    */
-  setMetisActive(value: boolean): void {
-    this.metisActive = value;
-    localStorage.setItem('metisActive', value.toString());
-    this.contextManager.setMetadata({ metisActive: value });
+  protected logError(message: string, ...args: any[]): void {
+    if (this.debugMode) {
+      console.error(`[MCP ERROR] ${message}`, ...args);
+    }
   }
   
   /**
    * Check if the Google API is loaded
    */
-  isApiLoaded(): boolean {
+  public isApiLoaded(): boolean {
     return this.apiLoader.isLoaded();
   }
   
   /**
-   * Get the GAPI client
+   * Force reload the Google API
    */
-  getGapiClient(): any {
-    return this.apiLoader.getGapiClient();
+  public reloadGoogleApi(): void {
+    return this.apiLoader.reloadGoogleApi();
+  }
+  
+  /**
+   * Get current load attempt count
+   */
+  public getApiLoadAttempts(): number {
+    return this.apiLoader.getLoadAttempts();
+  }
+  
+  /**
+   * Reset load attempts counter
+   */
+  public resetApiLoadAttempts(): void {
+    this.apiLoader.resetLoadAttempts();
   }
 }
