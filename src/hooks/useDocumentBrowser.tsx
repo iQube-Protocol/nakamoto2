@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useMCP } from '@/hooks/mcp/use-mcp';
 import { useDocumentSelectorContext } from '@/components/shared/document/DocumentSelectorContext';
@@ -20,11 +19,12 @@ export function useDocumentBrowser() {
     const { 
       listDocuments = () => Promise.resolve([]), 
       driveConnected = false,
-      isLoading: mcpIsLoading = false
+      isLoading: mcpIsLoading = false,
+      documents: mcpDocuments = [] // Extract documents from MCP with default empty array
     } = mcp || {};
     
-    // Use local documents state when mcp.documents is not available
-    const documents = Array.isArray(mcp?.documents) ? mcp.documents : localDocuments;
+    // Use MCP documents if available, otherwise use local documents state
+    const documents = Array.isArray(mcpDocuments) ? mcpDocuments : localDocuments;
     const isLoading = mcpIsLoading;
     
     const [currentFolder, setCurrentFolder] = useState<string>('');

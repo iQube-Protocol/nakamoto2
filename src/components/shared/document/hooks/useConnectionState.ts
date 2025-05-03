@@ -11,7 +11,7 @@ export const useConnectionState = () => {
   const {
     connectionInProgress,
     connectionAttempts,
-    connectToDrive, // Use this function directly instead of accessing handleConnect
+    connectToDrive, // This is the correct function name to use
     resetConnection
   } = useDriveConnection();
   

@@ -1,171 +1,107 @@
 
 import { useState, useEffect } from 'react';
-import { MCPClient, getMCPClient } from '@/integrations/mcp/client';
+import { useMCP } from './use-mcp';
+import { useConnectionManager } from './useConnectionManager';
+import { useConnectionReset } from './useConnectionReset';
+import { useConnectionSync } from './useConnectionSync';
+import { loadCredentials } from './utils/connectionUtils';
+import { DriveConnectionHook } from './types/driveConnectionTypes';
 
-/**
- * Hook to manage Google Drive connection state
- */
-export function useDriveConnection() {
-  const [client, setClient] = useState<MCPClient | null>(null);
-  const [driveConnected, setDriveConnected] = useState(false);
-  const [isInitialized, setIsInitialized] = useState(false);
-  const [isLoading, setIsLoading] = useState(false);
-  const [isApiLoading, setIsApiLoading] = useState(false);
-  const [apiLoadError, setApiLoadError] = useState<Error | null>(null);
-  const [connectionStatus, setConnectionStatus] = useState<'disconnected' | 'connecting' | 'connected' | 'error'>('disconnected');
-
-  // Connection parameters
-  const [clientId, setClientId] = useState('');
-  const [apiKey, setApiKey] = useState('');
-  const [connectionInProgress, setConnectionInProgress] = useState(false);
-  const [connectionAttempts, setConnectionAttempts] = useState(0);
+export function useDriveConnection(): DriveConnectionHook {
+  const { 
+    driveConnected, 
+    connectToDrive: mcpConnectToDrive, 
+    isLoading, 
+    client, 
+    isApiLoading, 
+    resetDriveConnection: mcpResetConnection,
+    getConnectionStatus 
+  } = useMCP();
   
-  // Initialize the client
+  // Load saved credentials
+  const { clientId: savedClientId, apiKey: savedApiKey } = loadCredentials();
+  
+  // Connection manager
+  const connectionManager = useConnectionManager(mcpConnectToDrive);
+  const {
+    clientId,
+    setClientId,
+    apiKey,
+    setApiKey,
+    connectionInProgress,
+    connectionAttempts,
+    connectionStatus,
+    setConnectionStatus,
+    lastConnectionResult,
+    setConnectionInProgress,
+    handleConnect
+  } = connectionManager;
+  
+  // Connection reset
+  const { resetConnection } = useConnectionReset(connectionManager, client, mcpResetConnection);
+  
+  // Try to load saved credentials from localStorage
   useEffect(() => {
-    // Check if we already have a connection to Google Drive
-    const hasConnection = localStorage.getItem('gdrive-connected') === 'true';
-    
-    const mcpClient = getMCPClient({
-      metisActive: localStorage.getItem('metisActive') === 'true',
-      debug: true,
-      apiLoadTimeout: 30000,
-      onApiLoadStart: () => {
-        console.log('Drive Connection: API loading started');
-        setIsApiLoading(true);
-      },
-      onApiLoadComplete: () => {
-        console.log('Drive Connection: API loading completed');
-        setIsApiLoading(false);
-      }
-    });
-    
-    // Try to load saved credentials
-    const savedClientId = localStorage.getItem('gdrive-client-id');
-    const savedApiKey = localStorage.getItem('gdrive-api-key');
-    
     if (savedClientId) setClientId(savedClientId);
     if (savedApiKey) setApiKey(savedApiKey);
     
-    setClient(mcpClient);
-    setIsInitialized(true);
-    setDriveConnected(hasConnection);
-    setConnectionStatus(hasConnection ? 'connected' : 'disconnected');
-  }, []);
-  
-  // Verify connection status periodically
-  useEffect(() => {
-    if (!client || !driveConnected) return;
-    
-    const interval = setInterval(() => {
-      const isConnected = client.isConnectedToDrive();
-      if (driveConnected !== isConnected) {
-        setDriveConnected(isConnected);
-        setConnectionStatus(isConnected ? 'connected' : 'disconnected');
-      }
-    }, 30000); // Check every 30 seconds
-    
-    return () => clearInterval(interval);
-  }, [client, driveConnected]);
-  
-  // Connect to Google Drive - explicitly exported for useConnectionState
-  const connectToDrive = async (clientIdParam?: string, apiKeyParam?: string): Promise<boolean> => {
-    if (!client || connectionInProgress) return false;
-    
-    try {
-      setConnectionInProgress(true);
-      setConnectionAttempts(prev => prev + 1);
-      setConnectionStatus('connecting');
-      
-      // Use provided parameters or the state values
-      const finalClientId = clientIdParam || clientId;
-      const finalApiKey = apiKeyParam || apiKey;
-      
-      // Save credentials to localStorage
-      localStorage.setItem('gdrive-client-id', finalClientId);
-      localStorage.setItem('gdrive-api-key', finalApiKey);
-      
-      const cachedToken = localStorage.getItem('gdrive-auth-token');
-      
-      console.log('Connecting to Google Drive...');
-      const result = await client.connectToDrive(finalClientId, finalApiKey, cachedToken);
-      
-      setDriveConnected(result);
-      setConnectionStatus(result ? 'connected' : 'error');
-      
-      if (result) {
-        localStorage.setItem('gdrive-connected', 'true');
-        console.log('Successfully connected to Google Drive');
-      } else {
-        localStorage.removeItem('gdrive-connected');
-        console.error('Failed to connect to Google Drive');
-      }
-      
-      return result;
-    } catch (error) {
-      console.error('Error connecting to Drive:', error);
-      setConnectionStatus('error');
-      setApiLoadError(error instanceof Error ? error : new Error('Unknown error'));
-      return false;
-    } finally {
-      setConnectionInProgress(false);
+    if (client?.isConnectedToDrive()) {
+      console.log('Drive is already connected based on client state');
     }
-  };
+  }, [client, savedClientId, savedApiKey, setClientId, setApiKey]);
   
-  // Reset connection
-  const resetConnection = () => {
-    localStorage.removeItem('gdrive-connected');
-    localStorage.removeItem('gdrive-auth-token');
-    
-    if (client) {
-      client.resetDriveConnection();
-      
-      // Force reload Google API
-      try {
-        client.reloadGoogleApi();
-      } catch (e) {
-        console.error('Error reloading Google API:', e);
-      }
-    }
-    
-    setDriveConnected(false);
-    setConnectionStatus('disconnected');
-    setConnectionAttempts(0);
-    console.log('Drive connection reset');
-  };
-  
-  // Check API status
-  const checkApiStatus = (): boolean => {
-    return client?.isApiLoaded() || false;
-  };
-  
-  // Get connection status
-  const getConnectionStatus = (): 'disconnected' | 'connecting' | 'connected' | 'error' => {
-    if (!client) return 'disconnected';
-    return client.getConnectionStatus();
-  };
-
-  return {
+  // Sync connection status
+  useConnectionSync({
     client,
-    isInitialized,
+    driveConnected,
+    getConnectionStatus,
+    connectionStatus,
+    setConnectionStatus,
+    setConnectionInProgress,
+    lastConnectionResult,
+    handleConnect
+  });
+  
+  // Check API status periodically if errors occur
+  useEffect(() => {
+    // Only set up monitoring if we've seen API errors
+    if (connectionManager.apiErrorCount > 0 && client) {
+      const interval = setInterval(() => {
+        // Check if API is now available
+        if (client.isApiLoaded?.()) {
+          console.log('API is now available after previous errors');
+          connectionManager.setApiErrorCount(0);
+          clearInterval(interval);
+        }
+      }, 5000);
+      
+      return () => clearInterval(interval);
+    }
+  }, [connectionManager.apiErrorCount, client]);
+  
+  // Create a wrapper for connectToDrive that can be exported
+  const connectToDrive = async (clientId: string, apiKey: string): Promise<boolean> => {
+    console.log("Drive connection: Connecting with credentials", { clientId: clientId?.substring(0, 10) + '...', apiKey: apiKey ? '[PROVIDED]' : '[MISSING]' });
+    return mcpConnectToDrive(clientId, apiKey);
+  };
+  
+  return {
     driveConnected,
     isLoading,
     isApiLoading,
-    apiLoadError,
+    connectionInProgress,
+    connectionAttempts,
     connectionStatus,
-    getConnectionStatus,
-    checkApiStatus,
-    connectToDrive, // Explicitly expose this function for useConnectionState
-    resetConnection,
-    
-    // Connection parameters
     clientId,
     apiKey,
     setClientId,
     setApiKey,
-    connectionInProgress,
-    connectionAttempts,
-    connectionTimeout: 30000,
-    apiErrorCount: 0,
-    lastConnectionResult: driveConnected,
+    connectToDrive, // Explicitly expose this function for external use
+    resetConnection,
+    
+    // These are included to satisfy the TypeScript interface but not used directly
+    connectionTimeout: connectionManager.connectionTimeout,
+    apiErrorCount: connectionManager.apiErrorCount,
+    lastConnectionResult: connectionManager.lastConnectionResult
   };
 }

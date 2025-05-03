@@ -19,37 +19,52 @@ export function useMCP() {
   
   // Initialize client on first load
   useEffect(() => {
-    // Check if we already have a connection to Google Drive
-    const hasConnection = localStorage.getItem('gdrive-connected') === 'true';
-    
-    const mcpClient = getMCPClient({
-      // Check for metisActive status from localStorage
-      metisActive: localStorage.getItem('metisActive') === 'true',
-      debug: true, // Enable debug mode
-      apiLoadTimeout: 30000, // 30-second timeout
-      onApiLoadStart: () => {
-        console.log('MCP API loading started');
-        setIsApiLoading(true);
-      },
-      onApiLoadComplete: () => {
-        console.log('MCP API loading completed');
-        setIsApiLoading(false);
-      }
-    });
-    
-    setClient(mcpClient);
-    setIsInitialized(true);
-    setDriveConnected(hasConnection);
-    setConnectionStatus(hasConnection ? 'connected' : 'disconnected');
+    try {
+      // Check if we already have a connection to Google Drive
+      const hasConnection = localStorage.getItem('gdrive-connected') === 'true';
+      console.log("MCP: Initializing with drive connection:", hasConnection);
+      
+      const mcpClient = getMCPClient({
+        // Check for metisActive status from localStorage
+        metisActive: localStorage.getItem('metisActive') === 'true',
+        debug: true, // Enable debug mode
+        apiLoadTimeout: 30000, // 30-second timeout
+        onApiLoadStart: () => {
+          console.log('MCP API loading started');
+          setIsApiLoading(true);
+        },
+        onApiLoadComplete: () => {
+          console.log('MCP API loading completed');
+          setIsApiLoading(false);
+        }
+      });
+      
+      setClient(mcpClient);
+      setIsInitialized(true);
+      setDriveConnected(hasConnection);
+      setConnectionStatus(hasConnection ? 'connected' : 'disconnected');
+    } catch (error) {
+      console.error("Error initializing MCP:", error);
+      setApiLoadError(error instanceof Error ? error : new Error('Failed to initialize MCP client'));
+    }
   }, []);
   
   // Connect to Google Drive
   const connectToDrive = async (clientId: string, apiKey: string): Promise<boolean> => {
-    if (!client) return false;
+    if (!client) {
+      console.error("Cannot connect to Drive: MCP client is not initialized");
+      return false;
+    }
     
     try {
       setIsLoading(true);
       const cachedToken = localStorage.getItem('gdrive-auth-token');
+      console.log("MCP: Connecting to drive with credentials", { 
+        clientIdLength: clientId?.length, 
+        apiKeyLength: apiKey?.length,
+        hasCachedToken: !!cachedToken
+      });
+      
       const result = await client.connectToDrive(clientId, apiKey, cachedToken);
       
       // Save connection state
@@ -98,6 +113,7 @@ export function useMCP() {
     
     try {
       setIsLoading(true);
+      console.log("MCP: Listing documents for folder:", folderId || 'root');
       const fetchedDocuments = await client.listDocuments(folderId);
       setDocuments(fetchedDocuments); // Store documents in local state
       return fetchedDocuments;
