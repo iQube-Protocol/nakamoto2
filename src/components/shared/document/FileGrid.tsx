@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Card } from '@/components/ui/card';
-import { Loader2, FolderOpen, AlertCircle } from 'lucide-react';
+import { Loader2, FolderOpen } from 'lucide-react';
 import FileIcon from '@/components/shared/agent/document/FileIcon';
 
 interface FileGridProps {
@@ -13,48 +13,45 @@ const FileGrid: React.FC<FileGridProps> = ({
   handleDocumentClick,
   handleBack
 }) => {
-  // Create default values for when context isn't available
-  const defaultValues = {
-    documents: [],
+  // Use state to safely store documents data
+  const [fileData, setFileData] = React.useState({
+    documents: [] as any[],
     isLoading: false,
-    currentFolder: '',
-  };
+    currentFolder: ''
+  });
   
-  // Use state to avoid re-renders when context check fails
-  const [fileState, setFileState] = React.useState<{
-    documents: any[];
-    isLoading: boolean;
-    currentFolder: string;
-  }>(defaultValues);
-  
-  // Try to access context just once to avoid re-renders
+  // Safely access context using dynamic import
   React.useEffect(() => {
-    try {
-      // Import at runtime to avoid circular dependencies
-      const { useDocumentSelectorContext } = require('./DocumentSelectorContext');
-      const contextValue = useDocumentSelectorContext();
-      
-      if (contextValue) {
-        setFileState({
-          documents: Array.isArray(contextValue.documents) ? contextValue.documents : defaultValues.documents,
-          isLoading: contextValue.documentsLoading || defaultValues.isLoading,
-          currentFolder: contextValue.currentFolder || defaultValues.currentFolder
-        });
+    const loadContext = async () => {
+      try {
+        const { useDocumentSelectorContext } = await import('./DocumentSelectorContext');
+        const context = useDocumentSelectorContext();
+        
+        if (context) {
+          setFileData({
+            documents: Array.isArray(context.documents) ? context.documents : [],
+            isLoading: context.documentsLoading || false,
+            currentFolder: context.currentFolder || ''
+          });
+        }
+      } catch (error) {
+        console.warn("FileGrid: Failed to access DocumentSelectorContext", error);
       }
-    } catch (error) {
-      console.warn("FileGrid: DocumentSelectorContext not available, using defaults");
-    }
+    };
+    
+    loadContext();
   }, []);
   
-  if (fileState.isLoading) {
+  // Extract values for easier access
+  const { documents, isLoading, currentFolder } = fileData;
+  
+  if (isLoading) {
     return (
       <div className="flex h-full items-center justify-center py-12">
         <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
       </div>
     );
   }
-  
-  const { documents, currentFolder } = fileState;
   
   return (
     <div className="grid grid-cols-2 gap-2">
