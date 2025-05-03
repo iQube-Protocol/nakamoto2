@@ -14,7 +14,7 @@ const FileGrid: React.FC<FileGridProps> = ({
   handleDocumentClick,
   handleBack
 }) => {
-  const { documents, documentsLoading: isLoading, currentFolder } = useDocumentSelectorContext();
+  const { documents = [], documentsLoading: isLoading, currentFolder } = useDocumentSelectorContext();
   
   if (isLoading) {
     return (
@@ -38,13 +38,13 @@ const FileGrid: React.FC<FileGridProps> = ({
         </Card>
       )}
       
-      {documents.length === 0 && (
+      {(!documents || documents.length === 0) && (
         <div className="col-span-2 text-center py-8 text-muted-foreground">
           {currentFolder ? 'This folder is empty' : 'No documents found in root folder'}
         </div>
       )}
       
-      {documents.map((doc) => (
+      {documents && documents.map((doc) => (
         <Card 
           key={doc.id} 
           className="p-4 cursor-pointer hover:bg-accent"

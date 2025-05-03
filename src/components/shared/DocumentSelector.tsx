@@ -37,9 +37,11 @@ const DocumentSelectorContent: React.FC<{ onDocumentSelect: (document: any) => v
 
   // Wrap the document selection handler to pass the document to the parent component
   const handleDocSelect = (doc: any) => {
+    if (!doc) return;
+    
     const result = handleFileSelection(doc);
     // Only pass non-folder documents to the parent
-    if (!doc.mimeType.includes('folder')) {
+    if (doc.mimeType && !doc.mimeType.includes('folder')) {
       onDocumentSelect(result);
     }
   };
