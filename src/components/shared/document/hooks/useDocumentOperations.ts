@@ -1,6 +1,7 @@
 
 import { useCallback } from 'react';
 import { useMCP } from '@/hooks/mcp/use-mcp';
+import { useDocumentBrowser } from '@/hooks/useDocumentBrowser';
 
 export const useDocumentOperations = () => {
   const { refreshCurrentFolder, documents, isLoading: documentsLoading } = useDocumentBrowser();
@@ -8,7 +9,8 @@ export const useDocumentOperations = () => {
   // Handle refresh with retry count and error handling
   const handleRefreshDocuments = useCallback(async () => {
     try {
-      return await refreshCurrentFolder();
+      await refreshCurrentFolder();
+      return; // Return void to match the expected return type
     } catch (error) {
       console.error('Error refreshing documents:', error);
       throw error;
@@ -21,6 +23,3 @@ export const useDocumentOperations = () => {
     handleRefreshDocuments
   };
 };
-
-// Import inside the file to avoid circular dependencies
-import { useDocumentBrowser } from '@/hooks/useDocumentBrowser';
