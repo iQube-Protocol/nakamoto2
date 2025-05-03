@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { useMCP } from '@/hooks/use-mcp';
 import { toast } from 'sonner';
@@ -21,6 +20,7 @@ const useDocumentContext = ({ conversationId, onDocumentAdded }: UseDocumentCont
     setIsLoading(true);
     try {
       console.log(`Loading documents for conversation: ${conversationId}`);
+      // Pass the conversationId to getDocumentsInContext
       const documents = await mcpContext.getDocumentsInContext(conversationId);
       if (documents && Array.isArray(documents)) {
         console.log(`Found ${documents.length} documents in context`);

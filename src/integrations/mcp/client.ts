@@ -1,4 +1,3 @@
-
 import { MCPClientOptions } from './types';
 import { DriveOperations, createDriveOperations } from './drive/index';
 import { ApiOperations } from './client/api-operations';
@@ -104,5 +103,5 @@ export function getMCPClient(options: MCPClientOptions = {}): MCPClient {
 }
 
 // Re-export types with proper 'export type' syntax for isolatedModules
-export { MCPContext } from './types';
+export type { MCPContext } from './types';
 export type { MCPClientOptions } from './types';

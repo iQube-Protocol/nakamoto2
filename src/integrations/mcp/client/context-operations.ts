@@ -1,4 +1,3 @@
-
 import { MCPClientBase } from './client-base';
 
 /**
@@ -15,15 +14,32 @@ export class ContextOperations extends MCPClientBase {
   /**
    * Add document to the current context
    */
-  addDocumentToContext(documentId: string, documentName: string, documentType: string, content: string): void {
-    this.contextManager.addDocument(documentId, documentName, documentType, content);
+  addDocumentToContext(conversationId: string, document: any, documentType?: string, content?: string): Promise<boolean> {
+    // First set the conversation ID to ensure we're in the right context
+    this.contextManager.setConversationId(conversationId);
+    
+    // Then add the document
+    this.contextManager.addDocument(
+      document.id, 
+      document.name || document.title, 
+      document.mimeType || documentType || 'unknown',
+      content || ''
+    );
+    
+    return Promise.resolve(true);
   }
   
   /**
    * Remove document from the current context
    */
-  removeDocumentFromContext(documentId: string): void {
+  removeDocumentFromContext(conversationId: string, documentId: string): Promise<boolean> {
+    // First set the conversation ID to ensure we're in the right context
+    this.contextManager.setConversationId(conversationId);
+    
+    // Then remove the document
     this.contextManager.removeDocument(documentId);
+    
+    return Promise.resolve(true);
   }
   
   /**
@@ -34,16 +50,16 @@ export class ContextOperations extends MCPClientBase {
   }
   
   /**
-   * Get the document context
+   * Get the document context for a specific conversation
    */
-  getDocumentContext(): Array<{
-    documentId: string;
-    documentName: string;
-    documentType: string;
-    content: string;
-    lastModified?: string;
-  }> | undefined {
-    return this.contextManager.getDocumentContext();
+  getDocumentsInContext(conversationId?: string): Promise<any[]> {
+    if (conversationId) {
+      // If a conversation ID is provided, set it first
+      this.contextManager.setConversationId(conversationId);
+    }
+    
+    const documents = this.contextManager.getDocumentContext() || [];
+    return Promise.resolve(documents);
   }
   
   /**

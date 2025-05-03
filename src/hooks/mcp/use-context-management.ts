@@ -31,11 +31,11 @@ export function useContextManagement(client: MCPClient | null) {
   }, [client]);
   
   // Get documents in context
-  const getDocumentsInContext = useCallback(() => {
+  const getDocumentsInContext = useCallback(async (conversationId?: string) => {
     if (!client) return [];
     
     try {
-      const documents = client.getDocumentContext() || [];
+      const documents = await client.getDocumentsInContext(conversationId);
       return documents;
     } catch (error) {
       console.error('Error getting documents in context:', error);
@@ -44,7 +44,7 @@ export function useContextManagement(client: MCPClient | null) {
   }, [client]);
   
   // Add document to context
-  const addDocumentToContext = useCallback(async (documentId: string, name: string, type: string, content: string) => {
+  const addDocumentToContext = useCallback(async (conversationId: string, document: any, documentType?: string, content?: string) => {
     if (!client) {
       toast.error('MCP client not initialized');
       return false;
@@ -52,12 +52,12 @@ export function useContextManagement(client: MCPClient | null) {
     
     setIsLoading(true);
     try {
-      client.addDocumentToContext(documentId, name, type, content);
+      const success = await client.addDocumentToContext(conversationId, document, documentType, content);
       toast.success('Document added to context', {
-        description: `"${name}" is now available for AI assistance`,
+        description: `"${document.name || document.title}" is now available for AI assistance`,
         duration: 3000,
       });
-      return true;
+      return success;
     } catch (error) {
       console.error('Error adding document to context:', error);
       toast.error('Failed to add document to context', {
@@ -71,7 +71,7 @@ export function useContextManagement(client: MCPClient | null) {
   }, [client]);
   
   // Remove document from context
-  const removeDocumentFromContext = useCallback(async (documentId: string, name?: string) => {
+  const removeDocumentFromContext = useCallback(async (conversationId: string, documentId: string) => {
     if (!client) {
       toast.error('MCP client not initialized');
       return false;
@@ -79,12 +79,12 @@ export function useContextManagement(client: MCPClient | null) {
     
     setIsLoading(true);
     try {
-      client.removeDocumentFromContext(documentId);
+      const success = await client.removeDocumentFromContext(conversationId, documentId);
       toast.success('Document removed from context', {
-        description: name ? `"${name}" removed` : undefined,
+        description: 'Document removed',
         duration: 3000,
       });
-      return true;
+      return success;
     } catch (error) {
       console.error('Error removing document from context:', error);
       toast.error('Failed to remove document from context');
