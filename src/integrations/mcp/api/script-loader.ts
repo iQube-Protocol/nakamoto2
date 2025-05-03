@@ -10,7 +10,7 @@ export class ScriptLoader {
     async?: boolean;
     defer?: boolean;
     timeout?: number;
-  }): Promise<void> {
+  } = {}): Promise<void> {
     return new Promise((resolve, reject) => {
       // Check if script already exists
       const existingScript = document.querySelector(`script[src="${url}"]`);

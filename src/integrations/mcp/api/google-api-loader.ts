@@ -13,7 +13,7 @@ export class GoogleApiLoader {
   private loadAttempts: number = 0;
   private maxLoadAttempts: number = 3;
   private apiLoadTimeout: number = 30000; // 30 seconds default timeout
-  private scriptLoader: ScriptLoader;
+  private scriptLoader: typeof ScriptLoader;
   private onApiLoadStart: LoadCallback | undefined;
   private onApiLoadComplete: LoadCallback | undefined;
   
@@ -24,7 +24,7 @@ export class GoogleApiLoader {
     onApiLoadStart?: LoadCallback;
     onApiLoadComplete?: LoadCallback;
   }) {
-    this.scriptLoader = new ScriptLoader();
+    this.scriptLoader = ScriptLoader; // Use the class directly for static methods
     this.onApiLoadStart = options?.onApiLoadStart;
     this.onApiLoadComplete = options?.onApiLoadComplete;
   }
@@ -46,6 +46,16 @@ export class GoogleApiLoader {
       !!(window as any).gapi && 
       !!(window as any).google?.accounts
     );
+  }
+  
+  /**
+   * Get the GAPI client if available
+   */
+  getGapiClient(): any {
+    if (typeof window !== 'undefined' && (window as any).gapi) {
+      return (window as any).gapi;
+    }
+    return null;
   }
   
   /**
@@ -91,15 +101,15 @@ export class GoogleApiLoader {
   /**
    * Ensure that the Google API is loaded
    */
-  async ensureGoogleApiLoaded(forceReload: boolean = false): Promise<void> {
+  async ensureGoogleApiLoaded(forceReload: boolean = false): Promise<boolean> {
     // If already loaded and not force reloading, return immediately
     if (this.isLoaded() && !forceReload) {
-      return Promise.resolve();
+      return true;
     }
     
     // If already loading, return existing promise
     if (this.loadPromise && !forceReload) {
-      return this.loadPromise;
+      return this.loadPromise.then(() => true);
     }
     
     // Increase load attempts counter
@@ -128,7 +138,7 @@ export class GoogleApiLoader {
         this.onApiLoadComplete();
       }
       
-      return Promise.resolve();
+      return true;
     } catch (error) {
       // Reset the load promise so we can try again
       this.loadPromise = null;
@@ -147,7 +157,7 @@ export class GoogleApiLoader {
         });
       }
       
-      return Promise.reject(error);
+      return false;
     }
   }
   
@@ -182,8 +192,8 @@ export class GoogleApiLoader {
           reject(new Error('GAPI loading timed out'));
         }, this.apiLoadTimeout);
         
-        // Load the script
-        this.scriptLoader.loadScript('https://apis.google.com/js/api.js')
+        // Load the script using the static method
+        ScriptLoader.loadScript('https://apis.google.com/js/api.js', {})
           .then(() => {
             clearTimeout(timeoutId);
             console.log('GAPI script loaded');
@@ -220,8 +230,8 @@ export class GoogleApiLoader {
           reject(new Error('GSI loading timed out'));
         }, this.apiLoadTimeout);
         
-        // Load the script
-        this.scriptLoader.loadScript('https://accounts.google.com/gsi/client')
+        // Load the script using the static method
+        ScriptLoader.loadScript('https://accounts.google.com/gsi/client', {})
           .then(() => {
             clearTimeout(timeoutId);
             console.log('GSI script loaded');

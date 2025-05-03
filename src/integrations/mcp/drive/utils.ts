@@ -1,9 +1,25 @@
 
-import { toast } from 'sonner';
-
 /**
- * Document type utility functions
+ * Check if an error is an authentication error
  */
+export function isAuthError(error: any): boolean {
+  if (!error) return false;
+  
+  // Check for common auth error patterns
+  if (typeof error === 'object') {
+    const errorStr = JSON.stringify(error).toLowerCase();
+    return errorStr.includes('auth') && (
+      errorStr.includes('unauthorized') ||
+      errorStr.includes('unauthenticated') ||
+      errorStr.includes('invalid') ||
+      errorStr.includes('expired') ||
+      errorStr.includes('revoked') ||
+      errorStr.includes('permission')
+    );
+  }
+  
+  return false;
+}
 
 /**
  * Get the appropriate export MIME type for Google Workspace files
@@ -37,72 +53,27 @@ export function getDocumentType(mimeType: string): string {
 }
 
 /**
- * Check if an error is an authentication error
+ * Safely stringify an object for local storage
  */
-export function isAuthError(error: any): boolean {
-  if (!error) return false;
-  
-  // Check for common auth error patterns
-  if (typeof error === 'object') {
-    const errorStr = JSON.stringify(error).toLowerCase();
-    return errorStr.includes('auth') && (
-      errorStr.includes('unauthorized') ||
-      errorStr.includes('unauthenticated') ||
-      errorStr.includes('invalid') ||
-      errorStr.includes('expired') ||
-      errorStr.includes('revoked') ||
-      errorStr.includes('permission')
-    );
+export function safeStringify(obj: any): string {
+  try {
+    return JSON.stringify(obj);
+  } catch (e) {
+    console.error('Error stringifying object:', e);
+    return '{}';
   }
-  
-  return false;
 }
 
 /**
- * Show toasts for different connection states
+ * Safely parse a string from local storage
  */
-export function showConnectionToast(
-  state: 'loading' | 'connecting' | 'error' | 'success' | 'verifying', 
-  message?: string
-): void {
-  const id = 'drive-connect';
+export function safeParse<T>(str: string | null, defaultValue: T): T {
+  if (!str) return defaultValue;
   
-  switch(state) {
-    case 'loading':
-      toast.loading(message || 'Setting up Google Drive connection...', {
-        id,
-        duration: 15000,
-      });
-      break;
-    case 'connecting':
-      toast.loading(message || 'Waiting for Google authentication...', {
-        id,
-        duration: 15000,
-      });
-      break;
-    case 'verifying':
-      toast.loading(message || 'Verifying connection...', {
-        id,
-        duration: 5000,
-      });
-      break;
-    case 'error':
-      toast.dismiss(id);
-      toast.error(message || 'Google Drive connection failed', {
-        description: message || 'Please try again',
-        duration: 4000,
-        id: 'drive-connect-error',
-      });
-      break;
-    case 'success':
-      toast.dismiss(id);
-      toast.success(message || 'Connected to Google Drive', {
-        description: 'Your Google Drive documents are now available',
-        duration: 3000,
-        id: 'drive-connect-success',
-      });
-      break;
-    default:
-      toast.dismiss(id);
+  try {
+    return JSON.parse(str) as T;
+  } catch (e) {
+    console.error('Error parsing string:', e);
+    return defaultValue;
   }
 }

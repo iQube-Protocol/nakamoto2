@@ -1,4 +1,3 @@
-
 import { toast } from 'sonner';
 import { GoogleApiLoader } from './api/google-api-loader';
 import { ContextManager } from './context-manager';
@@ -525,28 +524,6 @@ export class DriveOperations {
   }
   
   /**
-   * Check if an error is an authentication error
-   */
-  private isAuthError(error: any): boolean {
-    if (!error) return false;
-    
-    // Check for common auth error patterns
-    if (typeof error === 'object') {
-      const errorStr = JSON.stringify(error).toLowerCase();
-      return errorStr.includes('auth') && (
-        errorStr.includes('unauthorized') ||
-        errorStr.includes('unauthenticated') ||
-        errorStr.includes('invalid') ||
-        errorStr.includes('expired') ||
-        errorStr.includes('revoked') ||
-        errorStr.includes('permission')
-      );
-    }
-    
-    return false;
-  }
-  
-  /**
    * Fetch a specific document and add its content to the context
    */
   async fetchDocumentContent(documentId: string): Promise<string | null> {
@@ -690,6 +667,28 @@ export class DriveOperations {
   }
   
   /**
+   * Check if an error is an authentication error
+   */
+  private isAuthError(error: any): boolean {
+    if (!error) return false;
+    
+    // Check for common auth error patterns
+    if (typeof error === 'object') {
+      const errorStr = JSON.stringify(error).toLowerCase();
+      return errorStr.includes('auth') && (
+        errorStr.includes('unauthorized') ||
+        errorStr.includes('unauthenticated') ||
+        errorStr.includes('invalid') ||
+        errorStr.includes('expired') ||
+        errorStr.includes('revoked') ||
+        errorStr.includes('permission')
+      );
+    }
+    
+    return false;
+  }
+  
+  /**
    * Check if connected to Google Drive
    */
   isConnectedToDrive(): boolean {
@@ -733,4 +732,11 @@ export class DriveOperations {
       this.connectionCheckInterval = null;
     }
   }
+}
+
+/**
+ * Factory function to create a new DriveOperations instance
+ */
+export function createDriveOperations(config: { apiLoader: GoogleApiLoader, contextManager: ContextManager }): DriveOperations {
+  return new DriveOperations(config.apiLoader, config.contextManager);
 }

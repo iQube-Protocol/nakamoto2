@@ -3,6 +3,7 @@ import { MCPClientOptions } from './types';
 import { DriveOperations, createDriveOperations } from './drive/index';
 import { ApiOperations } from './client/api-operations';
 import { ContextOperations } from './client/context-operations';
+import { GoogleApiLoader } from './api/google-api-loader';
 
 /**
  * Main class for interacting with the MCP (Meta-Contextual Processor) server
@@ -23,7 +24,11 @@ export class MCPClient extends ContextOperations {
    */
   private initializeDriveOperations(): void {
     // Ensure Google API is loaded before initializing DriveOperations
-    this.apiLoader.ensureGoogleApiLoaded().then(() => {
+    this.apiLoader.ensureGoogleApiLoaded().then((success) => {
+      if (!success) {
+        console.warn('Google API failed to load, Drive operations may not be available');
+        return;
+      }
       this.driveOperations = createDriveOperations({
         apiLoader: this.apiLoader,
         contextManager: this.contextManager
@@ -42,7 +47,12 @@ export class MCPClient extends ContextOperations {
       console.warn('Drive operations not initialized, ensuring API is loaded...');
       try {
         // Try to load API and initialize drive operations
-        await this.apiLoader.ensureGoogleApiLoaded();
+        const apiLoaded = await this.apiLoader.ensureGoogleApiLoaded();
+        if (!apiLoaded) {
+          console.error('Failed to load Google API');
+          return false;
+        }
+        
         this.driveOperations = createDriveOperations({
           apiLoader: this.apiLoader,
           contextManager: this.contextManager
@@ -69,7 +79,12 @@ export class MCPClient extends ContextOperations {
       console.warn('Drive operations not initialized, ensuring API is loaded...');
       try {
         // Try to load API and initialize drive operations
-        await this.apiLoader.ensureGoogleApiLoaded();
+        const apiLoaded = await this.apiLoader.ensureGoogleApiLoaded();
+        if (!apiLoaded) {
+          console.error('Failed to load Google API');
+          return [];
+        }
+        
         this.driveOperations = createDriveOperations({
           apiLoader: this.apiLoader,
           contextManager: this.contextManager
@@ -96,7 +111,12 @@ export class MCPClient extends ContextOperations {
       console.warn('Drive operations not initialized, ensuring API is loaded...');
       try {
         // Try to load API and initialize drive operations
-        await this.apiLoader.ensureGoogleApiLoaded();
+        const apiLoaded = await this.apiLoader.ensureGoogleApiLoaded();
+        if (!apiLoaded) {
+          console.error('Failed to load Google API');
+          return null;
+        }
+        
         this.driveOperations = createDriveOperations({
           apiLoader: this.apiLoader,
           contextManager: this.contextManager
@@ -116,6 +136,13 @@ export class MCPClient extends ContextOperations {
   }
   
   /**
+   * Check if API is loaded
+   */
+  isApiLoaded(): boolean {
+    return this.apiLoader.isLoaded();
+  }
+  
+  /**
    * Check if connected to Google Drive
    */
   isConnectedToDrive(): boolean {
@@ -130,39 +157,41 @@ export class MCPClient extends ContextOperations {
   }
   
   /**
-   * Reset the Google Drive connection
+   * Reset Drive connection
    */
   resetDriveConnection(): void {
-    this.driveOperations?.setAuthenticationState(false);
-  }
-  
-  /**
-   * Clean up resources
-   */
-  cleanup(): void {
-    this.driveOperations?.cleanup();
-  }
-  
-  /**
-   * Check if API is loaded
-   */
-  isApiLoaded(): boolean {
-    return this.apiLoader.isLoaded();
-  }
-  
-  /**
-   * Force reload the Google API
-   */
-  reloadGoogleApi(): void {
-    return this.apiLoader.reloadGoogleApi();
+    if (this.driveOperations) {
+      this.driveOperations.setAuthenticationState(false);
+    }
+    
+    // Clear local storage
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('gdrive-connected');
+      localStorage.removeItem('gdrive-auth-token');
+    }
   }
 }
 
-// Function to create a new MCP client
+/**
+ * Create a new MCP client
+ */
 export function getMCPClient(options: MCPClientOptions = {}): MCPClient {
-  return new MCPClient(options);
+  try {
+    // Use a singleton pattern to prevent multiple instances
+    if (typeof window !== 'undefined') {
+      if (!(window as any).__mcpClient) {
+        (window as any).__mcpClient = new MCPClient(options);
+      }
+      return (window as any).__mcpClient;
+    }
+    
+    // Fallback to creating a new instance if window is not available
+    return new MCPClient(options);
+  } catch (error) {
+    console.error('Error creating MCP client:', error);
+    throw error;
+  }
 }
 
-// Re-export types with proper 'export type' syntax for isolatedModules
-export type { MCPContext } from './types';
+// Export types
 export type { MCPClientOptions } from './types';

@@ -16,7 +16,7 @@ export interface DocumentSelectorContextProps {
   connectionAttempts: number;
   
   // Folder navigation
-  folderHistory: Array<{ id: string; name: string }>;
+  folderHistory: Array<FolderHistory>;
   currentFolder?: string;
   navigateToFolder: (folderId: string, historyIndex?: number) => void;
   navigateToRoot: () => void;
@@ -28,4 +28,10 @@ export interface DocumentSelectorContextProps {
   handleRefreshDocuments: () => Promise<void>;
   handleConnectClick: () => Promise<boolean>;
   handleResetConnection: () => void;
+}
+
+// Add the missing FolderHistory type
+export interface FolderHistory {
+  id: string;
+  name: string;
 }

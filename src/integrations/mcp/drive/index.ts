@@ -1,4 +1,5 @@
 
-// Re-export all drive-related classes and functions
-export { DriveOperations, createDriveOperations } from './drive-operations';
-export type { ConnectionStatus, DriveOperationsConfig } from './types';
+export { DriveOperations } from '../drive-operations';
+export { createDriveOperations } from '../drive-operations';
+export * from './types';
+export * from './utils';
