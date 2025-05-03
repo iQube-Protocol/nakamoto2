@@ -107,7 +107,7 @@ export function useDocumentOperations(
   }, [client, driveConnected, setIsLoading]);
   
   // Force refresh documents
-  const forceRefreshDocuments = useCallback(async (folderId?: string) => {
+  const forceRefreshDocuments = useCallback(async (folderId?: string): Promise<any[]> => {
     return listDocuments(folderId);
   }, [listDocuments]);
 
