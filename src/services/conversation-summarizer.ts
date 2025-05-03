@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -17,6 +16,14 @@ const SUMMARIZATION_THRESHOLD = 10; // Summarize after 10 messages in a conversa
 const SUMMARY_EXPIRATION_DAYS = 30; // Summaries expire after 30 days
 
 /**
+ * Validates that a conversationId is in the proper UUID format
+ */
+function isValidUUID(id: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(id);
+}
+
+/**
  * Checks if a conversation needs summarization based on the number of interactions
  */
 export const checkIfSummarizationNeeded = async (
@@ -24,6 +31,12 @@ export const checkIfSummarizationNeeded = async (
   agentType: 'learn' | 'earn' | 'connect'
 ): Promise<boolean> => {
   try {
+    // Validate conversation ID format first
+    if (!isValidUUID(conversationId)) {
+      console.warn(`Invalid conversationId format: ${conversationId}, skipping summarization check`);
+      return false;
+    }
+
     // Get the current user session to ensure we have a user_id
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.user?.id) {
@@ -32,14 +45,14 @@ export const checkIfSummarizationNeeded = async (
     }
     
     // Count unsummarized interactions for this conversation
-    // Fix: Use proper JSON syntax for the filter
+    // Use proper PostgreSQL syntax for JSON column filtering
     const { data: interactions, error } = await supabase
       .from('user_interactions')
       .select('id')
       .eq('user_id', session.user.id)
       .eq('interaction_type', agentType)
       .eq('summarized', false)
-      .filter('metadata', 'cs', `{"conversationId":"${conversationId}"}`);
+      .filter('metadata->conversationId', 'eq', conversationId);
     
     if (error) {
       console.error('Error checking for summarization:', error);
@@ -178,7 +191,7 @@ export const getHistoricalContextForPrompt = async (
  * Prepares a conversation for a new session by checking if summarization 
  * is needed for past unsummarized interactions
  * 
- * Now with improved error handling to prevent blocking the application
+ * Now with improved validation and error handling to prevent blocking the application
  */
 export const prepareConversationContext = async (
   agentType: 'learn' | 'earn' | 'connect',
@@ -195,8 +208,8 @@ export const prepareConversationContext = async (
     // If we have an existing conversation ID, check if summarization is needed
     if (conversationId) {
       try {
-        // Validate conversationId format before checking summarization
-        if (typeof conversationId === 'string' && conversationId.match(/^[0-9a-f-]+$/)) {
+        // Validate conversationId format
+        if (isValidUUID(conversationId)) {
           const needsSummarization = await checkIfSummarizationNeeded(conversationId, agentType);
           
           if (needsSummarization) {

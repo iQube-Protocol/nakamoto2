@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -10,7 +9,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { FileText, AlertCircle } from 'lucide-react';
-import { DocumentSelectorProvider } from './document/DocumentSelectorContext';
+import { DocumentSelectorProvider, useDocumentSelectorContext } from './document/DocumentSelectorContext';
 import ApiLoadingAlert from './document/ApiLoadingAlert';
 import ApiErrorAlert from './document/ApiErrorAlert';
 import ConnectionErrorAlert from './document/ConnectionErrorAlert';
@@ -116,9 +115,7 @@ const DocumentSelectorContent: React.FC<{ onDocumentSelect: (document: any) => v
       {!contextState.driveConnected ? (
         <ConnectionInstructions />
       ) : (
-        <DocumentSelectorProvider>
-          <DocumentBrowser />
-        </DocumentSelectorProvider>
+        <DocumentBrowser />
       )}
       
       <DocumentDialogFooter />
