@@ -57,6 +57,25 @@ export function useConnectionReset(
           // Call the reset function from MCP client
           mcpResetConnection();
           
+          // Sign out of Google Auth if available
+          if (typeof window !== 'undefined' && window.google?.accounts) {
+            try {
+              console.log('Signing out of Google accounts');
+              window.google.accounts.id.disableAutoSelect();
+              // Additional Google sign-out if available
+              if (window.gapi?.auth2) {
+                const auth2 = window.gapi.auth2.getAuthInstance();
+                if (auth2) {
+                  auth2.signOut().then(() => {
+                    console.log('User signed out of Google Auth.');
+                  });
+                }
+              }
+            } catch (e) {
+              console.error('Error signing out of Google accounts:', e);
+            }
+          }
+          
           // Short-lived success toast
           toast.dismiss('reset-connection');
           toast.success('Connection reset complete', {
