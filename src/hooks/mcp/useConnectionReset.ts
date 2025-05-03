@@ -54,6 +54,7 @@ export function useConnectionReset(
       if (mcpClient) {
         // Use MCP reset if available
         if (mcpResetConnection) {
+          // Call the reset function from MCP client
           mcpResetConnection();
           
           // Short-lived success toast
@@ -64,6 +65,11 @@ export function useConnectionReset(
             id: 'reset-success',
           });
         } else {
+          // If no reset function provided but client exists, try to reset via the client directly
+          if (mcpClient.resetDriveConnection) {
+            mcpClient.resetDriveConnection();
+          }
+          
           // Clear connection status in localStorage as fallback
           localStorage.removeItem('gdrive-connected');
           localStorage.removeItem('gdrive-auth-token');
@@ -90,6 +96,13 @@ export function useConnectionReset(
       
       // Clear storage
       clearConnectionStorage();
+      
+      // Reload the page if we're in development mode to ensure a clean slate
+      if (process.env.NODE_ENV === 'development') {
+        setTimeout(() => {
+          window.location.reload();
+        }, 1500);
+      }
     } catch (error) {
       console.error('Error during connection reset:', error);
       

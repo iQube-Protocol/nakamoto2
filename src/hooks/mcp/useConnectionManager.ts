@@ -79,7 +79,7 @@ export function useConnectionManager(
         
         toast.dismiss('drive-connection');
         toast.error('Connection timed out', {
-          description: 'The connection attempt took too long. Please try again.',
+          description: 'The connection attempt took too long. Please try again or reset the connection.',
           duration: 5000,
           id: 'drive-connection-timeout',
         });
@@ -95,8 +95,17 @@ export function useConnectionManager(
         apiKeyLength: apiKey ? apiKey.length : 0
       });
       
+      // Show connecting toast
+      toast.loading('Connecting to Google Drive...', {
+        id: 'drive-connecting',
+        duration: 10000,
+      });
+      
       const success = await connectToDrive(clientId, apiKey);
       console.log('Drive connection result:', success);
+      
+      // Dismiss connecting toast
+      toast.dismiss('drive-connecting');
       
       // Save the last connection result
       setLastConnectionResult(success);
@@ -107,6 +116,20 @@ export function useConnectionManager(
       
       // Update connection status
       setConnectionStatus(success ? 'connected' : 'error');
+      
+      // Show appropriate toast based on result
+      if (success) {
+        toast.success('Connected to Google Drive', {
+          duration: 3000,
+          id: 'drive-connect-success',
+        });
+      } else {
+        toast.error('Failed to connect to Google Drive', {
+          description: 'Please check your credentials or reset the connection',
+          duration: 4000,
+          id: 'drive-connect-error',
+        });
+      }
       
       // If failed but we have retries left, try again
       if (!success && retryCount < MAX_AUTO_RETRIES) {
@@ -119,6 +142,9 @@ export function useConnectionManager(
       console.error('Connection error:', error);
       setLastConnectionResult(false);
       setConnectionStatus('error');
+      
+      // Dismiss connecting toast
+      toast.dismiss('drive-connecting');
       
       // Check if this might be an API loading issue
       if (error instanceof Error && (error.message.includes('gapi') || 
@@ -180,10 +206,10 @@ export function useConnectionManager(
     apiErrorCount,
     lastConnectionResult,
     connectionStatus,
-    setConnectionStatus,
     retryCount,
     
-    // Actions
+    // Setters
+    setConnectionStatus,
     setConnectionInProgress,
     setConnectionAttempts,
     setConnectionTimeout,

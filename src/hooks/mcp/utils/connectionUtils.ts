@@ -1,84 +1,80 @@
 
+import { toast } from 'sonner';
+
 /**
  * Save Google Drive credentials to localStorage
  */
 export function saveCredentials(clientId: string, apiKey: string): void {
   try {
-    if (clientId) {
-      localStorage.setItem('gdrive-client-id', clientId);
+    if (!clientId || !apiKey) {
+      console.warn('Attempted to save empty credentials');
+      return;
     }
     
-    if (apiKey) {
-      localStorage.setItem('gdrive-api-key', apiKey);
-    }
-    
-    console.log('Connection credentials saved to localStorage');
-  } catch (e) {
-    console.error('Failed to save credentials to localStorage:', e);
+    localStorage.setItem('gdrive-client-id', clientId);
+    localStorage.setItem('gdrive-api-key', apiKey);
+    console.log('Google Drive credentials saved to localStorage');
+  } catch (error) {
+    console.error('Error saving credentials:', error);
   }
 }
 
 /**
  * Load Google Drive credentials from localStorage
  */
-export function loadCredentials(): { clientId: string; apiKey: string } {
-  try {
-    const clientId = localStorage.getItem('gdrive-client-id') || '';
-    const apiKey = localStorage.getItem('gdrive-api-key') || '';
-    
-    return { clientId, apiKey };
-  } catch (e) {
-    console.error('Failed to load credentials from localStorage:', e);
-    return { clientId: '', apiKey: '' };
-  }
+export function loadCredentials(): { clientId: string, apiKey: string } {
+  const clientId = localStorage.getItem('gdrive-client-id') || '';
+  const apiKey = localStorage.getItem('gdrive-api-key') || '';
+  
+  return { clientId, apiKey };
 }
 
 /**
- * Clear all connection-related storage items
+ * Clear connection storage (credentials, tokens, etc.)
  */
 export function clearConnectionStorage(): void {
   try {
-    // Remove all Google Drive connection related items
+    // Clear Google Drive credentials and state
     localStorage.removeItem('gdrive-client-id');
     localStorage.removeItem('gdrive-api-key');
     localStorage.removeItem('gdrive-connected');
     localStorage.removeItem('gdrive-auth-token');
     
-    console.log('Connection storage cleared');
-  } catch (e) {
-    console.error('Failed to clear connection storage:', e);
+    // Clear any cached folder data
+    for (const key in sessionStorage) {
+      if (key.startsWith('gdrive-folder-')) {
+        sessionStorage.removeItem(key);
+      }
+    }
+    
+    // Clear any cached document content
+    for (const key in localStorage) {
+      if (key.startsWith('gdrive-doc-')) {
+        localStorage.removeItem(key);
+      }
+    }
+    
+    console.log('Google Drive connection storage cleared');
+  } catch (error) {
+    console.error('Error clearing connection storage:', error);
   }
 }
 
 /**
- * Dismiss all connection-related toast notifications
+ * Dismiss any toasts related to Drive connection
  */
 export function dismissConnectionToasts(): void {
-  // Dismiss any existing toasts to prevent duplicate errors
-  const toastIdsToRemove = [
-    'drive-connect', 
-    'drive-connect-error', 
-    'drive-connect-success',
-    'drive-connect-inprogress', 
-    'drive-connect-validation',
-    'drive-connection',
-    'drive-connection-timeout',
-    'api-error',
-    'connection-error',
-    'missing-credentials'
-  ];
-  
-  try {
-    // Toast library might expose a function to get all active toasts
-    if (typeof window !== 'undefined') {
-      const { toast } = require('sonner');
-      
-      // If sonner has a dismiss method, use it
-      if (toast && typeof toast.dismiss === 'function') {
-        toastIdsToRemove.forEach(id => toast.dismiss(id));
-      }
-    }
-  } catch (e) {
-    console.error('Failed to dismiss toasts:', e);
-  }
+  toast.dismiss('drive-connection');
+  toast.dismiss('drive-connect-validation');
+  toast.dismiss('drive-connect-inprogress');
+  toast.dismiss('drive-connection-timeout');
+  toast.dismiss('drive-connect-success');
+  toast.dismiss('drive-connect-error');
+  toast.dismiss('api-error');
+  toast.dismiss('connection-error');
+  toast.dismiss('reset-connection');
+  toast.dismiss('reset-success');
+  toast.dismiss('reset-info');
+  toast.dismiss('reset-error');
+  toast.dismiss('drive-connecting');
 }

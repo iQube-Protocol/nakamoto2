@@ -16,12 +16,23 @@ const DocumentDialogFooter: React.FC = () => {
   
   if (!driveConnected) return null;
   
+  const handleResetClick = () => {
+    // Call the reset handler and close the dialog
+    handleResetConnection();
+    setIsOpen(false);
+    
+    // Optional: Reload the page after a short delay (helps with complete reset)
+    if (process.env.NODE_ENV !== 'production') {
+      setTimeout(() => window.location.reload(), 1500);
+    }
+  };
+  
   return (
     <DialogFooter>
       <Button 
         variant="outline" 
         size="sm"
-        onClick={handleResetConnection} 
+        onClick={handleResetClick} 
         className="flex items-center gap-2 bg-purple-500 hover:bg-purple-600 text-white" 
       >
         <RefreshCw className="h-3.5 w-3.5" />

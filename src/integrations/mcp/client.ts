@@ -1,4 +1,3 @@
-
 import { MCPClientOptions } from './types';
 import { DriveOperations, createDriveOperations } from './drive/index';
 import { ApiOperations } from './client/api-operations';
@@ -184,18 +183,24 @@ export class MCPClient extends ContextOperations {
   }
   
   /**
-   * Reset Drive connection
+   * Reset Drive connection with enhanced functionality
    */
   resetDriveConnection(): void {
-    if (this.driveOperations) {
-      this.driveOperations.setAuthenticationState(false);
-    }
-    
-    // Clear local storage
+    // First, clean up stored credentials
     if (typeof window !== 'undefined') {
       localStorage.removeItem('gdrive-connected');
       localStorage.removeItem('gdrive-auth-token');
     }
+    
+    // Reset API loader state directly
+    this.apiLoader.fullReset();
+    
+    // Then, if drive operations exist, reset them too
+    if (this.driveOperations) {
+      this.driveOperations.resetConnection();
+    }
+    
+    console.log('MCP: Drive connection reset completed');
   }
 }
 

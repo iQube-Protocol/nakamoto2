@@ -1,3 +1,4 @@
+
 import { ConnectionStatus, DriveOperationsConfig } from './types';
 import { AuthManager } from './auth-manager';
 import { ConnectionMonitor } from './connection-monitor';
@@ -107,6 +108,22 @@ export class DriveOperations {
    */
   setAuthenticationState(state: boolean): void {
     this.authManager.setAuthenticationState(state);
+  }
+  
+  /**
+   * Completely reset the Drive connection
+   */
+  resetConnection(): void {
+    // Reset authentication state
+    this.authManager.setAuthenticationState(false);
+    
+    // Reset API loader state
+    this.apiLoader.fullReset();
+    
+    // Clean up connection monitor
+    this.connectionMonitor.cleanup();
+    
+    console.log('DriveOperations: Drive connection fully reset');
   }
   
   /**

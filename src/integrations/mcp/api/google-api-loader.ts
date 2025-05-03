@@ -1,4 +1,3 @@
-
 import { ScriptLoader } from './script-loader';
 
 // Define callback types
@@ -98,6 +97,37 @@ export class GoogleApiLoader {
    */
   resetLoadAttempts(): void {
     this.loadAttempts = 0;
+  }
+  
+  /**
+   * Completely reset the Google API connection state
+   * This will:
+   * 1. Reset the loaded state
+   * 2. Reset load attempts
+   * 3. Clean up existing auth state if possible
+   * 4. Clear any pending promises
+   */
+  fullReset(): void {
+    this.resetLoadedState();
+    this.resetLoadAttempts();
+    this.loadPromise = null;
+    
+    // Try to sign out if gapi is available
+    if (typeof window !== 'undefined' && (window as any).gapi && (window as any).gapi.auth2) {
+      try {
+        const authInstance = (window as any).gapi.auth2.getAuthInstance();
+        if (authInstance) {
+          console.log('GoogleApiLoader: Signing out of Google Auth');
+          authInstance.signOut().catch((e: any) => {
+            console.warn('GoogleApiLoader: Error during signout:', e);
+          });
+        }
+      } catch (e) {
+        console.warn('GoogleApiLoader: Error accessing auth instance during reset', e);
+      }
+    }
+    
+    console.log('GoogleApiLoader: API connection fully reset');
   }
   
   /**
