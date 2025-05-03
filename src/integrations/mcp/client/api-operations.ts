@@ -1,11 +1,21 @@
 
 import { MCPContext } from '../types';
 import { MCPClientBase } from './client-base';
+import axios from 'axios';
 
 /**
  * API operations for communicating with the MCP server
  */
 export class ApiOperations extends MCPClientBase {
+  // Add axiosInstance property
+  protected axiosInstance = axios.create({
+    baseURL: 'https://api.example.com', // Replace with actual API URL when available
+    timeout: 10000,
+    headers: {
+      'Content-Type': 'application/json'
+    }
+  });
+  
   /**
    * Submit the current context to the MCP server
    */

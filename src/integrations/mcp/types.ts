@@ -32,6 +32,8 @@ export interface MCPClientOptions {
   serverUrl?: string;
   authToken?: string;
   metisActive?: boolean;
+  debug?: boolean;
+  apiLoadTimeout?: number;
   onApiLoadStart?: () => void;
   onApiLoadComplete?: () => void;
 }
