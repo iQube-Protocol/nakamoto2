@@ -10,7 +10,7 @@ import { DriveConnectionHook } from './types/driveConnectionTypes';
 export function useDriveConnection(): DriveConnectionHook {
   const { 
     driveConnected, 
-    connectToDrive, 
+    connectToDrive: mcpConnectToDrive, 
     isLoading, 
     client, 
     isApiLoading, 
@@ -22,7 +22,7 @@ export function useDriveConnection(): DriveConnectionHook {
   const { clientId: savedClientId, apiKey: savedApiKey } = loadCredentials();
   
   // Connection manager
-  const connectionManager = useConnectionManager(connectToDrive);
+  const connectionManager = useConnectionManager(mcpConnectToDrive);
   const {
     clientId,
     setClientId,
@@ -90,7 +90,13 @@ export function useDriveConnection(): DriveConnectionHook {
     apiKey,
     setClientId,
     setApiKey,
-    handleConnect,
+    connectToDrive: async (clientId: string, apiKey: string): Promise<boolean> => {
+      console.log("Drive connection: Connecting with credentials", { 
+        clientIdLength: clientId?.length, 
+        apiKeyLength: apiKey ? '[PROVIDED]' : '[MISSING]'
+      });
+      return mcpConnectToDrive(clientId, apiKey);
+    },
     resetConnection,
     
     // These are included to satisfy the TypeScript interface but not used directly
