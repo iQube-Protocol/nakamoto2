@@ -39,6 +39,7 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
   if (!user) {
     console.log(`ProtectedRoute - Redirecting to signin page from ${location.pathname}`);
     // Save the attempted URL to redirect back after login
+    // Using sessionStorage to persist across page refreshes
     sessionStorage.setItem('redirectAfterLogin', location.pathname);
     return <Navigate to="/signin" replace />;
   }

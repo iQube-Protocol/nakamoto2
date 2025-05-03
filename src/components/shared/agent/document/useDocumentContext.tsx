@@ -18,7 +18,15 @@ const useDocumentContext = ({ conversationId, onDocumentAdded }: UseDocumentCont
   const addDocumentToContext = async (conversationId: string, document: any): Promise<boolean> => {
     if (mcpContext.client && typeof mcpContext.client.addDocumentToContext === 'function') {
       try {
-        return await mcpContext.client.addDocumentToContext(conversationId, document);
+        // The MCP client expects 4 parameters: documentId, documentName, documentType, content
+        const documentType = document.mimeType?.split('/')[1] || 'plain';
+        mcpContext.client.addDocumentToContext(
+          document.id, 
+          document.name, 
+          documentType, 
+          document.content || ''
+        );
+        return true;
       } catch (error) {
         console.error('Error in addDocumentToContext:', error);
         return false;
@@ -36,15 +44,16 @@ const useDocumentContext = ({ conversationId, onDocumentAdded }: UseDocumentCont
   };
   
   const getDocumentsInContext = async (conversationId: string): Promise<any[]> => {
-    if (mcpContext.client && typeof mcpContext.client.getDocumentsInContext === 'function') {
+    if (mcpContext.client && typeof mcpContext.client.getDocumentContext === 'function') {
       try {
-        return await mcpContext.client.getDocumentsInContext(conversationId);
+        // Using the correct method name: getDocumentContext instead of getDocumentsInContext
+        return mcpContext.client.getDocumentContext(conversationId) || [];
       } catch (error) {
         console.error('Error in getDocumentsInContext:', error);
         return [];
       }
     } else {
-      console.log('getDocumentsInContext not available, using localStorage fallback');
+      console.log('getDocumentContext not available, using localStorage fallback');
       // Fallback to localStorage if MCP method is not available
       if (conversationId) {
         const storedDocs = localStorage.getItem(`docs-${conversationId}`);
@@ -63,7 +72,8 @@ const useDocumentContext = ({ conversationId, onDocumentAdded }: UseDocumentCont
   const removeDocumentFromContext = async (conversationId: string, documentId: string): Promise<boolean> => {
     if (mcpContext.client && typeof mcpContext.client.removeDocumentFromContext === 'function') {
       try {
-        return await mcpContext.client.removeDocumentFromContext(conversationId, documentId);
+        // The removeDocumentFromContext method only expects one argument: documentId
+        return mcpContext.client.removeDocumentFromContext(documentId) || false;
       } catch (error) {
         console.error('Error in removeDocumentFromContext:', error);
         return false;
