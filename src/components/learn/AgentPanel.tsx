@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { AgentInterface } from '@/components/shared/agent';
 import { useToast } from '@/components/ui/use-toast';
@@ -14,6 +13,7 @@ interface AgentPanelProps {
   conversationId: string | null;
   setConversationId: (id: string | null) => void;
   isPanelCollapsed: boolean;
+  onDocumentAdded?: () => void; // Added this prop to match what's passed in LearnInterface.tsx
 }
 
 const AgentPanel = ({ 
@@ -21,7 +21,8 @@ const AgentPanel = ({
   blakQube,
   conversationId, 
   setConversationId,
-  isPanelCollapsed 
+  isPanelCollapsed,
+  onDocumentAdded 
 }: AgentPanelProps) => {
   const { toast } = useToast();
   const [metisActive, setMetisActive] = useState<boolean>(false);
@@ -90,6 +91,11 @@ const AgentPanel = ({
   const handleDocumentContextUpdated = () => {
     setDocumentContextUpdated(prev => prev + 1);
     console.log('Document context updated, triggering refresh');
+    
+    // Call the onDocumentAdded callback if it exists
+    if (onDocumentAdded) {
+      onDocumentAdded();
+    }
   };
 
   const handleAIMessage = async (message: string) => {
