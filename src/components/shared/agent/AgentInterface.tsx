@@ -1,4 +1,3 @@
-
 import React, { useState, useRef, useEffect } from 'react';
 import { AgentMessage } from '@/lib/types';
 import { Card } from '@/components/ui/card';
@@ -261,7 +260,7 @@ const AgentInterface = ({
           </TabsList>
         </div>
 
-        <TabsContent value="chat" className="flex-1 flex flex-col p-0 m-0">
+        <TabsContent value="chat" className="flex-1 flex flex-col p-0 m-0 overflow-hidden">
           {messages.length === 0 ? (
             <EmptyConversation agentType={agentType} />
           ) : (
@@ -283,15 +282,16 @@ const AgentInterface = ({
           />
         </TabsContent>
         
-        <TabsContent value="documents" className="flex-1 m-0 overflow-hidden">
+        <TabsContent value="documents" className="flex-1 p-0 m-0 overflow-hidden">
           <DocumentContext 
             conversationId={conversationId}
             onDocumentAdded={handleDocumentAdded}
             isInTabView={true}
+            isActiveTab={activeTab === 'documents'}
           />
         </TabsContent>
 
-        <TabsContent value="knowledge" className="flex-1 m-0 overflow-hidden">
+        <TabsContent value="knowledge" className="flex-1 p-0 m-0 overflow-hidden">
           <KnowledgeBase agentType={agentType} />
         </TabsContent>
       </Tabs>

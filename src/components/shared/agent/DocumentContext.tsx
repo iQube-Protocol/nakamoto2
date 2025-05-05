@@ -34,21 +34,35 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
   const [selectedDocuments, setSelectedDocuments] = useState<any[]>([]);
   const [viewingDocument, setViewingDocument] = useState<{id: string, content: string, name: string, mimeType: string} | null>(null);
   
-  // Get documents from context - only load once when component mounts or when conversation changes
+  // Get documents from context when component mounts, conversation changes, or tab becomes active
   useEffect(() => {
-    if (client && conversationId) {
-      const context = client.getModelContext();
-      if (context?.documentContext) {
-        const docs = context.documentContext.map(doc => ({
-          id: doc.documentId,
-          name: doc.documentName,
-          mimeType: `application/${doc.documentType}`,
-          content: doc.content
-        }));
-        setSelectedDocuments(docs);
+    const loadDocumentsFromContext = () => {
+      if (client && conversationId) {
+        const context = client.getModelContext();
+        if (context?.documentContext) {
+          const docs = context.documentContext.map(doc => ({
+            id: doc.documentId,
+            name: doc.documentName,
+            mimeType: `application/${doc.documentType}`,
+            content: doc.content
+          }));
+          setSelectedDocuments(docs);
+          console.log('Loaded documents from context:', docs.length);
+        }
       }
-    }
-  }, [client, conversationId]);
+    };
+    
+    loadDocumentsFromContext();
+    
+    // Set up an interval to periodically check for context updates when tab is active
+    const intervalId = setInterval(() => {
+      if (isActiveTab) {
+        loadDocumentsFromContext();
+      }
+    }, 5000); // Check every 5 seconds when tab is active
+    
+    return () => clearInterval(intervalId);
+  }, [client, conversationId, isActiveTab]);
   
   const handleDocumentSelect = async (document: any) => {
     if (!client) {
@@ -152,7 +166,7 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
   };
   
   return (
-    <div className="h-full flex flex-col">
+    <div className="flex flex-col h-full">
       <div className="flex items-center justify-between p-4 pb-2">
         <h3 className="text-sm font-medium">Documents in Context</h3>
         <DocumentSelector 
@@ -169,14 +183,14 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
       
       <Separator className="my-2" />
       
-      <div className="flex-grow overflow-auto p-4 pt-2">
+      <div className="flex-1 overflow-auto">
         {isLoading ? (
           <div className="flex justify-center p-4">
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
           </div>
         ) : selectedDocuments.length > 0 ? (
-          <ScrollArea className="h-full w-full">
-            <div className="space-y-2">
+          <ScrollArea className="h-full w-full px-4">
+            <div className="space-y-2 pb-4">
               {selectedDocuments.map(doc => (
                 <Card key={doc.id} className="p-2 flex items-center justify-between">
                   <div className="flex items-center gap-2 truncate">
@@ -209,7 +223,7 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
             </div>
           </ScrollArea>
         ) : (
-          <div className="text-center py-8 text-sm text-muted-foreground">
+          <div className="text-center p-8 text-sm text-muted-foreground">
             No documents in context. Add documents to enhance your agent's responses.
           </div>
         )}

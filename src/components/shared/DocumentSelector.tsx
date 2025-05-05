@@ -42,19 +42,26 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
   const [currentFolder, setCurrentFolder] = useState('');
   const [folderHistory, setFolderHistory] = useState<{id: string, name: string}[]>([]);
   const [reconnecting, setReconnecting] = useState(false);
+  const [justConnected, setJustConnected] = useState(false);
   
-  // Fetch documents when dialog opens or folder changes
+  // Fetch documents when dialog opens, folder changes, or after successful connection
   useEffect(() => {
     if (isOpen && driveConnected) {
       listDocuments(currentFolder);
+      
+      // Clear the "just connected" flag after refreshing
+      if (justConnected) {
+        setJustConnected(false);
+      }
     }
-  }, [isOpen, driveConnected, currentFolder, listDocuments]);
+  }, [isOpen, driveConnected, currentFolder, justConnected, listDocuments]);
   
   // Handle successful connection
   const handleConnect = async () => {
     const success = await connectToDrive(clientId, apiKey);
     if (success) {
-      // Documents will be automatically fetched by the hook after successful connection
+      // Mark as just connected to trigger an automatic refresh
+      setJustConnected(true);
       toast.success('Connected to Google Drive successfully');
     }
   };
