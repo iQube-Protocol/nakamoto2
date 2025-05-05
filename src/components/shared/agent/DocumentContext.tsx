@@ -6,7 +6,7 @@ import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { useMCP } from '@/hooks/use-mcp';
-import DocumentSelector from '../DocumentSelector';
+import DocumentSelector from '../document-selector';
 import { FileText, Trash2, Loader2, Eye, FileSpreadsheet, Presentation, File, Image, Video, Headphones } from 'lucide-react';
 import {
   Dialog,
