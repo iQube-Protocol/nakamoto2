@@ -29,6 +29,7 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
   const { client, fetchDocument, isLoading } = useMCP();
   const [selectedDocuments, setSelectedDocuments] = useState<any[]>([]);
   const [viewingDocument, setViewingDocument] = useState<{id: string, content: string, name: string, mimeType: string} | null>(null);
+  const [documentSelectorDialogOpen, setDocumentSelectorDialogOpen] = useState(false);
   
   // Get documents from context
   useEffect(() => {
@@ -65,6 +66,10 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
       document.content = content;
       setSelectedDocuments(prev => [...prev, document]);
       toast.success('Document added to context');
+      
+      // Ensure document context is visible after adding a document
+      setDocumentSelectorDialogOpen(false);
+      
       if (onDocumentAdded) onDocumentAdded();
     }
   };

@@ -13,7 +13,8 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Input } from '@/components/ui/input';
-import { Loader2, FileText, FolderOpen, File, Image, Video, Headphones, FileSpreadsheet, Presentation } from 'lucide-react';
+import { Loader2, FileText, FolderOpen, File, Image, Video, Headphones, FileSpreadsheet, Presentation, RefreshCw } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface DocumentSelectorProps {
   onDocumentSelect: (document: any) => void;
@@ -49,6 +50,38 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
     const success = await connectToDrive(clientId, apiKey);
     if (success) {
       listDocuments();
+    }
+  };
+
+  // Handle reconnection to Google Drive
+  const handleReconnect = async () => {
+    try {
+      // Clear connection cache first
+      localStorage.removeItem('gdrive-connected');
+      
+      // Clear any Google API session tokens
+      if (window.google && window.google.accounts) {
+        window.google.accounts.oauth2.revoke(undefined, () => {
+          console.log('Google OAuth tokens revoked');
+        });
+      }
+      
+      // Clear GAPI auth
+      if (window.gapi && window.gapi.auth) {
+        window.gapi.auth.setToken(null);
+      }
+      
+      toast.info('Google Drive connection reset', {
+        description: 'Please re-enter your credentials to reconnect'
+      });
+      
+      // Reset the connection state and ask for credentials again
+      window.location.reload();
+    } catch (error) {
+      console.error('Error during reconnection:', error);
+      toast.error('Failed to reset connection', {
+        description: 'Please try refreshing the page'
+      });
     }
   };
   
@@ -250,6 +283,14 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
             </Button>
           ) : (
             <>
+              <Button 
+                variant="outline" 
+                onClick={handleReconnect} 
+                className="gap-2"
+              >
+                <RefreshCw className="h-4 w-4" />
+                Reset Connection
+              </Button>
               <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
               <Button onClick={() => {
                 // Refresh the current folder

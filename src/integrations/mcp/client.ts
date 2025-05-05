@@ -112,6 +112,7 @@ export class MCPClient {
       this.context = {
         conversationId: newConversationId,
         messages: [],
+        documentContext: [], // Initialize empty document context
         metadata: {
           environment: "web3_education",
           modelPreference: "gpt-4o-mini",
@@ -178,6 +179,7 @@ export class MCPClient {
       try {
         // Save to local storage for now (in production, would likely use Supabase or other DB)
         localStorage.setItem(`mcp-context-${this.conversationId}`, JSON.stringify(this.context));
+        console.log(`MCP: Context persisted for conversation ${this.conversationId}`);
       } catch (error) {
         console.error('MCP: Error persisting context:', error);
       }
@@ -371,6 +373,7 @@ export class MCPClient {
           });
         }
         
+        // Save changes to context
         this.persistContext();
         console.log(`MCP: Added/updated document ${fileName} to context`);
       }
@@ -463,6 +466,19 @@ export class MCPClient {
    */
   setServerUrl(url: string): void {
     this.serverUrl = url;
+  }
+  
+  /**
+   * Reset Google Drive connection
+   */
+  resetDriveConnection(): void {
+    // Clear local storage
+    localStorage.removeItem('gdrive-connected');
+    
+    // Set authenticated state to false
+    this.isAuthenticated = false;
+    
+    console.log('MCP: Google Drive connection reset');
   }
 }
 
