@@ -21,13 +21,13 @@ export const useConversationContext = ({
   });
 
   // Track document context updates
-  const { documentContextUpdated, handleDocumentContextUpdated } = useDocumentContext();
+  const { documentContextUpdated, setDocumentContextUpdated } = useDocumentContext();
 
   return {
     historicalContext,
     isLoading,
     documentContextUpdated,
-    setDocumentContextUpdated: handleDocumentContextUpdated
+    setDocumentContextUpdated
   };
 };
 

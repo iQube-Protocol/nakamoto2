@@ -7,9 +7,8 @@ interface KnowledgeBaseProps {
   agentType: 'learn' | 'earn' | 'connect';
 }
 
-// Use memo to prevent unnecessary re-renders
 const KnowledgeBase = memo(({ agentType }: KnowledgeBaseProps) => {
-  const knowledgeItems = [1, 2, 3, 4, 5, 6, 7, 8].map((i) => ({
+  const knowledgeItems = React.useMemo(() => [1, 2, 3, 4, 5, 6, 7, 8].map((i) => ({
     id: i,
     title: agentType === 'learn' ? `Web3 Learning Module ${i}` :
            agentType === 'earn' ? `Token Economics Guide ${i}` :
@@ -17,7 +16,7 @@ const KnowledgeBase = memo(({ agentType }: KnowledgeBaseProps) => {
     description: agentType === 'learn' ? "Learn about blockchain fundamentals and web3 applications." :
                  agentType === 'earn' ? "Understand MonDAI token metrics and rewards." :
                  "Connect with like-minded individuals in the community."
-  }));
+  })), [agentType]);
 
   return (
     <div className="flex flex-col h-full">
