@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
@@ -127,8 +126,7 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
       
       <Separator className="my-2" />
       
-      {/* Reduced height to account for header (approx 60px) */}
-      <ScrollArea className="h-[340px] px-4">
+      <ScrollArea className="h-[400px] px-4">
         <DocumentList 
           documents={selectedDocuments}
           isLoading={isLoading}

@@ -6,7 +6,6 @@ import DocumentsTab from './tabs/DocumentsTab';
 import KnowledgeTab from './tabs/KnowledgeTab';
 import AgentInputBar from './AgentInputBar';
 import { AgentMessage } from '@/lib/types';
-import { Separator } from '@/components/ui/separator';
 
 interface AgentTabsSectionProps {
   activeTab: 'chat' | 'knowledge' | 'documents';
@@ -84,8 +83,6 @@ const AgentTabsSection: React.FC<AgentTabsSectionProps> = ({
         </TabsContent>
       </div>
 
-      <Separator className="my-2" />
-      
       <AgentInputBar
         inputValue={inputValue}
         handleInputChange={handleInputChange}

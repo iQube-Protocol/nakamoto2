@@ -18,8 +18,7 @@ const KnowledgeBase = ({ agentType }: KnowledgeBaseProps) => {
         </p>
       </div>
       
-      {/* Reduced height to account for header (approx 70px) */}
-      <ScrollArea className="h-[330px] px-4">
+      <ScrollArea className="h-[400px] px-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-4">
           {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
             <Card key={i} className="p-4 hover:bg-card/90 transition-colors cursor-pointer">
