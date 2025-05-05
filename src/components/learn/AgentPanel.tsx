@@ -6,7 +6,7 @@ import { MetaQube, BlakQube } from '@/lib/types';
 import { getConversationContext } from '@/services/agent-service';
 import { useMCP } from '@/hooks/use-mcp';
 import { useMetisActivation } from '@/hooks/use-metis-activation';
-import { useConversationContext } from '@/hooks/use-conversation-context';
+import { useConversationContext } from '@/hooks/conversation';
 import { sendMessageToLearnAI } from '@/services/learn-ai-service';
 
 interface AgentPanelProps {

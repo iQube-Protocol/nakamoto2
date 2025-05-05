@@ -1,10 +1,10 @@
-
 import React, { useState, useEffect } from 'react';
 import { AgentInterface } from '@/components/shared/agent';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { MetaQube, CommunityMetrics, BlakQube } from '@/lib/types';
 import { processAgentInteraction, getConversationContext } from '@/services/agent-service';
+import { useConversationContext } from '@/hooks/conversation';
 
 interface AgentPanelProps {
   communityMetrics: CommunityMetrics;
