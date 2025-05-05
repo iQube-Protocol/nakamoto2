@@ -32,18 +32,6 @@ serve(async (req) => {
     
     console.log(`Summarizing ${agentType} conversation ${conversationId} for user ${userId}`);
     
-    // Verify we have the OpenAI API key before proceeding
-    if (!openAIApiKey) {
-      return new Response(
-        JSON.stringify({
-          success: false,
-          error: 'OpenAI API key is not configured',
-          conversationId
-        }),
-        { headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
-    }
-    
     // Get all unsummarized interactions for this conversation
     const { data: interactions, error: fetchError } = await fetch(`${Deno.env.get('SUPABASE_URL')}/rest/v1/user_interactions?user_id=eq.${userId}&interaction_type=eq.${agentType}&summarized=eq.false&select=id,query,response,created_at&order=created_at.asc`, {
       headers: {
@@ -53,11 +41,10 @@ serve(async (req) => {
     }).then(res => res.json());
     
     if (fetchError) {
-      console.error('Failed to fetch interactions:', fetchError);
       throw new Error(`Failed to fetch interactions: ${fetchError.message}`);
     }
     
-    if (!Array.isArray(interactions) || interactions.length === 0) {
+    if (!interactions || interactions.length === 0) {
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -72,7 +59,7 @@ serve(async (req) => {
     
     // Prepare conversation history for summarization
     const conversationContent = interactions.map(interaction => 
-      `User: ${interaction.query || ''}\nAssistant: ${interaction.response || ''}`
+      `User: ${interaction.query}\nAssistant: ${interaction.response}`
     ).join('\n\n');
     
     // Generate a summary using OpenAI
@@ -132,24 +119,19 @@ serve(async (req) => {
       throw new Error(`Failed to store summary: ${summaryError.message}`);
     }
     
-    // Mark the interactions as summarized (continue even if some fail)
+    // Mark the interactions as summarized
     for (const id of interactionIds) {
-      try {
-        await fetch(`${Deno.env.get('SUPABASE_URL')}/rest/v1/user_interactions?id=eq.${id}`, {
-          method: 'PATCH',
-          headers: {
-            Authorization: `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
-            apikey: Deno.env.get('SUPABASE_ANON_KEY') || '',
-            'Content-Type': 'application/json',
-          },
-          body: JSON.stringify({
-            summarized: true
-          })
-        });
-      } catch (error) {
-        console.error(`Failed to mark interaction ${id} as summarized:`, error);
-        // Continue with the next one
-      }
+      await fetch(`${Deno.env.get('SUPABASE_URL')}/rest/v1/user_interactions?id=eq.${id}`, {
+        method: 'PATCH',
+        headers: {
+          Authorization: `Bearer ${Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')}`,
+          apikey: Deno.env.get('SUPABASE_ANON_KEY') || '',
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          summarized: true
+        })
+      });
     }
     
     console.log(`Successfully created summary for ${interactionIds.length} interactions`);
@@ -169,7 +151,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({ 
         success: false, 
-        error: error.message || 'Unknown error'
+        error: error.message 
       }),
       { 
         status: 500,

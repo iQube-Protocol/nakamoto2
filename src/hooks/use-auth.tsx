@@ -48,7 +48,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     supabase.auth.getSession().then(({ data, error }) => {
       if (error) {
         console.error("Error getting session:", error);
-        setLoading(false);
       } else {
         console.log("Got session:", data.session ? "Yes" : "No");
         if (mounted) {
@@ -67,7 +66,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signIn = async (email: string, password: string) => {
     console.log("Attempting sign in for:", email);
-    setLoading(true);
     try {
       const { error } = await supabase.auth.signInWithPassword({
         email,
@@ -76,7 +74,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (error) {
         console.error('Error signing in:', error.message);
-        setLoading(false);
         return { error, success: false };
       }
 
@@ -84,13 +81,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return { error: null, success: true };
     } catch (error) {
       console.error('Unexpected error during sign in:', error);
-      setLoading(false);
       return { error: error as Error, success: false };
     }
   };
 
   const signUp = async (email: string, password: string, firstName?: string, lastName?: string) => {
-    setLoading(true);
     try {
       // Get the current site URL for redirection
       const redirectTo = `${window.location.origin}/signin`;
@@ -111,7 +106,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (error) {
         console.error('Error signing up:', error.message);
-        setLoading(false);
         return { error, success: false };
       }
 
@@ -119,22 +113,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return { error: null, success: true };
     } catch (error) {
       console.error('Unexpected error during sign up:', error);
-      setLoading(false);
       return { error: error as Error, success: false };
     }
   };
 
   const signOut = async () => {
     console.log("Signing out");
-    setLoading(true);
     try {
       await supabase.auth.signOut();
       navigate('/signin');
     } catch (error) {
       console.error("Error during sign out:", error);
       toast.error("Error signing out. Please try again.");
-    } finally {
-      setLoading(false);
     }
   };
 
