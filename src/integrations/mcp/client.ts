@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -174,7 +173,7 @@ export class MCPClient {
   /**
    * Save context to persistence store
    */
-  private persistContext(): void {
+  persistContext(): void {
     if (this.context && this.conversationId) {
       try {
         // Save to local storage for now (in production, would likely use Supabase or other DB)

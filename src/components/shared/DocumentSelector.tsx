@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useMCP } from '@/hooks/use-mcp';
 import { Button } from '@/components/ui/button';
@@ -18,11 +19,13 @@ import { toast } from 'sonner';
 interface DocumentSelectorProps {
   onDocumentSelect: (document: any) => void;
   triggerButton?: React.ReactNode;
+  onSelectionComplete?: () => void;
 }
 
 const DocumentSelector: React.FC<DocumentSelectorProps> = ({ 
   onDocumentSelect,
-  triggerButton 
+  triggerButton,
+  onSelectionComplete
 }) => {
   const { 
     driveConnected, 
@@ -38,6 +41,7 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
   const [apiKey, setApiKey] = useState('');
   const [currentFolder, setCurrentFolder] = useState('');
   const [folderHistory, setFolderHistory] = useState<{id: string, name: string}[]>([]);
+  const [reconnecting, setReconnecting] = useState(false);
   
   // Fetch documents when dialog opens or folder changes
   useEffect(() => {
@@ -46,16 +50,19 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
     }
   }, [isOpen, driveConnected, currentFolder, listDocuments]);
   
+  // Handle successful connection
   const handleConnect = async () => {
     const success = await connectToDrive(clientId, apiKey);
     if (success) {
-      listDocuments();
+      // Documents will be automatically fetched by the hook after successful connection
+      toast.success('Connected to Google Drive successfully');
     }
   };
 
   // Handle reconnection to Google Drive without page reload
   const handleReconnect = async () => {
     try {
+      setReconnecting(true);
       // Use the resetDriveConnection method from MCP hook
       await resetDriveConnection();
       
@@ -71,9 +78,12 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
       toast.error('Failed to reset connection', {
         description: 'Please try again'
       });
+    } finally {
+      setReconnecting(false);
     }
   };
   
+  // Handle document selection
   const handleDocumentClick = (doc: any) => {
     if (doc.mimeType.includes('folder')) {
       // Save current folder to history before navigating
@@ -90,7 +100,12 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
       setCurrentFolder(doc.id);
     } else {
       onDocumentSelect(doc);
-      setIsOpen(false);
+      
+      if (onSelectionComplete) {
+        onSelectionComplete();
+      } else {
+        setIsOpen(false);
+      }
     }
   };
   
@@ -266,8 +281,8 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
         
         <DialogFooter>
           {!driveConnected ? (
-            <Button onClick={handleConnect} disabled={isLoading}>
-              {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
+            <Button onClick={handleConnect} disabled={isLoading || reconnecting}>
+              {(isLoading || reconnecting) && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
               Connect to Drive
             </Button>
           ) : (
@@ -276,8 +291,9 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
                 variant="outline" 
                 onClick={handleReconnect} 
                 className="gap-2"
+                disabled={reconnecting}
               >
-                <RefreshCw className="h-4 w-4" />
+                {reconnecting ? <Loader2 className="mr-2 h-4 w-4 animate-spin" /> : <RefreshCw className="h-4 w-4" />}
                 Reset Connection
               </Button>
               <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>

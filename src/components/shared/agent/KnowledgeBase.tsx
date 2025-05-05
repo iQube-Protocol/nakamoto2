@@ -9,16 +9,16 @@ interface KnowledgeBaseProps {
 
 const KnowledgeBase = ({ agentType }: KnowledgeBaseProps) => {
   return (
-    <div className="h-full flex flex-col p-4">
-      <div>
-        <h3 className="text-lg font-medium mb-2">Knowledge Base</h3>
-        <p className="text-sm text-muted-foreground mb-6">
+    <div className="h-full flex flex-col">
+      <div className="p-4 pb-2">
+        <h3 className="text-lg font-medium">Knowledge Base</h3>
+        <p className="text-sm text-muted-foreground mt-1">
           Access specialized information related to {agentType === 'learn' ? 'web3 education' : 
             agentType === 'earn' ? 'MonDAI tokens' : 'community connections'}.
         </p>
       </div>
       
-      <ScrollArea className="flex-grow">
+      <ScrollArea className="flex-grow p-4 pt-2">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
             <Card key={i} className="p-4 hover:bg-card/90 transition-colors cursor-pointer">

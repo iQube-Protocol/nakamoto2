@@ -49,6 +49,10 @@ export function useMCP() {
       if (success) {
         localStorage.setItem('gdrive-connected', 'true');
         setDriveConnected(true);
+        
+        // Automatically fetch documents after successful connection
+        await listDocuments();
+        
         return true;
       } else {
         return false;

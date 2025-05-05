@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { MetaQube, BlakQube } from '@/lib/types';
 import ContentDisplay from './ContentDisplay';
@@ -52,13 +51,22 @@ const LearnInterface = ({ metaQube, blakQube }: LearnInterfaceProps) => {
   };
 
   const handleTabClick = (value: string) => {
-    setActiveTab(prevTab => prevTab === value ? null : value);
-    setCurrentItemIndex(0);
-    setIsPanelCollapsed(false);
+    // Don't toggle off the tab if it's already active - this helps maintain the Documents tab when a document is added
+    if (activeTab !== value) {
+      setActiveTab(value);
+      setCurrentItemIndex(0);
+      setIsPanelCollapsed(false);
+    }
   };
 
   const togglePanelCollapse = () => {
     setIsPanelCollapsed(!isPanelCollapsed);
+  };
+
+  // New function to handle document added - we'll keep the current tab active
+  const handleDocumentAdded = () => {
+    // Don't switch tabs, just stay on current tab
+    // This ensures we remain on the Documents tab after adding a document
   };
 
   return (
@@ -69,6 +77,7 @@ const LearnInterface = ({ metaQube, blakQube }: LearnInterfaceProps) => {
         conversationId={conversationId} 
         setConversationId={setConversationId}
         isPanelCollapsed={isPanelCollapsed}
+        onDocumentAdded={handleDocumentAdded}
       />
 
       {isPanelCollapsed ? (

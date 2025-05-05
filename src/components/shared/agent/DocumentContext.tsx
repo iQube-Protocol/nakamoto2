@@ -21,18 +21,20 @@ interface DocumentContextProps {
   conversationId: string | null;
   onDocumentAdded?: () => void;
   isInTabView?: boolean;
+  isActiveTab?: boolean;
 }
 
 const DocumentContext: React.FC<DocumentContextProps> = ({ 
   conversationId,
   onDocumentAdded,
-  isInTabView = false
+  isInTabView = false,
+  isActiveTab = false
 }) => {
   const { client, fetchDocument, isLoading } = useMCP();
   const [selectedDocuments, setSelectedDocuments] = useState<any[]>([]);
   const [viewingDocument, setViewingDocument] = useState<{id: string, content: string, name: string, mimeType: string} | null>(null);
   
-  // Get documents from context
+  // Get documents from context - only load once when component mounts or when conversation changes
   useEffect(() => {
     if (client && conversationId) {
       const context = client.getModelContext();
@@ -81,6 +83,9 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
         context.documentContext = context.documentContext.filter(
           doc => doc.documentId !== documentId
         );
+        
+        // Make sure to persist the context after modification
+        client.persistContext();
       }
     }
     
@@ -147,7 +152,7 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
   };
   
   return (
-    <div className={`h-full flex flex-col`}>
+    <div className="h-full flex flex-col">
       <div className="flex items-center justify-between p-4 pb-2">
         <h3 className="text-sm font-medium">Documents in Context</h3>
         <DocumentSelector 
@@ -158,6 +163,7 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
               Add Document
             </Button>
           }
+          onSelectionComplete={() => {/* Stay in documents tab */}}
         />
       </div>
       
