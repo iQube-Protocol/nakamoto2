@@ -14,22 +14,22 @@ import {
   DialogDescription,
   DialogHeader,
   DialogTitle,
-  DialogTrigger,
 } from "@/components/ui/dialog";
 
 interface DocumentContextProps {
   conversationId: string | null;
   onDocumentAdded?: () => void;
+  isInTabView?: boolean;
 }
 
 const DocumentContext: React.FC<DocumentContextProps> = ({ 
   conversationId,
-  onDocumentAdded
+  onDocumentAdded,
+  isInTabView = false
 }) => {
   const { client, fetchDocument, isLoading } = useMCP();
   const [selectedDocuments, setSelectedDocuments] = useState<any[]>([]);
   const [viewingDocument, setViewingDocument] = useState<{id: string, content: string, name: string, mimeType: string} | null>(null);
-  const [documentSelectorDialogOpen, setDocumentSelectorDialogOpen] = useState(false);
   
   // Get documents from context
   useEffect(() => {
@@ -67,9 +67,8 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
       setSelectedDocuments(prev => [...prev, document]);
       toast.success('Document added to context');
       
-      // Ensure document context is visible after adding a document
-      setDocumentSelectorDialogOpen(false);
-      
+      // Call the callback to update the parent component
+      // Note: We're NOT switching to chat tab here anymore
       if (onDocumentAdded) onDocumentAdded();
     }
   };
@@ -148,7 +147,7 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
   };
   
   return (
-    <div className="space-y-4">
+    <div className={`space-y-4 ${isInTabView ? 'h-full flex flex-col' : ''}`}>
       <div className="flex items-center justify-between">
         <h3 className="text-sm font-medium">Documents in Context</h3>
         <DocumentSelector 
@@ -164,47 +163,49 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
       
       <Separator />
       
-      {isLoading ? (
-        <div className="flex justify-center p-4">
-          <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
-        </div>
-      ) : selectedDocuments.length > 0 ? (
-        <div className="space-y-2 max-h-[200px] overflow-y-auto">
-          {selectedDocuments.map(doc => (
-            <Card key={doc.id} className="p-2 flex items-center justify-between">
-              <div className="flex items-center gap-2 truncate">
-                {getFileIcon(doc.mimeType)}
-                <span className="truncate text-sm">{doc.name}</span>
-              </div>
-              <div className="flex gap-2 shrink-0">
-                <Badge variant="outline" className="text-xs">
-                  {getFileExtension(doc.mimeType)}
-                </Badge>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-6 w-6"
-                  onClick={() => handleViewDocument(doc)}
-                >
-                  <Eye className="h-3.5 w-3.5" />
-                </Button>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  className="h-6 w-6"
-                  onClick={() => handleRemoveDocument(doc.id)}
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </Button>
-              </div>
-            </Card>
-          ))}
-        </div>
-      ) : (
-        <div className="text-center py-8 text-sm text-muted-foreground">
-          No documents in context. Add documents to enhance your agent's responses.
-        </div>
-      )}
+      <div className={`${isInTabView ? 'flex-grow overflow-hidden flex flex-col' : ''}`}>
+        {isLoading ? (
+          <div className="flex justify-center p-4">
+            <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
+          </div>
+        ) : selectedDocuments.length > 0 ? (
+          <div className={`space-y-2 ${isInTabView ? 'flex-grow overflow-y-auto' : 'max-h-[200px] overflow-y-auto'}`}>
+            {selectedDocuments.map(doc => (
+              <Card key={doc.id} className="p-2 flex items-center justify-between">
+                <div className="flex items-center gap-2 truncate">
+                  {getFileIcon(doc.mimeType)}
+                  <span className="truncate text-sm">{doc.name}</span>
+                </div>
+                <div className="flex gap-2 shrink-0">
+                  <Badge variant="outline" className="text-xs">
+                    {getFileExtension(doc.mimeType)}
+                  </Badge>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-6 w-6"
+                    onClick={() => handleViewDocument(doc)}
+                  >
+                    <Eye className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button 
+                    variant="ghost" 
+                    size="icon" 
+                    className="h-6 w-6"
+                    onClick={() => handleRemoveDocument(doc.id)}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </Card>
+            ))}
+          </div>
+        ) : (
+          <div className="text-center py-8 text-sm text-muted-foreground">
+            No documents in context. Add documents to enhance your agent's responses.
+          </div>
+        )}
+      </div>
       
       {/* Document content viewer */}
       <Dialog open={!!viewingDocument} onOpenChange={(open) => !open && setViewingDocument(null)}>

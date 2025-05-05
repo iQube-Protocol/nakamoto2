@@ -224,13 +224,13 @@ const AgentInterface = ({
     // Refresh the messages or notify the user
     toast.success('Document context has been updated');
     
+    // Stay on the documents tab instead of switching to chat
+    setActiveTab('documents');
+    
     // Call the parent's onDocumentAdded if provided
     if (onDocumentAdded) {
       onDocumentAdded();
     }
-    
-    // Switch to chat tab to encourage interaction with the document
-    setActiveTab('chat');
   };
 
   // Effect to track document context updates
@@ -287,6 +287,7 @@ const AgentInterface = ({
           <DocumentContext 
             conversationId={conversationId}
             onDocumentAdded={handleDocumentAdded}
+            isInTabView={true}
           />
         </TabsContent>
 

@@ -64,6 +64,39 @@ export function useMCP() {
     }
   }, [client]);
   
+  // Reset Google Drive connection
+  const resetDriveConnection = useCallback(async () => {
+    try {
+      // Clear connection cache first
+      localStorage.removeItem('gdrive-connected');
+      
+      // Clear any Google API session tokens
+      if (window.google?.accounts?.oauth2) {
+        window.google.accounts.oauth2.revoke(undefined, () => {
+          console.log('Google OAuth tokens revoked');
+        });
+      }
+      
+      // Clear GAPI auth
+      if (window.gapi?.auth) {
+        window.gapi.auth.setToken(null);
+      }
+      
+      // Reset client's connection state
+      if (client) {
+        client.resetDriveConnection();
+      }
+      
+      // Update local state
+      setDriveConnected(false);
+      
+      return true;
+    } catch (error) {
+      console.error('Error during connection reset:', error);
+      throw error;
+    }
+  }, [client]);
+  
   // List available documents
   const listDocuments = useCallback(async (folderId?: string) => {
     if (!client || !driveConnected) {
@@ -128,6 +161,7 @@ export function useMCP() {
     documents,
     isLoading,
     connectToDrive,
+    resetDriveConnection,
     listDocuments,
     fetchDocument,
     initializeContext

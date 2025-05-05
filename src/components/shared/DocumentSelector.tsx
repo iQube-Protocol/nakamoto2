@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useMCP } from '@/hooks/use-mcp';
 import { Button } from '@/components/ui/button';
@@ -30,7 +29,8 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
     connectToDrive, 
     listDocuments, 
     documents, 
-    isLoading 
+    isLoading,
+    resetDriveConnection
   } = useMCP();
   
   const [isOpen, setIsOpen] = useState(false);
@@ -53,34 +53,23 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
     }
   };
 
-  // Handle reconnection to Google Drive
+  // Handle reconnection to Google Drive without page reload
   const handleReconnect = async () => {
     try {
-      // Clear connection cache first
-      localStorage.removeItem('gdrive-connected');
+      // Use the resetDriveConnection method from MCP hook
+      await resetDriveConnection();
       
-      // Clear any Google API session tokens
-      if (window.google?.accounts?.oauth2) {
-        window.google.accounts.oauth2.revoke(undefined, () => {
-          console.log('Google OAuth tokens revoked');
-        });
-      }
-      
-      // Clear GAPI auth
-      if (window.gapi?.auth) {
-        window.gapi.auth.setToken(null);
-      }
+      // Reset connection state in local component
+      setClientId('');
+      setApiKey('');
       
       toast.info('Google Drive connection reset', {
         description: 'Please re-enter your credentials to reconnect'
       });
-      
-      // Reset the connection state and ask for credentials again
-      window.location.reload();
     } catch (error) {
       console.error('Error during reconnection:', error);
       toast.error('Failed to reset connection', {
-        description: 'Please try refreshing the page'
+        description: 'Please try again'
       });
     }
   };
