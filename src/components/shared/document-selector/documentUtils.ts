@@ -39,3 +39,9 @@ export const getFileExtension = (mimeType: string) => {
   const parts = mimeType.split('/');
   return parts.length > 1 ? parts[1] : 'file';
 };
+
+// Add a function to return the appropriate icon component based on file type
+export const getFileIconComponent = (mimeType: string, className: string = "h-4 w-4") => {
+  const iconType = getFileIcon(mimeType);
+  return { type: iconType, className };
+};
