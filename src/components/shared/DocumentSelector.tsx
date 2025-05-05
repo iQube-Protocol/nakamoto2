@@ -60,14 +60,14 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
       localStorage.removeItem('gdrive-connected');
       
       // Clear any Google API session tokens
-      if (window.google && window.google.accounts) {
+      if (window.google?.accounts?.oauth2) {
         window.google.accounts.oauth2.revoke(undefined, () => {
           console.log('Google OAuth tokens revoked');
         });
       }
       
       // Clear GAPI auth
-      if (window.gapi && window.gapi.auth) {
+      if (window.gapi?.auth) {
         window.gapi.auth.setToken(null);
       }
       
