@@ -225,7 +225,7 @@ const AgentInterface = ({
     toast.success('Document context has been updated');
     
     // Stay on the documents tab instead of switching to chat
-    setActiveTab('documents');
+    // (This is important - we want to see the document after adding it)
     
     // Call the parent's onDocumentAdded if provided
     if (onDocumentAdded) {
@@ -283,7 +283,7 @@ const AgentInterface = ({
           />
         </TabsContent>
         
-        <TabsContent value="documents" className="flex-1 p-4 m-0 overflow-y-auto">
+        <TabsContent value="documents" className="flex-1 m-0 overflow-hidden">
           <DocumentContext 
             conversationId={conversationId}
             onDocumentAdded={handleDocumentAdded}
@@ -291,7 +291,7 @@ const AgentInterface = ({
           />
         </TabsContent>
 
-        <TabsContent value="knowledge" className="flex-1 p-4 m-0 overflow-y-auto">
+        <TabsContent value="knowledge" className="flex-1 m-0 overflow-hidden">
           <KnowledgeBase agentType={agentType} />
         </TabsContent>
       </Tabs>

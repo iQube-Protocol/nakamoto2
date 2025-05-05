@@ -64,7 +64,7 @@ export function useMCP() {
     }
   }, [client]);
   
-  // Reset Google Drive connection
+  // Reset Google Drive connection without page reload
   const resetDriveConnection = useCallback(async () => {
     try {
       // Clear connection cache first

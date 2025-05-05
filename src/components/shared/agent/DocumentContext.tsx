@@ -15,6 +15,7 @@ import {
   DialogHeader,
   DialogTitle,
 } from "@/components/ui/dialog";
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface DocumentContextProps {
   conversationId: string | null;
@@ -68,7 +69,6 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
       toast.success('Document added to context');
       
       // Call the callback to update the parent component
-      // Note: We're NOT switching to chat tab here anymore
       if (onDocumentAdded) onDocumentAdded();
     }
   };
@@ -147,8 +147,8 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
   };
   
   return (
-    <div className={`space-y-4 ${isInTabView ? 'h-full flex flex-col' : ''}`}>
-      <div className="flex items-center justify-between">
+    <div className={`h-full flex flex-col`}>
+      <div className="flex items-center justify-between p-4 pb-2">
         <h3 className="text-sm font-medium">Documents in Context</h3>
         <DocumentSelector 
           onDocumentSelect={handleDocumentSelect}
@@ -161,45 +161,47 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
         />
       </div>
       
-      <Separator />
+      <Separator className="my-2" />
       
-      <div className={`${isInTabView ? 'flex-grow overflow-hidden flex flex-col' : ''}`}>
+      <div className="flex-grow overflow-auto p-4 pt-2">
         {isLoading ? (
           <div className="flex justify-center p-4">
             <Loader2 className="h-5 w-5 animate-spin text-muted-foreground" />
           </div>
         ) : selectedDocuments.length > 0 ? (
-          <div className={`space-y-2 ${isInTabView ? 'flex-grow overflow-y-auto' : 'max-h-[200px] overflow-y-auto'}`}>
-            {selectedDocuments.map(doc => (
-              <Card key={doc.id} className="p-2 flex items-center justify-between">
-                <div className="flex items-center gap-2 truncate">
-                  {getFileIcon(doc.mimeType)}
-                  <span className="truncate text-sm">{doc.name}</span>
-                </div>
-                <div className="flex gap-2 shrink-0">
-                  <Badge variant="outline" className="text-xs">
-                    {getFileExtension(doc.mimeType)}
-                  </Badge>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-6 w-6"
-                    onClick={() => handleViewDocument(doc)}
-                  >
-                    <Eye className="h-3.5 w-3.5" />
-                  </Button>
-                  <Button 
-                    variant="ghost" 
-                    size="icon" 
-                    className="h-6 w-6"
-                    onClick={() => handleRemoveDocument(doc.id)}
-                  >
-                    <Trash2 className="h-3.5 w-3.5" />
-                  </Button>
-                </div>
-              </Card>
-            ))}
-          </div>
+          <ScrollArea className="h-full w-full">
+            <div className="space-y-2">
+              {selectedDocuments.map(doc => (
+                <Card key={doc.id} className="p-2 flex items-center justify-between">
+                  <div className="flex items-center gap-2 truncate">
+                    {getFileIcon(doc.mimeType)}
+                    <span className="truncate text-sm">{doc.name}</span>
+                  </div>
+                  <div className="flex gap-2 shrink-0">
+                    <Badge variant="outline" className="text-xs">
+                      {getFileExtension(doc.mimeType)}
+                    </Badge>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-6 w-6"
+                      onClick={() => handleViewDocument(doc)}
+                    >
+                      <Eye className="h-3.5 w-3.5" />
+                    </Button>
+                    <Button 
+                      variant="ghost" 
+                      size="icon" 
+                      className="h-6 w-6"
+                      onClick={() => handleRemoveDocument(doc.id)}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </Card>
+              ))}
+            </div>
+          </ScrollArea>
         ) : (
           <div className="text-center py-8 text-sm text-muted-foreground">
             No documents in context. Add documents to enhance your agent's responses.
