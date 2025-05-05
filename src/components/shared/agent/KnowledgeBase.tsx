@@ -9,7 +9,7 @@ interface KnowledgeBaseProps {
 
 const KnowledgeBase = ({ agentType }: KnowledgeBaseProps) => {
   return (
-    <div className="h-full flex flex-col">
+    <div className="flex flex-col">
       <div className="p-4 pb-2">
         <h3 className="text-lg font-medium">Knowledge Base</h3>
         <p className="text-sm text-muted-foreground mt-1">
@@ -18,7 +18,7 @@ const KnowledgeBase = ({ agentType }: KnowledgeBaseProps) => {
         </p>
       </div>
       
-      <ScrollArea className="flex-1 px-4">
+      <ScrollArea className="h-[400px] px-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-4">
           {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
             <Card key={i} className="p-4 hover:bg-card/90 transition-colors cursor-pointer">

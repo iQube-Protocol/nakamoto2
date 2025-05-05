@@ -126,6 +126,9 @@ const AgentInterface = ({
     e.preventDefault();
     if (!inputValue.trim() || isProcessing) return;
 
+    // Always switch to chat tab when submitting a message
+    setActiveTab('chat');
+
     const userMessage: AgentMessage = {
       id: Date.now().toString(),
       sender: 'user',
@@ -260,18 +263,33 @@ const AgentInterface = ({
           </TabsList>
         </div>
 
-        <TabsContent value="chat" className="flex-1 flex flex-col p-0 m-0 overflow-hidden">
-          {messages.length === 0 ? (
-            <EmptyConversation agentType={agentType} />
-          ) : (
-            <MessageList 
-              messages={messages} 
-              isProcessing={isProcessing} 
-              playing={playing} 
-              onPlayAudio={handlePlayAudio} 
-              messagesEndRef={messagesEndRef}
+        <div className="flex-1 flex flex-col overflow-hidden">
+          <TabsContent value="chat" className="flex-1 p-0 m-0 overflow-hidden">
+            {messages.length === 0 ? (
+              <EmptyConversation agentType={agentType} />
+            ) : (
+              <MessageList 
+                messages={messages} 
+                isProcessing={isProcessing} 
+                playing={playing} 
+                onPlayAudio={handlePlayAudio} 
+                messagesEndRef={messagesEndRef}
+              />
+            )}
+          </TabsContent>
+          
+          <TabsContent value="documents" className="p-0 m-0 overflow-hidden">
+            <DocumentContext 
+              conversationId={conversationId}
+              onDocumentAdded={handleDocumentAdded}
+              isInTabView={true}
+              isActiveTab={activeTab === 'documents'}
             />
-          )}
+          </TabsContent>
+
+          <TabsContent value="knowledge" className="p-0 m-0 overflow-hidden">
+            <KnowledgeBase agentType={agentType} />
+          </TabsContent>
 
           <AgentInputBar
             inputValue={inputValue}
@@ -280,20 +298,7 @@ const AgentInterface = ({
             isProcessing={isProcessing}
             agentType={agentType}
           />
-        </TabsContent>
-        
-        <TabsContent value="documents" className="flex-1 p-0 m-0 overflow-hidden">
-          <DocumentContext 
-            conversationId={conversationId}
-            onDocumentAdded={handleDocumentAdded}
-            isInTabView={true}
-            isActiveTab={activeTab === 'documents'}
-          />
-        </TabsContent>
-
-        <TabsContent value="knowledge" className="flex-1 p-0 m-0 overflow-hidden">
-          <KnowledgeBase agentType={agentType} />
-        </TabsContent>
+        </div>
       </Tabs>
     </Card>
   );

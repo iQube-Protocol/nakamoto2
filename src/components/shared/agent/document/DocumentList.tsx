@@ -1,6 +1,5 @@
 
 import React from 'react';
-import { ScrollArea } from '@/components/ui/scroll-area';
 import { Loader2 } from 'lucide-react';
 import DocumentItem from './DocumentItem';
 
@@ -34,18 +33,16 @@ const DocumentList: React.FC<DocumentListProps> = ({
   }
   
   return (
-    <ScrollArea className="h-full w-full px-4">
-      <div className="space-y-2 pb-4">
-        {documents.map(doc => (
-          <DocumentItem
-            key={doc.id}
-            document={doc}
-            onView={onViewDocument}
-            onRemove={onRemoveDocument}
-          />
-        ))}
-      </div>
-    </ScrollArea>
+    <div className="space-y-2 pb-4">
+      {documents.map(doc => (
+        <DocumentItem
+          key={doc.id}
+          document={doc}
+          onView={onViewDocument}
+          onRemove={onRemoveDocument}
+        />
+      ))}
+    </div>
   );
 };
 

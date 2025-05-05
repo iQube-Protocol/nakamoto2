@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
@@ -7,6 +6,7 @@ import { useMCP } from '@/hooks/use-mcp';
 import { FileText } from 'lucide-react';
 import DocumentSelector from '../document-selector';
 import { DocumentList, DocumentViewer } from './document';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface DocumentContextProps {
   conversationId: string | null;
@@ -109,7 +109,7 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
   };
   
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col">
       <div className="flex items-center justify-between p-4 pb-2">
         <h3 className="text-sm font-medium">Documents in Context</h3>
         <DocumentSelector 
@@ -126,14 +126,14 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
       
       <Separator className="my-2" />
       
-      <div className="flex-1 overflow-auto">
+      <ScrollArea className="h-[400px] px-4">
         <DocumentList 
           documents={selectedDocuments}
           isLoading={isLoading}
           onViewDocument={handleViewDocument}
           onRemoveDocument={handleRemoveDocument}
         />
-      </div>
+      </ScrollArea>
       
       <DocumentViewer 
         document={viewingDocument}
