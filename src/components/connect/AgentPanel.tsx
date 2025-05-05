@@ -1,10 +1,10 @@
-import React, { useState, useEffect } from 'react';
-import { AgentInterface } from '@/components/shared/agent';
-import { useToast } from '@/components/ui/use-toast';
+
+import React, { useState } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { MetaQube, CommunityMetrics, BlakQube } from '@/lib/types';
 import { processAgentInteraction, getConversationContext } from '@/services/agent-service';
-import { useConversationContext } from '@/hooks/conversation';
+import BaseAgentPanel from '@/components/shared/agent/BaseAgentPanel';
+import { useAgentPanel } from '@/hooks/agent-interface/use-agent-panel';
 
 interface AgentPanelProps {
   communityMetrics: CommunityMetrics;
@@ -19,39 +19,17 @@ const AgentPanel = ({
   blakQube,
   isPanelCollapsed 
 }: AgentPanelProps) => {
-  const { toast } = useToast();
   const [conversationId, setConversationId] = useState<string | null>(null);
-  const [historicalContext, setHistoricalContext] = useState<string>('');
-  const [isLoading, setIsLoading] = useState<boolean>(false);
-  
-  // Load conversation context when component mounts
-  useEffect(() => {
-    const loadContext = async () => {
-      if (!conversationId) {
-        console.log('No conversationId provided, skipping context load');
-        return;
-      }
-      
-      setIsLoading(true);
-      try {
-        const context = await getConversationContext(conversationId, 'connect');
-        if (context.historicalContext) {
-          setHistoricalContext(context.historicalContext);
-          console.log('Loaded historical context for connect agent');
-        }
-        
-        if (context.conversationId !== conversationId) {
-          setConversationId(context.conversationId);
-        }
-      } catch (error) {
-        console.error('Error loading conversation context:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    loadContext();
-  }, [conversationId]);
+  const { 
+    toast, 
+    historicalContext,
+    documentContextUpdated, 
+    handleDocumentContextUpdated 
+  } = useAgentPanel({
+    agentType: 'connect',
+    conversationId,
+    setConversationId
+  });
 
   const handleAIMessage = async (message: string) => {
     try {
@@ -61,11 +39,6 @@ const AgentPanel = ({
       if (contextResult.conversationId !== conversationId) {
         setConversationId(contextResult.conversationId);
         console.log(`Setting new conversation ID: ${contextResult.conversationId}`);
-      }
-      
-      if (contextResult.historicalContext !== historicalContext) {
-        setHistoricalContext(contextResult.historicalContext);
-        console.log('Updated historical context for connect agent');
       }
       
       const { data, error } = await supabase.functions.invoke('connect-ai', {
@@ -128,31 +101,18 @@ const AgentPanel = ({
     }
   };
 
-  if (isLoading) {
-    console.log('AgentPanel is loading conversation context...');
-  }
-
   return (
-    <div className={`${isPanelCollapsed ? 'col-span-11' : 'col-span-8'} flex flex-col`}>
-      <AgentInterface
-        title="Connection Assistant"
-        description="Community insights and networking opportunities"
-        agentType="connect"
-        onMessageSubmit={handleAIMessage}
-        initialMessages={[
-          {
-            id: "1",
-            sender: "agent",
-            message: "Welcome to your Connect dashboard. Based on your iQube profile, I've identified several community members with similar interests in DeFi and NFTs. Would you like me to suggest potential connections or keep you updated on upcoming events?",
-            timestamp: new Date().toISOString(),
-            metadata: {
-              version: "1.0",
-              modelUsed: "gpt-4o-mini"
-            }
-          }
-        ]}
-      />
-    </div>
+    <BaseAgentPanel
+      title="Connection Assistant"
+      description="Community insights and networking opportunities"
+      agentType="connect"
+      conversationId={conversationId}
+      isPanelCollapsed={isPanelCollapsed}
+      initialMessage="Welcome to your Connect dashboard. Based on your iQube profile, I've identified several community members with similar interests in DeFi and NFTs. Would you like me to suggest potential connections or keep you updated on upcoming events?"
+      onMessageSubmit={handleAIMessage}
+      onDocumentAdded={() => handleDocumentContextUpdated()}
+      documentContextUpdated={documentContextUpdated}
+    />
   );
 };
 
