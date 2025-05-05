@@ -4,6 +4,7 @@ import { useState } from 'react';
 export const useDocumentContext = () => {
   const [documentContextUpdated, setDocumentContextUpdated] = useState<number>(0);
 
+  // Make the function consistent with how it's called throughout the app
   const handleDocumentContextUpdated = () => {
     setDocumentContextUpdated(prev => prev + 1);
     console.log('Document context updated, triggering refresh');
@@ -11,6 +12,6 @@ export const useDocumentContext = () => {
 
   return {
     documentContextUpdated,
-    handleDocumentContextUpdated
+    setDocumentContextUpdated: handleDocumentContextUpdated
   };
 };

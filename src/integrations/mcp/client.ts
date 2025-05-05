@@ -94,10 +94,15 @@ export class MCPClient {
         // Try to fetch existing context from server or local storage
         const storedContext = localStorage.getItem(`mcp-context-${existingConversationId}`);
         if (storedContext) {
-          this.context = JSON.parse(storedContext);
-          this.conversationId = existingConversationId;
-          console.log(`MCP: Loaded local context for conversation ${existingConversationId}`);
-          return existingConversationId;
+          try {
+            this.context = JSON.parse(storedContext);
+            this.conversationId = existingConversationId;
+            console.log(`MCP: Loaded local context for conversation ${existingConversationId}`);
+            return existingConversationId;
+          } catch (error) {
+            console.error(`MCP: Error parsing stored context for ${existingConversationId}:`, error);
+            // Continue to create a new context
+          }
         }
         
         // If not found locally, create a new one
@@ -128,7 +133,7 @@ export class MCPClient {
       return newConversationId;
     } catch (error) {
       console.error('MCP: Error initializing context:', error);
-      throw new Error(`MCP initialization error: ${error.message}`);
+      throw new Error(`MCP initialization error: ${error instanceof Error ? error.message : String(error)}`);
     }
   }
   
@@ -176,12 +181,79 @@ export class MCPClient {
   persistContext(): void {
     if (this.context && this.conversationId) {
       try {
-        // Save to local storage for now (in production, would likely use Supabase or other DB)
+        // Limit message history to prevent localStorage from getting too large
+        if (this.context.messages && this.context.messages.length > 20) {
+          this.context.messages = this.context.messages.slice(-20);
+        }
+        
+        // Limit document context size
+        if (this.context.documentContext && this.context.documentContext.length > 5) {
+          // Keep only the 5 most recently added documents
+          this.context.documentContext = this.context.documentContext.slice(-5);
+        }
+        
+        // For each document, limit the content size
+        if (this.context.documentContext) {
+          this.context.documentContext.forEach(doc => {
+            if (doc.content && doc.content.length > 10000) {
+              doc.content = doc.content.substring(0, 10000) + "... (content truncated)";
+            }
+          });
+        }
+        
+        // Save to local storage
         localStorage.setItem(`mcp-context-${this.conversationId}`, JSON.stringify(this.context));
         console.log(`MCP: Context persisted for conversation ${this.conversationId}`);
       } catch (error) {
+        // Handle quota exceeded errors gracefully
         console.error('MCP: Error persisting context:', error);
+        
+        if (error instanceof Error && 
+            (error.name === 'QuotaExceededError' || error.message.includes('quota') || error.message.includes('exceeded'))) {
+          // Try to clean up old contexts to free up space
+          this.cleanupOldContexts();
+          
+          // Try to save a reduced context if possible
+          try {
+            // Create a minimal context with just the essential information
+            const minimalContext = {
+              conversationId: this.context.conversationId,
+              messages: this.context.messages ? this.context.messages.slice(-5) : [],
+              documentContext: [],
+              metadata: this.context.metadata
+            };
+            
+            localStorage.setItem(`mcp-context-${this.conversationId}`, JSON.stringify(minimalContext));
+            console.log('MCP: Saved minimal context due to storage limitations');
+          } catch (innerError) {
+            console.error('MCP: Failed to save even minimal context:', innerError);
+          }
+        }
       }
+    }
+  }
+  
+  /**
+   * Clean up old contexts to free up storage space
+   */
+  private cleanupOldContexts(): void {
+    try {
+      // Get all keys in localStorage
+      const keys = Object.keys(localStorage);
+      
+      // Filter for mcp-context keys
+      const contextKeys = keys.filter(key => key.startsWith('mcp-context-'));
+      
+      // Remove all but the 5 most recent contexts
+      if (contextKeys.length > 5) {
+        const keysToRemove = contextKeys.slice(0, contextKeys.length - 5);
+        keysToRemove.forEach(key => {
+          localStorage.removeItem(key);
+          console.log(`MCP: Removed old context ${key} to free up space`);
+        });
+      }
+    } catch (error) {
+      console.error('MCP: Error cleaning up old contexts:', error);
     }
   }
   
