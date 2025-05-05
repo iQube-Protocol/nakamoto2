@@ -25,7 +25,7 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
   const { client, fetchDocument, isLoading } = useMCP();
   const [selectedDocuments, setSelectedDocuments] = useState<any[]>([]);
   const [viewingDocument, setViewingDocument] = useState<{id: string, content: string, name: string, mimeType: string} | null>(null);
-  const [isPolling, setIsPolling] = useState<boolean>(false);
+  const [lastUpdate, setLastUpdate] = useState<number>(Date.now());
   
   // Load documents from context when component mounts, conversation changes, or tab becomes active
   const loadDocumentsFromContext = useCallback(() => {
@@ -49,29 +49,21 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
     if (client && conversationId) {
       loadDocumentsFromContext();
     }
-  }, [client, conversationId, loadDocumentsFromContext]);
+  }, [client, conversationId, loadDocumentsFromContext, lastUpdate]);
   
-  // Polling effect when tab is active
+  // Set up polling with proper cleanup
   useEffect(() => {
-    if (!isInTabView || isActiveTab) {
-      // Start polling if tab is active or not in tab view
-      let intervalId: number;
-      
-      if (!isPolling) {
-        setIsPolling(true);
-        intervalId = window.setInterval(() => {
-          loadDocumentsFromContext();
-        }, 5000);
-      }
+    // Only poll if tab is active or not in tab view
+    if ((!isInTabView || isActiveTab) && client && conversationId) {
+      const intervalId = window.setInterval(() => {
+        loadDocumentsFromContext();
+      }, 10000); // Reduced frequency from 5s to 10s
       
       return () => {
-        if (intervalId) {
-          clearInterval(intervalId);
-          setIsPolling(false);
-        }
+        window.clearInterval(intervalId);
       };
     }
-  }, [isInTabView, isActiveTab, isPolling, loadDocumentsFromContext]);
+  }, [isInTabView, isActiveTab, client, conversationId, loadDocumentsFromContext]);
   
   const handleDocumentSelect = async (document: any) => {
     if (!client) {
@@ -92,6 +84,7 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
       document.content = content;
       setSelectedDocuments(prev => [...prev, document]);
       toast.success('Document added to context');
+      setLastUpdate(Date.now());
       
       // Call the callback to update the parent component
       if (onDocumentAdded) onDocumentAdded();
@@ -115,6 +108,7 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
     // Update local state
     setSelectedDocuments(prev => prev.filter(doc => doc.id !== documentId));
     toast.success('Document removed from context');
+    setLastUpdate(Date.now());
     
     // Call the callback to update the parent component
     if (onDocumentAdded) onDocumentAdded();
