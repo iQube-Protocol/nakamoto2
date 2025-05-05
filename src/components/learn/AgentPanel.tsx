@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { AgentInterface } from '@/components/shared/agent';
 import { useToast } from '@/components/ui/use-toast';
@@ -34,7 +33,7 @@ const AgentPanel = ({
 
   // Handle when documents are added or removed
   const handleDocumentContextUpdated = () => {
-    setDocumentContextUpdated(prev => prev + 1);
+    setDocumentContextUpdated();
     console.log('Document context updated, triggering refresh');
     
     // Call the onDocumentAdded callback if it exists
