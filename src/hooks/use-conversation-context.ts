@@ -1,5 +1,5 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useRef } from 'react';
 import { getConversationContext } from '@/services/agent-service';
 import { useMCP } from '@/hooks/use-mcp';
 
@@ -25,18 +25,23 @@ export const useConversationContext = ({
   const [isLoading, setIsLoading] = useState<boolean>(false);
   const [documentContextUpdated, setDocumentContextUpdated] = useState<number>(0);
   const { client: mcpClient, isInitialized } = useMCP();
-
+  const loadingRef = useRef(false);
+  
   // Load conversation context when component mounts or conversationId changes
   useEffect(() => {
+    // Prevent multiple simultaneous loads
+    if (!conversationId || loadingRef.current) {
+      console.log('No conversationId provided or loading in progress, skipping context load');
+      return;
+    }
+    
     const loadContext = async () => {
-      if (!conversationId) {
-        console.log('No conversationId provided, skipping context load');
-        return;
-      }
-      
+      loadingRef.current = true;
       setIsLoading(true);
+      
       try {
         const context = await getConversationContext(conversationId, agentType);
+        
         if (context.historicalContext) {
           setHistoricalContext(context.historicalContext);
           console.log(`Loaded historical context for ${agentType} agent`);
@@ -55,6 +60,7 @@ export const useConversationContext = ({
         console.error('Error loading conversation context:', error);
       } finally {
         setIsLoading(false);
+        loadingRef.current = false;
       }
     };
     

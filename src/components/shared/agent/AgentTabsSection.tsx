@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ChatTab from './tabs/ChatTab';
 import DocumentsTab from './tabs/DocumentsTab';
@@ -38,10 +37,32 @@ const AgentTabsSection: React.FC<AgentTabsSectionProps> = ({
   handleSubmit,
   agentType
 }) => {
+  // Keep track of which tabs have been loaded/visited
+  const [loadedTabs, setLoadedTabs] = useState<Record<string, boolean>>({
+    chat: true, // Always load chat tab by default
+    knowledge: false,
+    documents: false
+  });
+  
+  // When tab changes, mark it as loaded
+  useEffect(() => {
+    if (activeTab && !loadedTabs[activeTab]) {
+      setLoadedTabs(prev => ({
+        ...prev,
+        [activeTab]: true
+      }));
+    }
+  }, [activeTab, loadedTabs]);
+  
+  // Handle tab change
+  const handleTabChange = (value: string) => {
+    setActiveTab(value as 'chat' | 'knowledge' | 'documents');
+  };
+
   return (
     <Tabs
       value={activeTab}
-      onValueChange={(v) => setActiveTab(v as 'chat' | 'knowledge' | 'documents')}
+      onValueChange={handleTabChange}
       className="flex-1 flex flex-col"
     >
       <div className="border-b px-4">
@@ -71,15 +92,21 @@ const AgentTabsSection: React.FC<AgentTabsSectionProps> = ({
         </TabsContent>
 
         <TabsContent value="documents" className="p-0 m-0 overflow-hidden">
-          <DocumentsTab
-            conversationId={conversationId}
-            onDocumentAdded={onDocumentAdded}
-            isActiveTab={activeTab === 'documents'}
-          />
+          {/* Only render the Documents tab content if it's been loaded */}
+          {loadedTabs.documents && (
+            <DocumentsTab
+              conversationId={conversationId}
+              onDocumentAdded={onDocumentAdded}
+              isActiveTab={activeTab === 'documents'}
+            />
+          )}
         </TabsContent>
 
         <TabsContent value="knowledge" className="p-0 m-0 overflow-hidden">
-          <KnowledgeTab agentType={agentType} />
+          {/* Only render the Knowledge tab content if it's been loaded */}
+          {loadedTabs.knowledge && (
+            <KnowledgeTab agentType={agentType} />
+          )}
         </TabsContent>
       </div>
 
