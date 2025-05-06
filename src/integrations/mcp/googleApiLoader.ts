@@ -1,4 +1,8 @@
 
+import { GoogleApiLoaderOptions } from './api/types';
+import { ScriptLoader } from './api/scriptLoader';
+import { ApiInitializer } from './api/apiInitializer';
+
 /**
  * Helper for loading and managing Google API scripts
  */
@@ -13,10 +17,7 @@ export class GoogleApiLoader {
   private maxLoadAttempts: number = 3;
   private apiInitialized: boolean = false;
   
-  constructor(options: { 
-    onApiLoadStart?: () => void; 
-    onApiLoadComplete?: () => void; 
-  } = {}) {
+  constructor(options: GoogleApiLoaderOptions = {}) {
     this.onApiLoadStart = options.onApiLoadStart || null;
     this.onApiLoadComplete = options.onApiLoadComplete || null;
   }
@@ -46,77 +47,35 @@ export class GoogleApiLoader {
           }
         };
         
-        // Add gapi script
-        const script = document.createElement('script');
-        script.src = 'https://apis.google.com/js/api.js';
-        script.async = true;
-        script.onload = () => {
-          this.scriptLoadAttempts = 0; // Reset attempts counter on success
-          this.onGapiLoaded();
-          gapiLoaded = true;
-          checkAllLoaded();
-        };
-        script.onerror = (e) => {
-          console.error('Failed to load Google API script:', e);
-          this.scriptLoadAttempts++;
-          
-          if (this.scriptLoadAttempts < this.maxLoadAttempts) {
-            console.log(`Retrying Google API script load (attempt ${this.scriptLoadAttempts}/${this.maxLoadAttempts})...`);
-            // Remove failed script
-            script.remove();
-            // Retry after a short delay
-            setTimeout(() => this.loadGoogleApi(), 1000);
-          } else {
-            if (this.onApiLoadComplete) {
-              this.onApiLoadComplete();
-            }
+        // Load GAPI script
+        ScriptLoader.loadScript({
+          src: 'https://apis.google.com/js/api.js',
+          async: true,
+          onLoad: () => {
+            this.scriptLoadAttempts = 0; // Reset attempts counter on success
+            this.onGapiLoaded();
+            gapiLoaded = true;
+            checkAllLoaded();
+          },
+          onError: (e) => {
+            console.error('Failed to load Google API script:', e);
             reject(e);
           }
-        };
+        }, this.maxLoadAttempts).catch(reject);
         
-        // Add GSI script in parallel 
-        const gsiScript = document.createElement('script');
-        gsiScript.src = 'https://accounts.google.com/gsi/client';
-        gsiScript.async = true;
-        gsiScript.onload = () => {
-          gsiLoaded = true;
-          checkAllLoaded();
-        };
-        gsiScript.onerror = (e) => {
-          console.error('Failed to load Google Sign-In script:', e);
-          
-          // Try again once for GSI script
-          if (!gsiLoaded) {
-            console.log('Retrying Google Sign-In script load...');
-            // Remove failed script
-            gsiScript.remove();
-            // Create and add a new script element
-            const retryScript = document.createElement('script');
-            retryScript.src = 'https://accounts.google.com/gsi/client';
-            retryScript.async = true;
-            retryScript.onload = () => {
-              gsiLoaded = true;
-              checkAllLoaded();
-            };
-            retryScript.onerror = (retryError) => {
-              console.error('Failed to load Google Sign-In script after retry:', retryError);
-              if (this.onApiLoadComplete) {
-                this.onApiLoadComplete();
-              }
-              reject(retryError);
-            };
-            document.body.appendChild(retryScript);
-          } else {
-            if (this.onApiLoadComplete) {
-              this.onApiLoadComplete();
-            }
+        // Load GSI script
+        ScriptLoader.loadScript({
+          src: 'https://accounts.google.com/gsi/client',
+          async: true,
+          onLoad: () => {
+            gsiLoaded = true;
+            checkAllLoaded();
+          },
+          onError: (e) => {
+            console.error('Failed to load Google Sign-In script:', e);
             reject(e);
           }
-        };
-        
-        // Add both scripts to document
-        document.body.appendChild(script);
-        document.body.appendChild(gsiScript);
+        }, 2).catch(reject); // Only retry once for GSI
       });
     }
   }
@@ -144,21 +103,12 @@ export class GoogleApiLoader {
           }
           
           // Initialize client
-          return new Promise<boolean>((resolve) => {
-            this.gapi.load('client', {
-              callback: () => {
-                this.apiInitialized = true;
-                this.isApiLoaded = true;
-                console.log('MCP: Google API client initialized successfully');
-                resolve(true);
-              },
-              onerror: () => {
-                console.error('MCP: Failed to initialize Google API client');
-                resolve(false);
-              },
-              timeout: 10000
-            });
-          });
+          const success = await ApiInitializer.initializeGapiClient(this.gapi);
+          if (success) {
+            this.apiInitialized = true;
+            this.isApiLoaded = true;
+          }
+          return success;
         }
         
         return true;
@@ -185,30 +135,17 @@ export class GoogleApiLoader {
       return;
     }
     
-    this.gapi.load('client', {
-      callback: () => {
-        this.isApiLoaded = true;
-        this.apiInitialized = true;
-        console.log('MCP: Google API client loaded successfully');
-      },
-      onerror: (e: any) => {
-        console.error('MCP: Failed to load Google API client:', e);
-        
-        // Retry loading the client once
-        console.log('MCP: Retrying to load Google API client...');
-        this.gapi.load('client', {
-          callback: () => {
-            this.isApiLoaded = true;
-            this.apiInitialized = true;
-            console.log('MCP: Google API client loaded successfully on retry');
-          },
-          onerror: (retryError: any) => {
-            console.error('MCP: Failed to load Google API client after retry:', retryError);
-          },
-          timeout: 10000, // 10 seconds
+    ApiInitializer.initializeGapiClient(this.gapi).then((success) => {
+      this.isApiLoaded = success;
+      this.apiInitialized = success;
+      
+      if (!success) {
+        // Retry once
+        ApiInitializer.retryInitialization(this.gapi).then((retrySuccess) => {
+          this.isApiLoaded = retrySuccess;
+          this.apiInitialized = retrySuccess;
         });
-      },
-      timeout: 10000, // 10 seconds
+      }
     });
   }
   
