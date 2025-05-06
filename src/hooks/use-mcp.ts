@@ -299,17 +299,7 @@ export function useMCP() {
       const currentContextId = client.getCurrentContextId();
       if (currentContextId) {
         // Call the client's refreshContext method and ensure we return a boolean
-        const result = client.refreshContext();
-        
-        // Handle different return types properly
-        if (typeof result === 'boolean') {
-          return result;
-        } else if (result === undefined || result === null) {
-          return false;
-        } else {
-          // Convert any other value to a boolean
-          return Boolean(result);
-        }
+        return Boolean(client.refreshContext());
       }
       return false;
     } catch (error) {
