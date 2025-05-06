@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -478,6 +479,55 @@ export class MCPClient {
     this.isAuthenticated = false;
     
     console.log('MCP: Google Drive connection reset');
+  }
+
+  /**
+   * Clear old contexts to free up storage space
+   */
+  clearOldContexts(): boolean {
+    try {
+      const keys = Object.keys(localStorage);
+      const contextKeys = keys.filter(key => 
+        key.startsWith('mcp-context-') && 
+        key !== `mcp-context-${this.conversationId}`
+      );
+      
+      console.log(`MCP: Found ${contextKeys.length} old contexts to clear`);
+      
+      // Remove old contexts
+      contextKeys.forEach(key => {
+        localStorage.removeItem(key);
+      });
+      
+      return true;
+    } catch (e) {
+      console.error('Failed to clear old contexts:', e);
+      return false;
+    }
+  }
+
+  /**
+   * Refresh the current context
+   */
+  refreshContext(): boolean {
+    try {
+      if (this.conversationId) {
+        this.persistContext();
+        console.log(`MCP: Refreshed context for conversation ${this.conversationId}`);
+        return true;
+      }
+      return false;
+    } catch (error) {
+      console.error('Error refreshing context:', error);
+      return false;
+    }
+  }
+
+  /**
+   * Get current context ID
+   */
+  getCurrentContextId(): string | null {
+    return this.conversationId;
   }
 }
 
