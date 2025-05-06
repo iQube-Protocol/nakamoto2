@@ -17,9 +17,11 @@ interface DocumentContextProps {
   isActiveTab?: boolean;
 }
 
+// Constants for optimization
 const POLLING_INTERVAL = 30000; // 30 seconds instead of 5 seconds
 const ITEMS_PER_PAGE = 5;
 const MAX_CONTENT_LENGTH = 10000; // Limit content length to prevent localStorage issues
+const MAX_DOCUMENTS = 10; // Maximum number of documents allowed
 
 const DocumentContext: React.FC<DocumentContextProps> = ({ 
   conversationId,
@@ -33,25 +35,28 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
   const [currentPage, setCurrentPage] = useState(1);
   const pollingIntervalRef = useRef<number | null>(null);
   const isComponentMounted = useRef(true);
+  const previousActiveState = useRef(isActiveTab);
   
   // Calculate pagination
   const totalPages = Math.ceil(selectedDocuments.length / ITEMS_PER_PAGE);
   const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const endIndex = startIndex + ITEMS_PER_PAGE;
+  const endIndex = Math.min(startIndex + ITEMS_PER_PAGE, selectedDocuments.length);
   const currentPageDocuments = selectedDocuments.slice(startIndex, endIndex);
   
   // Truncate content to prevent localStorage quota issues
-  const truncateContent = (content: string) => {
-    if (content && content.length > MAX_CONTENT_LENGTH) {
+  const truncateContent = useCallback((content: string) => {
+    if (!content) return '';
+    
+    if (content.length > MAX_CONTENT_LENGTH) {
       return content.substring(0, MAX_CONTENT_LENGTH) + 
         `\n\n[Content truncated to ${MAX_CONTENT_LENGTH} characters to preserve performance]`;
     }
     return content;
-  };
+  }, []);
   
   // Load documents from context
   const loadDocumentsFromContext = useCallback(() => {
-    if (!client || !conversationId || !isActiveTab) return;
+    if (!client || !conversationId) return;
     
     try {
       const context = client.getModelContext();
@@ -65,51 +70,78 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
         
         // Only update if there are differences to avoid unnecessary re-renders
         if (JSON.stringify(docs) !== JSON.stringify(selectedDocuments)) {
+          console.log('Loading documents from context:', docs.length);
           setSelectedDocuments(docs);
-          console.log('Loaded documents from context:', docs.length);
         }
       }
     } catch (error) {
       console.error('Error loading documents from context:', error);
     }
-  }, [client, conversationId, isActiveTab, selectedDocuments]);
+  }, [client, conversationId, selectedDocuments]);
   
-  // Set up polling only when tab is active
+  // Handle tab activation/deactivation
+  useEffect(() => {
+    // Only set up or tear down polling when active state changes
+    if (isActiveTab !== previousActiveState.current) {
+      previousActiveState.current = isActiveTab;
+      
+      // Clear any existing polling interval
+      if (pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+        console.log('Cleared document polling interval due to tab state change');
+      }
+      
+      // Set up polling only if tab is active
+      if (isActiveTab && conversationId) {
+        loadDocumentsFromContext(); // Initial load
+        
+        pollingIntervalRef.current = window.setInterval(() => {
+          if (isComponentMounted.current && document.visibilityState !== 'hidden') {
+            loadDocumentsFromContext();
+          }
+        }, POLLING_INTERVAL);
+        
+        console.log(`Set up document polling with ${POLLING_INTERVAL}ms interval`);
+      }
+    }
+  }, [isActiveTab, conversationId, loadDocumentsFromContext]);
+  
+  // Clean up on component unmount
   useEffect(() => {
     isComponentMounted.current = true;
     
-    // Initial load
-    if (isActiveTab) {
-      loadDocumentsFromContext();
-    }
-    
-    // Set up polling only when tab is active
-    if (isActiveTab && conversationId) {
-      // Clear any existing interval first
-      if (pollingIntervalRef.current) {
-        clearInterval(pollingIntervalRef.current);
-      }
-      
-      // Set up new polling interval
-      pollingIntervalRef.current = window.setInterval(() => {
-        if (isComponentMounted.current) {
-          loadDocumentsFromContext();
-        }
-      }, POLLING_INTERVAL);
-      
-      console.log(`Set up document polling with ${POLLING_INTERVAL}ms interval`);
-    }
-    
-    // Clean up on unmount or when tab becomes inactive
+    // Clean up function to be called on unmount
     return () => {
       isComponentMounted.current = false;
       if (pollingIntervalRef.current) {
         clearInterval(pollingIntervalRef.current);
         pollingIntervalRef.current = null;
-        console.log('Cleaned up document polling interval');
+        console.log('Cleaned up document polling interval on unmount');
       }
     };
-  }, [isActiveTab, conversationId, loadDocumentsFromContext]);
+  }, []);
+  
+  // Also monitor visibility changes to pause polling when tab is hidden
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (document.visibilityState === 'hidden' && pollingIntervalRef.current) {
+        clearInterval(pollingIntervalRef.current);
+        pollingIntervalRef.current = null;
+        console.log('Paused document polling due to tab being hidden');
+      } else if (document.visibilityState === 'visible' && isActiveTab && !pollingIntervalRef.current) {
+        pollingIntervalRef.current = window.setInterval(() => {
+          if (isComponentMounted.current) {
+            loadDocumentsFromContext();
+          }
+        }, POLLING_INTERVAL);
+        console.log('Resumed document polling after tab became visible');
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
+  }, [isActiveTab, loadDocumentsFromContext]);
   
   const handleDocumentSelect = async (document: any) => {
     if (!client) {
@@ -124,8 +156,8 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
     }
     
     // Prevent exceeding document limit
-    if (selectedDocuments.length >= 10) {
-      toast.warning('Maximum document limit reached (10). Please remove some documents first.');
+    if (selectedDocuments.length >= MAX_DOCUMENTS) {
+      toast.warning(`Maximum document limit reached (${MAX_DOCUMENTS}). Please remove some documents first.`);
       return;
     }
     
@@ -137,8 +169,12 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
         const truncatedContent = truncateContent(content);
         
         // Add content to the document object for local tracking
-        document.content = truncatedContent;
-        setSelectedDocuments(prev => [...prev, document]);
+        const newDocument = {
+          ...document, 
+          content: truncatedContent
+        };
+        
+        setSelectedDocuments(prev => [...prev, newDocument]);
         
         // Go to the page containing the new document
         const newDocIndex = selectedDocuments.length;
@@ -146,6 +182,24 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
         setCurrentPage(newPage);
         
         toast.success('Document added to context');
+        
+        // Update the client's document context
+        try {
+          const context = client.getModelContext() || { documentContext: [] };
+          context.documentContext = [
+            ...(context.documentContext || []),
+            {
+              documentId: document.id,
+              documentName: document.name,
+              documentType: document.mimeType?.split('/')[1] || 'text',
+              content: truncatedContent,
+            }
+          ];
+          
+          client.persistContext();
+        } catch (error) {
+          console.error('Error updating document context:', error);
+        }
         
         // Call the callback to update the parent component
         if (onDocumentAdded) onDocumentAdded();
@@ -166,8 +220,13 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
             doc => doc.documentId !== documentId
           );
           
-          // Make sure to persist the context after modification
-          client.persistContext();
+          try {
+            // Make sure to persist the context after modification
+            client.persistContext();
+          } catch (error) {
+            console.error('Error persisting context after document removal:', error);
+            // Continue anyway since we want to update the UI
+          }
         }
         
         // Update local state
@@ -205,11 +264,18 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
   return (
     <div className="flex flex-col">
       <div className="flex items-center justify-between p-4 pb-2">
-        <h3 className="text-sm font-medium">Documents in Context</h3>
+        <h3 className="text-sm font-medium">
+          Documents in Context ({selectedDocuments.length}/{MAX_DOCUMENTS})
+        </h3>
         <DocumentSelector 
           onDocumentSelect={handleDocumentSelect}
           triggerButton={
-            <Button variant="outline" size="sm" className="gap-1">
+            <Button 
+              variant="outline" 
+              size="sm" 
+              className="gap-1"
+              disabled={selectedDocuments.length >= MAX_DOCUMENTS}
+            >
               <FileText className="h-3.5 w-3.5" />
               Add Document
             </Button>

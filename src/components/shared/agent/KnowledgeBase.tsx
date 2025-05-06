@@ -15,8 +15,13 @@ interface KnowledgeBaseProps {
   agentType: 'learn' | 'earn' | 'connect';
 }
 
-// Knowledge base items by agent type - reduced to 4 items per type
-const knowledgeItems = {
+interface KnowledgeItem {
+  title: string;
+  description: string;
+}
+
+// Knowledge base items by agent type - reduced to 4 items per type for better performance
+const knowledgeItems: Record<string, KnowledgeItem[]> = {
   learn: [
     { title: "Web3 Learning Module 1", description: "Introduction to blockchain fundamentals and web3 applications." },
     { title: "Web3 Learning Module 2", description: "Smart contracts and decentralized applications (dApps)." },
@@ -39,18 +44,24 @@ const knowledgeItems = {
 
 const ITEMS_PER_PAGE = 2; // Show only 2 items per page to reduce rendering
 
-const KnowledgeBase = ({ agentType }: KnowledgeBaseProps) => {
+const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ agentType }) => {
   const [currentPage, setCurrentPage] = useState(1);
   
   // Memoized items for the current agent type to prevent unnecessary re-renders
-  const items = useMemo(() => knowledgeItems[agentType] || [], [agentType]);
+  const items = useMemo(() => 
+    knowledgeItems[agentType] || [], 
+    [agentType]
+  );
   
-  const totalPages = Math.ceil(items.length / ITEMS_PER_PAGE);
-  
-  // Calculate items for current page
-  const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-  const endIndex = startIndex + ITEMS_PER_PAGE;
-  const currentItems = items.slice(startIndex, endIndex);
+  // Memoize derived values
+  const { totalPages, currentItems, startIndex, endIndex } = useMemo(() => {
+    const totalPages = Math.ceil(items.length / ITEMS_PER_PAGE);
+    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
+    const endIndex = Math.min(startIndex + ITEMS_PER_PAGE, items.length);
+    const currentItems = items.slice(startIndex, endIndex);
+    
+    return { totalPages, currentItems, startIndex, endIndex };
+  }, [items, currentPage]);
   
   // Page navigation handlers
   const goToNextPage = () => {
@@ -90,6 +101,12 @@ const KnowledgeBase = ({ agentType }: KnowledgeBaseProps) => {
             </Card>
           ))}
         </div>
+        
+        {items.length === 0 && (
+          <div className="text-center p-8 text-sm text-muted-foreground">
+            No knowledge base items available for {agentType}.
+          </div>
+        )}
       </ScrollArea>
       
       {totalPages > 1 && (

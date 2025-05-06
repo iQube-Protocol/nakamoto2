@@ -1,5 +1,4 @@
-
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import KnowledgeBase from '../KnowledgeBase';
 
 interface KnowledgeTabProps {
@@ -8,11 +7,27 @@ interface KnowledgeTabProps {
 }
 
 const KnowledgeTab: React.FC<KnowledgeTabProps> = ({ agentType, isActiveTab = false }) => {
-  // Only render the KnowledgeBase component when the tab is active
-  if (!isActiveTab) {
+  // Use state to track if the component has been loaded yet
+  const [hasLoaded, setHasLoaded] = useState(false);
+  
+  // Set loaded state when tab becomes active
+  useEffect(() => {
+    if (isActiveTab && !hasLoaded) {
+      setHasLoaded(true);
+    }
+  }, [isActiveTab, hasLoaded]);
+  
+  // If tab is not active and hasn't been loaded yet, return placeholder
+  if (!isActiveTab && !hasLoaded) {
     return <div className="p-4 text-center text-muted-foreground">Select this tab to load knowledge base.</div>;
   }
   
+  // If tab is not currently active but has been loaded before, return hidden content
+  if (!isActiveTab && hasLoaded) {
+    return <div className="hidden"><KnowledgeBase agentType={agentType} /></div>;
+  }
+  
+  // Otherwise render the KnowledgeBase component
   return <KnowledgeBase agentType={agentType} />;
 };
 

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ChatTab from './tabs/ChatTab';
@@ -38,26 +37,30 @@ const AgentTabsSection: React.FC<AgentTabsSectionProps> = ({
   handleSubmit,
   agentType
 }) => {
-  // Keep track of which tabs have been loaded/visited
-  const [loadedTabs, setLoadedTabs] = useState<Record<string, boolean>>({
-    chat: true, // Always load chat tab by default
+  // Keep track of which tabs have been visited (not just loaded)
+  const [visitedTabs, setVisitedTabs] = useState<Record<string, boolean>>({
+    chat: true, // Always mark chat as visited by default
     knowledge: false,
     documents: false
   });
   
-  // When tab changes, mark it as loaded
+  // When tab changes, mark it as visited
   useEffect(() => {
-    if (activeTab && !loadedTabs[activeTab]) {
-      setLoadedTabs(prev => ({
+    if (activeTab && !visitedTabs[activeTab]) {
+      setVisitedTabs(prev => ({
         ...prev,
         [activeTab]: true
       }));
     }
-  }, [activeTab, loadedTabs]);
+  }, [activeTab, visitedTabs]);
   
   // Handle tab change
   const handleTabChange = (value: string) => {
-    setActiveTab(value as 'chat' | 'knowledge' | 'documents');
+    // Only update if the tab is actually changing
+    if (value !== activeTab) {
+      setActiveTab(value as 'chat' | 'knowledge' | 'documents');
+      console.log(`Switching to tab: ${value}`);
+    }
   };
 
   return (
@@ -93,22 +96,20 @@ const AgentTabsSection: React.FC<AgentTabsSectionProps> = ({
         </TabsContent>
 
         <TabsContent value="documents" className="p-0 m-0 overflow-hidden">
-          {loadedTabs.documents && (
-            <DocumentsTab
-              conversationId={conversationId}
-              onDocumentAdded={onDocumentAdded}
-              isActiveTab={activeTab === 'documents'}
-            />
-          )}
+          {/* Render DocumentsTab regardless if it's visited before - but with isActiveTab flag */}
+          <DocumentsTab
+            conversationId={conversationId}
+            onDocumentAdded={onDocumentAdded}
+            isActiveTab={activeTab === 'documents'}
+          />
         </TabsContent>
 
         <TabsContent value="knowledge" className="p-0 m-0 overflow-hidden">
-          {loadedTabs.knowledge && (
-            <KnowledgeTab 
-              agentType={agentType} 
-              isActiveTab={activeTab === 'knowledge'} 
-            />
-          )}
+          {/* Render KnowledgeTab regardless if it's visited before - but with isActiveTab flag */}
+          <KnowledgeTab 
+            agentType={agentType} 
+            isActiveTab={activeTab === 'knowledge'} 
+          />
         </TabsContent>
       </div>
 
