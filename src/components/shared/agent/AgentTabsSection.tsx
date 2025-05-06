@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ChatTab from './tabs/ChatTab';
@@ -92,7 +93,6 @@ const AgentTabsSection: React.FC<AgentTabsSectionProps> = ({
         </TabsContent>
 
         <TabsContent value="documents" className="p-0 m-0 overflow-hidden">
-          {/* Only render the Documents tab content if it's been loaded */}
           {loadedTabs.documents && (
             <DocumentsTab
               conversationId={conversationId}
@@ -103,9 +103,11 @@ const AgentTabsSection: React.FC<AgentTabsSectionProps> = ({
         </TabsContent>
 
         <TabsContent value="knowledge" className="p-0 m-0 overflow-hidden">
-          {/* Only render the Knowledge tab content if it's been loaded */}
           {loadedTabs.knowledge && (
-            <KnowledgeTab agentType={agentType} />
+            <KnowledgeTab 
+              agentType={agentType} 
+              isActiveTab={activeTab === 'knowledge'} 
+            />
           )}
         </TabsContent>
       </div>

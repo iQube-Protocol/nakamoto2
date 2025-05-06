@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useMemo } from 'react';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
@@ -15,39 +15,36 @@ interface KnowledgeBaseProps {
   agentType: 'learn' | 'earn' | 'connect';
 }
 
-// Knowledge base items by agent type
+// Knowledge base items by agent type - reduced to 4 items per type
 const knowledgeItems = {
   learn: [
     { title: "Web3 Learning Module 1", description: "Introduction to blockchain fundamentals and web3 applications." },
     { title: "Web3 Learning Module 2", description: "Smart contracts and decentralized applications (dApps)." },
     { title: "Web3 Learning Module 3", description: "Cryptocurrency wallets and security best practices." },
-    { title: "Web3 Learning Module 4", description: "DeFi platforms and yield optimization strategies." },
-    { title: "Web3 Learning Module 5", description: "NFTs and digital ownership in the web3 space." },
-    { title: "Web3 Learning Module 6", description: "DAOs and decentralized governance models." },
+    { title: "Web3 Learning Module 4", description: "DeFi platforms and yield optimization strategies." }
   ],
   earn: [
     { title: "Token Economics Guide 1", description: "MonDAI tokenomics and distribution model." },
     { title: "Token Economics Guide 2", description: "Staking rewards and participation incentives." },
     { title: "Token Economics Guide 3", description: "Earning opportunities through liquidity provision." },
-    { title: "Token Economics Guide 4", description: "Token utility and ecosystem value capture." },
-    { title: "Token Economics Guide 5", description: "Governance participation rewards." },
-    { title: "Token Economics Guide 6", description: "Long-term token value appreciation strategies." },
+    { title: "Token Economics Guide 4", description: "Token utility and ecosystem value capture." }
   ],
   connect: [
     { title: "Community Guide 1", description: "Getting started with the MonDAI community." },
     { title: "Community Guide 2", description: "Participating in governance and proposal voting." },
     { title: "Community Guide 3", description: "Contributing to the ecosystem as a developer." },
-    { title: "Community Guide 4", description: "Community events and meetups calendar." },
-    { title: "Community Guide 5", description: "Ambassador program and community leadership." },
-    { title: "Community Guide 6", description: "Cross-chain partnerships and integrations." },
+    { title: "Community Guide 4", description: "Community events and meetups calendar." }
   ]
 };
 
-const ITEMS_PER_PAGE = 4;
+const ITEMS_PER_PAGE = 2; // Show only 2 items per page to reduce rendering
 
 const KnowledgeBase = ({ agentType }: KnowledgeBaseProps) => {
   const [currentPage, setCurrentPage] = useState(1);
-  const items = knowledgeItems[agentType] || [];
+  
+  // Memoized items for the current agent type to prevent unnecessary re-renders
+  const items = useMemo(() => knowledgeItems[agentType] || [], [agentType]);
+  
   const totalPages = Math.ceil(items.length / ITEMS_PER_PAGE);
   
   // Calculate items for current page

@@ -26,18 +26,31 @@ export const useConversationContext = ({
   const [documentContextUpdated, setDocumentContextUpdated] = useState<number>(0);
   const { client: mcpClient, isInitialized } = useMCP();
   const loadingRef = useRef(false);
+  const previousConversationIdRef = useRef<string | null>(null);
   
   // Load conversation context when component mounts or conversationId changes
   useEffect(() => {
+    // Skip if conversation ID hasn't changed to avoid redundant loads
+    if (conversationId === previousConversationIdRef.current) {
+      return;
+    }
+    
+    // Skip if no conversation ID
+    if (!conversationId) {
+      console.log('No conversationId provided, skipping context load');
+      return;
+    }
+    
     // Prevent multiple simultaneous loads
-    if (!conversationId || loadingRef.current) {
-      console.log('No conversationId provided or loading in progress, skipping context load');
+    if (loadingRef.current) {
+      console.log('Loading already in progress, skipping context load');
       return;
     }
     
     const loadContext = async () => {
       loadingRef.current = true;
       setIsLoading(true);
+      previousConversationIdRef.current = conversationId;
       
       try {
         const context = await getConversationContext(conversationId, agentType);
@@ -53,8 +66,12 @@ export const useConversationContext = ({
         
         // Initialize MCP with this conversation ID
         if (mcpClient && isInitialized) {
-          await mcpClient.initializeContext(context.conversationId);
-          console.log(`MCP context initialized for conversation ${context.conversationId}`);
+          try {
+            await mcpClient.initializeContext(context.conversationId);
+            console.log(`MCP context initialized for conversation ${context.conversationId}`);
+          } catch (error) {
+            console.error('Error initializing MCP context:', error);
+          }
         }
       } catch (error) {
         console.error('Error loading conversation context:', error);

@@ -13,6 +13,11 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({
   onDocumentAdded,
   isActiveTab
 }) => {
+  // Only render the full component when the tab is active
+  if (!isActiveTab) {
+    return <div className="p-4 text-center text-muted-foreground">Select this tab to load documents.</div>;
+  }
+
   return (
     <DocumentContext
       conversationId={conversationId}
