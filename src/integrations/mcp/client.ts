@@ -3,7 +3,7 @@
    * Refresh the current context
    * @returns boolean indicating success or failure
    */
-  refreshContext(): boolean {
+  refreshContext() {
     try {
       if (this.conversationId) {
         this.persistContext();
@@ -16,4 +16,3 @@
       return false;
     }
   }
-
