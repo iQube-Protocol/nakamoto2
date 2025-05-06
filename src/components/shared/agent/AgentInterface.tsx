@@ -1,10 +1,11 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { AgentMessage } from '@/lib/types';
 import { Card } from '@/components/ui/card';
+import { toast } from 'sonner';
 import AgentHeader from './AgentHeader';
-import AgentTabsSection from './AgentTabsSection';
-import { useAgentInterface } from '@/hooks/use-agent-interface';
+import AgentTabs from './tabs/AgentTabs';
+import { useAgentMessages } from './hooks/useAgentMessages';
 
 interface AgentInterfaceProps {
   title: string;
@@ -27,38 +28,43 @@ const AgentInterface = ({
   onDocumentAdded,
   documentContextUpdated = 0,
 }: AgentInterfaceProps) => {
-  // Extract the interface state and handlers to a custom hook
+  const [activeTab, setActiveTab] = useState<'chat' | 'knowledge' | 'documents'>('chat');
+  
   const {
     messages,
     inputValue,
     isProcessing,
-    activeTab,
     playing,
     messagesEndRef,
     conversationId,
     handleInputChange,
     handleSubmit,
     handlePlayAudio,
-    handleDocumentAdded,
-    setActiveTab
-  } = useAgentInterface({
+  } = useAgentMessages({
     agentType,
     initialMessages,
-    conversationId: externalConversationId || null,
-    setConversationId: (id) => {
-      // This is just a pass-through as the actual state is managed in the parent component
-      if (externalConversationId !== id) {
-        console.log(`Conversation ID updated: ${id}`);
-      }
-    },
-    onMessageSubmit,
-    onDocumentAdded
+    conversationId: externalConversationId,
+    onMessageSubmit
   });
 
+  const handleDocumentAdded = () => {
+    // Refresh the messages or notify the user
+    toast.success('Document context has been updated');
+    
+    // Call the parent's onDocumentAdded if provided
+    if (onDocumentAdded) {
+      onDocumentAdded();
+    }
+    
+    // Switch to documents tab to let user see their document was added
+    setActiveTab('documents');
+  };
+
   // Effect to track document context updates
-  React.useEffect(() => {
+  useEffect(() => {
     if (documentContextUpdated > 0) {
       console.log(`Document context updated (${documentContextUpdated}), refreshing UI`);
+      // Force a UI refresh related to document display
     }
   }, [documentContextUpdated]);
 
@@ -70,20 +76,20 @@ const AgentInterface = ({
         isProcessing={isProcessing} 
       />
 
-      <AgentTabsSection
+      <AgentTabs
         activeTab={activeTab}
         setActiveTab={setActiveTab}
         messages={messages}
+        inputValue={inputValue}
         isProcessing={isProcessing}
         playing={playing}
+        agentType={agentType}
         messagesEndRef={messagesEndRef}
-        onPlayAudio={handlePlayAudio}
         conversationId={conversationId}
-        onDocumentAdded={handleDocumentAdded}
-        inputValue={inputValue}
         handleInputChange={handleInputChange}
         handleSubmit={handleSubmit}
-        agentType={agentType}
+        handlePlayAudio={handlePlayAudio}
+        handleDocumentAdded={handleDocumentAdded}
       />
     </Card>
   );

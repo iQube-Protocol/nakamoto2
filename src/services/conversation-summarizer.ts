@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -17,6 +16,14 @@ const SUMMARIZATION_THRESHOLD = 10; // Summarize after 10 messages in a conversa
 const SUMMARY_EXPIRATION_DAYS = 30; // Summaries expire after 30 days
 
 /**
+ * Validates that a conversationId is in the proper UUID format
+ */
+function isValidUUID(id: string): boolean {
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  return uuidRegex.test(id);
+}
+
+/**
  * Checks if a conversation needs summarization based on the number of interactions
  */
 export const checkIfSummarizationNeeded = async (
@@ -24,6 +31,12 @@ export const checkIfSummarizationNeeded = async (
   agentType: 'learn' | 'earn' | 'connect'
 ): Promise<boolean> => {
   try {
+    // Validate conversation ID format first
+    if (!isValidUUID(conversationId)) {
+      console.warn(`Invalid conversationId format: ${conversationId}, skipping summarization check`);
+      return false;
+    }
+
     // Get the current user session to ensure we have a user_id
     const { data: { session } } = await supabase.auth.getSession();
     if (!session?.user?.id) {
@@ -32,6 +45,7 @@ export const checkIfSummarizationNeeded = async (
     }
     
     // Count unsummarized interactions for this conversation
+    // Use proper PostgreSQL syntax for JSON column filtering
     const { data: interactions, error } = await supabase
       .from('user_interactions')
       .select('id')
@@ -95,6 +109,7 @@ export const getConversationSummaries = async (
 
 /**
  * Triggers summarization of a conversation via the edge function
+ * Returns false if summarization fails, but doesn't throw exceptions
  */
 export const triggerConversationSummarize = async (
   conversationId: string,
@@ -125,7 +140,7 @@ export const triggerConversationSummarize = async (
     }
     
     if (!data?.success) {
-      console.error('Summarization failed:', data?.error);
+      console.error('Summarization failed:', data?.error || 'Unknown error');
       return false;
     }
     
@@ -145,31 +160,38 @@ export const getHistoricalContextForPrompt = async (
   agentType: 'learn' | 'earn' | 'connect',
   maxSummaries: number = 3
 ): Promise<string> => {
-  const summaries = await getConversationSummaries(agentType);
-  
-  if (summaries.length === 0) {
-    return '';
+  try {
+    const summaries = await getConversationSummaries(agentType);
+    
+    if (summaries.length === 0) {
+      return '';
+    }
+    
+    // Get the most recent summaries
+    const recentSummaries = summaries.slice(0, maxSummaries);
+    
+    // Format them for inclusion in a prompt
+    let contextString = `\n\n<conversation-history>\n`;
+    contextString += `The user has had previous conversations with you. Here are summaries of past interactions:\n\n`;
+    
+    recentSummaries.forEach((summary, index) => {
+      contextString += `Summary ${index + 1} (${new Date(summary.created_at).toLocaleDateString()}): ${summary.summary_text}\n\n`;
+    });
+    
+    contextString += `</conversation-history>`;
+    
+    return contextString;
+  } catch (error) {
+    console.error('Error generating historical context:', error);
+    return ''; // Return empty string on error to avoid breaking the application
   }
-  
-  // Get the most recent summaries
-  const recentSummaries = summaries.slice(0, maxSummaries);
-  
-  // Format them for inclusion in a prompt
-  let contextString = `\n\n<conversation-history>\n`;
-  contextString += `The user has had previous conversations with you. Here are summaries of past interactions:\n\n`;
-  
-  recentSummaries.forEach((summary, index) => {
-    contextString += `Summary ${index + 1} (${new Date(summary.created_at).toLocaleDateString()}): ${summary.summary_text}\n\n`;
-  });
-  
-  contextString += `</conversation-history>`;
-  
-  return contextString;
 };
 
 /**
  * Prepares a conversation for a new session by checking if summarization 
  * is needed for past unsummarized interactions
+ * 
+ * Now with improved validation and error handling to prevent blocking the application
  */
 export const prepareConversationContext = async (
   agentType: 'learn' | 'earn' | 'connect',
@@ -180,21 +202,42 @@ export const prepareConversationContext = async (
 }> => {
   // Generate a new conversation ID if none provided
   const newConversationId = conversationId || crypto.randomUUID();
+  let historicalContext = '';
   
-  // If we have an existing conversation ID, check if summarization is needed
-  if (conversationId) {
-    const needsSummarization = await checkIfSummarizationNeeded(conversationId, agentType);
-    
-    if (needsSummarization) {
-      console.log(`Conversation ${conversationId} needs summarization, triggering...`);
-      await triggerConversationSummarize(conversationId, agentType);
-      toast.success('Summarizing your previous conversations for better context.');
+  try {
+    // If we have an existing conversation ID, check if summarization is needed
+    if (conversationId) {
+      try {
+        // Validate conversationId format
+        if (isValidUUID(conversationId)) {
+          const needsSummarization = await checkIfSummarizationNeeded(conversationId, agentType);
+          
+          if (needsSummarization) {
+            console.log(`Conversation ${conversationId} needs summarization, triggering...`);
+            await triggerConversationSummarize(conversationId, agentType).catch(err => {
+              console.error('Failed to summarize conversation, continuing anyway:', err);
+            });
+            toast.success('Summarizing your previous conversations for better context.');
+          }
+        } else {
+          console.warn('Invalid conversationId format:', conversationId);
+        }
+      } catch (error) {
+        console.error('Error checking if summarization needed, continuing anyway:', error);
+      }
     }
+    
+    // Get historical context regardless of summarization
+    try {
+      historicalContext = await getHistoricalContextForPrompt(agentType);
+      console.log(`Historical context for ${agentType} (length: ${historicalContext.length}):\n${historicalContext.substring(0, 100)}...`);
+    } catch (error) {
+      console.error('Error getting historical context, continuing without it:', error);
+      historicalContext = '';
+    }
+  } catch (error) {
+    console.error('Error in prepareConversationContext, continuing with new conversation:', error);
   }
-  
-  // Get historical context regardless of summarization
-  const historicalContext = await getHistoricalContextForPrompt(agentType);
-  console.log(`Historical context for ${agentType} (length: ${historicalContext.length}):\n${historicalContext}`);
   
   return {
     conversationId: newConversationId,

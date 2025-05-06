@@ -1,69 +1,106 @@
 
-import { useMCPClient } from './use-mcp-client';
-import { useDriveConnection } from './use-drive-connection';
-import { useDocumentOperations } from './use-document-operations';
-import { useContextManagement } from './use-context-management';
+import { useState } from 'react';
+import { useConnectionInitialization } from './useConnectionInitialization';
+import { useConnectionVerification } from './useConnectionVerification';
+import { useApiStateTracking } from './useApiStateTracking';
+import { useStatusCheck } from './useStatusCheck';
+import { useDocumentOperations } from './useDocumentOperations';
+import { useContextManagement } from './useContextManagement';
+import { MCPClient } from '@/integrations/mcp/client';
+import { MCPContext } from '@/integrations/mcp/types';
 
 /**
- * Main MCP hook that combines all MCP-related functionality
+ * Main hook combining all MCP functionality
  */
-export function useMCP() {
-  // Initialize client
-  const { client, isInitialized } = useMCPClient();
-  
-  // Drive connection management
-  const { 
-    driveConnected, 
-    isLoading: connectionLoading, 
-    connectToDrive, 
-    resetDriveConnection 
-  } = useDriveConnection(client);
-  
-  // Document operations
-  const { 
-    documents,
-    isLoading: documentsLoading, 
-    listDocuments, 
-    fetchDocument 
-  } = useDocumentOperations(client, driveConnected);
-  
-  // Context management
-  const { 
-    initializeContext, 
-    refreshContext, 
-    getCurrentContextId 
-  } = useContextManagement(client);
-  
-  // Combine loading states
-  const isLoading = connectionLoading || documentsLoading;
-  
-  return {
-    // Client state
+export function useMCP(): MCPContext {
+  const [client, setClient] = useState<MCPClient | null>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
+  const [driveConnected, setDriveConnected] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [connectionStatus, setConnectionStatus] = useState<'disconnected' | 'connecting' | 'connected' | 'error'>('disconnected');
+  const [documents, setDocuments] = useState<any[]>([]);
+
+  // Initialize the client and track API loading state
+  const { isApiLoading, apiLoadError, setIsApiLoading } = useApiStateTracking(client);
+
+  // Initialize MCP client and connection state
+  useConnectionInitialization(
+    setClient,
+    setIsInitialized,
+    setDriveConnected,
+    setConnectionStatus,
+    setIsApiLoading
+  );
+
+  // Verify connection state periodically
+  useConnectionVerification(
     client,
-    isInitialized,
-    
-    // Drive connection
     driveConnected,
+    setDriveConnected,
+    setConnectionStatus
+  );
+
+  // Get functions to check connection status
+  const { getConnectionStatus, checkApiStatus } = useStatusCheck(
+    client,
+    driveConnected
+  );
+
+  // Drive operations
+  const {
     connectToDrive,
     resetDriveConnection,
-    
-    // Document operations
-    documents,
     listDocuments,
     fetchDocument,
-    
-    // Context management
+    forceRefreshDocuments
+  } = useDocumentOperations(
+    client,
+    driveConnected,
+    setDriveConnected,
+    setIsLoading,
+    setConnectionStatus,
+    setDocuments
+  );
+
+  // Context operations
+  const {
     initializeContext,
-    refreshContext,
-    getCurrentContextId,
-    
-    // UI state
-    isLoading
+    getDocumentsInContext,
+    addDocumentToContext,
+    removeDocumentFromContext
+  } = useContextManagement(client);
+
+  // Fix type issues by wrapping functions that need to return Promises
+  const checkApiStatusAsync = async (): Promise<boolean> => {
+    return Promise.resolve(checkApiStatus());
+  };
+  
+  // Fix the type mismatch by wrapping forceRefreshDocuments to return Promise<void>
+  const forceRefreshDocumentsAsync = async (): Promise<void> => {
+    await forceRefreshDocuments();
+    // Return void to match the expected return type
+    return;
+  };
+
+  return {
+    client,
+    isInitialized,
+    driveConnected,
+    isLoading,
+    isApiLoading,
+    apiLoadError,
+    connectionStatus,
+    getConnectionStatus,
+    connectToDrive,
+    resetDriveConnection,
+    checkApiStatus: checkApiStatusAsync,
+    listDocuments,
+    fetchDocument,
+    forceRefreshDocuments: forceRefreshDocumentsAsync,
+    initializeContext,
+    getDocumentsInContext,
+    addDocumentToContext,
+    removeDocumentFromContext,
+    documents,
   };
 }
-
-// Re-export all hooks for direct import when needed
-export * from './use-mcp-client';
-export * from './use-drive-connection';
-export * from './use-document-operations';
-export * from './use-context-management';

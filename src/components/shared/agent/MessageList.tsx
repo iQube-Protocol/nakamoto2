@@ -20,29 +20,31 @@ const MessageList = ({
   messagesEndRef
 }: MessageListProps) => {
   return (
-    <ScrollArea className="h-[400px]">
-      <div className="p-4 space-y-4">
-        {messages.map((msg) => (
-          <MessageItem 
-            key={msg.id} 
-            message={msg} 
-            isPlaying={playing === msg.id}
-            onPlayAudio={onPlayAudio}
-          />
-        ))}
-        
-        {isProcessing && (
-          <div className="agent-message">
-            <div className="flex space-x-2 items-center">
-              <div className="w-2 h-2 rounded-full bg-iqube-primary animate-pulse"></div>
-              <div className="w-2 h-2 rounded-full bg-iqube-primary animate-pulse" style={{animationDelay: '0.2s'}}></div>
-              <div className="w-2 h-2 rounded-full bg-iqube-primary animate-pulse" style={{animationDelay: '0.4s'}}></div>
+    <div className="flex-1 overflow-hidden">
+      <ScrollArea className="h-[400px]">
+        <div className="p-4 space-y-4">
+          {messages.map((msg) => (
+            <MessageItem 
+              key={msg.id} 
+              message={msg} 
+              isPlaying={playing === msg.id}
+              onPlayAudio={onPlayAudio}
+            />
+          ))}
+          
+          {isProcessing && (
+            <div className="agent-message">
+              <div className="flex space-x-2 items-center">
+                <div className="w-2 h-2 rounded-full bg-iqube-primary animate-pulse"></div>
+                <div className="w-2 h-2 rounded-full bg-iqube-primary animate-pulse" style={{animationDelay: '0.2s'}}></div>
+                <div className="w-2 h-2 rounded-full bg-iqube-primary animate-pulse" style={{animationDelay: '0.4s'}}></div>
+              </div>
             </div>
-          </div>
-        )}
-        <div ref={messagesEndRef} />
-      </div>
-    </ScrollArea>
+          )}
+          <div ref={messagesEndRef} />
+        </div>
+      </ScrollArea>
+    </div>
   );
 };
 

@@ -1,13 +1,11 @@
 
 import React from 'react';
 import { AgentInterface } from '@/components/shared/agent';
-import { useToast } from '@/components/ui/use-toast';
 import { MetaQube, BlakQube } from '@/lib/types';
-import { getConversationContext } from '@/services/agent-service';
-import { useMCP } from '@/hooks/use-mcp';
-import { useMetisActivation } from '@/hooks/use-metis-activation';
-import { useConversationContext } from '@/hooks/use-conversation-context';
-import { sendMessageToLearnAI } from '@/services/learn-ai-service';
+import { useMetisActivation } from './hooks/useMetisActivation';
+import { useDocumentContextUpdates } from './hooks/useDocumentContextUpdates';
+import { useConversationContext } from './hooks/useConversationContext';
+import { processAiMessage } from './services/aiMessageService';
 
 interface AgentPanelProps {
   metaQube: MetaQube;
@@ -15,7 +13,6 @@ interface AgentPanelProps {
   conversationId: string | null;
   setConversationId: (id: string | null) => void;
   isPanelCollapsed: boolean;
-  onDocumentAdded?: () => void;
 }
 
 const AgentPanel = ({ 
@@ -23,75 +20,42 @@ const AgentPanel = ({
   blakQube,
   conversationId, 
   setConversationId,
-  isPanelCollapsed,
-  onDocumentAdded 
+  isPanelCollapsed 
 }: AgentPanelProps) => {
-  const { toast } = useToast();
-  const { metisActive, updateMetisStatus } = useMetisActivation();
-  const { historicalContext, isLoading, documentContextUpdated, setDocumentContextUpdated } = 
-    useConversationContext({ conversationId, setConversationId, agentType: 'learn' });
-  const { client: mcpClient, isInitialized } = useMCP();
-
-  // Handle when documents are added or removed
-  const handleDocumentContextUpdated = () => {
-    setDocumentContextUpdated(prev => prev + 1);
-    console.log('Document context updated, triggering refresh');
-    
-    // Call the onDocumentAdded callback if it exists
-    if (onDocumentAdded) {
-      onDocumentAdded();
-    }
-  };
+  const { metisActive, setMetisActive } = useMetisActivation();
+  const { documentContextUpdated, handleDocumentContextUpdated } = useDocumentContextUpdates();
+  const { historicalContext, isLoading, mcpClient } = useConversationContext(
+    conversationId, 
+    setConversationId
+  );
 
   const handleAIMessage = async (message: string) => {
-    try {
-      // Get conversation context, including history if available
-      const contextResult = await getConversationContext(conversationId, 'learn');
+    const response = await processAiMessage({
+      message,
+      metaQube,
+      blakQube,
+      conversationId,
+      metisActive,
+      mcpClient,
+      historicalContext,
+      setConversationId,
+    });
+    
+    // Check if Metis was activated through the payment flow
+    if (response.metadata?.metisActive !== undefined && response.metadata.metisActive !== metisActive) {
+      setMetisActive(response.metadata.metisActive);
       
-      if (contextResult.conversationId !== conversationId) {
-        setConversationId(contextResult.conversationId);
-        console.log(`Setting new conversation ID: ${contextResult.conversationId}`);
-      }
+      // Persist Metis activation status to localStorage
+      localStorage.setItem('metisActive', 'true');
       
-      // Get AI response
-      const response = await sendMessageToLearnAI(
-        message, 
-        contextResult, 
-        metaQube, 
-        blakQube, 
-        mcpClient, 
-        metisActive
-      );
+      // Dispatch global event to notify other components
+      const activationEvent = new Event('metisActivated');
+      window.dispatchEvent(activationEvent);
       
-      // Update Metis activation status if changed in the response
-      if (response.metadata?.metisActive !== undefined && response.metadata.metisActive !== metisActive) {
-        updateMetisStatus(response.metadata.metisActive);
-      }
-      
-      // Update conversation ID if changed
-      if (response.metadata?.conversationId && response.metadata.conversationId !== conversationId) {
-        setConversationId(response.metadata.conversationId);
-      }
-      
-      return response;
-    } catch (error) {
-      console.error('Failed to process AI message:', error);
-      toast({
-        title: "AI Service Error",
-        description: "Could not connect to the AI service. Please try again later.",
-        variant: "destructive"
-      });
-      
-      return {
-        id: Date.now().toString(),
-        sender: 'agent' as const,
-        message: "I'm sorry, I couldn't process your request. Please try again later.",
-        timestamp: new Date().toISOString(),
-        metadata: {
-          metisActive: metisActive
-        }
-      };
+      console.log(`Metis agent status updated to: ${response.metadata.metisActive}`);
     }
+    
+    return response;
   };
 
   if (isLoading) {

@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Loader2 } from 'lucide-react';
-import DocumentItem from './DocumentItem';
+import DocumentCard from './DocumentCard';
 
 interface DocumentListProps {
   documents: any[];
@@ -10,11 +10,14 @@ interface DocumentListProps {
   onRemoveDocument: (documentId: string) => void;
 }
 
-const DocumentList: React.FC<DocumentListProps> = ({ 
-  documents, 
-  isLoading, 
-  onViewDocument, 
-  onRemoveDocument 
+/**
+ * Component for displaying the list of documents in context
+ */
+const DocumentList: React.FC<DocumentListProps> = ({
+  documents,
+  isLoading,
+  onViewDocument,
+  onRemoveDocument
 }) => {
   if (isLoading) {
     return (
@@ -23,19 +26,19 @@ const DocumentList: React.FC<DocumentListProps> = ({
       </div>
     );
   }
-  
+
   if (documents.length === 0) {
     return (
-      <div className="text-center p-8 text-sm text-muted-foreground">
+      <div className="text-center py-8 text-sm text-muted-foreground">
         No documents in context. Add documents to enhance your agent's responses.
       </div>
     );
   }
-  
+
   return (
-    <div className="space-y-2 pb-4">
+    <div className="space-y-2 max-h-[200px] overflow-y-auto">
       {documents.map(doc => (
-        <DocumentItem
+        <DocumentCard
           key={doc.id}
           document={doc}
           onView={onViewDocument}

@@ -1,154 +1,38 @@
 
-import React, { useState, useMemo } from 'react';
+import React from 'react';
 import { Card } from '@/components/ui/card';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Button } from '@/components/ui/button';
-import { ChevronLeft, ChevronRight } from 'lucide-react';
-import { 
-  Pagination, 
-  PaginationContent, 
-  PaginationItem, 
-  PaginationLink 
-} from '@/components/ui/pagination';
 
 interface KnowledgeBaseProps {
   agentType: 'learn' | 'earn' | 'connect';
 }
 
-interface KnowledgeItem {
-  title: string;
-  description: string;
-}
-
-// Knowledge base items by agent type - reduced to 4 items per type for better performance
-const knowledgeItems: Record<string, KnowledgeItem[]> = {
-  learn: [
-    { title: "Web3 Learning Module 1", description: "Introduction to blockchain fundamentals and web3 applications." },
-    { title: "Web3 Learning Module 2", description: "Smart contracts and decentralized applications (dApps)." },
-    { title: "Web3 Learning Module 3", description: "Cryptocurrency wallets and security best practices." },
-    { title: "Web3 Learning Module 4", description: "DeFi platforms and yield optimization strategies." }
-  ],
-  earn: [
-    { title: "Token Economics Guide 1", description: "MonDAI tokenomics and distribution model." },
-    { title: "Token Economics Guide 2", description: "Staking rewards and participation incentives." },
-    { title: "Token Economics Guide 3", description: "Earning opportunities through liquidity provision." },
-    { title: "Token Economics Guide 4", description: "Token utility and ecosystem value capture." }
-  ],
-  connect: [
-    { title: "Community Guide 1", description: "Getting started with the MonDAI community." },
-    { title: "Community Guide 2", description: "Participating in governance and proposal voting." },
-    { title: "Community Guide 3", description: "Contributing to the ecosystem as a developer." },
-    { title: "Community Guide 4", description: "Community events and meetups calendar." }
-  ]
-};
-
-const ITEMS_PER_PAGE = 2; // Show only 2 items per page to reduce rendering
-
-const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ agentType }) => {
-  const [currentPage, setCurrentPage] = useState(1);
-  
-  // Memoized items for the current agent type to prevent unnecessary re-renders
-  const items = useMemo(() => 
-    knowledgeItems[agentType] || [], 
-    [agentType]
-  );
-  
-  // Memoize derived values
-  const { totalPages, currentItems, startIndex, endIndex } = useMemo(() => {
-    const totalPages = Math.ceil(items.length / ITEMS_PER_PAGE);
-    const startIndex = (currentPage - 1) * ITEMS_PER_PAGE;
-    const endIndex = Math.min(startIndex + ITEMS_PER_PAGE, items.length);
-    const currentItems = items.slice(startIndex, endIndex);
-    
-    return { totalPages, currentItems, startIndex, endIndex };
-  }, [items, currentPage]);
-  
-  // Page navigation handlers
-  const goToNextPage = () => {
-    if (currentPage < totalPages) {
-      setCurrentPage(currentPage + 1);
-    }
-  };
-  
-  const goToPrevPage = () => {
-    if (currentPage > 1) {
-      setCurrentPage(currentPage - 1);
-    }
-  };
-  
-  const goToPage = (page: number) => {
-    setCurrentPage(page);
-  };
-
+const KnowledgeBase = ({ agentType }: KnowledgeBaseProps) => {
   return (
-    <div className="flex flex-col">
-      <div className="p-4 pb-2">
-        <h3 className="text-lg font-medium">Knowledge Base</h3>
-        <p className="text-sm text-muted-foreground mt-1">
+    <div className="space-y-6">
+      <div>
+        <h3 className="text-lg font-medium mb-2">Knowledge Base</h3>
+        <p className="text-sm text-muted-foreground">
           Access specialized information related to {agentType === 'learn' ? 'web3 education' : 
             agentType === 'earn' ? 'MonDAI tokens' : 'community connections'}.
         </p>
       </div>
       
-      <ScrollArea className="h-[350px] px-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-4">
-          {currentItems.map((item, i) => (
-            <Card key={i} className="p-4 hover:bg-card/90 transition-colors cursor-pointer">
-              <h4 className="font-medium">{item.title}</h4>
-              <p className="text-sm text-muted-foreground mt-1">
-                {item.description}
-              </p>
-            </Card>
-          ))}
-        </div>
-        
-        {items.length === 0 && (
-          <div className="text-center p-8 text-sm text-muted-foreground">
-            No knowledge base items available for {agentType}.
-          </div>
-        )}
-      </ScrollArea>
-      
-      {totalPages > 1 && (
-        <div className="p-2 border-t">
-          <Pagination>
-            <PaginationContent>
-              <PaginationItem>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  onClick={goToPrevPage}
-                  disabled={currentPage === 1}
-                >
-                  <ChevronLeft className="h-4 w-4" />
-                </Button>
-              </PaginationItem>
-              
-              {Array.from({ length: totalPages }, (_, i) => i + 1).map((page) => (
-                <PaginationItem key={page}>
-                  <PaginationLink
-                    onClick={() => goToPage(page)}
-                    isActive={page === currentPage}
-                  >
-                    {page}
-                  </PaginationLink>
-                </PaginationItem>
-              ))}
-              
-              <PaginationItem>
-                <Button 
-                  variant="ghost" 
-                  size="icon" 
-                  onClick={goToNextPage}
-                  disabled={currentPage === totalPages}
-                >
-                  <ChevronRight className="h-4 w-4" />
-                </Button>
-              </PaginationItem>
-            </PaginationContent>
-          </Pagination>
-        </div>
-      )}
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        {[1, 2, 3, 4].map((i) => (
+          <Card key={i} className="p-4 hover:bg-card/90 transition-colors cursor-pointer">
+            <h4 className="font-medium">
+              {agentType === 'learn' && `Web3 Learning Module ${i}`}
+              {agentType === 'earn' && `Token Economics Guide ${i}`}
+              {agentType === 'connect' && `Community Guide ${i}`}
+            </h4>
+            <p className="text-sm text-muted-foreground mt-1">
+              {agentType === 'learn' && "Learn about blockchain fundamentals and web3 applications."}
+              {agentType === 'earn' && "Understand MonDAI token metrics and rewards."}
+              {agentType === 'connect' && "Connect with like-minded individuals in the community."}
+            </p>
+          </Card>
+        ))}
+      </div>
     </div>
   );
 };
