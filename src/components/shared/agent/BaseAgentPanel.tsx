@@ -1,7 +1,7 @@
 
 import React, { memo } from 'react';
 import { AgentInterface } from '@/components/shared/agent';
-import { AgentMessage, MetaQube, BlakQube } from '@/lib/types';
+import { MetaQube, BlakQube } from '@/lib/types';
 
 interface BaseAgentPanelProps {
   title: string;
@@ -35,10 +35,10 @@ const BaseAgentPanel = memo(({
   }, [documentContextUpdated]);
 
   // Memoize initial messages to prevent recreation on every render
-  const initialMessages = React.useMemo((): AgentMessage[] => [
+  const initialMessages = React.useMemo(() => [
     {
       id: "1",
-      sender: "agent", // Explicitly using "agent" as a literal type
+      sender: "agent",
       message: initialMessage,
       timestamp: new Date().toISOString(),
       metadata: {

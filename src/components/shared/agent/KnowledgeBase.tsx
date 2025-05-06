@@ -8,7 +8,7 @@ interface KnowledgeBaseProps {
 }
 
 const KnowledgeBase = memo(({ agentType }: KnowledgeBaseProps) => {
-  const knowledgeItems = React.useMemo(() => [1, 2, 3, 4, 5, 6].map((i) => ({
+  const knowledgeItems = React.useMemo(() => [1, 2, 3, 4, 5, 6, 7, 8].map((i) => ({
     id: i,
     title: agentType === 'learn' ? `Web3 Learning Module ${i}` :
            agentType === 'earn' ? `Token Economics Guide ${i}` :
@@ -28,10 +28,10 @@ const KnowledgeBase = memo(({ agentType }: KnowledgeBaseProps) => {
         </p>
       </div>
       
-      <ScrollArea className="flex-grow px-4">
+      <ScrollArea className="h-[400px] px-4 flex-grow">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-4">
           {knowledgeItems.map((item) => (
-            <Card key={item.id} className="p-4 hover:bg-accent/50 transition-colors cursor-pointer">
+            <Card key={item.id} className="p-4 hover:bg-card/90 transition-colors cursor-pointer">
               <h4 className="font-medium">{item.title}</h4>
               <p className="text-sm text-muted-foreground mt-1">{item.description}</p>
             </Card>

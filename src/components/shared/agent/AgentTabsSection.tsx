@@ -48,6 +48,46 @@ const AgentTabsSection: React.FC<AgentTabsSectionProps> = ({
   handleSubmit,
   agentType
 }) => {
+  // Memoize the tab content to prevent unnecessary re-renders
+  const renderTabContent = React.useMemo(() => ({
+    chat: (
+      <Suspense fallback={<TabLoading />}>
+        <ChatTab
+          messages={messages}
+          isProcessing={isProcessing}
+          playing={playing}
+          messagesEndRef={messagesEndRef}
+          onPlayAudio={onPlayAudio}
+          agentType={agentType}
+        />
+      </Suspense>
+    ),
+    documents: (
+      <Suspense fallback={<TabLoading />}>
+        <DocumentsTab
+          conversationId={conversationId}
+          onDocumentAdded={onDocumentAdded}
+          isActiveTab={activeTab === 'documents'}
+        />
+      </Suspense>
+    ),
+    knowledge: (
+      <Suspense fallback={<TabLoading />}>
+        <KnowledgeTab agentType={agentType} />
+      </Suspense>
+    )
+  }), [
+    messages, 
+    isProcessing, 
+    playing, 
+    messagesEndRef, 
+    onPlayAudio, 
+    conversationId, 
+    onDocumentAdded, 
+    activeTab, 
+    agentType
+  ]);
+
   return (
     <Tabs
       value={activeTab}
@@ -69,39 +109,16 @@ const AgentTabsSection: React.FC<AgentTabsSectionProps> = ({
       </div>
 
       <div className="flex-1 flex flex-col overflow-hidden">
-        <TabsContent value="chat" className="flex-1 p-0 m-0 overflow-hidden h-full">
-          {activeTab === 'chat' && (
-            <Suspense fallback={<TabLoading />}>
-              <ChatTab
-                messages={messages}
-                isProcessing={isProcessing}
-                playing={playing}
-                messagesEndRef={messagesEndRef}
-                onPlayAudio={onPlayAudio}
-                agentType={agentType}
-              />
-            </Suspense>
-          )}
+        <TabsContent value="chat" className="flex-1 p-0 m-0 overflow-hidden">
+          {activeTab === 'chat' && renderTabContent.chat}
         </TabsContent>
 
-        <TabsContent value="documents" className="p-0 m-0 overflow-hidden h-full">
-          {activeTab === 'documents' && (
-            <Suspense fallback={<TabLoading />}>
-              <DocumentsTab
-                conversationId={conversationId}
-                onDocumentAdded={onDocumentAdded}
-                isActiveTab={activeTab === 'documents'}
-              />
-            </Suspense>
-          )}
+        <TabsContent value="documents" className="p-0 m-0 overflow-hidden">
+          {activeTab === 'documents' && renderTabContent.documents}
         </TabsContent>
 
-        <TabsContent value="knowledge" className="p-0 m-0 overflow-hidden h-full">
-          {activeTab === 'knowledge' && (
-            <Suspense fallback={<TabLoading />}>
-              <KnowledgeTab agentType={agentType} />
-            </Suspense>
-          )}
+        <TabsContent value="knowledge" className="p-0 m-0 overflow-hidden">
+          {activeTab === 'knowledge' && renderTabContent.knowledge}
         </TabsContent>
       </div>
 
