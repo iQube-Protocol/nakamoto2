@@ -1,7 +1,7 @@
 
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { getConversationContext } from '@/services/agent-service';
-import { useMCP } from '@/hooks/use-mcp';
+import { useMCP } from '@/hooks/mcp/use-mcp';
 import { toast } from 'sonner';
 
 interface UseConversationContextProps {

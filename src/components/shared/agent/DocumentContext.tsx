@@ -1,9 +1,8 @@
-
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
-import { useMCP } from '@/hooks/use-mcp';
+import { useMCP } from '@/hooks/mcp/use-mcp';
 import { FileText } from 'lucide-react';
 import DocumentSelector from '../document-selector';
 import { DocumentList, DocumentViewer } from './document';
