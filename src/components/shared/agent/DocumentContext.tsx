@@ -51,15 +51,18 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
     }
   }, [client, conversationId, loadDocumentsFromContext, lastUpdate]);
   
-  // Set up polling with proper cleanup
+  // Set up polling with proper cleanup - only if tab is active
   useEffect(() => {
     // Only poll if tab is active or not in tab view
     if ((!isInTabView || isActiveTab) && client && conversationId) {
+      console.log('Starting document polling');
+      
       const intervalId = window.setInterval(() => {
         loadDocumentsFromContext();
-      }, 10000); // Reduced frequency from 5s to 10s
+      }, 15000); // Reduced frequency to 15s
       
       return () => {
+        console.log('Stopping document polling');
         window.clearInterval(intervalId);
       };
     }
@@ -77,17 +80,22 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
       return;
     }
     
-    // Fetch document content
-    const content = await fetchDocument(document.id);
-    if (content) {
-      // Add content to the document object for local tracking
-      document.content = content;
-      setSelectedDocuments(prev => [...prev, document]);
-      toast.success('Document added to context');
-      setLastUpdate(Date.now());
-      
-      // Call the callback to update the parent component
-      if (onDocumentAdded) onDocumentAdded();
+    try {
+      // Fetch document content
+      const content = await fetchDocument(document.id);
+      if (content) {
+        // Add content to the document object for local tracking
+        document.content = content;
+        setSelectedDocuments(prev => [...prev, document]);
+        toast.success('Document added to context');
+        setLastUpdate(Date.now());
+        
+        // Call the callback to update the parent component
+        if (onDocumentAdded) onDocumentAdded();
+      }
+    } catch (error) {
+      console.error('Error fetching document:', error);
+      toast.error('Failed to fetch document content');
     }
   };
   
@@ -141,7 +149,7 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
       
       <Separator className="my-2" />
       
-      <ScrollArea className="h-[400px] px-4 flex-grow">
+      <ScrollArea className="px-4 flex-grow">
         <DocumentList 
           documents={selectedDocuments}
           isLoading={isLoading}
