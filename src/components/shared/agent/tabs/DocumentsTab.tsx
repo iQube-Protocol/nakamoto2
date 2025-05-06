@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import DocumentContext from '../DocumentContext';
 
@@ -18,7 +19,12 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({
   // Set loaded state when tab becomes active
   useEffect(() => {
     if (isActiveTab && !hasLoaded) {
-      setHasLoaded(true);
+      // Use a small timeout to prevent UI freezing during tab transition
+      const timer = setTimeout(() => {
+        setHasLoaded(true);
+      }, 50);
+      
+      return () => clearTimeout(timer);
     }
   }, [isActiveTab, hasLoaded]);
   
@@ -30,7 +36,7 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({
   // If tab is not currently active but has been loaded before, render with hidden state
   if (!isActiveTab && hasLoaded) {
     return (
-      <div className="hidden">
+      <div className="hidden" aria-hidden="true">
         <DocumentContext
           conversationId={conversationId}
           onDocumentAdded={onDocumentAdded}

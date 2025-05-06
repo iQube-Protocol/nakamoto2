@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { MCPClient, getMCPClient } from '@/integrations/mcp/client';
 import { useAuth } from '@/hooks/use-auth';
@@ -296,10 +297,18 @@ export function useMCP() {
     try {
       const currentContextId = client?.getCurrentContextId();
       if (currentContextId && client) {
-        // Explicitly ensure we return a boolean value by converting result to boolean
+        // Get the result from client's refreshContext method
         const result = client.refreshContext();
-        // Convert any value to its boolean representation explicitly
-        return result === true || result === 1 || result === "true";
+        
+        // Properly handle type conversion to boolean
+        if (typeof result === 'boolean') {
+          return result;
+        } else if (result === undefined || result === null) {
+          return false;
+        } else {
+          // For any other truthy value, convert to boolean
+          return Boolean(result);
+        }
       }
       return false;
     } catch (error) {
