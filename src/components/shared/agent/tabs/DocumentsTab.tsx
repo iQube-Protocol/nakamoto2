@@ -22,7 +22,7 @@ const DocumentsTab: React.FC<DocumentsTabProps> = ({
       // Use a small timeout to prevent UI freezing during tab transition
       const timer = setTimeout(() => {
         setHasLoaded(true);
-      }, 50);
+      }, 100); // Increased timeout to give more breathing room
       
       return () => clearTimeout(timer);
     }

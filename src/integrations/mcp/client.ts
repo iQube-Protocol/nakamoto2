@@ -507,6 +507,7 @@ export class MCPClient {
 
   /**
    * Refresh the current context
+   * @returns boolean indicating success or failure
    */
   refreshContext(): boolean {
     try {

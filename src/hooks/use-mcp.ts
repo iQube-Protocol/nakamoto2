@@ -295,18 +295,20 @@ export function useMCP() {
   // Fix the refreshContext function to ensure it always returns a boolean
   const refreshContext = useCallback((): boolean => {
     try {
-      const currentContextId = client?.getCurrentContextId();
-      if (currentContextId && client) {
-        // Get the result from client's refreshContext method
+      if (!client) return false;
+      
+      const currentContextId = client.getCurrentContextId();
+      if (currentContextId) {
+        // Call the client's refreshContext method and ensure we return a boolean
         const result = client.refreshContext();
         
-        // Properly handle type conversion to boolean
+        // Handle different return types properly
         if (typeof result === 'boolean') {
           return result;
         } else if (result === undefined || result === null) {
           return false;
         } else {
-          // For any other truthy value, convert to boolean
+          // Convert any other value to a boolean
           return Boolean(result);
         }
       }
