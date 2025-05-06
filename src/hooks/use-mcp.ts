@@ -291,6 +291,33 @@ export function useMCP() {
     }
   }, [client]);
   
+  // Fix the refreshContext function to ensure it always returns a boolean
+  const refreshContext = useCallback((): boolean => {
+    try {
+      const currentContextId = client?.getCurrentContextId();
+      if (currentContextId && client) {
+        return client.refreshContext() || false; // Ensure boolean return
+      }
+      return false;
+    } catch (error) {
+      console.error('Error refreshing context:', error);
+      return false;
+    }
+  }, [client]);
+  
+  // Get current context ID
+  const getCurrentContextId = useCallback((): string | null => {
+    try {
+      if (client) {
+        return client.getCurrentContextId();
+      }
+      return null;
+    } catch (error) {
+      console.error('Error getting context ID:', error);
+      return null;
+    }
+  }, [client]);
+  
   return {
     client,
     isInitialized,
@@ -301,6 +328,8 @@ export function useMCP() {
     resetDriveConnection,
     listDocuments,
     fetchDocument,
-    initializeContext
+    initializeContext,
+    refreshContext,
+    getCurrentContextId
   };
 }
