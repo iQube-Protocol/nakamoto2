@@ -173,16 +173,9 @@ export class DriveClientExtension extends MCPClientBase {
     if (typeof window !== 'undefined') {
       localStorage.removeItem('gdrive-connected');
       localStorage.removeItem('gdrive-auth-token');
-      
-      // Clean up any cached document data
-      Object.keys(sessionStorage).forEach(key => {
-        if (key.startsWith('gdrive-')) {
-          sessionStorage.removeItem(key);
-        }
-      });
     }
     
-    // Reset API loader state directly for a thorough cleanup
+    // Reset API loader state directly
     this.apiLoader.fullReset();
     
     // Then, if drive operations exist, reset them too

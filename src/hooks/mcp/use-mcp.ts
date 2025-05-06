@@ -74,13 +74,6 @@ export function useMCP(): MCPContext {
   const checkApiStatusAsync = async (): Promise<boolean> => {
     return Promise.resolve(checkApiStatus());
   };
-  
-  // Fix the type mismatch by wrapping forceRefreshDocuments to return Promise<void>
-  const forceRefreshDocumentsAsync = async (): Promise<void> => {
-    await forceRefreshDocuments();
-    // Return void to match the expected return type
-    return;
-  };
 
   return {
     client,
@@ -96,7 +89,7 @@ export function useMCP(): MCPContext {
     checkApiStatus: checkApiStatusAsync,
     listDocuments,
     fetchDocument,
-    forceRefreshDocuments: forceRefreshDocumentsAsync,
+    forceRefreshDocuments,
     initializeContext,
     getDocumentsInContext,
     addDocumentToContext,

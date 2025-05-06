@@ -314,32 +314,6 @@ export class AuthManager {
     // Clean up any cached tokens
     if (typeof window !== 'undefined') {
       localStorage.removeItem('gdrive-auth-token');
-      
-      // Attempt to sign out of Google Auth if available
-      if (window.gapi?.auth2) {
-        try {
-          const authInstance = window.gapi.auth2.getAuthInstance();
-          if (authInstance) {
-            console.log('AuthManager: Signing out of Google Auth');
-            authInstance.signOut().catch((e: any) => {
-              console.warn('AuthManager: Error during Google Auth signout:', e);
-            });
-          }
-        } catch (e) {
-          console.warn('AuthManager: Error accessing auth instance during reset', e);
-        }
-      }
-      
-      // Disable auto select for Google Identity Services if available
-      if (window.google?.accounts?.id) {
-        try {
-          console.log('AuthManager: Disabling Google Identity auto select');
-          window.google.accounts.id.disableAutoSelect();
-          window.google.accounts.id.cancel();
-        } catch (e) {
-          console.warn('AuthManager: Error disabling Google Identity auto select', e);
-        }
-      }
     }
     
     console.log('AuthManager: Authentication state reset');

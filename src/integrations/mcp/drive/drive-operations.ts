@@ -44,28 +44,15 @@ export class DriveOperations {
    * Reset the connection state completely
    */
   resetConnection(): void {
-    // Reset auth state with enhanced functionality
+    // Reset auth state
     this.authManager.resetAuth();
     
     // Full reset for API loader
     this.config.apiLoader.fullReset();
     
-    // Stop connection monitoring temporarily
+    // Cleanup connection monitor
     this.connectionMonitor.stopMonitoring();
-    
-    // Clear any cached document data
-    if (typeof sessionStorage !== 'undefined') {
-      Object.keys(sessionStorage).forEach(key => {
-        if (key.startsWith('gdrive-')) {
-          sessionStorage.removeItem(key);
-        }
-      });
-    }
-    
-    // Restart monitoring after a short delay
-    setTimeout(() => {
-      this.connectionMonitor.setupConnectionMonitoring();
-    }, 1000);
+    this.connectionMonitor.setupConnectionMonitoring();
     
     // Reset connection status
     this.connectionStatus = 'disconnected';
