@@ -1,6 +1,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { useMCP } from '@/hooks/mcp/use-mcp';
+import { useMCP } from '@/hooks/use-mcp';
+import { toast } from 'sonner';
 
 interface FolderHistory {
   id: string;
@@ -8,146 +9,155 @@ interface FolderHistory {
 }
 
 export function useDocumentBrowser() {
-  try {
-    // Access MCP directly without trying to use the context
-    const mcp = useMCP();
-    
-    // Create a local documents state to manage documents
-    const [localDocuments, setLocalDocuments] = useState<any[]>([]);
-    
-    // Add default values to handle undefined properties
-    const { 
-      listDocuments = () => Promise.resolve([]), 
-      driveConnected = false,
-      isLoading: mcpIsLoading = false,
-      documents: mcpDocuments = []
-    } = mcp || {};
-    
-    // Use MCP documents if available, otherwise use local documents state
-    const documents = Array.isArray(mcpDocuments) ? mcpDocuments : localDocuments;
-    const isLoading = mcpIsLoading;
-    
-    const [currentFolder, setCurrentFolder] = useState<string>('');
-    const [folderHistory, setFolderHistory] = useState<FolderHistory[]>([]);
-    const [isOpen, setIsOpen] = useState(false);
-    
-    // Fetch documents when folder changes
-    useEffect(() => {
-      if (!mcp || !listDocuments) {
-        console.error("MCP or listDocuments is not available");
-        return;
+  const { listDocuments, documents, isLoading, driveConnected, forceRefreshDocuments } = useMCP();
+  const [currentFolder, setCurrentFolder] = useState('');
+  const [folderHistory, setFolderHistory] = useState<FolderHistory[]>([]);
+  const [isOpen, setIsOpen] = useState(false);
+  const [fetchError, setFetchError] = useState<string | null>(null);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
+  
+  // Fetch documents when dialog opens or folder changes
+  useEffect(() => {
+    if (isOpen && driveConnected) {
+      refreshCurrentFolder();
+      // After first load, set initial load to false
+      if (isInitialLoad) {
+        setIsInitialLoad(false);
       }
-      
-      if (driveConnected) {
-        console.log("Loading documents for folder:", currentFolder || 'root');
-        listDocuments(currentFolder)
-          .then(docs => {
-            if (Array.isArray(docs)) {
-              setLocalDocuments(docs);
-            }
-          })
-          .catch(error => {
-            console.error("Error listing documents:", error);
-          });
-      }
-    }, [driveConnected, currentFolder, listDocuments, mcp]);
+    }
+  }, [isOpen, driveConnected, currentFolder, isInitialLoad]);
 
-    const handleDocumentClick = useCallback((doc: any) => {
-      if (!doc) return doc;
-      
-      if (doc.mimeType && doc.mimeType.includes('folder')) {
-        // Save current folder to history before navigating
-        if (currentFolder) {
-          // Find the current folder name from documents
-          const currentFolderDoc = Array.isArray(documents) ? 
-            documents.find(d => d.id === currentFolder) : null;
-            
-          if (currentFolderDoc) {
-            setFolderHistory(prev => [...prev, {
-              id: currentFolder,
-              name: currentFolderDoc.name
-            }]);
-          }
+  const handleDocumentClick = (doc: any) => {
+    if (doc.mimeType.includes('folder')) {
+      // Save current folder to history before navigating
+      if (currentFolder) {
+        // Find the current folder name from documents
+        const currentFolderDoc = documents.find(d => d.id === currentFolder);
+        if (currentFolderDoc) {
+          setFolderHistory([...folderHistory, {
+            id: currentFolder,
+            name: currentFolderDoc.name
+          }]);
         }
-        setCurrentFolder(doc.id);
       }
-      return doc;
-    }, [currentFolder, documents]);
+      setCurrentFolder(doc.id);
+    }
+    return doc;
+  };
 
-    const handleBack = useCallback(() => {
-      if (folderHistory.length > 0) {
-        // Go back to the previous folder
-        const newHistory = [...folderHistory];
-        const lastFolder = newHistory.pop();
-        setFolderHistory(newHistory);
-        setCurrentFolder(lastFolder?.id || '');
-      } else {
-        // Go back to root
-        setCurrentFolder('');
-      }
-    }, [folderHistory]);
-    
-    const navigateToFolder = useCallback((folderId: string, historyIndex?: number) => {
-      if (historyIndex !== undefined) {
-        // Navigate to specific folder in history
-        setCurrentFolder(folderId);
-        setFolderHistory(prev => prev.slice(0, historyIndex));
-      } else {
-        setCurrentFolder(folderId);
-      }
-    }, []);
-    
-    const navigateToRoot = useCallback(() => {
+  const handleBack = () => {
+    if (folderHistory.length > 0) {
+      // Go back to the previous folder
+      const newHistory = [...folderHistory];
+      const lastFolder = newHistory.pop();
+      setFolderHistory(newHistory);
+      setCurrentFolder(lastFolder?.id || '');
+    } else {
+      // Go back to root
       setCurrentFolder('');
-      setFolderHistory([]);
-    }, []);
+    }
+  };
+  
+  const navigateToFolder = (folderId: string, historyIndex?: number) => {
+    if (historyIndex !== undefined) {
+      // Navigate to specific folder in history
+      setCurrentFolder(folderId);
+      setFolderHistory(folderHistory.slice(0, historyIndex));
+    } else {
+      setCurrentFolder(folderId);
+    }
+  };
+  
+  const navigateToRoot = () => {
+    setCurrentFolder('');
+    setFolderHistory([]);
+  };
+  
+  // Add retry counter to handle potential connection issues
+  const [retryCount, setRetryCount] = useState(0);
+  const [refreshAttempts, setRefreshAttempts] = useState(0);
+  
+  // Use force refresh to bypass cache and get fresh data
+  const forceRefreshCurrentFolder = useCallback(async () => {
+    setFetchError(null);
+    setRetryCount(0);
+    setRefreshAttempts(prev => prev + 1);
     
-    // Updated to return a Promise<void> so it matches the expected type
-    const refreshCurrentFolder = useCallback(async (): Promise<void> => {
-      if (!mcp || !listDocuments) {
-        console.error("MCP or listDocuments function is not available");
-        throw new Error("MCP or listDocuments function is not available");
-      }
+    toast.loading("Forcing document refresh...", { id: "refreshing-docs", duration: 1500 });
+    
+    try {
+      const result = await forceRefreshDocuments(currentFolder);
       
-      try {
-        const docs = await listDocuments(currentFolder);
-        if (Array.isArray(docs)) {
-          setLocalDocuments(docs);
+      if (!result || result.length === 0) {
+        console.log(`Folder ${currentFolder || 'root'} might be empty or not accessible`);
+        
+        // Show more specific error message after multiple attempts
+        if (refreshAttempts > 2) {
+          setFetchError("Multiple refresh attempts failed. Please check your Google API connection and credentials.");
         }
-      } catch (error) {
-        console.error("Error refreshing folder:", error);
-        throw error;
+      } else {
+        // Reset refresh attempts counter on success
+        setRefreshAttempts(0);
       }
-    }, [listDocuments, currentFolder, mcp]);
+    } catch (error) {
+      console.error("Error refreshing folder:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to fetch documents";
+      setFetchError(errorMessage);
+      toast.error("Failed to load documents", { 
+        description: errorMessage
+      });
+    }
+  }, [currentFolder, forceRefreshDocuments, refreshAttempts]);
+  
+  const refreshCurrentFolder = useCallback(async () => {
+    if (!driveConnected) {
+      setFetchError("Not connected to Google Drive");
+      return;
+    }
+    
+    setFetchError(null);
+    
+    try {
+      const result = await listDocuments(currentFolder);
+      
+      if (!result || result.length === 0) {
+        console.log(`Folder ${currentFolder || 'root'} is empty or not accessible`);
+        
+        // If we get an empty result multiple times, try force refreshing
+        if (retryCount >= 2) {
+          console.log('Multiple empty results, trying force refresh');
+          setRetryCount(0);
+          await forceRefreshCurrentFolder();
+        } else {
+          setRetryCount(prev => prev + 1);
+        }
+      } else {
+        // Reset retry count on success
+        setRetryCount(0);
+      }
+    } catch (error) {
+      console.error("Error refreshing folder:", error);
+      const errorMessage = error instanceof Error ? error.message : "Failed to fetch documents";
+      setFetchError(errorMessage);
+      toast.error("Failed to load documents", { 
+        description: errorMessage
+      });
+    }
+  }, [driveConnected, listDocuments, currentFolder, retryCount, forceRefreshCurrentFolder]);
 
-    return {
-      documents: Array.isArray(documents) ? documents : [],
-      isLoading,
-      currentFolder,
-      folderHistory,
-      isOpen,
-      setIsOpen,
-      handleDocumentClick,
-      handleBack,
-      navigateToFolder,
-      navigateToRoot,
-      refreshCurrentFolder
-    };
-  } catch (error) {
-    console.error("Error in useDocumentBrowser:", error);
-    // Return safe default values
-    return {
-      documents: [],
-      isLoading: false,
-      currentFolder: '',
-      folderHistory: [],
-      isOpen: false,
-      setIsOpen: () => {},
-      handleDocumentClick: (doc: any) => doc,
-      handleBack: () => {},
-      navigateToFolder: () => {},
-      navigateToRoot: () => {},
-      refreshCurrentFolder: async () => {}
-    };
-  }
+  return {
+    documents,
+    isLoading,
+    currentFolder,
+    folderHistory,
+    isOpen,
+    setIsOpen,
+    handleDocumentClick,
+    handleBack,
+    navigateToFolder,
+    navigateToRoot,
+    refreshCurrentFolder,
+    forceRefreshCurrentFolder,
+    fetchError
+  };
 }

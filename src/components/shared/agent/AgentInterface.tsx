@@ -56,15 +56,14 @@ const AgentInterface = ({
       onDocumentAdded();
     }
     
-    // Switch to documents tab to let user see their document was added
-    setActiveTab('documents');
+    // Switch to chat tab to encourage interaction with the document
+    setActiveTab('chat');
   };
 
   // Effect to track document context updates
   useEffect(() => {
     if (documentContextUpdated > 0) {
       console.log(`Document context updated (${documentContextUpdated}), refreshing UI`);
-      // Force a UI refresh related to document display
     }
   }, [documentContextUpdated]);
 

@@ -1,19 +1,14 @@
 
-import { useState, useCallback } from 'react';
+import { useState } from 'react';
 
-/**
- * Hook to manage document context updates
- */
 export function useDocumentContextUpdates() {
   const [documentContextUpdated, setDocumentContextUpdated] = useState<number>(0);
-  
-  /**
-   * Increment the document context update count to trigger re-renders
-   */
-  const handleDocumentContextUpdated = useCallback(() => {
+
+  const handleDocumentContextUpdated = () => {
     setDocumentContextUpdated(prev => prev + 1);
-  }, []);
-  
+    console.log('Document context updated, triggering refresh');
+  };
+
   return {
     documentContextUpdated,
     handleDocumentContextUpdated
