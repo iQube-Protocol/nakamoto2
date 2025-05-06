@@ -1,24 +1,18 @@
 
 import { ConnectionStatus } from './types';
-import { AuthManager } from './auth-manager';
 
 export class ConnectionMonitor {
   private connectionCheckInterval: NodeJS.Timeout | null = null;
-  private authManager: AuthManager;
-  private onStatusChange: (status: ConnectionStatus) => void;
+  private authManager: any; // AuthManager reference
   
-  constructor(config: { 
-    authManager: AuthManager;
-    onStatusChange?: (status: ConnectionStatus) => void;
-  }) {
-    this.authManager = config.authManager;
-    this.onStatusChange = config.onStatusChange || (() => {});
+  constructor(authManager: any) {
+    this.authManager = authManager;
   }
   
   /**
-   * Start monitoring connection state
+   * Set up monitoring for connection state
    */
-  startMonitoring(): void {
+  setupConnectionMonitoring(): void {
     // Clear any existing intervals
     if (this.connectionCheckInterval) {
       clearInterval(this.connectionCheckInterval);
@@ -36,27 +30,12 @@ export class ConnectionMonitor {
   }
   
   /**
-   * Set up monitoring for connection state
+   * Clean up resources
    */
-  setupConnectionMonitoring(): void {
-    // Start the monitoring if not already started
-    this.startMonitoring();
-  }
-  
-  /**
-   * Stop monitoring connection state
-   */
-  stopMonitoring(): void {
+  cleanup(): void {
     if (this.connectionCheckInterval) {
       clearInterval(this.connectionCheckInterval);
       this.connectionCheckInterval = null;
     }
-  }
-  
-  /**
-   * Clean up resources
-   */
-  cleanup(): void {
-    this.stopMonitoring();
   }
 }

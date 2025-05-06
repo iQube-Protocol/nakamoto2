@@ -70,11 +70,6 @@ export function useMCP(): MCPContext {
     removeDocumentFromContext
   } = useContextManagement(client);
 
-  // Fix type issues by wrapping functions that need to return Promises
-  const checkApiStatusAsync = async (): Promise<boolean> => {
-    return Promise.resolve(checkApiStatus());
-  };
-
   return {
     client,
     isInitialized,
@@ -86,7 +81,7 @@ export function useMCP(): MCPContext {
     getConnectionStatus,
     connectToDrive,
     resetDriveConnection,
-    checkApiStatus: checkApiStatusAsync,
+    checkApiStatus,
     listDocuments,
     fetchDocument,
     forceRefreshDocuments,

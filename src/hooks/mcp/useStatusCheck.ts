@@ -20,14 +20,14 @@ export function useStatusCheck(client: MCPClient | null, driveConnected: boolean
   }, [client, driveConnected]);
   
   // Check API status
-  const checkApiStatus = useCallback((): boolean => {
+  const checkApiStatus = useCallback(() => {
     if (!client) return false;
     
     // Check if Google API is loaded successfully
     const isLoaded = client.isApiLoaded?.();
     console.log('MCP API loaded status:', isLoaded);
     
-    return !!isLoaded;
+    return isLoaded;
   }, [client]);
   
   return {

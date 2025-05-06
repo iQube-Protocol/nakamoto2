@@ -1,67 +1,174 @@
 
 import { MCPClientOptions } from './types';
-import { DriveClientExtension } from './client/drive-client-extension';
+import { DriveOperations, createDriveOperations } from './drive/index';
 import { ApiOperations } from './client/api-operations';
+import { ContextOperations } from './client/context-operations';
+import { GoogleApiLoader } from './api/google-api-loader';
 
 /**
  * Main class for interacting with the MCP (Meta-Contextual Processor) server
  * Combines API, Context, and Drive operations
  */
-export class MCPClient extends DriveClientExtension {
+export class MCPClient extends ContextOperations {
+  private driveOperations: DriveOperations | null = null;
+  
   constructor(options: MCPClientOptions = {}) {
     super(options);
     
     // Initialize Drive operations (conditionally after API is loaded)
     this.initializeDriveOperations();
   }
-
-  // Context operations
-  async initializeContext(existingConversationId?: string): Promise<string> {
-    return this.contextManager.initializeContext(existingConversationId);
+  
+  /**
+   * Initialize Google Drive operations
+   */
+  private initializeDriveOperations(): void {
+    // Ensure Google API is loaded before initializing DriveOperations
+    this.apiLoader.ensureGoogleApiLoaded().then((success) => {
+      if (!success) {
+        console.warn('Google API failed to load, Drive operations may not be available');
+        return;
+      }
+      this.driveOperations = createDriveOperations({
+        apiLoader: this.apiLoader,
+        contextManager: this.contextManager
+      });
+      console.log('Drive operations initialized successfully');
+    }).catch(error => {
+      console.error('Failed to load Google API, Drive operations not available', error);
+    });
   }
   
-  async getDocumentsInContext(conversationId?: string): Promise<any[]> {
-    if (conversationId) {
-      // If a conversation ID is provided, set it first
-      this.contextManager.setConversationId(conversationId);
+  /**
+   * Connect to Google Drive and authorize access
+   */
+  async connectToDrive(clientId: string, apiKey: string, cachedToken?: string | null): Promise<boolean> {
+    if (!this.driveOperations) {
+      console.warn('Drive operations not initialized, ensuring API is loaded...');
+      try {
+        // Try to load API and initialize drive operations
+        const apiLoaded = await this.apiLoader.ensureGoogleApiLoaded();
+        if (!apiLoaded) {
+          console.error('Failed to load Google API');
+          return false;
+        }
+        
+        this.driveOperations = createDriveOperations({
+          apiLoader: this.apiLoader,
+          contextManager: this.contextManager
+        });
+      } catch (e) {
+        console.error('Failed to initialize drive operations:', e);
+        return false;
+      }
     }
     
-    const documents = this.contextManager.getDocumentContext() || [];
-    return Promise.resolve(documents);
+    if (!this.driveOperations) {
+      console.error('Failed to initialize drive operations after retry');
+      return false;
+    }
+    
+    return this.driveOperations.connectToDrive(clientId, apiKey, cachedToken);
   }
   
-  async addDocumentToContext(conversationId: string, document: any, documentType?: string, content?: string): Promise<boolean> {
-    // First set the conversation ID to ensure we're in the right context
-    this.contextManager.setConversationId(conversationId);
+  /**
+   * List documents from Google Drive
+   */
+  async listDocuments(folderId?: string): Promise<any[]> {
+    if (!this.driveOperations) {
+      console.warn('Drive operations not initialized, ensuring API is loaded...');
+      try {
+        // Try to load API and initialize drive operations
+        const apiLoaded = await this.apiLoader.ensureGoogleApiLoaded();
+        if (!apiLoaded) {
+          console.error('Failed to load Google API');
+          return [];
+        }
+        
+        this.driveOperations = createDriveOperations({
+          apiLoader: this.apiLoader,
+          contextManager: this.contextManager
+        });
+      } catch (e) {
+        console.error('Failed to initialize drive operations:', e);
+        return [];
+      }
+    }
     
-    // Then add the document
-    this.contextManager.addDocument(
-      document.id, 
-      document.name || document.title, 
-      document.mimeType || documentType || 'unknown',
-      content || ''
-    );
+    if (!this.driveOperations) {
+      console.error('Failed to initialize drive operations for listing documents');
+      return [];
+    }
     
-    return Promise.resolve(true);
+    return this.driveOperations.listDocuments(folderId);
   }
   
-  async removeDocumentFromContext(conversationId: string, documentId: string): Promise<boolean> {
-    // First set the conversation ID to ensure we're in the right context
-    this.contextManager.setConversationId(conversationId);
+  /**
+   * Fetch a specific document and add its content to the context
+   */
+  async fetchDocumentContent(documentId: string): Promise<string | null> {
+    if (!this.driveOperations) {
+      console.warn('Drive operations not initialized, ensuring API is loaded...');
+      try {
+        // Try to load API and initialize drive operations
+        const apiLoaded = await this.apiLoader.ensureGoogleApiLoaded();
+        if (!apiLoaded) {
+          console.error('Failed to load Google API');
+          return null;
+        }
+        
+        this.driveOperations = createDriveOperations({
+          apiLoader: this.apiLoader,
+          contextManager: this.contextManager
+        });
+      } catch (e) {
+        console.error('Failed to initialize drive operations:', e);
+        return null;
+      }
+    }
     
-    // Then remove the document
-    this.contextManager.removeDocument(documentId);
+    if (!this.driveOperations) {
+      console.error('Failed to initialize drive operations for fetching document');
+      return null;
+    }
     
-    return Promise.resolve(true);
-  }
-
-  // Additional context methods
-  async addUserMessage(message: string): Promise<void> {
-    await this.contextManager.addUserMessage(message);
+    return this.driveOperations.fetchDocumentContent(documentId);
   }
   
-  async addAgentResponse(response: string): Promise<void> {
-    await this.contextManager.addAgentResponse(response);
+  /**
+   * Check if API is loaded
+   */
+  isApiLoaded(): boolean {
+    return this.apiLoader.isLoaded();
+  }
+  
+  /**
+   * Check if connected to Google Drive
+   */
+  isConnectedToDrive(): boolean {
+    return this.driveOperations?.isConnectedToDrive() || false;
+  }
+  
+  /**
+   * Get the current connection status
+   */
+  getConnectionStatus(): 'disconnected' | 'connecting' | 'connected' | 'error' {
+    return this.driveOperations?.getConnectionStatus() || 'disconnected';
+  }
+  
+  /**
+   * Reset Drive connection
+   */
+  resetDriveConnection(): void {
+    if (this.driveOperations) {
+      this.driveOperations.setAuthenticationState(false);
+    }
+    
+    // Clear local storage
+    if (typeof window !== 'undefined') {
+      localStorage.removeItem('gdrive-connected');
+      localStorage.removeItem('gdrive-auth-token');
+    }
   }
 }
 
