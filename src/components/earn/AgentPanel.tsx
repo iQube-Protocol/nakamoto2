@@ -1,10 +1,10 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
+import { AgentInterface } from '@/components/shared/agent';
+import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { MetaQube, TokenMetrics, BlakQube } from '@/lib/types';
 import { processAgentInteraction, getConversationContext } from '@/services/agent-service';
-import BaseAgentPanel from '@/components/shared/agent/BaseAgentPanel';
-import { useAgentPanel } from '@/hooks/agent-interface/use-agent-panel';
 
 interface AgentPanelProps {
   tokenMetrics: TokenMetrics;
@@ -19,17 +19,39 @@ const AgentPanel = ({
   blakQube,
   isPanelCollapsed 
 }: AgentPanelProps) => {
+  const { toast } = useToast();
   const [conversationId, setConversationId] = useState<string | null>(null);
-  const { 
-    toast, 
-    historicalContext,
-    documentContextUpdated, 
-    handleDocumentContextUpdated 
-  } = useAgentPanel({
-    agentType: 'earn',
-    conversationId,
-    setConversationId
-  });
+  const [historicalContext, setHistoricalContext] = useState<string>('');
+  const [isLoading, setIsLoading] = useState<boolean>(false);
+  
+  // Load conversation context when component mounts
+  useEffect(() => {
+    const loadContext = async () => {
+      if (!conversationId) {
+        console.log('No conversationId provided, skipping context load');
+        return;
+      }
+      
+      setIsLoading(true);
+      try {
+        const context = await getConversationContext(conversationId, 'earn');
+        if (context.historicalContext) {
+          setHistoricalContext(context.historicalContext);
+          console.log('Loaded historical context for earn agent');
+        }
+        
+        if (context.conversationId !== conversationId) {
+          setConversationId(context.conversationId);
+        }
+      } catch (error) {
+        console.error('Error loading conversation context:', error);
+      } finally {
+        setIsLoading(false);
+      }
+    };
+    
+    loadContext();
+  }, [conversationId]);
 
   const handleAIMessage = async (message: string) => {
     try {
@@ -39,6 +61,11 @@ const AgentPanel = ({
       if (contextResult.conversationId !== conversationId) {
         setConversationId(contextResult.conversationId);
         console.log(`Setting new conversation ID: ${contextResult.conversationId}`);
+      }
+      
+      if (contextResult.historicalContext !== historicalContext) {
+        setHistoricalContext(contextResult.historicalContext);
+        console.log('Updated historical context for earn agent');
       }
       
       const { data, error } = await supabase.functions.invoke('earn-ai', {
@@ -101,18 +128,31 @@ const AgentPanel = ({
     }
   };
 
+  if (isLoading) {
+    console.log('AgentPanel is loading conversation context...');
+  }
+
   return (
-    <BaseAgentPanel
-      title="Earning Assistant"
-      description="MonDAI token insights and earning opportunities"
-      agentType="earn"
-      conversationId={conversationId}
-      isPanelCollapsed={isPanelCollapsed}
-      initialMessage="Welcome to your Earn dashboard. I see MonDAI token has grown by 3.5% this week! Based on your iQube data, I can suggest personalized earning strategies. Would you like to explore staking options or learn about upcoming airdrops?"
-      onMessageSubmit={handleAIMessage}
-      onDocumentAdded={() => handleDocumentContextUpdated()}
-      documentContextUpdated={documentContextUpdated}
-    />
+    <div className={`${isPanelCollapsed ? 'col-span-11' : 'col-span-8'} flex flex-col`}>
+      <AgentInterface
+        title="Earning Assistant"
+        description="MonDAI token insights and earning opportunities"
+        agentType="earn"
+        onMessageSubmit={handleAIMessage}
+        initialMessages={[
+          {
+            id: "1",
+            sender: "agent",
+            message: "Welcome to your Earn dashboard. I see MonDAI token has grown by 3.5% this week! Based on your iQube data, I can suggest personalized earning strategies. Would you like to explore staking options or learn about upcoming airdrops?",
+            timestamp: new Date().toISOString(),
+            metadata: {
+              version: "1.0",
+              modelUsed: "gpt-4o-mini"
+            }
+          }
+        ]}
+      />
+    </div>
   );
 };
 

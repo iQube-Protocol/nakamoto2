@@ -1,11 +1,13 @@
 
 import React from 'react';
+import { AgentInterface } from '@/components/shared/agent';
+import { useToast } from '@/components/ui/use-toast';
 import { MetaQube, BlakQube } from '@/lib/types';
 import { getConversationContext } from '@/services/agent-service';
+import { useMCP } from '@/hooks/use-mcp';
 import { useMetisActivation } from '@/hooks/use-metis-activation';
+import { useConversationContext } from '@/hooks/use-conversation-context';
 import { sendMessageToLearnAI } from '@/services/learn-ai-service';
-import BaseAgentPanel from '@/components/shared/agent/BaseAgentPanel';
-import { useAgentPanel } from '@/hooks/agent-interface/use-agent-panel';
 
 interface AgentPanelProps {
   metaQube: MetaQube;
@@ -24,21 +26,21 @@ const AgentPanel = ({
   isPanelCollapsed,
   onDocumentAdded 
 }: AgentPanelProps) => {
+  const { toast } = useToast();
   const { metisActive, updateMetisStatus } = useMetisActivation();
-  const { 
-    toast, 
-    mcpClient, 
-    documentContextUpdated, 
-    handleDocumentContextUpdated 
-  } = useAgentPanel({
-    agentType: 'learn',
-    conversationId,
-    setConversationId
-  });
+  const { historicalContext, isLoading, documentContextUpdated, setDocumentContextUpdated } = 
+    useConversationContext({ conversationId, setConversationId, agentType: 'learn' });
+  const { client: mcpClient, isInitialized } = useMCP();
 
   // Handle when documents are added or removed
-  const handleDocumentContextChange = () => {
-    handleDocumentContextUpdated(onDocumentAdded);
+  const handleDocumentContextUpdated = () => {
+    setDocumentContextUpdated(prev => prev + 1);
+    console.log('Document context updated, triggering refresh');
+    
+    // Call the onDocumentAdded callback if it exists
+    if (onDocumentAdded) {
+      onDocumentAdded();
+    }
   };
 
   const handleAIMessage = async (message: string) => {
@@ -92,18 +94,35 @@ const AgentPanel = ({
     }
   };
 
+  if (isLoading) {
+    console.log('AgentPanel is loading conversation context...');
+  }
+
   return (
-    <BaseAgentPanel
-      title="Learning Assistant"
-      description="Personalized web3 education based on your iQube data"
-      agentType="learn"
-      conversationId={conversationId}
-      isPanelCollapsed={isPanelCollapsed}
-      initialMessage="Hi there! I'm your Learning Assistant, here to help you explore the world of Web3 and blockchain. Based on your iQube profile, I see you're interested in several Web3 topics. You can now add Google Drive documents to our conversation for me to analyze. What aspects of blockchain or Web3 are you curious about today?"
-      onMessageSubmit={handleAIMessage}
-      onDocumentAdded={handleDocumentContextChange}
-      documentContextUpdated={documentContextUpdated}
-    />
+    <div className={`${isPanelCollapsed ? 'lg:col-span-1' : 'lg:col-span-2'} flex flex-col`}>
+      <AgentInterface
+        title="Learning Assistant"
+        description="Personalized web3 education based on your iQube data"
+        agentType="learn"
+        onMessageSubmit={handleAIMessage}
+        onDocumentAdded={handleDocumentContextUpdated}
+        documentContextUpdated={documentContextUpdated}
+        conversationId={conversationId}
+        initialMessages={[
+          {
+            id: "1",
+            sender: "agent",
+            message: "Hi there! I'm your Learning Assistant, here to help you explore the world of Web3 and blockchain. Based on your iQube profile, I see you're interested in several Web3 topics. You can now add Google Drive documents to our conversation for me to analyze. What aspects of blockchain or Web3 are you curious about today?",
+            timestamp: new Date().toISOString(),
+            metadata: {
+              version: "1.0",
+              modelUsed: "gpt-4o-mini",
+              metisActive: metisActive
+            }
+          }
+        ]}
+      />
+    </div>
   );
 };
 

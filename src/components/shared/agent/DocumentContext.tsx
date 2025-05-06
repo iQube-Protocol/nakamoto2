@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect, useCallback } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
@@ -25,45 +24,36 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
   const { client, fetchDocument, isLoading } = useMCP();
   const [selectedDocuments, setSelectedDocuments] = useState<any[]>([]);
   const [viewingDocument, setViewingDocument] = useState<{id: string, content: string, name: string, mimeType: string} | null>(null);
-  const [lastUpdate, setLastUpdate] = useState<number>(Date.now());
   
-  // Load documents from context when component mounts, conversation changes, or tab becomes active
-  const loadDocumentsFromContext = useCallback(() => {
-    if (client && conversationId) {
-      const context = client.getModelContext();
-      if (context?.documentContext) {
-        const docs = context.documentContext.map(doc => ({
-          id: doc.documentId,
-          name: doc.documentName,
-          mimeType: `application/${doc.documentType}`,
-          content: doc.content
-        }));
-        setSelectedDocuments(docs);
-        console.log('Loaded documents from context:', docs.length);
+  // Get documents from context when component mounts, conversation changes, or tab becomes active
+  useEffect(() => {
+    const loadDocumentsFromContext = () => {
+      if (client && conversationId) {
+        const context = client.getModelContext();
+        if (context?.documentContext) {
+          const docs = context.documentContext.map(doc => ({
+            id: doc.documentId,
+            name: doc.documentName,
+            mimeType: `application/${doc.documentType}`,
+            content: doc.content
+          }));
+          setSelectedDocuments(docs);
+          console.log('Loaded documents from context:', docs.length);
+        }
       }
-    }
-  }, [client, conversationId]);
-  
-  // Initial load and load when dependencies change
-  useEffect(() => {
-    if (client && conversationId) {
-      loadDocumentsFromContext();
-    }
-  }, [client, conversationId, loadDocumentsFromContext, lastUpdate]);
-  
-  // Set up polling with proper cleanup
-  useEffect(() => {
-    // Only poll if tab is active or not in tab view
-    if ((!isInTabView || isActiveTab) && client && conversationId) {
-      const intervalId = window.setInterval(() => {
+    };
+    
+    loadDocumentsFromContext();
+    
+    // Set up an interval to periodically check for context updates when tab is active
+    const intervalId = setInterval(() => {
+      if (isActiveTab) {
         loadDocumentsFromContext();
-      }, 10000); // Reduced frequency from 5s to 10s
-      
-      return () => {
-        window.clearInterval(intervalId);
-      };
-    }
-  }, [isInTabView, isActiveTab, client, conversationId, loadDocumentsFromContext]);
+      }
+    }, 5000); // Check every 5 seconds when tab is active
+    
+    return () => clearInterval(intervalId);
+  }, [client, conversationId, isActiveTab]);
   
   const handleDocumentSelect = async (document: any) => {
     if (!client) {
@@ -84,7 +74,6 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
       document.content = content;
       setSelectedDocuments(prev => [...prev, document]);
       toast.success('Document added to context');
-      setLastUpdate(Date.now());
       
       // Call the callback to update the parent component
       if (onDocumentAdded) onDocumentAdded();
@@ -108,10 +97,6 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
     // Update local state
     setSelectedDocuments(prev => prev.filter(doc => doc.id !== documentId));
     toast.success('Document removed from context');
-    setLastUpdate(Date.now());
-    
-    // Call the callback to update the parent component
-    if (onDocumentAdded) onDocumentAdded();
   };
   
   const handleViewDocument = (document: any) => {
@@ -124,7 +109,7 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
   };
   
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col">
       <div className="flex items-center justify-between p-4 pb-2">
         <h3 className="text-sm font-medium">Documents in Context</h3>
         <DocumentSelector 
@@ -141,7 +126,7 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
       
       <Separator className="my-2" />
       
-      <ScrollArea className="h-[400px] px-4 flex-grow">
+      <ScrollArea className="h-[400px] px-4">
         <DocumentList 
           documents={selectedDocuments}
           isLoading={isLoading}
