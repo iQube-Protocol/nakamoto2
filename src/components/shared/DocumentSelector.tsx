@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -70,10 +69,14 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
     }
   };
 
-  const handleConnectClick = async () => {
+  const handleConnectClick = async (): Promise<boolean> => {
     setConnecting(true);
-    await handleConnect();
-    setConnecting(false);
+    try {
+      const result = await handleConnect();
+      return result;
+    } finally {
+      setConnecting(false);
+    }
   };
   
   // If we have credentials stored but haven't fetched documents yet
