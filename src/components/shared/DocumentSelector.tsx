@@ -10,7 +10,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Info, FileText, RefreshCw } from 'lucide-react';
+import { Info, FileText, RefreshCw, AlertCircle } from 'lucide-react';
 import { useDriveConnection } from '@/hooks/useDriveConnection';
 import { useDocumentBrowser } from '@/hooks/useDocumentBrowser';
 import ConnectionForm from './document/ConnectionForm';
@@ -19,6 +19,7 @@ import FileGrid from './document/FileGrid';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useMCP } from '@/hooks/use-mcp';
+import { toast } from 'sonner';
 
 interface DocumentSelectorProps {
   onDocumentSelect: (document: any) => void;
@@ -31,20 +32,18 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
 }) => {
   const { isApiLoading } = useMCP();
   const [connecting, setConnecting] = useState(false);
-  const [apiLoadingState, setApiLoadingState] = useState<'loading' | 'loaded' | 'error'>('loading');
-  const [apiCheckAttempts, setApiCheckAttempts] = useState(0);
-  const maxApiCheckAttempts = 20; // Maximum number of attempts to check if API is loaded
+  const [connectionError, setConnectionError] = useState<string | null>(null);
   
   const {
     driveConnected,
     isLoading: connectionLoading,
     connectionInProgress,
-    connectionAttempts,
     clientId,
     setClientId,
     apiKey,
     setApiKey,
-    handleConnect
+    handleConnect,
+    resetConnection
   } = useDriveConnection();
   
   const {
@@ -58,52 +57,15 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
     handleBack,
     navigateToFolder,
     navigateToRoot,
-    refreshCurrentFolder
+    refreshCurrentFolder,
+    fetchError
   } = useDocumentBrowser();
-  
-  useEffect(() => {
-    // Check if Google API is available
-    const checkGapiLoaded = () => {
-      if ((window as any).gapi && (window as any).google?.accounts) {
-        setApiLoadingState('loaded');
-        return true;
-      }
-      return false;
-    };
-
-    // Initial check
-    if (checkGapiLoaded()) {
-      return; // Already loaded
-    }
-
-    // Set up an interval to check if API is loaded with a maximum number of attempts
-    const interval = setInterval(() => {
-      setApiCheckAttempts(prev => {
-        const newCount = prev + 1;
-        if (newCount >= maxApiCheckAttempts) {
-          clearInterval(interval);
-          setApiLoadingState('error');
-          return newCount;
-        }
-        
-        if (checkGapiLoaded()) {
-          clearInterval(interval);
-        }
-        return newCount;
-      });
-    }, 1000);
-
-    // Clean up interval
-    return () => clearInterval(interval);
-  }, []);
   
   const handleDialogChange = (open: boolean) => {
     setIsOpen(open);
-    
-    // Reset API loading state when reopening the dialog
-    if (open && apiLoadingState === 'error') {
-      setApiLoadingState('loading');
-      setApiCheckAttempts(0);
+    // Reset any connection errors when closing the dialog
+    if (!open) {
+      setConnectionError(null);
     }
   };
   
@@ -116,15 +78,32 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
     }
   };
 
-  // Fixed: Make sure this function returns a Promise<boolean>
   const handleConnectClick = async (): Promise<boolean> => {
     setConnecting(true);
+    setConnectionError(null);
     try {
       const result = await handleConnect();
-      return result; // This properly returns the boolean from handleConnect
+      if (!result) {
+        setConnectionError("Failed to connect to Google Drive. Please check your credentials.");
+      }
+      return result;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+      setConnectionError(errorMessage);
+      return false;
     } finally {
       setConnecting(false);
     }
+  };
+
+  const handleRefresh = () => {
+    toast.loading("Refreshing documents...", { id: "refreshing-docs", duration: 1500 });
+    refreshCurrentFolder();
+  };
+  
+  const handleRetryConnection = () => {
+    resetConnection();
+    setConnectionError(null);
   };
   
   // If we have credentials stored but haven't fetched documents yet
@@ -158,35 +137,6 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
           </DialogDescription>
         </DialogHeader>
         
-        {apiLoadingState === 'loading' && (
-          <Alert className="bg-blue-500/10 border-blue-500/30">
-            <Info className="h-4 w-4 text-blue-500" />
-            <AlertDescription className="mt-2">
-              Loading Google API... Please wait.
-              {apiCheckAttempts > 10 && (
-                <p className="text-sm mt-1">
-                  This is taking longer than expected. You may need to refresh the page if it doesn't complete soon.
-                </p>
-              )}
-            </AlertDescription>
-          </Alert>
-        )}
-        
-        {apiLoadingState === 'error' && (
-          <Alert className="bg-red-500/10 border-red-500/30">
-            <Info className="h-4 w-4 text-red-500" />
-            <AlertDescription className="mt-2">
-              Failed to load Google API after several attempts. Please try:
-              <ul className="list-disc pl-5 mt-2 space-y-1 text-sm">
-                <li>Refreshing the page</li>
-                <li>Checking your internet connection</li>
-                <li>Disabling any ad blockers or privacy extensions</li>
-                <li>Using a different browser</li>
-              </ul>
-            </AlertDescription>
-          </Alert>
-        )}
-        
         {!driveConnected ? (
           <>
             <Alert>
@@ -202,6 +152,24 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
                 </ol>
               </AlertDescription>
             </Alert>
+            
+            {connectionError && (
+              <Alert variant="destructive" className="mt-2">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription className="mt-2">
+                  {connectionError}
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="mt-2 w-full" 
+                    onClick={handleRetryConnection}
+                  >
+                    Try again
+                  </Button>
+                </AlertDescription>
+              </Alert>
+            )}
+            
             <Separator className="my-2" />
             <ConnectionForm 
               clientId={clientId}
@@ -210,18 +178,7 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
               setApiKey={setApiKey}
               handleConnect={handleConnectClick}
               isLoading={isProcessing}
-              disabled={apiLoadingState !== 'loaded'}
             />
-            
-            {connectionAttempts > 0 && apiLoadingState !== 'loaded' && (
-              <Alert className="bg-yellow-500/10 border-yellow-500/30 mt-2">
-                <Info className="h-4 w-4 text-yellow-500" />
-                <AlertDescription className="mt-2">
-                  If you're having trouble connecting, try refreshing the page and trying again.
-                  Make sure to allow pop-ups for this site, as Google's authentication may appear in a popup window.
-                </AlertDescription>
-              </Alert>
-            )}
           </>
         ) : (
           <div className="py-4 h-[300px] overflow-y-auto">
@@ -232,7 +189,24 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
               navigateToFolder={navigateToFolder}
               navigateToRoot={navigateToRoot}
             />
-          
+            
+            {fetchError && (
+              <Alert variant="destructive" className="mb-2">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription className="mt-2">
+                  {fetchError}
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="mt-2 w-full" 
+                    onClick={refreshCurrentFolder}
+                  >
+                    Try again
+                  </Button>
+                </AlertDescription>
+              </Alert>
+            )}
+            
             {/* File grid */}
             <FileGrid
               documents={documents}
@@ -248,7 +222,7 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
           {driveConnected && (
             <>
               <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
-              <Button onClick={refreshCurrentFolder} disabled={isProcessing} className="gap-1">
+              <Button onClick={handleRefresh} disabled={isProcessing} className="gap-1">
                 {isProcessing && <RefreshCw className="h-4 w-4 animate-spin" />}
                 {!isProcessing && <RefreshCw className="h-4 w-4" />}
                 Refresh

@@ -11,7 +11,6 @@ interface ConnectionFormProps {
   setApiKey: (value: string) => void;
   handleConnect: () => Promise<boolean>;
   isLoading: boolean;
-  disabled?: boolean;
 }
 
 const ConnectionForm: React.FC<ConnectionFormProps> = ({
@@ -20,8 +19,7 @@ const ConnectionForm: React.FC<ConnectionFormProps> = ({
   apiKey,
   setApiKey,
   handleConnect,
-  isLoading,
-  disabled = false
+  isLoading
 }) => {
   return (
     <div className="grid gap-4 py-4">
@@ -32,7 +30,6 @@ const ConnectionForm: React.FC<ConnectionFormProps> = ({
           value={clientId}
           onChange={(e) => setClientId(e.target.value)}
           placeholder="Enter your Google API Client ID"
-          disabled={disabled || isLoading}
         />
       </div>
       <div className="space-y-2">
@@ -43,22 +40,12 @@ const ConnectionForm: React.FC<ConnectionFormProps> = ({
           onChange={(e) => setApiKey(e.target.value)}
           placeholder="Enter your Google API Key"
           type="password"
-          disabled={disabled || isLoading}
         />
       </div>
-      <Button 
-        onClick={handleConnect} 
-        disabled={disabled || isLoading || !clientId || !apiKey} 
-        className="mt-2"
-      >
+      <Button onClick={handleConnect} disabled={isLoading} className="mt-2">
         {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-        {disabled ? 'Waiting for Google API...' : 'Connect to Drive'}
+        Connect to Drive
       </Button>
-      {disabled && (
-        <p className="text-xs text-muted-foreground">
-          Please wait while we load the Google API. This may take a few moments.
-        </p>
-      )}
     </div>
   );
 };

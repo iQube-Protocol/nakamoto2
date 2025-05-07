@@ -8,8 +8,6 @@ export function useDriveConnection() {
   const [clientId, setClientId] = useState('');
   const [apiKey, setApiKey] = useState('');
   const [connectionInProgress, setConnectionInProgress] = useState(false);
-  const [connectionAttempts, setConnectionAttempts] = useState(0);
-  const [connectionTimeout, setConnectionTimeout] = useState<NodeJS.Timeout | null>(null);
   
   // Try to load saved credentials from localStorage
   useEffect(() => {
@@ -22,16 +20,9 @@ export function useDriveConnection() {
     if (client?.isConnectedToDrive()) {
       console.log('Drive is already connected based on client state');
     }
-    
-    // Clean up any existing timeout on unmount
-    return () => {
-      if (connectionTimeout) {
-        clearTimeout(connectionTimeout);
-      }
-    };
-  }, [client, connectionTimeout]);
+  }, [client]);
   
-  // Optimized connection handler with better error handling and timeout
+  // Optimized connection handler with debounce and better state management
   const handleConnect = useCallback(async () => {
     if (!clientId || !apiKey) {
       toast.error('Missing Google API credentials', {
@@ -46,25 +37,8 @@ export function useDriveConnection() {
       return false;
     }
     
-    // Clear any existing timeout
-    if (connectionTimeout) {
-      clearTimeout(connectionTimeout);
-    }
-    
     try {
       setConnectionInProgress(true);
-      setConnectionAttempts(prev => prev + 1);
-      
-      // Set a timeout to prevent indefinite waiting
-      const timeout = setTimeout(() => {
-        setConnectionInProgress(false);
-        toast.error('Connection timed out', {
-          id: 'drive-connection',
-          description: 'The connection attempt took too long. Please try again.'
-        });
-      }, 40000); // 40 second timeout
-      
-      setConnectionTimeout(timeout);
       
       // Save credentials for convenience
       localStorage.setItem('gdrive-client-id', clientId);
@@ -76,10 +50,6 @@ export function useDriveConnection() {
       });
       
       const success = await connectToDrive(clientId, apiKey);
-      
-      // Clear the timeout as we got a response
-      clearTimeout(timeout);
-      setConnectionTimeout(null);
       
       if (success) {
         toast.success('Connected to Google Drive', {
@@ -101,24 +71,35 @@ export function useDriveConnection() {
       });
       return false;
     } finally {
-      // Clean up the timeout if it's still active
-      if (connectionTimeout) {
-        clearTimeout(connectionTimeout);
-        setConnectionTimeout(null);
-      }
       setConnectionInProgress(false);
     }
-  }, [clientId, apiKey, connectToDrive, connectionInProgress, connectionTimeout]);
+  }, [clientId, apiKey, connectToDrive, connectionInProgress]);
+  
+  // Reset connection state to allow reconnecting
+  const resetConnection = useCallback(() => {
+    if (client) {
+      localStorage.removeItem('gdrive-connected');
+      localStorage.removeItem('gdrive-auth-token');
+      // We don't clear the client ID and API key to make reconnection easier
+      
+      toast.info('Google Drive connection reset', {
+        description: 'Please reconnect to continue'
+      });
+      
+      // Force page reload to reset all internal states
+      window.location.reload();
+    }
+  }, [client]);
   
   return {
     driveConnected,
     isLoading,
     connectionInProgress,
-    connectionAttempts,
     clientId,
     setClientId,
     apiKey,
     setApiKey,
-    handleConnect
+    handleConnect,
+    resetConnection
   };
 }
