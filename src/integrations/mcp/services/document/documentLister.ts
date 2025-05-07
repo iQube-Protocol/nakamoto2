@@ -9,6 +9,9 @@ export class DocumentLister {
   private googleApiLoader: GoogleApiLoader;
   private requestInProgress: boolean = false;
   private requestTimeout: NodeJS.Timeout | null = null;
+  private driveApiInitAttempted: boolean = false;
+  private lastRequestTime: number = 0;
+  private requestCooldown: number = 2000; // 2 seconds between requests
   
   constructor(googleApiLoader: GoogleApiLoader) {
     this.googleApiLoader = googleApiLoader;
@@ -19,6 +22,13 @@ export class DocumentLister {
    */
   public async listDocuments(folderId?: string): Promise<any[]> {
     console.log(`MCP: Listing documents${folderId ? ' in folder ' + folderId : ''}`);
+    
+    // Enforce cooldown between requests
+    const now = Date.now();
+    if (now - this.lastRequestTime < this.requestCooldown) {
+      console.log('Request attempted too soon, enforcing cooldown');
+      await new Promise(resolve => setTimeout(resolve, this.requestCooldown));
+    }
     
     // Prevent concurrent requests
     if (this.requestInProgress) {
@@ -34,6 +44,7 @@ export class DocumentLister {
     }
     
     this.requestInProgress = true;
+    this.lastRequestTime = Date.now();
     
     // Set a timeout for the entire operation
     const operationPromise = this.executeListOperation(folderId);
@@ -67,39 +78,52 @@ export class DocumentLister {
   private async executeListOperation(folderId?: string): Promise<any[]> {
     const gapi = this.googleApiLoader.getGapi();
     if (!gapi) {
-      toast.error('Google API not available');
+      console.log('Google API not available for document listing');
       return [];
     }
     
     // Check if client is initialized and available
     if (!gapi.client) {
-      console.error('Google client not initialized, attempting to initialize');
+      // If we've already attempted to initialize the client and failed, don't keep trying
+      if (this.driveApiInitAttempted) {
+        console.log('Already attempted to initialize Google client API, skipping retry');
+        return [];
+      }
+      
+      console.log('Google client not initialized, attempting to initialize once');
+      this.driveApiInitAttempted = true;
       
       return new Promise<any[]>((resolve) => {
         const timeoutId = setTimeout(() => {
-          console.error('Client initialization in listDocuments timed out');
+          console.log('Client initialization in listDocuments timed out');
           resolve([]);
         }, 8000);
         
-        gapi.load('client', {
-          callback: async () => {
-            clearTimeout(timeoutId);
-            console.log('Client API loaded in listDocuments, attempting to list documents');
-            try {
-              const docs = await this.executeListDocuments(folderId);
-              resolve(docs);
-            } catch (err) {
-              console.error('Error listing documents after client initialization:', err);
+        try {
+          gapi.load('client', {
+            callback: async () => {
+              clearTimeout(timeoutId);
+              console.log('Client API loaded in listDocuments, attempting to list documents');
+              try {
+                const docs = await this.executeListDocuments(folderId);
+                resolve(docs);
+              } catch (err) {
+                console.error('Error listing documents after client initialization:', err);
+                resolve([]);
+              }
+            },
+            onerror: () => {
+              clearTimeout(timeoutId);
+              console.error('Failed to load client API in listDocuments');
+              toast.error('Failed to initialize Google API client');
               resolve([]);
             }
-          },
-          onerror: () => {
-            clearTimeout(timeoutId);
-            console.error('Failed to load client API in listDocuments');
-            toast.error('Failed to initialize Google API client');
-            resolve([]);
-          }
-        });
+          });
+        } catch (err) {
+          clearTimeout(timeoutId);
+          console.error('Error calling gapi.load:', err);
+          resolve([]);
+        }
       });
     }
     
@@ -112,13 +136,20 @@ export class DocumentLister {
   private async executeListDocuments(folderId?: string): Promise<any[]> {
     const gapi = this.googleApiLoader.getGapi();
     if (!gapi || !gapi.client) {
-      console.error('Google API client not available');
+      console.log('Google API client not available for document listing');
       return [];
     }
     
     // Check if Drive API is available
     if (!gapi.client.drive) {
-      console.error('Google Drive API not available');
+      // If we've already attempted to initialize the API and failed, don't keep trying
+      if (this.driveApiInitAttempted) {
+        console.log('Already attempted to initialize Drive API, skipping retry');
+        return [];
+      }
+      
+      console.log('Google Drive API not available, attempting to initialize once');
+      this.driveApiInitAttempted = true;
       
       // Try to initialize Drive API
       try {
@@ -204,6 +235,18 @@ export class DocumentLister {
       }
       
       return [];
+    }
+  }
+  
+  /**
+   * Reset state for a new session
+   */
+  public reset(): void {
+    this.driveApiInitAttempted = false;
+    this.requestInProgress = false;
+    if (this.requestTimeout) {
+      clearTimeout(this.requestTimeout);
+      this.requestTimeout = null;
     }
   }
 }

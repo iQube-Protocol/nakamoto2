@@ -1,8 +1,11 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import LearnInterface from '@/components/learn/LearnInterface';
 import { MetaQube, BlakQube } from '@/lib/types';
 import { TooltipProvider } from '@/components/ui/tooltip';
+import { ErrorBoundary } from '@/components/shared/ErrorBoundary';
+import { useMCP } from '@/hooks/use-mcp';
+import { toast } from 'sonner';
 
 // Sample metaQube data
 const metaQubeData: MetaQube = {
@@ -35,19 +38,48 @@ const blakQubeData: BlakQube = {
 };
 
 const Learn = () => {
+  const { isApiLoading } = useMCP();
+  const [apiLoadAttempted, setApiLoadAttempted] = useState(false);
+  
+  // Track if Google API loading has been attempted
+  useEffect(() => {
+    if (isApiLoading) {
+      setApiLoadAttempted(true);
+    } else if (apiLoadAttempted) {
+      // API loading finished after being attempted
+      toast.success('Learn page loaded', {
+        description: 'Document features are now available'
+      });
+    }
+  }, [isApiLoading, apiLoadAttempted]);
+  
   return (
-    <TooltipProvider>
-      <div className="container p-2 h-[calc(100vh-100px)]">
-        <div className="flex justify-between items-center mb-3">
-          <h1 className="text-2xl font-bold tracking-tight">Learn</h1>
-        </div>
-
-        <LearnInterface 
-          metaQube={metaQubeData} 
-          blakQube={blakQubeData}
-        />
+    <ErrorBoundary fallback={
+      <div className="p-4 border border-red-300 bg-red-50 rounded">
+        <h2 className="text-lg font-semibold text-red-700 mb-2">Error in Learn Page</h2>
+        <p className="mb-2">There was a problem loading the Learn page. This might be due to Google API connectivity issues.</p>
+        <p className="text-sm text-gray-600">Try refreshing the page or checking your internet connection.</p>
+        <button 
+          onClick={() => window.location.reload()} 
+          className="mt-4 px-4 py-2 bg-red-600 text-white rounded hover:bg-red-700"
+        >
+          Reload Page
+        </button>
       </div>
-    </TooltipProvider>
+    }>
+      <TooltipProvider>
+        <div className="container p-2 h-[calc(100vh-100px)]">
+          <div className="flex justify-between items-center mb-3">
+            <h1 className="text-2xl font-bold tracking-tight">Learn</h1>
+          </div>
+
+          <LearnInterface 
+            metaQube={metaQubeData} 
+            blakQube={blakQubeData}
+          />
+        </div>
+      </TooltipProvider>
+    </ErrorBoundary>
   );
 };
 
