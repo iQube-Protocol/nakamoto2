@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -26,6 +26,8 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
   const [connecting, setConnecting] = useState(false);
   const [connectionError, setConnectionError] = useState<string | null>(null);
   const [connectionAttempts, setConnectionAttempts] = useState(0);
+  const [connectionCooldown, setConnectionCooldown] = useState(false);
+  const [lastErrorTime, setLastErrorTime] = useState(0);
   
   const {
     driveConnected,
@@ -56,6 +58,34 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
     isRefreshing
   } = useDocumentBrowser();
   
+  // Reset cooldown after a period
+  useEffect(() => {
+    let timer: NodeJS.Timeout;
+    if (connectionCooldown) {
+      timer = setTimeout(() => {
+        setConnectionCooldown(false);
+      }, 5000); // 5 seconds cooldown
+    }
+    return () => {
+      if (timer) clearTimeout(timer);
+    };
+  }, [connectionCooldown]);
+  
+  // Check for connection issues
+  useEffect(() => {
+    if (fetchError) {
+      const now = Date.now();
+      setLastErrorTime(now);
+      
+      // If we get consistent errors, suggest a reset
+      if (now - lastErrorTime < 10000) { // Within 10 seconds
+        toast.error('Connection issues detected', {
+          description: 'Consider resetting your Google Drive connection'
+        });
+      }
+    }
+  }, [fetchError, lastErrorTime]);
+  
   const handleDialogChange = (open: boolean) => {
     setIsOpen(open);
     // Reset any connection errors when closing the dialog
@@ -74,9 +104,20 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
   };
 
   const handleConnectClick = async (): Promise<boolean> => {
+    // Prevent rapid connection attempts
+    if (connectionCooldown) {
+      toast.info('Please wait before trying to connect again');
+      return false;
+    }
+    
+    // Clear any stale connection state
+    localStorage.removeItem('gdrive-connected');
+    localStorage.removeItem('gdrive-auth-token');
+    
     setConnecting(true);
     setConnectionError(null);
     setConnectionAttempts(prev => prev + 1);
+    setConnectionCooldown(true);
     
     try {
       const result = await handleConnect();
@@ -103,10 +144,30 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
   };
   
   const handleRetryConnection = () => {
+    if (connectionCooldown) {
+      toast.info('Please wait before resetting connection');
+      return;
+    }
+    
+    // Force clean reset
+    localStorage.removeItem('gdrive-connected');
+    localStorage.removeItem('gdrive-auth-token');
+    
     resetConnection();
     resetMcpConnection();
     setConnectionError(null);
     setConnectionAttempts(0);
+    setConnectionCooldown(true);
+    
+    toast.success('Connection reset', {
+      description: 'Ready to reconnect to Google Drive'
+    });
+    
+    // Force dialog refresh
+    setTimeout(() => {
+      setIsOpen(false);
+      setTimeout(() => setIsOpen(true), 100);
+    }, 300);
   };
   
   // Loading states

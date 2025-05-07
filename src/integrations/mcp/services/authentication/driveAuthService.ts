@@ -14,6 +14,8 @@ export class DriveAuthService extends BaseService {
   private googleApiLoader: GoogleApiLoader;
   private isAuthenticated: boolean = false;
   private authTimeoutId: NodeJS.Timeout | null = null;
+  private lastAuthAttempt: number = 0;
+  private authCooldownPeriod: number = 5000; // 5 seconds
   
   constructor(googleApiLoader: GoogleApiLoader) {
     super();
@@ -29,6 +31,20 @@ export class DriveAuthService extends BaseService {
    * Completes Drive connection after ensuring API is initialized
    */
   public async authenticateWithDrive(clientId: string, apiKey: string, cachedToken?: string | null): Promise<boolean> {
+    // Implement cooldown to prevent rapid reconnection attempts
+    const now = Date.now();
+    if (now - this.lastAuthAttempt < this.authCooldownPeriod) {
+      console.log('Authentication attempt too soon after previous attempt, enforcing cooldown');
+      toast.info('Please wait before trying to connect again');
+      return false;
+    }
+    
+    this.lastAuthAttempt = now;
+    
+    // Clear any stale connection state before starting
+    tokenUtils.clearCachedToken();
+    localStorage.removeItem('gdrive-connected');
+    
     // Clear any existing timeouts
     if (this.authTimeoutId) {
       clearTimeout(this.authTimeoutId);
@@ -131,17 +147,9 @@ export class DriveAuthService extends BaseService {
         return false;
       }
       
-      // Try to use cached token if available
-      const cachedAuthToken = cachedToken || tokenUtils.getCachedToken();
-      if (cachedAuthToken) {
-        const authenticated = await CachedTokenHandler.tryAuthenticateWithCachedToken(gapi, cachedAuthToken);
-        if (authenticated) {
-          this.isAuthenticated = true;
-          return true;
-        }
-      }
-      
-      // If cached token didn't work, proceed with OAuth flow
+      // Always try OAuth flow first for a fresh token - skip cached token
+      // This helps when the token might be invalid or expired
+      console.log('Initiating OAuth flow for a fresh token');
       return this.initiateAuthentication(clientId);
     } catch (error) {
       console.error('MCP: Error connecting to Google Drive:', error);
@@ -159,6 +167,7 @@ export class DriveAuthService extends BaseService {
     const success = await OAuthFlowManager.initiateOAuthFlow(clientId, this.googleApiLoader);
     if (success) {
       this.isAuthenticated = true;
+      localStorage.setItem('gdrive-connected', 'true');
     }
     return success;
   }

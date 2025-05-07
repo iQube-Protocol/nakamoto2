@@ -15,6 +15,7 @@ export class GoogleApiLoader {
   private events: GoogleApiEvents;
   private lastLoadAttemptTime: number = 0;
   private loadAttemptCooldown: number = 5000; // 5 seconds between load attempts
+  private initializationInProgress: boolean = false;
   
   constructor(options: GoogleApiLoaderOptions = {}) {
     this.client = new GoogleApiClient();
@@ -121,9 +122,17 @@ export class GoogleApiLoader {
     // If API is already fully loaded and initialized
     if (this.state.isLoaded() && this.state.isInitialized()) return true;
     
+    // Prevent multiple concurrent initialization attempts
+    if (this.initializationInProgress) {
+      console.log('API initialization already in progress, waiting...');
+      await new Promise(resolve => setTimeout(resolve, 1000));
+      return this.state.isLoaded() && this.state.isInitialized();
+    }
+    
     // If we're in the process of loading, wait for it
     if (this.state.getApiLoadPromise()) {
       try {
+        this.initializationInProgress = true;
         const loadResult = await this.state.getApiLoadPromise();
         
         // After scripts are loaded, ensure client is initialized
@@ -133,6 +142,7 @@ export class GoogleApiLoader {
           // Check if gapi is available now
           if (!this.client.getGapi()) {
             console.error('MCP: Google API client not available after loading');
+            this.initializationInProgress = false;
             return false;
           }
           
@@ -154,19 +164,23 @@ export class GoogleApiLoader {
               this.state.setLoaded(true);
             }
             
+            this.initializationInProgress = false;
             return success;
           } catch (error) {
             console.error('Error initializing Google API client:', error);
+            this.initializationInProgress = false;
             return false;
           }
         }
         
+        this.initializationInProgress = false;
         return !!loadResult;
       } catch (e) {
         console.error('Error ensuring Google API loaded:', e);
         // If promise failed, reset it so we can try loading again
         this.state.setApiLoadPromise(null);
         this.state.setInitializing(false);
+        this.initializationInProgress = false;
         return false;
       }
     }
@@ -226,6 +240,7 @@ export class GoogleApiLoader {
   public reset(): void {
     this.state.reset();
     this.client.reset();
+    this.initializationInProgress = false;
   }
   
   public getGapi(): any {
