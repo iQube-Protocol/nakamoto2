@@ -1,7 +1,6 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useMCP } from '@/hooks/use-mcp';
-import { toast } from 'sonner';
 
 interface FolderHistory {
   id: string;
@@ -9,18 +8,17 @@ interface FolderHistory {
 }
 
 export function useDocumentBrowser() {
-  const { listDocuments, documents, isLoading, driveConnected, forceRefreshDocuments } = useMCP();
+  const { listDocuments, documents, isLoading, driveConnected } = useMCP();
   const [currentFolder, setCurrentFolder] = useState('');
   const [folderHistory, setFolderHistory] = useState<FolderHistory[]>([]);
   const [isOpen, setIsOpen] = useState(false);
-  const [fetchError, setFetchError] = useState<string | null>(null);
   
   // Fetch documents when dialog opens or folder changes
   useEffect(() => {
     if (isOpen && driveConnected) {
-      refreshCurrentFolder();
+      listDocuments(currentFolder);
     }
-  }, [isOpen, driveConnected, currentFolder]);
+  }, [isOpen, driveConnected, currentFolder, listDocuments]);
 
   const handleDocumentClick = (doc: any) => {
     if (doc.mimeType.includes('folder')) {
@@ -68,66 +66,9 @@ export function useDocumentBrowser() {
     setFolderHistory([]);
   };
   
-  // Add retry counter to handle potential connection issues
-  const [retryCount, setRetryCount] = useState(0);
-  
-  // Use force refresh to bypass cache and get fresh data
-  const forceRefreshCurrentFolder = useCallback(async () => {
-    setFetchError(null);
-    setRetryCount(0);
-    toast.loading("Forcing document refresh...", { id: "refreshing-docs", duration: 1500 });
-    
-    try {
-      const result = await forceRefreshDocuments(currentFolder);
-      
-      if (result.length === 0) {
-        console.log(`Folder ${currentFolder || 'root'} might be empty or not accessible`);
-      }
-    } catch (error) {
-      console.error("Error refreshing folder:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to fetch documents";
-      setFetchError(errorMessage);
-      toast.error("Failed to load documents", { 
-        description: errorMessage
-      });
-    }
-  }, [currentFolder, forceRefreshDocuments]);
-  
-  const refreshCurrentFolder = useCallback(async () => {
-    if (!driveConnected) {
-      setFetchError("Not connected to Google Drive");
-      return;
-    }
-    
-    setFetchError(null);
-    
-    try {
-      const result = await listDocuments(currentFolder);
-      
-      if (result.length === 0) {
-        console.log(`Folder ${currentFolder || 'root'} is empty or not accessible`);
-        
-        // If we get an empty result multiple times, try force refreshing
-        if (retryCount >= 2) {
-          console.log('Multiple empty results, trying force refresh');
-          setRetryCount(0);
-          await forceRefreshCurrentFolder();
-        } else {
-          setRetryCount(prev => prev + 1);
-        }
-      } else {
-        // Reset retry count on success
-        setRetryCount(0);
-      }
-    } catch (error) {
-      console.error("Error refreshing folder:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to fetch documents";
-      setFetchError(errorMessage);
-      toast.error("Failed to load documents", { 
-        description: errorMessage
-      });
-    }
-  }, [driveConnected, listDocuments, currentFolder, retryCount, forceRefreshCurrentFolder]);
+  const refreshCurrentFolder = () => {
+    listDocuments(currentFolder);
+  };
 
   return {
     documents,
@@ -140,8 +81,6 @@ export function useDocumentBrowser() {
     handleBack,
     navigateToFolder,
     navigateToRoot,
-    refreshCurrentFolder,
-    forceRefreshCurrentFolder,
-    fetchError
+    refreshCurrentFolder
   };
 }
