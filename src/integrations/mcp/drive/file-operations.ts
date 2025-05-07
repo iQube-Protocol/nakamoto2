@@ -1,16 +1,13 @@
 
 import { toast } from 'sonner';
 import { getDocumentType, getExportMimeType, isAuthError } from './utils';
-import { AuthManager } from './auth-manager';
-import { GoogleApiLoader } from '../api/google-api-loader';
-import { ContextManager } from '../context-manager';
 
 export class FileOperations {
-  private apiLoader: GoogleApiLoader;
-  private contextManager: ContextManager;
-  private authManager: AuthManager;
+  private apiLoader: any; // GoogleApiLoader
+  private contextManager: any; // ContextManager
+  private authManager: any; // AuthManager
   
-  constructor(apiLoader: GoogleApiLoader, contextManager: ContextManager, authManager: AuthManager) {
+  constructor(apiLoader: any, contextManager: any, authManager: any) {
     this.apiLoader = apiLoader;
     this.contextManager = contextManager;
     this.authManager = authManager;
@@ -180,6 +177,9 @@ export class FileOperations {
       
       // Dismiss the loading toast
       toast.dismiss(`doc-${documentId}`);
+      
+      // Extract document type from mimeType
+      const documentType = getDocumentType(mimeType);
       
       // Return the document content
       return documentContent;

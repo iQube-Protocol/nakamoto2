@@ -54,27 +54,7 @@ export function useConnectionReset(
       if (mcpClient) {
         // Use MCP reset if available
         if (mcpResetConnection) {
-          // Call the reset function from MCP client
           mcpResetConnection();
-          
-          // Sign out of Google Auth if available
-          if (typeof window !== 'undefined' && window.google?.accounts) {
-            try {
-              console.log('Signing out of Google accounts');
-              window.google.accounts.id.disableAutoSelect();
-              // Additional Google sign-out if available
-              if (window.gapi?.auth2) {
-                const auth2 = window.gapi.auth2.getAuthInstance();
-                if (auth2) {
-                  auth2.signOut().then(() => {
-                    console.log('User signed out of Google Auth.');
-                  });
-                }
-              }
-            } catch (e) {
-              console.error('Error signing out of Google accounts:', e);
-            }
-          }
           
           // Short-lived success toast
           toast.dismiss('reset-connection');
@@ -84,11 +64,6 @@ export function useConnectionReset(
             id: 'reset-success',
           });
         } else {
-          // If no reset function provided but client exists, try to reset via the client directly
-          if (mcpClient.resetDriveConnection) {
-            mcpClient.resetDriveConnection();
-          }
-          
           // Clear connection status in localStorage as fallback
           localStorage.removeItem('gdrive-connected');
           localStorage.removeItem('gdrive-auth-token');
@@ -115,13 +90,6 @@ export function useConnectionReset(
       
       // Clear storage
       clearConnectionStorage();
-      
-      // Reload the page if we're in development mode to ensure a clean slate
-      if (process.env.NODE_ENV === 'development') {
-        setTimeout(() => {
-          window.location.reload();
-        }, 1500);
-      }
     } catch (error) {
       console.error('Error during connection reset:', error);
       

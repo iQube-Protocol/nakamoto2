@@ -40,33 +40,20 @@ export class GoogleApiLoader {
    * Check if the API is loaded
    */
   isLoaded(): boolean {
-    // More thorough check for GAPI availability
-    const gapiAvailable = typeof window !== 'undefined' && 
-                         (window as any).gapi && 
-                         (window as any).gapi.client && 
-                         typeof (window as any).gapi.client === 'object';
-    
-    const gsiAvailable = typeof window !== 'undefined' && 
-                        (window as any).google && 
-                        (window as any).google.accounts;
-    
-    const isApiReady = gapiAvailable && gsiAvailable;
-    
-    // Update our internal state if APIs are available
-    if (isApiReady && !this.isApiLoaded) {
-      console.log('GoogleApiLoader: APIs detected as available, updating internal state');
-      this.isApiLoaded = true;
-    }
-    
-    return this.isApiLoaded || isApiReady;
+    // Check if window.gapi exists
+    return this.isApiLoaded || (
+      typeof window !== 'undefined' && 
+      !!(window as any).gapi && 
+      !!(window as any).google?.accounts
+    );
   }
   
   /**
    * Get the GAPI client if available
    */
   getGapiClient(): any {
-    if (typeof window !== 'undefined' && (window as any).gapi && (window as any).gapi.client) {
-      return (window as any).gapi.client;
+    if (typeof window !== 'undefined' && (window as any).gapi) {
+      return (window as any).gapi;
     }
     return null;
   }
@@ -101,86 +88,6 @@ export class GoogleApiLoader {
   }
   
   /**
-   * Completely reset the Google API connection state
-   * This will:
-   * 1. Reset the loaded state
-   * 2. Reset load attempts
-   * 3. Clean up existing auth state if possible
-   * 4. Clear any pending promises
-   * 5. Attempt to clear cached auth tokens from the Google side
-   */
-  fullReset(): void {
-    this.resetLoadedState();
-    this.resetLoadAttempts();
-    this.loadPromise = null;
-    
-    if (typeof window === 'undefined') return;
-    
-    // Try to sign out if gapi is available
-    if ((window as any).gapi && (window as any).gapi.auth2) {
-      try {
-        const authInstance = (window as any).gapi.auth2.getAuthInstance();
-        if (authInstance) {
-          console.log('GoogleApiLoader: Signing out of Google Auth');
-          authInstance.signOut().catch((e: any) => {
-            console.warn('GoogleApiLoader: Error during signout:', e);
-          });
-        }
-      } catch (e) {
-        console.warn('GoogleApiLoader: Error accessing auth instance during reset', e);
-      }
-    }
-    
-    // Try to revoke token access
-    if ((window as any).google?.accounts?.oauth2) {
-      try {
-        console.log('GoogleApiLoader: Attempting to revoke OAuth token');
-        const token = localStorage.getItem('gdrive-auth-token');
-        if (token) {
-          try {
-            const parsedToken = JSON.parse(token);
-            if (parsedToken.access_token) {
-              (window as any).google.accounts.oauth2.revoke(parsedToken.access_token, () => {
-                console.log('GoogleApiLoader: Token revoked successfully');
-              });
-            }
-          } catch (e) {
-            console.warn('GoogleApiLoader: Error parsing token during revoke:', e);
-          }
-        }
-      } catch (e) {
-        console.warn('GoogleApiLoader: Error revoking token:', e);
-      }
-    }
-    
-    // Try to disable Google Identity Services auto-select (single sign-on)
-    if ((window as any).google?.accounts?.id) {
-      try {
-        console.log('GoogleApiLoader: Disabling Google Identity auto select');
-        (window as any).google.accounts.id.disableAutoSelect();
-        (window as any).google.accounts.id.cancel();
-      } catch (e) {
-        console.warn('GoogleApiLoader: Error disabling Google Identity auto select:', e);
-      }
-    }
-    
-    // For a more thorough reset, use ScriptLoader to remove Google scripts
-    // Only do this in development to avoid affecting other Google integrations
-    if (process.env.NODE_ENV === 'development') {
-      try {
-        ScriptLoader.removeGoogleApiScripts();
-        // Optional: Reset the global objects
-        ScriptLoader.resetGoogleApiGlobals();
-        console.log('GoogleApiLoader: Google scripts removed from DOM');
-      } catch (e) {
-        console.warn('GoogleApiLoader: Error removing Google scripts:', e);
-      }
-    }
-    
-    console.log('GoogleApiLoader: API connection fully reset');
-  }
-  
-  /**
    * Force reload the Google API
    */
   reloadGoogleApi(): void {
@@ -202,14 +109,7 @@ export class GoogleApiLoader {
     
     // If already loading, return existing promise
     if (this.loadPromise && !forceReload) {
-      try {
-        await this.loadPromise;
-        return this.isLoaded();
-      } catch (error) {
-        console.error('Existing Google API load promise failed:', error);
-        // Continue with a new load attempt
-        this.loadPromise = null;
-      }
+      return this.loadPromise.then(() => true);
     }
     
     // Increase load attempts counter
@@ -231,19 +131,6 @@ export class GoogleApiLoader {
     
     try {
       await this.loadPromise;
-      
-      // Double check that APIs are actually available
-      if (!this.isLoaded()) {
-        console.warn('Google API scripts loaded but API objects not detected, waiting...');
-        
-        // Give browser a bit more time to initialize the API objects
-        await new Promise(resolve => setTimeout(resolve, 1000));
-        
-        if (!this.isLoaded()) {
-          throw new Error('Google API scripts loaded but API objects not available');
-        }
-      }
-      
       this.markAsLoaded();
       
       // Call the onApiLoadComplete callback if provided
