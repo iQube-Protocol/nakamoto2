@@ -1,4 +1,3 @@
-
 import { MCPClientOptions } from './types';
 import { DriveOperations, createDriveOperations } from './drive/index';
 import { ApiOperations } from './client/api-operations';
@@ -40,33 +39,60 @@ export class MCPClient extends ContextOperations {
   }
   
   /**
-   * Connect to Google Drive and authorize access
+   * Connect to Google Drive and authorize access with additional verification
    */
   async connectToDrive(clientId: string, apiKey: string, cachedToken?: string | null): Promise<boolean> {
-    if (!this.driveOperations) {
-      console.warn('Drive operations not initialized, ensuring API is loaded...');
+    // Verify parameters first
+    if (!clientId || !apiKey) {
+      console.error('MCP: Missing credentials for Google Drive connection');
+      return false;
+    }
+    
+    // Make sure API is loaded
+    if (!this.apiLoader.isLoaded()) {
+      console.log('MCP: Google API not loaded yet, attempting to load before connecting');
       try {
-        // Try to load API and initialize drive operations
-        const apiLoaded = await this.apiLoader.ensureGoogleApiLoaded();
-        if (!apiLoaded) {
-          console.error('Failed to load Google API');
+        const loaded = await this.apiLoader.ensureGoogleApiLoaded();
+        if (!loaded) {
+          console.error('MCP: Failed to load Google API');
           return false;
         }
-        
+      } catch (error) {
+        console.error('MCP: Error loading Google API:', error);
+        return false;
+      }
+    }
+    
+    // Initialize drive operations if needed
+    if (!this.driveOperations) {
+      console.log('MCP: Drive operations not initialized, creating now');
+      try {
         this.driveOperations = createDriveOperations({
           apiLoader: this.apiLoader,
           contextManager: this.contextManager
         });
       } catch (e) {
-        console.error('Failed to initialize drive operations:', e);
+        console.error('MCP: Failed to initialize drive operations:', e);
         return false;
       }
     }
     
     if (!this.driveOperations) {
-      console.error('Failed to initialize drive operations after retry');
+      console.error('MCP: Failed to initialize drive operations after retry');
       return false;
     }
+    
+    // Check if GAPI client is available before connecting
+    if (!this.apiLoader.getGapiClient()) {
+      console.error('MCP: Google API client not available for connection');
+      return false;
+    }
+    
+    console.log('MCP: Connecting to drive with credentials', { 
+      hasCachedToken: !!cachedToken,
+      clientIdLength: clientId.length,
+      apiKeyLength: apiKey.length
+    });
     
     return this.driveOperations.connectToDrive(clientId, apiKey, cachedToken);
   }
@@ -157,18 +183,24 @@ export class MCPClient extends ContextOperations {
   }
   
   /**
-   * Reset Drive connection
+   * Reset Drive connection with enhanced functionality
    */
   resetDriveConnection(): void {
-    if (this.driveOperations) {
-      this.driveOperations.setAuthenticationState(false);
-    }
-    
-    // Clear local storage
+    // First, clean up stored credentials
     if (typeof window !== 'undefined') {
       localStorage.removeItem('gdrive-connected');
       localStorage.removeItem('gdrive-auth-token');
     }
+    
+    // Reset API loader state directly
+    this.apiLoader.fullReset();
+    
+    // Then, if drive operations exist, reset them too
+    if (this.driveOperations) {
+      this.driveOperations.resetConnection();
+    }
+    
+    console.log('MCP: Drive connection reset completed');
   }
 }
 

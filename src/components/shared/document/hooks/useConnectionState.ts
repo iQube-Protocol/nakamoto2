@@ -34,14 +34,27 @@ export const useConnectionState = () => {
     setConnectionError(false);
     try {
       console.log('DocumentSelector: Initiating connection process');
-      // Use clientId and apiKey from the hook if available, otherwise use empty strings
+      
+      // Get credentials from localStorage
       const clientId = localStorage.getItem('gdrive-client-id') || '';
       const apiKey = localStorage.getItem('gdrive-api-key') || '';
       
+      // Log credential status to help with debugging
       console.log('useConnectionState: Connecting with stored credentials', {
-        hasClientId: !!clientId,
-        hasApiKey: !!apiKey
+        hasClientId: Boolean(clientId),
+        hasApiKey: Boolean(apiKey),
+        clientIdLength: clientId?.length || 0,
+        apiKeyLength: apiKey ? apiKey.length : 0
       });
+      
+      if (!clientId || !apiKey) {
+        toast.error('Missing Google Drive credentials', {
+          description: 'Please enter your Google API credentials',
+          id: 'missing-credentials'
+        });
+        setConnecting(false);
+        return false;
+      }
       
       const result = await connectToDrive(clientId, apiKey);
       console.log('Connection result:', result);

@@ -17,6 +17,26 @@ export function useConnectionManager(
   const [lastConnectionResult, setLastConnectionResult] = useState<boolean | null>(null);
   const [connectionStatus, setConnectionStatus] = useState<'disconnected' | 'connecting' | 'connected' | 'error'>('disconnected');
   
+  // Add a retry count to allow internal retries for connection
+  const [retryCount, setRetryCount] = useState(0);
+  const MAX_AUTO_RETRIES = 2;
+  
+  // Function to retry a connection automatically
+  const retryConnection = useCallback(async (): Promise<boolean> => {
+    if (retryCount >= MAX_AUTO_RETRIES) {
+      console.log('Maximum auto-retry attempts reached');
+      return false;
+    }
+    
+    console.log(`Auto-retrying connection (attempt ${retryCount + 1}/${MAX_AUTO_RETRIES})...`);
+    setRetryCount(prevCount => prevCount + 1);
+    
+    // Small delay before retry
+    await new Promise(resolve => setTimeout(resolve, 1000));
+    
+    return handleConnect();
+  }, [retryCount, clientId, apiKey]);
+  
   // Optimized connection handler with better error handling and timeout
   const handleConnect = useCallback(async () => {
     if (!clientId || !apiKey) {
@@ -59,20 +79,33 @@ export function useConnectionManager(
         
         toast.dismiss('drive-connection');
         toast.error('Connection timed out', {
-          description: 'The connection attempt took too long. Please try again.',
+          description: 'The connection attempt took too long. Please try again or reset the connection.',
           duration: 5000,
           id: 'drive-connection-timeout',
         });
-      }, 30000); // 30 seconds timeout (reduced from 45s)
+      }, 30000); // 30 seconds timeout
       
       setConnectionTimeout(timeout);
       
-      // Save credentials for convenience
+      // Save credentials for convenience - moved before connect to ensure credentials are saved
       saveCredentials(clientId, apiKey);
       
-      console.log('Starting drive connection with credentials', { clientId, apiKeyLength: apiKey?.length });
+      console.log('Starting drive connection with credentials', { 
+        clientId, 
+        apiKeyLength: apiKey ? apiKey.length : 0
+      });
+      
+      // Show connecting toast
+      toast.loading('Connecting to Google Drive...', {
+        id: 'drive-connecting',
+        duration: 10000,
+      });
+      
       const success = await connectToDrive(clientId, apiKey);
       console.log('Drive connection result:', success);
+      
+      // Dismiss connecting toast
+      toast.dismiss('drive-connecting');
       
       // Save the last connection result
       setLastConnectionResult(success);
@@ -84,11 +117,34 @@ export function useConnectionManager(
       // Update connection status
       setConnectionStatus(success ? 'connected' : 'error');
       
+      // Show appropriate toast based on result
+      if (success) {
+        toast.success('Connected to Google Drive', {
+          duration: 3000,
+          id: 'drive-connect-success',
+        });
+      } else {
+        toast.error('Failed to connect to Google Drive', {
+          description: 'Please check your credentials or reset the connection',
+          duration: 4000,
+          id: 'drive-connect-error',
+        });
+      }
+      
+      // If failed but we have retries left, try again
+      if (!success && retryCount < MAX_AUTO_RETRIES) {
+        console.log('Connection failed, attempting retry...');
+        return retryConnection();
+      }
+      
       return success;
     } catch (error) {
       console.error('Connection error:', error);
       setLastConnectionResult(false);
       setConnectionStatus('error');
+      
+      // Dismiss connecting toast
+      toast.dismiss('drive-connecting');
       
       // Check if this might be an API loading issue
       if (error instanceof Error && (error.message.includes('gapi') || 
@@ -110,6 +166,12 @@ export function useConnectionManager(
             duration: 4000,
             id: 'api-error',
           });
+          
+          // If this is an API loading issue and we have retries left, try again
+          if (retryCount < MAX_AUTO_RETRIES) {
+            console.log('API loading issue, attempting retry...');
+            return retryConnection();
+          }
         }
       } else {
         // Generic connection error
@@ -130,7 +192,7 @@ export function useConnectionManager(
       }
       setConnectionInProgress(false);
     }
-  }, [clientId, apiKey, connectToDrive, connectionInProgress, connectionTimeout, apiErrorCount]);
+  }, [clientId, apiKey, connectToDrive, connectionInProgress, connectionTimeout, apiErrorCount, retryCount, retryConnection]);
 
   return {
     // State
@@ -144,16 +206,19 @@ export function useConnectionManager(
     apiErrorCount,
     lastConnectionResult,
     connectionStatus,
-    setConnectionStatus,
+    retryCount,
     
-    // Actions
+    // Setters
+    setConnectionStatus,
     setConnectionInProgress,
     setConnectionAttempts,
     setConnectionTimeout,
     setApiErrorCount,
     setLastConnectionResult,
+    setRetryCount,
     
     // Main handlers
-    handleConnect
+    handleConnect,
+    retryConnection
   };
 }

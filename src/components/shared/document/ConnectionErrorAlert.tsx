@@ -19,12 +19,20 @@ const ConnectionErrorAlert: React.FC = () => {
           <li>Your authentication token has expired</li>
           <li>You revoked access for this application</li>
           <li>There's a network connectivity issue</li>
+          <li>The Google API failed to initialize properly</li>
         </ul>
         <div className="mt-4">
           <Button 
             variant="outline" 
             size="sm" 
-            onClick={handleResetConnection}
+            onClick={() => {
+              // Call the reset handler and then reload the page after a short delay
+              handleResetConnection();
+              // Don't reload in production to avoid interrupting the user
+              if (process.env.NODE_ENV !== 'production') {
+                setTimeout(() => window.location.reload(), 1500);
+              }
+            }}
             className="flex items-center gap-2 mt-2 bg-purple-500 hover:bg-purple-600 text-white"
           >
             <RefreshCw className="h-3.5 w-3.5" />
