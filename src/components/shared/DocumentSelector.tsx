@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -10,15 +10,12 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Info, FileText, RefreshCw, AlertTriangle } from 'lucide-react';
+import { FileText } from 'lucide-react';
 import { useDriveConnection } from '@/hooks/useDriveConnection';
 import { useDocumentBrowser } from '@/hooks/useDocumentBrowser';
 import ConnectionForm from './document/ConnectionForm';
 import FolderBreadcrumb from './document/FolderBreadcrumb';
 import FileGrid from './document/FileGrid';
-import { Separator } from '@/components/ui/separator';
-import { Alert, AlertDescription } from '@/components/ui/alert';
-import { useMCP } from '@/hooks/use-mcp';
 
 interface DocumentSelectorProps {
   onDocumentSelect: (document: any) => void;
@@ -29,20 +26,14 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
   onDocumentSelect,
   triggerButton 
 }) => {
-  const { isApiLoading } = useMCP();
-  const [connecting, setConnecting] = useState(false);
-  const [connectionError, setConnectionError] = useState<string | null>(null);
-  
   const {
     driveConnected,
     isLoading: connectionLoading,
-    connectionInProgress,
     clientId,
     setClientId,
     apiKey,
     setApiKey,
-    handleConnect,
-    resetConnection
+    handleConnect
   } = useDriveConnection();
   
   const {
@@ -61,10 +52,6 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
   
   const handleDialogChange = (open: boolean) => {
     setIsOpen(open);
-    // Clear any error messages when closing the dialog
-    if (!open) {
-      setConnectionError(null);
-    }
   };
   
   const handleFileSelection = (doc: any) => {
@@ -75,44 +62,6 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
       setIsOpen(false);
     }
   };
-
-  const handleConnectClick = async (): Promise<boolean> => {
-    setConnecting(true);
-    setConnectionError(null);
-    try {
-      console.log('DocumentSelector: Attempting to connect to Google Drive');
-      const result = await handleConnect();
-      console.log('DocumentSelector: Connection result:', result);
-      
-      if (!result) {
-        setConnectionError('Failed to connect to Google Drive. Please check your credentials and try again.');
-      }
-      
-      return result;
-    } catch (error) {
-      console.error('Error during connection:', error);
-      setConnectionError('An unexpected error occurred. Please try again.');
-      return false;
-    } finally {
-      setConnecting(false);
-    }
-  };
-
-  const handleResetConnection = () => {
-    resetConnection();
-    setConnectionError(null);
-  };
-  
-  // If we have credentials stored but haven't fetched documents yet
-  useEffect(() => {
-    if (driveConnected && isOpen && documents.length === 0 && !documentsLoading) {
-      console.log('DocumentSelector: Connected to Drive, fetching documents');
-      refreshCurrentFolder();
-    }
-  }, [driveConnected, isOpen, documents.length, documentsLoading, refreshCurrentFolder]);
-  
-  // Loading states
-  const isProcessing = connectionLoading || documentsLoading || isApiLoading || connecting || connectionInProgress;
   
   return (
     <Dialog open={isOpen} onOpenChange={handleDialogChange}>
@@ -135,40 +84,15 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
           </DialogDescription>
         </DialogHeader>
         
-        {connectionError && (
-          <Alert variant="destructive" className="mb-4">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription className="ml-2">
-              {connectionError}
-            </AlertDescription>
-          </Alert>
-        )}
-        
         {!driveConnected ? (
-          <>
-            <Alert>
-              <Info className="h-4 w-4" />
-              <AlertDescription className="mt-2">
-                To connect to your Google Drive, you'll need to create Google API credentials:
-                <ol className="list-decimal pl-5 mt-2 space-y-1 text-sm">
-                  <li>Go to <a href="https://console.cloud.google.com" target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">Google Cloud Console</a></li>
-                  <li>Create a project and enable the Google Drive API</li>
-                  <li>Create an OAuth client ID (Web application type)</li>
-                  <li>Create an API Key</li>
-                  <li>Enter these credentials below</li>
-                </ol>
-              </AlertDescription>
-            </Alert>
-            <Separator className="my-2" />
-            <ConnectionForm 
-              clientId={clientId}
-              setClientId={setClientId}
-              apiKey={apiKey}
-              setApiKey={setApiKey}
-              handleConnect={handleConnectClick}
-              isLoading={isProcessing}
-            />
-          </>
+          <ConnectionForm 
+            clientId={clientId}
+            setClientId={setClientId}
+            apiKey={apiKey}
+            setApiKey={setApiKey}
+            handleConnect={handleConnect}
+            isLoading={connectionLoading}
+          />
         ) : (
           <div className="py-4 h-[300px] overflow-y-auto">
             {/* Breadcrumb navigation */}
@@ -191,20 +115,13 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
         )}
         
         <DialogFooter>
-          {driveConnected ? (
+          {driveConnected && (
             <>
               <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
-              <Button variant="outline" onClick={handleResetConnection} className="mr-2 text-red-500 hover:text-red-600">
-                Reset Connection
-              </Button>
-              <Button onClick={refreshCurrentFolder} disabled={isProcessing} className="gap-1">
-                {isProcessing && <RefreshCw className="h-4 w-4 animate-spin" />}
-                {!isProcessing && <RefreshCw className="h-4 w-4" />}
+              <Button onClick={refreshCurrentFolder}>
                 Refresh
               </Button>
             </>
-          ) : (
-            <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
           )}
         </DialogFooter>
       </DialogContent>

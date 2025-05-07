@@ -1,3 +1,4 @@
+
 import { useState, useEffect, useCallback } from 'react';
 import { MCPClient, getMCPClient } from '@/integrations/mcp/client';
 import { useAuth } from '@/hooks/use-auth';
@@ -9,29 +10,26 @@ export function useMCP() {
   const [driveConnected, setDriveConnected] = useState(false);
   const [documents, setDocuments] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [isApiLoading, setIsApiLoading] = useState(false);
   const { user } = useAuth();
   
   // Initialize MCP client
   useEffect(() => {
     if (user) {
-      // Check if we already have a connection to Google Drive
-      const hasConnection = localStorage.getItem('gdrive-connected') === 'true';
-      
       const mcpClient = getMCPClient({
         // Check for metisActive status from localStorage
-        metisActive: localStorage.getItem('metisActive') === 'true',
-        onApiLoadStart: () => setIsApiLoading(true),
-        onApiLoadComplete: () => setIsApiLoading(false)
+        metisActive: localStorage.getItem('metisActive') === 'true'
       });
       
       setClient(mcpClient);
       setIsInitialized(true);
+      
+      // Check if we already have a connection to Google Drive
+      const hasConnection = localStorage.getItem('gdrive-connected') === 'true';
       setDriveConnected(hasConnection);
     }
   }, [user]);
   
-  // Connect to Google Drive with optimized flow
+  // Connect to Google Drive
   const connectToDrive = useCallback(async (clientId?: string, apiKey?: string) => {
     if (!client) return false;
     
@@ -39,16 +37,14 @@ export function useMCP() {
     try {
       // Validate that we have the required credentials
       if (!clientId || !apiKey) {
-        toast.error('Missing Google API credentials');
+        toast.error('Missing Google API credentials', {
+          description: 'Both Client ID and API Key are required'
+        });
         return false;
       }
       
-      // Use cached token if available
-      const cachedToken = localStorage.getItem('gdrive-auth-token');
-      
       // Connect to Google Drive with the provided credentials
-      console.log('useMCP: Connecting to Google Drive with clientId:', clientId.substring(0, 10) + '...');
-      const success = await client.connectToDrive(clientId, apiKey, cachedToken);
+      const success = await client.connectToDrive(clientId, apiKey);
       
       if (success) {
         localStorage.setItem('gdrive-connected', 'true');
@@ -68,56 +64,17 @@ export function useMCP() {
     }
   }, [client]);
   
-  // Reset Google Drive connection
-  const resetDriveConnection = useCallback(() => {
-    if (client) {
-      const success = client.resetDriveConnection();
-      if (success) {
-        setDriveConnected(false);
-      }
-      return success;
-    }
-    return false;
-  }, [client]);
-  
-  // Optimized document listing with caching
+  // List available documents
   const listDocuments = useCallback(async (folderId?: string) => {
     if (!client || !driveConnected) {
       toast.error('Not connected to Google Drive');
       return [];
     }
     
-    const cacheKey = `gdrive-folder-${folderId || 'root'}`;
-    const cachedData = sessionStorage.getItem(cacheKey);
-    
-    // Use cached data if available and recent (less than 60 seconds old)
-    if (cachedData) {
-      try {
-        const { docs, timestamp } = JSON.parse(cachedData);
-        const isRecent = Date.now() - timestamp < 60000; // 60 seconds
-        
-        if (isRecent) {
-          console.log('Using cached folder data');
-          setDocuments(docs);
-          return docs;
-        }
-      } catch (e) {
-        console.error('Error parsing cached folder data');
-      }
-    }
-    
     setIsLoading(true);
     try {
-      console.log('useMCP: Listing documents in folder:', folderId || 'root');
       const docs = await client.listDocuments(folderId);
       setDocuments(docs);
-      
-      // Cache the results
-      sessionStorage.setItem(cacheKey, JSON.stringify({
-        docs,
-        timestamp: Date.now()
-      }));
-      
       return docs;
     } catch (error) {
       console.error('Error listing documents:', error);
@@ -130,44 +87,16 @@ export function useMCP() {
     }
   }, [client, driveConnected]);
   
-  // Optimized document fetching with caching
+  // Fetch a document's content
   const fetchDocument = useCallback(async (documentId: string) => {
     if (!client || !driveConnected) {
       toast.error('Not connected to Google Drive');
       return null;
     }
     
-    const cacheKey = `gdrive-doc-${documentId}`;
-    const cachedData = localStorage.getItem(cacheKey);
-    
-    // Use cached data if available (document content doesn't change often)
-    if (cachedData) {
-      try {
-        const { content, timestamp } = JSON.parse(cachedData);
-        const isRecent = Date.now() - timestamp < 3600000; // 1 hour
-        
-        if (isRecent) {
-          console.log('Using cached document content');
-          return content;
-        }
-      } catch (e) {
-        console.error('Error parsing cached document data');
-      }
-    }
-    
     setIsLoading(true);
     try {
-      const content = await client.fetchDocumentContent(documentId);
-      
-      // Cache the results
-      if (content) {
-        localStorage.setItem(cacheKey, JSON.stringify({
-          content,
-          timestamp: Date.now()
-        }));
-      }
-      
-      return content;
+      return await client.fetchDocumentContent(documentId);
     } catch (error) {
       console.error(`Error fetching document ${documentId}:`, error);
       toast.error('Failed to fetch document', {
@@ -198,11 +127,9 @@ export function useMCP() {
     driveConnected,
     documents,
     isLoading,
-    isApiLoading,
     connectToDrive,
-    resetDriveConnection,
     listDocuments,
-    fetchDocument: client?.fetchDocumentContent.bind(client),
-    initializeContext: client?.initializeContext.bind(client)
+    fetchDocument,
+    initializeContext
   };
 }
