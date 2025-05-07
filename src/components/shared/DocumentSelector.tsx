@@ -10,7 +10,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Info, FileText, RefreshCw } from 'lucide-react';
+import { Info, FileText, RefreshCw, AlertCircle, Loader2 } from 'lucide-react';
 import { useDriveConnection } from '@/hooks/useDriveConnection';
 import { useDocumentBrowser } from '@/hooks/useDocumentBrowser';
 import ConnectionForm from './document/ConnectionForm';
@@ -19,6 +19,7 @@ import FileGrid from './document/FileGrid';
 import { Separator } from '@/components/ui/separator';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useMCP } from '@/hooks/use-mcp';
+import { toast } from 'sonner';
 
 interface DocumentSelectorProps {
   onDocumentSelect: (document: any) => void;
@@ -29,8 +30,10 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
   onDocumentSelect,
   triggerButton 
 }) => {
-  const { isApiLoading } = useMCP();
+  const { isApiLoading, resetConnection: resetMcpConnection } = useMCP();
   const [connecting, setConnecting] = useState(false);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
   
   const {
     driveConnected,
@@ -40,7 +43,8 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
     setClientId,
     apiKey,
     setApiKey,
-    handleConnect
+    handleConnect,
+    resetConnection
   } = useDriveConnection();
   
   const {
@@ -54,11 +58,17 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
     handleBack,
     navigateToFolder,
     navigateToRoot,
-    refreshCurrentFolder
+    refreshCurrentFolder,
+    forceRefreshCurrentFolder,
+    fetchError
   } = useDocumentBrowser();
   
   const handleDialogChange = (open: boolean) => {
     setIsOpen(open);
+    // Reset any connection errors when closing the dialog
+    if (!open) {
+      setConnectionError(null);
+    }
   };
   
   const handleFileSelection = (doc: any) => {
@@ -70,10 +80,38 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
     }
   };
 
-  const handleConnectClick = async () => {
+  const handleConnectClick = async (): Promise<boolean> => {
     setConnecting(true);
-    await handleConnect();
-    setConnecting(false);
+    setConnectionError(null);
+    try {
+      const result = await handleConnect();
+      if (!result) {
+        setConnectionError("Failed to connect to Google Drive. Please check your credentials.");
+      }
+      return result;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+      setConnectionError(errorMessage);
+      return false;
+    } finally {
+      setConnecting(false);
+    }
+  };
+
+  const handleRefresh = async () => {
+    setIsRefreshing(true);
+    toast.loading("Refreshing documents...", { id: "refreshing-docs", duration: 2000 });
+    try {
+      await forceRefreshCurrentFolder();
+    } finally {
+      setIsRefreshing(false);
+    }
+  };
+  
+  const handleRetryConnection = () => {
+    resetConnection();
+    resetMcpConnection();
+    setConnectionError(null);
   };
   
   // If we have credentials stored but haven't fetched documents yet
@@ -84,7 +122,7 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
   }, [driveConnected, isOpen, documents.length, documentsLoading, refreshCurrentFolder]);
   
   // Loading states
-  const isProcessing = connectionLoading || documentsLoading || isApiLoading || connecting || connectionInProgress;
+  const isProcessing = connectionLoading || documentsLoading || isApiLoading || connecting || connectionInProgress || isRefreshing;
   
   return (
     <Dialog open={isOpen} onOpenChange={handleDialogChange}>
@@ -117,11 +155,30 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
                   <li>Go to <a href="https://console.cloud.google.com" target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">Google Cloud Console</a></li>
                   <li>Create a project and enable the Google Drive API</li>
                   <li>Create an OAuth client ID (Web application type)</li>
+                  <li>Add authorized redirect URIs: {window.location.origin}</li>
                   <li>Create an API Key</li>
                   <li>Enter these credentials below</li>
                 </ol>
               </AlertDescription>
             </Alert>
+            
+            {connectionError && (
+              <Alert variant="destructive" className="mt-2">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription className="mt-2">
+                  {connectionError}
+                  <Button 
+                    variant="outline" 
+                    size="sm" 
+                    className="mt-2 w-full" 
+                    onClick={handleRetryConnection}
+                  >
+                    Try again
+                  </Button>
+                </AlertDescription>
+              </Alert>
+            )}
+            
             <Separator className="my-2" />
             <ConnectionForm 
               clientId={clientId}
@@ -141,11 +198,38 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
               navigateToFolder={navigateToFolder}
               navigateToRoot={navigateToRoot}
             />
-          
+            
+            {fetchError && (
+              <Alert variant="destructive" className="mb-2">
+                <AlertCircle className="h-4 w-4" />
+                <AlertDescription className="mt-2">
+                  {fetchError}
+                  <div className="flex gap-2 mt-2">
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex-1" 
+                      onClick={refreshCurrentFolder}
+                    >
+                      Try again
+                    </Button>
+                    <Button 
+                      variant="outline" 
+                      size="sm" 
+                      className="flex-1" 
+                      onClick={handleRetryConnection}
+                    >
+                      Reset connection
+                    </Button>
+                  </div>
+                </AlertDescription>
+              </Alert>
+            )}
+            
             {/* File grid */}
             <FileGrid
               documents={documents}
-              isLoading={documentsLoading}
+              isLoading={documentsLoading || isRefreshing}
               currentFolder={currentFolder}
               handleDocumentClick={handleFileSelection}
               handleBack={handleBack}
@@ -157,9 +241,13 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
           {driveConnected && (
             <>
               <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
-              <Button onClick={refreshCurrentFolder} disabled={isProcessing} className="gap-1">
-                {isProcessing && <RefreshCw className="h-4 w-4 animate-spin" />}
-                {!isProcessing && <RefreshCw className="h-4 w-4" />}
+              <Button variant="outline" onClick={handleRetryConnection}>Reset Connection</Button>
+              <Button onClick={handleRefresh} disabled={isProcessing} className="gap-1">
+                {isRefreshing ? (
+                  <Loader2 className="h-4 w-4 animate-spin" />
+                ) : (
+                  <RefreshCw className={`h-4 w-4 ${isProcessing ? "animate-spin" : ""}`} />
+                )}
                 Refresh
               </Button>
             </>

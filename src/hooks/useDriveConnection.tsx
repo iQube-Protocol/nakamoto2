@@ -75,6 +75,22 @@ export function useDriveConnection() {
     }
   }, [clientId, apiKey, connectToDrive, connectionInProgress]);
   
+  // Reset connection state to allow reconnecting
+  const resetConnection = useCallback(() => {
+    if (client) {
+      localStorage.removeItem('gdrive-connected');
+      localStorage.removeItem('gdrive-auth-token');
+      // We don't clear the client ID and API key to make reconnection easier
+      
+      toast.info('Google Drive connection reset', {
+        description: 'Please reconnect to continue'
+      });
+      
+      // Force page reload to reset all internal states
+      window.location.reload();
+    }
+  }, [client]);
+  
   return {
     driveConnected,
     isLoading,
@@ -83,6 +99,7 @@ export function useDriveConnection() {
     setClientId,
     apiKey,
     setApiKey,
-    handleConnect
+    handleConnect,
+    resetConnection
   };
 }
