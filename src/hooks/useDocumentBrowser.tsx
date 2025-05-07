@@ -1,7 +1,6 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { useMCP } from '@/hooks/use-mcp';
-import { toast } from 'sonner';
 
 interface FolderHistory {
   id: string;
@@ -13,14 +12,13 @@ export function useDocumentBrowser() {
   const [currentFolder, setCurrentFolder] = useState('');
   const [folderHistory, setFolderHistory] = useState<FolderHistory[]>([]);
   const [isOpen, setIsOpen] = useState(false);
-  const [fetchError, setFetchError] = useState<string | null>(null);
   
   // Fetch documents when dialog opens or folder changes
   useEffect(() => {
     if (isOpen && driveConnected) {
-      refreshCurrentFolder();
+      listDocuments(currentFolder);
     }
-  }, [isOpen, driveConnected, currentFolder]); // Remove listDocuments dependency to prevent excessive calls
+  }, [isOpen, driveConnected, currentFolder, listDocuments]);
 
   const handleDocumentClick = (doc: any) => {
     if (doc.mimeType.includes('folder')) {
@@ -68,30 +66,9 @@ export function useDocumentBrowser() {
     setFolderHistory([]);
   };
   
-  const refreshCurrentFolder = useCallback(async () => {
-    if (!driveConnected) {
-      setFetchError("Not connected to Google Drive");
-      return;
-    }
-    
-    setFetchError(null);
-    
-    try {
-      const result = await listDocuments(currentFolder);
-      
-      if (result.length === 0) {
-        // This could be a legitimate empty folder, so we don't set an error
-        console.log(`Folder ${currentFolder || 'root'} is empty or not accessible`);
-      }
-    } catch (error) {
-      console.error("Error refreshing folder:", error);
-      const errorMessage = error instanceof Error ? error.message : "Failed to fetch documents";
-      setFetchError(errorMessage);
-      toast.error("Failed to load documents", { 
-        description: errorMessage
-      });
-    }
-  }, [driveConnected, listDocuments, currentFolder]);
+  const refreshCurrentFolder = () => {
+    listDocuments(currentFolder);
+  };
 
   return {
     documents,
@@ -104,7 +81,6 @@ export function useDocumentBrowser() {
     handleBack,
     navigateToFolder,
     navigateToRoot,
-    refreshCurrentFolder,
-    fetchError
+    refreshCurrentFolder
   };
 }
