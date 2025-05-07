@@ -16,19 +16,9 @@ export async function processAiMessage({
 }) {
   try {
     // Get conversation context, including history if available
-    let contextResult;
-    try {
-      contextResult = await getConversationContext(conversationId, 'learn');
-    } catch (error) {
-      console.error('Error getting conversation context:', error);
-      // If context retrieval fails, create a fallback context
-      contextResult = {
-        conversationId: conversationId || crypto.randomUUID(),
-        historicalContext: historicalContext || ''
-      };
-    }
+    const contextResult = await getConversationContext(conversationId, 'learn');
     
-    if (contextResult.conversationId !== conversationId && setConversationId) {
+    if (contextResult.conversationId !== conversationId) {
       setConversationId(contextResult.conversationId);
       console.log(`Setting new conversation ID: ${contextResult.conversationId}`);
     }
@@ -36,29 +26,20 @@ export async function processAiMessage({
     // Get MCP context if available
     let documentContext = [];
     if (mcpClient) {
-      try {
-        const mcpContext = mcpClient.getModelContext();
-        if (mcpContext?.documentContext) {
-          documentContext = mcpContext.documentContext;
-          console.log('MCP: Including document context in request', {
-            documentCount: documentContext.length,
-            documentIds: documentContext.map(doc => doc.documentId),
-            documentNames: documentContext.map(doc => doc.documentName)
-          });
-          
-          // Log a sample of each document's content to verify it's being sent
-          documentContext.forEach((doc, index) => {
-            if (doc && doc.content) {
-              const contentPreview = doc.content.substring(0, 100) + (doc.content.length > 100 ? '...' : '');
-              console.log(`Document ${index + 1} (${doc.documentName || 'unnamed'}) content preview:`, contentPreview);
-            } else {
-              console.warn(`Document ${index + 1} has invalid content:`, doc);
-            }
-          });
-        }
-      } catch (error) {
-        console.error('Error getting MCP document context:', error);
-        documentContext = [];
+      const mcpContext = mcpClient.getModelContext();
+      if (mcpContext?.documentContext) {
+        documentContext = mcpContext.documentContext;
+        console.log('MCP: Including document context in request', {
+          documentCount: documentContext.length,
+          documentIds: documentContext.map(doc => doc.documentId),
+          documentNames: documentContext.map(doc => doc.documentName)
+        });
+        
+        // Log a sample of each document's content to verify it's being sent
+        documentContext.forEach((doc, index) => {
+          const contentPreview = doc.content.substring(0, 100) + (doc.content.length > 100 ? '...' : '');
+          console.log(`Document ${index + 1} (${doc.documentName}) content preview:`, contentPreview);
+        });
       }
     }
     
@@ -80,27 +61,22 @@ export async function processAiMessage({
       throw new Error(error.message);
     }
     
-    if (data.conversationId && setConversationId) {
+    if (data.conversationId) {
       setConversationId(data.conversationId);
       console.log(`MCP conversation established with ID: ${data.conversationId}`);
     }
 
     // Store the interaction in the database for persistence
-    try {
-      await processAgentInteraction(
-        message,
-        'learn',
-        data.message,
-        {
-          ...(data.mcp || {}),
-          metisActive: metisActive,
-          conversationId: data.conversationId
-        }
-      );
-    } catch (storeError) {
-      console.error('Failed to store interaction in database:', storeError);
-      // Continue even if storing fails - don't block the user experience
-    }
+    await processAgentInteraction(
+      message,
+      'learn',
+      data.message,
+      {
+        ...(data.mcp || {}),
+        metisActive: metisActive,
+        conversationId: data.conversationId
+      }
+    );
     
     return {
       id: Date.now().toString(),

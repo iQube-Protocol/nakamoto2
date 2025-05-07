@@ -69,7 +69,6 @@ const AgentTabs: React.FC<AgentTabsProps> = ({
         <DocumentContext 
           conversationId={conversationId}
           onDocumentAdded={handleDocumentAdded}
-          setActiveTab={setActiveTab}
         />
       </TabsContent>
 
