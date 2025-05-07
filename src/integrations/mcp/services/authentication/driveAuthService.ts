@@ -16,6 +16,8 @@ export class DriveAuthService extends BaseService {
   private authTimeoutId: NodeJS.Timeout | null = null;
   private lastAuthAttempt: number = 0;
   private authCooldownPeriod: number = 5000; // 5 seconds
+  private authAttempts: number = 0;
+  private maxAuthAttempts: number = 2;
   
   constructor(googleApiLoader: GoogleApiLoader) {
     super();
@@ -41,6 +43,27 @@ export class DriveAuthService extends BaseService {
     
     this.lastAuthAttempt = now;
     
+    // Reset auth attempts if it's been a while since the last attempt
+    if (now - this.lastAuthAttempt > 60000) { // 1 minute
+      this.authAttempts = 0;
+    }
+    
+    // Check if we've tried too many times
+    if (this.authAttempts >= this.maxAuthAttempts) {
+      toast.error('Too many authentication attempts', {
+        description: 'Please wait a few minutes before trying again'
+      });
+      
+      // Reset the attempts counter after a longer cooldown
+      setTimeout(() => {
+        this.authAttempts = 0;
+      }, 2 * 60 * 1000); // 2 minutes
+      
+      return false;
+    }
+    
+    this.authAttempts++;
+    
     // Clear any stale connection state before starting
     tokenUtils.clearCachedToken();
     localStorage.removeItem('gdrive-connected');
@@ -56,10 +79,10 @@ export class DriveAuthService extends BaseService {
       this.authTimeoutId = setTimeout(() => {
         console.error('MCP: Authentication process timed out');
         toast.error('Authentication timed out', { 
-          description: 'Please try again' 
+          description: 'Please check your internet connection and try again' 
         });
         resolve(false);
-      }, 20000); // 20 second timeout
+      }, 30000); // 30 second timeout
     });
     
     // The actual authentication process
@@ -74,6 +97,11 @@ export class DriveAuthService extends BaseService {
       this.authTimeoutId = null;
     }
     
+    // If successful, reset the attempts counter
+    if (result) {
+      this.authAttempts = 0;
+    }
+    
     return result;
   }
   
@@ -81,6 +109,8 @@ export class DriveAuthService extends BaseService {
    * Execute the actual authentication process
    */
   private async executeAuthentication(clientId: string, apiKey: string, cachedToken?: string | null): Promise<boolean> {
+    console.log('MCP: Executing authentication with credentials', { clientId: clientId?.substring(0, 10) + '...', apiKeyProvided: !!apiKey });
+    
     const gapi = this.googleApiLoader.getGapi();
     if (!gapi) {
       console.error('Google API client not available, attempting to initialize...');
@@ -88,7 +118,7 @@ export class DriveAuthService extends BaseService {
       // Wait for API to load with a timeout
       const apiLoaded = await Promise.race([
         this.googleApiLoader.ensureGoogleApiLoaded(),
-        new Promise<boolean>(resolve => setTimeout(() => resolve(false), 10000))
+        new Promise<boolean>(resolve => setTimeout(() => resolve(false), 15000))
       ]);
       
       if (!apiLoaded) {
@@ -106,25 +136,43 @@ export class DriveAuthService extends BaseService {
         const timeoutId = setTimeout(() => {
           console.error('Client initialization timed out');
           resolve(false);
-        }, 8000);
+        }, 10000); // Increased timeout for slow connections
         
-        gapi.load('client', {
-          callback: async () => {
-            clearTimeout(timeoutId);
-            console.log('Google client API initialized in authenticateWithDrive');
-            // Continue with authentication after client is loaded
-            const result = await this.completeAuthentication(clientId, apiKey, cachedToken);
-            resolve(result);
-          },
-          onerror: () => {
-            clearTimeout(timeoutId);
-            console.error('Failed to load Google client API');
-            toast.error('Google API initialization failed', {
-              description: 'Please refresh the page and try again'
-            });
-            resolve(false);
-          }
-        });
+        try {
+          gapi.load('client', {
+            callback: async () => {
+              clearTimeout(timeoutId);
+              console.log('Google client API initialized in authenticateWithDrive');
+              // Continue with authentication after client is loaded
+              const result = await this.completeAuthentication(clientId, apiKey, cachedToken);
+              resolve(result);
+            },
+            onerror: (error: any) => {
+              clearTimeout(timeoutId);
+              console.error('Failed to load Google client API:', error);
+              toast.error('Google API initialization failed', {
+                description: 'Please refresh the page and try again'
+              });
+              resolve(false);
+            },
+            timeout: 10000, // 10 seconds timeout for loading client
+            ontimeout: () => {
+              clearTimeout(timeoutId);
+              console.error('Google client API initialization timed out');
+              toast.error('Google API initialization timed out', {
+                description: 'Please check your internet connection and try again'
+              });
+              resolve(false);
+            }
+          });
+        } catch (error) {
+          clearTimeout(timeoutId);
+          console.error('Error in gapi.load:', error);
+          toast.error('Failed to initialize Google API', {
+            description: error instanceof Error ? error.message : 'Unknown error'
+          });
+          resolve(false);
+        }
       });
     }
     
@@ -137,19 +185,26 @@ export class DriveAuthService extends BaseService {
   private async completeAuthentication(clientId: string, apiKey: string, cachedToken?: string | null): Promise<boolean> {
     const gapi = this.googleApiLoader.getGapi();
     if (!gapi || !gapi.client) {
+      console.error('Google API client still not available');
+      toast.error('Google API client not available', {
+        description: 'Please refresh the page and try again'
+      });
       return false;
     }
     
     try {
       // Initialize the Google API client with provided credentials
+      console.log('Initializing API client with credentials');
       const initialized = await ApiClientInitializer.initializeApiClient(gapi, apiKey);
       if (!initialized) {
+        console.error('Failed to initialize API client');
+        toast.error('Failed to initialize Google API client');
         return false;
       }
       
-      // Always try OAuth flow first for a fresh token - skip cached token
+      // Force a completely fresh OAuth flow - ignore cached token
       // This helps when the token might be invalid or expired
-      console.log('Initiating OAuth flow for a fresh token');
+      console.log('Initiating fresh OAuth flow');
       return this.initiateAuthentication(clientId);
     } catch (error) {
       console.error('MCP: Error connecting to Google Drive:', error);
@@ -164,10 +219,14 @@ export class DriveAuthService extends BaseService {
    * Initiates the authentication process using OAuth
    */
   private async initiateAuthentication(clientId: string): Promise<boolean> {
+    console.log('Starting OAuth flow with client ID:', clientId?.substring(0, 10) + '...');
     const success = await OAuthFlowManager.initiateOAuthFlow(clientId, this.googleApiLoader);
     if (success) {
       this.isAuthenticated = true;
       localStorage.setItem('gdrive-connected', 'true');
+      console.log('OAuth flow completed successfully');
+    } else {
+      console.error('OAuth flow failed');
     }
     return success;
   }
