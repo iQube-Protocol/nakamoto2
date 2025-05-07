@@ -46,6 +46,8 @@ export class MCPClient {
   private apiLoadPromise: Promise<boolean> | null = null;
   private onApiLoadStart: (() => void) | null = null;
   private onApiLoadComplete: (() => void) | null = null;
+  private apiLoadAttempts: number = 0;
+  private maxApiLoadAttempts: number = 3;
   
   constructor(options: MCPClientOptions = {}) {
     this.serverUrl = options.serverUrl || 'https://mcp-gdrive-server.example.com';
@@ -79,9 +81,25 @@ export class MCPClient {
       this.apiLoadPromise = new Promise((resolve, reject) => {
         let gapiLoaded = false;
         let gsiLoaded = false;
+        let timeout: any = null;
+        
+        // Set a timeout for API loading
+        timeout = setTimeout(() => {
+          if (!gapiLoaded || !gsiLoaded) {
+            console.error('MCP: Google API script loading timed out after 15 seconds');
+            toast.error('Google API loading timed out', {
+              description: 'Please check your internet connection and try refreshing the page.'
+            });
+            if (this.onApiLoadComplete) {
+              this.onApiLoadComplete();
+            }
+            reject(new Error('API loading timeout'));
+          }
+        }, 15000); // 15 second timeout
         
         const checkAllLoaded = () => {
           if (gapiLoaded && gsiLoaded) {
+            clearTimeout(timeout);
             if (this.onApiLoadComplete) {
               this.onApiLoadComplete();
             }
@@ -94,19 +112,24 @@ export class MCPClient {
         script.src = 'https://apis.google.com/js/api.js';
         script.async = true;
         script.onload = () => {
+          console.log('MCP: Google API script loaded successfully');
           this.onGapiLoaded();
           gapiLoaded = true;
           checkAllLoaded();
         };
         script.onerror = (e) => {
           console.error('Failed to load Google API script:', e);
-          toast.error('Failed to load Google API script', {
-            description: 'Please check your internet connection and try again.'
-          });
-          if (this.onApiLoadComplete) {
-            this.onApiLoadComplete();
+          clearTimeout(timeout);
+          this.retryApiLoading('gapi');
+          if (this.apiLoadAttempts >= this.maxApiLoadAttempts) {
+            toast.error('Failed to load Google API script', {
+              description: 'Please check your internet connection and try again.'
+            });
+            if (this.onApiLoadComplete) {
+              this.onApiLoadComplete();
+            }
+            reject(e);
           }
-          reject(e);
         };
         
         // Add GSI script in parallel 
@@ -114,24 +137,44 @@ export class MCPClient {
         gsiScript.src = 'https://accounts.google.com/gsi/client';
         gsiScript.async = true;
         gsiScript.onload = () => {
+          console.log('MCP: Google Sign-In script loaded successfully');
           gsiLoaded = true;
           checkAllLoaded();
         };
         gsiScript.onerror = (e) => {
           console.error('Failed to load Google Sign-In script:', e);
-          toast.error('Failed to load Google Sign-In script', {
-            description: 'Please check your internet connection and try again.'
-          });
-          if (this.onApiLoadComplete) {
-            this.onApiLoadComplete();
+          clearTimeout(timeout);
+          this.retryApiLoading('gsi');
+          if (this.apiLoadAttempts >= this.maxApiLoadAttempts) {
+            toast.error('Failed to load Google Sign-In script', {
+              description: 'Please check your internet connection and try again.'
+            });
+            if (this.onApiLoadComplete) {
+              this.onApiLoadComplete();
+            }
+            reject(e);
           }
-          reject(e);
         };
         
         // Add both scripts to document
         document.body.appendChild(script);
         document.body.appendChild(gsiScript);
       });
+    }
+  }
+  
+  /**
+   * Retry loading the Google API scripts
+   */
+  private retryApiLoading(scriptType: string): void {
+    this.apiLoadAttempts++;
+    if (this.apiLoadAttempts < this.maxApiLoadAttempts) {
+      console.log(`MCP: Retrying to load ${scriptType} script (attempt ${this.apiLoadAttempts})`);
+      // Reset the load promise and try again with a delay
+      setTimeout(() => {
+        this.apiLoadPromise = null;
+        this.loadGoogleApi();
+      }, 2000); // 2 second delay between retries
     }
   }
   
@@ -145,11 +188,20 @@ export class MCPClient {
       try {
         return await this.apiLoadPromise;
       } catch (e) {
+        console.error('MCP: Error ensuring Google API loaded:', e);
         return false;
       }
     }
     
-    return false;
+    // If we don't have a load promise yet, start loading
+    this.loadGoogleApi();
+    
+    try {
+      return await this.apiLoadPromise!;
+    } catch (e) {
+      console.error('MCP: Error loading Google API:', e);
+      return false;
+    }
   }
   
   /**
@@ -290,6 +342,18 @@ export class MCPClient {
       return false;
     }
     
+    // Clear any potentially corrupted cached tokens
+    try {
+      if (localStorage.getItem('gdrive-auth-token-corrupted') === 'true') {
+        console.log('MCP: Removing corrupted cached token');
+        localStorage.removeItem('gdrive-auth-token');
+        localStorage.removeItem('gdrive-auth-token-corrupted');
+        cachedToken = null;
+      }
+    } catch (e) {
+      console.error('Error checking for corrupted token:', e);
+    }
+    
     const apiLoaded = await this.ensureGoogleApiLoaded();
     if (!apiLoaded) {
       console.error('Google API failed to load after waiting');
@@ -308,11 +372,13 @@ export class MCPClient {
       
       // If we have a cached token, try to use it directly
       if (cachedToken) {
+        console.log('MCP: Attempting to use cached authentication token');
         try {
           this.gapi.client.setToken(JSON.parse(cachedToken));
           
           // Test if the token is still valid with a simple API call
           try {
+            console.log('MCP: Testing cached token validity...');
             await this.gapi.client.drive.files.list({
               pageSize: 1,
               fields: 'files(id)'
@@ -326,9 +392,12 @@ export class MCPClient {
           } catch (e) {
             // Token is invalid, proceed with normal flow
             console.log('Cached token is invalid, proceeding with regular auth flow');
+            // Mark the token as corrupted to prevent future attempts
+            localStorage.setItem('gdrive-auth-token-corrupted', 'true');
           }
         } catch (e) {
           console.error('Error parsing cached token:', e);
+          localStorage.removeItem('gdrive-auth-token');
         }
       }
       
@@ -340,6 +409,8 @@ export class MCPClient {
         });
         return false;
       }
+      
+      console.log('MCP: Starting OAuth flow with Google');
       
       // Use a promise to track the OAuth flow
       return new Promise((resolve) => {
@@ -354,6 +425,8 @@ export class MCPClient {
               // Cache the token
               try {
                 localStorage.setItem('gdrive-auth-token', JSON.stringify(this.gapi.client.getToken()));
+                // Clear the corrupted flag if it was set
+                localStorage.removeItem('gdrive-auth-token-corrupted');
               } catch (e) {
                 console.error('Failed to cache token:', e);
               }
@@ -364,6 +437,10 @@ export class MCPClient {
               console.log('Successfully authenticated with Google Drive');
               resolve(true);
             } else {
+              toast.error('Google authentication failed', {
+                description: 'Failed to get access token'
+              });
+              console.error('No access token received from Google OAuth flow');
               resolve(false);
             }
           },
@@ -376,8 +453,9 @@ export class MCPClient {
           }
         });
         
-        // Request access token with a timeout for better UX
-        this.tokenClient.requestAccessToken({ prompt: '' });
+        // Request access token with explicit consent to ensure we get a fresh token
+        console.log('MCP: Requesting access token with consent prompt');
+        this.tokenClient.requestAccessToken({ prompt: 'consent' });
       });
     } catch (error) {
       console.error('MCP: Error connecting to Google Drive:', error);
@@ -623,6 +701,25 @@ export class MCPClient {
    */
   isConnectedToDrive(): boolean {
     return this.isAuthenticated || localStorage.getItem('gdrive-connected') === 'true';
+  }
+  
+  /**
+   * Reset the Google Drive connection state
+   * @returns boolean indicating success
+   */
+  resetDriveConnection(): boolean {
+    try {
+      this.isAuthenticated = false;
+      localStorage.removeItem('gdrive-connected');
+      localStorage.removeItem('gdrive-auth-token');
+      localStorage.removeItem('gdrive-auth-token-corrupted');
+      
+      console.log('MCP: Google Drive connection reset');
+      return true;
+    } catch (error) {
+      console.error('Error resetting Drive connection:', error);
+      return false;
+    }
   }
   
   /**

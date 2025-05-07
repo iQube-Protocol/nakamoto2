@@ -75,6 +75,16 @@ export function useDriveConnection() {
     }
   }, [clientId, apiKey, connectToDrive, connectionInProgress]);
   
+  // Reset the connection
+  const resetConnection = useCallback(() => {
+    if (client) {
+      client.resetDriveConnection();
+      toast.success('Google Drive connection reset', {
+        description: 'You can now connect with new credentials'
+      });
+    }
+  }, [client]);
+  
   return {
     driveConnected,
     isLoading,
@@ -83,6 +93,7 @@ export function useDriveConnection() {
     setClientId,
     apiKey,
     setApiKey,
-    handleConnect
+    handleConnect,
+    resetConnection
   };
 }

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { MCPClient, getMCPClient } from '@/integrations/mcp/client';
 import { useAuth } from '@/hooks/use-auth';
@@ -48,6 +47,7 @@ export function useMCP() {
       const cachedToken = localStorage.getItem('gdrive-auth-token');
       
       // Connect to Google Drive with the provided credentials
+      console.log('useMCP: Connecting to Google Drive with clientId:', clientId.substring(0, 10) + '...');
       const success = await client.connectToDrive(clientId, apiKey, cachedToken);
       
       if (success) {
@@ -66,6 +66,18 @@ export function useMCP() {
     } finally {
       setIsLoading(false);
     }
+  }, [client]);
+  
+  // Reset Google Drive connection
+  const resetDriveConnection = useCallback(() => {
+    if (client) {
+      const success = client.resetDriveConnection();
+      if (success) {
+        setDriveConnected(false);
+      }
+      return success;
+    }
+    return false;
   }, [client]);
   
   // Optimized document listing with caching
@@ -96,6 +108,7 @@ export function useMCP() {
     
     setIsLoading(true);
     try {
+      console.log('useMCP: Listing documents in folder:', folderId || 'root');
       const docs = await client.listDocuments(folderId);
       setDocuments(docs);
       
@@ -187,8 +200,9 @@ export function useMCP() {
     isLoading,
     isApiLoading,
     connectToDrive,
+    resetDriveConnection,
     listDocuments,
-    fetchDocument,
-    initializeContext
+    fetchDocument: client?.fetchDocumentContent.bind(client),
+    initializeContext: client?.initializeContext.bind(client)
   };
 }
