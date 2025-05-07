@@ -1,16 +1,19 @@
 
 import React from 'react';
+import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
-import { Loader2 } from 'lucide-react';
 import { Button } from '@/components/ui/button';
+import { Loader2 } from 'lucide-react';
 
 interface ConnectionFormProps {
   clientId: string;
-  setClientId: (value: string) => void;
+  setClientId: (id: string) => void;
   apiKey: string;
-  setApiKey: (value: string) => void;
+  setApiKey: (key: string) => void;
   handleConnect: () => Promise<boolean>;
   isLoading: boolean;
+  disabled?: boolean;
+  isApiLoading?: boolean;
 }
 
 const ConnectionForm: React.FC<ConnectionFormProps> = ({
@@ -19,34 +22,77 @@ const ConnectionForm: React.FC<ConnectionFormProps> = ({
   apiKey,
   setApiKey,
   handleConnect,
-  isLoading
+  isLoading,
+  disabled = false,
+  isApiLoading = false
 }) => {
+  // Local validation
+  const isValid = Boolean(clientId && apiKey);
+  
+  // Handle form submission
+  const onSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    
+    // Save credentials to localStorage to ensure they're available for connection
+    if (clientId) localStorage.setItem('gdrive-client-id', clientId);
+    if (apiKey) localStorage.setItem('gdrive-api-key', apiKey);
+    
+    await handleConnect();
+  };
+  
   return (
-    <div className="grid gap-4 py-4">
+    <form className="space-y-4" onSubmit={onSubmit}>
       <div className="space-y-2">
-        <label htmlFor="client-id" className="text-sm font-medium">Google Client ID</label>
+        <Label htmlFor="clientId">Google OAuth Client ID</Label>
         <Input
-          id="client-id"
+          id="clientId"
+          placeholder="Your Google OAuth Client ID"
           value={clientId}
           onChange={(e) => setClientId(e.target.value)}
-          placeholder="Enter your Google API Client ID"
+          disabled={isLoading}
+          required
         />
+        <p className="text-xs text-muted-foreground">
+          From your Google Cloud Console project
+        </p>
       </div>
+      
       <div className="space-y-2">
-        <label htmlFor="api-key" className="text-sm font-medium">API Key</label>
+        <Label htmlFor="apiKey">Google API Key</Label>
         <Input
-          id="api-key"
+          id="apiKey"
+          placeholder="Your Google API Key"
           value={apiKey}
           onChange={(e) => setApiKey(e.target.value)}
-          placeholder="Enter your Google API Key"
+          disabled={isLoading}
           type="password"
+          required
         />
+        <p className="text-xs text-muted-foreground">
+          From your Google Cloud Console project
+        </p>
       </div>
-      <Button onClick={handleConnect} disabled={isLoading} className="mt-2">
-        {isLoading && <Loader2 className="mr-2 h-4 w-4 animate-spin" />}
-        Connect to Drive
+      
+      <Button
+        type="submit"
+        disabled={isLoading || disabled || !isValid || isApiLoading}
+        className="w-full bg-purple-500 hover:bg-purple-600 text-white"
+      >
+        {isLoading ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
+            Connecting...
+          </>
+        ) : isApiLoading ? (
+          <>
+            <Loader2 className="mr-2 h-4 w-4 animate-spin" /> 
+            Loading API...
+          </>
+        ) : (
+          'Connect to Google Drive'
+        )}
       </Button>
-    </div>
+    </form>
   );
 };
 

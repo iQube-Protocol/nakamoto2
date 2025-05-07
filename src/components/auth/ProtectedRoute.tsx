@@ -1,6 +1,6 @@
 
-import React from "react";
-import { Navigate } from "react-router-dom";
+import React, { useEffect } from "react";
+import { Navigate, useLocation } from "react-router-dom";
 import { useAuth } from "@/hooks/use-auth";
 
 interface ProtectedRouteProps {
@@ -8,10 +8,20 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { user, loading } = useAuth();
+  const { user, loading, session } = useAuth();
+  const location = useLocation();
   
-  console.log("ProtectedRoute - Auth status:", { user: !!user, loading });
+  // Debug authentication status
+  useEffect(() => {
+    console.log("ProtectedRoute - Auth status:", { 
+      user: !!user, 
+      session: !!session, 
+      loading, 
+      path: location.pathname 
+    });
+  }, [user, loading, session, location.pathname]);
   
+  // Don't redirect while authentication is loading
   if (loading) {
     return (
       <div className="flex h-screen items-center justify-center">
@@ -23,12 +33,22 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     );
   }
   
-  if (!user) {
-    console.log("ProtectedRoute - Redirecting to signin page");
+  // Only redirect if not already on signin page and user is not authenticated
+  if (!user && location.pathname !== "/signin") {
+    console.log(`ProtectedRoute - Redirecting to signin page from ${location.pathname}`);
+    // Save the attempted URL to redirect back after login
+    // Using sessionStorage to persist across page refreshes
+    sessionStorage.setItem('redirectAfterLogin', location.pathname);
     return <Navigate to="/signin" replace />;
   }
   
-  console.log("ProtectedRoute - Authenticated, rendering children");
+  // If we're on signin page but already authenticated, redirect to home
+  if (user && location.pathname === "/signin") {
+    console.log("ProtectedRoute - Already authenticated, redirecting to home");
+    return <Navigate to="/" replace />;
+  }
+  
+  console.log("ProtectedRoute - Authenticated or public route, rendering children");
   return <>{children}</>;
 };
 

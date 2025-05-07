@@ -6,32 +6,44 @@ import { getConversationContext } from '@/services/agent-service';
 export function useConversationContext(conversationId: string | null, setConversationId: (id: string | null) => void) {
   const [historicalContext, setHistoricalContext] = useState<string>('');
   const [isLoading, setIsLoading] = useState<boolean>(false);
-  const { client: mcpClient, isInitialized } = useMCP();
+  const { client: mcpClient, isInitialized, initializeContext } = useMCP();
 
   // Load conversation context when component mounts or conversationId changes
   useEffect(() => {
     const loadContext = async () => {
-      if (!conversationId) {
-        console.log('No conversationId provided, skipping context load');
+      if (!isInitialized) {
+        console.log('MCP not initialized yet, waiting...');
         return;
       }
       
       setIsLoading(true);
       try {
-        const context = await getConversationContext(conversationId, 'learn');
-        if (context.historicalContext) {
-          setHistoricalContext(context.historicalContext);
-          console.log('Loaded historical context for learn agent');
-        }
+        let contextConversationId = conversationId;
         
-        if (context.conversationId !== conversationId) {
-          setConversationId(context.conversationId);
+        if (conversationId) {
+          // Try to load existing context
+          const context = await getConversationContext(conversationId, 'learn');
+          if (context.historicalContext) {
+            setHistoricalContext(context.historicalContext);
+            console.log('Loaded historical context for learn agent');
+          }
+          
+          if (context.conversationId !== conversationId) {
+            contextConversationId = context.conversationId;
+            setConversationId(context.conversationId);
+          }
         }
         
         // Initialize MCP with this conversation ID
-        if (mcpClient && isInitialized) {
-          await mcpClient.initializeContext(context.conversationId);
-          console.log(`MCP context initialized for conversation ${context.conversationId}`);
+        if (mcpClient) {
+          const mcpConversationId = await initializeContext(contextConversationId);
+          
+          if (mcpConversationId && (!contextConversationId || mcpConversationId !== contextConversationId)) {
+            setConversationId(mcpConversationId);
+            console.log(`Setting new conversation ID from MCP: ${mcpConversationId}`);
+          }
+          
+          console.log(`MCP context initialized for conversation ${mcpConversationId || 'new'}`);
         }
       } catch (error) {
         console.error('Error loading conversation context:', error);
@@ -41,7 +53,7 @@ export function useConversationContext(conversationId: string | null, setConvers
     };
     
     loadContext();
-  }, [conversationId, setConversationId, mcpClient, isInitialized]);
+  }, [conversationId, setConversationId, mcpClient, isInitialized, initializeContext]);
 
   return {
     historicalContext,

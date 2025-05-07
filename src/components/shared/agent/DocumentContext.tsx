@@ -6,16 +6,19 @@ import { FileText } from 'lucide-react';
 import DocumentSelector from '../DocumentSelector';
 import DocumentList from './document/DocumentList';
 import DocumentViewer from './document/DocumentViewer';
-import useDocumentContext from './document/useDocumentContext';
+import { useDocumentContext } from './document/useDocumentContext';
+import { DocumentSelectorProvider } from '../document/DocumentSelectorContext';
 
 interface DocumentContextProps {
   conversationId: string | null;
   onDocumentAdded?: () => void;
+  setActiveTab?: (tab: 'chat' | 'knowledge' | 'documents') => void;
 }
 
 const DocumentContext: React.FC<DocumentContextProps> = ({ 
   conversationId,
-  onDocumentAdded
+  onDocumentAdded,
+  setActiveTab
 }) => {
   const {
     selectedDocuments,
@@ -25,7 +28,14 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
     handleDocumentSelect,
     handleRemoveDocument,
     handleViewDocument
-  } = useDocumentContext({ conversationId, onDocumentAdded });
+  } = useDocumentContext({ 
+    conversationId, 
+    onDocumentAdded: () => {
+      if (onDocumentAdded) onDocumentAdded();
+      // Switch to the documents tab when a document is added
+      if (setActiveTab) setActiveTab('documents');
+    }
+  });
   
   return (
     <div className="space-y-4">
@@ -34,7 +44,7 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
         <DocumentSelector 
           onDocumentSelect={handleDocumentSelect}
           triggerButton={
-            <Button variant="outline" size="sm" className="gap-1">
+            <Button variant="outline" size="sm" className="gap-1 bg-purple-500 hover:bg-purple-600 text-white">
               <FileText className="h-3.5 w-3.5" />
               Add Document
             </Button>

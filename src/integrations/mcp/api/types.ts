@@ -1,16 +1,9 @@
 
 /**
- * Common types for Google API integration
+ * Types for API-related functionality
  */
 
-export interface GoogleApiLoaderOptions {
-  onApiLoadStart?: () => void;
-  onApiLoadComplete?: () => void;
-}
-
-export interface ScriptLoadOptions {
-  src: string;
-  async?: boolean;
-  onLoad?: () => void;
-  onError?: (e: Event) => void;
+export interface ApiLoadCallbacks {
+  onApiLoadStart?: (() => void) | null;
+  onApiLoadComplete?: (() => void) | null;
 }
