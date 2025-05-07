@@ -1,74 +1,54 @@
 
-import { useState, useEffect } from 'react';
+import { useState, useCallback, useEffect } from 'react';
 import { useMCP } from '@/hooks/use-mcp';
-
-interface FolderHistory {
-  id: string;
-  name: string;
-}
+import { useDocumentNavigation } from './document-browser/useDocumentNavigation';
+import { useDocumentFetching } from './document-browser/useDocumentFetching';
+import { useInitialLoad } from './document-browser/useInitialLoad';
 
 export function useDocumentBrowser() {
-  const { listDocuments, documents, isLoading, driveConnected } = useMCP();
-  const [currentFolder, setCurrentFolder] = useState('');
-  const [folderHistory, setFolderHistory] = useState<FolderHistory[]>([]);
+  const { documents, isLoading, driveConnected, listDocuments, forceRefreshDocuments } = useMCP();
   const [isOpen, setIsOpen] = useState(false);
   
-  // Fetch documents when dialog opens or folder changes
+  const {
+    currentFolder,
+    folderHistory,
+    handleDocumentClick: navHandleDocumentClick,
+    handleBack,
+    navigateToFolder,
+    navigateToRoot
+  } = useDocumentNavigation();
+  
+  const {
+    fetchError,
+    isRefreshing,
+    refreshCurrentFolder: fetchRefreshCurrentFolder,
+    forceRefreshCurrentFolder: fetchForceRefreshCurrentFolder
+  } = useDocumentFetching(listDocuments, forceRefreshDocuments, driveConnected);
+  
+  // Create a callback for refreshing the current folder
+  const refreshCurrentFolder = useCallback(() => {
+    return fetchRefreshCurrentFolder(currentFolder);
+  }, [fetchRefreshCurrentFolder, currentFolder]);
+  
+  // Create a callback for force refreshing the current folder
+  const forceRefreshCurrentFolder = useCallback(() => {
+    return fetchForceRefreshCurrentFolder(currentFolder);
+  }, [fetchForceRefreshCurrentFolder, currentFolder]);
+  
+  // Use the initialLoad hook with the refreshCurrentFolder callback
+  const { isInitialLoad } = useInitialLoad(isOpen, driveConnected, refreshCurrentFolder);
+  
+  // Wrap the document click handler to include the current documents
+  const handleDocumentClick = useCallback((doc: any) => {
+    return navHandleDocumentClick(doc, documents);
+  }, [navHandleDocumentClick, documents]);
+  
+  // If we have credentials stored but haven't fetched documents yet
   useEffect(() => {
-    if (isOpen && driveConnected) {
-      listDocuments(currentFolder);
+    if (driveConnected && isOpen && documents.length === 0 && !isLoading && !isInitialLoad) {
+      refreshCurrentFolder();
     }
-  }, [isOpen, driveConnected, currentFolder, listDocuments]);
-
-  const handleDocumentClick = (doc: any) => {
-    if (doc.mimeType.includes('folder')) {
-      // Save current folder to history before navigating
-      if (currentFolder) {
-        // Find the current folder name from documents
-        const currentFolderDoc = documents.find(d => d.id === currentFolder);
-        if (currentFolderDoc) {
-          setFolderHistory([...folderHistory, {
-            id: currentFolder,
-            name: currentFolderDoc.name
-          }]);
-        }
-      }
-      setCurrentFolder(doc.id);
-    }
-    return doc;
-  };
-
-  const handleBack = () => {
-    if (folderHistory.length > 0) {
-      // Go back to the previous folder
-      const newHistory = [...folderHistory];
-      const lastFolder = newHistory.pop();
-      setFolderHistory(newHistory);
-      setCurrentFolder(lastFolder?.id || '');
-    } else {
-      // Go back to root
-      setCurrentFolder('');
-    }
-  };
-  
-  const navigateToFolder = (folderId: string, historyIndex?: number) => {
-    if (historyIndex !== undefined) {
-      // Navigate to specific folder in history
-      setCurrentFolder(folderId);
-      setFolderHistory(folderHistory.slice(0, historyIndex));
-    } else {
-      setCurrentFolder(folderId);
-    }
-  };
-  
-  const navigateToRoot = () => {
-    setCurrentFolder('');
-    setFolderHistory([]);
-  };
-  
-  const refreshCurrentFolder = () => {
-    listDocuments(currentFolder);
-  };
+  }, [driveConnected, isOpen, documents.length, isLoading, isInitialLoad, refreshCurrentFolder]);
 
   return {
     documents,
@@ -81,6 +61,9 @@ export function useDocumentBrowser() {
     handleBack,
     navigateToFolder,
     navigateToRoot,
-    refreshCurrentFolder
+    refreshCurrentFolder,
+    forceRefreshCurrentFolder,
+    fetchError,
+    isRefreshing
   };
 }

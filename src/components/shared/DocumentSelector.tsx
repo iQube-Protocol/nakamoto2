@@ -1,24 +1,17 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogFooter,
-  DialogHeader,
-  DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { Info, FileText, RefreshCw } from 'lucide-react';
+import { FileText } from 'lucide-react';
 import { useDriveConnection } from '@/hooks/useDriveConnection';
 import { useDocumentBrowser } from '@/hooks/useDocumentBrowser';
-import ConnectionForm from './document/ConnectionForm';
-import FolderBreadcrumb from './document/FolderBreadcrumb';
-import FileGrid from './document/FileGrid';
-import { Separator } from '@/components/ui/separator';
-import { Alert, AlertDescription } from '@/components/ui/alert';
 import { useMCP } from '@/hooks/use-mcp';
+import { toast } from 'sonner';
+import ConnectionDialog from './document/ConnectionDialog';
+import DocumentBrowserDialog from './document/DocumentBrowserDialog';
 
 interface DocumentSelectorProps {
   onDocumentSelect: (document: any) => void;
@@ -29,8 +22,10 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
   onDocumentSelect,
   triggerButton 
 }) => {
-  const { isApiLoading } = useMCP();
+  const { isApiLoading, resetConnection: resetMcpConnection } = useMCP();
   const [connecting, setConnecting] = useState(false);
+  const [connectionError, setConnectionError] = useState<string | null>(null);
+  const [connectionAttempts, setConnectionAttempts] = useState(0);
   
   const {
     driveConnected,
@@ -40,7 +35,8 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
     setClientId,
     apiKey,
     setApiKey,
-    handleConnect
+    handleConnect,
+    resetConnection
   } = useDriveConnection();
   
   const {
@@ -54,11 +50,18 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
     handleBack,
     navigateToFolder,
     navigateToRoot,
-    refreshCurrentFolder
+    refreshCurrentFolder,
+    forceRefreshCurrentFolder,
+    fetchError,
+    isRefreshing
   } = useDocumentBrowser();
   
   const handleDialogChange = (open: boolean) => {
     setIsOpen(open);
+    // Reset any connection errors when closing the dialog
+    if (!open) {
+      setConnectionError(null);
+    }
   };
   
   const handleFileSelection = (doc: any) => {
@@ -70,21 +73,44 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
     }
   };
 
-  const handleConnectClick = async () => {
+  const handleConnectClick = async (): Promise<boolean> => {
     setConnecting(true);
-    await handleConnect();
-    setConnecting(false);
+    setConnectionError(null);
+    setConnectionAttempts(prev => prev + 1);
+    
+    try {
+      const result = await handleConnect();
+      if (!result) {
+        const errorMsg = connectionAttempts > 1 
+          ? "Connection failed multiple times. Please verify your credentials and check if the Google Drive API is enabled in your Google Cloud Console."
+          : "Failed to connect to Google Drive. Please check your credentials.";
+        
+        setConnectionError(errorMsg);
+      }
+      return result;
+    } catch (error) {
+      const errorMessage = error instanceof Error ? error.message : "Unknown error occurred";
+      setConnectionError(errorMessage);
+      return false;
+    } finally {
+      setConnecting(false);
+    }
+  };
+
+  const handleRefresh = async () => {
+    toast.loading("Refreshing documents...", { id: "refreshing-docs", duration: 2000 });
+    await forceRefreshCurrentFolder();
   };
   
-  // If we have credentials stored but haven't fetched documents yet
-  useEffect(() => {
-    if (driveConnected && isOpen && documents.length === 0 && !documentsLoading) {
-      refreshCurrentFolder();
-    }
-  }, [driveConnected, isOpen, documents.length, documentsLoading, refreshCurrentFolder]);
+  const handleRetryConnection = () => {
+    resetConnection();
+    resetMcpConnection();
+    setConnectionError(null);
+    setConnectionAttempts(0);
+  };
   
   // Loading states
-  const isProcessing = connectionLoading || documentsLoading || isApiLoading || connecting || connectionInProgress;
+  const isProcessing = connectionLoading || documentsLoading || isApiLoading || connecting || connectionInProgress || isRefreshing;
   
   return (
     <Dialog open={isOpen} onOpenChange={handleDialogChange}>
@@ -97,75 +123,39 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
         )}
       </DialogTrigger>
       
-      <DialogContent className="sm:max-w-[500px]">
-        <DialogHeader>
-          <DialogTitle>Select a document from Google Drive</DialogTitle>
-          <DialogDescription>
-            {driveConnected 
-              ? "Choose a document to analyze with your agent" 
-              : "Connect to Google Drive to access your documents"}
-          </DialogDescription>
-        </DialogHeader>
-        
-        {!driveConnected ? (
-          <>
-            <Alert>
-              <Info className="h-4 w-4" />
-              <AlertDescription className="mt-2">
-                To connect to your Google Drive, you'll need to create Google API credentials:
-                <ol className="list-decimal pl-5 mt-2 space-y-1 text-sm">
-                  <li>Go to <a href="https://console.cloud.google.com" target="_blank" rel="noopener noreferrer" className="text-blue-500 underline">Google Cloud Console</a></li>
-                  <li>Create a project and enable the Google Drive API</li>
-                  <li>Create an OAuth client ID (Web application type)</li>
-                  <li>Create an API Key</li>
-                  <li>Enter these credentials below</li>
-                </ol>
-              </AlertDescription>
-            </Alert>
-            <Separator className="my-2" />
-            <ConnectionForm 
-              clientId={clientId}
-              setClientId={setClientId}
-              apiKey={apiKey}
-              setApiKey={setApiKey}
-              handleConnect={handleConnectClick}
-              isLoading={isProcessing}
-            />
-          </>
-        ) : (
-          <div className="py-4 h-[300px] overflow-y-auto">
-            {/* Breadcrumb navigation */}
-            <FolderBreadcrumb
-              currentFolder={currentFolder}
-              folderHistory={folderHistory}
-              navigateToFolder={navigateToFolder}
-              navigateToRoot={navigateToRoot}
-            />
-          
-            {/* File grid */}
-            <FileGrid
-              documents={documents}
-              isLoading={documentsLoading}
-              currentFolder={currentFolder}
-              handleDocumentClick={handleFileSelection}
-              handleBack={handleBack}
-            />
-          </div>
-        )}
-        
-        <DialogFooter>
-          {driveConnected && (
-            <>
-              <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
-              <Button onClick={refreshCurrentFolder} disabled={isProcessing} className="gap-1">
-                {isProcessing && <RefreshCw className="h-4 w-4 animate-spin" />}
-                {!isProcessing && <RefreshCw className="h-4 w-4" />}
-                Refresh
-              </Button>
-            </>
-          )}
-        </DialogFooter>
-      </DialogContent>
+      {!driveConnected ? (
+        <ConnectionDialog 
+          isOpen={isOpen}
+          onOpenChange={handleDialogChange}
+          clientId={clientId}
+          setClientId={setClientId}
+          apiKey={apiKey}
+          setApiKey={setApiKey}
+          handleConnect={handleConnectClick}
+          isProcessing={isProcessing}
+          connectionError={connectionError}
+          handleRetryConnection={handleRetryConnection}
+        />
+      ) : (
+        <DocumentBrowserDialog
+          documents={documents}
+          currentFolder={currentFolder}
+          folderHistory={folderHistory}
+          documentsLoading={documentsLoading}
+          fetchError={fetchError}
+          isRefreshing={isRefreshing}
+          isProcessing={isProcessing}
+          navigateToFolder={navigateToFolder}
+          navigateToRoot={navigateToRoot}
+          refreshCurrentFolder={refreshCurrentFolder}
+          handleRefresh={handleRefresh}
+          handleFileSelection={handleFileSelection}
+          handleBack={handleBack}
+          handleRetryConnection={handleRetryConnection}
+          setIsOpen={setIsOpen}
+          resetConnection={handleRetryConnection}
+        />
+      )}
     </Dialog>
   );
 };
