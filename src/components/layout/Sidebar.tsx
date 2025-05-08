@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
 import { Bot, ChevronDown } from 'lucide-react';
@@ -12,6 +11,7 @@ import MetaQubeItem from './sidebar/MetaQubeItem';
 import MobileSidebar from './sidebar/MobileSidebar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { MetaQube } from '@/lib/types';
 
 const Sidebar = () => {
   const location = useLocation();
@@ -38,6 +38,39 @@ const Sidebar = () => {
   // Function to dynamically render the icon
   const renderIcon = (IconComponent: React.ElementType) => {
     return <IconComponent className="h-5 w-5" />;
+  };
+
+  // Sample MetaQube objects
+  const monDaiMetaQube: MetaQube = {
+    "iQube-Identifier": "MonDAI-001",
+    "iQube-Type": "DataQube",
+    "iQube-Designer": "Aigent Z",
+    "iQube-Use": "For learning in web3 communities",
+    "Owner-Type": "Person",
+    "Owner-Identifiability": "Semi-Identifiable",
+    "Date-Minted": new Date().toISOString(),
+    "Related-iQubes": ["ContentQube1"],
+    "X-of-Y": "1 of 1",
+    "Sensitivity-Score": 3,
+    "Verifiability-Score": 8,
+    "Accuracy-Score": 8,
+    "Risk-Score": 3
+  };
+
+  const metisMetaQube: MetaQube = {
+    "iQube-Identifier": "Metis-001",
+    "iQube-Type": "AgentQube",
+    "iQube-Designer": "Aigent Z",
+    "iQube-Use": "AI assistance for learning and research",
+    "Owner-Type": "Person",
+    "Owner-Identifiability": "Semi-Identifiable",
+    "Date-Minted": new Date().toISOString(),
+    "Related-iQubes": ["MonDAI-001"],
+    "X-of-Y": "1 of 1",
+    "Sensitivity-Score": 2,
+    "Verifiability-Score": 9,
+    "Accuracy-Score": 9,
+    "Risk-Score": 2
   };
 
   const sidebarContent = (
@@ -151,22 +184,19 @@ const Sidebar = () => {
         
         {/* MonDAI iQube */}
         <MetaQubeItem
-          name={monDaiQubeData.name}
-          type={monDaiQubeData.type}
-          active={monDaiQubeData.active}
+          metaQube={monDaiMetaQube}
           collapsed={collapsed}
-          onClick={() => handleIQubeClick("MonDAI iQube")}
+          onIQubeClick={() => handleIQubeClick("MonDAI iQube")}
         />
         
         {/* Metis iQube - Only shown if activated */}
         {metisActivated && metisVisible && (
           <MetaQubeItem
-            name={metisQubeData.name}
-            type={metisQubeData.type}
-            active={true}
+            metaQube={metisMetaQube}
             collapsed={collapsed}
-            onClick={() => handleIQubeClick("Metis iQube")}
+            onIQubeClick={() => handleIQubeClick("Metis iQube")}
             onClose={handleCloseMetisIQube}
+            tooltipType="agentQube"
           />
         )}
       </div>
