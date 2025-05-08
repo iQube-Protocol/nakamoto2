@@ -32,10 +32,21 @@ export const sendMessage = async (
     if (mcpClient) {
       const context = mcpClient.getModelContext();
       documentContext = context?.documentContext || null;
-      if (documentContext) {
+      if (documentContext && documentContext.length > 0) {
         console.log(`Including ${documentContext.length} documents in request to AI service:`, 
           documentContext.map(doc => doc.documentName));
+        
+        // Debug document content
+        documentContext.forEach((doc, i) => {
+          console.log(`Document ${i+1}: ${doc.documentName}`);
+          console.log(`Type: ${doc.documentType}, Content length: ${doc.content.length}`);
+          console.log(`Content preview: ${doc.content.substring(0, 100)}...`);
+        });
+      } else {
+        console.log("No documents available in context to send to AI service");
       }
+    } else {
+      console.log("MCP client not available, cannot access document context");
     }
 
     // Prepare payload for edge function
@@ -65,6 +76,8 @@ export const sendMessage = async (
       throw new Error('Invalid response from edge function');
     }
 
+    console.log("AI service response:", data);
+    
     // Create the full message with the response
     const responseMessage: AgentMessage = {
       id: data.id || `msg-${Date.now()}`,

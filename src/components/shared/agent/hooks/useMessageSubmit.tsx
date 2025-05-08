@@ -48,14 +48,21 @@ export const useMessageSubmit = (
     
     // Add user message to MCP context if available
     if (mcpClient && conversationId) {
+      console.log(`Adding user message to MCP context for conversation ${conversationId}`);
       await mcpClient.addUserMessage(userMessage.message);
       
       // Log the current MCP context to verify documents are included
       const context = mcpClient.getModelContext();
+      console.log("Full MCP context:", JSON.stringify(context));
+      
       if (context?.documentContext && context.documentContext.length > 0) {
         hasDocuments = true;
         documentsInfo = context.documentContext.map(d => d.documentName);
         console.log(`Current MCP context has ${context.documentContext.length} documents:`, documentsInfo);
+        console.log("Document content sample:", context.documentContext.map(d => ({ 
+          name: d.documentName, 
+          contentPreview: d.content.substring(0, 100) + '...' 
+        })));
         
         // If message doesn't explicitly reference documents, add a helpful hint
         if (!message.toLowerCase().includes("document") && 
@@ -65,7 +72,14 @@ export const useMessageSubmit = (
             description: "Try asking a question that mentions your uploaded documents for best results"
           });
         }
+      } else {
+        console.log("No documents found in the current context");
       }
+    } else {
+      console.log("MCP client or conversation ID not available:", { 
+        hasMcpClient: !!mcpClient, 
+        conversationId 
+      });
     }
 
     try {
@@ -84,6 +98,13 @@ export const useMessageSubmit = (
         }
         
         setMessages(prev => [...prev, agentResponse]);
+
+        // Check if documents were used in the response
+        if (agentResponse.metadata?.documentsUsed) {
+          toast.success("Documents were referenced in the response", {
+            description: "The AI used your documents to answer your question"
+          });
+        }
       } else {
         // Fallback for when no onMessageSubmit is provided
         // Also store this interaction in the database for consistency
