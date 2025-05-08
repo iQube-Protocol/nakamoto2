@@ -12,11 +12,12 @@ interface UseDocumentContextProps {
  * Custom hook for managing document context
  */
 export default function useDocumentContext({ conversationId, onDocumentAdded }: UseDocumentContextProps) {
-  const { client, fetchDocument, isLoading } = useMCP();
+  const { client, fetchDocument, isLoading: mcpIsLoading } = useMCP();
   const [selectedDocuments, setSelectedDocuments] = useState<any[]>([]);
   const [viewingDocument, setViewingDocument] = useState<{id: string, content: string, name: string, mimeType: string} | null>(null);
+  const [isLoadingDocument, setIsLoadingDocument] = useState(false);
   
-  // Get documents from context whenever the conversation ID changes
+  // Get documents from context whenever the conversation ID changes or when MCP client changes
   useEffect(() => {
     if (client && conversationId) {
       const context = client.getModelContext();
@@ -33,6 +34,7 @@ export default function useDocumentContext({ conversationId, onDocumentAdded }: 
         console.log("Documents loaded:", docs.length);
       } else {
         console.log("No document context available");
+        setSelectedDocuments([]);
       }
     }
   }, [client, conversationId]);
@@ -51,16 +53,21 @@ export default function useDocumentContext({ conversationId, onDocumentAdded }: 
     }
     
     // Fetch document content
-    const content = await fetchDocument(document.id);
-    if (content) {
-      // Add content to the document object for local tracking
-      document.content = content;
-      setSelectedDocuments(prev => [...prev, document]);
-      
-      if (onDocumentAdded) onDocumentAdded();
-      return document;
-    } else {
-      throw new Error('Failed to fetch document content');
+    setIsLoadingDocument(true);
+    try {
+      const content = await fetchDocument(document.id);
+      if (content) {
+        // Add content to the document object for local tracking
+        document.content = content;
+        setSelectedDocuments(prev => [...prev, document]);
+        
+        if (onDocumentAdded) onDocumentAdded();
+        return document;
+      } else {
+        throw new Error('Failed to fetch document content');
+      }
+    } finally {
+      setIsLoadingDocument(false);
     }
   };
   
@@ -97,7 +104,8 @@ export default function useDocumentContext({ conversationId, onDocumentAdded }: 
     selectedDocuments,
     viewingDocument,
     setViewingDocument,
-    isLoading,
+    isLoading: mcpIsLoading || isLoadingDocument,
+    isLoadingDocument,
     handleDocumentSelect,
     handleRemoveDocument,
     handleViewDocument

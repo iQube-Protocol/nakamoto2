@@ -21,8 +21,11 @@ const FileGrid: React.FC<FileGridProps> = ({
 }) => {
   if (isLoading) {
     return (
-      <div className="flex h-full items-center justify-center">
-        <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+      <div className="flex h-full items-center justify-center py-8">
+        <div className="text-center">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground mx-auto mb-2" />
+          <p className="text-sm text-muted-foreground">Loading documents...</p>
+        </div>
       </div>
     );
   }
@@ -41,7 +44,7 @@ const FileGrid: React.FC<FileGridProps> = ({
         </Card>
       )}
       
-      {documents.length === 0 && (
+      {documents.length === 0 && !isLoading && (
         <div className="col-span-2 text-center py-8 text-muted-foreground">
           {currentFolder ? 'This folder is empty' : 'No documents found in root folder'}
         </div>

@@ -2,7 +2,7 @@
 import React from 'react';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
-import { FileText } from 'lucide-react';
+import { FileText, Loader2 } from 'lucide-react';
 import DocumentSelector from '../DocumentSelector';
 import DocumentList from './document/DocumentList';
 import DocumentViewer from './document/DocumentViewer';
@@ -22,6 +22,7 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
     viewingDocument,
     setViewingDocument,
     isLoading,
+    isLoadingDocument,
     handleDocumentSelect,
     handleRemoveDocument,
     handleViewDocument
@@ -35,10 +36,15 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
           onDocumentSelect={handleDocumentSelect}
           triggerButton={
             <Button variant="outline" size="sm" className="gap-1">
-              <FileText className="h-3.5 w-3.5" />
+              {isLoadingDocument ? (
+                <Loader2 className="h-3.5 w-3.5 animate-spin" />
+              ) : (
+                <FileText className="h-3.5 w-3.5" />
+              )}
               Add Document
             </Button>
           }
+          refreshAfterConnect={true}
         />
       </div>
       

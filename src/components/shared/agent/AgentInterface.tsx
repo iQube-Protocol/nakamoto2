@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { AgentMessage } from '@/lib/types';
 import { Card } from '@/components/ui/card';
@@ -59,6 +60,13 @@ const AgentInterface = ({
     // Do not switch to chat tab automatically
   };
 
+  // Submit message from any tab and switch to chat
+  const handleMessageSubmit = (e: React.FormEvent) => {
+    handleSubmit(e);
+    // Switch to chat tab when a message is sent
+    setActiveTab('chat');
+  };
+
   // Effect to track document context updates
   useEffect(() => {
     if (documentContextUpdated > 0) {
@@ -85,7 +93,7 @@ const AgentInterface = ({
         messagesEndRef={messagesEndRef}
         conversationId={conversationId}
         handleInputChange={handleInputChange}
-        handleSubmit={handleSubmit}
+        handleSubmit={handleMessageSubmit}
         handlePlayAudio={handlePlayAudio}
         handleDocumentAdded={handleDocumentAdded}
       />
