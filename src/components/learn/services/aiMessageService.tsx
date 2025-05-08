@@ -1,110 +1,84 @@
 
-import { MetaQube, BlakQube } from '@/lib/types';
-import { useToast } from '@/components/ui/use-toast';
-import { supabase } from '@/integrations/supabase/client';
-import { processAgentInteraction, getConversationContext } from '@/services/agent-service';
+import React from 'react';
 import { toast } from 'sonner';
+import { AgentMessage } from '@/lib/types';
+import { supabase } from '@/integrations/supabase/client';
 
-export async function processAiMessage({
-  message,
-  metaQube,
-  blakQube,
-  conversationId,
-  metisActive,
-  mcpClient,
-  historicalContext,
-  setConversationId,
-}) {
+export const sendMessage = async (
+  message: string,
+  conversationId: string | null,
+  agentType = 'learn',
+  onMessageReceived: (message: AgentMessage) => void,
+  historicalContext?: string
+): Promise<AgentMessage> => {
   try {
-    // Get conversation context, including history if available
-    const contextResult = await getConversationContext(conversationId, 'learn');
+    console.log(`Sending message to ${agentType} agent with conversation ID ${conversationId}`);
+
+    // Create pending message to show in UI immediately
+    const pendingMessage: AgentMessage = {
+      id: `pending-${Date.now()}`,
+      role: 'assistant',
+      content: '...',
+      createdAt: new Date().toISOString(),
+      metadata: { status: 'pending' }
+    };
     
-    if (contextResult.conversationId !== conversationId) {
-      setConversationId(contextResult.conversationId);
-      console.log(`Setting new conversation ID: ${contextResult.conversationId}`);
-    }
-    
-    // Get MCP context if available
-    let documentContext = [];
-    if (mcpClient) {
-      const mcpContext = mcpClient.getModelContext();
-      if (mcpContext?.documentContext) {
-        documentContext = mcpContext.documentContext;
-        console.log('MCP: Including document context in request', {
-          documentCount: documentContext.length,
-          documentIds: documentContext.map(doc => doc.documentId),
-          documentNames: documentContext.map(doc => doc.documentName)
-        });
-        
-        // Log a sample of each document's content to verify it's being sent
-        documentContext.forEach((doc, index) => {
-          const contentPreview = doc.content.substring(0, 100) + (doc.content.length > 100 ? '...' : '');
-          console.log(`Document ${index + 1} (${doc.documentName}) content preview:`, contentPreview);
-        });
-      }
-    }
-    
-    // Call the edge function to get the AI response
-    const { data, error } = await supabase.functions.invoke('learn-ai', {
-      body: { 
-        message, 
-        metaQube,
-        blakQube,
-        conversationId: contextResult.conversationId,
-        metisActive,
-        historicalContext: contextResult.historicalContext || '',
-        documentContext: documentContext
-      }
+    onMessageReceived(pendingMessage);
+
+    // Prepare payload for edge function
+    const payload = {
+      message,
+      conversationId,
+      historicalContext
+    };
+
+    // Call the appropriate edge function
+    const { data, error } = await supabase.functions.invoke(`${agentType}-ai`, {
+      body: payload
     });
-    
+
     if (error) {
-      console.error('Error calling learn-ai function:', error);
-      throw new Error(error.message);
-    }
-    
-    if (data.conversationId) {
-      setConversationId(data.conversationId);
-      console.log(`MCP conversation established with ID: ${data.conversationId}`);
+      throw new Error(`Edge function error: ${error.message}`);
     }
 
-    // Store the interaction in the database for persistence
-    await processAgentInteraction(
-      message,
-      'learn',
-      data.message,
-      {
-        ...(data.mcp || {}),
-        metisActive: metisActive,
-        conversationId: data.conversationId
-      }
-    );
-    
-    return {
-      id: Date.now().toString(),
-      sender: 'agent' as const,
-      message: data.message,
-      timestamp: data.timestamp || new Date().toISOString(),
+    // Process the response from the edge function
+    if (!data || !data.response) {
+      throw new Error('Invalid response from edge function');
+    }
+
+    // Create the full message with the response
+    const responseMessage: AgentMessage = {
+      id: data.id || `msg-${Date.now()}`,
+      role: 'assistant',
+      content: data.response,
+      createdAt: new Date().toISOString(),
+      conversationId: data.conversationId || conversationId,
       metadata: {
-        ...(data.mcp || {}),
-        metisActive: metisActive
+        status: 'complete',
+        reliability: data.reliability || 0.85,
+        sources: data.sources || []
       }
     };
+
+    // Return the complete message
+    return responseMessage;
   } catch (error) {
-    console.error('Failed to get AI response:', error);
-    toast({
-      title: "AI Service Error",
-      description: "Could not connect to the AI service. Please try again later.",
-      variant: "destructive"
-    });
+    console.error('Error sending message:', error);
     
-    return {
-      id: Date.now().toString(),
-      sender: 'agent' as const,
-      message: "I'm sorry, I couldn't process your request. Please try again later.",
-      timestamp: new Date().toISOString(),
-      metadata: {
-        metisActive: metisActive
-      }
+    // Show toast with error
+    toast.error('Failed to get response', {
+      description: error instanceof Error ? error.message : 'Unknown error occurred'
+    });
+
+    // Create error message
+    const errorMessage: AgentMessage = {
+      id: `error-${Date.now()}`,
+      role: 'assistant',
+      content: 'Sorry, I encountered an error processing your request. Please try again.',
+      createdAt: new Date().toISOString(),
+      metadata: { status: 'error' }
     };
+
+    return errorMessage;
   }
-}
+};
