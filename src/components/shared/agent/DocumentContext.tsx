@@ -28,8 +28,8 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
   } = useDocumentContext({ conversationId, onDocumentAdded });
   
   return (
-    <div className="space-y-4">
-      <div className="flex items-center justify-between">
+    <div className="flex flex-col h-full">
+      <div className="flex items-center justify-between mb-4">
         <h3 className="text-sm font-medium">Documents in Context</h3>
         <DocumentSelector 
           onDocumentSelect={handleDocumentSelect}
@@ -42,14 +42,16 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
         />
       </div>
       
-      <Separator />
+      <Separator className="mb-4" />
       
-      <DocumentList
-        documents={selectedDocuments}
-        isLoading={isLoading}
-        onViewDocument={handleViewDocument}
-        onRemoveDocument={handleRemoveDocument}
-      />
+      <div className="flex-1 overflow-y-auto">
+        <DocumentList
+          documents={selectedDocuments}
+          isLoading={isLoading}
+          onViewDocument={handleViewDocument}
+          onRemoveDocument={handleRemoveDocument}
+        />
+      </div>
       
       {/* Document content viewer dialog */}
       <DocumentViewer 

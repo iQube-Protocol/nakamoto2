@@ -65,14 +65,17 @@ const AgentTabs: React.FC<AgentTabsProps> = ({
         />
       </TabsContent>
       
-      <TabsContent value="documents" className="flex-1 p-4 m-0 overflow-y-auto">
+      <TabsContent value="documents" className="flex-1 p-4 m-0 overflow-hidden h-full">
         <DocumentContext 
           conversationId={conversationId}
-          onDocumentAdded={handleDocumentAdded}
+          onDocumentAdded={() => {
+            handleDocumentAdded();
+            setActiveTab('chat');
+          }}
         />
       </TabsContent>
 
-      <TabsContent value="knowledge" className="flex-1 p-4 m-0 overflow-y-auto">
+      <TabsContent value="knowledge" className="flex-1 p-4 m-0 overflow-hidden h-full">
         <KnowledgeBase agentType={agentType} />
       </TabsContent>
     </Tabs>

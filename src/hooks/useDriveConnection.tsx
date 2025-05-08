@@ -4,7 +4,7 @@ import { useMCP } from '@/hooks/use-mcp';
 import { toast } from 'sonner';
 
 export function useDriveConnection() {
-  const { driveConnected, connectToDrive, isLoading } = useMCP();
+  const { driveConnected, connectToDrive, isLoading, resetDriveConnection } = useMCP();
   const [clientId, setClientId] = useState('');
   const [apiKey, setApiKey] = useState('');
   
@@ -16,6 +16,18 @@ export function useDriveConnection() {
     return false;
   };
   
+  const resetConnection = async () => {
+    try {
+      await resetDriveConnection();
+      toast.success('Google Drive connection reset successfully');
+      return true;
+    } catch (error) {
+      console.error('Error resetting connection:', error);
+      toast.error('Failed to reset Google Drive connection');
+      return false;
+    }
+  };
+  
   return {
     driveConnected,
     isLoading,
@@ -23,6 +35,7 @@ export function useDriveConnection() {
     setClientId,
     apiKey,
     setApiKey,
-    handleConnect
+    handleConnect,
+    resetConnection
   };
 }

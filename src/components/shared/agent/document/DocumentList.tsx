@@ -36,7 +36,7 @@ const DocumentList: React.FC<DocumentListProps> = ({
   }
 
   return (
-    <div className="space-y-2 max-h-[200px] overflow-y-auto">
+    <div className="space-y-2">
       {documents.map(doc => (
         <DocumentCard
           key={doc.id}

@@ -10,12 +10,13 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { FileText } from 'lucide-react';
+import { FileText, RefreshCw } from 'lucide-react';
 import { useDriveConnection } from '@/hooks/useDriveConnection';
 import { useDocumentBrowser } from '@/hooks/useDocumentBrowser';
 import ConnectionForm from './document/ConnectionForm';
 import FolderBreadcrumb from './document/FolderBreadcrumb';
 import FileGrid from './document/FileGrid';
+import { toast } from 'sonner';
 
 interface DocumentSelectorProps {
   onDocumentSelect: (document: any) => void;
@@ -33,7 +34,8 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
     setClientId,
     apiKey,
     setApiKey,
-    handleConnect
+    handleConnect,
+    resetConnection
   } = useDriveConnection();
   
   const {
@@ -54,13 +56,29 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
     setIsOpen(open);
   };
   
-  const handleFileSelection = (doc: any) => {
+  const handleFileSelection = async (doc: any) => {
     const result = handleDocumentClick(doc);
     // If not a folder, pass the document to the parent component
     if (!doc.mimeType.includes('folder')) {
-      onDocumentSelect(result);
-      setIsOpen(false);
+      try {
+        await onDocumentSelect(result);
+        // Close dialog after document is selected
+        setIsOpen(false);
+        toast.success('Document added to context');
+      } catch (error) {
+        console.error('Error selecting document:', error);
+        if (error.message?.includes('already in context')) {
+          toast.info('Document already in context');
+        } else {
+          toast.error('Failed to add document to context');
+        }
+      }
     }
+  };
+  
+  const handleResetConnection = async () => {
+    await resetConnection();
+    refreshCurrentFolder();
   };
   
   return (
@@ -114,13 +132,24 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
           </div>
         )}
         
-        <DialogFooter>
+        <DialogFooter className="flex justify-between items-center">
           {driveConnected && (
             <>
-              <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
-              <Button onClick={refreshCurrentFolder}>
-                Refresh
+              <Button 
+                variant="outline" 
+                size="sm" 
+                className="flex items-center gap-1"
+                onClick={handleResetConnection}
+              >
+                <RefreshCw className="h-3.5 w-3.5" />
+                Reset Connection
               </Button>
+              <div className="flex gap-2">
+                <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
+                <Button onClick={refreshCurrentFolder}>
+                  Refresh
+                </Button>
+              </div>
             </>
           )}
         </DialogFooter>

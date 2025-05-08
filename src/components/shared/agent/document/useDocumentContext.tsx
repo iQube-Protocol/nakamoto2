@@ -40,8 +40,9 @@ export default function useDocumentContext({ conversationId, onDocumentAdded }: 
     
     // Check if document is already in context
     if (selectedDocuments.some(doc => doc.id === document.id)) {
-      toast.info('Document already in context');
-      return;
+      const error = new Error('Document already in context');
+      error.message = 'Document already in context';
+      throw error;
     }
     
     // Fetch document content
@@ -50,8 +51,10 @@ export default function useDocumentContext({ conversationId, onDocumentAdded }: 
       // Add content to the document object for local tracking
       document.content = content;
       setSelectedDocuments(prev => [...prev, document]);
-      toast.success('Document added to context');
       if (onDocumentAdded) onDocumentAdded();
+      return document;
+    } else {
+      throw new Error('Failed to fetch document content');
     }
   };
   

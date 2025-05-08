@@ -64,6 +64,30 @@ export function useMCP() {
     }
   }, [client]);
   
+  // Reset Google Drive connection
+  const resetDriveConnection = useCallback(async () => {
+    setIsLoading(true);
+    try {
+      if (!client) {
+        throw new Error('MCP client not initialized');
+      }
+      
+      // Reset Google Drive connection in the client
+      await client.resetDriveConnection();
+      
+      // Update local state
+      setDriveConnected(false);
+      localStorage.removeItem('gdrive-connected');
+      
+      return true;
+    } catch (error) {
+      console.error('Error resetting Drive connection:', error);
+      throw error;
+    } finally {
+      setIsLoading(false);
+    }
+  }, [client]);
+  
   // List available documents
   const listDocuments = useCallback(async (folderId?: string) => {
     if (!client || !driveConnected) {
@@ -128,6 +152,7 @@ export function useMCP() {
     documents,
     isLoading,
     connectToDrive,
+    resetDriveConnection,
     listDocuments,
     fetchDocument,
     initializeContext

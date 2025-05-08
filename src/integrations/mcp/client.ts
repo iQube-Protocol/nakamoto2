@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -235,6 +234,46 @@ export class MCPClient {
         description: error instanceof Error ? error.message : 'Unknown error' 
       });
       return false;
+    }
+  }
+  
+  /**
+   * Reset Google Drive connection
+   */
+  async resetDriveConnection(): Promise<boolean> {
+    console.log('MCP: Resetting Google Drive connection');
+    
+    try {
+      // Clear any cached tokens from Google Auth
+      if (this.gapi && this.gapi.auth) {
+        try {
+          // Try to clear the token
+          const token = this.gapi.auth.getToken();
+          if (token) {
+            this.gapi.auth.setToken(null);
+            console.log('MCP: Successfully cleared auth token');
+          }
+        } catch (e) {
+          console.log('MCP: No token to clear or error clearing token', e);
+        }
+      }
+
+      // Reset authentication state
+      this.isAuthenticated = false;
+      
+      // Reset stored credentials in localStorage
+      localStorage.removeItem('gdrive-connected');
+      
+      // Create new token client for future authentication
+      if ((window as any).google && (window as any).google.accounts && (window as any).google.accounts.oauth2) {
+        this.tokenClient = null;
+      }
+      
+      console.log('MCP: Google Drive connection has been reset');
+      return true;
+    } catch (error) {
+      console.error('MCP: Error resetting Drive connection:', error);
+      throw error;
     }
   }
   
