@@ -6,7 +6,7 @@ import MermaidDiagram from './MermaidDiagram';
 
 interface MessageContentProps {
   content: string;
-  sender: 'user' | 'agent';
+  sender: 'user' | 'agent' | 'system';
 }
 
 const MessageContent = ({ content, sender }: MessageContentProps) => {
