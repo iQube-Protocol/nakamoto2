@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Bot } from 'lucide-react';
+import { Bot, ChevronDown } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useMetisAgent } from '@/hooks/use-metis-agent';
@@ -12,13 +12,12 @@ import MetaQubeItem from './sidebar/MetaQubeItem';
 import MobileSidebar from './sidebar/MobileSidebar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronDown } from "lucide-react";
 
 const Sidebar = () => {
   const location = useLocation();
   const isMobile = useIsMobile();
   const { metisActivated, metisVisible, hideMetis } = useMetisAgent();
-  const { collapsed, mobileOpen } = useSidebarState();
+  const { collapsed, mobileOpen, toggleMobileSidebar } = useSidebarState();
   const [iQubesOpen, setIQubesOpen] = React.useState(true);
 
   const handleIQubeClick = (iqubeId: string) => {
@@ -94,7 +93,7 @@ const Sidebar = () => {
                     )}
                     onClick={() => setIQubesOpen(!iQubesOpen)}
                   >
-                    <Cube className="h-5 w-5" />
+                    {iQubeItems[0].icon && <iQubeItems[0].icon className="h-5 w-5" />}
                   </div>
                 </TooltipTrigger>
                 <TooltipContent side="right">iQubes</TooltipContent>
@@ -147,23 +146,21 @@ const Sidebar = () => {
         
         {/* MonDAI iQube */}
         <MetaQubeItem
-          id={monDaiQubeData.id}
           name={monDaiQubeData.name}
           type={monDaiQubeData.type}
           active={monDaiQubeData.active}
           collapsed={collapsed}
-          onClick={() => handleIQubeClick(monDaiQubeData.id)}
+          onClick={() => handleIQubeClick("MonDAI iQube")}
         />
         
         {/* Metis iQube - Only shown if activated */}
         {metisActivated && metisVisible && (
           <MetaQubeItem
-            id={metisQubeData.id}
             name={metisQubeData.name}
             type={metisQubeData.type}
             active={true}
             collapsed={collapsed}
-            onClick={() => handleIQubeClick(metisQubeData.id)}
+            onClick={() => handleIQubeClick("Metis iQube")}
             onClose={handleCloseMetisIQube}
           />
         )}
@@ -173,7 +170,14 @@ const Sidebar = () => {
 
   // Render mobile sidebar if on mobile, otherwise render desktop sidebar
   if (isMobile) {
-    return <MobileSidebar>{sidebarContent}</MobileSidebar>;
+    return (
+      <MobileSidebar 
+        mobileOpen={mobileOpen} 
+        toggleMobileSidebar={toggleMobileSidebar}
+      >
+        {sidebarContent}
+      </MobileSidebar>
+    );
   }
 
   return (

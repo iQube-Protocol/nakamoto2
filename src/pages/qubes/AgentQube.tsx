@@ -1,13 +1,13 @@
 
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { Cube } from 'lucide-react';
+import { Database } from 'lucide-react'; // Changed from Cube to Database
 
 const AgentQube = () => {
   return (
     <div className="container py-6 max-w-7xl mx-auto">
       <div className="flex items-center mb-6">
-        <Cube className="h-8 w-8 text-iqube-primary mr-3" />
+        <Database className="h-8 w-8 text-iqube-primary mr-3" /> {/* Changed from Cube to Database */}
         <div>
           <h1 className="text-2xl font-bold">Metis AgentQube</h1>
           <p className="text-muted-foreground">Your AI assistant for learning and guidance</p>

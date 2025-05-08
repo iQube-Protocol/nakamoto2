@@ -6,6 +6,13 @@ import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
 import { processAgentInteraction, getConversationContext } from '@/services/agent-service';
 
+// Extend the agent service to support 'mondai' type
+declare module '@/services/agent-service' {
+  interface ConversationContextOptions {
+    agentType: "learn" | "earn" | "connect" | "mondai";
+  }
+}
+
 const MonDAI = () => {
   const { toast } = useToast();
   const { user } = useAuth();
@@ -23,7 +30,8 @@ const MonDAI = () => {
       
       setIsLoading(true);
       try {
-        const context = await getConversationContext(conversationId, 'mondai');
+        // Use 'learn' instead of 'mondai' to match the existing agent types
+        const context = await getConversationContext(conversationId, 'learn');
         if (context.historicalContext) {
           setHistoricalContext(context.historicalContext);
           console.log('Loaded historical context for MonDAI agent');
@@ -45,7 +53,7 @@ const MonDAI = () => {
   const handleAIMessage = async (message: string) => {
     try {
       // Get conversation context, including history if available
-      const contextResult = await getConversationContext(conversationId, 'mondai');
+      const contextResult = await getConversationContext(conversationId, 'learn');
       
       if (contextResult.conversationId !== conversationId) {
         setConversationId(contextResult.conversationId);
@@ -79,7 +87,7 @@ const MonDAI = () => {
       // Store the interaction in the database for persistence
       await processAgentInteraction(
         message,
-        'mondai',
+        'learn', // Use 'learn' instead of 'mondai'
         data.message,
         {
           conversationId: data.conversationId
@@ -117,7 +125,7 @@ const MonDAI = () => {
           <AgentInterface
             title="MonDAI Assistant"
             description="Your personal AI assistant for Web3 education and insights"
-            agentType="mondai"
+            agentType="learn" // Use 'learn' instead of 'mondai'
             onMessageSubmit={handleAIMessage}
             initialMessages={[
               {
