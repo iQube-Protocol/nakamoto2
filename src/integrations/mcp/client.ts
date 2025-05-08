@@ -1,10 +1,9 @@
-
 import { MCPClientOptions, MCPContext, DocumentMetadata } from './types';
 import { GoogleDriveService } from './GoogleDriveService';
 import { ContextService } from './ContextService';
 import { toast } from 'sonner';
 
-export { MCPContext, MCPClientOptions } from './types';
+export { type MCPContext, type MCPClientOptions } from './types';
 
 /**
  * Main MCP Client that coordinates Google Drive and Context services

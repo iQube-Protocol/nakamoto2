@@ -1,4 +1,3 @@
-
 import { toast } from 'sonner';
 import { DocumentMetadata } from './types';
 
@@ -6,7 +5,7 @@ import { DocumentMetadata } from './types';
  * Service for Google Drive integration and document management
  */
 export class GoogleDriveService {
-  private gapi: any = null;
+  public gapi: any = null;
   private tokenClient: any = null;
   private isApiLoaded: boolean = false;
   private isAuthenticated: boolean = false;

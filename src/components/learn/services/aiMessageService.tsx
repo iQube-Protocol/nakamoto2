@@ -17,9 +17,9 @@ export const sendMessage = async (
     // Create pending message to show in UI immediately
     const pendingMessage: AgentMessage = {
       id: `pending-${Date.now()}`,
-      role: 'assistant',
-      content: '...',
-      createdAt: new Date().toISOString(),
+      sender: 'agent',
+      message: '...',
+      timestamp: new Date().toISOString(),
       metadata: { status: 'pending' }
     };
     
@@ -49,9 +49,9 @@ export const sendMessage = async (
     // Create the full message with the response
     const responseMessage: AgentMessage = {
       id: data.id || `msg-${Date.now()}`,
-      role: 'assistant',
-      content: data.response,
-      createdAt: new Date().toISOString(),
+      sender: 'agent',
+      message: data.response,
+      timestamp: new Date().toISOString(),
       conversationId: data.conversationId || conversationId,
       metadata: {
         status: 'complete',
@@ -73,9 +73,9 @@ export const sendMessage = async (
     // Create error message
     const errorMessage: AgentMessage = {
       id: `error-${Date.now()}`,
-      role: 'assistant',
-      content: 'Sorry, I encountered an error processing your request. Please try again.',
-      createdAt: new Date().toISOString(),
+      sender: 'agent',
+      message: 'Sorry, I encountered an error processing your request. Please try again.',
+      timestamp: new Date().toISOString(),
       metadata: { status: 'error' }
     };
 

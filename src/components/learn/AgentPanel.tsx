@@ -1,11 +1,10 @@
-
 import React from 'react';
 import { AgentInterface } from '@/components/shared/agent';
 import { MetaQube, BlakQube } from '@/lib/types';
 import { useMetisActivation } from './hooks/useMetisActivation';
 import { useDocumentContextUpdates } from './hooks/useDocumentContextUpdates';
 import { useConversationContext } from './hooks/useConversationContext';
-import { processAiMessage } from './services/aiMessageService';
+import { sendMessage } from './services/aiMessageService';
 
 interface AgentPanelProps {
   metaQube: MetaQube;
@@ -30,7 +29,7 @@ const AgentPanel = ({
   );
 
   const handleAIMessage = async (message: string) => {
-    const response = await processAiMessage({
+    const response = await sendMessage({
       message,
       metaQube,
       blakQube,

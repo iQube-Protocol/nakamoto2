@@ -10,10 +10,7 @@ export function useDriveConnection() {
   
   const handleConnect = async () => {
     const success = await connectToDrive(clientId, apiKey);
-    if (success) {
-      return true;
-    }
-    return false;
+    return success;
   };
   
   const resetConnection = async () => {
