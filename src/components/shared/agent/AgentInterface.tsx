@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import AgentHeader from './AgentHeader';
 import AgentTabs from './tabs/AgentTabs';
 import { useAgentMessages } from './hooks/useAgentMessages';
+import './styles/agent-interface.css'; // We'll create this file for styles
 
 interface AgentInterfaceProps {
   title: string;
@@ -94,29 +95,6 @@ const AgentInterface = ({
 
   return (
     <Card className="flex flex-col h-full overflow-hidden">
-      <style jsx global>{`
-        .system-message {
-          padding: 0.75rem;
-          margin-bottom: 0.75rem;
-          background-color: rgba(251, 191, 36, 0.1);
-          border-left: 3px solid rgba(245, 158, 11, 0.5);
-          border-radius: 0.375rem;
-        }
-        
-        .user-message {
-          padding: 0.75rem;
-          margin-bottom: 0.75rem;
-          background-color: rgba(59, 130, 246, 0.1);
-          border-radius: 0.375rem;
-        }
-        
-        .agent-message {
-          padding: 0.75rem;
-          margin-bottom: 0.75rem;
-          background-color: rgba(99, 102, 241, 0.1);
-          border-radius: 0.375rem;
-        }
-      `}</style>
       <AgentHeader 
         title={title} 
         description={description} 
