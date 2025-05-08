@@ -1,3 +1,4 @@
+
 import { MCPClientOptions, MCPContext, DocumentMetadata } from './types';
 import { GoogleDriveService } from './GoogleDriveService';
 import { ContextService } from './ContextService';
@@ -90,22 +91,7 @@ export class MCPClient {
         mimeType: mimeType
       });
       
-      if (documentContent) {
-        // Extract document type from mimeType
-        const documentType = this.driveService.getDocumentType(mimeType);
-        
-        // Add to context
-        this.contextService.addDocumentToContext(
-          documentId,
-          fileName,
-          documentType,
-          documentContent
-        );
-        
-        return documentContent;
-      }
-      
-      return null;
+      return documentContent;
     } catch (error) {
       console.error(`Error fetching document ${documentId}:`, error);
       toast.error('Failed to fetch document', { 
@@ -113,6 +99,30 @@ export class MCPClient {
       });
       return null;
     }
+  }
+  
+  /**
+   * Add document to MCP context
+   */
+  addDocumentToContext(
+    documentId: string,
+    documentName: string,
+    documentType: string,
+    content: string
+  ): void {
+    this.contextService.addDocumentToContext(
+      documentId,
+      documentName,
+      documentType,
+      content
+    );
+  }
+  
+  /**
+   * Remove document from MCP context
+   */
+  removeDocumentFromContext(documentId: string): boolean {
+    return this.contextService.removeDocumentFromContext(documentId);
   }
   
   /**

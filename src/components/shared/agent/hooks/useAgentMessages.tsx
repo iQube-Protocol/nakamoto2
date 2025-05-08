@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useRef } from 'react';
 import { AgentMessage } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
@@ -124,6 +123,13 @@ export const useAgentMessages = ({
     // Add user message to MCP context if available
     if (mcpClient && conversationId) {
       await mcpClient.addUserMessage(userMessage.message);
+      
+      // Log the current MCP context to verify documents are included
+      const context = mcpClient.getModelContext();
+      if (context?.documentContext && context.documentContext.length > 0) {
+        console.log(`Current MCP context has ${context.documentContext.length} documents:`, 
+          context.documentContext.map(d => d.documentName));
+      }
     }
 
     try {

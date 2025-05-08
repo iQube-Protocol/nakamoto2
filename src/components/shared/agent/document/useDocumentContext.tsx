@@ -57,6 +57,21 @@ export default function useDocumentContext({ conversationId, onDocumentAdded }: 
       document.content = content;
       setSelectedDocuments(prev => [...prev, document]);
       
+      // Make sure the document is added to the MCP context
+      if (client && conversationId) {
+        const documentType = document.mimeType.split('/').pop() || 'unknown';
+        
+        // Add to model context
+        client.addDocumentToContext(
+          document.id,
+          document.name,
+          documentType,
+          content
+        );
+        
+        console.log(`Document ${document.name} added to MCP context`);
+      }
+      
       if (onDocumentAdded) onDocumentAdded();
       return document;
     } else {
@@ -67,6 +82,10 @@ export default function useDocumentContext({ conversationId, onDocumentAdded }: 
   const handleRemoveDocument = (documentId: string) => {
     // Remove from the client context
     if (client && conversationId) {
+      // Remove from MCP context first
+      client.removeDocumentFromContext(documentId);
+      console.log(`Document ${documentId} removed from MCP context`);
+      
       const context = client.getModelContext();
       if (context?.documentContext) {
         context.documentContext = context.documentContext.filter(

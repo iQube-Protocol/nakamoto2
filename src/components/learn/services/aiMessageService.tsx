@@ -3,6 +3,7 @@ import React from 'react';
 import { toast } from 'sonner';
 import { AgentMessage } from '@/lib/types';
 import { supabase } from '@/integrations/supabase/client';
+import { getMCPClient } from '@/integrations/mcp/client';
 
 export const sendMessage = async (
   message: string,
@@ -25,11 +26,23 @@ export const sendMessage = async (
     
     onMessageReceived(pendingMessage);
 
+    // Get document context from MCP if available
+    let documentContext = null;
+    const mcpClient = getMCPClient();
+    if (mcpClient) {
+      const context = mcpClient.getModelContext();
+      documentContext = context?.documentContext || null;
+      if (documentContext) {
+        console.log(`Including ${documentContext.length} documents in request to AI service`);
+      }
+    }
+
     // Prepare payload for edge function
     const payload = {
       message,
       conversationId,
-      historicalContext
+      historicalContext,
+      documentContext // Include document context in the request
     };
 
     // Call the appropriate edge function
@@ -56,7 +69,8 @@ export const sendMessage = async (
         status: 'complete',
         reliability: data.reliability || 0.85,
         sources: data.sources || [],
-        conversationId: data.conversationId || conversationId // Store conversationId in metadata instead
+        conversationId: data.conversationId || conversationId,
+        documentsUsed: data.documentsUsed || false // Flag to indicate if documents were used
       }
     };
 
