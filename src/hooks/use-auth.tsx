@@ -35,11 +35,19 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     // First set up the auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, newSession) => {
-        console.log("Auth state changed:", event);
+        console.log("Auth state changed:", event, newSession?.user?.email);
         if (mounted) {
           setSession(newSession);
           setUser(newSession?.user ?? null);
           setLoading(false);
+          
+          // Handle specific auth events
+          if (event === 'SIGNED_IN') {
+            console.log("User signed in, session established");
+          } else if (event === 'SIGNED_OUT') {
+            console.log("User signed out, session cleared");
+            navigate('/signin');
+          }
         }
       }
     );
@@ -49,7 +57,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       if (error) {
         console.error("Error getting session:", error);
       } else {
-        console.log("Got session:", data.session ? "Yes" : "No");
+        console.log("Got session:", data.session ? `Yes for ${data.session.user.email}` : "No");
         if (mounted) {
           setSession(data.session);
           setUser(data.session?.user ?? null);
@@ -62,12 +70,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, []);
+  }, [navigate]);
 
   const signIn = async (email: string, password: string) => {
     console.log("Attempting sign in for:", email);
     try {
-      const { error } = await supabase.auth.signInWithPassword({
+      const { data, error } = await supabase.auth.signInWithPassword({
         email,
         password,
       });
@@ -77,7 +85,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return { error, success: false };
       }
 
-      console.log("Sign in successful");
+      console.log("Sign in successful:", data.user?.email);
+      setUser(data.user);
+      setSession(data.session);
       return { error: null, success: true };
     } catch (error) {
       console.error('Unexpected error during sign in:', error);
@@ -92,7 +102,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       
       console.log("Attempting sign up for:", email);
       
-      const { error } = await supabase.auth.signUp({
+      const { data, error } = await supabase.auth.signUp({
         email,
         password,
         options: {
@@ -109,7 +119,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         return { error, success: false };
       }
 
-      console.log("Sign up successful");
+      console.log("Sign up successful:", data.user?.email);
       return { error: null, success: true };
     } catch (error) {
       console.error('Unexpected error during sign up:', error);
@@ -121,7 +131,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     console.log("Signing out");
     try {
       await supabase.auth.signOut();
-      navigate('/signin');
+      setUser(null);
+      setSession(null);
+      navigate('/signin', { replace: true });
     } catch (error) {
       console.error("Error during sign out:", error);
       toast.error("Error signing out. Please try again.");

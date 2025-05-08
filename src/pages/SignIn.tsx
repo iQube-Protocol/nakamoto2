@@ -34,8 +34,8 @@ const SignIn = () => {
   // Check if user is already logged in
   useEffect(() => {
     if (user) {
-      console.log("User already logged in, redirecting to home");
-      navigate('/');
+      console.log("User already logged in, redirecting to dashboard");
+      navigate('/dashboard');
     }
   }, [user, navigate]);
 
@@ -48,7 +48,7 @@ const SignIn = () => {
       
       if (success) {
         toast.success('Signed in successfully');
-        navigate('/');
+        navigate('/dashboard');
       } else if (error) {
         toast.error(`Sign in failed: ${error.message}`);
       }
@@ -105,7 +105,7 @@ const SignIn = () => {
       
       if (success) {
         toast.success('Signed in with demo account');
-        navigate('/');
+        navigate('/dashboard', { replace: true });
       } else if (error) {
         toast.error(`Demo sign in failed: ${error.message}`);
       }
