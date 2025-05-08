@@ -1,5 +1,6 @@
 
-import { LucideIcon, LayoutDashboard, Database, Settings, FolderGit2, Bot, User, Cube } from 'lucide-react';
+import { LucideIcon, LayoutDashboard, Database, Settings, FolderGit2, Bot, User } from 'lucide-react';
+import CubeIcon from '../sidebar/CubeIcon';
 
 export interface NavItem {
   name: string;

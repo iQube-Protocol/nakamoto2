@@ -1,10 +1,8 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   Bot, ChevronDown, ChevronLeft, ChevronRight, 
-  Database, User, FolderGit2, Settings as SettingsIcon,
-  Cube
+  Database, User, FolderGit2, Settings as SettingsIcon
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -169,7 +167,7 @@ const Sidebar = () => {
                     )}
                     onClick={toggleIQubesMenu}
                   >
-                    <Cube className="h-5 w-5" />
+                    <CubeIcon className="h-5 w-5" />
                   </div>
                 </TooltipTrigger>
                 <TooltipContent side="right">iQubes</TooltipContent>
@@ -183,7 +181,7 @@ const Sidebar = () => {
             >
               <CollapsibleTrigger className="flex w-full items-center justify-between p-2 hover:bg-accent/30 rounded-md">
                 <div className="flex items-center">
-                  <Cube className="h-5 w-5 mr-2" />
+                  <CubeIcon className="h-5 w-5 mr-2" />
                   <span className="text-sm font-medium">iQubes</span>
                 </div>
                 <ChevronDown className={cn(
