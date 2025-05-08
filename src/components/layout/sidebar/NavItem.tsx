@@ -27,8 +27,8 @@ const NavItem: React.FC<NavItemProps> = ({
       to={href}
       onClick={onClick}
       className={cn(
-        "flex items-center rounded-md p-2 text-sm hover:bg-accent",
-        active && "bg-accent",
+        "flex items-center rounded-md p-2 text-sm hover:bg-accent/30",
+        active && "bg-accent/20 text-accent-foreground",
         collapsed ? "justify-center" : ""
       )}
     >

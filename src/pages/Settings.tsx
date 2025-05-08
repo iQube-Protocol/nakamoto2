@@ -7,6 +7,7 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { useMetisAgent } from '@/hooks/use-metis-agent';
 import AgentRecommendation from '@/components/shared/agent/AgentRecommendation';
 import { toast } from 'sonner';
+import { iQubeItems } from '@/components/layout/sidebar/sidebarData';
 
 // Sample metaQube data
 const monDaiQubeData: MetaQube = {
@@ -41,11 +42,32 @@ const metisQubeData: MetaQube = {
   "Risk-Score": 3
 };
 
+const gdriveQubeData: MetaQube = {
+  "iQube-Identifier": "GDrive iQube",
+  "iQube-Type": "ToolQube",
+  "iQube-Designer": "Aigent Connect",
+  "iQube-Use": "Connect to Google Drive for document management",
+  "Owner-Type": "Person",
+  "Owner-Identifiability": "Identifiable",
+  "Date-Minted": new Date().toISOString(),
+  "Related-iQubes": ["DataQube1"],
+  "X-of-Y": "1 of 10",
+  "Sensitivity-Score": 5,
+  "Verifiability-Score": 9,
+  "Accuracy-Score": 8,
+  "Risk-Score": 4
+};
+
 const Settings = () => {
   const { theme } = useTheme();
   const [selectedIQube, setSelectedIQube] = useState<MetaQube>(monDaiQubeData);
   const { metisActivated, metisVisible, activateMetis } = useMetisAgent();
   const [showAgentRecommendation, setShowAgentRecommendation] = useState(!metisActivated);
+  const [activeQubes, setActiveQubes] = useState<{[key: string]: boolean}>({
+    "MonDAI": true,
+    "Metis": metisActivated && metisVisible,
+    "GDrive": false
+  });
   
   // Listen for iQube selection events from sidebar
   useEffect(() => {
@@ -53,10 +75,12 @@ const Settings = () => {
       const iQubeId = e.detail?.iqubeId;
       console.log("iQube selection event received:", iQubeId);
       
-      if (iQubeId === "MonDAI iQube") {
+      if (iQubeId === "MonDAI" || iQubeId === "MonDAI iQube") {
         setSelectedIQube(monDaiQubeData);
-      } else if (iQubeId === "Metis iQube" && metisActivated) {
+      } else if ((iQubeId === "Metis" || iQubeId === "Metis iQube") && metisActivated) {
         setSelectedIQube(metisQubeData);
+      } else if (iQubeId === "GDrive") {
+        setSelectedIQube(gdriveQubeData);
       }
     };
 
@@ -71,6 +95,7 @@ const Settings = () => {
   const handleActivateMetis = () => {
     activateMetis();
     setShowAgentRecommendation(false);
+    setActiveQubes(prev => ({...prev, "Metis": true}));
     toast.success("Metis agent activated successfully");
     // Dispatch the metisActivated event
     window.dispatchEvent(new Event('metisActivated'));
@@ -79,6 +104,20 @@ const Settings = () => {
   const handleDismissAgent = () => {
     setShowAgentRecommendation(false);
     toast.info("Agent recommendation dismissed");
+  };
+
+  const toggleQubeActive = (qubeName: string) => {
+    if (qubeName === "Metis" && !activeQubes["Metis"]) {
+      handleActivateMetis();
+      return;
+    }
+    
+    setActiveQubes(prev => ({
+      ...prev,
+      [qubeName]: !prev[qubeName]
+    }));
+    
+    toast.info(`${qubeName} iQube ${!activeQubes[qubeName] ? 'activated' : 'deactivated'}`);
   };
 
   // Sample user settings

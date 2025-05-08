@@ -1,12 +1,12 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import Sidebar from './Sidebar';
-import { Menu, User, LogOut } from 'lucide-react';
+import { Menu, LogOut } from 'lucide-react';
 import { Button } from '../ui/button';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useSidebarState } from '@/hooks/use-sidebar-state';
 import { useAuth } from '@/hooks/use-auth';
-import { Link, useNavigate } from 'react-router-dom';
+import { useNavigate } from 'react-router-dom';
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -82,15 +82,6 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
               <DropdownMenuLabel>
                 {user?.email || 'User Account'}
               </DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              <DropdownMenuItem onClick={() => navigate('/profile')}>
-                <User className="mr-2 h-4 w-4" />
-                Profile
-              </DropdownMenuItem>
-              <DropdownMenuItem onClick={() => navigate('/settings')}>
-                <User className="mr-2 h-4 w-4" />
-                Settings
-              </DropdownMenuItem>
               <DropdownMenuSeparator />
               <DropdownMenuItem onClick={handleSignOut}>
                 <LogOut className="mr-2 h-4 w-4" />

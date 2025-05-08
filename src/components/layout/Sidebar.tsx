@@ -1,6 +1,7 @@
-import React from 'react';
+
+import React, { useState } from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Bot, ChevronDown } from 'lucide-react';
+import { Bot, ChevronDown, ChevronLeft, ChevronRight, Database, User, FolderGit2, Settings as SettingsIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useMetisAgent } from '@/hooks/use-metis-agent';
@@ -12,13 +13,15 @@ import MobileSidebar from './sidebar/MobileSidebar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { MetaQube } from '@/lib/types';
+import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
 
 const Sidebar = () => {
   const location = useLocation();
   const isMobile = useIsMobile();
   const { metisActivated, metisVisible, hideMetis } = useMetisAgent();
-  const { collapsed, mobileOpen, toggleMobileSidebar } = useSidebarState();
-  const [iQubesOpen, setIQubesOpen] = React.useState(true);
+  const { collapsed, mobileOpen, toggleSidebar, toggleMobileSidebar } = useSidebarState();
+  const [iQubesOpen, setIQubesOpen] = useState(true);
 
   const handleIQubeClick = (iqubeId: string) => {
     console.log("iQube clicked:", iqubeId);
@@ -33,6 +36,20 @@ const Sidebar = () => {
     e.stopPropagation();
     hideMetis();
     console.log("Metis iQube closed from sidebar");
+  };
+
+  // Function to render iQube type icon based on type
+  const renderIQubeTypeIcon = (type: string) => {
+    switch(type) {
+      case 'DataQube':
+        return <Database className="h-4 w-4 text-blue-500" />;
+      case 'AgentQube':
+        return <Bot className="h-4 w-4 text-purple-500" />;
+      case 'ToolQube':
+        return <FolderGit2 className="h-4 w-4 text-green-500" />;
+      default:
+        return <Database className="h-4 w-4" />;
+    }
   };
 
   // Function to dynamically render the icon
@@ -103,6 +120,16 @@ const Sidebar = () => {
             </Tooltip>
           </TooltipProvider>
         )}
+
+        {/* Collapse/Expand button */}
+        <Button 
+          variant="ghost" 
+          size="icon" 
+          onClick={toggleSidebar}
+          className={collapsed ? "hidden" : ""}
+        >
+          {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
+        </Button>
       </div>
 
       <div className="flex-1 px-3 space-y-1">
@@ -118,6 +145,16 @@ const Sidebar = () => {
           </NavItem>
         ))}
 
+        {/* Profile NavItem */}
+        <NavItem 
+          icon={User}
+          href="/profile"
+          active={location.pathname.includes('/profile')}
+          collapsed={collapsed}
+        >
+          Profile
+        </NavItem>
+
         {/* iQubes Collapsible Section */}
         <div className="pt-2">
           {collapsed ? (
@@ -126,12 +163,12 @@ const Sidebar = () => {
                 <TooltipTrigger asChild>
                   <div
                     className={cn(
-                      "flex items-center justify-center p-2 rounded-md hover:bg-accent cursor-pointer",
-                      location.pathname.includes('/qubes') && "bg-accent"
+                      "flex items-center justify-center p-2 rounded-md hover:bg-accent/30 cursor-pointer",
+                      location.pathname.includes('/qubes') && "bg-accent/20"
                     )}
                     onClick={() => setIQubesOpen(!iQubesOpen)}
                   >
-                    {renderIcon(iQubeItems[0].icon)}
+                    <Database className="h-5 w-5" />
                   </div>
                 </TooltipTrigger>
                 <TooltipContent side="right">iQubes</TooltipContent>
@@ -143,8 +180,11 @@ const Sidebar = () => {
               onOpenChange={setIQubesOpen}
               className="border-t pt-2"
             >
-              <CollapsibleTrigger className="flex w-full items-center justify-between p-2 hover:bg-accent rounded-md">
-                <span className="text-sm font-medium">iQubes</span>
+              <CollapsibleTrigger className="flex w-full items-center justify-between p-2 hover:bg-accent/30 rounded-md">
+                <div className="flex items-center">
+                  <Database className="h-5 w-5 mr-2" />
+                  <span className="text-sm font-medium">iQubes</span>
+                </div>
                 <ChevronDown className={cn(
                   "h-4 w-4 transition-transform",
                   iQubesOpen && "transform rotate-180"
@@ -152,18 +192,34 @@ const Sidebar = () => {
               </CollapsibleTrigger>
               <CollapsibleContent className="mt-1 space-y-1">
                 {iQubeItems.map((qube) => (
-                  <Link 
+                  <div 
                     key={qube.id}
-                    to={qube.href}
                     className={cn(
-                      "flex items-center px-2 py-1.5 text-sm rounded-md hover:bg-accent",
-                      location.pathname.includes(qube.href) && "bg-accent/50"
+                      "flex items-center justify-between px-2 py-1.5 text-sm rounded-md hover:bg-accent/30",
+                      location.pathname.includes(qube.href) && "bg-accent/20"
                     )}
                   >
-                    {renderIcon(qube.icon)}
-                    <span className="ml-2">{qube.name}</span>
-                    <span className="text-xs ml-auto opacity-60">{qube.type}</span>
-                  </Link>
+                    <Link 
+                      to={qube.href}
+                      className="flex items-center flex-1"
+                      onClick={() => handleIQubeClick(qube.name)}
+                    >
+                      <TooltipProvider>
+                        <Tooltip>
+                          <TooltipTrigger asChild>
+                            <span className="mr-2">
+                              {renderIQubeTypeIcon(qube.type)}
+                            </span>
+                          </TooltipTrigger>
+                          <TooltipContent side="top">
+                            {qube.type}
+                          </TooltipContent>
+                        </Tooltip>
+                      </TooltipProvider>
+                      <span className="mr-2">{qube.name}</span>
+                    </Link>
+                    <Switch size="sm" />
+                  </div>
                 ))}
               </CollapsibleContent>
             </Collapsible>
@@ -200,6 +256,20 @@ const Sidebar = () => {
           />
         )}
       </div>
+
+      {/* Expand button when collapsed */}
+      {collapsed && (
+        <div className="flex justify-center mt-4">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleSidebar}
+            className="rounded-full"
+          >
+            <ChevronRight size={18} />
+          </Button>
+        </div>
+      )}
     </div>
   );
 

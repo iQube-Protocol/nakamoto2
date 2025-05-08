@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { BookOpen, Award, Trophy, ChevronLeft } from 'lucide-react';
+import { BookOpen, Award, Trophy, ChevronRight } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface CollapsedSidebarProps {
@@ -26,7 +26,7 @@ const CollapsedSidebar = ({
               onClick={togglePanelCollapse}
               className="mt-4"
             >
-              <ChevronLeft className="h-6 w-6" />
+              <ChevronRight className="h-6 w-6" />
             </Button>
           </TooltipTrigger>
           <TooltipContent side="left">
@@ -41,7 +41,7 @@ const CollapsedSidebar = ({
             <Button
               variant={activeTab === 'courses' ? 'secondary' : 'ghost'}
               size="icon"
-              className={`p-2 ${activeTab === 'courses' ? 'bg-iqube-primary/20' : ''}`}
+              className={`p-2 ${activeTab === 'courses' ? 'bg-iqube-primary/10' : ''}`}
               onClick={() => handleTabClick('courses')}
             >
               <BookOpen className="h-6 w-6" />
@@ -59,7 +59,7 @@ const CollapsedSidebar = ({
             <Button
               variant={activeTab === 'certifications' ? 'secondary' : 'ghost'}
               size="icon"
-              className={`p-2 ${activeTab === 'certifications' ? 'bg-iqube-primary/20' : ''}`}
+              className={`p-2 ${activeTab === 'certifications' ? 'bg-iqube-primary/10' : ''}`}
               onClick={() => handleTabClick('certifications')}
             >
               <Award className="h-6 w-6" />
@@ -77,7 +77,7 @@ const CollapsedSidebar = ({
             <Button
               variant={activeTab === 'achievements' ? 'secondary' : 'ghost'}
               size="icon"
-              className={`p-2 ${activeTab === 'achievements' ? 'bg-iqube-primary/20' : ''}`}
+              className={`p-2 ${activeTab === 'achievements' ? 'bg-iqube-primary/10' : ''}`}
               onClick={() => handleTabClick('achievements')}
             >
               <Trophy className="h-6 w-6" />

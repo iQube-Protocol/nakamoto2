@@ -1,5 +1,5 @@
 
-import { LucideIcon, LayoutDashboard, Database, Settings, FolderGit2 } from 'lucide-react';
+import { LucideIcon, LayoutDashboard, Database, Settings, FolderGit2, Bot } from 'lucide-react';
 
 export interface NavItem {
   name: string;
@@ -17,7 +17,7 @@ export const navItems: NavItem[] = [
   {
     name: 'MonDAI',
     href: '/mondai',
-    icon: Database,
+    icon: Bot,
   },
   {
     name: 'Settings',
@@ -49,7 +49,7 @@ export const iQubeItems: QubeItem[] = [
     id: 'agentqube',
     name: 'Metis',
     type: 'AgentQube',
-    icon: Database, // Changed from Cube to Database
+    icon: Bot,
     href: '/qubes/agentqube',
     description: 'Your AI assistant for learning',
   },
