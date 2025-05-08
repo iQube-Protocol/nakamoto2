@@ -4,6 +4,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ChatTab from './ChatTab';
 import DocumentContext from '../DocumentContext';
 import KnowledgeBase from '../KnowledgeBase';
+import AgentInputBar from '../AgentInputBar';
 import { AgentMessage } from '@/lib/types';
 
 interface AgentTabsProps {
@@ -51,34 +52,41 @@ const AgentTabs: React.FC<AgentTabsProps> = ({
         </TabsList>
       </div>
 
-      <div className="flex-1 overflow-hidden">
-        <TabsContent value="chat" className="h-full m-0 p-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col">
+      <div className="flex-1 overflow-hidden flex flex-col">
+        <TabsContent value="chat" className="h-full m-0 p-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col flex-1">
           <ChatTab 
             messages={messages}
-            inputValue={inputValue}
-            isProcessing={isProcessing}
             playing={playing}
             agentType={agentType}
             messagesEndRef={messagesEndRef}
-            handleInputChange={handleInputChange}
-            handleSubmit={handleSubmit}
             handlePlayAudio={handlePlayAudio}
           />
         </TabsContent>
         
-        <TabsContent value="documents" className="h-full m-0 p-4 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col">
+        <TabsContent value="documents" className="h-full m-0 p-4 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col flex-1">
           <DocumentContext 
             conversationId={conversationId}
-            onDocumentAdded={() => {
-              handleDocumentAdded();
-              setActiveTab('chat');
-            }}
+            onDocumentAdded={handleDocumentAdded}
           />
         </TabsContent>
 
-        <TabsContent value="knowledge" className="h-full m-0 p-4 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col">
+        <TabsContent value="knowledge" className="h-full m-0 p-4 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col flex-1">
           <KnowledgeBase agentType={agentType} />
         </TabsContent>
+      </div>
+
+      {/* Input bar moved outside of tabs, always visible */}
+      <div className="mt-auto">
+        <AgentInputBar
+          inputValue={inputValue}
+          handleInputChange={handleInputChange}
+          handleSubmit={(e) => {
+            handleSubmit(e);
+            setActiveTab('chat'); // Switch to chat tab when message is sent
+          }}
+          isProcessing={isProcessing}
+          agentType={agentType}
+        />
       </div>
     </Tabs>
   );

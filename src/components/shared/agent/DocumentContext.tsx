@@ -29,12 +29,12 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
   
   return (
     <div className="flex flex-col h-full overflow-hidden">
-      <div className="mb-4">
+      <div className="mb-4 flex justify-between items-center">
         <h3 className="text-sm font-medium">Documents in Context</h3>
         <DocumentSelector 
           onDocumentSelect={handleDocumentSelect}
           triggerButton={
-            <Button variant="outline" size="sm" className="gap-1 mt-2">
+            <Button variant="outline" size="sm" className="gap-1">
               <FileText className="h-3.5 w-3.5" />
               Add Document
             </Button>

@@ -16,10 +16,12 @@ export default function useDocumentContext({ conversationId, onDocumentAdded }: 
   const [selectedDocuments, setSelectedDocuments] = useState<any[]>([]);
   const [viewingDocument, setViewingDocument] = useState<{id: string, content: string, name: string, mimeType: string} | null>(null);
   
-  // Get documents from context
+  // Get documents from context whenever the conversation ID changes
   useEffect(() => {
     if (client && conversationId) {
       const context = client.getModelContext();
+      console.log("Loading document context:", context);
+      
       if (context?.documentContext) {
         const docs = context.documentContext.map(doc => ({
           id: doc.documentId,
@@ -28,6 +30,9 @@ export default function useDocumentContext({ conversationId, onDocumentAdded }: 
           content: doc.content
         }));
         setSelectedDocuments(docs);
+        console.log("Documents loaded:", docs.length);
+      } else {
+        console.log("No document context available");
       }
     }
   }, [client, conversationId]);
@@ -51,6 +56,7 @@ export default function useDocumentContext({ conversationId, onDocumentAdded }: 
       // Add content to the document object for local tracking
       document.content = content;
       setSelectedDocuments(prev => [...prev, document]);
+      
       if (onDocumentAdded) onDocumentAdded();
       return document;
     } else {
@@ -66,6 +72,10 @@ export default function useDocumentContext({ conversationId, onDocumentAdded }: 
         context.documentContext = context.documentContext.filter(
           doc => doc.documentId !== documentId
         );
+        
+        // Persist the updated context
+        const key = `mcp-context-${conversationId}`;
+        localStorage.setItem(key, JSON.stringify(context));
       }
     }
     

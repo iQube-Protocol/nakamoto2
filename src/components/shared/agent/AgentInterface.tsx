@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { AgentMessage } from '@/lib/types';
 import { Card } from '@/components/ui/card';
@@ -48,7 +47,7 @@ const AgentInterface = ({
   });
 
   const handleDocumentAdded = () => {
-    // Refresh the messages or notify the user
+    // Notify the user that document context has been updated
     toast.success('Document context has been updated');
     
     // Call the parent's onDocumentAdded if provided
@@ -56,8 +55,8 @@ const AgentInterface = ({
       onDocumentAdded();
     }
     
-    // Switch to chat tab to encourage interaction with the document
-    setActiveTab('chat');
+    // Keep the user on the documents tab to see the updated list
+    // Do not switch to chat tab automatically
   };
 
   // Effect to track document context updates
