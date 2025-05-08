@@ -41,7 +41,7 @@ const AgentTabs: React.FC<AgentTabsProps> = ({
     <Tabs 
       value={activeTab} 
       onValueChange={(v) => setActiveTab(v as 'chat' | 'knowledge' | 'documents')}
-      className="flex-1 flex flex-col"
+      className="flex-1 flex flex-col h-full"
     >
       <div className="border-b px-4">
         <TabsList className="h-10">
@@ -51,33 +51,35 @@ const AgentTabs: React.FC<AgentTabsProps> = ({
         </TabsList>
       </div>
 
-      <TabsContent value="chat" className="flex-1 flex flex-col p-0 m-0">
-        <ChatTab 
-          messages={messages}
-          inputValue={inputValue}
-          isProcessing={isProcessing}
-          playing={playing}
-          agentType={agentType}
-          messagesEndRef={messagesEndRef}
-          handleInputChange={handleInputChange}
-          handleSubmit={handleSubmit}
-          handlePlayAudio={handlePlayAudio}
-        />
-      </TabsContent>
-      
-      <TabsContent value="documents" className="flex-1 p-4 m-0 overflow-hidden h-full">
-        <DocumentContext 
-          conversationId={conversationId}
-          onDocumentAdded={() => {
-            handleDocumentAdded();
-            setActiveTab('chat');
-          }}
-        />
-      </TabsContent>
+      <div className="flex-1 overflow-hidden">
+        <TabsContent value="chat" className="h-full m-0 p-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col">
+          <ChatTab 
+            messages={messages}
+            inputValue={inputValue}
+            isProcessing={isProcessing}
+            playing={playing}
+            agentType={agentType}
+            messagesEndRef={messagesEndRef}
+            handleInputChange={handleInputChange}
+            handleSubmit={handleSubmit}
+            handlePlayAudio={handlePlayAudio}
+          />
+        </TabsContent>
+        
+        <TabsContent value="documents" className="h-full m-0 p-4 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col">
+          <DocumentContext 
+            conversationId={conversationId}
+            onDocumentAdded={() => {
+              handleDocumentAdded();
+              setActiveTab('chat');
+            }}
+          />
+        </TabsContent>
 
-      <TabsContent value="knowledge" className="flex-1 p-4 m-0 overflow-hidden h-full">
-        <KnowledgeBase agentType={agentType} />
-      </TabsContent>
+        <TabsContent value="knowledge" className="h-full m-0 p-4 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col">
+          <KnowledgeBase agentType={agentType} />
+        </TabsContent>
+      </div>
     </Tabs>
   );
 };

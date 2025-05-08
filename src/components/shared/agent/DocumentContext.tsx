@@ -28,13 +28,13 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
   } = useDocumentContext({ conversationId, onDocumentAdded });
   
   return (
-    <div className="flex flex-col h-full">
-      <div className="flex items-center justify-between mb-4">
+    <div className="flex flex-col h-full overflow-hidden">
+      <div className="mb-4">
         <h3 className="text-sm font-medium">Documents in Context</h3>
         <DocumentSelector 
           onDocumentSelect={handleDocumentSelect}
           triggerButton={
-            <Button variant="outline" size="sm" className="gap-1">
+            <Button variant="outline" size="sm" className="gap-1 mt-2">
               <FileText className="h-3.5 w-3.5" />
               Add Document
             </Button>
@@ -44,7 +44,7 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
       
       <Separator className="mb-4" />
       
-      <div className="flex-1 overflow-y-auto">
+      <div className="flex-1 overflow-hidden">
         <DocumentList
           documents={selectedDocuments}
           isLoading={isLoading}

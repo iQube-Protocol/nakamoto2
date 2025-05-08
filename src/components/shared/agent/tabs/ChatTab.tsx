@@ -29,27 +29,31 @@ const ChatTab: React.FC<ChatTabProps> = ({
   handlePlayAudio
 }) => {
   return (
-    <>
-      {messages.length === 0 ? (
-        <EmptyConversation agentType={agentType} />
-      ) : (
-        <MessageList 
-          messages={messages} 
-          isProcessing={isProcessing} 
-          playing={playing} 
-          onPlayAudio={handlePlayAudio} 
-          messagesEndRef={messagesEndRef}
-        />
-      )}
+    <div className="flex flex-col h-full overflow-hidden">
+      <div className="flex-1 overflow-y-auto">
+        {messages.length === 0 ? (
+          <EmptyConversation agentType={agentType} />
+        ) : (
+          <MessageList 
+            messages={messages} 
+            isProcessing={isProcessing} 
+            playing={playing} 
+            onPlayAudio={handlePlayAudio} 
+            messagesEndRef={messagesEndRef}
+          />
+        )}
+      </div>
 
-      <AgentInputBar
-        inputValue={inputValue}
-        handleInputChange={handleInputChange}
-        handleSubmit={handleSubmit}
-        isProcessing={isProcessing}
-        agentType={agentType}
-      />
-    </>
+      <div className="mt-auto">
+        <AgentInputBar
+          inputValue={inputValue}
+          handleInputChange={handleInputChange}
+          handleSubmit={handleSubmit}
+          isProcessing={isProcessing}
+          agentType={agentType}
+        />
+      </div>
+    </div>
   );
 };
 
