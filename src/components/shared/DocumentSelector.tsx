@@ -1,5 +1,5 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -10,7 +10,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from "@/components/ui/dialog";
-import { FileText, RefreshCw, Loader2 } from 'lucide-react';
+import { FileText, RefreshCw } from 'lucide-react';
 import { useDriveConnection } from '@/hooks/useDriveConnection';
 import { useDocumentBrowser } from '@/hooks/useDocumentBrowser';
 import ConnectionForm from './document/ConnectionForm';
@@ -19,15 +19,13 @@ import FileGrid from './document/FileGrid';
 import { toast } from 'sonner';
 
 interface DocumentSelectorProps {
-  onDocumentSelect: (document: any) => Promise<any>;
+  onDocumentSelect: (document: any) => void;
   triggerButton?: React.ReactNode;
-  refreshAfterConnect?: boolean;
 }
 
 const DocumentSelector: React.FC<DocumentSelectorProps> = ({ 
   onDocumentSelect,
-  triggerButton,
-  refreshAfterConnect = false
+  triggerButton 
 }) => {
   const {
     driveConnected,
@@ -53,14 +51,6 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
     navigateToRoot,
     refreshCurrentFolder
   } = useDocumentBrowser();
-
-  // Auto refresh when drive connection state changes
-  useEffect(() => {
-    if (refreshAfterConnect && driveConnected && isOpen) {
-      console.log("Drive connected, refreshing documents");
-      refreshCurrentFolder();
-    }
-  }, [driveConnected, isOpen, refreshAfterConnect, refreshCurrentFolder]);
   
   const handleDialogChange = (open: boolean) => {
     setIsOpen(open);
@@ -84,14 +74,6 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
         }
       }
     }
-  };
-  
-  const handleConnectionAndRefresh = async () => {
-    const connected = await handleConnect();
-    if (connected && refreshAfterConnect) {
-      refreshCurrentFolder();
-    }
-    return connected;
   };
   
   const handleResetConnection = async () => {
@@ -126,7 +108,7 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
             setClientId={setClientId}
             apiKey={apiKey}
             setApiKey={setApiKey}
-            handleConnect={handleConnectionAndRefresh}
+            handleConnect={handleConnect}
             isLoading={connectionLoading}
           />
         ) : (
@@ -164,12 +146,7 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
               </Button>
               <div className="flex gap-2">
                 <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
-                <Button 
-                  onClick={refreshCurrentFolder}
-                  disabled={documentsLoading}
-                  className="flex items-center gap-1"
-                >
-                  {documentsLoading ? <Loader2 className="h-3.5 w-3.5 animate-spin mr-1" /> : null}
+                <Button onClick={refreshCurrentFolder}>
                   Refresh
                 </Button>
               </div>
