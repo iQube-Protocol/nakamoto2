@@ -52,11 +52,11 @@ export const sendMessage = async (
       sender: 'agent',
       message: data.response,
       timestamp: new Date().toISOString(),
-      conversationId: data.conversationId || conversationId,
       metadata: {
         status: 'complete',
         reliability: data.reliability || 0.85,
-        sources: data.sources || []
+        sources: data.sources || [],
+        conversationId: data.conversationId || conversationId // Store conversationId in metadata instead
       }
     };
 

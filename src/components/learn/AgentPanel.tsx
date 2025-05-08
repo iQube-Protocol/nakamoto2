@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { AgentInterface } from '@/components/shared/agent';
 import { MetaQube, BlakQube } from '@/lib/types';
@@ -29,16 +30,20 @@ const AgentPanel = ({
   );
 
   const handleAIMessage = async (message: string) => {
-    const response = await sendMessage({
+    // Create a function that handles receiving messages to update the UI
+    const handleMessageReceived = (message: any) => {
+      // This function will be called with pending messages
+      console.log("Received message:", message);
+      return message;
+    };
+    
+    const response = await sendMessage(
       message,
-      metaQube,
-      blakQube,
       conversationId,
-      metisActive,
-      mcpClient,
-      historicalContext,
-      setConversationId,
-    });
+      'learn',
+      handleMessageReceived,
+      historicalContext
+    );
     
     // Check if Metis was activated through the payment flow
     if (response.metadata?.metisActive !== undefined && response.metadata.metisActive !== metisActive) {
