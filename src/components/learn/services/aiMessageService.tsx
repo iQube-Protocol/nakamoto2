@@ -33,7 +33,8 @@ export const sendMessage = async (
       const context = mcpClient.getModelContext();
       documentContext = context?.documentContext || null;
       if (documentContext) {
-        console.log(`Including ${documentContext.length} documents in request to AI service`);
+        console.log(`Including ${documentContext.length} documents in request to AI service:`, 
+          documentContext.map(doc => doc.documentName));
       }
     }
 
@@ -44,6 +45,11 @@ export const sendMessage = async (
       historicalContext,
       documentContext // Include document context in the request
     };
+
+    console.log("Full payload being sent to AI service:", JSON.stringify({
+      ...payload,
+      documentContext: documentContext ? `${documentContext.length} documents included` : 'none'
+    }));
 
     // Call the appropriate edge function
     const { data, error } = await supabase.functions.invoke(`${agentType}-ai`, {
@@ -73,6 +79,13 @@ export const sendMessage = async (
         documentsUsed: data.documentsUsed || false // Flag to indicate if documents were used
       }
     };
+
+    if (data.documentsUsed) {
+      console.log("AI response used documents in context");
+      toast.success("Referenced documents in response", {
+        description: "The AI used your uploaded documents to answer"
+      });
+    }
 
     // Return the complete message
     return responseMessage;

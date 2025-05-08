@@ -67,13 +67,18 @@ const AgentInterface = ({
     // Notify the user that document context has been updated
     toast.success('Document context has been updated');
     
+    // Add a system message to inform the user about documents
+    const systemMessage: AgentMessage = {
+      id: `system-${Date.now()}`,
+      sender: 'system',
+      message: 'I can now access the document you\'ve added. Feel free to ask questions about its content.',
+      timestamp: new Date().toISOString(),
+    };
+    
     // Call the parent's onDocumentAdded if provided
     if (onDocumentAdded) {
       onDocumentAdded();
     }
-    
-    // Keep the user on the documents tab to see the updated list
-    // Do not switch to chat tab automatically
   };
 
   // Effect to track document context updates

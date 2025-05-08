@@ -42,6 +42,9 @@ export const useMessageSubmit = (
     setInputValue('');
     setIsProcessing(true);
 
+    // Check if we have documents in context
+    let hasDocuments = false;
+    
     // Add user message to MCP context if available
     if (mcpClient && conversationId) {
       await mcpClient.addUserMessage(userMessage.message);
@@ -49,8 +52,18 @@ export const useMessageSubmit = (
       // Log the current MCP context to verify documents are included
       const context = mcpClient.getModelContext();
       if (context?.documentContext && context.documentContext.length > 0) {
+        hasDocuments = true;
         console.log(`Current MCP context has ${context.documentContext.length} documents:`, 
           context.documentContext.map(d => d.documentName));
+        
+        // If message doesn't explicitly reference documents, add a helpful hint
+        if (!message.toLowerCase().includes("document") && 
+            !message.toLowerCase().includes("attachment") && 
+            !message.toLowerCase().includes("file")) {
+          toast.info("Tip: You can explicitly ask about your documents", {
+            description: "Try asking a question that mentions your uploaded documents for best results"
+          });
+        }
       }
     }
 

@@ -56,6 +56,10 @@ serve(async (req) => {
     console.log(`Processing request for conversation ${conversationId} with historical context: ${historicalContext ? 'present' : 'none'}`);
     console.log(`Document context: ${documentContext ? documentContext.length + ' documents' : 'none'}`);
     
+    if (documentContext && documentContext.length > 0) {
+      console.log("Documents provided:", documentContext.map((doc: any) => doc.documentName).join(", "));
+    }
+    
     // Initialize or retrieve MCP context
     let mcpContext: MCPContext;
     
@@ -74,6 +78,7 @@ serve(async (req) => {
       // Update document context if provided
       if (documentContext) {
         mcpContext.documentContext = documentContext;
+        console.log(`Updated document context for conversation ${conversationId}, now has ${documentContext.length} documents`);
       }
     } else {
       // Create new conversation context
@@ -96,6 +101,10 @@ serve(async (req) => {
         },
         documentContext: documentContext || []
       };
+      
+      if (documentContext && documentContext.length > 0) {
+        console.log(`New conversation ${newConversationId} created with ${documentContext.length} documents`);
+      }
     }
     
     // Updated system prompt with formatting instructions including Mermaid, iQube data, and document context
@@ -145,7 +154,9 @@ Additionally, consider the following iQube data for personalization:
   - Chain IDs: ${blakQube && blakQube["Chain-IDs"] ? blakQube["Chain-IDs"].join(", ") : "Multiple chains"}`;
 
     // Add document context if available
+    let documentsIncluded = false;
     if (mcpContext.documentContext && mcpContext.documentContext.length > 0) {
+      documentsIncluded = true;
       systemPrompt += `\n\n**<document-context>**\nThe following documents have been shared for analysis:\n`;
       
       mcpContext.documentContext.forEach((doc, index) => {
@@ -153,7 +164,7 @@ Additionally, consider the following iQube data for personalization:
         systemPrompt += `Content: ${doc.content.substring(0, 2000)}${doc.content.length > 2000 ? '...(content truncated)' : ''}\n`;
       });
       
-      systemPrompt += `\nWhen responding, refer to these documents when relevant and extract key information to help answer the user's questions.`;
+      systemPrompt += `\nWhen responding, refer to these documents when relevant and extract key information to help answer the user's questions. If the user asks about the documents, provide detailed information from them. If the user doesn't specifically mention the documents but they contain relevant information to the user's query, still incorporate that information in your response.`;
     }
 
     // Add historical context if provided
@@ -227,10 +238,12 @@ When the user asks about crypto risks, token security, or wallet protection, pro
     
     // Return the AI response with MCP metadata
     return new Response(JSON.stringify({ 
-      message: aiResponse,
+      id: crypto.randomUUID(),
+      response: aiResponse,
       timestamp: new Date().toISOString(),
       conversationId: mcpContext.conversationId,
       contextSize: mcpContext.messages.length,
+      documentsUsed: documentsIncluded,
       mcp: {
         version: "1.0",
         contextRetained: true,
@@ -246,7 +259,7 @@ When the user asks about crypto risks, token security, or wallet protection, pro
     console.error('Error in learn-ai function:', error);
     return new Response(JSON.stringify({ 
       error: error.message,
-      message: "I'm sorry, I couldn't process your request. Please try again later."
+      response: "I'm sorry, I couldn't process your request. Please try again later."
     }), {
       status: 500,
       headers: { ...corsHeaders, 'Content-Type': 'application/json' },
