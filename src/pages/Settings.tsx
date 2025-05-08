@@ -7,7 +7,6 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 import { useMetisAgent } from '@/hooks/use-metis-agent';
 import AgentRecommendation from '@/components/shared/agent/AgentRecommendation';
 import { toast } from 'sonner';
-import { iQubeItems } from '@/components/layout/sidebar/sidebarData';
 
 // Sample metaQube data
 const monDaiQubeData: MetaQube = {
@@ -61,7 +60,7 @@ const gdriveQubeData: MetaQube = {
 const Settings = () => {
   const { theme } = useTheme();
   const [selectedIQube, setSelectedIQube] = useState<MetaQube>(monDaiQubeData);
-  const { metisActivated, metisVisible, activateMetis } = useMetisAgent();
+  const { metisActivated, metisVisible, activateMetis, hideMetis } = useMetisAgent();
   const [showAgentRecommendation, setShowAgentRecommendation] = useState(!metisActivated);
   const [activeQubes, setActiveQubes] = useState<{[key: string]: boolean}>({
     "MonDAI": true,
@@ -69,11 +68,24 @@ const Settings = () => {
     "GDrive": false
   });
   
+  // Auto-select the iQube tab on settings page
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('tab')) {
+      const tabRef = document.querySelector(`[data-tab="${params.get('tab')}"]`);
+      if (tabRef) {
+        // @ts-ignore
+        tabRef.click();
+      }
+    }
+  }, []);
+  
   // Listen for iQube selection events from sidebar
   useEffect(() => {
     const handleIQubeSelected = (e: CustomEvent) => {
       const iQubeId = e.detail?.iqubeId;
-      console.log("iQube selection event received:", iQubeId);
+      const shouldSelectTab = e.detail?.selectTab || false;
+      console.log("iQube selection event received:", iQubeId, "select tab:", shouldSelectTab);
       
       if (iQubeId === "MonDAI" || iQubeId === "MonDAI iQube") {
         setSelectedIQube(monDaiQubeData);
@@ -81,6 +93,15 @@ const Settings = () => {
         setSelectedIQube(metisQubeData);
       } else if (iQubeId === "GDrive") {
         setSelectedIQube(gdriveQubeData);
+      }
+      
+      // If selectTab is true, select the iQube tab in the settings interface
+      if (shouldSelectTab) {
+        const tabRef = document.querySelector(`[data-tab="iqube"]`);
+        if (tabRef) {
+          // @ts-ignore
+          tabRef.click();
+        }
       }
     };
 
@@ -91,6 +112,33 @@ const Settings = () => {
       window.removeEventListener('iqubeSelected', handleIQubeSelected as EventListener);
     };
   }, [metisActivated]);
+  
+  // Listen for iQube activation/deactivation events from sidebar
+  useEffect(() => {
+    const handleIQubeToggle = (e: CustomEvent) => {
+      const { iqubeId, active } = e.detail || {};
+      if (iqubeId) {
+        setActiveQubes(prev => ({...prev, [iqubeId]: active}));
+        
+        // Special handling for Metis
+        if (iqubeId === "Metis") {
+          if (active && !metisActivated) {
+            activateMetis();
+          } else if (!active && metisVisible) {
+            hideMetis();
+          }
+        }
+        
+        toast.info(`${iqubeId} iQube ${active ? 'activated' : 'deactivated'}`);
+      }
+    };
+    
+    window.addEventListener('iqubeToggle', handleIQubeToggle as EventListener);
+    
+    return () => {
+      window.removeEventListener('iqubeToggle', handleIQubeToggle as EventListener);
+    };
+  }, [metisActivated, metisVisible, activateMetis, hideMetis]);
   
   const handleActivateMetis = () => {
     activateMetis();
@@ -116,6 +164,15 @@ const Settings = () => {
       ...prev,
       [qubeName]: !prev[qubeName]
     }));
+    
+    // Dispatch event for sidebar to update
+    const event = new CustomEvent('iqubeToggle', { 
+      detail: { 
+        iqubeId: qubeName, 
+        active: !activeQubes[qubeName] 
+      } 
+    });
+    window.dispatchEvent(event);
     
     toast.info(`${qubeName} iQube ${!activeQubes[qubeName] ? 'activated' : 'deactivated'}`);
   };
@@ -156,7 +213,12 @@ const Settings = () => {
 
         {/* Main settings panel */}
         <div className="flex-1">
-          <SettingsInterface userSettings={userSettings} metaQube={selectedIQube} />
+          <SettingsInterface 
+            userSettings={userSettings} 
+            metaQube={selectedIQube} 
+            activeQubes={activeQubes}
+            onToggleIQubeActive={toggleQubeActive}
+          />
         </div>
       </div>
     </TooltipProvider>

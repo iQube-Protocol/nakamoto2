@@ -1,33 +1,64 @@
 
-import React, { useState } from 'react';
-import { Link, useLocation } from 'react-router-dom';
-import { Bot, ChevronDown, ChevronLeft, ChevronRight, Database, User, FolderGit2, Settings as SettingsIcon } from 'lucide-react';
+import React, { useState, useEffect } from 'react';
+import { Link, useLocation, useNavigate } from 'react-router-dom';
+import { 
+  Bot, ChevronDown, ChevronLeft, ChevronRight, 
+  Database, User, FolderGit2, Settings as SettingsIcon,
+  Cube
+} from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useMetisAgent } from '@/hooks/use-metis-agent';
 import { useSidebarState } from '@/hooks/use-sidebar-state';
-import { navItems, iQubeItems, monDaiQubeData, metisQubeData } from './sidebar/sidebarData';
+import { navItems, iQubeItems } from './sidebar/sidebarData';
 import NavItem from './sidebar/NavItem';
 import MetaQubeItem from './sidebar/MetaQubeItem';
 import MobileSidebar from './sidebar/MobileSidebar';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { MetaQube } from '@/lib/types';
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
+import CubeIcon from './sidebar/CubeIcon';
 
 const Sidebar = () => {
   const location = useLocation();
+  const navigate = useNavigate();
   const isMobile = useIsMobile();
   const { metisActivated, metisVisible, hideMetis } = useMetisAgent();
-  const { collapsed, mobileOpen, toggleSidebar, toggleMobileSidebar } = useSidebarState();
-  const [iQubesOpen, setIQubesOpen] = useState(true);
+  const { collapsed, iQubesOpen, mobileOpen, toggleSidebar, toggleMobileSidebar, toggleIQubesMenu } = useSidebarState();
+  const [activeIQubes, setActiveIQubes] = useState<{[key: string]: boolean}>({
+    "MonDAI": true,
+    "Metis": metisActivated && metisVisible,
+    "GDrive": false
+  });
+
+  // Listen for iQube toggle events from Settings page
+  useEffect(() => {
+    const handleIQubeToggle = (e: CustomEvent) => {
+      const { iqubeId, active } = e.detail || {};
+      if (iqubeId) {
+        setActiveIQubes(prev => ({...prev, [iqubeId]: active}));
+      }
+    };
+    
+    window.addEventListener('iqubeToggle', handleIQubeToggle as EventListener);
+    
+    return () => {
+      window.removeEventListener('iqubeToggle', handleIQubeToggle as EventListener);
+    };
+  }, []);
 
   const handleIQubeClick = (iqubeId: string) => {
     console.log("iQube clicked:", iqubeId);
     
+    // Navigate to settings page and send event to select this iQube
+    navigate('/settings');
+    
     const event = new CustomEvent('iqubeSelected', { 
-      detail: { iqubeId: iqubeId } 
+      detail: { 
+        iqubeId: iqubeId,
+        selectTab: true
+      } 
     });
     window.dispatchEvent(event);
   };
@@ -35,7 +66,24 @@ const Sidebar = () => {
   const handleCloseMetisIQube = (e: React.MouseEvent<HTMLButtonElement>) => {
     e.stopPropagation();
     hideMetis();
+    setActiveIQubes(prev => ({...prev, "Metis": false}));
     console.log("Metis iQube closed from sidebar");
+  };
+
+  const toggleIQubeActive = (e: React.MouseEvent<HTMLInputElement>, qubeName: string) => {
+    e.stopPropagation(); // Prevent the click from triggering the parent element
+    
+    const newActiveState = !activeIQubes[qubeName];
+    setActiveIQubes(prev => ({...prev, [qubeName]: newActiveState}));
+    
+    // Dispatch event to update Settings page
+    const event = new CustomEvent('iqubeToggle', { 
+      detail: { 
+        iqubeId: qubeName, 
+        active: newActiveState 
+      } 
+    });
+    window.dispatchEvent(event);
   };
 
   // Function to render iQube type icon based on type
@@ -50,44 +98,6 @@ const Sidebar = () => {
       default:
         return <Database className="h-4 w-4" />;
     }
-  };
-
-  // Function to dynamically render the icon
-  const renderIcon = (IconComponent: React.ElementType) => {
-    return <IconComponent className="h-5 w-5" />;
-  };
-
-  // Sample MetaQube objects
-  const monDaiMetaQube: MetaQube = {
-    "iQube-Identifier": "MonDAI-001",
-    "iQube-Type": "DataQube",
-    "iQube-Designer": "Aigent Z",
-    "iQube-Use": "For learning in web3 communities",
-    "Owner-Type": "Person",
-    "Owner-Identifiability": "Semi-Identifiable",
-    "Date-Minted": new Date().toISOString(),
-    "Related-iQubes": ["ContentQube1"],
-    "X-of-Y": "1 of 1",
-    "Sensitivity-Score": 3,
-    "Verifiability-Score": 8,
-    "Accuracy-Score": 8,
-    "Risk-Score": 3
-  };
-
-  const metisMetaQube: MetaQube = {
-    "iQube-Identifier": "Metis-001",
-    "iQube-Type": "AgentQube",
-    "iQube-Designer": "Aigent Z",
-    "iQube-Use": "AI assistance for learning and research",
-    "Owner-Type": "Person",
-    "Owner-Identifiability": "Semi-Identifiable",
-    "Date-Minted": new Date().toISOString(),
-    "Related-iQubes": ["MonDAI-001"],
-    "X-of-Y": "1 of 1",
-    "Sensitivity-Score": 2,
-    "Verifiability-Score": 9,
-    "Accuracy-Score": 9,
-    "Risk-Score": 2
   };
 
   const sidebarContent = (
@@ -133,6 +143,7 @@ const Sidebar = () => {
       </div>
 
       <div className="flex-1 px-3 space-y-1">
+        {/* Regular Nav Items */}
         {navItems.map((item, index) => (
           <NavItem 
             key={index}
@@ -145,16 +156,6 @@ const Sidebar = () => {
           </NavItem>
         ))}
 
-        {/* Profile NavItem */}
-        <NavItem 
-          icon={User}
-          href="/profile"
-          active={location.pathname.includes('/profile')}
-          collapsed={collapsed}
-        >
-          Profile
-        </NavItem>
-
         {/* iQubes Collapsible Section */}
         <div className="pt-2">
           {collapsed ? (
@@ -166,9 +167,9 @@ const Sidebar = () => {
                       "flex items-center justify-center p-2 rounded-md hover:bg-accent/30 cursor-pointer",
                       location.pathname.includes('/qubes') && "bg-accent/20"
                     )}
-                    onClick={() => setIQubesOpen(!iQubesOpen)}
+                    onClick={toggleIQubesMenu}
                   >
-                    <Database className="h-5 w-5" />
+                    <Cube className="h-5 w-5" />
                   </div>
                 </TooltipTrigger>
                 <TooltipContent side="right">iQubes</TooltipContent>
@@ -177,12 +178,12 @@ const Sidebar = () => {
           ) : (
             <Collapsible
               open={iQubesOpen}
-              onOpenChange={setIQubesOpen}
+              onOpenChange={toggleIQubesMenu}
               className="border-t pt-2"
             >
               <CollapsibleTrigger className="flex w-full items-center justify-between p-2 hover:bg-accent/30 rounded-md">
                 <div className="flex items-center">
-                  <Database className="h-5 w-5 mr-2" />
+                  <Cube className="h-5 w-5 mr-2" />
                   <span className="text-sm font-medium">iQubes</span>
                 </div>
                 <ChevronDown className={cn(
@@ -195,15 +196,12 @@ const Sidebar = () => {
                   <div 
                     key={qube.id}
                     className={cn(
-                      "flex items-center justify-between px-2 py-1.5 text-sm rounded-md hover:bg-accent/30",
-                      location.pathname.includes(qube.href) && "bg-accent/20"
+                      "flex items-center justify-between px-2 py-1.5 text-sm rounded-md hover:bg-accent/30 cursor-pointer",
+                      location.pathname === '/settings' && "bg-accent/20"
                     )}
+                    onClick={() => handleIQubeClick(qube.name)}
                   >
-                    <Link 
-                      to={qube.href}
-                      className="flex items-center flex-1"
-                      onClick={() => handleIQubeClick(qube.name)}
-                    >
+                    <div className="flex items-center flex-1">
                       <TooltipProvider>
                         <Tooltip>
                           <TooltipTrigger asChild>
@@ -217,8 +215,13 @@ const Sidebar = () => {
                         </Tooltip>
                       </TooltipProvider>
                       <span className="mr-2">{qube.name}</span>
-                    </Link>
-                    <Switch size="sm" />
+                    </div>
+                    <Switch 
+                      size="sm" 
+                      checked={activeIQubes[qube.name] || false}
+                      onCheckedChange={(e) => toggleIQubeActive(e as any, qube.name)}
+                      className="data-[state=checked]:bg-iqube-primary"
+                    />
                   </div>
                 ))}
               </CollapsibleContent>
@@ -238,22 +241,56 @@ const Sidebar = () => {
           </div>
         </div>
         
-        {/* MonDAI iQube */}
-        <MetaQubeItem
-          metaQube={monDaiMetaQube}
-          collapsed={collapsed}
-          onIQubeClick={() => handleIQubeClick("MonDAI iQube")}
-        />
+        {/* Active iQubes list */}
+        {activeIQubes["MonDAI"] && (
+          <div
+            className={cn(
+              "flex items-center rounded-md p-2 text-sm hover:bg-accent/30 cursor-pointer",
+              collapsed ? "justify-center" : ""
+            )}
+            onClick={() => handleIQubeClick("MonDAI")}
+          >
+            <Database className={cn("h-5 w-5 text-blue-500", collapsed ? "" : "mr-2")} />
+            {!collapsed && <span>MonDAI iQube</span>}
+          </div>
+        )}
         
-        {/* Metis iQube - Only shown if activated */}
-        {metisActivated && metisVisible && (
-          <MetaQubeItem
-            metaQube={metisMetaQube}
-            collapsed={collapsed}
-            onIQubeClick={() => handleIQubeClick("Metis iQube")}
-            onClose={handleCloseMetisIQube}
-            tooltipType="agentQube"
-          />
+        {activeIQubes["Metis"] && (
+          <div
+            className={cn(
+              "flex items-center justify-between rounded-md p-2 text-sm hover:bg-accent/30 cursor-pointer group",
+              collapsed ? "justify-center" : ""
+            )}
+            onClick={() => handleIQubeClick("Metis")}
+          >
+            <div className="flex items-center">
+              <Bot className={cn("h-5 w-5 text-purple-500", collapsed ? "" : "mr-2")} />
+              {!collapsed && <span>Metis iQube</span>}
+            </div>
+            {!collapsed && (
+              <Button
+                variant="ghost"
+                size="icon"
+                className="h-5 w-5 opacity-0 group-hover:opacity-100"
+                onClick={handleCloseMetisIQube}
+              >
+                <ChevronLeft size={14} />
+              </Button>
+            )}
+          </div>
+        )}
+        
+        {activeIQubes["GDrive"] && (
+          <div
+            className={cn(
+              "flex items-center rounded-md p-2 text-sm hover:bg-accent/30 cursor-pointer",
+              collapsed ? "justify-center" : ""
+            )}
+            onClick={() => handleIQubeClick("GDrive")}
+          >
+            <FolderGit2 className={cn("h-5 w-5 text-green-500", collapsed ? "" : "mr-2")} />
+            {!collapsed && <span>GDrive iQube</span>}
+          </div>
         )}
       </div>
 
@@ -265,6 +302,7 @@ const Sidebar = () => {
             size="icon"
             onClick={toggleSidebar}
             className="rounded-full"
+            aria-label="Expand sidebar"
           >
             <ChevronRight size={18} />
           </Button>

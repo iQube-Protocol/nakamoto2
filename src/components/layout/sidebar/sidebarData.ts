@@ -1,5 +1,5 @@
 
-import { LucideIcon, LayoutDashboard, Database, Settings, FolderGit2, Bot } from 'lucide-react';
+import { LucideIcon, LayoutDashboard, Database, Settings, FolderGit2, Bot, User, Cube } from 'lucide-react';
 
 export interface NavItem {
   name: string;
@@ -18,6 +18,11 @@ export const navItems: NavItem[] = [
     name: 'MonDAI',
     href: '/mondai',
     icon: Bot,
+  },
+  {
+    name: 'Profile',
+    href: '/profile',
+    icon: User,
   },
   {
     name: 'Settings',
@@ -42,7 +47,7 @@ export const iQubeItems: QubeItem[] = [
     name: 'MonDAI',
     type: 'DataQube',
     icon: Database,
-    href: '/qubes/dataqube',
+    href: '/settings',
     description: 'Explore your personal data insights',
   },
   {
@@ -50,7 +55,7 @@ export const iQubeItems: QubeItem[] = [
     name: 'Metis',
     type: 'AgentQube',
     icon: Bot,
-    href: '/qubes/agentqube',
+    href: '/settings',
     description: 'Your AI assistant for learning',
   },
   {
@@ -58,7 +63,7 @@ export const iQubeItems: QubeItem[] = [
     name: 'GDrive',
     type: 'ToolQube',
     icon: FolderGit2,
-    href: '/qubes/toolqube',
+    href: '/settings',
     description: 'Connect your tools and resources',
   },
 ];
@@ -67,7 +72,7 @@ export const monDaiQubeData = {
   id: 'mondai',
   name: 'MonDAI iQube',
   type: 'Personal Data',
-  href: '/iqubes/mondai',
+  href: '/settings',
   active: true
 };
 
@@ -75,5 +80,5 @@ export const metisQubeData = {
   id: 'metis',
   name: 'Metis AI',
   type: 'Assistant',
-  href: '/iqubes/metis',
+  href: '/settings',
 };

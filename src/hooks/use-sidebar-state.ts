@@ -11,11 +11,22 @@ export function useSidebarState() {
   });
   
   const [mobileOpen, setMobileOpen] = useState(false);
+  
+  // Added state to track iQubes submenu
+  const [iQubesOpen, setIQubesOpen] = useState(() => {
+    const savedState = localStorage.getItem('iqubes-collapsed');
+    return savedState ? JSON.parse(savedState) : true;
+  });
 
   useEffect(() => {
     // Save collapsed state to localStorage when it changes
     localStorage.setItem('sidebar-collapsed', JSON.stringify(collapsed));
   }, [collapsed]);
+
+  useEffect(() => {
+    // Save iQubes submenu state to localStorage
+    localStorage.setItem('iqubes-collapsed', JSON.stringify(iQubesOpen));
+  }, [iQubesOpen]);
 
   const toggleSidebar = () => {
     setCollapsed(!collapsed);
@@ -25,10 +36,16 @@ export function useSidebarState() {
     setMobileOpen(!mobileOpen);
   };
 
+  const toggleIQubesMenu = () => {
+    setIQubesOpen(!iQubesOpen);
+  };
+
   return {
     collapsed,
     mobileOpen,
+    iQubesOpen,
     toggleSidebar,
-    toggleMobileSidebar
+    toggleMobileSidebar,
+    toggleIQubesMenu
   };
 }

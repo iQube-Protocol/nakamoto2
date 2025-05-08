@@ -12,9 +12,11 @@ import { useTheme } from '@/contexts/ThemeContext';
 interface SettingsInterfaceProps {
   userSettings: UserSettings;
   metaQube: MetaQube;
+  activeQubes: {[key: string]: boolean};
+  onToggleIQubeActive: (qubeName: string) => void;
 }
 
-const SettingsInterface = ({ userSettings, metaQube }: SettingsInterfaceProps) => {
+const SettingsInterface = ({ userSettings, metaQube, activeQubes, onToggleIQubeActive }: SettingsInterfaceProps) => {
   const { theme } = useTheme();
   const [settings, setSettings] = useState<UserSettings>({
     ...userSettings,
@@ -22,6 +24,7 @@ const SettingsInterface = ({ userSettings, metaQube }: SettingsInterfaceProps) =
   });
   
   const { toast } = useToast();
+  const [activeTab, setActiveTab] = useState<string>("connections");
 
   // Create different private data sets for different iQubes
   const [mondaiPrivateData, setMondaiPrivateData] = useState({
@@ -48,9 +51,28 @@ const SettingsInterface = ({ userSettings, metaQube }: SettingsInterfaceProps) =
     "Trustworthiness": "Verified"
   });
 
+  const [gdrivePrivateData, setGdrivePrivateData] = useState({
+    "Storage-Quota": "15GB",
+    "Connected-Email": "user@example.com",
+    "Auto-Sync": "Enabled",
+    "Sharing-Permissions": "Private",
+    "Cached-Files": ["Doc1.pdf", "Presentation.ppt"],
+    "API-Key": "••••••••••••••••",
+    "Last-Sync": "2023-05-01T12:00:00Z",
+    "Default-View": "List",
+    "File-Count": "128"
+  });
+
   // Determine which private data to show based on selected iQube
-  const isMetisIQube = metaQube["iQube-Identifier"] === "Metis iQube";
-  const privateData = isMetisIQube ? metisPrivateData : mondaiPrivateData;
+  const getPrivateData = () => {
+    if (metaQube["iQube-Identifier"] === "Metis iQube") {
+      return metisPrivateData;
+    } else if (metaQube["iQube-Identifier"] === "GDrive iQube") {
+      return gdrivePrivateData;
+    } else {
+      return mondaiPrivateData;
+    }
+  };
 
   const handleConnectService = (service: keyof UserSettings['connected']) => {
     setSettings(prev => ({
@@ -84,8 +106,10 @@ const SettingsInterface = ({ userSettings, metaQube }: SettingsInterfaceProps) =
   };
 
   const handleUpdatePrivateData = (newData: any) => {
-    if (isMetisIQube) {
+    if (metaQube["iQube-Identifier"] === "Metis iQube") {
       setMetisPrivateData(newData);
+    } else if (metaQube["iQube-Identifier"] === "GDrive iQube") {
+      setGdrivePrivateData(newData);
     } else {
       setMondaiPrivateData(newData);
     }
@@ -103,11 +127,37 @@ const SettingsInterface = ({ userSettings, metaQube }: SettingsInterfaceProps) =
     });
   };
 
+  const handleTabChange = (tab: string) => {
+    setActiveTab(tab);
+  };
+
+  const isActive = (qubeName: string) => {
+    if (qubeName === "MonDAI iQube") return activeQubes["MonDAI"];
+    if (qubeName === "Metis iQube") return activeQubes["Metis"];
+    if (qubeName === "GDrive iQube") return activeQubes["GDrive"];
+    return false;
+  };
+
+  const toggleActive = () => {
+    let qubeName = "";
+    if (metaQube["iQube-Identifier"] === "MonDAI iQube") qubeName = "MonDAI";
+    else if (metaQube["iQube-Identifier"] === "Metis iQube") qubeName = "Metis";
+    else if (metaQube["iQube-Identifier"] === "GDrive iQube") qubeName = "GDrive";
+    
+    if (qubeName) {
+      onToggleIQubeActive(qubeName);
+    }
+  };
+
   return (
     <div className="grid grid-cols-1 gap-4">
-      <MetaQubeHeader metaQube={metaQube} />
+      <MetaQubeHeader 
+        metaQube={metaQube} 
+        isActive={isActive(metaQube["iQube-Identifier"])}
+        onToggleActive={toggleActive}
+      />
       
-      <Tabs defaultValue="connections">
+      <Tabs defaultValue="connections" value={activeTab} onValueChange={handleTabChange}>
         <TabsContent value="connections" className="mt-4">
           <ConnectionsTab 
             settings={settings} 
@@ -118,7 +168,7 @@ const SettingsInterface = ({ userSettings, metaQube }: SettingsInterfaceProps) =
         <TabsContent value="iqube" className="mt-4">
           <IQubeManagementTab 
             settings={settings}
-            privateData={privateData}
+            privateData={getPrivateData()}
             onUpdatePrivateData={handleUpdatePrivateData}
             onConnectWallet={() => handleConnectService('wallet')}
             onMintIQube={handleMintIQube}
@@ -135,9 +185,9 @@ const SettingsInterface = ({ userSettings, metaQube }: SettingsInterfaceProps) =
         </TabsContent>
         
         <TabsList className="w-full grid grid-cols-3">
-          <TabsTrigger value="connections">Connections</TabsTrigger>
-          <TabsTrigger value="iqube">iQube Management</TabsTrigger>
-          <TabsTrigger value="preferences">Preferences</TabsTrigger>
+          <TabsTrigger value="connections" data-tab="connections">Connections</TabsTrigger>
+          <TabsTrigger value="iqube" data-tab="iqube">iQube Management</TabsTrigger>
+          <TabsTrigger value="preferences" data-tab="preferences">Preferences</TabsTrigger>
         </TabsList>
       </Tabs>
     </div>

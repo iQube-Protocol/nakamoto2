@@ -28,11 +28,11 @@ const NavItem: React.FC<NavItemProps> = ({
       onClick={onClick}
       className={cn(
         "flex items-center rounded-md p-2 text-sm hover:bg-accent/30",
-        active && "bg-accent/20 text-accent-foreground",
+        active && "bg-accent/20 text-white font-medium", // Ensure text stays white in active state
         collapsed ? "justify-center" : ""
       )}
     >
-      <Icon className={cn("h-5 w-5", collapsed ? "" : "mr-2")} />
+      <Icon className={cn("h-5 w-5", active && "text-white", collapsed ? "" : "mr-2")} />
       {!collapsed && <span>{children}</span>}
     </Link>
   );

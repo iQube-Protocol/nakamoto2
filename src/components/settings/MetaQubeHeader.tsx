@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
 import { MetaQube } from '@/lib/types';
@@ -8,6 +9,8 @@ import ScoreTooltip from '@/components/shared/ScoreTooltips';
 
 interface MetaQubeHeaderProps {
   metaQube: MetaQube;
+  isActive: boolean;
+  onToggleActive: () => void;
 }
 
 interface DotScoreProps {
@@ -62,8 +65,7 @@ const DotScore = ({ value, label, type }: DotScoreProps) => {
   );
 };
 
-const MetaQubeHeader = ({ metaQube }: MetaQubeHeaderProps) => {
-  const [isActive, setIsActive] = React.useState(true);
+const MetaQubeHeader = ({ metaQube, isActive, onToggleActive }: MetaQubeHeaderProps) => {
   const trustScore = Math.round((metaQube["Accuracy-Score"] + metaQube["Verifiability-Score"]) / 2);
   
   return (
@@ -101,7 +103,7 @@ const MetaQubeHeader = ({ metaQube }: MetaQubeHeaderProps) => {
           <span className="text-xs text-muted-foreground mb-1">{isActive ? 'Active' : 'Inactive'}</span>
           <Switch 
             checked={isActive} 
-            onCheckedChange={setIsActive} 
+            onCheckedChange={onToggleActive} 
             size="sm"
             className="data-[state=checked]:bg-iqube-primary"
           />
