@@ -35,6 +35,11 @@ const Sidebar = () => {
     console.log("Metis iQube closed from sidebar");
   };
 
+  // Function to dynamically render the icon
+  const renderIcon = (IconComponent: React.ElementType) => {
+    return <IconComponent className="h-5 w-5" />;
+  };
+
   const sidebarContent = (
     <div className={cn(
       "flex flex-col h-full bg-sidebar py-4 transition-all duration-300",
@@ -93,7 +98,7 @@ const Sidebar = () => {
                     )}
                     onClick={() => setIQubesOpen(!iQubesOpen)}
                   >
-                    {iQubeItems[0].icon && <iQubeItems[0].icon className="h-5 w-5" />}
+                    {renderIcon(iQubeItems[0].icon)}
                   </div>
                 </TooltipTrigger>
                 <TooltipContent side="right">iQubes</TooltipContent>
@@ -122,8 +127,8 @@ const Sidebar = () => {
                       location.pathname.includes(qube.href) && "bg-accent/50"
                     )}
                   >
-                    <qube.icon className="h-4 w-4 mr-2" />
-                    <span>{qube.name}</span>
+                    {renderIcon(qube.icon)}
+                    <span className="ml-2">{qube.name}</span>
                     <span className="text-xs ml-auto opacity-60">{qube.type}</span>
                   </Link>
                 ))}
