@@ -10,6 +10,9 @@ export function useDriveConnection() {
   
   const handleConnect = async () => {
     const success = await connectToDrive(clientId, apiKey);
+    if (success) {
+      toast.success('Connected to Google Drive successfully');
+    }
     return success;
   };
   

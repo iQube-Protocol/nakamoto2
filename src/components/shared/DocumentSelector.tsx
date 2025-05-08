@@ -81,6 +81,16 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
     refreshCurrentFolder();
   };
   
+  // Enhanced connect handler that refreshes documents after successful connection
+  const handleEnhancedConnect = async () => {
+    const success = await handleConnect();
+    if (success) {
+      // If connection was successful, refresh documents
+      refreshCurrentFolder();
+    }
+    return success;
+  };
+  
   return (
     <Dialog open={isOpen} onOpenChange={handleDialogChange}>
       <DialogTrigger asChild>
@@ -108,7 +118,7 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
             setClientId={setClientId}
             apiKey={apiKey}
             setApiKey={setApiKey}
-            handleConnect={handleConnect}
+            handleConnect={handleEnhancedConnect}
             isLoading={connectionLoading}
           />
         ) : (

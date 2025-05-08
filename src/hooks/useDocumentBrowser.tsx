@@ -67,7 +67,11 @@ export function useDocumentBrowser() {
   };
   
   const refreshCurrentFolder = () => {
-    listDocuments(currentFolder);
+    if (driveConnected) {
+      // Only refresh if we're actually connected to avoid unnecessary calls
+      console.log(`Refreshing folder: ${currentFolder || 'root'}`);
+      listDocuments(currentFolder);
+    }
   };
 
   return {
