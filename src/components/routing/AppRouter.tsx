@@ -5,7 +5,7 @@ import MainLayout from "../layout/MainLayout";
 import Dashboard from "@/pages/Dashboard";
 import MonDAI from "@/pages/MonDAI";
 import Settings from "@/pages/Settings";
-import SignIn from "@/pages/auth/SignIn";
+import SignIn from "@/pages/SignIn"; // Updated import path
 import SignUp from "@/pages/auth/SignUp";
 import NotFound from "@/pages/NotFound";
 import SplashScreen from "@/pages/SplashScreen";
