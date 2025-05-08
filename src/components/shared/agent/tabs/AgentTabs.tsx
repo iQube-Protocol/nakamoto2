@@ -87,7 +87,7 @@ const AgentTabs: React.FC<AgentTabsProps> = ({
         <AgentInputBar
           inputValue={inputValue}
           handleInputChange={handleInputChange}
-          handleSubmit={handleFormSubmit} {/* Use the wrapper function that switches tabs */}
+          handleSubmit={handleFormSubmit}
           isProcessing={isProcessing}
           agentType={agentType}
         />
