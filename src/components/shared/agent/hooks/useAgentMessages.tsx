@@ -1,11 +1,11 @@
 
-import { useState, useRef } from 'react';
 import { useConversationId } from './useConversationId';
 import { useMessageHistory } from './useMessageHistory';
 import { useMessageSubmit } from './useMessageSubmit';
 import { useScrollToBottom } from './useScrollToBottom';
 import { useMessageInput } from './useMessageInput';
 import { useAudioControl } from './useAudioControl';
+import { useMessageState } from './useMessageState';
 import { AgentMessage } from '@/lib/types';
 
 interface UseAgentMessagesProps {
@@ -21,8 +21,8 @@ export const useAgentMessages = ({
   conversationId: externalConversationId,
   onMessageSubmit
 }: UseAgentMessagesProps) => {
-  // Store messages in state
-  const [messages, setMessages] = useState<AgentMessage[]>(initialMessages);
+  // Use message state hook
+  const { messages, setMessages } = useMessageState(initialMessages);
   
   // Use smaller hooks to manage different aspects of functionality
   const {
