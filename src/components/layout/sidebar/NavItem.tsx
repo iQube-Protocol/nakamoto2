@@ -1,56 +1,58 @@
 
 import React from 'react';
-import { NavLink } from 'react-router-dom';
+import { Link } from 'react-router-dom';
+import { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
-import {
-  Tooltip,
-  TooltipContent,
-  TooltipProvider,
-  TooltipTrigger
-} from "@/components/ui/tooltip";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface NavItemProps {
-  to: string;
-  icon: React.ReactNode;
-  label: string;
-  collapsed: boolean;
+  icon: LucideIcon;
+  href: string;
+  children: React.ReactNode;
+  active?: boolean;
+  collapsed?: boolean;
   onClick?: () => void;
 }
 
-const NavItem = ({ to, icon, label, collapsed, onClick }: NavItemProps) => {
-  return (
-    <NavLink
-      to={to}
-      className={({ isActive }) =>
-        cn(
-          "flex items-center py-3 px-3 rounded-md transition-all hover:bg-iqube-primary/20 group",
-          isActive ? "bg-iqube-primary/20 text-iqube-primary" : "text-sidebar-foreground"
-        )
-      }
+const NavItem: React.FC<NavItemProps> = ({
+  icon: Icon,
+  href,
+  children,
+  active,
+  collapsed,
+  onClick,
+}) => {
+  const content = (
+    <Link
+      to={href}
       onClick={onClick}
-    >
-      {collapsed ? (
-        <TooltipProvider>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <div className="flex items-center justify-center">
-                <div className="text-xl">{icon}</div>
-                <span className="sr-only">{label}</span>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent side="right">
-              {label}
-            </TooltipContent>
-          </Tooltip>
-        </TooltipProvider>
-      ) : (
-        <>
-          <div className="mr-3 text-xl">{icon}</div>
-          <span>{label}</span>
-        </>
+      className={cn(
+        "flex items-center rounded-md p-2 text-sm hover:bg-accent",
+        active && "bg-accent",
+        collapsed ? "justify-center" : ""
       )}
-    </NavLink>
+    >
+      <Icon className={cn("h-5 w-5", collapsed ? "" : "mr-2")} />
+      {!collapsed && <span>{children}</span>}
+    </Link>
   );
+
+  if (collapsed) {
+    return (
+      <TooltipProvider>
+        <Tooltip>
+          <TooltipTrigger asChild>
+            {content}
+          </TooltipTrigger>
+          <TooltipContent side="right">
+            {children}
+          </TooltipContent>
+        </Tooltip>
+      </TooltipProvider>
+    );
+  }
+
+  return content;
 };
 
 export default NavItem;
