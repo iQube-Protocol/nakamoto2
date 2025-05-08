@@ -48,6 +48,7 @@ const AgentInterface = ({
   
   const {
     messages,
+    setMessages,
     inputValue,
     isProcessing,
     playing,
@@ -74,6 +75,9 @@ const AgentInterface = ({
       message: 'I can now access the document you\'ve added. Feel free to ask questions about its content.',
       timestamp: new Date().toISOString(),
     };
+    
+    // Add the system message to the chat
+    setMessages(prev => [...prev, systemMessage]);
     
     // Call the parent's onDocumentAdded if provided
     if (onDocumentAdded) {

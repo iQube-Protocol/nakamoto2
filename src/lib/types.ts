@@ -1,3 +1,4 @@
+
 // iQube types
 
 export interface MetaQube {
@@ -46,7 +47,7 @@ export interface DataQube {
 // Agent types
 export interface AgentMessage {
   id: string;
-  sender: 'user' | 'agent';
+  sender: 'user' | 'agent' | 'system';
   message: string;
   timestamp: string;
   attachments?: string[];

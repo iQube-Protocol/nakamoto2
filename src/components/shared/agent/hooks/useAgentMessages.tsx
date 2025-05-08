@@ -55,6 +55,7 @@ export const useAgentMessages = ({
 
   return {
     messages,
+    setMessages,
     inputValue,
     isProcessing,
     playing,
