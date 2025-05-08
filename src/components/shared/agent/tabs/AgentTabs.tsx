@@ -21,6 +21,7 @@ interface AgentTabsProps {
   handleSubmit: (e: React.FormEvent) => void;
   handlePlayAudio: (messageId: string) => void;
   handleDocumentAdded: () => void;
+  documentUpdates?: number; // Track document updates
 }
 
 const AgentTabs: React.FC<AgentTabsProps> = ({
@@ -36,7 +37,8 @@ const AgentTabs: React.FC<AgentTabsProps> = ({
   handleInputChange,
   handleSubmit,
   handlePlayAudio,
-  handleDocumentAdded
+  handleDocumentAdded,
+  documentUpdates = 0
 }) => {
   // Function to handle form submission and switch to chat tab
   const handleFormSubmit = (e: React.FormEvent) => {
@@ -74,6 +76,7 @@ const AgentTabs: React.FC<AgentTabsProps> = ({
           <DocumentContext 
             conversationId={conversationId}
             onDocumentAdded={handleDocumentAdded}
+            documentUpdates={documentUpdates}
           />
         </TabsContent>
 

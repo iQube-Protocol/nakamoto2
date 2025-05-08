@@ -18,42 +18,67 @@ export default function useDocumentContext({ conversationId, onDocumentAdded }: 
   
   // Load document context when conversation ID or client changes
   const loadDocumentContext = useCallback(async () => {
-    if (client && conversationId) {
-      try {
-        const context = client.getModelContext();
-        console.log("Loading document context. Context available:", !!context);
+    if (!client) {
+      console.log("Cannot load document context: MCP client not available");
+      return;
+    }
+    
+    if (!conversationId) {
+      console.log("Cannot load document context: Conversation ID not available");
+      return;
+    }
+    
+    try {
+      // Always initialize context first to ensure we have the latest
+      await client.initializeContext(conversationId);
+      console.log(`Context initialized for conversation ${conversationId}`);
+      
+      const context = client.getModelContext();
+      console.log("Loading document context. Context available:", !!context);
+      
+      if (context?.documentContext) {
+        const docs = context.documentContext.map(doc => ({
+          id: doc.documentId,
+          name: doc.documentName,
+          mimeType: `application/${doc.documentType}`,
+          content: doc.content
+        }));
         
-        if (context?.documentContext) {
-          const docs = context.documentContext.map(doc => ({
-            id: doc.documentId,
-            name: doc.documentName,
-            mimeType: `application/${doc.documentType}`,
-            content: doc.content
-          }));
-          setSelectedDocuments(docs);
-          console.log("Documents loaded:", docs.length, docs.map(d => d.name));
+        if (docs.length === 0) {
+          console.log("Document context is empty");
+        } else {
+          console.log(`Documents loaded: ${docs.length}`, docs.map(d => d.name));
           
           // Verify document content is loaded
+          let contentMissing = false;
           docs.forEach((doc, index) => {
             console.log(`Document ${index + 1}: ${doc.name}, Content length: ${doc.content?.length || 0}`);
             if (!doc.content || doc.content.length === 0) {
-              console.warn(`Document ${doc.name} has no content!`);
+              console.warn(`⚠️ Document ${doc.name} has no content!`);
+              contentMissing = true;
             }
           });
-        } else {
-          console.log("No document context available");
-          setSelectedDocuments([]);
+          
+          if (contentMissing) {
+            console.error("Some documents have missing content! Attempting recovery...");
+            // This isn't ideal but we'll try to work with what we have
+          }
         }
-      } catch (error) {
-        console.error("Error loading document context:", error);
-        toast.error("Failed to load document context");
+        
+        setSelectedDocuments(docs);
+      } else {
+        console.log("No document context available");
+        setSelectedDocuments([]);
       }
-    } else {
-      console.log("Cannot load document context: client or conversationId not available");
+    } catch (error) {
+      console.error("Error loading document context:", error);
+      toast.error("Failed to load document context", {
+        description: error instanceof Error ? error.message : "Unknown error"
+      });
     }
   }, [client, conversationId]);
   
-  // Load document context when component mounts or dependencies change
+  // Initial load of document context
   useEffect(() => {
     loadDocumentContext();
   }, [loadDocumentContext]);
@@ -105,6 +130,9 @@ export default function useDocumentContext({ conversationId, onDocumentAdded }: 
     try {
       console.log(`Adding document to context: ${document.name} (${document.id})`);
       
+      // Initialize the context with the conversation ID
+      await client.initializeContext(conversationId);
+      
       // Fetch document content
       const content = await fetchDocument(document.id);
       if (!content) {
@@ -135,8 +163,15 @@ export default function useDocumentContext({ conversationId, onDocumentAdded }: 
       
       if (docInContext) {
         console.log(`Document successfully added to context. Content length: ${docInContext.content.length}`);
+        
+        // Double-check content
+        if (docInContext.content.length === 0) {
+          console.error("Document added but content is empty!");
+          throw new Error("Document content is empty after adding to context");
+        }
       } else {
-        console.warn("Document not found in context after adding!");
+        console.error("Document not found in context after adding!");
+        throw new Error("Failed to add document to context");
       }
       
       // Dispatch event that document context was updated
@@ -216,6 +251,7 @@ export default function useDocumentContext({ conversationId, onDocumentAdded }: 
     isLoading,
     handleDocumentSelect,
     handleRemoveDocument,
-    handleViewDocument
+    handleViewDocument,
+    loadDocumentContext // Expose this so other components can trigger a refresh
   };
 }

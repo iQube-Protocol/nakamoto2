@@ -29,24 +29,46 @@ export const sendMessage = async (
     // Get document context from MCP if available
     let documentContext = null;
     const mcpClient = getMCPClient();
-    if (mcpClient) {
-      const context = mcpClient.getModelContext();
-      documentContext = context?.documentContext || null;
-      if (documentContext && documentContext.length > 0) {
-        console.log(`Including ${documentContext.length} documents in request to AI service:`, 
-          documentContext.map(doc => doc.documentName));
-        
-        // Debug document content
-        documentContext.forEach((doc, i) => {
-          console.log(`Document ${i+1}: ${doc.documentName}`);
-          console.log(`Type: ${doc.documentType}, Content length: ${doc.content.length}`);
-          console.log(`Content preview: ${doc.content.substring(0, 100)}...`);
-        });
-      } else {
-        console.log("No documents available in context to send to AI service");
-      }
+    if (!mcpClient) {
+      console.error("MCP client not available, cannot access document context");
+      throw new Error("Document context service unavailable");
+    }
+    
+    // Force refresh context from storage to ensure we have latest document updates
+    if (conversationId) {
+      mcpClient.initializeContext(conversationId)
+        .then(() => console.log("Context initialized for document access"))
+        .catch(error => console.error("Error initializing context:", error));
+    }
+    
+    const context = mcpClient.getModelContext();
+    documentContext = context?.documentContext || null;
+    
+    if (!documentContext || documentContext.length === 0) {
+      console.log("No documents available in context to send to AI service");
     } else {
-      console.log("MCP client not available, cannot access document context");
+      console.log(`Including ${documentContext.length} documents in request to AI service:`, 
+        documentContext.map(doc => doc.documentName));
+      
+      // Debug document content
+      let hasContentIssues = false;
+      documentContext.forEach((doc, i) => {
+        console.log(`Document ${i+1}: ${doc.documentName}`);
+        console.log(`Type: ${doc.documentType}, Content length: ${doc.content?.length || 0}`);
+        
+        if (!doc.content || doc.content.length === 0) {
+          console.error(`⚠️ Document ${doc.documentName} has NO CONTENT! This will affect AI response.`);
+          hasContentIssues = true;
+        } else {
+          console.log(`Content preview: ${doc.content.substring(0, 100)}...`);
+        }
+      });
+      
+      if (hasContentIssues) {
+        toast.error("Some documents have content issues", {
+          description: "Document content may not be properly included in the AI response"
+        });
+      }
     }
 
     // Prepare payload for edge function
@@ -68,11 +90,13 @@ export const sendMessage = async (
     });
 
     if (error) {
+      console.error("Edge function error:", error);
       throw new Error(`Edge function error: ${error.message}`);
     }
 
     // Process the response from the edge function
     if (!data || !data.response) {
+      console.error("Invalid response from edge function:", data);
       throw new Error('Invalid response from edge function');
     }
 

@@ -48,32 +48,57 @@ export const useMessageSubmit = (
     
     // Add user message to MCP context if available
     if (mcpClient && conversationId) {
-      console.log(`Adding user message to MCP context for conversation ${conversationId}`);
-      await mcpClient.addUserMessage(userMessage.message);
-      
-      // Log the current MCP context to verify documents are included
-      const context = mcpClient.getModelContext();
-      console.log("Full MCP context:", JSON.stringify(context));
-      
-      if (context?.documentContext && context.documentContext.length > 0) {
-        hasDocuments = true;
-        documentsInfo = context.documentContext.map(d => d.documentName);
-        console.log(`Current MCP context has ${context.documentContext.length} documents:`, documentsInfo);
-        console.log("Document content sample:", context.documentContext.map(d => ({ 
-          name: d.documentName, 
-          contentPreview: d.content.substring(0, 100) + '...' 
-        })));
+      try {
+        // Always initialize MCP context with conversation ID first
+        await mcpClient.initializeContext(conversationId);
+        console.log(`MCP context initialized for conversation ${conversationId}`);
         
-        // If message doesn't explicitly reference documents, add a helpful hint
-        if (!message.toLowerCase().includes("document") && 
-            !message.toLowerCase().includes("attachment") && 
-            !message.toLowerCase().includes("file")) {
-          toast.info("Tip: You can explicitly ask about your documents", {
-            description: "Try asking a question that mentions your uploaded documents for best results"
-          });
+        // Add user message to context
+        await mcpClient.addUserMessage(userMessage.message);
+        console.log(`Added user message to MCP context for conversation ${conversationId}`);
+        
+        // Log the current MCP context to verify documents are included
+        const context = mcpClient.getModelContext();
+        if (!context) {
+          console.error("Failed to get MCP context after adding user message");
+        } else {
+          // Log document context status
+          if (context.documentContext && context.documentContext.length > 0) {
+            hasDocuments = true;
+            documentsInfo = context.documentContext.map(d => d.documentName);
+            
+            console.log(`Current MCP context has ${context.documentContext.length} documents:`, documentsInfo);
+            
+            // Check document content integrity
+            const emptyContentDocs = context.documentContext.filter(doc => !doc.content || doc.content.length === 0);
+            if (emptyContentDocs.length > 0) {
+              console.error(`⚠️ ${emptyContentDocs.length} documents have empty content:`, 
+                emptyContentDocs.map(d => d.documentName));
+            }
+            
+            // Debug sample of document content
+            console.log("Document content samples:", context.documentContext.map(d => ({ 
+              name: d.documentName, 
+              contentPreview: d.content ? (d.content.length > 0 ? d.content.substring(0, 100) + '...' : '[EMPTY]') : '[NULL]'
+            })));
+            
+            // If message doesn't explicitly reference documents, add a helpful hint
+            if (!message.toLowerCase().includes("document") && 
+                !message.toLowerCase().includes("attachment") && 
+                !message.toLowerCase().includes("file")) {
+              toast.info("Tip: You can explicitly ask about your documents", {
+                description: "Try asking a question that mentions your uploaded documents for best results"
+              });
+            }
+          } else {
+            console.log("No documents found in the current context");
+          }
         }
-      } else {
-        console.log("No documents found in the current context");
+      } catch (error) {
+        console.error("Error initializing MCP context or adding user message:", error);
+        toast.error("Failed to prepare message context", {
+          description: error instanceof Error ? error.message : "Unknown error"
+        });
       }
     } else {
       console.log("MCP client or conversation ID not available:", { 
@@ -94,16 +119,24 @@ export const useMessageSubmit = (
         
         // Add agent response to MCP context if available
         if (mcpClient && conversationId) {
-          await mcpClient.addAgentResponse(agentResponse.message);
+          try {
+            await mcpClient.addAgentResponse(agentResponse.message);
+            console.log(`Added agent response to MCP context for conversation ${conversationId}`);
+          } catch (error) {
+            console.error("Error adding agent response to MCP context:", error);
+          }
         }
         
         setMessages(prev => [...prev, agentResponse]);
 
         // Check if documents were used in the response
         if (agentResponse.metadata?.documentsUsed) {
+          console.log("Documents were used in the agent response");
           toast.success("Documents were referenced in the response", {
             description: "The AI used your documents to answer your question"
           });
+        } else if (hasDocuments) {
+          console.log("Documents were available but not referenced in the response");
         }
       } else {
         // Fallback for when no onMessageSubmit is provided

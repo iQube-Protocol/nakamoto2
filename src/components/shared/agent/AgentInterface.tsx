@@ -41,6 +41,7 @@ const AgentInterface = ({
   };
   
   const [activeTab, setActiveTab] = useState<'chat' | 'knowledge' | 'documents'>(getInitialTab());
+  const [documentUpdates, setDocumentUpdates] = useState<number>(0);
   
   // Save active tab to localStorage whenever it changes
   useEffect(() => {
@@ -65,6 +66,28 @@ const AgentInterface = ({
     onMessageSubmit
   });
 
+  // Handle document context updates from parent component
+  useEffect(() => {
+    if (documentContextUpdated > 0) {
+      console.log(`Document context updated (${documentContextUpdated}), refreshing UI`);
+      setDocumentUpdates(prev => prev + 1);
+    }
+  }, [documentContextUpdated]);
+
+  // Listen for document context updates from anywhere in the application
+  useEffect(() => {
+    const handleContextUpdate = (event: Event) => {
+      console.log("Document context updated event received in AgentInterface");
+      setDocumentUpdates(prev => prev + 1);
+    };
+    
+    window.addEventListener('documentContextUpdated', handleContextUpdate);
+    
+    return () => {
+      window.removeEventListener('documentContextUpdated', handleContextUpdate);
+    };
+  }, []);
+
   const handleDocumentAdded = () => {
     // Notify the user that document context has been updated
     toast.success('Document context has been updated');
@@ -80,18 +103,17 @@ const AgentInterface = ({
     // Add the system message to the chat
     setMessages(prev => [...prev, systemMessage]);
     
+    // Update document counter to trigger UI refresh
+    setDocumentUpdates(prev => prev + 1);
+    
     // Call the parent's onDocumentAdded if provided
     if (onDocumentAdded) {
       onDocumentAdded();
     }
+    
+    // Switch to chat tab after document is added
+    setActiveTab('chat');
   };
-
-  // Effect to track document context updates
-  useEffect(() => {
-    if (documentContextUpdated > 0) {
-      console.log(`Document context updated (${documentContextUpdated}), refreshing UI`);
-    }
-  }, [documentContextUpdated]);
 
   return (
     <Card className="flex flex-col h-full overflow-hidden">
@@ -115,6 +137,7 @@ const AgentInterface = ({
         handleSubmit={handleSubmit}
         handlePlayAudio={handlePlayAudio}
         handleDocumentAdded={handleDocumentAdded}
+        documentUpdates={documentUpdates}
       />
     </Card>
   );
