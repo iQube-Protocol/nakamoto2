@@ -38,6 +38,13 @@ const AgentTabs: React.FC<AgentTabsProps> = ({
   handlePlayAudio,
   handleDocumentAdded
 }) => {
+  // Function to handle form submission and switch to chat tab
+  const handleFormSubmit = (e: React.FormEvent) => {
+    handleSubmit(e);
+    // Always switch to chat tab when a message is sent
+    setActiveTab('chat');
+  };
+
   return (
     <Tabs 
       value={activeTab} 
@@ -80,13 +87,7 @@ const AgentTabs: React.FC<AgentTabsProps> = ({
         <AgentInputBar
           inputValue={inputValue}
           handleInputChange={handleInputChange}
-          handleSubmit={(e) => {
-            handleSubmit(e);
-            // Only switch to chat tab when message is sent if we're not in documents tab
-            if (activeTab !== 'documents') {
-              setActiveTab('chat');
-            }
-          }}
+          handleSubmit={handleFormSubmit}
           isProcessing={isProcessing}
           agentType={agentType}
         />

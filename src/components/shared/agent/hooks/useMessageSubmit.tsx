@@ -44,6 +44,7 @@ export const useMessageSubmit = (
 
     // Check if we have documents in context
     let hasDocuments = false;
+    let documentsInfo: string[] = [];
     
     // Add user message to MCP context if available
     if (mcpClient && conversationId) {
@@ -53,8 +54,8 @@ export const useMessageSubmit = (
       const context = mcpClient.getModelContext();
       if (context?.documentContext && context.documentContext.length > 0) {
         hasDocuments = true;
-        console.log(`Current MCP context has ${context.documentContext.length} documents:`, 
-          context.documentContext.map(d => d.documentName));
+        documentsInfo = context.documentContext.map(d => d.documentName);
+        console.log(`Current MCP context has ${context.documentContext.length} documents:`, documentsInfo);
         
         // If message doesn't explicitly reference documents, add a helpful hint
         if (!message.toLowerCase().includes("document") && 
@@ -69,6 +70,12 @@ export const useMessageSubmit = (
 
     try {
       if (onMessageSubmit) {
+        console.log(`Sending message to ${agentType} agent with conversation ID ${conversationId}`);
+        
+        if (hasDocuments) {
+          console.log("Including documents in request:", documentsInfo);
+        }
+        
         const agentResponse = await onMessageSubmit(userMessage.message);
         
         // Add agent response to MCP context if available

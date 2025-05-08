@@ -18,7 +18,7 @@ export default function useDocumentContext({ conversationId, onDocumentAdded }: 
   
   // Get documents from context whenever the conversation ID changes or client becomes available
   useEffect(() => {
-    const loadDocumentContext = () => {
+    const loadDocumentContext = async () => {
       if (client && conversationId) {
         const context = client.getModelContext();
         console.log("Loading document context:", context);
@@ -41,7 +41,17 @@ export default function useDocumentContext({ conversationId, onDocumentAdded }: 
     // Load document context immediately
     loadDocumentContext();
     
-    // Set up a listener for when navigating back to document tab
+    // Set up a listener for context changes
+    const handleContextUpdate = () => {
+      if (client && conversationId) {
+        loadDocumentContext();
+      }
+    };
+    
+    // Listen for document context updates
+    window.addEventListener('documentContextUpdated', handleContextUpdate);
+    
+    // Also reload when tab becomes visible
     const handleTabVisibilityChange = () => {
       if (!document.hidden && client && conversationId) {
         loadDocumentContext();
@@ -50,8 +60,9 @@ export default function useDocumentContext({ conversationId, onDocumentAdded }: 
     
     document.addEventListener('visibilitychange', handleTabVisibilityChange);
     
-    // Clean up listener
+    // Clean up listeners
     return () => {
+      window.removeEventListener('documentContextUpdated', handleContextUpdate);
       document.removeEventListener('visibilitychange', handleTabVisibilityChange);
     };
   }, [client, conversationId]);
@@ -64,14 +75,17 @@ export default function useDocumentContext({ conversationId, onDocumentAdded }: 
     
     // Check if document is already in context
     if (selectedDocuments.some(doc => doc.id === document.id)) {
-      const error = new Error('Document already in context');
-      error.message = 'Document already in context';
-      throw error;
+      toast.error('Document already in context');
+      return;
     }
     
-    // Fetch document content
-    const content = await fetchDocument(document.id);
-    if (content) {
+    try {
+      // Fetch document content
+      const content = await fetchDocument(document.id);
+      if (!content) {
+        throw new Error('Failed to fetch document content');
+      }
+      
       // Add content to the document object for local tracking
       document.content = content;
       setSelectedDocuments(prev => [...prev, document]);
@@ -89,26 +103,51 @@ export default function useDocumentContext({ conversationId, onDocumentAdded }: 
         );
         
         console.log(`Document ${document.name} added to MCP context`);
+        
+        // Dispatch event that document context was updated
+        const event = new CustomEvent('documentContextUpdated', { 
+          detail: { documentId: document.id } 
+        });
+        window.dispatchEvent(event);
       }
       
-      if (onDocumentAdded) onDocumentAdded();
+      if (onDocumentAdded) {
+        onDocumentAdded();
+      }
+      
+      toast.success('Document added to conversation context');
       return document;
-    } else {
-      throw new Error('Failed to fetch document content');
+    } catch (error) {
+      console.error('Error handling document selection:', error);
+      toast.error('Failed to add document', {
+        description: error instanceof Error ? error.message : 'Unknown error'
+      });
+      throw error;
     }
   };
   
   const handleRemoveDocument = (documentId: string) => {
-    // Remove from the client context
-    if (client && conversationId) {
-      // Remove from MCP context first
-      client.removeDocumentFromContext(documentId);
-      console.log(`Document ${documentId} removed from MCP context`);
+    try {
+      // Remove from the client context
+      if (client && conversationId) {
+        // Remove from MCP context first
+        client.removeDocumentFromContext(documentId);
+        console.log(`Document ${documentId} removed from MCP context`);
+        
+        // Dispatch event that document context was updated
+        const event = new CustomEvent('documentContextUpdated', { 
+          detail: { documentId, removed: true } 
+        });
+        window.dispatchEvent(event);
+      }
+      
+      // Update local state
+      setSelectedDocuments(prev => prev.filter(doc => doc.id !== documentId));
+      toast.success('Document removed from context');
+    } catch (error) {
+      console.error('Error removing document:', error);
+      toast.error('Failed to remove document');
     }
-    
-    // Update local state
-    setSelectedDocuments(prev => prev.filter(doc => doc.id !== documentId));
-    toast.success('Document removed from context');
   };
   
   const handleViewDocument = (document: any) => {
