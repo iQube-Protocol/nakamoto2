@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { AgentMessage } from '@/lib/types';
 import { Card } from '@/components/ui/card';
@@ -27,7 +28,23 @@ const AgentInterface = ({
   onDocumentAdded,
   documentContextUpdated = 0,
 }: AgentInterfaceProps) => {
-  const [activeTab, setActiveTab] = useState<'chat' | 'knowledge' | 'documents'>('chat');
+  // Get the active tab from localStorage or default to 'chat'
+  const getInitialTab = () => {
+    if (typeof window !== 'undefined') {
+      const savedTab = localStorage.getItem(`${agentType}-active-tab`);
+      if (savedTab && ['chat', 'knowledge', 'documents'].includes(savedTab)) {
+        return savedTab as 'chat' | 'knowledge' | 'documents';
+      }
+    }
+    return 'chat';
+  };
+  
+  const [activeTab, setActiveTab] = useState<'chat' | 'knowledge' | 'documents'>(getInitialTab());
+  
+  // Save active tab to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem(`${agentType}-active-tab`, activeTab);
+  }, [activeTab, agentType]);
   
   const {
     messages,

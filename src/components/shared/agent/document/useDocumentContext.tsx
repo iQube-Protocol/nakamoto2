@@ -16,25 +16,44 @@ export default function useDocumentContext({ conversationId, onDocumentAdded }: 
   const [selectedDocuments, setSelectedDocuments] = useState<any[]>([]);
   const [viewingDocument, setViewingDocument] = useState<{id: string, content: string, name: string, mimeType: string} | null>(null);
   
-  // Get documents from context whenever the conversation ID changes
+  // Get documents from context whenever the conversation ID changes or client becomes available
   useEffect(() => {
-    if (client && conversationId) {
-      const context = client.getModelContext();
-      console.log("Loading document context:", context);
-      
-      if (context?.documentContext) {
-        const docs = context.documentContext.map(doc => ({
-          id: doc.documentId,
-          name: doc.documentName,
-          mimeType: `application/${doc.documentType}`,
-          content: doc.content
-        }));
-        setSelectedDocuments(docs);
-        console.log("Documents loaded:", docs.length);
-      } else {
-        console.log("No document context available");
+    const loadDocumentContext = () => {
+      if (client && conversationId) {
+        const context = client.getModelContext();
+        console.log("Loading document context:", context);
+        
+        if (context?.documentContext) {
+          const docs = context.documentContext.map(doc => ({
+            id: doc.documentId,
+            name: doc.documentName,
+            mimeType: `application/${doc.documentType}`,
+            content: doc.content
+          }));
+          setSelectedDocuments(docs);
+          console.log("Documents loaded:", docs.length);
+        } else {
+          console.log("No document context available");
+        }
       }
-    }
+    };
+    
+    // Load document context immediately
+    loadDocumentContext();
+    
+    // Set up a listener for when navigating back to document tab
+    const handleTabVisibilityChange = () => {
+      if (!document.hidden && client && conversationId) {
+        loadDocumentContext();
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleTabVisibilityChange);
+    
+    // Clean up listener
+    return () => {
+      document.removeEventListener('visibilitychange', handleTabVisibilityChange);
+    };
   }, [client, conversationId]);
   
   const handleDocumentSelect = async (document: any) => {
@@ -85,17 +104,6 @@ export default function useDocumentContext({ conversationId, onDocumentAdded }: 
       // Remove from MCP context first
       client.removeDocumentFromContext(documentId);
       console.log(`Document ${documentId} removed from MCP context`);
-      
-      const context = client.getModelContext();
-      if (context?.documentContext) {
-        context.documentContext = context.documentContext.filter(
-          doc => doc.documentId !== documentId
-        );
-        
-        // Persist the updated context
-        const key = `mcp-context-${conversationId}`;
-        localStorage.setItem(key, JSON.stringify(context));
-      }
     }
     
     // Update local state

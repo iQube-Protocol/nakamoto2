@@ -82,7 +82,10 @@ const AgentTabs: React.FC<AgentTabsProps> = ({
           handleInputChange={handleInputChange}
           handleSubmit={(e) => {
             handleSubmit(e);
-            setActiveTab('chat'); // Switch to chat tab when message is sent
+            // Only switch to chat tab when message is sent if we're not in documents tab
+            if (activeTab !== 'documents') {
+              setActiveTab('chat');
+            }
           }}
           isProcessing={isProcessing}
           agentType={agentType}
