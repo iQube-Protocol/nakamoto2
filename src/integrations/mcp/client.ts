@@ -1,7 +1,7 @@
 
 import { MCPClientOptions, MCPContext, DocumentMetadata } from './types';
 import { GoogleDriveService } from './GoogleDriveService';
-import { ContextService } from './ContextService';
+import { ContextService } from './context';
 import { toast } from 'sonner';
 
 export { type MCPContext, type MCPClientOptions } from './types';

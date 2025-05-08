@@ -1,5 +1,9 @@
 
-import { MCPContext } from './types';
+import { MCPContext } from '../types';
+import { LocalStorageService } from './LocalStorageService';
+import { DocumentManager } from './DocumentManager';
+import { MessageManager } from './MessageManager';
+import { ContextStorageService } from './types';
 
 /**
  * Service for managing conversation context
@@ -8,9 +12,16 @@ export class ContextService {
   private context: MCPContext | null = null;
   private conversationId: string | null = null;
   private metisActive: boolean;
+  private storageService: ContextStorageService;
+  private documentManager: DocumentManager;
+  private messageManager: MessageManager;
   
-  constructor(metisActive: boolean = false) {
+  constructor(metisActive: boolean = false, storageService?: ContextStorageService) {
     this.metisActive = metisActive;
+    this.storageService = storageService || new LocalStorageService();
+    this.documentManager = new DocumentManager();
+    this.messageManager = new MessageManager();
+    
     console.log('Context service initialized with metisActive:', metisActive);
   }
   
@@ -21,10 +32,12 @@ export class ContextService {
     try {
       if (existingConversationId && this.conversationId !== existingConversationId) {
         console.log(`Loading existing conversation context: ${existingConversationId}`);
-        // Try to fetch existing context from server or local storage
-        const storedContext = localStorage.getItem(`mcp-context-${existingConversationId}`);
+        
+        // Try to fetch existing context from storage
+        const storedContext = this.storageService.loadContext(existingConversationId);
+        
         if (storedContext) {
-          this.context = JSON.parse(storedContext);
+          this.context = storedContext;
           this.conversationId = existingConversationId;
           console.log(`Loaded local context for conversation ${existingConversationId}`);
           return existingConversationId;
@@ -57,7 +70,7 @@ export class ContextService {
       return newConversationId;
     } catch (error) {
       console.error('Error initializing context:', error);
-      throw new Error(`MCP initialization error: ${error.message}`);
+      throw new Error(`MCP initialization error: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
   
@@ -70,12 +83,7 @@ export class ContextService {
     }
     
     if (this.context) {
-      this.context.messages.push({
-        role: 'user',
-        content: message,
-        timestamp: new Date().toISOString()
-      });
-      
+      this.context = this.messageManager.addUserMessage(this.context, message);
       this.persistContext();
       console.log(`Added user message to context ${this.conversationId}`);
     }
@@ -89,12 +97,7 @@ export class ContextService {
       throw new Error('Cannot add agent response: Context not initialized');
     }
     
-    this.context.messages.push({
-      role: 'assistant',
-      content: response,
-      timestamp: new Date().toISOString()
-    });
-    
+    this.context = this.messageManager.addAgentResponse(this.context, response);
     this.persistContext();
     console.log(`Added agent response to context ${this.conversationId}`);
   }
@@ -112,55 +115,30 @@ export class ContextService {
       throw new Error('Cannot add document: Context not initialized');
     }
     
-    if (!this.context.documentContext) {
-      this.context.documentContext = [];
-    }
-    
-    // Check if document already exists in context
-    const existingDocIndex = this.context.documentContext.findIndex(doc => doc.documentId === documentId);
-    
-    if (existingDocIndex >= 0) {
-      // Update existing document
-      this.context.documentContext[existingDocIndex] = {
-        documentId,
-        documentName,
-        documentType,
-        content,
-        lastModified: new Date().toISOString()
-      };
-    } else {
-      // Add new document
-      this.context.documentContext.push({
-        documentId,
-        documentName,
-        documentType,
-        content,
-        lastModified: new Date().toISOString()
-      });
-    }
+    this.context = this.documentManager.addDocumentToContext(
+      this.context,
+      documentId,
+      documentName,
+      documentType,
+      content
+    );
     
     this.persistContext();
-    console.log(`Added/updated document ${documentName} to context`);
   }
   
   /**
    * Remove document from context
    */
   removeDocumentFromContext(documentId: string): boolean {
-    if (!this.context || !this.context.documentContext) {
+    if (!this.context) {
       return false;
     }
     
-    const initialLength = this.context.documentContext.length;
-    this.context.documentContext = this.context.documentContext.filter(
-      doc => doc.documentId !== documentId
-    );
-    
-    const removed = initialLength > this.context.documentContext.length;
+    const { context, removed } = this.documentManager.removeDocumentFromContext(this.context, documentId);
     
     if (removed) {
+      this.context = context;
       this.persistContext();
-      console.log(`Removed document ${documentId} from context`);
     }
     
     return removed;
@@ -171,12 +149,7 @@ export class ContextService {
    */
   private persistContext(): void {
     if (this.context && this.conversationId) {
-      try {
-        // Save to local storage for now (in production, would likely use Supabase or other DB)
-        localStorage.setItem(`mcp-context-${this.conversationId}`, JSON.stringify(this.context));
-      } catch (error) {
-        console.error('Error persisting context:', error);
-      }
+      this.storageService.saveContext(this.conversationId, this.context);
     }
   }
   
