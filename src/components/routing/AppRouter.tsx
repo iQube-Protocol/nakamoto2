@@ -1,6 +1,6 @@
 
 import React from "react";
-import { BrowserRouter as Router, Routes, Route, Navigate } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom";
 import MainLayout from "../layout/MainLayout";
 import Dashboard from "@/pages/Dashboard";
 import MonDAI from "@/pages/MonDAI";
@@ -14,10 +14,11 @@ import DataQube from "@/pages/qubes/DataQube";
 import AgentQube from "@/pages/qubes/AgentQube";
 import ToolQube from "@/pages/qubes/ToolQube";
 import ProtectedRoute from "../auth/ProtectedRoute";
+import { AuthProvider } from "@/hooks/use-auth";
 
 const AppRouter = () => {
   return (
-    <Router>
+    <AuthProvider>
       <Routes>
         {/* Public routes */}
         <Route path="/signin" element={<SignIn />} />
@@ -93,7 +94,7 @@ const AppRouter = () => {
         {/* Catch-all route for 404 */}
         <Route path="*" element={<NotFound />} />
       </Routes>
-    </Router>
+    </AuthProvider>
   );
 };
 
