@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import SettingsInterface from '@/components/settings/SettingsInterface';
 import { UserSettings, MetaQube } from '@/lib/types';
@@ -64,9 +63,14 @@ const Settings = () => {
   const [showAgentRecommendation, setShowAgentRecommendation] = useState(!metisActivated);
   const [activeQubes, setActiveQubes] = useState<{[key: string]: boolean}>({
     "MonDAI": true,
-    "Metis": metisActivated && metisVisible,
+    "Metis": metisActivated,
     "GDrive": false
   });
+  
+  // Update active state when metisActivated changes
+  useEffect(() => {
+    setActiveQubes(prev => ({...prev, "Metis": metisActivated}));
+  }, [metisActivated]);
   
   // Auto-select the iQube tab on settings page
   useEffect(() => {
@@ -89,7 +93,7 @@ const Settings = () => {
       
       if (iQubeId === "MonDAI" || iQubeId === "MonDAI iQube") {
         setSelectedIQube(monDaiQubeData);
-      } else if ((iQubeId === "Metis" || iQubeId === "Metis iQube") && metisActivated) {
+      } else if ((iQubeId === "Metis" || iQubeId === "Metis iQube")) {
         setSelectedIQube(metisQubeData);
       } else if (iQubeId === "GDrive") {
         setSelectedIQube(gdriveQubeData);
@@ -111,7 +115,7 @@ const Settings = () => {
     return () => {
       window.removeEventListener('iqubeSelected', handleIQubeSelected as EventListener);
     };
-  }, [metisActivated]);
+  }, []);
   
   // Listen for iQube activation/deactivation events from sidebar
   useEffect(() => {
@@ -124,6 +128,7 @@ const Settings = () => {
         if (iqubeId === "Metis") {
           if (active && !metisActivated) {
             activateMetis();
+            setShowAgentRecommendation(false);
           } else if (!active && metisVisible) {
             hideMetis();
           }
@@ -145,8 +150,15 @@ const Settings = () => {
     setShowAgentRecommendation(false);
     setActiveQubes(prev => ({...prev, "Metis": true}));
     toast.success("Metis agent activated successfully");
-    // Dispatch the metisActivated event
-    window.dispatchEvent(new Event('metisActivated'));
+    
+    // Dispatch the toggle event to update sidebar
+    const event = new CustomEvent('iqubeToggle', { 
+      detail: { 
+        iqubeId: "Metis", 
+        active: true 
+      } 
+    });
+    window.dispatchEvent(event);
   };
   
   const handleDismissAgent = () => {
@@ -155,26 +167,33 @@ const Settings = () => {
   };
 
   const toggleQubeActive = (qubeName: string) => {
-    if (qubeName === "Metis" && !activeQubes["Metis"]) {
-      handleActivateMetis();
-      return;
-    }
+    const newActiveState = !activeQubes[qubeName];
     
     setActiveQubes(prev => ({
       ...prev,
-      [qubeName]: !prev[qubeName]
+      [qubeName]: newActiveState
     }));
+    
+    // Special handling for Metis
+    if (qubeName === "Metis") {
+      if (newActiveState) {
+        activateMetis();
+        setShowAgentRecommendation(false);
+      } else {
+        hideMetis();
+      }
+    }
     
     // Dispatch event for sidebar to update
     const event = new CustomEvent('iqubeToggle', { 
       detail: { 
         iqubeId: qubeName, 
-        active: !activeQubes[qubeName] 
+        active: newActiveState 
       } 
     });
     window.dispatchEvent(event);
     
-    toast.info(`${qubeName} iQube ${!activeQubes[qubeName] ? 'activated' : 'deactivated'}`);
+    toast.info(`${qubeName} iQube ${newActiveState ? 'activated' : 'deactivated'}`);
   };
 
   // Sample user settings

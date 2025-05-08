@@ -17,13 +17,28 @@ export function useMCP() {
   // Initialize MCP client
   useEffect(() => {
     if (user) {
-      const mcpClient = getMCPClient({
-        // Check for metisActive status from localStorage
-        metisActive: localStorage.getItem('metisActive') === 'true'
-      });
+      const initClient = () => {
+        const mcpClient = getMCPClient({
+          // Check for metisActive status from localStorage
+          metisActive: localStorage.getItem('metisActive') === 'true'
+        });
+        
+        setClient(mcpClient);
+        setIsInitialized(true);
+      };
       
-      setClient(mcpClient);
-      setIsInitialized(true);
+      initClient();
+      
+      // Listen for Metis activation changes
+      const handleMetisActivated = () => {
+        initClient();
+      };
+      
+      window.addEventListener('metisActivated', handleMetisActivated);
+      
+      return () => {
+        window.removeEventListener('metisActivated', handleMetisActivated);
+      };
     }
   }, [user]);
   

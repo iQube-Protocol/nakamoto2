@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
@@ -22,13 +23,18 @@ const Sidebar = () => {
   const location = useLocation();
   const navigate = useNavigate();
   const isMobile = useIsMobile();
-  const { metisActivated, metisVisible, hideMetis } = useMetisAgent();
+  const { metisActivated, metisVisible, activateMetis, hideMetis } = useMetisAgent();
   const { collapsed, iQubesOpen, mobileOpen, toggleSidebar, toggleMobileSidebar, toggleIQubesMenu } = useSidebarState();
   const [activeIQubes, setActiveIQubes] = useState<{[key: string]: boolean}>({
     "MonDAI": true,
-    "Metis": metisActivated && metisVisible,
+    "Metis": metisActivated,
     "GDrive": false
   });
+
+  // Update Metis state whenever metisActivated changes
+  useEffect(() => {
+    setActiveIQubes(prev => ({...prev, "Metis": metisActivated}));
+  }, [metisActivated]);
 
   // Listen for iQube toggle events from Settings page
   useEffect(() => {
@@ -36,6 +42,15 @@ const Sidebar = () => {
       const { iqubeId, active } = e.detail || {};
       if (iqubeId) {
         setActiveIQubes(prev => ({...prev, [iqubeId]: active}));
+        
+        // Special handling for Metis
+        if (iqubeId === "Metis") {
+          if (active && !metisActivated) {
+            activateMetis();
+          } else if (!active && metisVisible) {
+            hideMetis();
+          }
+        }
       }
     };
     
@@ -44,7 +59,7 @@ const Sidebar = () => {
     return () => {
       window.removeEventListener('iqubeToggle', handleIQubeToggle as EventListener);
     };
-  }, []);
+  }, [metisActivated, metisVisible, activateMetis, hideMetis]);
 
   const handleIQubeClick = (iqubeId: string) => {
     console.log("iQube clicked:", iqubeId);
@@ -65,6 +80,16 @@ const Sidebar = () => {
     e.stopPropagation();
     hideMetis();
     setActiveIQubes(prev => ({...prev, "Metis": false}));
+    
+    // Dispatch event to update Settings page
+    const event = new CustomEvent('iqubeToggle', { 
+      detail: { 
+        iqubeId: "Metis", 
+        active: false 
+      } 
+    });
+    window.dispatchEvent(event);
+    
     console.log("Metis iQube closed from sidebar");
   };
 
@@ -73,6 +98,15 @@ const Sidebar = () => {
     
     const newActiveState = !activeIQubes[qubeName];
     setActiveIQubes(prev => ({...prev, [qubeName]: newActiveState}));
+    
+    // Special handling for Metis
+    if (qubeName === "Metis") {
+      if (newActiveState) {
+        activateMetis();
+      } else {
+        hideMetis();
+      }
+    }
     
     // Dispatch event to update Settings page
     const event = new CustomEvent('iqubeToggle', { 

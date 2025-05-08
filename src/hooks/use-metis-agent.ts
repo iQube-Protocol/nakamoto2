@@ -31,6 +31,8 @@ export function useMetisAgent() {
 
   const hideMetis = () => {
     setMetisVisible(false);
+    setMetisActivated(false);
+    localStorage.setItem('metisActive', 'false');
     console.log("Metis iQube closed");
   };
 
@@ -39,6 +41,11 @@ export function useMetisAgent() {
     setMetisActivated(true);
     setMetisVisible(true);
     localStorage.setItem('metisActive', 'true');
+    
+    // Dispatch the metisActivated event
+    const activationEvent = new Event('metisActivated');
+    window.dispatchEvent(activationEvent);
+    
     console.log("Metis activated manually");
   };
 
