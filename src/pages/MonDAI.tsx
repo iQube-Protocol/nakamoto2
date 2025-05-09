@@ -123,8 +123,8 @@ const MonDAI = () => {
       <div className="grid gap-6">
         <div className="flex flex-col">
           <AgentInterface
-            title="MonDAI Assistant"
-            description="Your personal AI assistant for Web3 education and insights"
+            title="MonDAI"
+            description="Community agent for learning, earning and connecting"
             agentType="learn" // Use 'learn' instead of 'mondai'
             onMessageSubmit={handleAIMessage}
             initialMessages={[

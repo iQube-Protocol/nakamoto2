@@ -44,6 +44,15 @@ const AgentInputBar = ({
     });
   };
 
+  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key === 'Enter' && !e.shiftKey) {
+      e.preventDefault();
+      if (inputValue.trim()) {
+        handleSubmit(e);
+      }
+    }
+  };
+
   return (
     <form onSubmit={handleSubmit} className="border-t p-4">
       <div className="flex items-center space-x-2">
@@ -83,14 +92,9 @@ const AgentInputBar = ({
         <Textarea
           value={inputValue}
           onChange={handleInputChange}
+          onKeyDown={handleKeyDown}
           placeholder={`Ask your ${agentType} agent...`}
           className="flex-1 min-h-10 max-h-32"
-          onKeyDown={(e) => {
-            if (e.key === 'Enter' && !e.shiftKey) {
-              e.preventDefault();
-              handleSubmit(e);
-            }
-          }}
         />
         
         <Button 

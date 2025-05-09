@@ -56,7 +56,7 @@ const AgentTabs: React.FC<AgentTabsProps> = ({
       <div className="border-b px-4">
         <TabsList className="h-10">
           <TabsTrigger value="chat" className="data-[state=active]:bg-iqube-primary/20">Chat</TabsTrigger>
-          <TabsTrigger value="documents" className="data-[state=active]:bg-iqube-primary/20">Documents</TabsTrigger>
+          <TabsTrigger value="documents" className="data-[state=active]:bg-iqube-primary/20">Tool</TabsTrigger>
           <TabsTrigger value="knowledge" className="data-[state=active]:bg-iqube-primary/20">Knowledge Base</TabsTrigger>
         </TabsList>
       </div>

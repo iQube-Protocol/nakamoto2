@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Key } from 'lucide-react';
 import { AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
 import { User, Linkedin, Wallet, Database, Brain } from 'lucide-react';
@@ -21,7 +21,13 @@ const PrivateDataSection = ({
 }: PrivateDataSectionProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editingData, setEditingData] = useState<{ [key: string]: string | string[] }>({...privateData});
-  const [dataSources, setDataSources] = useState<{[key: string]: string}>(getDefaultDataSourcesByType(iQubeType));
+  const [dataSources, setDataSources] = useState<{[key: string]: string}>({});
+
+  // Update the data sources and editing data whenever iQube type or private data changes
+  useEffect(() => {
+    setDataSources(getDefaultDataSourcesByType(iQubeType));
+    setEditingData({...privateData});
+  }, [iQubeType, privateData]);
 
   function getDefaultDataSourcesByType(type: string): {[key: string]: string} {
     switch (type) {
