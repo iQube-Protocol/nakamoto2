@@ -1,8 +1,9 @@
+
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   Bot, ChevronDown, ChevronLeft, ChevronRight, 
-  Database, User, FolderGit2, Settings as SettingsIcon
+  Database, User, FolderGit2, Settings as SettingsIcon, LogOut
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -17,6 +18,8 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import CubeIcon from './sidebar/CubeIcon';
+import { useAuth } from '@/hooks/use-auth';
+import { toast } from 'sonner';
 
 const Sidebar = () => {
   const location = useLocation();
@@ -24,6 +27,7 @@ const Sidebar = () => {
   const isMobile = useIsMobile();
   const { metisActivated, metisVisible, activateMetis, hideMetis } = useMetisAgent();
   const { collapsed, iQubesOpen, mobileOpen, toggleSidebar, toggleMobileSidebar, toggleIQubesMenu } = useSidebarState();
+  const { signOut } = useAuth();
   const [activeIQubes, setActiveIQubes] = useState<{[key: string]: boolean}>({
     "MonDAI": true,
     "Metis": metisActivated,
@@ -115,6 +119,17 @@ const Sidebar = () => {
       } 
     });
     window.dispatchEvent(event);
+  };
+
+  const handleSignOut = async () => {
+    try {
+      await signOut();
+      toast.success('Successfully signed out');
+      navigate('/signin');
+    } catch (error) {
+      toast.error('Failed to sign out');
+      console.error('Sign out error:', error);
+    }
   };
 
   // Function to render iQube type icon based on type
@@ -323,9 +338,25 @@ const Sidebar = () => {
             {!collapsed && <span>GDrive</span>}
           </div>
         )}
+
+        {/* Sign Out button */}
+        <div className="mt-2 pt-2 border-t">
+          <Button 
+            variant="ghost"
+            size={collapsed ? "icon" : "sm"}
+            onClick={handleSignOut}
+            className={cn(
+              "w-full flex items-center text-sm text-muted-foreground hover:text-foreground",
+              collapsed ? "justify-center" : "justify-start"
+            )}
+          >
+            <LogOut className={cn("h-5 w-5", collapsed ? "" : "mr-2")} />
+            {!collapsed && <span>Sign out</span>}
+          </Button>
+        </div>
       </div>
 
-      {/* Expand button when collapsed */}
+      {/* Expand button when collapsed - moved to a more centered location */}
       {collapsed && (
         <div className="flex justify-center mt-4">
           <Button

@@ -6,9 +6,10 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Switch } from '@/components/ui/switch';
 import { Key, Shield, Info, Linkedin, User, Wallet, Database, Brain } from 'lucide-react';
-import { useToast } from '@/components/ui/use-toast';
+import { useToast } from '@/hooks/use-toast';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { MetaQube } from '@/lib/types';
+import { toast } from 'sonner';
 
 interface PrivateData {
   [key: string]: string | string[];
@@ -35,7 +36,6 @@ const BlakQubeSection = ({ privateData, onUpdatePrivateData, metaQube }: BlakQub
   const defaultDataSources = getDefaultDataSourcesByType(iQubeType);
   
   const [dataSources, setDataSources] = useState<DataSource>(defaultDataSources);
-  const { toast } = useToast();
 
   function getDefaultDataSourcesByType(type: string): DataSource {
     switch (type) {
@@ -63,6 +63,30 @@ const BlakQubeSection = ({ privateData, onUpdatePrivateData, metaQube }: BlakQub
           "Default-View": "manual",
           "File-Count": "api"
         };
+      case "ContentQube":
+        return {
+          "Content-Type": "api",
+          "Creation-Date": "system",
+          "Author": "manual",
+          "Keywords": "manual",
+          "Version": "system",
+          "License": "manual",
+          "Distribution": "manual",
+          "Related-Content": "api",
+          "Analytics": "api"
+        };
+      case "ModelQube":
+        return {
+          "Model-Type": "api",
+          "Parameters": "system",
+          "Training-Dataset": "api",
+          "Accuracy": "system",
+          "Version": "system",
+          "Creator": "manual",
+          "Use-Cases": "manual",
+          "Dependencies": "system",
+          "Limitations": "manual"
+        };
       case "DataQube":
       default:
         return {
@@ -82,10 +106,7 @@ const BlakQubeSection = ({ privateData, onUpdatePrivateData, metaQube }: BlakQub
   const handleSavePrivateData = () => {
     onUpdatePrivateData(editingData);
     setIsEditing(false);
-    toast({
-      title: "Private Data Updated",
-      description: `Your ${iQubeType.replace("Qube", "")} data has been updated successfully`,
-    });
+    toast.success(`Your ${iQubeType.replace("Qube", "")} data has been updated successfully`);
   };
 
   const getSourceIcon = (key: string) => {
@@ -132,10 +153,7 @@ const BlakQubeSection = ({ privateData, onUpdatePrivateData, metaQube }: BlakQub
       [key]: value
     });
     
-    toast({
-      title: "Data Source Updated",
-      description: `The data source for ${key} has been updated to ${value}`,
-    });
+    toast.success(`The data source for ${key} has been updated to ${value}`);
   };
 
   const getSourceOptions = (key: string) => {
@@ -192,7 +210,20 @@ const BlakQubeSection = ({ privateData, onUpdatePrivateData, metaQube }: BlakQub
 
   // Get the appropriate title for the blakQube section based on iQube type
   const getBlakQubeTitle = () => {
-    return `Private ${iQubeType.replace("Qube", "")} Fields`;
+    switch (iQubeType) {
+      case 'DataQube':
+        return 'Private Data Fields';
+      case 'ContentQube':
+        return 'Private Content Fields';
+      case 'ToolQube':
+        return 'Private Tool Fields';
+      case 'ModelQube':
+        return 'Private Model Fields';
+      case 'AgentQube':
+        return 'Private Agent Fields';
+      default:
+        return `Private ${iQubeType.replace("Qube", "")} Fields`;
+    }
   };
 
   return (

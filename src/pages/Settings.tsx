@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import SettingsInterface from '@/components/settings/SettingsInterface';
 import { UserSettings, MetaQube } from '@/lib/types';
@@ -58,6 +59,40 @@ const gdriveQubeData: MetaQube = {
   "Risk-Score": 4
 };
 
+// Sample metaQube data for Content (ContentQube)
+const contentQubeData: MetaQube = {
+  "iQube-Identifier": "Content iQube",
+  "iQube-Type": "ContentQube",
+  "iQube-Designer": "Aigent Content",
+  "iQube-Use": "Manage and share web3 educational content",
+  "Owner-Type": "Person",
+  "Owner-Identifiability": "Semi-Identifiable",
+  "Date-Minted": new Date().toISOString(),
+  "Related-iQubes": ["DataQube1"],
+  "X-of-Y": "2 of 8",
+  "Sensitivity-Score": 2,
+  "Verifiability-Score": 7,
+  "Accuracy-Score": 6,
+  "Risk-Score": 3
+};
+
+// Sample metaQube data for Model (ModelQube)
+const modelQubeData: MetaQube = {
+  "iQube-Identifier": "Model iQube",
+  "iQube-Type": "ModelQube",
+  "iQube-Designer": "Aigent Model",
+  "iQube-Use": "AI model for data analysis and predictions",
+  "Owner-Type": "Organization",
+  "Owner-Identifiability": "Identifiable",
+  "Date-Minted": new Date().toISOString(),
+  "Related-iQubes": ["AgentQube1", "DataQube1"],
+  "X-of-Y": "1 of 5",
+  "Sensitivity-Score": 5,
+  "Verifiability-Score": 6,
+  "Accuracy-Score": 7,
+  "Risk-Score": 4
+};
+
 // Define private data for each iQube type
 const dataQubePrivateData = {
   "Profession": "Software Developer",
@@ -95,6 +130,30 @@ const toolQubePrivateData = {
   "File-Count": "128"
 };
 
+const contentQubePrivateData = {
+  "Content-Type": "Educational",
+  "Creation-Date": "2023-05-15T10:30:00Z",
+  "Author": "John Doe",
+  "Keywords": ["Web3", "Blockchain", "DeFi"],
+  "Version": "1.2.3",
+  "License": "Creative Commons",
+  "Distribution": "Public",
+  "Related-Content": ["Intro to NFTs", "DeFi Basics"],
+  "Analytics": "Enabled"
+};
+
+const modelQubePrivateData = {
+  "Model-Type": "Transformer",
+  "Parameters": "12B",
+  "Training-Dataset": ["Web3 Data", "Market Analysis"],
+  "Accuracy": "92.5%",
+  "Version": "2.1.0",
+  "Creator": "Aigent Research",
+  "Use-Cases": ["Prediction", "Analysis", "Recommendation"],
+  "Dependencies": ["TensorFlow", "PyTorch"],
+  "Limitations": "Limited financial history"
+};
+
 const Settings = () => {
   const { theme } = useTheme();
   const [selectedIQube, setSelectedIQube] = useState<MetaQube>(monDaiQubeData);
@@ -110,6 +169,8 @@ const Settings = () => {
   const [mondaiPrivateData, setMondaiPrivateData] = useState(dataQubePrivateData);
   const [metisPrivateData, setMetisPrivateData] = useState(agentQubePrivateData);
   const [gdrivePrivateData, setGdrivePrivateData] = useState(toolQubePrivateData);
+  const [contentPrivateData, setContentPrivateData] = useState(contentQubePrivateData);
+  const [modelPrivateData, setModelPrivateData] = useState(modelQubePrivateData);
   
   // Update active state when metisActivated changes
   useEffect(() => {
@@ -141,6 +202,10 @@ const Settings = () => {
         setSelectedIQube(metisQubeData);
       } else if (iQubeId === "GDrive" || iQubeId === "GDrive iQube") {
         setSelectedIQube(gdriveQubeData);
+      } else if (iQubeId === "Content" || iQubeId === "Content iQube") {
+        setSelectedIQube(contentQubeData);
+      } else if (iQubeId === "Model" || iQubeId === "Model iQube") {
+        setSelectedIQube(modelQubeData);
       }
       
       // If selectTab is true, select the iQube tab in the settings interface
@@ -246,6 +311,10 @@ const Settings = () => {
       return metisPrivateData;
     } else if (selectedIQube["iQube-Identifier"] === "GDrive iQube") {
       return gdrivePrivateData;
+    } else if (selectedIQube["iQube-Identifier"] === "Content iQube") {
+      return contentPrivateData;
+    } else if (selectedIQube["iQube-Identifier"] === "Model iQube") {
+      return modelPrivateData;
     } else {
       return mondaiPrivateData;
     }
@@ -257,6 +326,10 @@ const Settings = () => {
       setMetisPrivateData(newData);
     } else if (selectedIQube["iQube-Identifier"] === "GDrive iQube") {
       setGdrivePrivateData(newData);
+    } else if (selectedIQube["iQube-Identifier"] === "Content iQube") {
+      setContentPrivateData(newData);
+    } else if (selectedIQube["iQube-Identifier"] === "Model iQube") {
+      setModelPrivateData(newData);
     } else {
       setMondaiPrivateData(newData);
     }
