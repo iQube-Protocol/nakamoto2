@@ -136,7 +136,7 @@ const SettingsInterface = ({
         
         <TabsList className="w-full grid grid-cols-3">
           <TabsTrigger value="connections" data-tab="connections">Connections</TabsTrigger>
-          <TabsTrigger value="iqube" data-tab="iqube">iQube Management</TabsTrigger>
+          <TabsTrigger value="iqube" data-tab="iqube">iQubes</TabsTrigger>
           <TabsTrigger value="preferences" data-tab="preferences">Preferences</TabsTrigger>
         </TabsList>
       </Tabs>

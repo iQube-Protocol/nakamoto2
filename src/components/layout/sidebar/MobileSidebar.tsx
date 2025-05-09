@@ -2,6 +2,7 @@
 import React from 'react';
 import { cn } from '@/lib/utils';
 import { ChevronLeft } from 'lucide-react';
+import { Button } from '@/components/ui/button';
 
 interface MobileSidebarProps {
   mobileOpen: boolean;
@@ -20,25 +21,24 @@ const MobileSidebar = ({ mobileOpen, toggleMobileSidebar, children }: MobileSide
     >
       <div
         className={cn(
-          "absolute left-0 top-0 h-full transition-transform duration-300",
+          "absolute left-0 top-0 h-full transition-transform duration-300 bg-sidebar",
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         )}
         onClick={(e) => e.stopPropagation()}
       >
+        <div className="flex justify-end p-2">
+          <Button
+            variant="ghost"
+            size="icon"
+            onClick={toggleMobileSidebar}
+            className="md:hidden"
+          >
+            <ChevronLeft size={20} />
+          </Button>
+        </div>
         {children}
       </div>
     </div>
-  );
-};
-
-export const MobileMenuButton = ({ mobileOpen, toggleMobileSidebar }: { mobileOpen: boolean; toggleMobileSidebar: () => void }) => {
-  return (
-    <button
-      onClick={toggleMobileSidebar}
-      className="fixed top-4 left-4 z-50 p-2 rounded-md bg-sidebar-accent text-sidebar-foreground"
-    >
-      {mobileOpen ? <ChevronLeft /> : <ChevronLeft className="rotate-180" />}
-    </button>
   );
 };
 

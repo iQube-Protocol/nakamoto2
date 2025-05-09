@@ -3,7 +3,7 @@ import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
   Bot, ChevronDown, ChevronLeft, ChevronRight, 
-  Database, User, FolderGit2, Settings as SettingsIcon, LogOut
+  Database, User, FolderGit2, Settings as SettingsIcon, LogOut, Menu
 } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -394,12 +394,24 @@ const Sidebar = () => {
   // Render mobile sidebar if on mobile, otherwise render desktop sidebar
   if (isMobile) {
     return (
-      <MobileSidebar 
-        mobileOpen={mobileOpen} 
-        toggleMobileSidebar={toggleMobileSidebar}
-      >
-        {sidebarContent}
-      </MobileSidebar>
+      <>
+        {/* Mobile Menu Button - Always Visible */}
+        <Button 
+          variant="ghost"
+          size="icon"
+          className="fixed top-4 left-4 z-50 md:hidden"
+          onClick={toggleMobileSidebar}
+        >
+          <Menu size={24} />
+        </Button>
+        
+        <MobileSidebar 
+          mobileOpen={mobileOpen} 
+          toggleMobileSidebar={toggleMobileSidebar}
+        >
+          {sidebarContent}
+        </MobileSidebar>
+      </>
     );
   }
 
