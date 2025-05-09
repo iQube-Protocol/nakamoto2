@@ -112,12 +112,15 @@ const IQubesSection: React.FC<IQubesSectionProps> = ({
               </div>
               <div 
                 className="switch-container" 
-                onClick={(e) => toggleIQubeActive(e, qube.name)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  toggleIQubeActive(e, qube.name);
+                }}
               >
                 <Switch 
                   size="sm" 
                   checked={activeQubes[qube.name] || false}
-                  className="data-[state=checked]:bg-iqube-primary pointer-events-none"
+                  className="data-[state=checked]:bg-iqube-primary"
                 />
               </div>
             </div>

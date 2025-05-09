@@ -3,7 +3,6 @@ import React from 'react';
 import { cn } from '@/lib/utils';
 import SidebarHeader from './SidebarHeader';
 import MainNavigation from './MainNavigation';
-import IQubesSection from './IQubesSection';
 import ActiveIQubesList from './ActiveIQubesList';
 import SignOutButton from './SignOutButton';
 import CollapseButton from './CollapseButton';
@@ -49,14 +48,9 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
         navItems={navItems} 
         activePath={location.pathname} 
         collapsed={collapsed} 
-      />
-
-      {/* iQubes Collapsible Section */}
-      <IQubesSection 
         iQubeItems={iQubeItems}
         iQubesOpen={iQubesOpen}
         toggleIQubesMenu={toggleIQubesMenu}
-        collapsed={collapsed}
         selectedIQube={selectedIQube}
         activeQubes={activeQubes}
         handleIQubeClick={handleIQubeClick}

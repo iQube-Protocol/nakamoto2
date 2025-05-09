@@ -1,8 +1,6 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { ChevronLeft } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 
 interface MobileSidebarProps {
   mobileOpen: boolean;
@@ -26,16 +24,6 @@ const MobileSidebar = ({ mobileOpen, toggleMobileSidebar, children }: MobileSide
         )}
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex justify-end p-2">
-          <Button
-            variant="ghost"
-            size="icon"
-            onClick={toggleMobileSidebar}
-            className="md:hidden"
-          >
-            <ChevronLeft size={20} />
-          </Button>
-        </div>
         {children}
       </div>
     </div>
