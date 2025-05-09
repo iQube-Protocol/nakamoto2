@@ -26,7 +26,16 @@ const Sidebar = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const { metisActivated, metisVisible, activateMetis, hideMetis } = useMetisAgent();
-  const { collapsed, iQubesOpen, mobileOpen, toggleSidebar, toggleMobileSidebar, toggleIQubesMenu } = useSidebarState();
+  const { 
+    collapsed, 
+    iQubesOpen, 
+    mobileOpen, 
+    selectedIQube, 
+    toggleSidebar, 
+    toggleMobileSidebar, 
+    toggleIQubesMenu,
+    selectIQube 
+  } = useSidebarState();
   const { signOut } = useAuth();
   const [activeIQubes, setActiveIQubes] = useState<{[key: string]: boolean}>({
     "MonDAI": true,
@@ -66,6 +75,9 @@ const Sidebar = () => {
 
   const handleIQubeClick = (iqubeId: string) => {
     console.log("iQube clicked:", iqubeId);
+    
+    // Set the selected iQube
+    selectIQube(iqubeId);
     
     // Navigate to settings page and send event to select this iQube
     navigate('/settings');
@@ -119,6 +131,8 @@ const Sidebar = () => {
       } 
     });
     window.dispatchEvent(event);
+    
+    toast.info(`${qubeName} ${newActiveState ? 'activated' : 'deactivated'}`);
   };
 
   const handleSignOut = async () => {
@@ -195,7 +209,7 @@ const Sidebar = () => {
             key={index}
             icon={item.icon}
             href={item.href}
-            active={location.pathname.includes(item.href)}
+            active={location.pathname === item.href}
             collapsed={collapsed}
           >
             {item.name}
@@ -243,7 +257,7 @@ const Sidebar = () => {
                     key={qube.id}
                     className={cn(
                       "flex items-center justify-between px-2 py-1.5 text-sm rounded-md hover:bg-accent/30 cursor-pointer",
-                      location.pathname === '/settings' && "bg-accent/20"
+                      location.pathname === '/settings' && selectedIQube === qube.name && "bg-accent/20"
                     )}
                     onClick={() => handleIQubeClick(qube.name)}
                   >
@@ -292,7 +306,8 @@ const Sidebar = () => {
           <div
             className={cn(
               "flex items-center rounded-md p-2 text-sm hover:bg-accent/30 cursor-pointer",
-              collapsed ? "justify-center" : ""
+              collapsed ? "justify-center" : "",
+              location.pathname === '/settings' && selectedIQube === "MonDAI" && "bg-accent/20"
             )}
             onClick={() => handleIQubeClick("MonDAI")}
           >
@@ -305,7 +320,8 @@ const Sidebar = () => {
           <div
             className={cn(
               "flex items-center justify-between rounded-md p-2 text-sm hover:bg-accent/30 cursor-pointer group",
-              collapsed ? "justify-center" : ""
+              collapsed ? "justify-center" : "",
+              location.pathname === '/settings' && selectedIQube === "Metis" && "bg-accent/20"
             )}
             onClick={() => handleIQubeClick("Metis")}
           >
@@ -330,7 +346,8 @@ const Sidebar = () => {
           <div
             className={cn(
               "flex items-center rounded-md p-2 text-sm hover:bg-accent/30 cursor-pointer",
-              collapsed ? "justify-center" : ""
+              collapsed ? "justify-center" : "",
+              location.pathname === '/settings' && selectedIQube === "GDrive" && "bg-accent/20"
             )}
             onClick={() => handleIQubeClick("GDrive")}
           >

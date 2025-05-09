@@ -34,8 +34,6 @@ const Settings = () => {
       } 
     });
     window.dispatchEvent(event);
-    
-    toast.info(`${qubeName} ${newActiveState ? 'activated' : 'deactivated'}`);
   };
 
   return (

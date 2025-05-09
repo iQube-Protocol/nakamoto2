@@ -18,6 +18,9 @@ export function useSidebarState() {
     return savedState ? JSON.parse(savedState) : true;
   });
 
+  // Add state to track which iQube is selected
+  const [selectedIQube, setSelectedIQube] = useState<string | null>('MonDAI');
+
   useEffect(() => {
     // Save collapsed state to localStorage when it changes
     localStorage.setItem('sidebar-collapsed', JSON.stringify(collapsed));
@@ -40,12 +43,18 @@ export function useSidebarState() {
     setIQubesOpen(!iQubesOpen);
   };
 
+  const selectIQube = (qubeName: string) => {
+    setSelectedIQube(qubeName);
+  };
+
   return {
     collapsed,
     mobileOpen,
     iQubesOpen,
+    selectedIQube,
     toggleSidebar,
     toggleMobileSidebar,
-    toggleIQubesMenu
+    toggleIQubesMenu,
+    selectIQube
   };
 }

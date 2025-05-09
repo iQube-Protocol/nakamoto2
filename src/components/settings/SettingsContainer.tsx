@@ -6,6 +6,8 @@ import { MetaQube } from '@/lib/types';
 import { usePrivateData } from './usePrivateData';
 import { qubeData } from './QubeData';
 import { useSettingsData } from './SettingsUserData';
+import { useSidebarState } from '@/hooks/use-sidebar-state';
+import { toast } from 'sonner';
 
 interface SettingsContainerProps {
   activeQubes: { [key: string]: boolean };
@@ -16,6 +18,33 @@ interface SettingsContainerProps {
 const SettingsContainer = ({ activeQubes, toggleQubeActive, selectedIQube }: SettingsContainerProps) => {
   const { userSettings } = useSettingsData();
   const { privateData, handleUpdatePrivateData } = usePrivateData(selectedIQube);
+  const { selectIQube } = useSidebarState();
+
+  // When the selected iQube changes, update the sidebar state
+  useEffect(() => {
+    if (selectedIQube["iQube-Identifier"] === "MonDAI iQube") {
+      selectIQube("MonDAI");
+    } else if (selectedIQube["iQube-Identifier"] === "Metis iQube") {
+      selectIQube("Metis");
+    } else if (selectedIQube["iQube-Identifier"] === "GDrive iQube") {
+      selectIQube("GDrive");
+    }
+  }, [selectedIQube, selectIQube]);
+
+  // Handle iQube activation toggle
+  const handleToggleIQubeActive = (qubeName: string) => {
+    // Call the parent function to update active state
+    toggleQubeActive(qubeName);
+    
+    // Send toggle event to update sidebar
+    const event = new CustomEvent('iqubeToggle', { 
+      detail: { 
+        iqubeId: qubeName, 
+        active: !activeQubes[qubeName] 
+      } 
+    });
+    window.dispatchEvent(event);
+  };
 
   // Auto-select the iQube tab on settings page
   useEffect(() => {
@@ -42,7 +71,7 @@ const SettingsContainer = ({ activeQubes, toggleQubeActive, selectedIQube }: Set
             userSettings={userSettings} 
             metaQube={selectedIQube} 
             activeQubes={activeQubes}
-            onToggleIQubeActive={toggleQubeActive}
+            onToggleIQubeActive={handleToggleIQubeActive}
             privateData={privateData}
             onUpdatePrivateData={handleUpdatePrivateData}
           />

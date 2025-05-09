@@ -30,12 +30,14 @@ const IQubeActivationManager = ({
         if (iqubeId === "Metis") {
           if (active && !metisActivated) {
             activateMetis();
+            toast.info(`Metis activated`);
           } else if (!active && metisVisible) {
             hideMetis();
+            toast.info(`Metis deactivated`);
           }
+        } else {
+          toast.info(`${iqubeId} ${active ? 'activated' : 'deactivated'}`);
         }
-        
-        toast.info(`${iqubeId} ${active ? 'activated' : 'deactivated'}`);
       }
     };
     

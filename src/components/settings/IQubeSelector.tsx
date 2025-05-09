@@ -2,6 +2,7 @@
 import React, { useEffect } from 'react';
 import { MetaQube } from '@/lib/types';
 import { toast } from 'sonner';
+import { useSidebarState } from '@/hooks/use-sidebar-state';
 
 interface IQubeSelectorProps {
   selectedIQube: MetaQube;
@@ -16,6 +17,7 @@ const IQubeSelector = ({
   setSelectedIQube, 
   qubeData 
 }: IQubeSelectorProps) => {
+  const { selectIQube } = useSidebarState();
   
   // Listen for iQube selection events from sidebar
   useEffect(() => {
@@ -26,10 +28,13 @@ const IQubeSelector = ({
       
       if (iQubeId === "MonDAI" || iQubeId === "MonDAI iQube") {
         setSelectedIQube(qubeData.monDai);
+        selectIQube("MonDAI");
       } else if ((iQubeId === "Metis" || iQubeId === "Metis iQube")) {
         setSelectedIQube(qubeData.metis);
+        selectIQube("Metis");
       } else if (iQubeId === "GDrive" || iQubeId === "GDrive iQube") {
         setSelectedIQube(qubeData.gdrive);
+        selectIQube("GDrive");
       } else if (iQubeId === "Content" || iQubeId === "Content iQube") {
         setSelectedIQube(qubeData.content);
       } else if (iQubeId === "Model" || iQubeId === "Model iQube") {
@@ -52,7 +57,7 @@ const IQubeSelector = ({
     return () => {
       window.removeEventListener('iqubeSelected', handleIQubeSelected as EventListener);
     };
-  }, [qubeData, setSelectedIQube]);
+  }, [qubeData, setSelectedIQube, selectIQube]);
 
   return null; // This is a logic-only component, no UI
 };
