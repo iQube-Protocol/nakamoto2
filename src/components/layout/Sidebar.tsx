@@ -108,7 +108,7 @@ const Sidebar = () => {
     console.log("Metis iQube closed from sidebar");
   };
 
-  const toggleIQubeActive = (e: React.MouseEvent<HTMLInputElement>, qubeName: string) => {
+  const toggleIQubeActive = (e: React.MouseEvent<HTMLDivElement>, qubeName: string) => {
     e.stopPropagation(); // Prevent the click from triggering the parent element
     
     const newActiveState = !activeIQubes[qubeName];
@@ -276,12 +276,16 @@ const Sidebar = () => {
                       </TooltipProvider>
                       <span className="mr-2">{qube.name}</span>
                     </div>
-                    <Switch 
-                      size="sm" 
-                      checked={activeIQubes[qube.name] || false}
-                      onCheckedChange={(e) => toggleIQubeActive(e as any, qube.name)}
-                      className="data-[state=checked]:bg-iqube-primary"
-                    />
+                    <div 
+                      className="switch-container" 
+                      onClick={(e) => toggleIQubeActive(e, qube.name)}
+                    >
+                      <Switch 
+                        size="sm" 
+                        checked={activeIQubes[qube.name] || false}
+                        className="data-[state=checked]:bg-iqube-primary pointer-events-none"
+                      />
+                    </div>
                   </div>
                 ))}
               </CollapsibleContent>
@@ -301,13 +305,12 @@ const Sidebar = () => {
           </div>
         </div>
         
-        {/* Active iQubes list with updated titles */}
+        {/* Active iQubes list with original styling */}
         {activeIQubes["MonDAI"] && (
           <div
             className={cn(
               "flex items-center rounded-md p-2 text-sm hover:bg-accent/30 cursor-pointer",
-              collapsed ? "justify-center" : "",
-              location.pathname === '/settings' && selectedIQube === "MonDAI" && "bg-accent/20"
+              collapsed ? "justify-center" : ""
             )}
             onClick={() => handleIQubeClick("MonDAI")}
           >
@@ -320,8 +323,7 @@ const Sidebar = () => {
           <div
             className={cn(
               "flex items-center justify-between rounded-md p-2 text-sm hover:bg-accent/30 cursor-pointer group",
-              collapsed ? "justify-center" : "",
-              location.pathname === '/settings' && selectedIQube === "Metis" && "bg-accent/20"
+              collapsed ? "justify-center" : ""
             )}
             onClick={() => handleIQubeClick("Metis")}
           >
@@ -346,8 +348,7 @@ const Sidebar = () => {
           <div
             className={cn(
               "flex items-center rounded-md p-2 text-sm hover:bg-accent/30 cursor-pointer",
-              collapsed ? "justify-center" : "",
-              location.pathname === '/settings' && selectedIQube === "GDrive" && "bg-accent/20"
+              collapsed ? "justify-center" : ""
             )}
             onClick={() => handleIQubeClick("GDrive")}
           >
