@@ -29,67 +29,100 @@ const BlakQubeSection = ({ privateData, onUpdatePrivateData, metaQube }: BlakQub
   const [editingData, setEditingData] = useState<PrivateData>({...privateData});
   const [encryptionAlgorithm, setEncryptionAlgorithm] = useState("kyber");
   
-  const isAgentQube = metaQube?.["iQube-Type"] === "AgentQube";
+  const iQubeType = metaQube?.["iQube-Type"] || "DataQube";
   
-  const defaultDataSources = isAgentQube ? 
-    {
-      "AI-Capabilities": "api",
-      "Model Weights": "system",
-      "Training Data": "api",
-      "Model-Version": "api",
-      "API Key": "system",
-      "Access-Control": "manual",
-      "Data-Sources": "api",
-      "Refresh-Interval": "system",
-      "Trustworthiness": "system"
-    } : 
-    {
-      "Profession": "linkedin",
-      "Web3-Interests": "manual",
-      "Local-City": "linkedin",
-      "Email": "linkedin",
-      "EVM-Public-Key": "wallet",
-      "BTC-Public-Key": "wallet",
-      "Tokens-of-Interest": "manual",
-      "Chain-IDs": "wallet",
-      "Wallets-of-Interest": "wallet"
-    };
-
+  // Define data sources based on iQube type
+  const defaultDataSources = getDefaultDataSourcesByType(iQubeType);
+  
   const [dataSources, setDataSources] = useState<DataSource>(defaultDataSources);
   const { toast } = useToast();
+
+  function getDefaultDataSourcesByType(type: string): DataSource {
+    switch (type) {
+      case "AgentQube":
+        return {
+          "AI-Capabilities": "api",
+          "Model Weights": "system",
+          "Training Data": "api",
+          "Model-Version": "api",
+          "API Key": "system",
+          "Access-Control": "manual",
+          "Data-Sources": "api",
+          "Refresh-Interval": "system",
+          "Trustworthiness": "system"
+        };
+      case "ToolQube":
+        return {
+          "Storage-Quota": "api",
+          "Connected-Email": "manual",
+          "Auto-Sync": "system",
+          "Sharing-Permissions": "manual",
+          "Cached-Files": "system",
+          "API-Key": "system",
+          "Last-Sync": "system",
+          "Default-View": "manual",
+          "File-Count": "api"
+        };
+      case "DataQube":
+      default:
+        return {
+          "Profession": "linkedin",
+          "Web3-Interests": "manual",
+          "Local-City": "linkedin",
+          "Email": "linkedin",
+          "EVM-Public-Key": "wallet",
+          "BTC-Public-Key": "wallet",
+          "Tokens-of-Interest": "manual",
+          "Chain-IDs": "wallet",
+          "Wallets-of-Interest": "wallet"
+        };
+    }
+  }
 
   const handleSavePrivateData = () => {
     onUpdatePrivateData(editingData);
     setIsEditing(false);
     toast({
       title: "Private Data Updated",
-      description: `Your ${isAgentQube ? 'agent' : 'private'} data has been updated successfully`,
+      description: `Your ${iQubeType.replace("Qube", "")} data has been updated successfully`,
     });
   };
 
   const getSourceIcon = (key: string) => {
     const source = dataSources[key] || 'manual';
 
-    if (isAgentQube) {
-      switch (source) {
-        case 'api':
-          return <Database className="h-3 w-3 text-blue-500" />;
-        case 'system':
-          return <Brain className="h-3 w-3 text-purple-500" />;
-        case 'manual':
-        default:
-          return <User className="h-3 w-3 text-gray-500" />;
-      }
-    } else {
-      switch (source) {
-        case 'linkedin':
-          return <Linkedin className="h-3 w-3 text-blue-500" />;
-        case 'wallet':
-          return <Wallet className="h-3 w-3 text-orange-500" />;
-        case 'manual':
-        default:
-          return <User className="h-3 w-3 text-gray-500" />;
-      }
+    switch (iQubeType) {
+      case 'AgentQube':
+        switch (source) {
+          case 'api':
+            return <Database className="h-3 w-3 text-blue-500" />;
+          case 'system':
+            return <Brain className="h-3 w-3 text-purple-500" />;
+          case 'manual':
+          default:
+            return <User className="h-3 w-3 text-gray-500" />;
+        }
+      case 'ToolQube':
+        switch (source) {
+          case 'api':
+            return <Database className="h-3 w-3 text-green-500" />;
+          case 'system':
+            return <Brain className="h-3 w-3 text-orange-500" />;
+          case 'manual':
+          default:
+            return <User className="h-3 w-3 text-gray-500" />;
+        }
+      case 'DataQube':
+      default:
+        switch (source) {
+          case 'linkedin':
+            return <Linkedin className="h-3 w-3 text-blue-500" />;
+          case 'wallet':
+            return <Wallet className="h-3 w-3 text-orange-500" />;
+          case 'manual':
+          default:
+            return <User className="h-3 w-3 text-gray-500" />;
+        }
     }
   };
 
@@ -106,39 +139,60 @@ const BlakQubeSection = ({ privateData, onUpdatePrivateData, metaQube }: BlakQub
   };
 
   const getSourceOptions = (key: string) => {
-    if (isAgentQube) {
-      return (
-        <>
-          <DropdownMenuItem onClick={() => handleSourceChange(key, 'manual')}>
-            <User className="h-3.5 w-3.5 mr-2" /> Manual Entry
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => handleSourceChange(key, 'api')}>
-            <Database className="h-3.5 w-3.5 mr-2" /> API Source
-          </DropdownMenuItem>
-          <DropdownMenuItem onClick={() => handleSourceChange(key, 'system')}>
-            <Brain className="h-3.5 w-3.5 mr-2" /> System Generated
-          </DropdownMenuItem>
-        </>
-      );
-    } else {
-      return (
-        <>
-          <DropdownMenuItem onClick={() => handleSourceChange(key, 'manual')}>
-            <User className="h-3.5 w-3.5 mr-2" /> Manual Entry
-          </DropdownMenuItem>
-          {['Profession', 'Local-City', 'Email'].includes(key) && (
-            <DropdownMenuItem onClick={() => handleSourceChange(key, 'linkedin')}>
-              <Linkedin className="h-3.5 w-3.5 mr-2" /> LinkedIn
+    switch (iQubeType) {
+      case 'AgentQube':
+        return (
+          <>
+            <DropdownMenuItem onClick={() => handleSourceChange(key, 'manual')}>
+              <User className="h-3.5 w-3.5 mr-2" /> Manual Entry
             </DropdownMenuItem>
-          )}
-          {['EVM-Public-Key', 'BTC-Public-Key', 'Chain-IDs', 'Wallets-of-Interest'].includes(key) && (
-            <DropdownMenuItem onClick={() => handleSourceChange(key, 'wallet')}>
-              <Wallet className="h-3.5 w-3.5 mr-2" /> Wallet
+            <DropdownMenuItem onClick={() => handleSourceChange(key, 'api')}>
+              <Database className="h-3.5 w-3.5 mr-2" /> API Source
             </DropdownMenuItem>
-          )}
-        </>
-      );
+            <DropdownMenuItem onClick={() => handleSourceChange(key, 'system')}>
+              <Brain className="h-3.5 w-3.5 mr-2" /> System Generated
+            </DropdownMenuItem>
+          </>
+        );
+      case 'ToolQube':
+        return (
+          <>
+            <DropdownMenuItem onClick={() => handleSourceChange(key, 'manual')}>
+              <User className="h-3.5 w-3.5 mr-2" /> Manual Entry
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleSourceChange(key, 'api')}>
+              <Database className="h-3.5 w-3.5 mr-2" /> API Source
+            </DropdownMenuItem>
+            <DropdownMenuItem onClick={() => handleSourceChange(key, 'system')}>
+              <Brain className="h-3.5 w-3.5 mr-2" /> System Generated
+            </DropdownMenuItem>
+          </>
+        );
+      case 'DataQube':
+      default:
+        return (
+          <>
+            <DropdownMenuItem onClick={() => handleSourceChange(key, 'manual')}>
+              <User className="h-3.5 w-3.5 mr-2" /> Manual Entry
+            </DropdownMenuItem>
+            {['Profession', 'Local-City', 'Email'].includes(key) && (
+              <DropdownMenuItem onClick={() => handleSourceChange(key, 'linkedin')}>
+                <Linkedin className="h-3.5 w-3.5 mr-2" /> LinkedIn
+              </DropdownMenuItem>
+            )}
+            {['EVM-Public-Key', 'BTC-Public-Key', 'Chain-IDs', 'Wallets-of-Interest'].includes(key) && (
+              <DropdownMenuItem onClick={() => handleSourceChange(key, 'wallet')}>
+                <Wallet className="h-3.5 w-3.5 mr-2" /> Wallet
+              </DropdownMenuItem>
+            )}
+          </>
+        );
     }
+  };
+
+  // Get the appropriate title for the blakQube section based on iQube type
+  const getBlakQubeTitle = () => {
+    return `Private ${iQubeType.replace("Qube", "")} Fields`;
   };
 
   return (
@@ -148,7 +202,7 @@ const BlakQubeSection = ({ privateData, onUpdatePrivateData, metaQube }: BlakQub
           <AccordionTrigger>
             <div className="flex items-center">
               <Key className="h-4 w-4 mr-2" />
-              {isAgentQube ? 'Agent Data Fields' : 'Private Data Fields'}
+              {getBlakQubeTitle()}
             </div>
           </AccordionTrigger>
           <AccordionContent>

@@ -25,19 +25,29 @@ export function useMCP() {
         
         setClient(mcpClient);
         setIsInitialized(true);
+        
+        console.log('MCP client initialized with metisActive:', localStorage.getItem('metisActive') === 'true');
       };
       
       initClient();
       
       // Listen for Metis activation changes
       const handleMetisActivated = () => {
+        console.log('MCP detected Metis activation');
+        initClient();
+      };
+      
+      const handleMetisDeactivated = () => {
+        console.log('MCP detected Metis deactivation');
         initClient();
       };
       
       window.addEventListener('metisActivated', handleMetisActivated);
+      window.addEventListener('metisDeactivated', handleMetisDeactivated);
       
       return () => {
         window.removeEventListener('metisActivated', handleMetisActivated);
+        window.removeEventListener('metisDeactivated', handleMetisDeactivated);
       };
     }
   }, [user]);

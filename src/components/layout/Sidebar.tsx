@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Link, useLocation, useNavigate } from 'react-router-dom';
 import { 
@@ -262,7 +261,7 @@ const Sidebar = () => {
         </div>
       </div>
 
-      {/* Active iQubes */}
+      {/* Active iQubes - Updated to remove "iQube" from titles */}
       <div className="mt-auto px-3">
         <div className="mb-2 px-2">
           <div className={cn(
@@ -273,7 +272,7 @@ const Sidebar = () => {
           </div>
         </div>
         
-        {/* Active iQubes list */}
+        {/* Active iQubes list with updated titles */}
         {activeIQubes["MonDAI"] && (
           <div
             className={cn(
@@ -283,7 +282,7 @@ const Sidebar = () => {
             onClick={() => handleIQubeClick("MonDAI")}
           >
             <Database className={cn("h-5 w-5 text-blue-500", collapsed ? "" : "mr-2")} />
-            {!collapsed && <span>MonDAI iQube</span>}
+            {!collapsed && <span>MonDAI</span>}
           </div>
         )}
         
@@ -297,7 +296,7 @@ const Sidebar = () => {
           >
             <div className="flex items-center">
               <Bot className={cn("h-5 w-5 text-purple-500", collapsed ? "" : "mr-2")} />
-              {!collapsed && <span>Metis iQube</span>}
+              {!collapsed && <span>Metis</span>}
             </div>
             {!collapsed && (
               <Button
@@ -321,7 +320,7 @@ const Sidebar = () => {
             onClick={() => handleIQubeClick("GDrive")}
           >
             <FolderGit2 className={cn("h-5 w-5 text-green-500", collapsed ? "" : "mr-2")} />
-            {!collapsed && <span>GDrive iQube</span>}
+            {!collapsed && <span>GDrive</span>}
           </div>
         )}
       </div>

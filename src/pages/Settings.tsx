@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import SettingsInterface from '@/components/settings/SettingsInterface';
 import { UserSettings, MetaQube } from '@/lib/types';
@@ -7,7 +8,7 @@ import { useMetisAgent } from '@/hooks/use-metis-agent';
 import AgentRecommendation from '@/components/shared/agent/AgentRecommendation';
 import { toast } from 'sonner';
 
-// Sample metaQube data
+// Sample metaQube data for MonDAI (DataQube)
 const monDaiQubeData: MetaQube = {
   "iQube-Identifier": "MonDAI iQube",
   "iQube-Type": "DataQube",
@@ -24,6 +25,7 @@ const monDaiQubeData: MetaQube = {
   "Risk-Score": 4
 };
 
+// Sample metaQube data for Metis (AgentQube)
 const metisQubeData: MetaQube = {
   "iQube-Identifier": "Metis iQube",
   "iQube-Type": "AgentQube",
@@ -40,6 +42,7 @@ const metisQubeData: MetaQube = {
   "Risk-Score": 3
 };
 
+// Sample metaQube data for GDrive (ToolQube)
 const gdriveQubeData: MetaQube = {
   "iQube-Identifier": "GDrive iQube",
   "iQube-Type": "ToolQube",
@@ -56,6 +59,43 @@ const gdriveQubeData: MetaQube = {
   "Risk-Score": 4
 };
 
+// Define private data for each iQube type
+const dataQubePrivateData = {
+  "Profession": "Software Developer",
+  "Web3-Interests": ["DeFi", "NFTs", "DAOs"],
+  "Local-City": "San Francisco",
+  "Email": "user@example.com",
+  "EVM-Public-Key": "0x71C7656EC7ab88b098defB751B7401B5f6d8976F",
+  "BTC-Public-Key": "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh",
+  "Tokens-of-Interest": ["ETH", "BTC", "MATIC"],
+  "Chain-IDs": ["1", "137"],
+  "Wallets-of-Interest": ["MetaMask", "Rainbow"]
+};
+
+const agentQubePrivateData = {
+  "AI-Capabilities": ["Data Analysis", "NLP", "Blockchain Insights"],
+  "Model Weights": "Transformer 12B",
+  "Training Data": ["Web3 Data", "Financial Markets", "Public Data"],
+  "Model-Version": "1.3.7",
+  "API Key": "••••••••••••••••",
+  "Access-Control": "Permissioned",
+  "Data-Sources": ["On-chain", "User Input", "External APIs"],
+  "Refresh-Interval": "24h",
+  "Trustworthiness": "Verified"
+};
+
+const toolQubePrivateData = {
+  "Storage-Quota": "15GB",
+  "Connected-Email": "user@example.com",
+  "Auto-Sync": "Enabled",
+  "Sharing-Permissions": "Private",
+  "Cached-Files": ["Doc1.pdf", "Presentation.ppt"],
+  "API-Key": "••••••••••••••••",
+  "Last-Sync": "2023-05-01T12:00:00Z",
+  "Default-View": "List",
+  "File-Count": "128"
+};
+
 const Settings = () => {
   const { theme } = useTheme();
   const [selectedIQube, setSelectedIQube] = useState<MetaQube>(monDaiQubeData);
@@ -66,6 +106,11 @@ const Settings = () => {
     "Metis": metisActivated,
     "GDrive": false
   });
+  
+  // State for private data of each iQube type
+  const [mondaiPrivateData, setMondaiPrivateData] = useState(dataQubePrivateData);
+  const [metisPrivateData, setMetisPrivateData] = useState(agentQubePrivateData);
+  const [gdrivePrivateData, setGdrivePrivateData] = useState(toolQubePrivateData);
   
   // Update active state when metisActivated changes
   useEffect(() => {
@@ -95,7 +140,7 @@ const Settings = () => {
         setSelectedIQube(monDaiQubeData);
       } else if ((iQubeId === "Metis" || iQubeId === "Metis iQube")) {
         setSelectedIQube(metisQubeData);
-      } else if (iQubeId === "GDrive") {
+      } else if (iQubeId === "GDrive" || iQubeId === "GDrive iQube") {
         setSelectedIQube(gdriveQubeData);
       }
       
@@ -196,6 +241,33 @@ const Settings = () => {
     toast.info(`${qubeName} iQube ${newActiveState ? 'activated' : 'deactivated'}`);
   };
 
+  // Function to get the appropriate private data based on selected iQube
+  const getPrivateData = () => {
+    if (selectedIQube["iQube-Identifier"] === "Metis iQube") {
+      return metisPrivateData;
+    } else if (selectedIQube["iQube-Identifier"] === "GDrive iQube") {
+      return gdrivePrivateData;
+    } else {
+      return mondaiPrivateData;
+    }
+  };
+
+  // Function to update the appropriate private data based on selected iQube
+  const handleUpdatePrivateData = (newData: any) => {
+    if (selectedIQube["iQube-Identifier"] === "Metis iQube") {
+      setMetisPrivateData(newData);
+    } else if (selectedIQube["iQube-Identifier"] === "GDrive iQube") {
+      setGdrivePrivateData(newData);
+    } else {
+      setMondaiPrivateData(newData);
+    }
+
+    toast({
+      title: `${selectedIQube["iQube-Identifier"]} Data Updated`,
+      description: "Private data has been updated successfully",
+    });
+  };
+
   // Sample user settings
   const userSettings: UserSettings = {
     connected: {
@@ -237,6 +309,8 @@ const Settings = () => {
             metaQube={selectedIQube} 
             activeQubes={activeQubes}
             onToggleIQubeActive={toggleQubeActive}
+            privateData={getPrivateData()}
+            onUpdatePrivateData={handleUpdatePrivateData}
           />
         </div>
       </div>
