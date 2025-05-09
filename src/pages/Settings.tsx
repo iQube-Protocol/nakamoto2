@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import SettingsInterface from '@/components/settings/SettingsInterface';
 import { UserSettings, MetaQube } from '@/lib/types';
@@ -262,10 +261,7 @@ const Settings = () => {
       setMondaiPrivateData(newData);
     }
 
-    toast({
-      title: `${selectedIQube["iQube-Identifier"]} Data Updated`,
-      description: "Private data has been updated successfully",
-    });
+    toast.success(`${selectedIQube["iQube-Identifier"]} Data Updated`);
   };
 
   // Sample user settings
