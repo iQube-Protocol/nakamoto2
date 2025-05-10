@@ -5,6 +5,7 @@ import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
 import ScoreTooltip from '../ScoreTooltips';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface AgentInputBarProps {
   inputValue: string;
@@ -22,6 +23,7 @@ const AgentInputBar = ({
   agentType
 }: AgentInputBarProps) => {
   const { toast } = useToast();
+  const isMobile = useIsMobile();
 
   const handleVoiceInput = () => {
     toast({
@@ -56,46 +58,93 @@ const AgentInputBar = ({
   return (
     <form onSubmit={handleSubmit} className="border-t p-4">
       <div className="flex items-center space-x-2">
-        <ScoreTooltip type="voice">
-          <Button
-            type="button"
-            size="icon"
-            variant="outline"
-            onClick={handleVoiceInput}
-          >
-            <Mic className="h-4 w-4" />
-          </Button>
-        </ScoreTooltip>
-        
-        <ScoreTooltip type="attachment">
-          <Button
-            type="button"
-            size="icon"
-            variant="outline"
-            onClick={handleAttachment}
-          >
-            <Paperclip className="h-4 w-4" />
-          </Button>
-        </ScoreTooltip>
-        
-        <ScoreTooltip type="image">
-          <Button
-            type="button"
-            size="icon"
-            variant="outline"
-            onClick={handleImageUpload}
-          >
-            <Image className="h-4 w-4" />
-          </Button>
-        </ScoreTooltip>
-        
-        <Textarea
-          value={inputValue}
-          onChange={handleInputChange}
-          onKeyDown={handleKeyDown}
-          placeholder={`Ask your ${agentType} agent...`}
-          className="flex-1 min-h-10 max-h-32"
-        />
+        {isMobile ? (
+          // Mobile-optimized layout with icons inside the textarea container
+          <div className="relative flex-1 flex items-center">
+            <div className="absolute left-2 flex items-center space-x-2">
+              <ScoreTooltip type="voice">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 w-8 p-0"
+                  onClick={handleVoiceInput}
+                >
+                  <Mic className="h-4 w-4 text-muted-foreground" />
+                </Button>
+              </ScoreTooltip>
+              
+              <ScoreTooltip type="attachment">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 w-8 p-0"
+                  onClick={handleAttachment}
+                >
+                  <Paperclip className="h-4 w-4 text-muted-foreground" />
+                </Button>
+              </ScoreTooltip>
+            </div>
+            
+            <Textarea
+              value={inputValue}
+              onChange={handleInputChange}
+              onKeyDown={handleKeyDown}
+              placeholder={`Ask your ${agentType} agent...`}
+              className="pl-20 min-h-10 max-h-32 flex-1 pr-2"
+              style={{
+                resize: 'none',
+                paddingTop: '0.625rem',
+                paddingBottom: '0.625rem',
+              }}
+            />
+          </div>
+        ) : (
+          // Desktop layout with buttons outside textarea
+          <>
+            <ScoreTooltip type="voice">
+              <Button
+                type="button"
+                size="icon"
+                variant="outline"
+                onClick={handleVoiceInput}
+              >
+                <Mic className="h-4 w-4" />
+              </Button>
+            </ScoreTooltip>
+            
+            <ScoreTooltip type="attachment">
+              <Button
+                type="button"
+                size="icon"
+                variant="outline"
+                onClick={handleAttachment}
+              >
+                <Paperclip className="h-4 w-4" />
+              </Button>
+            </ScoreTooltip>
+            
+            <ScoreTooltip type="image">
+              <Button
+                type="button"
+                size="icon"
+                variant="outline"
+                onClick={handleImageUpload}
+              >
+                <Image className="h-4 w-4" />
+              </Button>
+            </ScoreTooltip>
+            
+            <Textarea
+              value={inputValue}
+              onChange={handleInputChange}
+              onKeyDown={handleKeyDown}
+              placeholder={`Ask your ${agentType} agent...`}
+              className="flex-1 min-h-10 max-h-32"
+            />
+          </>
+        )}
         
         <Button 
           type="submit" 
