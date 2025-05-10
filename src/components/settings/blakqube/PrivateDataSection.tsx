@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Key } from 'lucide-react';
 import { AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
-import { User, Linkedin, Wallet, Database, Brain } from 'lucide-react';
+import { User, Linkedin, Wallet, Database, Brain, Twitter, MessageCircle, Globe, Users } from 'lucide-react';
 import PrivateDataView from './PrivateDataView';
 import PrivateDataEditor from './PrivateDataEditor';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -96,7 +96,7 @@ const PrivateDataSection = ({
           "Twitter-ID": "twitter",
           "Discord-ID": "discord",
           "Telegram-ID": "telegram",
-          "Luma-ID": "manual"
+          "Luma-ID": "luma"
         };
     }
   }
@@ -137,6 +137,14 @@ const PrivateDataSection = ({
             return <Linkedin className="h-3 w-3 text-blue-500" />;
           case 'wallet':
             return <Wallet className="h-3 w-3 text-orange-500" />;
+          case 'twitter':
+            return <Twitter className="h-3 w-3 text-blue-400" />;
+          case 'discord':
+            return <Users className="h-3 w-3 text-purple-500" />;
+          case 'telegram':
+            return <MessageCircle className="h-3 w-3 text-blue-500" />;
+          case 'luma':
+            return <Globe className="h-3 w-3 text-green-500" />;
           case 'manual':
           default:
             return <User className="h-3 w-3 text-gray-500" />;
@@ -160,27 +168,25 @@ const PrivateDataSection = ({
         </div>
       </AccordionTrigger>
       <AccordionContent>
-        <ScrollArea className="h-[300px]">
-          <div className="space-y-3 py-2 pr-4">
-            {!isEditing ? (
-              <PrivateDataView 
-                privateData={privateData} 
-                onEdit={() => setIsEditing(true)}
-                getSourceIcon={getSourceIcon}
-              />
-            ) : (
-              <PrivateDataEditor 
-                editingData={editingData}
-                setEditingData={setEditingData}
-                onSave={handleSavePrivateData}
-                onCancel={() => setIsEditing(false)}
-                dataSources={dataSources}
-                iQubeType={iQubeType}
-                onSourceChange={handleSourceChange}
-              />
-            )}
-          </div>
-        </ScrollArea>
+        <div className="space-y-3 py-2">
+          {!isEditing ? (
+            <PrivateDataView 
+              privateData={privateData} 
+              onEdit={() => setIsEditing(true)}
+              getSourceIcon={getSourceIcon}
+            />
+          ) : (
+            <PrivateDataEditor 
+              editingData={editingData}
+              setEditingData={setEditingData}
+              onSave={handleSavePrivateData}
+              onCancel={() => setIsEditing(false)}
+              dataSources={dataSources}
+              iQubeType={iQubeType}
+              onSourceChange={handleSourceChange}
+            />
+          )}
+        </div>
       </AccordionContent>
     </AccordionItem>
   );
