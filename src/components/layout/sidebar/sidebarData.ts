@@ -49,7 +49,7 @@ export const iQubeItems: QubeItem[] = [
     type: 'DataQube',
     icon: Database,
     href: '/settings',
-    description: 'Explore your personal data insights',
+    description: 'Community agent',
   },
   {
     id: 'agentqube',
@@ -83,3 +83,4 @@ export const metisQubeData = {
   type: 'Assistant',
   href: '/settings',
 };
+
