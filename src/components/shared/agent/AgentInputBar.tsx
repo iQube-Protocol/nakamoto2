@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { Send, Mic, Paperclip, Image } from 'lucide-react';
+import { Send, Mic, Paperclip } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
 import { useToast } from '@/components/ui/use-toast';
@@ -39,13 +39,6 @@ const AgentInputBar = ({
     });
   };
 
-  const handleImageUpload = () => {
-    toast({
-      title: "Upload Image",
-      description: "Image upload functionality coming soon.",
-    });
-  };
-
   const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
@@ -68,7 +61,7 @@ const AgentInputBar = ({
       <div className="flex items-center space-x-2">
         {/* Unified design for both mobile and desktop with icons inside the textarea container */}
         <div className="relative flex-1 flex items-center">
-          <div className="absolute left-2 flex items-center space-x-2">
+          <div className="absolute left-3 flex items-center space-x-2">
             <ScoreTooltip type="voice">
               <Button
                 type="button"
@@ -92,20 +85,6 @@ const AgentInputBar = ({
                 <Paperclip className="h-4 w-4 text-muted-foreground" />
               </Button>
             </ScoreTooltip>
-            
-            {!isMobile && (
-              <ScoreTooltip type="image">
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  className="h-8 w-8 p-0"
-                  onClick={handleImageUpload}
-                >
-                  <Image className="h-4 w-4 text-muted-foreground" />
-                </Button>
-              </ScoreTooltip>
-            )}
           </div>
           
           <Textarea
@@ -113,11 +92,14 @@ const AgentInputBar = ({
             onChange={handleInputChange}
             onKeyDown={handleKeyDown}
             placeholder={getPlaceholderText()}
-            className={`${isMobile ? 'pl-20' : 'pl-28'} min-h-10 max-h-32 flex-1 pr-2`}
+            className={`pl-20 min-h-10 max-h-32 flex-1 pr-2`}
             style={{
               resize: 'none',
               paddingTop: '0.625rem',
               paddingBottom: '0.625rem',
+              lineHeight: '1.5',
+              display: 'flex',
+              alignItems: 'center',
             }}
           />
         </div>
