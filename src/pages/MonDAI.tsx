@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { AgentInterface } from '@/components/shared/agent';
 import { useToast } from '@/components/ui/use-toast';
@@ -125,7 +124,7 @@ const MonDAI = () => {
           <AgentInterface
             title="MonDAI"
             description="Community agent"
-            agentType="learn" // Use 'learn' instead of 'mondai'
+            agentType="learn" // Using learn type for compatibility
             onMessageSubmit={handleAIMessage}
             initialMessages={[
               {

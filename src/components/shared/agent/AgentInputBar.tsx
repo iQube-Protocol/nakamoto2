@@ -55,96 +55,72 @@ const AgentInputBar = ({
     }
   };
 
+  // Create custom placeholder text based on the agent type
+  const getPlaceholderText = () => {
+    if (window.location.pathname === '/mondai') {
+      return 'Ask MonDAI...';
+    }
+    return `Ask your ${agentType} agent...`;
+  };
+
   return (
     <form onSubmit={handleSubmit} className="border-t p-4">
       <div className="flex items-center space-x-2">
-        {isMobile ? (
-          // Mobile-optimized layout with icons inside the textarea container
-          <div className="relative flex-1 flex items-center">
-            <div className="absolute left-2 flex items-center space-x-2">
-              <ScoreTooltip type="voice">
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  className="h-8 w-8 p-0"
-                  onClick={handleVoiceInput}
-                >
-                  <Mic className="h-4 w-4 text-muted-foreground" />
-                </Button>
-              </ScoreTooltip>
-              
-              <ScoreTooltip type="attachment">
-                <Button
-                  type="button"
-                  size="sm"
-                  variant="ghost"
-                  className="h-8 w-8 p-0"
-                  onClick={handleAttachment}
-                >
-                  <Paperclip className="h-4 w-4 text-muted-foreground" />
-                </Button>
-              </ScoreTooltip>
-            </div>
-            
-            <Textarea
-              value={inputValue}
-              onChange={handleInputChange}
-              onKeyDown={handleKeyDown}
-              placeholder={`Ask your ${agentType} agent...`}
-              className="pl-20 min-h-10 max-h-32 flex-1 pr-2"
-              style={{
-                resize: 'none',
-                paddingTop: '0.625rem',
-                paddingBottom: '0.625rem',
-              }}
-            />
-          </div>
-        ) : (
-          // Desktop layout with buttons outside textarea
-          <>
+        {/* Unified design for both mobile and desktop with icons inside the textarea container */}
+        <div className="relative flex-1 flex items-center">
+          <div className="absolute left-2 flex items-center space-x-2">
             <ScoreTooltip type="voice">
               <Button
                 type="button"
-                size="icon"
-                variant="outline"
+                size="sm"
+                variant="ghost"
+                className="h-8 w-8 p-0"
                 onClick={handleVoiceInput}
               >
-                <Mic className="h-4 w-4" />
+                <Mic className="h-4 w-4 text-muted-foreground" />
               </Button>
             </ScoreTooltip>
             
             <ScoreTooltip type="attachment">
               <Button
                 type="button"
-                size="icon"
-                variant="outline"
+                size="sm"
+                variant="ghost"
+                className="h-8 w-8 p-0"
                 onClick={handleAttachment}
               >
-                <Paperclip className="h-4 w-4" />
+                <Paperclip className="h-4 w-4 text-muted-foreground" />
               </Button>
             </ScoreTooltip>
             
-            <ScoreTooltip type="image">
-              <Button
-                type="button"
-                size="icon"
-                variant="outline"
-                onClick={handleImageUpload}
-              >
-                <Image className="h-4 w-4" />
-              </Button>
-            </ScoreTooltip>
-            
-            <Textarea
-              value={inputValue}
-              onChange={handleInputChange}
-              onKeyDown={handleKeyDown}
-              placeholder={`Ask your ${agentType} agent...`}
-              className="flex-1 min-h-10 max-h-32"
-            />
-          </>
-        )}
+            {!isMobile && (
+              <ScoreTooltip type="image">
+                <Button
+                  type="button"
+                  size="sm"
+                  variant="ghost"
+                  className="h-8 w-8 p-0"
+                  onClick={handleImageUpload}
+                >
+                  <Image className="h-4 w-4 text-muted-foreground" />
+                </Button>
+              </ScoreTooltip>
+            )}
+          </div>
+          
+          <Textarea
+            value={inputValue}
+            onChange={handleInputChange}
+            onKeyDown={handleKeyDown}
+            placeholder={getPlaceholderText()}
+            className={`${isMobile ? 'pl-20' : 'pl-28'} min-h-10 max-h-32 flex-1 pr-2`}
+            style={{
+              resize: 'none',
+              paddingTop: '0.625rem',
+              paddingBottom: '0.625rem',
+            }}
+          />
+        </div>
         
         <Button 
           type="submit" 
