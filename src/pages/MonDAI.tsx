@@ -124,7 +124,7 @@ const MonDAI = () => {
         <div className="flex flex-col">
           <AgentInterface
             title="MonDAI"
-            description="Community agent for learning, earning and connecting"
+            description="Community agent"
             agentType="learn" // Use 'learn' instead of 'mondai'
             onMessageSubmit={handleAIMessage}
             initialMessages={[
