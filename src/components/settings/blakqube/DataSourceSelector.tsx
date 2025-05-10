@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { User, Database, Brain, Linkedin, Wallet } from 'lucide-react';
+import { Twitter, MessageCircle, Globe, Users } from 'lucide-react';
 import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
 import { Button } from '@/components/ui/button';
 
@@ -47,6 +48,14 @@ const DataSourceSelector = ({
             return <Linkedin className="h-3 w-3 text-blue-500" />;
           case 'wallet':
             return <Wallet className="h-3 w-3 text-orange-500" />;
+          case 'twitter':
+            return <Twitter className="h-3 w-3 text-blue-400" />;
+          case 'discord':
+            return <Users className="h-3 w-3 text-purple-500" />;
+          case 'telegram':
+            return <MessageCircle className="h-3 w-3 text-blue-500" />;
+          case 'luma':
+            return <Globe className="h-3 w-3 text-green-500" />;
           case 'manual':
           default:
             return <User className="h-3 w-3 text-gray-500" />;
@@ -54,7 +63,7 @@ const DataSourceSelector = ({
     }
   };
 
-  // Generate dropdown options based on iQube type
+  // Generate dropdown options based on iQube type and key
   const getDropdownContent = () => {
     switch (iQubeType) {
       case 'AgentQube':
@@ -79,14 +88,39 @@ const DataSourceSelector = ({
             <DropdownMenuItem onClick={() => onSourceChange(sourceKey, 'manual')}>
               <User className="h-3.5 w-3.5 mr-2" /> Manual Entry
             </DropdownMenuItem>
-            {['Profession', 'Local-City', 'Email'].includes(sourceKey) && (
+            {sourceKey.includes('LinkedIn') && (
               <DropdownMenuItem onClick={() => onSourceChange(sourceKey, 'linkedin')}>
                 <Linkedin className="h-3.5 w-3.5 mr-2" /> LinkedIn
               </DropdownMenuItem>
             )}
-            {['EVM-Public-Key', 'BTC-Public-Key', 'Chain-IDs', 'Wallets-of-Interest'].includes(sourceKey) && (
+            {sourceKey.includes('Twitter') && (
+              <DropdownMenuItem onClick={() => onSourceChange(sourceKey, 'twitter')}>
+                <Twitter className="h-3.5 w-3.5 mr-2" /> Twitter
+              </DropdownMenuItem>
+            )}
+            {sourceKey.includes('Discord') && (
+              <DropdownMenuItem onClick={() => onSourceChange(sourceKey, 'discord')}>
+                <Users className="h-3.5 w-3.5 mr-2" /> Discord
+              </DropdownMenuItem>
+            )}
+            {sourceKey.includes('Telegram') && (
+              <DropdownMenuItem onClick={() => onSourceChange(sourceKey, 'telegram')}>
+                <MessageCircle className="h-3.5 w-3.5 mr-2" /> Telegram
+              </DropdownMenuItem>
+            )}
+            {sourceKey.includes('Luma') && (
+              <DropdownMenuItem onClick={() => onSourceChange(sourceKey, 'luma')}>
+                <Globe className="h-3.5 w-3.5 mr-2" /> Luma
+              </DropdownMenuItem>
+            )}
+            {(sourceKey.includes('Public-Key') || sourceKey.includes('Chain-IDs') || sourceKey.includes('Wallets-of-Interest')) && (
               <DropdownMenuItem onClick={() => onSourceChange(sourceKey, 'wallet')}>
                 <Wallet className="h-3.5 w-3.5 mr-2" /> Wallet
+              </DropdownMenuItem>
+            )}
+            {(['Profession', 'Local-City', 'Email'].includes(sourceKey)) && (
+              <DropdownMenuItem onClick={() => onSourceChange(sourceKey, 'linkedin')}>
+                <Linkedin className="h-3.5 w-3.5 mr-2" /> LinkedIn
               </DropdownMenuItem>
             )}
           </>

@@ -5,6 +5,7 @@ import { AccordionItem, AccordionTrigger, AccordionContent } from '@/components/
 import { User, Linkedin, Wallet, Database, Brain } from 'lucide-react';
 import PrivateDataView from './PrivateDataView';
 import PrivateDataEditor from './PrivateDataEditor';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface PrivateDataSectionProps {
   privateData: { [key: string]: string | string[] };
@@ -90,7 +91,12 @@ const PrivateDataSection = ({
           "BTC-Public-Key": "wallet",
           "Tokens-of-Interest": "manual",
           "Chain-IDs": "wallet",
-          "Wallets-of-Interest": "wallet"
+          "Wallets-of-Interest": "wallet",
+          "LinkedIn-ID": "linkedin",
+          "Twitter-ID": "twitter",
+          "Discord-ID": "discord",
+          "Telegram-ID": "telegram",
+          "Luma-ID": "manual"
         };
     }
   }
@@ -154,25 +160,27 @@ const PrivateDataSection = ({
         </div>
       </AccordionTrigger>
       <AccordionContent>
-        <div className="space-y-3 py-2">
-          {!isEditing ? (
-            <PrivateDataView 
-              privateData={privateData} 
-              onEdit={() => setIsEditing(true)}
-              getSourceIcon={getSourceIcon}
-            />
-          ) : (
-            <PrivateDataEditor 
-              editingData={editingData}
-              setEditingData={setEditingData}
-              onSave={handleSavePrivateData}
-              onCancel={() => setIsEditing(false)}
-              dataSources={dataSources}
-              iQubeType={iQubeType}
-              onSourceChange={handleSourceChange}
-            />
-          )}
-        </div>
+        <ScrollArea className="h-[300px]">
+          <div className="space-y-3 py-2 pr-4">
+            {!isEditing ? (
+              <PrivateDataView 
+                privateData={privateData} 
+                onEdit={() => setIsEditing(true)}
+                getSourceIcon={getSourceIcon}
+              />
+            ) : (
+              <PrivateDataEditor 
+                editingData={editingData}
+                setEditingData={setEditingData}
+                onSave={handleSavePrivateData}
+                onCancel={() => setIsEditing(false)}
+                dataSources={dataSources}
+                iQubeType={iQubeType}
+                onSourceChange={handleSourceChange}
+              />
+            )}
+          </div>
+        </ScrollArea>
       </AccordionContent>
     </AccordionItem>
   );

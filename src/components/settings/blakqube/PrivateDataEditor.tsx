@@ -26,7 +26,7 @@ const PrivateDataEditor = ({
 }: PrivateDataEditorProps) => {
   return (
     <>
-      {Object.entries(editingData).slice(0, 6).map(([key, value]) => (
+      {Object.entries(editingData).map(([key, value]) => (
         <div key={key} className="space-y-1 border-b pb-2">
           <div className="flex justify-between items-center">
             <Label className="text-xs">{key}</Label>

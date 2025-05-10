@@ -1,4 +1,3 @@
-
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { MetaQube } from '@/lib/types';
@@ -13,7 +12,12 @@ const dataQubePrivateData = {
   "BTC-Public-Key": "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh",
   "Tokens-of-Interest": ["ETH", "BTC", "MATIC"],
   "Chain-IDs": ["1", "137"],
-  "Wallets-of-Interest": ["MetaMask", "Rainbow"]
+  "Wallets-of-Interest": ["MetaMask", "Rainbow"],
+  "LinkedIn-ID": "user-linkedin-profile",
+  "Twitter-ID": "@usertwitter",
+  "Discord-ID": "user#1234",
+  "Telegram-ID": "@usertelegram",
+  "Luma-ID": "user-luma"
 };
 
 const agentQubePrivateData = {
