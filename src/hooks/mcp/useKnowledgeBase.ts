@@ -7,6 +7,7 @@ export interface KnowledgeBaseState {
   isLoading: boolean;
   error: Error | null;
   connectionStatus: 'disconnected' | 'connecting' | 'connected' | 'error';
+  errorMessage: string | null;
 }
 
 export function useKnowledgeBase(options: KBAIQueryOptions = {}) {
@@ -14,7 +15,8 @@ export function useKnowledgeBase(options: KBAIQueryOptions = {}) {
     items: [],
     isLoading: false,
     error: null,
-    connectionStatus: 'disconnected'
+    connectionStatus: 'disconnected',
+    errorMessage: null
   });
   const [queryOptions, setQueryOptions] = useState<KBAIQueryOptions>(options);
   
@@ -34,13 +36,14 @@ export function useKnowledgeBase(options: KBAIQueryOptions = {}) {
       // Use current options merged with any new options
       const currentOptions = newOptions ? { ...queryOptions, ...newOptions } : queryOptions;
       const items = await kbaiService.fetchKnowledgeItems(currentOptions);
-      const status = kbaiService.getConnectionStatus();
+      const { status, errorMessage } = kbaiService.getConnectionInfo();
       
       setState({
         items,
         isLoading: false,
         error: null,
-        connectionStatus: status
+        connectionStatus: status,
+        errorMessage
       });
       
       console.log(`Fetched ${items.length} knowledge items with status: ${status}`);
@@ -50,7 +53,8 @@ export function useKnowledgeBase(options: KBAIQueryOptions = {}) {
         ...prev,
         isLoading: false,
         error: error instanceof Error ? error : new Error('Unknown error'),
-        connectionStatus: 'error'
+        connectionStatus: 'error',
+        errorMessage: error instanceof Error ? error.message : String(error)
       }));
     }
   }, [kbaiService, queryOptions]);

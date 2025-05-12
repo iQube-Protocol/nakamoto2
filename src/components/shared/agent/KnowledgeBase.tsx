@@ -4,11 +4,12 @@ import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, RefreshCw, WifiOff } from 'lucide-react';
+import { Search, RefreshCw, WifiOff, AlertTriangle, Info } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { KBAIKnowledgeItem } from '@/integrations/kbai/KBAIMCPService';
 import { useKnowledgeBase } from '@/hooks/mcp/useKnowledgeBase';
 import DocumentViewer from './document/DocumentViewer';
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface KnowledgeBaseProps {
   agentType: 'learn' | 'earn' | 'connect';
@@ -23,6 +24,7 @@ const KnowledgeBase = ({ agentType }: KnowledgeBaseProps) => {
     items,
     isLoading,
     connectionStatus,
+    errorMessage,
     fetchKnowledgeItems,
     searchKnowledge,
     resetSearch
@@ -88,20 +90,41 @@ const KnowledgeBase = ({ agentType }: KnowledgeBaseProps) => {
     if (connectionStatus === 'connected') return null;
     
     return (
-      <div className={`p-2 rounded text-sm flex items-center gap-1 mb-4 ${
+      <div className={`p-2 rounded text-sm flex items-center gap-2 mb-4 ${
         connectionStatus === 'error' 
           ? 'bg-destructive/10 text-destructive' 
-          : 'bg-amber-500/10 text-amber-500'
+          : connectionStatus === 'connecting'
+            ? 'bg-blue-500/10 text-blue-500'
+            : 'bg-amber-500/10 text-amber-500'
       }`}>
         {connectionStatus === 'error' ? (
           <>
             <WifiOff size={16} />
-            <span>Could not connect to knowledge base. Using fallback data.</span>
+            <div className="flex-1">
+              <span>Could not connect to knowledge base. Using fallback data.</span>
+              {errorMessage && (
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Button variant="ghost" size="icon" className="h-5 w-5 ml-1 hover:bg-destructive/20">
+                      <Info size={14} />
+                    </Button>
+                  </TooltipTrigger>
+                  <TooltipContent className="max-w-sm">
+                    <p className="text-xs">{errorMessage}</p>
+                  </TooltipContent>
+                </Tooltip>
+              )}
+            </div>
+          </>
+        ) : connectionStatus === 'connecting' ? (
+          <>
+            <span className="animate-pulse">●</span>
+            <span>Connecting to knowledge base...</span>
           </>
         ) : (
           <>
-            <span className="animate-pulse">●</span>
-            <span>{connectionStatus === 'connecting' ? 'Connecting...' : 'Disconnected'}</span>
+            <AlertTriangle size={16} />
+            <span>Knowledge base disconnected</span>
           </>
         )}
       </div>

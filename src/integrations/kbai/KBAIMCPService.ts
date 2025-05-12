@@ -1,3 +1,4 @@
+
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -21,6 +22,14 @@ export interface KBAIQueryOptions {
 interface KBAIConnectorResponse {
   data: {
     items: any[];
+    metadata?: {
+      source: string;
+      timestamp: string;
+      error?: string;
+      requestId?: string;
+    };
+    error?: string;
+    status?: number;
   } | null;
   error: Error | null;
 }
@@ -32,9 +41,12 @@ export class KBAIMCPService {
   private connectionStatus: 'disconnected' | 'connecting' | 'connected' | 'error' = 'disconnected';
   private cache: Map<string, { data: KBAIKnowledgeItem[], timestamp: number }> = new Map();
   private cacheLifetime = 5 * 60 * 1000; // 5 minutes
+  private maxRetries = 3;
+  private retryDelay = 1000; // Start with 1 second delay
+  private lastErrorMessage: string | null = null;
 
   /**
-   * Fetch knowledge items from KBAI MCP server
+   * Fetch knowledge items from KBAI MCP server with retry logic
    */
   async fetchKnowledgeItems(options: KBAIQueryOptions = {}): Promise<KBAIKnowledgeItem[]> {
     try {
@@ -42,39 +54,73 @@ export class KBAIMCPService {
       const cachedData = this.getFromCache(cacheKey);
       
       if (cachedData) {
-        console.log('Using cached KBAI knowledge items:', cachedData);
+        console.log('Using cached KBAI knowledge items:', cachedData.length);
         return cachedData;
       }
       
       this.connectionStatus = 'connecting';
       console.log('Fetching knowledge items from KBAI MCP server with options:', options);
       
-      // Fetch from Supabase edge function with real authentication
-      const response = await this.callKBAIConnector(options);
+      // Implement retry logic with exponential backoff
+      let currentRetry = 0;
+      let lastError: any = null;
       
-      if (response.error) {
-        console.error('Error fetching KBAI knowledge:', response.error);
-        this.connectionStatus = 'error';
-        throw new Error(`KBAI knowledge fetch error: ${response.error.message || 'Unknown error'}`);
+      while (currentRetry <= this.maxRetries) {
+        try {
+          if (currentRetry > 0) {
+            console.log(`KBAI retry attempt ${currentRetry} of ${this.maxRetries}`);
+            // Wait before retry with exponential backoff
+            await new Promise(resolve => setTimeout(resolve, this.retryDelay * Math.pow(2, currentRetry - 1)));
+          }
+          
+          // Fetch from Supabase edge function
+          const response = await this.callKBAIConnector(options);
+          
+          if (response.error) {
+            throw new Error(`KBAI connector error: ${response.error.message || 'Unknown error'}`);
+          }
+          
+          if (!response.data) {
+            throw new Error('Empty response from KBAI connector');
+          }
+          
+          // Check if the response itself contains an error
+          if (response.data.error) {
+            throw new Error(`KBAI server error: ${response.data.error}`);
+          }
+          
+          if (!Array.isArray(response.data.items)) {
+            console.warn('Invalid response from KBAI connector:', response.data);
+            throw new Error('Invalid items format in KBAI response');
+          }
+          
+          const items = response.data.items.map(this.transformKnowledgeItem);
+          this.connectionStatus = 'connected';
+          this.lastErrorMessage = null;
+          
+          // Cache the results
+          this.addToCache(cacheKey, items);
+          console.log('Successfully fetched and cached KBAI knowledge items:', items.length);
+          
+          return items;
+        } catch (error) {
+          lastError = error;
+          currentRetry++;
+          console.warn(`KBAI fetch attempt ${currentRetry} failed:`, error);
+          
+          if (currentRetry > this.maxRetries) {
+            // All retries failed
+            throw error;
+          }
+        }
       }
       
-      if (!response.data || !Array.isArray(response.data.items)) {
-        console.warn('Invalid response from KBAI connector:', response.data);
-        this.connectionStatus = 'error';
-        return this.getFallbackItems();
-      }
-      
-      const items = response.data.items.map(this.transformKnowledgeItem);
-      this.connectionStatus = 'connected';
-      
-      // Cache the results
-      this.addToCache(cacheKey, items);
-      console.log('Successfully fetched and cached KBAI knowledge items:', items.length);
-      
-      return items;
+      throw lastError; // Should never get here due to the throw in the loop
     } catch (error) {
       this.connectionStatus = 'error';
-      console.error('Failed to fetch KBAI knowledge:', error);
+      this.lastErrorMessage = error instanceof Error ? error.message : String(error);
+      console.error('Failed to fetch KBAI knowledge after all retries:', error);
+      
       toast.error('Failed to connect to knowledge base', {
         description: 'Using fallback knowledge items instead'
       });
@@ -84,10 +130,13 @@ export class KBAIMCPService {
   }
   
   /**
-   * Get connection status
+   * Get connection status and detailed error information
    */
-  getConnectionStatus(): 'disconnected' | 'connecting' | 'connected' | 'error' {
-    return this.connectionStatus;
+  getConnectionInfo(): { status: 'disconnected' | 'connecting' | 'connected' | 'error'; errorMessage: string | null } {
+    return {
+      status: this.connectionStatus,
+      errorMessage: this.lastErrorMessage
+    };
   }
   
   /**
@@ -96,16 +145,34 @@ export class KBAIMCPService {
   reset(): void {
     this.connectionStatus = 'disconnected';
     this.cache.clear();
+    this.lastErrorMessage = null;
   }
   
   /**
-   * Call the KBAI connector edge function
+   * Call the KBAI connector edge function with timeout
    */
   private async callKBAIConnector(options: KBAIQueryOptions): Promise<KBAIConnectorResponse> {
-    // Call the actual Supabase edge function with the provided authentication
-    return await supabase.functions.invoke('kbai-connector', {
-      body: { options }
-    }) as KBAIConnectorResponse;
+    // Create an abort controller for timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    
+    try {
+      // Call the actual Supabase edge function with the provided authentication
+      const response = await supabase.functions.invoke('kbai-connector', {
+        body: { options },
+        signal: controller.signal
+      }) as KBAIConnectorResponse;
+      
+      clearTimeout(timeoutId);
+      return response;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      // Check if this was a timeout error
+      if (error.name === 'AbortError') {
+        throw new Error('KBAI connection timed out after 10 seconds');
+      }
+      throw error;
+    }
   }
   
   /**
