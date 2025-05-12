@@ -51,9 +51,9 @@ async function testKBAIServerConnection() {
 }
 
 // Handle KBAI knowledge retrieval with improved SSE handling and retries
-async function fetchKBAIKnowledge(options: any) {
+async function fetchKBAIKnowledge(options: any, requestId: string) {
   try {
-    console.log('Fetching knowledge from KBAI with options:', JSON.stringify(options));
+    console.log(`Fetching knowledge from KBAI with options (request ${requestId}):`, JSON.stringify(options));
     
     // Try to connect to the actual KBAI MCP server with the provided tokens
     try {
@@ -72,7 +72,7 @@ async function fetchKBAIKnowledge(options: any) {
           'x-auth-token': KBAI_AUTH_TOKEN,
           'x-kb-token': KBAI_KB_TOKEN,
           // Add request correlation ID for debugging
-          'x-request-id': crypto.randomUUID()
+          'x-request-id': requestId || crypto.randomUUID()
         },
         body: JSON.stringify(options)
       });
@@ -102,7 +102,7 @@ async function fetchKBAIKnowledge(options: any) {
         if (done) break;
       }
       
-      console.log('Successfully read SSE response from KBAI server');
+      console.log(`Successfully read SSE response from KBAI server for request ${requestId}`);
       
       // Process and return the knowledge data
       try {
@@ -113,7 +113,7 @@ async function fetchKBAIKnowledge(options: any) {
           metadata: {
             source: 'KBAI MCP',
             timestamp: new Date().toISOString(),
-            requestId: knowledgeData.requestId || null
+            requestId: knowledgeData.requestId || requestId
           }
         };
       } catch (parseError) {
@@ -121,7 +121,7 @@ async function fetchKBAIKnowledge(options: any) {
         throw new Error(`Failed to parse KBAI response: ${parseError.message}`);
       }
     } catch (error) {
-      console.warn('Failed to connect to KBAI server, using mock data:', error);
+      console.warn(`Failed to connect to KBAI server for request ${requestId}, using mock data:`, error);
       
       // Fall back to mock data if connection fails
       return {
@@ -130,17 +130,19 @@ async function fetchKBAIKnowledge(options: any) {
         metadata: {
           source: 'KBAI MCP (mock)',
           timestamp: new Date().toISOString(),
-          error: error.message
+          error: error.message,
+          requestId
         }
       };
     }
   } catch (error) {
-    console.error('Error fetching KBAI knowledge:', error);
+    console.error(`Error fetching KBAI knowledge (request ${requestId}):`, error);
     
     return {
       status: 500,
       error: `Failed to connect to KBAI: ${error.message || 'Unknown error'}`,
-      items: []
+      items: [],
+      requestId
     };
   }
 }
@@ -154,17 +156,19 @@ serve(async (req) => {
   
   try {
     // Parse the request body
-    const { options } = await req.json();
+    const { options, requestId } = await req.json();
+    const requestTrackingId = requestId || crypto.randomUUID();
     
     // Log request info for debugging
     console.log(`KBAI connector request received at ${new Date().toISOString()}`, 
-      { options, headers: Object.fromEntries([...req.headers].filter(h => !h[0].includes('auth'))) });
+      { requestId: requestTrackingId, options, headers: Object.fromEntries([...req.headers].filter(h => !h[0].includes('auth'))) });
     
     // Fetch knowledge from KBAI
-    const result = await fetchKBAIKnowledge(options);
+    const result = await fetchKBAIKnowledge(options, requestTrackingId);
     
     // Log response summary
     console.log('KBAI connector response summary:', { 
+      requestId: requestTrackingId,
       status: result.status, 
       itemCount: result.items?.length || 0, 
       hasError: !!result.error 
@@ -182,11 +186,13 @@ serve(async (req) => {
     );
   } catch (error) {
     console.error('Error in kbai-connector:', error);
+    const errorId = crypto.randomUUID();
     
     return new Response(
       JSON.stringify({
         status: 500,
         error: `Internal server error: ${error.message || 'Unknown error'}`,
+        errorId,
         items: mockKnowledgeItems, // Still return mock items on error
         metadata: {
           source: 'KBAI MCP (error fallback)',

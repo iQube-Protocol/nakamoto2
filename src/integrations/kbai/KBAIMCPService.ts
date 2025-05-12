@@ -1,4 +1,3 @@
-
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -152,23 +151,26 @@ export class KBAIMCPService {
    * Call the KBAI connector edge function with timeout
    */
   private async callKBAIConnector(options: KBAIQueryOptions): Promise<KBAIConnectorResponse> {
-    // Create an abort controller for timeout
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+    // Instead of using AbortController, we'll implement timeout with Promise.race
+    const timeoutPromise = new Promise<KBAIConnectorResponse>((_, reject) => {
+      setTimeout(() => reject(new Error('KBAI connection timed out after 10 seconds')), 10000);
+    });
     
     try {
-      // Call the actual Supabase edge function with the provided authentication
-      const response = await supabase.functions.invoke('kbai-connector', {
-        body: { options },
-        signal: controller.signal
-      }) as KBAIConnectorResponse;
+      // Call the Supabase edge function with the request ID for tracking
+      const functionPromise = supabase.functions.invoke('kbai-connector', {
+        body: { 
+          options,
+          requestId: crypto.randomUUID() // Add a request ID for tracking
+        }
+      }) as Promise<KBAIConnectorResponse>;
       
-      clearTimeout(timeoutId);
+      // Use Promise.race to implement timeout without AbortController
+      const response = await Promise.race([functionPromise, timeoutPromise]);
       return response;
     } catch (error) {
-      clearTimeout(timeoutId);
       // Check if this was a timeout error
-      if (error.name === 'AbortError') {
+      if (error.message === 'KBAI connection timed out after 10 seconds') {
         throw new Error('KBAI connection timed out after 10 seconds');
       }
       throw error;
