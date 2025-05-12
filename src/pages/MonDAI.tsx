@@ -5,6 +5,8 @@ import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
 import { processAgentInteraction, getConversationContext } from '@/services/agent-service';
+import { getKBAIService } from '@/integrations/kbai/KBAIMCPService';
+import { useKnowledgeBase } from '@/hooks/mcp/useKnowledgeBase';
 
 // Extend the agent service to support 'mondai' type
 declare module '@/services/agent-service' {
@@ -19,6 +21,14 @@ const MonDAI = () => {
   const [conversationId, setConversationId] = React.useState<string | null>(null);
   const [historicalContext, setHistoricalContext] = React.useState<string>('');
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
+  const [activeTab, setActiveTab] = React.useState<'chat' | 'knowledge' | 'documents'>('chat');
+  const [documentUpdates, setDocumentUpdates] = React.useState<number>(0);
+  
+  // Initialize knowledge base
+  const { 
+    items: knowledgeItems,
+    fetchKnowledgeItems
+  } = useKnowledgeBase();
 
   // Set fullscreen mode effect for mobile
   React.useEffect(() => {
@@ -61,6 +71,21 @@ const MonDAI = () => {
     loadContext();
   }, [conversationId]);
 
+  // Handle document context updates
+  const handleDocumentContextUpdated = () => {
+    setDocumentUpdates(prev => prev + 1);
+  };
+  
+  // Handle tab changes
+  const handleTabChange = (tab: 'chat' | 'knowledge' | 'documents') => {
+    setActiveTab(tab);
+    
+    // Refresh knowledge items when knowledge tab is selected
+    if (tab === 'knowledge') {
+      fetchKnowledgeItems();
+    }
+  };
+
   const handleAIMessage = async (message: string) => {
     try {
       // Get conversation context, including history if available
@@ -76,12 +101,26 @@ const MonDAI = () => {
         console.log('Updated historical context for MonDAI agent');
       }
       
+      // Get relevant knowledge items for the message
+      let relevantKnowledgeItems = [];
+      try {
+        const kbaiService = getKBAIService();
+        relevantKnowledgeItems = await kbaiService.fetchKnowledgeItems({
+          query: message,
+          limit: 3
+        });
+        console.log(`Found ${relevantKnowledgeItems.length} relevant knowledge items for query`);
+      } catch (error) {
+        console.warn('Error fetching knowledge items:', error);
+      }
+      
       const { data, error } = await supabase.functions.invoke('mondai-ai', {
         body: { 
           message, 
           userId: user?.id,
           conversationId: contextResult.conversationId,
-          historicalContext: contextResult.historicalContext
+          historicalContext: contextResult.historicalContext,
+          knowledgeItems: relevantKnowledgeItems
         }
       });
       
@@ -135,18 +174,22 @@ const MonDAI = () => {
         <div className="flex flex-col h-full">
           <AgentInterface
             title="MonDAI"
-            description="Community agent"
+            description="Community agent with KBAI integration"
             agentType="learn" // Using learn type for compatibility
             onMessageSubmit={handleAIMessage}
+            onDocumentAdded={handleDocumentContextUpdated}
+            documentContextUpdated={documentUpdates}
+            conversationId={conversationId}
             initialMessages={[
               {
                 id: "1",
                 sender: "agent",
-                message: "Hello! I'm your MonDAI assistant, here to help you learn about Web3, cryptocurrency, and blockchain concepts. What would you like to know about today?",
+                message: "Hello! I'm your MonDAI assistant with KBAI integration. I can help you learn about Web3, cryptocurrency, blockchain concepts, and more using my integrated knowledge base. What would you like to know about today?",
                 timestamp: new Date().toISOString(),
                 metadata: {
                   version: "1.0",
-                  modelUsed: "gpt-4o"
+                  modelUsed: "gpt-4o",
+                  knowledgeSource: "KBAI MCP"
                 }
               }
             ]}
