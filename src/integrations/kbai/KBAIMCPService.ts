@@ -1,3 +1,4 @@
+
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -154,11 +155,8 @@ export class KBAIMCPService {
           this.addToCache(cacheKey, items);
           console.log('Successfully fetched and cached KBAI knowledge items:', items.length);
           
-          // Show success toast
-          toast({
-            title: "Connected to knowledge base",
-            duration: 2000
-          });
+          // Show success toast - Fix error by using correct sonner toast format
+          toast("Connected to knowledge base");
           
           return items;
         } catch (error) {
@@ -179,11 +177,8 @@ export class KBAIMCPService {
       this.lastErrorMessage = error instanceof Error ? error.message : String(error);
       console.error('Failed to fetch KBAI knowledge after all retries:', error);
       
-      toast({
-        title: "Failed to connect to knowledge base",
-        description: "Using fallback knowledge items instead",
-        variant: "destructive"
-      });
+      // Fix error by using correct sonner toast format
+      toast("Failed to connect to knowledge base: Using fallback knowledge items instead");
       
       return this.getFallbackItems();
     }
