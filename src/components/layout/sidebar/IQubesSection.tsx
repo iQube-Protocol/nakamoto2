@@ -7,6 +7,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Switch } from "@/components/ui/switch";
 import CubeIcon from './CubeIcon';
 import { QubeItem } from './sidebarData';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface IQubesSectionProps {
   iQubeItems: QubeItem[];
@@ -18,6 +19,7 @@ interface IQubesSectionProps {
   handleIQubeClick: (iqubeId: string) => void;
   toggleIQubeActive: (e: React.MouseEvent<HTMLDivElement>, qubeName: string) => void;
   location: { pathname: string };
+  toggleMobileSidebar?: () => void;  // Add this line to accept the toggleMobileSidebar prop
 }
 
 const IQubesSection: React.FC<IQubesSectionProps> = ({
@@ -29,8 +31,11 @@ const IQubesSection: React.FC<IQubesSectionProps> = ({
   activeQubes,
   handleIQubeClick,
   toggleIQubeActive,
-  location
+  location,
+  toggleMobileSidebar
 }) => {
+  const isMobile = useIsMobile();
+  
   // Function to render iQube type icon based on type
   const renderIQubeTypeIcon = (type: string) => {
     switch(type) {
@@ -42,6 +47,15 @@ const IQubesSection: React.FC<IQubesSectionProps> = ({
         return <FolderGit2 className="h-4 w-4 text-green-500" />;
       default:
         return <Database className="h-4 w-4" />;
+    }
+  };
+
+  const handleIQubeItemClick = (iqubeId: string) => {
+    handleIQubeClick(iqubeId);
+    
+    // If on mobile, also close the sidebar
+    if (isMobile && toggleMobileSidebar) {
+      toggleMobileSidebar();
     }
   };
 
@@ -93,7 +107,7 @@ const IQubesSection: React.FC<IQubesSectionProps> = ({
                 "flex items-center justify-between px-2 py-1.5 text-sm rounded-md hover:bg-accent/30 cursor-pointer",
                 location.pathname === '/settings' && selectedIQube === qube.name && "bg-accent/20"
               )}
-              onClick={() => handleIQubeClick(qube.name)}
+              onClick={() => handleIQubeItemClick(qube.name)}
             >
               <div className="flex items-center flex-1">
                 <TooltipProvider>
