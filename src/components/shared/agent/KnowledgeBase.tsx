@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -5,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, RefreshCw, WifiOff, AlertTriangle, Info, Activity } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { KBAIKnowledgeItem } from '@/integrations/kbai/KBAIMCPService';
+import { KBAIKnowledgeItem } from '@/integrations/kbai';
 import { useKnowledgeBase } from '@/hooks/mcp/useKnowledgeBase';
 import DocumentViewer from './document/DocumentViewer';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';

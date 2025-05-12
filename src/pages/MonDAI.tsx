@@ -1,10 +1,11 @@
+
 import React from 'react';
 import { AgentInterface } from '@/components/shared/agent';
 import { useToast } from '@/components/ui/use-toast';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
 import { processAgentInteraction, getConversationContext } from '@/services/agent-service';
-import { getKBAIService } from '@/integrations/kbai/KBAIMCPService';
+import { getKBAIService } from '@/integrations/kbai';
 import { useKnowledgeBase } from '@/hooks/mcp/useKnowledgeBase';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle } from 'lucide-react';
