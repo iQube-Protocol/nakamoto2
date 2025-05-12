@@ -25,10 +25,8 @@ if (storedTheme) {
 
 // Handle mobile fullscreen
 const enableFullscreen = () => {
-  const doc = window.document as any;
-  
-  // Handle iOS fullscreen
-  if (navigator.standalone) {
+  // Handle iOS fullscreen - type assertion to access 'standalone' property
+  if ((navigator as any).standalone) {
     document.documentElement.classList.add('standalone');
   }
   
@@ -52,7 +50,8 @@ if (typeof window !== 'undefined') {
   // Lock to portrait orientation if possible
   try {
     if ('screen' in window && 'orientation' in window.screen) {
-      window.screen.orientation.lock('portrait').catch(() => {
+      // Type assertion to access the lock method
+      (window.screen.orientation as any).lock('portrait').catch(() => {
         // Silently fail if not supported
       });
     }
