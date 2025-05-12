@@ -1,16 +1,16 @@
-
 import React from 'react';
 import { Link } from 'react-router-dom';
-
 interface AuthLayoutProps {
   children: React.ReactNode;
   title: string;
   subtitle?: string;
 }
-
-const AuthLayout = ({ children, title, subtitle }: AuthLayoutProps) => {
-  return (
-    <div className="flex min-h-screen bg-gradient-to-br from-iqube-primary/10 via-background to-iqube-accent/5">
+const AuthLayout = ({
+  children,
+  title,
+  subtitle
+}: AuthLayoutProps) => {
+  return <div className="flex min-h-screen bg-gradient-to-br from-iqube-primary/10 via-background to-iqube-accent/5">
       <div className="flex-1 flex flex-col justify-center px-4 py-12 sm:px-6 lg:flex-none lg:px-20 xl:px-24">
         <div className="mx-auto w-full max-w-md">
           <div className="mb-6">
@@ -34,14 +34,12 @@ const AuthLayout = ({ children, title, subtitle }: AuthLayoutProps) => {
               <span className="text-4xl font-bold">M</span>
             </div>
           </div>
-          <h1 className="text-4xl font-bold mb-4 text-center">MonDAI iQube</h1>
+          <h1 className="text-4xl font-bold mb-4 text-center">Aigent MonDAI</h1>
           <p className="text-xl opacity-80 max-w-lg text-center">
             Your secure and privacy-focused gateway to Web3 communities
           </p>
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default AuthLayout;
