@@ -228,66 +228,6 @@ export class KBAIMCPService {
   }
   
   /**
-   * Get mock knowledge items for testing
-   */
-  private getMockKnowledgeItems(options: KBAIQueryOptions): any[] {
-    let items = [
-      {
-        id: 'kb-001',
-        title: 'Blockchain Fundamentals',
-        content: 'A blockchain is a distributed database that maintains a continuously growing list of records, called blocks, which are linked using cryptography.',
-        type: 'concept',
-        source: 'KBAI',
-        relevance: 0.95,
-        timestamp: new Date().toISOString()
-      },
-      {
-        id: 'kb-002',
-        title: 'Token Economics',
-        content: 'Token economics involves the study of economic systems governed by the properties of tokens, including their supply, distribution, and incentives.',
-        type: 'concept',
-        source: 'KBAI',
-        relevance: 0.85,
-        timestamp: new Date().toISOString()
-      },
-      {
-        id: 'kb-003',
-        title: 'DeFi: Decentralized Finance',
-        content: 'DeFi refers to financial applications built on blockchain technologies, generally using smart contracts. These applications are open to anyone with an internet connection.',
-        type: 'guide',
-        source: 'KBAI',
-        relevance: 0.9,
-        timestamp: new Date().toISOString()
-      },
-      {
-        id: 'kb-004',
-        title: 'NFTs Explained',
-        content: 'Non-fungible tokens (NFTs) are cryptographic assets on a blockchain with unique identification codes that distinguish them from each other.',
-        type: 'guide',
-        source: 'KBAI',
-        relevance: 0.8,
-        timestamp: new Date().toISOString()
-      }
-    ];
-    
-    // Filter by query if provided
-    if (options.query) {
-      const query = options.query.toLowerCase();
-      items = items.filter(item => 
-        item.title.toLowerCase().includes(query) || 
-        item.content.toLowerCase().includes(query)
-      );
-    }
-    
-    // Apply limit if provided
-    if (options.limit && options.limit > 0) {
-      items = items.slice(0, options.limit);
-    }
-    
-    return items;
-  }
-  
-  /**
    * Generate cache key from options
    */
   private getCacheKey(options: KBAIQueryOptions): string {

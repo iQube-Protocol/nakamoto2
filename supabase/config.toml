@@ -9,3 +9,6 @@ verify_jwt = false
 
 [functions."kbai-connector"]
 verify_jwt = false
+[functions."kbai-connector".import_map]
+imports = { cors = "https://deno.land/x/cors@v1.2.2/mod.ts" }
+

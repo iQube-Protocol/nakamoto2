@@ -1,6 +1,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { getKBAIService, KBAIKnowledgeItem, KBAIQueryOptions } from '@/integrations/kbai/KBAIMCPService';
+import { toast } from 'sonner';
 
 export interface KnowledgeBaseState {
   items: KBAIKnowledgeItem[];
@@ -30,7 +31,7 @@ export function useKnowledgeBase(options: KBAIQueryOptions = {}) {
       setQueryOptions(prevOptions => ({ ...prevOptions, ...newOptions }));
     }
     
-    setState(prev => ({ ...prev, isLoading: true }));
+    setState(prev => ({ ...prev, isLoading: true, connectionStatus: 'connecting' }));
     
     try {
       // Use current options merged with any new options
@@ -47,6 +48,12 @@ export function useKnowledgeBase(options: KBAIQueryOptions = {}) {
       });
       
       console.log(`Fetched ${items.length} knowledge items with status: ${status}`);
+      
+      if (status === 'connected') {
+        toast.success('Connected to knowledge base', {
+          duration: 2000
+        });
+      }
     } catch (error) {
       console.error('Error in useKnowledgeBase:', error);
       setState(prev => ({
@@ -56,6 +63,11 @@ export function useKnowledgeBase(options: KBAIQueryOptions = {}) {
         connectionStatus: 'error',
         errorMessage: error instanceof Error ? error.message : String(error)
       }));
+      
+      // Show toast with error message and troubleshooting info
+      toast.error('Knowledge base connection failed', {
+        description: error instanceof Error ? error.message : 'Failed to connect to knowledge base'
+      });
     }
   }, [kbaiService, queryOptions]);
   
@@ -76,17 +88,20 @@ export function useKnowledgeBase(options: KBAIQueryOptions = {}) {
     updateQueryOptions(resetOptions);
     fetchKnowledgeItems(resetOptions);
   }, [updateQueryOptions, fetchKnowledgeItems]);
-  
-  // Fetch knowledge items when component mounts or options change
-  useEffect(() => {
-    fetchKnowledgeItems();
-  }, []); // Intentionally only run on mount
+
+  // Force a reconnect attempt
+  const reconnect = useCallback(async () => {
+    console.log('Attempting to reconnect to KBAI server...');
+    kbaiService.reset();
+    await fetchKnowledgeItems(queryOptions);
+  }, [kbaiService, fetchKnowledgeItems, queryOptions]);
   
   return {
     ...state,
     fetchKnowledgeItems,
     updateQueryOptions,
     searchKnowledge,
-    resetSearch
+    resetSearch,
+    reconnect
   };
 }

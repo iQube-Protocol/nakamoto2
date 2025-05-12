@@ -151,7 +151,13 @@ async function fetchKBAIKnowledge(options: any, requestId: string) {
 serve(async (req) => {
   // Handle CORS for preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { headers: corsHeaders });
+    return new Response('ok', { 
+      headers: {
+        ...corsHeaders,
+        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-client-info, apikey'
+      }
+    });
   }
   
   try {

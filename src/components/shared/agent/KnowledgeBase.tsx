@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
@@ -10,6 +10,7 @@ import { KBAIKnowledgeItem } from '@/integrations/kbai/KBAIMCPService';
 import { useKnowledgeBase } from '@/hooks/mcp/useKnowledgeBase';
 import DocumentViewer from './document/DocumentViewer';
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip';
+import { toast } from 'sonner';
 
 interface KnowledgeBaseProps {
   agentType: 'learn' | 'earn' | 'connect';
@@ -44,6 +45,7 @@ const KnowledgeBase = ({ agentType }: KnowledgeBaseProps) => {
   
   // Handle refresh - explicitly passing an empty object to force refresh
   const handleRefresh = () => {
+    toast.info('Refreshing knowledge base...');
     fetchKnowledgeItems({});
   };
   
@@ -115,6 +117,14 @@ const KnowledgeBase = ({ agentType }: KnowledgeBaseProps) => {
                 </Tooltip>
               )}
             </div>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-6 px-2 text-xs"
+              onClick={handleRefresh}
+            >
+              Retry
+            </Button>
           </>
         ) : connectionStatus === 'connecting' ? (
           <>
@@ -125,11 +135,32 @@ const KnowledgeBase = ({ agentType }: KnowledgeBaseProps) => {
           <>
             <AlertTriangle size={16} />
             <span>Knowledge base disconnected</span>
+            <Button 
+              variant="ghost" 
+              size="sm" 
+              className="h-6 px-2 text-xs"
+              onClick={handleRefresh}
+            >
+              Connect
+            </Button>
           </>
         )}
       </div>
     );
   };
+
+  // Attempt initial connection
+  useEffect(() => {
+    const attemptInitialConnection = async () => {
+      try {
+        await fetchKnowledgeItems();
+      } catch (error) {
+        console.error('Failed to establish initial KBAI connection:', error);
+      }
+    };
+    
+    attemptInitialConnection();
+  }, [fetchKnowledgeItems]);
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
