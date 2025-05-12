@@ -23,6 +23,44 @@ if (storedTheme) {
   localStorage.setItem('theme', 'dark');
 }
 
+// Handle mobile fullscreen
+const enableFullscreen = () => {
+  const doc = window.document as any;
+  
+  // Handle iOS fullscreen
+  if (navigator.standalone) {
+    document.documentElement.classList.add('standalone');
+  }
+  
+  // Prevent pull-to-refresh
+  document.body.addEventListener('touchmove', function(e) {
+    if (e.touches.length > 1) {
+      e.preventDefault();
+    }
+  }, { passive: false });
+  
+  // Handle Android Chrome fullscreen
+  if (window.matchMedia('(display-mode: standalone)').matches) {
+    document.documentElement.classList.add('standalone');
+  }
+};
+
+// Enable fullscreen when possible
+if (typeof window !== 'undefined') {
+  enableFullscreen();
+  
+  // Lock to portrait orientation if possible
+  try {
+    if ('screen' in window && 'orientation' in window.screen) {
+      window.screen.orientation.lock('portrait').catch(() => {
+        // Silently fail if not supported
+      });
+    }
+  } catch (e) {
+    console.warn('Orientation lock not supported');
+  }
+}
+
 // Create root and render immediately
 const root = createRoot(rootElement || document.getElementById("root")!);
 console.log("Rendering application...");
