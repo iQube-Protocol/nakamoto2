@@ -137,12 +137,6 @@ const Sidebar = () => {
     }
   };
 
-  const closeMobileSidebar = () => {
-    if (mobileOpen) {
-      toggleMobileSidebar();
-    }
-  };
-
   const sidebarContentProps = {
     collapsed,
     iQubesOpen,
@@ -154,8 +148,7 @@ const Sidebar = () => {
     handleIQubeClick,
     toggleIQubeActive,
     handleCloseMetisIQube,
-    handleSignOut,
-    onNavigate: isMobile ? closeMobileSidebar : undefined
+    handleSignOut
   };
 
   // Render mobile sidebar if on mobile, otherwise render desktop sidebar

@@ -1,71 +1,85 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { X } from 'lucide-react';
+import { Database, Bot, FolderGit2, ChevronLeft } from 'lucide-react';
+import { Link } from 'react-router-dom';
+import { Button } from '@/components/ui/button';
 
 interface ActiveIQubesListProps {
-  activeQubes: { [key: string]: boolean };
+  activeQubes: {[key: string]: boolean};
   collapsed: boolean;
   onIQubeClick: (iqubeId: string) => void;
-  onCloseIQube: (e: React.MouseEvent<HTMLButtonElement>, qubeName: string) => void;
+  onCloseIQube?: (e: React.MouseEvent<HTMLButtonElement>, qubeName: string) => void;
 }
 
 const ActiveIQubesList: React.FC<ActiveIQubesListProps> = ({
   activeQubes,
   collapsed,
   onIQubeClick,
-  onCloseIQube,
+  onCloseIQube
 }) => {
-  // Filter active qubes
-  const activeQubesList = Object.entries(activeQubes)
-    .filter(([_, isActive]) => isActive)
-    .map(([name]) => name);
-
-  // Don't render if no active qubes
-  if (activeQubesList.length === 0) {
-    return null;
-  }
-
   return (
-    <div className={cn("mt-auto mb-4", collapsed ? "px-2" : "px-3")}>
-      {!collapsed && (
-        <h3 className="px-2 mb-1 text-xs uppercase text-muted-foreground">
-          Active
-        </h3>
+    <div className="mt-auto px-3">
+      <div className="mb-2 px-2">
+        <div className={cn(
+          "flex items-center",
+          collapsed ? "justify-center" : "justify-between"
+        )}>
+          {!collapsed && <h3 className="text-xs font-medium uppercase text-muted-foreground">Active iQubes</h3>}
+        </div>
+      </div>
+      
+      {/* Active iQubes list */}
+      {activeQubes["MonDAI"] && (
+        <div
+          className={cn(
+            "flex items-center rounded-md p-2 text-sm hover:bg-accent/30 cursor-pointer",
+            collapsed ? "justify-center" : ""
+          )}
+          onClick={() => onIQubeClick("MonDAI")}
+        >
+          <Database className={cn("h-5 w-5 text-blue-500", collapsed ? "" : "mr-2")} />
+          {!collapsed && <span>MonDAI</span>}
+        </div>
       )}
       
-      <div className="space-y-1">
-        {activeQubesList.map((qubeName) => (
-          <div 
-            key={qubeName}
-            className={cn(
-              "group relative flex items-center rounded-md px-2 py-1.5 cursor-pointer",
-              "text-sm hover:bg-accent/30",
-              collapsed ? "justify-center" : "justify-between"
-            )}
-            onClick={() => onIQubeClick(qubeName)}
-          >
-            {/* Qube indicator and name */}
-            <div className="flex items-center">
-              <div className={cn(
-                "h-2 w-2 rounded-full bg-green-500 mr-2",
-                collapsed && "mr-0"
-              )} />
-              {!collapsed && <span>{qubeName}</span>}
-            </div>
-            
-            {/* Close button */}
-            {!collapsed && qubeName === "Metis" && (
-              <button
-                onClick={(e) => onCloseIQube(e, qubeName)}
-                className="opacity-0 group-hover:opacity-100 hover:bg-accent/50 p-1 rounded"
-              >
-                <X className="h-3 w-3" />
-              </button>
-            )}
+      {activeQubes["Metis"] && (
+        <div
+          className={cn(
+            "flex items-center justify-between rounded-md p-2 text-sm hover:bg-accent/30 cursor-pointer group",
+            collapsed ? "justify-center" : ""
+          )}
+          onClick={() => onIQubeClick("Metis")}
+        >
+          <div className="flex items-center">
+            <Bot className={cn("h-5 w-5 text-purple-500", collapsed ? "" : "mr-2")} />
+            {!collapsed && <span>Metis</span>}
           </div>
-        ))}
-      </div>
+          {!collapsed && onCloseIQube && (
+            <Button
+              variant="ghost"
+              size="icon"
+              className="h-5 w-5 opacity-0 group-hover:opacity-100"
+              onClick={(e) => onCloseIQube(e, "Metis")}
+            >
+              <ChevronLeft size={14} />
+            </Button>
+          )}
+        </div>
+      )}
+      
+      {activeQubes["GDrive"] && (
+        <div
+          className={cn(
+            "flex items-center rounded-md p-2 text-sm hover:bg-accent/30 cursor-pointer",
+            collapsed ? "justify-center" : ""
+          )}
+          onClick={() => onIQubeClick("GDrive")}
+        >
+          <FolderGit2 className={cn("h-5 w-5 text-green-500", collapsed ? "" : "mr-2")} />
+          {!collapsed && <span>GDrive</span>}
+        </div>
+      )}
     </div>
   );
 };
