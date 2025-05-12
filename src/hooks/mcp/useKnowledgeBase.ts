@@ -1,5 +1,6 @@
+
 import { useState, useEffect, useCallback } from 'react';
-import { getKBAIService, KBAIKnowledgeItem, KBAIQueryOptions } from '@/integrations/kbai/KBAIMCPService';
+import { getKBAIService, KBAIKnowledgeItem, KBAIQueryOptions } from '@/integrations/kbai';
 import { toast } from 'sonner';
 
 export interface KnowledgeBaseState {

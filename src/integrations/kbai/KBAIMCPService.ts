@@ -1,89 +1,56 @@
 
 import { toast } from 'sonner';
-import { supabase } from '@/integrations/supabase/client';
-
-export interface KBAIKnowledgeItem {
-  id: string;
-  title: string;
-  content: string;
-  type: string;
-  source: string;
-  relevance: number;
-  timestamp: string;
-}
-
-export interface KBAIQueryOptions {
-  query?: string;
-  category?: string;
-  limit?: number;
-  includeMetadata?: boolean;
-}
-
-interface KBAIConnectorResponse {
-  data: {
-    items: any[];
-    metadata?: {
-      source: string;
-      timestamp: string;
-      error?: string;
-      requestId?: string;
-    };
-    error?: string;
-    status?: number;
-  } | null;
-  error: Error | null;
-}
+import { KBAICache } from './KBAICache';
+import { KBAIConnector } from './KBAIConnector';
+import { KBAIHealthCheck } from './KBAIHealthCheck';
+import { getFallbackItems } from './fallbackItems';
+import { 
+  KBAIKnowledgeItem, 
+  KBAIQueryOptions, 
+  ConnectionStatus, 
+  DiagnosticResult 
+} from './types';
 
 /**
  * Service for communicating with KBAI MCP server via Supabase edge functions
  */
 export class KBAIMCPService {
-  private connectionStatus: 'disconnected' | 'connecting' | 'connected' | 'error' = 'disconnected';
-  private cache: Map<string, { data: KBAIKnowledgeItem[], timestamp: number }> = new Map();
-  private cacheLifetime = 5 * 60 * 1000; // 5 minutes
+  private connectionStatus: ConnectionStatus = 'disconnected';
   private maxRetries = 3;
   private retryDelay = 1000; // Start with 1 second delay
   private lastErrorMessage: string | null = null;
   private currentRequestId: string | null = null;
-  private edgeFunctionUrl: string;
-
+  
+  // Component services
+  private cache: KBAICache;
+  private connector: KBAIConnector;
+  private healthCheck: KBAIHealthCheck;
+  
   constructor() {
     // Use a fixed project ref since we can't access supabaseUrl directly
     const projectRef = 'odzaacarlkmxqrpmggwe'; // Using the value from config.toml
+    const edgeFunctionUrl = `https://${projectRef}.supabase.co/functions/v1/kbai-connector`;
     
-    this.edgeFunctionUrl = `https://${projectRef}.supabase.co/functions/v1/kbai-connector`;
-    console.log(`KBAIMCPService initialized with edge function URL: ${this.edgeFunctionUrl}`);
+    // Initialize component services
+    this.cache = new KBAICache();
+    this.connector = new KBAIConnector(projectRef);
+    this.healthCheck = new KBAIHealthCheck(edgeFunctionUrl);
+    
+    console.log(`KBAIMCPService initialized with edge function URL: ${edgeFunctionUrl}`);
   }
 
   /**
    * Check if the edge function is reachable
    */
   async checkEdgeFunctionHealth(): Promise<boolean> {
-    try {
-      console.log(`Checking health of edge function at: ${this.edgeFunctionUrl}/health`);
-      const response = await fetch(`${this.edgeFunctionUrl}/health`, {
-        method: 'GET',
-        headers: {
-          'Content-Type': 'application/json',
-          // Use a safer way to get the API key
-          'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token') || ''}`
-        }
-      });
-      
-      if (response.ok) {
-        const data = await response.json();
-        console.log('Edge function health check successful:', data);
-        return true;
-      } else {
-        console.error('Edge function health check failed with status:', response.status);
-        const text = await response.text();
-        console.error('Response body:', text);
-        return false;
-      }
-    } catch (error) {
-      console.error('Error during edge function health check:', error);
-      return false;
-    }
+    return this.healthCheck.checkEdgeFunctionHealth();
+  }
+  
+  /**
+   * Run diagnostics on the KBAI connection
+   */
+  async runDiagnostics(): Promise<DiagnosticResult> {
+    return this.healthCheck.runDiagnostics(this.connectionStatus, this.lastErrorMessage);
   }
 
   /**
@@ -91,8 +58,8 @@ export class KBAIMCPService {
    */
   async fetchKnowledgeItems(options: KBAIQueryOptions = {}): Promise<KBAIKnowledgeItem[]> {
     try {
-      const cacheKey = this.getCacheKey(options);
-      const cachedData = this.getFromCache(cacheKey);
+      const cacheKey = this.cache.getCacheKey(options);
+      const cachedData = this.cache.getFromCache(cacheKey);
       
       if (cachedData) {
         console.log('Using cached KBAI knowledge items:', cachedData.length);
@@ -126,8 +93,8 @@ export class KBAIMCPService {
             await new Promise(resolve => setTimeout(resolve, this.retryDelay * Math.pow(2, currentRetry - 1)));
           }
           
-          // Fetch from Supabase edge function
-          const response = await this.callKBAIConnector(options, this.currentRequestId);
+          // Fetch from KBAI connector
+          const response = await this.connector.callKBAIConnector(options, this.currentRequestId);
           
           if (response.error) {
             throw new Error(`KBAI connector error: ${response.error.message || 'Unknown error'}`);
@@ -152,10 +119,10 @@ export class KBAIMCPService {
           this.lastErrorMessage = null;
           
           // Cache the results
-          this.addToCache(cacheKey, items);
+          this.cache.addToCache(cacheKey, items);
           console.log('Successfully fetched and cached KBAI knowledge items:', items.length);
           
-          // Show success toast - Fix error by using correct sonner toast format
+          // Show success toast
           toast("Connected to knowledge base");
           
           return items;
@@ -177,17 +144,17 @@ export class KBAIMCPService {
       this.lastErrorMessage = error instanceof Error ? error.message : String(error);
       console.error('Failed to fetch KBAI knowledge after all retries:', error);
       
-      // Fix error by using correct sonner toast format
+      // Show error toast
       toast("Failed to connect to knowledge base: Using fallback knowledge items instead");
       
-      return this.getFallbackItems();
+      return getFallbackItems();
     }
   }
   
   /**
    * Get connection status and detailed error information
    */
-  getConnectionInfo(): { status: 'disconnected' | 'connecting' | 'connected' | 'error'; errorMessage: string | null } {
+  getConnectionInfo(): { status: ConnectionStatus; errorMessage: string | null } {
     return {
       status: this.connectionStatus,
       errorMessage: this.lastErrorMessage
@@ -204,70 +171,6 @@ export class KBAIMCPService {
   }
   
   /**
-   * Call the KBAI connector edge function with timeout
-   */
-  private async callKBAIConnector(options: KBAIQueryOptions, requestId: string): Promise<KBAIConnectorResponse> {
-    // Implement timeout with Promise.race
-    const timeoutPromise = new Promise<KBAIConnectorResponse>((_, reject) => {
-      setTimeout(() => reject(new Error('KBAI connection timed out after 10 seconds')), 10000);
-    });
-    
-    try {
-      console.log(`Calling KBAI connector with request ID: ${requestId}`);
-      
-      // Try direct fetch first to better diagnose CORS issues
-      try {
-        console.log(`Attempting direct fetch to: ${this.edgeFunctionUrl}`);
-        const directResponse = await fetch(this.edgeFunctionUrl, {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token') || ''}`
-          },
-          body: JSON.stringify({ 
-            options,
-            requestId
-          })
-        });
-        
-        console.log(`Direct fetch response status: ${directResponse.status}`);
-        
-        if (directResponse.ok) {
-          const data = await directResponse.json();
-          return { data, error: null };
-        } else {
-          console.warn(`Direct fetch failed with status ${directResponse.status}, falling back to Supabase client`);
-          const responseText = await directResponse.text();
-          console.warn('Response text:', responseText);
-        }
-      } catch (directFetchError) {
-        console.warn('Direct fetch attempt failed:', directFetchError);
-      }
-      
-      // Fall back to Supabase client if direct fetch fails
-      console.log('Falling back to Supabase client for edge function call');
-      
-      // Call the Supabase edge function with the request ID for tracking
-      const functionPromise = supabase.functions.invoke('kbai-connector', {
-        body: { 
-          options,
-          requestId
-        }
-      }) as Promise<KBAIConnectorResponse>;
-      
-      // Use Promise.race to implement timeout without AbortController
-      const response = await Promise.race([functionPromise, timeoutPromise]);
-      return response;
-    } catch (error) {
-      // Check if this was a timeout error
-      if (error instanceof Error && error.message === 'KBAI connection timed out after 10 seconds') {
-        throw new Error('KBAI connection timed out after 10 seconds');
-      }
-      throw error;
-    }
-  }
-  
-  /**
    * Transform raw knowledge item from KBAI format
    */
   private transformKnowledgeItem(item: any): KBAIKnowledgeItem {
@@ -280,75 +183,6 @@ export class KBAIMCPService {
       relevance: item.relevance || item.score || 0.5,
       timestamp: item.timestamp || new Date().toISOString()
     };
-  }
-  
-  /**
-   * Get fallback knowledge items when KBAI is unavailable
-   */
-  private getFallbackItems(): KBAIKnowledgeItem[] {
-    return [
-      {
-        id: 'fallback-1',
-        title: 'Introduction to Web3',
-        content: 'Web3 represents the next evolution of the internet, focusing on decentralization, blockchain technology, and token-based economics.',
-        type: 'concept',
-        source: 'Local',
-        relevance: 0.9,
-        timestamp: new Date().toISOString()
-      },
-      {
-        id: 'fallback-2',
-        title: 'Smart Contracts',
-        content: 'Smart contracts are self-executing contracts with the terms directly written into code. They automatically execute when predetermined conditions are met.',
-        type: 'concept',
-        source: 'Local',
-        relevance: 0.8,
-        timestamp: new Date().toISOString()
-      },
-      {
-        id: 'fallback-3',
-        title: 'Cryptocurrency Basics',
-        content: 'Cryptocurrencies are digital or virtual currencies that use cryptography for security and operate on decentralized networks based on blockchain technology.',
-        type: 'guide',
-        source: 'Local',
-        relevance: 0.7,
-        timestamp: new Date().toISOString()
-      }
-    ];
-  }
-  
-  /**
-   * Generate cache key from options
-   */
-  private getCacheKey(options: KBAIQueryOptions): string {
-    return `kbai-${JSON.stringify(options)}`;
-  }
-  
-  /**
-   * Get cached data if it exists and is not expired
-   */
-  private getFromCache(key: string): KBAIKnowledgeItem[] | null {
-    const cached = this.cache.get(key);
-    if (!cached) return null;
-    
-    const now = Date.now();
-    if (now - cached.timestamp > this.cacheLifetime) {
-      // Cache expired
-      this.cache.delete(key);
-      return null;
-    }
-    
-    return cached.data;
-  }
-  
-  /**
-   * Add data to cache
-   */
-  private addToCache(key: string, data: KBAIKnowledgeItem[]): void {
-    this.cache.set(key, {
-      data,
-      timestamp: Date.now()
-    });
   }
 }
 
@@ -364,3 +198,6 @@ export const getKBAIService = (): KBAIMCPService => {
   }
   return kbaiServiceInstance;
 };
+
+// Re-export types for convenience
+export * from './types';
