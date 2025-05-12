@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -49,9 +48,7 @@ const KnowledgeBase = ({ agentType }: KnowledgeBaseProps) => {
   
   // Handle refresh - explicitly passing an empty object to force refresh
   const handleRefresh = () => {
-    toast({
-      title: "Refreshing knowledge base...",
-    });
+    toast("Refreshing knowledge base...");
     fetchKnowledgeItems({});
   };
   
@@ -64,27 +61,22 @@ const KnowledgeBase = ({ agentType }: KnowledgeBaseProps) => {
   // Run connection diagnostics
   const handleRunDiagnostics = async () => {
     setIsDiagnosticMode(true);
-    toast({
-      title: "Running connection diagnostics...",
-    });
+    toast("Running connection diagnostics...");
     
     try {
       const results = await runDiagnostics();
       setDiagnosticResults(results);
       
-      toast({
-        title: "Diagnostics complete",
-        description: results.edgeFunctionHealthy 
-          ? "Edge function is healthy" 
-          : "Edge function health check failed",
-        variant: results.edgeFunctionHealthy ? "default" : "destructive"
-      });
+      // Check if the results have the expected properties
+      const isHealthy = 'edgeFunctionHealthy' in results ? results.edgeFunctionHealthy : false;
+      
+      toast(
+        isHealthy 
+          ? "Diagnostics complete: Edge function is healthy" 
+          : "Diagnostics complete: Edge function health check failed"
+      );
     } catch (error) {
-      toast({
-        title: "Diagnostics failed",
-        description: error.message,
-        variant: "destructive"
-      });
+      toast(`Diagnostics failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   };
   
@@ -124,34 +116,40 @@ const KnowledgeBase = ({ agentType }: KnowledgeBaseProps) => {
   const renderDiagnostics = () => {
     if (!diagnosticResults) return null;
     
+    // Safely check for properties
+    const isHealthy = 'edgeFunctionHealthy' in diagnosticResults ? diagnosticResults.edgeFunctionHealthy : false;
+    const connStatus = 'connectionStatus' in diagnosticResults ? diagnosticResults.connectionStatus : 'error';
+    const errorMsg = 'errorMessage' in diagnosticResults ? diagnosticResults.errorMessage : null;
+    const timestamp = 'timestamp' in diagnosticResults ? diagnosticResults.timestamp : new Date().toISOString();
+    
     return (
       <Card className="p-4 mb-4">
         <h3 className="font-medium mb-2">Connection Diagnostics</h3>
         <div className="text-sm space-y-2">
           <div className="flex justify-between">
             <span>Edge Function:</span>
-            <span className={diagnosticResults.edgeFunctionHealthy ? "text-green-500" : "text-red-500"}>
-              {diagnosticResults.edgeFunctionHealthy ? "Healthy" : "Unavailable"}
+            <span className={isHealthy ? "text-green-500" : "text-red-500"}>
+              {isHealthy ? "Healthy" : "Unavailable"}
             </span>
           </div>
           <div className="flex justify-between">
             <span>Connection Status:</span>
             <span className={
-              diagnosticResults.connectionStatus === 'connected' ? "text-green-500" : 
-              diagnosticResults.connectionStatus === 'connecting' ? "text-blue-500" : 
+              connStatus === 'connected' ? "text-green-500" : 
+              connStatus === 'connecting' ? "text-blue-500" : 
               "text-red-500"
             }>
-              {diagnosticResults.connectionStatus}
+              {connStatus}
             </span>
           </div>
-          {diagnosticResults.errorMessage && (
+          {errorMsg && (
             <div className="pt-2 text-xs text-muted-foreground">
               <p className="font-medium">Error Message:</p>
-              <p className="whitespace-pre-wrap">{diagnosticResults.errorMessage}</p>
+              <p className="whitespace-pre-wrap">{errorMsg}</p>
             </div>
           )}
           <div className="text-xs text-muted-foreground pt-2">
-            <span>Timestamp: {diagnosticResults.timestamp}</span>
+            <span>Timestamp: {timestamp}</span>
           </div>
         </div>
         <Button 

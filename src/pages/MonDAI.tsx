@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { AgentInterface } from '@/components/shared/agent';
 import { useToast } from '@/components/ui/use-toast';
@@ -9,6 +8,7 @@ import { getKBAIService } from '@/integrations/kbai/KBAIMCPService';
 import { useKnowledgeBase } from '@/hooks/mcp/useKnowledgeBase';
 import { Button } from '@/components/ui/button';
 import { AlertTriangle } from 'lucide-react';
+import { toast } from 'sonner';
 
 // Extend the agent service to support 'mondai' type
 declare module '@/services/agent-service' {
@@ -18,7 +18,7 @@ declare module '@/services/agent-service' {
 }
 
 const MonDAI = () => {
-  const { toast } = useToast();
+  const { toast: uiToast } = useToast(); // Renamed to avoid conflicts with sonner toast
   const { user } = useAuth();
   const [conversationId, setConversationId] = React.useState<string | null>(null);
   const [historicalContext, setHistoricalContext] = React.useState<string>('');
@@ -54,11 +54,7 @@ const MonDAI = () => {
         await fetchKnowledgeItems();
       } catch (error) {
         console.error("Error initializing KBAI:", error);
-        toast({
-          title: "Knowledge base connection issue",
-          description: "Could not connect to KBAI service. Using fallback data.",
-          variant: "destructive"
-        });
+        toast("Knowledge base connection issue: Could not connect to KBAI service. Using fallback data.");
       }
     };
     
@@ -112,19 +108,12 @@ const MonDAI = () => {
 
   // Handle manual reconnection
   const handleManualReconnect = async () => {
-    toast({
-      title: "Attempting to reconnect",
-      description: "Connecting to knowledge base..."
-    });
+    toast("Attempting to reconnect: Connecting to knowledge base...");
     
     try {
       await reconnect();
     } catch (error) {
-      toast({
-        title: "Reconnection failed",
-        description: "Please try again later",
-        variant: "destructive"
-      });
+      toast("Reconnection failed: Please try again later");
     }
   };
 
@@ -154,11 +143,7 @@ const MonDAI = () => {
         console.log(`Found ${relevantKnowledgeItems.length} relevant knowledge items for query`);
       } catch (error) {
         console.warn('Error fetching knowledge items:', error);
-        toast({
-          title: "Knowledge Base Error",
-          description: "Could not fetch relevant knowledge items. Using fallback data.",
-          variant: "destructive" 
-        });
+        toast("Knowledge Base Error: Could not fetch relevant knowledge items. Using fallback data.");
       }
       
       const { data, error } = await supabase.functions.invoke('mondai-ai', {
@@ -200,11 +185,7 @@ const MonDAI = () => {
       };
     } catch (error) {
       console.error('Failed to get AI response:', error);
-      toast({
-        title: "AI Service Error",
-        description: "Could not connect to the AI service. Please try again later.",
-        variant: "destructive"
-      });
+      toast("AI Service Error: Could not connect to the AI service. Please try again later.");
       
       return {
         id: Date.now().toString(),

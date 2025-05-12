@@ -1,4 +1,3 @@
-
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -48,9 +47,8 @@ export class KBAIMCPService {
   private edgeFunctionUrl: string;
 
   constructor() {
-    // Use the project ref from the Supabase client to construct the edge function URL
-    const { supabaseUrl } = supabase.auth.getSession();
-    const projectRef = supabaseUrl ? supabaseUrl.split('https://')[1].split('.')[0] : 'odzaacarlkmxqrpmggwe';
+    // Use a fixed project ref since we can't access supabaseUrl directly
+    const projectRef = 'odzaacarlkmxqrpmggwe'; // Using the value from config.toml
     
     this.edgeFunctionUrl = `https://${projectRef}.supabase.co/functions/v1/kbai-connector`;
     console.log(`KBAIMCPService initialized with edge function URL: ${this.edgeFunctionUrl}`);
@@ -66,7 +64,8 @@ export class KBAIMCPService {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          'apikey': supabase.supabaseKey || ''
+          // Use a safer way to get the API key
+          'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token') || ''}`
         }
       });
       
@@ -228,7 +227,6 @@ export class KBAIMCPService {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'apikey': supabase.supabaseKey || '',
             'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token') || ''}`
           },
           body: JSON.stringify({ 
@@ -267,7 +265,7 @@ export class KBAIMCPService {
       return response;
     } catch (error) {
       // Check if this was a timeout error
-      if (error.message === 'KBAI connection timed out after 10 seconds') {
+      if (error instanceof Error && error.message === 'KBAI connection timed out after 10 seconds') {
         throw new Error('KBAI connection timed out after 10 seconds');
       }
       throw error;

@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { getKBAIService, KBAIKnowledgeItem, KBAIQueryOptions } from '@/integrations/kbai/KBAIMCPService';
 import { toast } from 'sonner';
@@ -70,10 +69,7 @@ export function useKnowledgeBase(options: KBAIQueryOptions = {}) {
       
       if (status === 'connected') {
         setReconnectAttempts(0); // Reset reconnect attempts on success
-        toast({
-          title: 'Connected to knowledge base',
-          duration: 2000
-        });
+        toast("Connected to knowledge base");
       }
       
       return true;
@@ -89,11 +85,7 @@ export function useKnowledgeBase(options: KBAIQueryOptions = {}) {
       }));
       
       // Show toast with error message and troubleshooting info
-      toast({
-        title: 'Knowledge base connection failed',
-        description: error instanceof Error ? error.message : 'Failed to connect to knowledge base',
-        variant: 'destructive'
-      });
+      toast(`Knowledge base connection failed: ${error instanceof Error ? error.message : 'Failed to connect to knowledge base'}`);
       
       return false;
     }
@@ -155,11 +147,11 @@ export function useKnowledgeBase(options: KBAIQueryOptions = {}) {
       setState(prev => ({
         ...prev,
         isLoading: false,
-        errorMessage: `Diagnostics error: ${error.message}`
+        errorMessage: `Diagnostics error: ${error instanceof Error ? error.message : String(error)}`
       }));
       
       return {
-        error: error.message,
+        error: error instanceof Error ? error.message : String(error),
         timestamp: new Date().toISOString()
       };
     }
