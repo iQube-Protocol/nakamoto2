@@ -45,6 +45,46 @@ export class KBAIMCPService {
   private retryDelay = 1000; // Start with 1 second delay
   private lastErrorMessage: string | null = null;
   private currentRequestId: string | null = null;
+  private edgeFunctionUrl: string;
+
+  constructor() {
+    // Use the project ref from the Supabase client to construct the edge function URL
+    const { supabaseUrl } = supabase.auth.getSession();
+    const projectRef = supabaseUrl ? supabaseUrl.split('https://')[1].split('.')[0] : 'odzaacarlkmxqrpmggwe';
+    
+    this.edgeFunctionUrl = `https://${projectRef}.supabase.co/functions/v1/kbai-connector`;
+    console.log(`KBAIMCPService initialized with edge function URL: ${this.edgeFunctionUrl}`);
+  }
+
+  /**
+   * Check if the edge function is reachable
+   */
+  async checkEdgeFunctionHealth(): Promise<boolean> {
+    try {
+      console.log(`Checking health of edge function at: ${this.edgeFunctionUrl}/health`);
+      const response = await fetch(`${this.edgeFunctionUrl}/health`, {
+        method: 'GET',
+        headers: {
+          'Content-Type': 'application/json',
+          'apikey': supabase.supabaseKey || ''
+        }
+      });
+      
+      if (response.ok) {
+        const data = await response.json();
+        console.log('Edge function health check successful:', data);
+        return true;
+      } else {
+        console.error('Edge function health check failed with status:', response.status);
+        const text = await response.text();
+        console.error('Response body:', text);
+        return false;
+      }
+    } catch (error) {
+      console.error('Error during edge function health check:', error);
+      return false;
+    }
+  }
 
   /**
    * Fetch knowledge items from KBAI MCP server with retry logic
@@ -61,6 +101,14 @@ export class KBAIMCPService {
       
       this.connectionStatus = 'connecting';
       console.log('Fetching knowledge items from KBAI MCP server with options:', options);
+      
+      // First check if the edge function is reachable
+      const isHealthy = await this.checkEdgeFunctionHealth().catch(() => false);
+      if (!isHealthy) {
+        console.warn('KBAI edge function health check failed, will attempt direct call anyway');
+      } else {
+        console.log('KBAI edge function health check passed, proceeding with request');
+      }
       
       // Generate a unique request ID for tracking
       this.currentRequestId = crypto.randomUUID();
@@ -108,7 +156,10 @@ export class KBAIMCPService {
           console.log('Successfully fetched and cached KBAI knowledge items:', items.length);
           
           // Show success toast
-          toast.success('Connected to knowledge base', { duration: 2000 });
+          toast({
+            title: "Connected to knowledge base",
+            duration: 2000
+          });
           
           return items;
         } catch (error) {
@@ -129,8 +180,10 @@ export class KBAIMCPService {
       this.lastErrorMessage = error instanceof Error ? error.message : String(error);
       console.error('Failed to fetch KBAI knowledge after all retries:', error);
       
-      toast.error('Failed to connect to knowledge base', {
-        description: 'Using fallback knowledge items instead'
+      toast({
+        title: "Failed to connect to knowledge base",
+        description: "Using fallback knowledge items instead",
+        variant: "destructive"
       });
       
       return this.getFallbackItems();
@@ -167,6 +220,39 @@ export class KBAIMCPService {
     
     try {
       console.log(`Calling KBAI connector with request ID: ${requestId}`);
+      
+      // Try direct fetch first to better diagnose CORS issues
+      try {
+        console.log(`Attempting direct fetch to: ${this.edgeFunctionUrl}`);
+        const directResponse = await fetch(this.edgeFunctionUrl, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': supabase.supabaseKey || '',
+            'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token') || ''}`
+          },
+          body: JSON.stringify({ 
+            options,
+            requestId
+          })
+        });
+        
+        console.log(`Direct fetch response status: ${directResponse.status}`);
+        
+        if (directResponse.ok) {
+          const data = await directResponse.json();
+          return { data, error: null };
+        } else {
+          console.warn(`Direct fetch failed with status ${directResponse.status}, falling back to Supabase client`);
+          const responseText = await directResponse.text();
+          console.warn('Response text:', responseText);
+        }
+      } catch (directFetchError) {
+        console.warn('Direct fetch attempt failed:', directFetchError);
+      }
+      
+      // Fall back to Supabase client if direct fetch fails
+      console.log('Falling back to Supabase client for edge function call');
       
       // Call the Supabase edge function with the request ID for tracking
       const functionPromise = supabase.functions.invoke('kbai-connector', {

@@ -1,3 +1,4 @@
+
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { corsHeaders } from '../_shared/cors.ts';
 
@@ -148,6 +149,26 @@ async function fetchKBAIKnowledge(options: any, requestId: string) {
 
 // Main Supabase Edge Function handler
 serve(async (req) => {
+  // Special endpoint for health check
+  const url = new URL(req.url);
+  if (url.pathname.endsWith('/health')) {
+    console.log('Health check endpoint called');
+    return new Response(
+      JSON.stringify({ 
+        status: "ok", 
+        timestamp: new Date().toISOString(),
+        environment: "edge function" 
+      }),
+      {
+        status: 200,
+        headers: {
+          ...corsHeaders,
+          'Content-Type': 'application/json'
+        }
+      }
+    );
+  }
+
   // Improved CORS handling for preflight requests
   if (req.method === 'OPTIONS') {
     console.log("Handling OPTIONS preflight request");
@@ -204,7 +225,7 @@ serve(async (req) => {
         }
       }),
       {
-        status: 500,
+        status: 200, // Return 200 even on error to prevent CORS issues
         headers: {
           ...corsHeaders,
           'Content-Type': 'application/json'

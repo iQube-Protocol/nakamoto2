@@ -4,7 +4,7 @@ import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, RefreshCw, WifiOff, AlertTriangle, Info } from 'lucide-react';
+import { Search, RefreshCw, WifiOff, AlertTriangle, Info, Activity } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { KBAIKnowledgeItem } from '@/integrations/kbai/KBAIMCPService';
 import { useKnowledgeBase } from '@/hooks/mcp/useKnowledgeBase';
@@ -20,6 +20,8 @@ const KnowledgeBase = ({ agentType }: KnowledgeBaseProps) => {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedItem, setSelectedItem] = useState<KBAIKnowledgeItem | null>(null);
   const [isViewerOpen, setIsViewerOpen] = useState(false);
+  const [isDiagnosticMode, setIsDiagnosticMode] = useState(false);
+  const [diagnosticResults, setDiagnosticResults] = useState<any>(null);
   
   const {
     items,
@@ -28,7 +30,9 @@ const KnowledgeBase = ({ agentType }: KnowledgeBaseProps) => {
     errorMessage,
     fetchKnowledgeItems,
     searchKnowledge,
-    resetSearch
+    resetSearch,
+    reconnect,
+    runDiagnostics
   } = useKnowledgeBase({
     limit: 8
   });
@@ -45,7 +49,9 @@ const KnowledgeBase = ({ agentType }: KnowledgeBaseProps) => {
   
   // Handle refresh - explicitly passing an empty object to force refresh
   const handleRefresh = () => {
-    toast.info('Refreshing knowledge base...');
+    toast({
+      title: "Refreshing knowledge base...",
+    });
     fetchKnowledgeItems({});
   };
   
@@ -53,6 +59,33 @@ const KnowledgeBase = ({ agentType }: KnowledgeBaseProps) => {
   const handleKnowledgeItemClick = (item: KBAIKnowledgeItem) => {
     setSelectedItem(item);
     setIsViewerOpen(true);
+  };
+
+  // Run connection diagnostics
+  const handleRunDiagnostics = async () => {
+    setIsDiagnosticMode(true);
+    toast({
+      title: "Running connection diagnostics...",
+    });
+    
+    try {
+      const results = await runDiagnostics();
+      setDiagnosticResults(results);
+      
+      toast({
+        title: "Diagnostics complete",
+        description: results.edgeFunctionHealthy 
+          ? "Edge function is healthy" 
+          : "Edge function health check failed",
+        variant: results.edgeFunctionHealthy ? "default" : "destructive"
+      });
+    } catch (error) {
+      toast({
+        title: "Diagnostics failed",
+        description: error.message,
+        variant: "destructive"
+      });
+    }
   };
   
   // Render knowledge item
@@ -86,6 +119,52 @@ const KnowledgeBase = ({ agentType }: KnowledgeBaseProps) => {
       ))}
     </>
   );
+
+  // Render diagnostic results
+  const renderDiagnostics = () => {
+    if (!diagnosticResults) return null;
+    
+    return (
+      <Card className="p-4 mb-4">
+        <h3 className="font-medium mb-2">Connection Diagnostics</h3>
+        <div className="text-sm space-y-2">
+          <div className="flex justify-between">
+            <span>Edge Function:</span>
+            <span className={diagnosticResults.edgeFunctionHealthy ? "text-green-500" : "text-red-500"}>
+              {diagnosticResults.edgeFunctionHealthy ? "Healthy" : "Unavailable"}
+            </span>
+          </div>
+          <div className="flex justify-between">
+            <span>Connection Status:</span>
+            <span className={
+              diagnosticResults.connectionStatus === 'connected' ? "text-green-500" : 
+              diagnosticResults.connectionStatus === 'connecting' ? "text-blue-500" : 
+              "text-red-500"
+            }>
+              {diagnosticResults.connectionStatus}
+            </span>
+          </div>
+          {diagnosticResults.errorMessage && (
+            <div className="pt-2 text-xs text-muted-foreground">
+              <p className="font-medium">Error Message:</p>
+              <p className="whitespace-pre-wrap">{diagnosticResults.errorMessage}</p>
+            </div>
+          )}
+          <div className="text-xs text-muted-foreground pt-2">
+            <span>Timestamp: {diagnosticResults.timestamp}</span>
+          </div>
+        </div>
+        <Button 
+          onClick={() => setIsDiagnosticMode(false)} 
+          variant="outline" 
+          size="sm" 
+          className="mt-4 w-full"
+        >
+          Hide Diagnostics
+        </Button>
+      </Card>
+    );
+  };
   
   // Render connection status
   const renderConnectionStatus = () => {
@@ -104,24 +183,20 @@ const KnowledgeBase = ({ agentType }: KnowledgeBaseProps) => {
             <WifiOff size={16} />
             <div className="flex-1">
               <span>Could not connect to knowledge base. Using fallback data.</span>
-              {errorMessage && (
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Button variant="ghost" size="icon" className="h-5 w-5 ml-1 hover:bg-destructive/20">
-                      <Info size={14} />
-                    </Button>
-                  </TooltipTrigger>
-                  <TooltipContent className="max-w-sm">
-                    <p className="text-xs">{errorMessage}</p>
-                  </TooltipContent>
-                </Tooltip>
-              )}
+              <Button 
+                variant="ghost" 
+                size="icon" 
+                className="h-5 w-5 ml-1 hover:bg-destructive/20"
+                onClick={handleRunDiagnostics}
+              >
+                <Info size={14} />
+              </Button>
             </div>
             <Button 
               variant="ghost" 
               size="sm" 
               className="h-6 px-2 text-xs"
-              onClick={handleRefresh}
+              onClick={reconnect}
             >
               Retry
             </Button>
@@ -139,7 +214,7 @@ const KnowledgeBase = ({ agentType }: KnowledgeBaseProps) => {
               variant="ghost" 
               size="sm" 
               className="h-6 px-2 text-xs"
-              onClick={handleRefresh}
+              onClick={reconnect}
             >
               Connect
             </Button>
@@ -191,21 +266,39 @@ const KnowledgeBase = ({ agentType }: KnowledgeBaseProps) => {
         </form>
         
         {renderConnectionStatus()}
+        {isDiagnosticMode && renderDiagnostics()}
       </div>
       
       <div className="flex items-center justify-between mb-3">
         <h4 className="text-sm font-medium">
           {searchQuery ? `Results for "${searchQuery}"` : "Relevant Knowledge"}
         </h4>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleRefresh}
-          disabled={isLoading}
-          className="h-8 px-2"
-        >
-          <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
-        </Button>
+        <div className="flex gap-2">
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleRunDiagnostics}
+                disabled={isLoading}
+                className="h-8 px-2"
+              >
+                <Activity size={16} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>Run connection diagnostics</TooltipContent>
+          </Tooltip>
+          
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleRefresh}
+            disabled={isLoading}
+            className="h-8 px-2"
+          >
+            <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
+          </Button>
+        </div>
       </div>
       
       <div className="flex-1 overflow-hidden">

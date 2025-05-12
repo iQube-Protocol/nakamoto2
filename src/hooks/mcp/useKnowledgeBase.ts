@@ -9,6 +9,7 @@ export interface KnowledgeBaseState {
   error: Error | null;
   connectionStatus: 'disconnected' | 'connecting' | 'connected' | 'error';
   errorMessage: string | null;
+  lastAttemptTimestamp: number | null;
 }
 
 export function useKnowledgeBase(options: KBAIQueryOptions = {}) {
@@ -17,7 +18,8 @@ export function useKnowledgeBase(options: KBAIQueryOptions = {}) {
     isLoading: false,
     error: null,
     connectionStatus: 'disconnected',
-    errorMessage: null
+    errorMessage: null,
+    lastAttemptTimestamp: null
   });
   const [queryOptions, setQueryOptions] = useState<KBAIQueryOptions>(options);
   const [reconnectAttempts, setReconnectAttempts] = useState(0);
@@ -32,9 +34,22 @@ export function useKnowledgeBase(options: KBAIQueryOptions = {}) {
       setQueryOptions(prevOptions => ({ ...prevOptions, ...newOptions }));
     }
     
-    setState(prev => ({ ...prev, isLoading: true, connectionStatus: 'connecting' }));
+    setState(prev => ({ 
+      ...prev, 
+      isLoading: true, 
+      connectionStatus: 'connecting',
+      lastAttemptTimestamp: Date.now() 
+    }));
     
     try {
+      // First check if the edge function is available
+      console.log('Checking edge function health before fetching knowledge items');
+      const isHealthy = await kbaiService.checkEdgeFunctionHealth().catch(() => false);
+      
+      if (!isHealthy) {
+        console.warn('Edge function health check failed, proceeding with attempt anyway');
+      }
+      
       // Use current options merged with any new options
       const currentOptions = newOptions ? { ...queryOptions, ...newOptions } : queryOptions;
       console.log(`Attempting to fetch knowledge items with options:`, currentOptions);
@@ -47,17 +62,21 @@ export function useKnowledgeBase(options: KBAIQueryOptions = {}) {
         isLoading: false,
         error: null,
         connectionStatus: status,
-        errorMessage
+        errorMessage,
+        lastAttemptTimestamp: Date.now()
       });
       
       console.log(`Fetched ${items.length} knowledge items with status: ${status}`);
       
       if (status === 'connected') {
         setReconnectAttempts(0); // Reset reconnect attempts on success
-        toast.success('Connected to knowledge base', {
+        toast({
+          title: 'Connected to knowledge base',
           duration: 2000
         });
       }
+      
+      return true;
     } catch (error) {
       console.error('Error in useKnowledgeBase:', error);
       setState(prev => ({
@@ -65,13 +84,18 @@ export function useKnowledgeBase(options: KBAIQueryOptions = {}) {
         isLoading: false,
         error: error instanceof Error ? error : new Error('Unknown error'),
         connectionStatus: 'error',
-        errorMessage: error instanceof Error ? error.message : String(error)
+        errorMessage: error instanceof Error ? error.message : String(error),
+        lastAttemptTimestamp: Date.now()
       }));
       
       // Show toast with error message and troubleshooting info
-      toast.error('Knowledge base connection failed', {
-        description: error instanceof Error ? error.message : 'Failed to connect to knowledge base'
+      toast({
+        title: 'Knowledge base connection failed',
+        description: error instanceof Error ? error.message : 'Failed to connect to knowledge base',
+        variant: 'destructive'
       });
+      
+      return false;
     }
   }, [kbaiService, queryOptions]);
   
@@ -92,6 +116,54 @@ export function useKnowledgeBase(options: KBAIQueryOptions = {}) {
     updateQueryOptions(resetOptions);
     fetchKnowledgeItems(resetOptions);
   }, [updateQueryOptions, fetchKnowledgeItems]);
+
+  // Run diagnostics on the knowledge base connection
+  const runDiagnostics = useCallback(async () => {
+    setState(prev => ({ ...prev, isLoading: true }));
+    
+    try {
+      console.log('Running knowledge base connection diagnostics...');
+      
+      // Step 1: Check edge function health
+      const isEdgeFunctionHealthy = await kbaiService.checkEdgeFunctionHealth();
+      console.log('Edge function health check result:', isEdgeFunctionHealthy);
+      
+      // Step 2: Get current connection info
+      const connectionInfo = kbaiService.getConnectionInfo();
+      console.log('Current connection info:', connectionInfo);
+      
+      // Step 3: Return diagnostic results
+      const diagnosticResults = {
+        edgeFunctionHealthy: isEdgeFunctionHealthy,
+        connectionStatus: connectionInfo.status,
+        errorMessage: connectionInfo.errorMessage,
+        timestamp: new Date().toISOString()
+      };
+      
+      console.log('Diagnostic results:', diagnosticResults);
+      
+      setState(prev => ({
+        ...prev,
+        isLoading: false,
+        errorMessage: prev.errorMessage + '\n\nDiagnostics: ' + JSON.stringify(diagnosticResults)
+      }));
+      
+      return diagnosticResults;
+    } catch (error) {
+      console.error('Error running diagnostics:', error);
+      
+      setState(prev => ({
+        ...prev,
+        isLoading: false,
+        errorMessage: `Diagnostics error: ${error.message}`
+      }));
+      
+      return {
+        error: error.message,
+        timestamp: new Date().toISOString()
+      };
+    }
+  }, [kbaiService]);
 
   // Force a reconnect attempt with improved logging
   const reconnect = useCallback(async () => {
@@ -130,6 +202,7 @@ export function useKnowledgeBase(options: KBAIQueryOptions = {}) {
     searchKnowledge,
     resetSearch,
     reconnect,
+    runDiagnostics,
     reconnectAttempts
   };
 }
