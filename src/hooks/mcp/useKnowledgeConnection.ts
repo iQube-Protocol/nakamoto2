@@ -55,6 +55,19 @@ export function useKnowledgeConnection() {
       const isHealthy = await kbaiService.checkEdgeFunctionHealth();
       console.log('Edge function health check result:', isHealthy);
       
+      if (!isHealthy) {
+        toast.error("Edge Function Not Available", {
+          description: "The KBAI connector function appears to be unavailable. Please ensure it's deployed to Supabase."
+        });
+        setState(prev => ({ 
+          ...prev, 
+          isLoading: false, 
+          connectionStatus: 'error',
+          errorMessage: "Edge function not deployed or not accessible"
+        }));
+        return false;
+      }
+      
       if (isHealthy) {
         toast("Edge function is available. Attempting to reconnect...");
       }
@@ -73,7 +86,7 @@ export function useKnowledgeConnection() {
       }));
       
       if (status === 'connected') {
-        toast("Successfully reconnected to knowledge base");
+        toast.success("Successfully reconnected to knowledge base");
         return true;
       } else {
         toast("Reconnection attempt completed, but connection is not fully established");
@@ -88,7 +101,7 @@ export function useKnowledgeConnection() {
         errorMessage: error instanceof Error ? error.message : 'Unknown error'
       }));
       
-      toast(`Reconnection failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      toast.error(`Reconnection failed: ${error instanceof Error ? error.message : 'Unknown error'}`);
       return false;
     }
   }, [kbaiService]);

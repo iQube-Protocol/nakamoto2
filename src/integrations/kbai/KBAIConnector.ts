@@ -14,6 +14,20 @@ export class KBAIConnector {
   }
   
   /**
+   * Get authentication token from Supabase session
+   */
+  private async getAuthToken(): Promise<string> {
+    try {
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token || '';
+      return token;
+    } catch (error) {
+      console.error('Error retrieving auth token:', error);
+      return '';
+    }
+  }
+  
+  /**
    * Call the KBAI connector edge function with timeout
    */
   async callKBAIConnector(options: KBAIQueryOptions, requestId: string): Promise<KBAIConnectorResponse> {
@@ -25,6 +39,12 @@ export class KBAIConnector {
     try {
       console.log(`Calling KBAI connector with request ID: ${requestId}`);
       
+      // Get authentication token
+      const token = await this.getAuthToken();
+      if (!token) {
+        console.warn('No authentication token available, proceeding with empty token');
+      }
+      
       // Try direct fetch first to better diagnose CORS issues
       try {
         console.log(`Attempting direct fetch to: ${this.edgeFunctionUrl}`);
@@ -32,7 +52,7 @@ export class KBAIConnector {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token') || ''}`
+            'Authorization': `Bearer ${token}`
           },
           body: JSON.stringify({ 
             options,

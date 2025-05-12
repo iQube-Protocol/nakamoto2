@@ -1,4 +1,5 @@
 
+import { supabase } from '@/integrations/supabase/client';
 import { DiagnosticResult } from './types';
 
 /**
@@ -12,16 +13,34 @@ export class KBAIHealthCheck {
   }
   
   /**
+   * Get authentication token from Supabase session
+   */
+  private async getAuthToken(): Promise<string> {
+    try {
+      const { data } = await supabase.auth.getSession();
+      const token = data.session?.access_token || '';
+      return token;
+    } catch (error) {
+      console.error('Error retrieving auth token:', error);
+      return '';
+    }
+  }
+  
+  /**
    * Check if the edge function is reachable
    */
   async checkEdgeFunctionHealth(): Promise<boolean> {
     try {
       console.log(`Checking health of edge function at: ${this.edgeFunctionUrl}/health`);
+      
+      // Get authentication token
+      const token = await this.getAuthToken();
+      
       const response = await fetch(`${this.edgeFunctionUrl}/health`, {
         method: 'GET',
         headers: {
           'Content-Type': 'application/json',
-          'Authorization': `Bearer ${localStorage.getItem('supabase.auth.token') || ''}`
+          'Authorization': `Bearer ${token}`
         }
       });
       

@@ -1,14 +1,17 @@
 
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { KBAIQueryOptions } from '@/integrations/kbai';
 import { useKnowledgeItems } from './useKnowledgeItems';
 import { useKnowledgeConnection } from './useKnowledgeConnection';
 import { useKnowledgeSearch } from './useKnowledgeSearch';
+import { toast } from 'sonner';
 
 /**
  * Combined hook for all knowledge base functionality
  */
 export function useKnowledgeBase(options: KBAIQueryOptions = {}) {
+  const [connectionAttempted, setConnectionAttempted] = useState(false);
+  
   // Use all the individual hooks
   const {
     items,
@@ -25,7 +28,8 @@ export function useKnowledgeBase(options: KBAIQueryOptions = {}) {
     reconnectAttempts,
     isLoading: isConnectionLoading,
     reconnect,
-    runDiagnostics
+    runDiagnostics,
+    checkConnectionStatus
   } = useKnowledgeConnection();
   
   const {
@@ -41,14 +45,41 @@ export function useKnowledgeBase(options: KBAIQueryOptions = {}) {
   useEffect(() => {
     const attemptInitialConnection = async () => {
       try {
+        console.log('Attempting initial knowledge base connection...');
+        setConnectionAttempted(true);
         await fetchKnowledgeItems();
       } catch (error) {
         console.error('Failed to establish initial KBAI connection:', error);
+        // Show detailed error toast
+        toast.error("Knowledge Base Connection Failed", {
+          description: error instanceof Error ? error.message : 'Unknown error occurred'
+        });
       }
     };
     
-    attemptInitialConnection();
-  }, [fetchKnowledgeItems]);
+    if (!connectionAttempted) {
+      attemptInitialConnection();
+    }
+  }, [fetchKnowledgeItems, connectionAttempted]);
+  
+  // Updated reconnect function with better error handling
+  const enhancedReconnect = async () => {
+    toast("Attempting to reconnect to knowledge base...");
+    try {
+      const success = await reconnect();
+      if (success) {
+        // Refresh knowledge items
+        await fetchKnowledgeItems();
+      }
+      return success;
+    } catch (error) {
+      console.error('Enhanced reconnect failed:', error);
+      toast.error("Reconnection failed", {
+        description: error instanceof Error ? error.message : 'Unknown error occurred'
+      });
+      return false;
+    }
+  };
   
   return {
     // Data
@@ -66,8 +97,9 @@ export function useKnowledgeBase(options: KBAIQueryOptions = {}) {
     updateQueryOptions,
     searchKnowledge,
     resetSearch,
-    reconnect,
-    runDiagnostics
+    reconnect: enhancedReconnect,
+    runDiagnostics,
+    checkConnectionStatus
   };
 }
 

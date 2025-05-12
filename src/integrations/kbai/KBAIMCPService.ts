@@ -70,9 +70,15 @@ export class KBAIMCPService {
       console.log('Fetching knowledge items from KBAI MCP server with options:', options);
       
       // First check if the edge function is reachable
-      const isHealthy = await this.checkEdgeFunctionHealth().catch(() => false);
+      const isHealthy = await this.checkEdgeFunctionHealth().catch((error) => {
+        console.error('Health check error:', error);
+        return false;
+      });
+      
       if (!isHealthy) {
-        console.warn('KBAI edge function health check failed, will attempt direct call anyway');
+        console.warn('KBAI edge function health check failed - edge function may not be deployed');
+        this.lastErrorMessage = "Edge function not reachable. Verify deployment of the 'kbai-connector' function to Supabase.";
+        throw new Error(this.lastErrorMessage);
       } else {
         console.log('KBAI edge function health check passed, proceeding with request');
       }
@@ -144,8 +150,10 @@ export class KBAIMCPService {
       this.lastErrorMessage = error instanceof Error ? error.message : String(error);
       console.error('Failed to fetch KBAI knowledge after all retries:', error);
       
-      // Show error toast
-      toast("Failed to connect to knowledge base: Using fallback knowledge items instead");
+      // Show detailed error toast
+      toast.error("Knowledge base connection failed", {
+        description: `Reason: ${this.lastErrorMessage}. Using fallback data.`
+      });
       
       return getFallbackItems();
     }
