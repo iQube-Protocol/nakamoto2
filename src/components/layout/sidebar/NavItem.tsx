@@ -12,6 +12,7 @@ interface NavItemProps {
   active?: boolean;
   collapsed?: boolean;
   onClick?: () => void;
+  onNavigate?: () => void;
 }
 
 const NavItem: React.FC<NavItemProps> = ({
@@ -21,11 +22,17 @@ const NavItem: React.FC<NavItemProps> = ({
   active,
   collapsed,
   onClick,
+  onNavigate,
 }) => {
+  const handleClick = (e: React.MouseEvent) => {
+    if (onClick) onClick();
+    if (onNavigate) onNavigate();
+  };
+
   const content = (
     <Link
       to={href}
-      onClick={onClick}
+      onClick={handleClick}
       className={cn(
         "flex items-center rounded-md p-2 text-sm hover:bg-accent/30",
         active && "bg-accent/20 text-white font-medium", // Ensure text stays white in active state
