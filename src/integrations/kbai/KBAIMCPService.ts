@@ -1,4 +1,3 @@
-
 import { toast } from 'sonner';
 
 export interface KBAIKnowledgeItem {
@@ -16,6 +15,13 @@ export interface KBAIQueryOptions {
   category?: string;
   limit?: number;
   includeMetadata?: boolean;
+}
+
+interface KBAIConnectorResponse {
+  data: {
+    items: any[];
+  } | null;
+  error: Error | null;
 }
 
 /**
@@ -94,7 +100,7 @@ export class KBAIMCPService {
   /**
    * Call the KBAI connector edge function
    */
-  private async callKBAIConnector(options: KBAIQueryOptions) {
+  private async callKBAIConnector(options: KBAIQueryOptions): Promise<KBAIConnectorResponse> {
     // In a real implementation, this would call the Supabase edge function
     // For now, we'll simulate the call with a mock response
     
