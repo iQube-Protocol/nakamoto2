@@ -20,6 +20,7 @@ export function useKnowledgeBase(options: KBAIQueryOptions = {}) {
     errorMessage: null
   });
   const [queryOptions, setQueryOptions] = useState<KBAIQueryOptions>(options);
+  const [reconnectAttempts, setReconnectAttempts] = useState(0);
   
   // Get KBAI service
   const kbaiService = getKBAIService();
@@ -36,6 +37,8 @@ export function useKnowledgeBase(options: KBAIQueryOptions = {}) {
     try {
       // Use current options merged with any new options
       const currentOptions = newOptions ? { ...queryOptions, ...newOptions } : queryOptions;
+      console.log(`Attempting to fetch knowledge items with options:`, currentOptions);
+      
       const items = await kbaiService.fetchKnowledgeItems(currentOptions);
       const { status, errorMessage } = kbaiService.getConnectionInfo();
       
@@ -50,6 +53,7 @@ export function useKnowledgeBase(options: KBAIQueryOptions = {}) {
       console.log(`Fetched ${items.length} knowledge items with status: ${status}`);
       
       if (status === 'connected') {
+        setReconnectAttempts(0); // Reset reconnect attempts on success
         toast.success('Connected to knowledge base', {
           duration: 2000
         });
@@ -89,11 +93,34 @@ export function useKnowledgeBase(options: KBAIQueryOptions = {}) {
     fetchKnowledgeItems(resetOptions);
   }, [updateQueryOptions, fetchKnowledgeItems]);
 
-  // Force a reconnect attempt
+  // Force a reconnect attempt with improved logging
   const reconnect = useCallback(async () => {
     console.log('Attempting to reconnect to KBAI server...');
+    setReconnectAttempts(prev => prev + 1);
+    
+    setState(prev => ({ 
+      ...prev, 
+      isLoading: true, 
+      connectionStatus: 'connecting',
+      errorMessage: null 
+    }));
+    
     kbaiService.reset();
-    await fetchKnowledgeItems(queryOptions);
+    
+    try {
+      await fetchKnowledgeItems(queryOptions);
+      console.log('KBAI reconnection successful');
+      return true;
+    } catch (error) {
+      console.error('KBAI reconnection failed:', error);
+      setState(prev => ({ 
+        ...prev, 
+        isLoading: false, 
+        connectionStatus: 'error',
+        errorMessage: `Reconnection failed: ${error.message || 'Unknown error'}`
+      }));
+      return false;
+    }
   }, [kbaiService, fetchKnowledgeItems, queryOptions]);
   
   return {
@@ -102,6 +129,7 @@ export function useKnowledgeBase(options: KBAIQueryOptions = {}) {
     updateQueryOptions,
     searchKnowledge,
     resetSearch,
-    reconnect
+    reconnect,
+    reconnectAttempts
   };
 }

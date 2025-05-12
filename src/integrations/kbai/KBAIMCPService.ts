@@ -1,3 +1,4 @@
+
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
@@ -43,6 +44,7 @@ export class KBAIMCPService {
   private maxRetries = 3;
   private retryDelay = 1000; // Start with 1 second delay
   private lastErrorMessage: string | null = null;
+  private currentRequestId: string | null = null;
 
   /**
    * Fetch knowledge items from KBAI MCP server with retry logic
@@ -60,6 +62,10 @@ export class KBAIMCPService {
       this.connectionStatus = 'connecting';
       console.log('Fetching knowledge items from KBAI MCP server with options:', options);
       
+      // Generate a unique request ID for tracking
+      this.currentRequestId = crypto.randomUUID();
+      console.log(`Starting KBAI request with ID: ${this.currentRequestId}`);
+      
       // Implement retry logic with exponential backoff
       let currentRetry = 0;
       let lastError: any = null;
@@ -73,7 +79,7 @@ export class KBAIMCPService {
           }
           
           // Fetch from Supabase edge function
-          const response = await this.callKBAIConnector(options);
+          const response = await this.callKBAIConnector(options, this.currentRequestId);
           
           if (response.error) {
             throw new Error(`KBAI connector error: ${response.error.message || 'Unknown error'}`);
@@ -100,6 +106,9 @@ export class KBAIMCPService {
           // Cache the results
           this.addToCache(cacheKey, items);
           console.log('Successfully fetched and cached KBAI knowledge items:', items.length);
+          
+          // Show success toast
+          toast.success('Connected to knowledge base', { duration: 2000 });
           
           return items;
         } catch (error) {
@@ -150,18 +159,20 @@ export class KBAIMCPService {
   /**
    * Call the KBAI connector edge function with timeout
    */
-  private async callKBAIConnector(options: KBAIQueryOptions): Promise<KBAIConnectorResponse> {
-    // Instead of using AbortController, we'll implement timeout with Promise.race
+  private async callKBAIConnector(options: KBAIQueryOptions, requestId: string): Promise<KBAIConnectorResponse> {
+    // Implement timeout with Promise.race
     const timeoutPromise = new Promise<KBAIConnectorResponse>((_, reject) => {
       setTimeout(() => reject(new Error('KBAI connection timed out after 10 seconds')), 10000);
     });
     
     try {
+      console.log(`Calling KBAI connector with request ID: ${requestId}`);
+      
       // Call the Supabase edge function with the request ID for tracking
       const functionPromise = supabase.functions.invoke('kbai-connector', {
         body: { 
           options,
-          requestId: crypto.randomUUID() // Add a request ID for tracking
+          requestId
         }
       }) as Promise<KBAIConnectorResponse>;
       

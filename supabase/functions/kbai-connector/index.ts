@@ -1,4 +1,3 @@
-
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { corsHeaders } from '../_shared/cors.ts';
 
@@ -149,14 +148,12 @@ async function fetchKBAIKnowledge(options: any, requestId: string) {
 
 // Main Supabase Edge Function handler
 serve(async (req) => {
-  // Handle CORS for preflight requests
+  // Improved CORS handling for preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response('ok', { 
-      headers: {
-        ...corsHeaders,
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-        'Access-Control-Allow-Headers': 'Content-Type, Authorization, x-client-info, apikey'
-      }
+    console.log("Handling OPTIONS preflight request");
+    return new Response(null, { 
+      status: 204,
+      headers: corsHeaders
     });
   }
   
@@ -167,7 +164,7 @@ serve(async (req) => {
     
     // Log request info for debugging
     console.log(`KBAI connector request received at ${new Date().toISOString()}`, 
-      { requestId: requestTrackingId, options, headers: Object.fromEntries([...req.headers].filter(h => !h[0].includes('auth'))) });
+      { requestId: requestTrackingId, options });
     
     // Fetch knowledge from KBAI
     const result = await fetchKBAIKnowledge(options, requestTrackingId);
@@ -180,10 +177,11 @@ serve(async (req) => {
       hasError: !!result.error 
     });
     
-    // Return the result
+    // Return the result with proper CORS headers
     return new Response(
       JSON.stringify(result),
       {
+        status: 200,
         headers: {
           ...corsHeaders,
           'Content-Type': 'application/json'
