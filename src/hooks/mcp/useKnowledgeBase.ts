@@ -22,13 +22,18 @@ export function useKnowledgeBase(options: KBAIQueryOptions = {}) {
   const kbaiService = getKBAIService();
   
   // Fetch knowledge items
-  const fetchKnowledgeItems = useCallback(async () => {
-    if (state.isLoading) return;
+  const fetchKnowledgeItems = useCallback(async (newOptions?: KBAIQueryOptions) => {
+    // If new options are provided, update the query options
+    if (newOptions) {
+      setQueryOptions(prevOptions => ({ ...prevOptions, ...newOptions }));
+    }
     
     setState(prev => ({ ...prev, isLoading: true }));
     
     try {
-      const items = await kbaiService.fetchKnowledgeItems(queryOptions);
+      // Use current options merged with any new options
+      const currentOptions = newOptions ? { ...queryOptions, ...newOptions } : queryOptions;
+      const items = await kbaiService.fetchKnowledgeItems(currentOptions);
       const status = kbaiService.getConnectionStatus();
       
       setState({
@@ -48,7 +53,7 @@ export function useKnowledgeBase(options: KBAIQueryOptions = {}) {
         connectionStatus: 'error'
       }));
     }
-  }, [kbaiService, queryOptions, state.isLoading]);
+  }, [kbaiService, queryOptions]);
   
   // Update query options
   const updateQueryOptions = useCallback((newOptions: KBAIQueryOptions) => {
@@ -58,17 +63,20 @@ export function useKnowledgeBase(options: KBAIQueryOptions = {}) {
   // Search knowledge base
   const searchKnowledge = useCallback((query: string) => {
     updateQueryOptions({ query });
-  }, [updateQueryOptions]);
+    fetchKnowledgeItems({ query });
+  }, [updateQueryOptions, fetchKnowledgeItems]);
   
   // Reset search
   const resetSearch = useCallback(() => {
-    updateQueryOptions({ query: '' });
-  }, [updateQueryOptions]);
+    const resetOptions = { query: '' };
+    updateQueryOptions(resetOptions);
+    fetchKnowledgeItems(resetOptions);
+  }, [updateQueryOptions, fetchKnowledgeItems]);
   
   // Fetch knowledge items when component mounts or options change
   useEffect(() => {
     fetchKnowledgeItems();
-  }, [fetchKnowledgeItems]);
+  }, []); // Intentionally only run on mount
   
   return {
     ...state,

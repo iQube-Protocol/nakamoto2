@@ -8,6 +8,7 @@ import { Search, RefreshCw, WifiOff } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { KBAIKnowledgeItem } from '@/integrations/kbai/KBAIMCPService';
 import { useKnowledgeBase } from '@/hooks/mcp/useKnowledgeBase';
+import DocumentViewer from './document/DocumentViewer';
 
 interface KnowledgeBaseProps {
   agentType: 'learn' | 'earn' | 'connect';
@@ -15,6 +16,8 @@ interface KnowledgeBaseProps {
 
 const KnowledgeBase = ({ agentType }: KnowledgeBaseProps) => {
   const [searchQuery, setSearchQuery] = useState('');
+  const [selectedItem, setSelectedItem] = useState<KBAIKnowledgeItem | null>(null);
+  const [isViewerOpen, setIsViewerOpen] = useState(false);
   
   const {
     items,
@@ -37,14 +40,24 @@ const KnowledgeBase = ({ agentType }: KnowledgeBaseProps) => {
     }
   };
   
-  // Handle refresh
+  // Handle refresh - explicitly passing an empty object to force refresh
   const handleRefresh = () => {
-    fetchKnowledgeItems();
+    fetchKnowledgeItems({});
+  };
+  
+  // Handle knowledge item click
+  const handleKnowledgeItemClick = (item: KBAIKnowledgeItem) => {
+    setSelectedItem(item);
+    setIsViewerOpen(true);
   };
   
   // Render knowledge item
   const renderKnowledgeItem = (item: KBAIKnowledgeItem) => (
-    <Card key={item.id} className="p-4 hover:bg-card/90 transition-colors cursor-pointer">
+    <Card 
+      key={item.id} 
+      className="p-4 hover:bg-card/90 transition-colors cursor-pointer"
+      onClick={() => handleKnowledgeItemClick(item)}
+    >
       <h4 className="font-medium">{item.title}</h4>
       <div className="flex items-center gap-2 mt-1 text-xs text-muted-foreground">
         <span className="bg-primary/10 px-2 py-0.5 rounded">{item.type}</span>
@@ -154,6 +167,18 @@ const KnowledgeBase = ({ agentType }: KnowledgeBaseProps) => {
           </div>
         </ScrollArea>
       </div>
+
+      {/* Knowledge Item Viewer Dialog */}
+      <DocumentViewer
+        document={selectedItem ? {
+          id: selectedItem.id,
+          name: selectedItem.title,
+          content: selectedItem.content,
+          mimeType: 'text/plain'
+        } : null}
+        isOpen={isViewerOpen}
+        onOpenChange={setIsViewerOpen}
+      />
     </div>
   );
 };
