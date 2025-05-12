@@ -6,10 +6,11 @@ import MetaQubeDisplay from '@/components/shared/MetaQubeDisplay';
 import ScoreTooltip from '@/components/shared/ScoreTooltips';
 import CubeIcon from './CubeIcon';
 import { Link } from 'react-router-dom';
+import { cn } from '@/lib/utils';
 
 interface MetaQubeItemProps {
   metaQube?: MetaQube;
-  qubeName: string; // Add this property that was missing
+  qubeName: string;
   active: boolean;
   selected: boolean;
   onClick: () => void;
@@ -22,7 +23,7 @@ interface MetaQubeItemProps {
 
 const MetaQubeItem = ({
   metaQube,
-  qubeName, // Add this to the destructured props
+  qubeName,
   active,
   selected,
   onClick,
@@ -40,14 +41,13 @@ const MetaQubeItem = ({
         <ScoreTooltip type={tooltipType}>
           <Link 
             to="/settings" 
-            className={`flex items-center justify-center py-3 px-3 rounded-md transition-all ${
-              isPurple 
-                ? "hover:bg-purple-500/20 bg-purple-500/10" 
-                : "hover:bg-iqube-primary/20 bg-iqube-primary/10"
-            }`}
+            className={cn(
+              "flex items-center justify-center py-3 px-3 rounded-md transition-all",
+              isPurple ? "hover:bg-purple-500/20 bg-purple-500/10" : "hover:bg-iqube-primary/20 bg-iqube-primary/10"
+            )}
             onClick={onClick}
           >
-            <div className={`${isPurple ? "text-purple-500" : "text-iqube-primary"} h-6 w-6`}>
+            <div className={cn("h-6 w-6", isPurple ? "text-purple-500" : "text-iqube-primary")}>
               <CubeIcon />
             </div>
           </Link>
@@ -67,12 +67,19 @@ const MetaQubeItem = ({
   // Use metaQube if available, otherwise use simple version with just qubeName
   if (metaQube) {
     return (
-      <div className={`bg-${isPurple ? "purple-500/10" : "iqube-primary/10"} rounded-md relative ${className}`}>
+      <div className={cn(
+        "rounded-md relative",
+        isPurple ? "bg-purple-500/10" : "bg-iqube-primary/10",
+        className
+      )}>
         <MetaQubeDisplay 
           metaQube={metaQube} 
           compact={true}
           onClick={onClick}
-          className={`cursor-pointer hover:bg-${isPurple ? "purple-500/20" : "iqube-primary/20"} transition-colors`}
+          className={cn(
+            "cursor-pointer transition-colors",
+            isPurple ? "hover:bg-purple-500/20" : "hover:bg-iqube-primary/20"
+          )}
         />
         {onClose && (
           <button
@@ -89,24 +96,24 @@ const MetaQubeItem = ({
   // Simple version when no metaQube is provided
   return (
     <div 
-      className={`
-        flex items-center justify-between rounded-md px-2 py-1.5 text-sm 
-        ${selected ? 'bg-accent/30 font-medium' : 'hover:bg-accent/20'} 
-        ${active ? 'text-green-500' : ''}
-        ${className}
-      `}
+      className={cn(
+        "flex items-center justify-between rounded-md px-2 py-1.5 text-sm",
+        selected ? 'bg-accent/30 font-medium' : 'hover:bg-accent/20',
+        active ? 'text-green-500' : '',
+        className
+      )}
       onClick={onClick}
     >
       <div className="flex items-center">
-        <div className={`h-2.5 w-2.5 rounded-full mr-2 ${active ? 'bg-green-500' : 'bg-gray-400'}`} />
+        <div className={cn("h-2.5 w-2.5 rounded-full mr-2", active ? 'bg-green-500' : 'bg-gray-400')} />
         <span>{qubeName}</span>
       </div>
       {onToggleActive && (
         <div 
-          className={`h-4 w-4 rounded hover:bg-accent/50 cursor-pointer flex items-center justify-center`}
+          className="h-4 w-4 rounded hover:bg-accent/50 cursor-pointer flex items-center justify-center"
           onClick={onToggleActive}
         >
-          <div className={`h-2 w-2 rounded-full ${active ? 'bg-green-500' : 'bg-gray-300'}`} />
+          <div className={cn("h-2 w-2 rounded-full", active ? 'bg-green-500' : 'bg-gray-300')} />
         </div>
       )}
     </div>
