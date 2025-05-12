@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { AgentInterface } from '@/components/shared/agent';
 import { useToast } from '@/components/ui/use-toast';
@@ -111,12 +112,18 @@ const MonDAI = () => {
 
   // Handle manual reconnection
   const handleManualReconnect = async () => {
-    toast.info("Attempting to reconnect to knowledge base...");
+    toast({
+      title: "Attempting to reconnect",
+      description: "Connecting to knowledge base..."
+    });
+    
     try {
       await reconnect();
     } catch (error) {
-      toast.error("Reconnection failed", {
-        description: "Please try again later"
+      toast({
+        title: "Reconnection failed",
+        description: "Please try again later",
+        variant: "destructive"
       });
     }
   };
