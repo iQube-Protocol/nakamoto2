@@ -1,4 +1,5 @@
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface KBAIKnowledgeItem {
   id: string;
@@ -48,22 +49,22 @@ export class KBAIMCPService {
       this.connectionStatus = 'connecting';
       console.log('Fetching knowledge items from KBAI MCP server with options:', options);
       
-      // Fetch from Supabase edge function
-      const { data, error } = await this.callKBAIConnector(options);
+      // Fetch from Supabase edge function with real authentication
+      const response = await this.callKBAIConnector(options);
       
-      if (error) {
-        console.error('Error fetching KBAI knowledge:', error);
+      if (response.error) {
+        console.error('Error fetching KBAI knowledge:', response.error);
         this.connectionStatus = 'error';
-        throw new Error(`KBAI knowledge fetch error: ${error.message || 'Unknown error'}`);
+        throw new Error(`KBAI knowledge fetch error: ${response.error.message || 'Unknown error'}`);
       }
       
-      if (!data || !Array.isArray(data.items)) {
-        console.warn('Invalid response from KBAI connector:', data);
+      if (!response.data || !Array.isArray(response.data.items)) {
+        console.warn('Invalid response from KBAI connector:', response.data);
         this.connectionStatus = 'error';
         return this.getFallbackItems();
       }
       
-      const items = data.items.map(this.transformKnowledgeItem);
+      const items = response.data.items.map(this.transformKnowledgeItem);
       this.connectionStatus = 'connected';
       
       // Cache the results
@@ -101,25 +102,10 @@ export class KBAIMCPService {
    * Call the KBAI connector edge function
    */
   private async callKBAIConnector(options: KBAIQueryOptions): Promise<KBAIConnectorResponse> {
-    // In a real implementation, this would call the Supabase edge function
-    // For now, we'll simulate the call with a mock response
-    
-    // TODO: Replace with actual Supabase edge function call
-    // return await supabase.functions.invoke('kbai-connector', {
-    //   body: { options }
-    // });
-    
-    // Mock implementation for testing
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({
-          data: {
-            items: this.getMockKnowledgeItems(options)
-          },
-          error: null
-        });
-      }, 500);
-    });
+    // Call the actual Supabase edge function with the provided authentication
+    return await supabase.functions.invoke('kbai-connector', {
+      body: { options }
+    }) as KBAIConnectorResponse;
   }
   
   /**

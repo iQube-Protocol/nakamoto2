@@ -1,13 +1,12 @@
-
 import { serve } from 'https://deno.land/std@0.177.0/http/server.ts';
 import { corsHeaders } from '../_shared/cors.ts';
 
 // KBAI MCP server endpoint
 const KBAI_MCP_ENDPOINT = 'https://api.kbai.org/MCP/sse';
 
-// Fetch KBAI secrets from environment variables
-const KBAI_AUTH_TOKEN = Deno.env.get('KBAI_AUTH_TOKEN') || 'test-auth-token';
-const KBAI_KB_TOKEN = Deno.env.get('KBAI_KB_TOKEN') || 'test-kb-token';
+// Use the provided authentication tokens
+const KBAI_AUTH_TOKEN = '85abed95769d4b2ea1cb6bfaa8a67193';
+const KBAI_KB_TOKEN = 'KB00000001_CRPTMONDS';
 
 // Mock knowledge items for development without actual KBAI connection
 const mockKnowledgeItems = [
@@ -34,49 +33,48 @@ async function fetchKBAIKnowledge(options: any) {
   try {
     console.log('Fetching knowledge from KBAI with options:', options);
     
-    // Use mockKnowledgeItems for now instead of actual KBAI connection
-    // In production, this would connect to the KBAI MCP server
-    // This avoids exposing secrets in frontend code
-    
-    return {
-      status: 200,
-      items: mockKnowledgeItems,
-      metadata: {
-        source: 'KBAI MCP (mock)',
-        timestamp: new Date().toISOString()
+    // Try to connect to the actual KBAI MCP server with the provided tokens
+    try {
+      const response = await fetch(KBAI_MCP_ENDPOINT, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'x-auth-token': KBAI_AUTH_TOKEN,
+          'x-kb-token': KBAI_KB_TOKEN
+        },
+        body: JSON.stringify(options)
+      });
+      
+      // Process SSE response
+      const reader = response.body?.getReader();
+      if (!reader) throw new Error('Failed to get response reader');
+      
+      const decoder = new TextDecoder();
+      let result = '';
+      
+      const { value, done } = await reader.read();
+      if (done) {
+        throw new Error('Response ended prematurely');
       }
-    };
-    
-    // TODO: Implement actual KBAI connection when ready
-    /*
-    const response = await fetch(KBAI_MCP_ENDPOINT, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-auth-token': KBAI_AUTH_TOKEN,
-        'x-kb-token': KBAI_KB_TOKEN
-      },
-      body: JSON.stringify(options)
-    });
-    
-    // Process SSE response
-    const reader = response.body?.getReader();
-    if (!reader) throw new Error('Failed to get response reader');
-    
-    const decoder = new TextDecoder();
-    let result = '';
-    
-    const { value, done } = await reader.read();
-    if (done) {
-      throw new Error('Response ended prematurely');
+      
+      result += decoder.decode(value);
+      
+      // Process and return the knowledge data
+      const knowledgeData = JSON.parse(result);
+      return knowledgeData;
+    } catch (error) {
+      console.warn('Failed to connect to KBAI server, using mock data:', error);
+      
+      // Fall back to mock data if connection fails
+      return {
+        status: 200,
+        items: mockKnowledgeItems,
+        metadata: {
+          source: 'KBAI MCP (mock)',
+          timestamp: new Date().toISOString()
+        }
+      };
     }
-    
-    result += decoder.decode(value);
-    
-    // Process and return the knowledge data
-    const knowledgeData = JSON.parse(result);
-    return knowledgeData;
-    */
   } catch (error) {
     console.error('Error fetching KBAI knowledge:', error);
     
