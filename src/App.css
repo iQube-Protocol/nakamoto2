@@ -93,3 +93,38 @@ p {
 .audio-waveform span:nth-child(4n) {
   animation-delay: 0.6s;
 }
+
+/* Mobile fullscreen optimizations */
+@media (max-width: 768px) {
+  html, body, #root {
+    height: 100%;
+    width: 100%;
+    overflow-x: hidden;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+  }
+  
+  /* Ensure message input is always visible */
+  .agent-interface {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    height: -webkit-fill-available;
+    max-height: -webkit-fill-available;
+  }
+  
+  /* Fix textarea placeholder vertical alignment */
+  textarea::placeholder {
+    line-height: 2;
+    vertical-align: middle;
+  }
+}
+
+/* Textarea placeholder vertical alignment */
+textarea::placeholder {
+  line-height: 1.5;
+  vertical-align: middle;
+}

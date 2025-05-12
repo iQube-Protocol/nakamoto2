@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { AgentInterface } from '@/components/shared/agent';
 import { useToast } from '@/components/ui/use-toast';
@@ -18,6 +19,17 @@ const MonDAI = () => {
   const [conversationId, setConversationId] = React.useState<string | null>(null);
   const [historicalContext, setHistoricalContext] = React.useState<string>('');
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
+
+  // Set fullscreen mode effect for mobile
+  React.useEffect(() => {
+    // Add a class to the root element for fullscreen styling
+    document.documentElement.classList.add('fullscreen-mode');
+    
+    // Remove the class when component unmounts
+    return () => {
+      document.documentElement.classList.remove('fullscreen-mode');
+    };
+  }, []);
 
   // Load conversation context when component mounts
   React.useEffect(() => {
@@ -118,9 +130,9 @@ const MonDAI = () => {
   };
 
   return (
-    <div className="container py-6 max-w-7xl mx-auto">
-      <div className="grid gap-6">
-        <div className="flex flex-col">
+    <div className="container py-6 max-w-7xl mx-auto h-full agent-interface">
+      <div className="grid gap-6 h-full">
+        <div className="flex flex-col h-full">
           <AgentInterface
             title="MonDAI"
             description="Community agent"
