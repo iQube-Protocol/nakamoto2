@@ -148,7 +148,8 @@ const Sidebar = () => {
     handleIQubeClick,
     toggleIQubeActive,
     handleCloseMetisIQube,
-    handleSignOut
+    handleSignOut,
+    toggleMobileSidebar // Pass this down to child components
   };
 
   // Render mobile sidebar if on mobile, otherwise render desktop sidebar

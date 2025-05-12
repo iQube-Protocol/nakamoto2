@@ -20,6 +20,7 @@ interface SidebarContentProps {
   toggleIQubeActive: (e: React.MouseEvent<HTMLDivElement>, qubeName: string) => void;
   handleCloseMetisIQube: (e: React.MouseEvent<HTMLButtonElement>) => void;
   handleSignOut: () => void;
+  toggleMobileSidebar?: () => void;
 }
 
 const SidebarContent: React.FC<SidebarContentProps> = ({
@@ -33,7 +34,8 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
   handleIQubeClick,
   toggleIQubeActive,
   handleCloseMetisIQube,
-  handleSignOut
+  handleSignOut,
+  toggleMobileSidebar
 }) => {
   return (
     <div className={cn(
@@ -56,6 +58,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
         handleIQubeClick={handleIQubeClick}
         toggleIQubeActive={toggleIQubeActive}
         location={location}
+        toggleMobileSidebar={toggleMobileSidebar}
       />
 
       {/* Active iQubes */}
@@ -69,6 +72,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
             handleCloseMetisIQube(e);
           }
         }}
+        toggleMobileSidebar={toggleMobileSidebar}
       />
 
       {/* Sign Out button */}

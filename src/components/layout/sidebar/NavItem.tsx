@@ -4,6 +4,7 @@ import { Link } from 'react-router-dom';
 import { LucideIcon } from 'lucide-react';
 import { cn } from '@/lib/utils';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface NavItemProps {
   icon: LucideIcon;
@@ -12,6 +13,7 @@ interface NavItemProps {
   active?: boolean;
   collapsed?: boolean;
   onClick?: () => void;
+  toggleMobileSidebar?: () => void;
 }
 
 const NavItem: React.FC<NavItemProps> = ({
@@ -21,11 +23,24 @@ const NavItem: React.FC<NavItemProps> = ({
   active,
   collapsed,
   onClick,
+  toggleMobileSidebar,
 }) => {
+  const isMobile = useIsMobile();
+  
+  const handleClick = () => {
+    // Call the original onClick if provided
+    if (onClick) onClick();
+    
+    // If we're on mobile, also close the sidebar
+    if (isMobile && toggleMobileSidebar) {
+      toggleMobileSidebar();
+    }
+  };
+  
   const content = (
     <Link
       to={href}
-      onClick={onClick}
+      onClick={handleClick}
       className={cn(
         "flex items-center rounded-md p-2 text-sm hover:bg-accent/30",
         active && "bg-accent/20 text-white font-medium", // Ensure text stays white in active state

@@ -16,6 +16,7 @@ interface MainNavigationProps {
   handleIQubeClick: (iqubeId: string) => void;
   toggleIQubeActive: (e: React.MouseEvent<HTMLDivElement>, qubeName: string) => void;
   location: { pathname: string };
+  toggleMobileSidebar?: () => void;
 }
 
 const MainNavigation: React.FC<MainNavigationProps> = ({ 
@@ -29,7 +30,8 @@ const MainNavigation: React.FC<MainNavigationProps> = ({
   activeQubes,
   handleIQubeClick,
   toggleIQubeActive,
-  location
+  location,
+  toggleMobileSidebar
 }) => {
   return (
     <div className="flex-1 px-3 space-y-1">
@@ -41,6 +43,7 @@ const MainNavigation: React.FC<MainNavigationProps> = ({
           href={item.href}
           active={activePath === item.href}
           collapsed={collapsed}
+          toggleMobileSidebar={toggleMobileSidebar}
         >
           {item.name}
         </NavItem>
@@ -57,6 +60,7 @@ const MainNavigation: React.FC<MainNavigationProps> = ({
         handleIQubeClick={handleIQubeClick}
         toggleIQubeActive={toggleIQubeActive}
         location={location}
+        toggleMobileSidebar={toggleMobileSidebar}
       />
     </div>
   );
