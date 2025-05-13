@@ -1,4 +1,3 @@
-
 import { toast } from 'sonner';
 import { KBAICache } from './KBAICache';
 import { KBAIItemTransformer } from './services/KBAIItemTransformer';
@@ -45,6 +44,7 @@ export class KBAIDirectService {
 
   /**
    * Check if the KBAI API is reachable
+   * This replaces the edge function health check with a direct API health check
    */
   async checkApiHealth(): Promise<boolean> {
     try {
@@ -61,6 +61,15 @@ export class KBAIDirectService {
       console.error('KBAI API connection test failed:', error);
       return false;
     }
+  }
+  
+  /**
+   * For compatibility with KBAIMCPService - checks if the KBAI API is accessible
+   * This allows the same interface to be used for both services
+   */
+  async checkEdgeFunctionHealth(): Promise<boolean> {
+    // Use the API health check instead since we're using direct API
+    return this.checkApiHealth();
   }
   
   /**

@@ -51,25 +51,25 @@ export function useKnowledgeConnection() {
     kbaiService.reset();
     
     try {
-      // First check if the edge function is reachable
+      // Check if the service is reachable - both legacy and direct API service implement this method
       const isHealthy = await kbaiService.checkEdgeFunctionHealth();
-      console.log('Edge function health check result:', isHealthy);
+      console.log('Service health check result:', isHealthy);
       
       if (!isHealthy) {
-        toast.error("Edge Function Not Available", {
-          description: "The KBAI connector function appears to be unavailable. Please ensure it's deployed to Supabase."
+        toast.error("API Connection Not Available", {
+          description: "The KBAI API appears to be unavailable. Please check your internet connection."
         });
         setState(prev => ({ 
           ...prev, 
           isLoading: false, 
           connectionStatus: 'error',
-          errorMessage: "Edge function not deployed or not accessible"
+          errorMessage: "KBAI API not accessible"
         }));
         return false;
       }
       
       if (isHealthy) {
-        toast("Edge function is available. Attempting to reconnect...");
+        toast("KBAI API is available. Attempting to reconnect...");
       }
       
       // Try to establish connection by fetching initial items
