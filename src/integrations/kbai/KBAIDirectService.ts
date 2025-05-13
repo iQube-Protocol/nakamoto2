@@ -1,6 +1,7 @@
 import { RetryService } from '@/services/RetryService';
 import { EventSourcePolyfill } from 'event-source-polyfill';
 import { KBAIKnowledgeItem, KBAIQueryOptions, ConnectionStatus } from './index';
+import { toast } from 'sonner';
 
 // KBAI MCP server endpoint and credentials
 const KBAI_MCP_ENDPOINT = 'https://api.kbai.org/MCP/sse';
@@ -15,6 +16,8 @@ export class KBAIDirectService {
   private cache: Map<string, { data: KBAIKnowledgeItem[], timestamp: number }> = new Map();
   private cacheLifetime = 5 * 60 * 1000; // 5 minutes
   private readonly retryService: RetryService;
+  private connectionAttempts = 0;
+  private maxConnectionAttempts = 3;
   
   constructor() {
     this.retryService = new RetryService({
@@ -30,22 +33,48 @@ export class KBAIDirectService {
     return {
       'Content-Type': 'application/json',
       'x-auth-token': KBAI_AUTH_TOKEN,
-      'x-kb-token': KBAI_KB_TOKEN
+      'x-kb-token': KBAI_KB_TOKEN,
+      'Origin': window.location.origin,
+      'Accept': 'text/event-stream'
     };
   }
 
   /**
    * Check if the KBAI API is healthy and accessible
+   * Using GET instead of OPTIONS for more reliable health check
    */
   public async checkApiHealth(): Promise<boolean> {
     try {
       this.connectionStatus = 'connecting';
       console.log('Checking KBAI API health...');
       
-      const response = await fetch(KBAI_MCP_ENDPOINT, {
-        method: 'OPTIONS',
-        headers: this.getAuthHeaders()
+      // Use a simpler GET request for health check with a timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      
+      const response = await fetch(`${KBAI_MCP_ENDPOINT}/health`, {
+        method: 'GET',
+        headers: this.getAuthHeaders(),
+        signal: controller.signal
+      }).catch(error => {
+        console.error('KBAI health check fetch error:', error);
+        // Check if this is a CORS error
+        if (error.message && error.message.includes('CORS')) {
+          console.error('CORS error detected when connecting to KBAI API');
+          toast.error('KBAI API CORS error', { 
+            description: 'Please check CORS configuration on the server' 
+          });
+        }
+        return null;
       });
+      
+      clearTimeout(timeoutId);
+      
+      // If response is null, connection failed
+      if (!response) {
+        this.connectionStatus = 'error';
+        return false;
+      }
       
       const isHealthy = response.ok;
       this.connectionStatus = isHealthy ? 'connected' : 'error';
@@ -55,6 +84,12 @@ export class KBAIDirectService {
     } catch (error) {
       this.connectionStatus = 'error';
       console.error('KBAI health check failed:', error);
+      
+      // Add more detailed error logging
+      if (error instanceof TypeError && error.message.includes('NetworkError')) {
+        console.error('Network error when connecting to KBAI API. Possibly CORS related or server is unavailable.');
+      }
+      
       return false;
     }
   }
@@ -75,30 +110,57 @@ export class KBAIDirectService {
       this.connectionStatus = 'connecting';
       console.log('Fetching knowledge items from KBAI MCP server with options:', options);
       
-      // Check API health first
-      const isHealthy = await this.checkApiHealth();
+      // Reset connection attempts for this fetch operation
+      this.connectionAttempts = 0;
+      
+      // Try to connect with multiple attempts before falling back
+      let isHealthy = false;
+      
+      while (this.connectionAttempts < this.maxConnectionAttempts && !isHealthy) {
+        this.connectionAttempts++;
+        console.log(`KBAI connection attempt ${this.connectionAttempts}/${this.maxConnectionAttempts}`);
+        
+        isHealthy = await this.checkApiHealth();
+        
+        if (!isHealthy && this.connectionAttempts < this.maxConnectionAttempts) {
+          // Wait before trying again with exponential backoff
+          const delay = Math.min(1000 * Math.pow(2, this.connectionAttempts - 1), 5000);
+          console.log(`Waiting ${delay}ms before next connection attempt`);
+          await new Promise(resolve => setTimeout(resolve, delay));
+        }
+      }
+      
       if (!isHealthy) {
-        console.warn('KBAI API is not healthy, using fallback data');
+        console.warn('KBAI API is not healthy after multiple attempts, using fallback data');
+        toast.error('Could not connect to knowledge base', {
+          description: 'Using fallback knowledge items instead'
+        });
         return this.getFallbackItems();
       }
       
-      // Try to fetch items with retry logic
-      const items = await this.retryService.execute(() => 
-        this.connectToSSE(options)
-      );
-      
-      if (!items || items.length === 0) {
-        console.warn('No items returned from KBAI, using fallback data');
+      // Try connecting with retry logic for the SSE connection
+      try {
+        const items = await this.retryService.execute(() => 
+          this.connectToSSE(options)
+        );
+        
+        if (!items || items.length === 0) {
+          console.warn('No items returned from KBAI, using fallback data');
+          return this.getFallbackItems();
+        }
+        
+        this.connectionStatus = 'connected';
+        
+        // Cache the results
+        this.addToCache(cacheKey, items);
+        console.log('Successfully fetched and cached KBAI knowledge items:', items.length);
+        
+        return items;
+      } catch (sseError) {
+        console.error('SSE connection error:', sseError);
+        this.connectionStatus = 'error';
         return this.getFallbackItems();
       }
-      
-      this.connectionStatus = 'connected';
-      
-      // Cache the results
-      this.addToCache(cacheKey, items);
-      console.log('Successfully fetched and cached KBAI knowledge items:', items.length);
-      
-      return items;
     } catch (error) {
       this.connectionStatus = 'error';
       console.error('Failed to fetch KBAI knowledge:', error);
@@ -108,6 +170,7 @@ export class KBAIDirectService {
 
   /**
    * Connect to the KBAI server using Server-Sent Events
+   * Added better error handling and timeout management
    */
   private async connectToSSE(options: KBAIQueryOptions): Promise<KBAIKnowledgeItem[]> {
     return new Promise((resolve, reject) => {
@@ -124,26 +187,50 @@ export class KBAIDirectService {
       
       // Use EventSource polyfill to support custom headers
       const eventSource = new EventSourcePolyfill(endpoint, {
-        headers: this.getAuthHeaders()
+        headers: this.getAuthHeaders(),
+        withCredentials: false, // Setting this explicitly to false for CORS
+        heartbeatTimeout: 10000 // 10 seconds heartbeat timeout
       });
       
       const knowledgeItems: KBAIKnowledgeItem[] = [];
       const timeout = setTimeout(() => {
         if (eventSource.readyState !== eventSource.CLOSED) {
-          console.log('SSE connection timed out, closing connection');
+          console.log('SSE connection timed out after 15s, closing connection');
           eventSource.close();
           resolve(knowledgeItems.length > 0 ? knowledgeItems : this.getFallbackItems());
         }
       }, 15000); // 15 second timeout
       
-      eventSource.onopen = () => {
-        console.log('SSE connection opened');
+      eventSource.onopen = (event) => {
+        console.log('SSE connection opened successfully', event);
       };
       
       eventSource.onmessage = (event) => {
         try {
-          const data = JSON.parse(event.data);
-          console.log('Received SSE message:', data);
+          console.log('Received SSE event data:', event.data);
+          
+          let data;
+          try {
+            data = JSON.parse(event.data);
+          } catch (parseError) {
+            console.warn('Failed to parse SSE event as JSON, trying alternative formats', parseError);
+            
+            // Try alternative format - some SSE servers send data differently
+            // Check if it's a string that needs further processing
+            if (typeof event.data === 'string' && event.data.includes('{')) {
+              const jsonStr = event.data.substring(event.data.indexOf('{'));
+              try {
+                data = JSON.parse(jsonStr);
+              } catch (e) {
+                console.error('Alternative parsing failed too:', e);
+                // Continue with event loop, don't add this item
+                return;
+              }
+            } else {
+              // If we can't parse it at all, just continue
+              return;
+            }
+          }
           
           // Transform raw data into KBAIKnowledgeItem
           const item = this.transformKnowledgeItem(data);
@@ -156,7 +243,7 @@ export class KBAIDirectService {
             resolve(knowledgeItems);
           }
         } catch (error) {
-          console.error('Error parsing SSE message:', error);
+          console.error('Error processing SSE message:', error);
         }
       };
       
@@ -201,6 +288,7 @@ export class KBAIDirectService {
    */
   public reset(): void {
     this.connectionStatus = 'disconnected';
+    this.connectionAttempts = 0;
     this.cache.clear();
   }
 

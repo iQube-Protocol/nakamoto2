@@ -1,3 +1,4 @@
+
 import { toast } from 'sonner';
 import { KBAIKnowledgeItem, KBAIQueryOptions, ConnectionStatus, getKBAIDirectService } from './index';
 
@@ -8,6 +9,8 @@ export class KBAIMCPService {
   private connectionStatus: ConnectionStatus = 'disconnected';
   private cache: Map<string, { data: KBAIKnowledgeItem[], timestamp: number }> = new Map();
   private cacheLifetime = 5 * 60 * 1000; // 5 minutes
+  private lastErrorTime: number = 0;
+  private errorCooldown: number = 30000; // 30 second cooldown between error notifications
 
   /**
    * Fetch knowledge items from KBAI MCP server
@@ -45,9 +48,15 @@ export class KBAIMCPService {
     } catch (error) {
       this.connectionStatus = 'error';
       console.error('Failed to fetch KBAI knowledge:', error);
-      toast.error('Failed to connect to knowledge base', {
-        description: 'Using fallback knowledge items instead'
-      });
+      
+      // Only show toast error if we haven't shown one recently
+      const now = Date.now();
+      if (now - this.lastErrorTime > this.errorCooldown) {
+        this.lastErrorTime = now;
+        toast.error('Failed to connect to knowledge base', {
+          description: 'Using fallback knowledge items instead'
+        });
+      }
       
       return this.getFallbackItems();
     }
