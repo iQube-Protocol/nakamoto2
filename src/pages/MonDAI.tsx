@@ -1,8 +1,9 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { AgentInterface } from '@/components/shared/agent';
 import { useKnowledgeBase } from '@/hooks/mcp/useKnowledgeBase';
 import { useMondAI } from '@/hooks/use-mondai';
+import { toast } from 'sonner';
 
 // Extend the agent service to support 'mondai' type
 declare module '@/services/agent-service' {
@@ -24,11 +25,13 @@ const MonDAI = () => {
   // Initialize knowledge base
   const { 
     items: knowledgeItems,
-    fetchKnowledgeItems
+    fetchKnowledgeItems,
+    retryConnection,
+    connectionStatus
   } = useKnowledgeBase();
 
   // Set fullscreen mode effect for mobile
-  React.useEffect(() => {
+  useEffect(() => {
     // Add a class to the root element for fullscreen styling
     document.documentElement.classList.add('fullscreen-mode');
     
@@ -36,6 +39,33 @@ const MonDAI = () => {
     return () => {
       document.documentElement.classList.remove('fullscreen-mode');
     };
+  }, []);
+  
+  // Check KBAI connection on initial load
+  useEffect(() => {
+    // Auto-retry connection once on initial load
+    const checkConnection = async () => {
+      try {
+        await fetchKnowledgeItems();
+        
+        if (connectionStatus === 'error') {
+          console.log('Initial connection failed, attempting retry...');
+          setTimeout(async () => {
+            const success = await retryConnection();
+            if (!success) {
+              toast.error('Knowledge base connection failed', {
+                description: 'Using fallback data instead. Try refreshing later.',
+                duration: 5000,
+              });
+            }
+          }, 3000);
+        }
+      } catch (error) {
+        console.error('Error checking initial connection:', error);
+      }
+    };
+    
+    checkConnection();
   }, []);
 
   return (

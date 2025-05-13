@@ -48,6 +48,21 @@ export function useKnowledgeBase(options: KBAIQueryOptions = {}) {
       });
       
       console.log(`Fetched ${items.length} knowledge items with status: ${status}`);
+      
+      // Only show success toast when forcing refresh
+      if (forceRefresh && status === 'connected') {
+        toast.success('Knowledge base refreshed', {
+          description: `${items.length} items retrieved`
+        });
+      }
+      
+      // If it's an error and force refresh was requested, notify
+      if (status === 'error' && forceRefresh) {
+        toast.error('Knowledge base connection issue', {
+          description: 'Using cached or fallback data',
+        });
+      }
+      
       return items;
     } catch (error) {
       console.error('Error in useKnowledgeBase:', error);
@@ -57,13 +72,23 @@ export function useKnowledgeBase(options: KBAIQueryOptions = {}) {
         error: error instanceof Error ? error : new Error('Unknown error'),
         connectionStatus: 'error'
       }));
+      
+      // Check if it's a CORS error
+      const errorMsg = error instanceof Error ? error.message : String(error);
+      if (errorMsg.includes('CORS') || errorMsg.includes('NetworkError')) {
+        toast.error('CORS issue with knowledge base', {
+          description: 'Using fallback data instead',
+          id: 'kbai-cors-error', // Prevent duplicate toasts
+        });
+      }
+      
       throw error;
     }
   }, [kbaiService, queryOptions, state.isLoading]);
   
   // Force reconnect to KBAI service
   const retryConnection = useCallback(async () => {
-    setState(prev => ({ ...prev, isLoading: true }));
+    setState(prev => ({ ...prev, isLoading: true, connectionStatus: 'connecting' }));
     
     try {
       // First try to force refresh the direct service
@@ -90,8 +115,10 @@ export function useKnowledgeBase(options: KBAIQueryOptions = {}) {
         connectionStatus: 'error'
       }));
       
+      // Only show toast if not a duplicate error
       toast.error('Connection retry failed', {
-        description: 'Please try again later'
+        description: 'Please check network connectivity',
+        id: 'kbai-retry-error', // Prevent duplicate toasts
       });
       return false;
     }

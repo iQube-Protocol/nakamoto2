@@ -19,7 +19,7 @@ export class KBAIDirectService {
   private readonly cacheManager: CacheManager;
   private readonly retryService: RetryService;
   private connectionAttempts = 0;
-  private maxConnectionAttempts = 5; // Increased from 3
+  private maxConnectionAttempts = 5;
   private lastConnectionAttempt = 0;
   private connectionCooldown = 10000; // 10 seconds between connection attempts
   
@@ -28,8 +28,8 @@ export class KBAIDirectService {
     this.retryService = new RetryService({
       maxRetries: 3,
       baseDelay: 1000,
-      maxDelay: 10000, // 10 seconds max delay
-      exponentialFactor: 1.5, // Gentler backoff
+      maxDelay: 10000,
+      exponentialFactor: 1.5,
       retryCondition: (error: any) => {
         // Don't retry on authentication errors
         if (error.status === 401 || error.status === 403) {
@@ -49,7 +49,9 @@ export class KBAIDirectService {
       'x-auth-token': KBAI_AUTH_TOKEN,
       'x-kb-token': KBAI_KB_TOKEN,
       'Origin': window.location.origin,
-      'Accept': 'text/event-stream'
+      'Accept': 'text/event-stream',
+      'Access-Control-Allow-Origin': '*',
+      'Access-Control-Allow-Headers': '*'
     };
   }
 
@@ -124,7 +126,7 @@ export class KBAIDirectService {
       
       if (!isHealthy) {
         console.warn('KBAI API is not healthy after multiple attempts, using fallback data');
-        toast.error('Could not connect to knowledge base', {
+        toast.error('CORS issue with knowledge base', {
           description: 'Using fallback knowledge items instead'
         });
         return getFallbackItems();
@@ -182,8 +184,8 @@ export class KBAIDirectService {
           description: 'Your connection has been refreshed'
         });
       } else {
-        toast.error('Failed to connect to knowledge base', {
-          description: 'Please try again later'
+        toast.error('CORS issue with knowledge base', {
+          description: 'Please check CORS configuration or use a proxy'
         });
       }
       

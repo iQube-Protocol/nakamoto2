@@ -6,7 +6,10 @@ import { processMonDAIInteraction } from "@/services/mondai-service";
 serve(async (req) => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
-    return new Response(null, { headers: corsHeaders });
+    return new Response(null, { 
+      status: 204,
+      headers: corsHeaders 
+    });
   }
   
   try {
@@ -40,7 +43,7 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         error: 'Error processing request',
-        message: error.message
+        message: error instanceof Error ? error.message : String(error)
       }),
       {
         status: 500,
