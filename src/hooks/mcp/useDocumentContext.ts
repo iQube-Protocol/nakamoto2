@@ -57,7 +57,6 @@ export function useDocumentContext(client: MCPClient | null, driveConnected: boo
   return {
     documents,
     listDocuments,
-    fetchDocument,
-    isLoading
+    fetchDocument
   };
 }

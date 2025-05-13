@@ -8,6 +8,3 @@ export * from './useMessageInput';
 export * from './useMessageState';
 export * from './useMessageSubmit';
 export * from './useScrollToBottom';
-
-// Export document hooks
-export * from '../document/hooks';

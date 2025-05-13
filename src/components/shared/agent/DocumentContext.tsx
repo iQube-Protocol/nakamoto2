@@ -38,12 +38,6 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
     }
   }, [documentUpdates, loadDocumentContext]);
   
-  // Create a proper onClick handler that calls loadDocumentContext with forceRefresh=true
-  const handleRefreshClick = (event: React.MouseEvent<HTMLButtonElement>) => {
-    event.preventDefault();
-    loadDocumentContext(true);
-  };
-  
   return (
     <div className="flex flex-col h-full overflow-hidden">
       <div className="mb-4 flex justify-between items-center">
@@ -53,7 +47,7 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
             variant="ghost" 
             size="sm" 
             className="flex gap-1 items-center"
-            onClick={handleRefreshClick}
+            onClick={loadDocumentContext}
             title="Refresh document list"
           >
             <RefreshCw className="h-3.5 w-3.5" />

@@ -1,3 +1,4 @@
+
 import { MCPContext } from '../types';
 import { LocalStorageService } from './LocalStorageService';
 import { DocumentManager } from './DocumentManager';
@@ -52,19 +53,6 @@ export class ContextService {
                 console.warn(`⚠️ Document ${doc.documentName} has no content! This will affect agent functionality.`);
               }
             });
-            
-            // Dispatch event that document context was loaded
-            if (typeof window !== 'undefined') {
-              try {
-                const event = new CustomEvent('documentContextUpdated', {
-                  detail: { action: 'context-loaded', conversationId: existingConversationId }
-                });
-                window.dispatchEvent(event);
-                console.log('Dispatched documentContextUpdated event for loaded context');
-              } catch (eventError) {
-                console.error('Error dispatching document context loaded event:', eventError);
-              }
-            }
           } else {
             console.log(`No documents found in stored context for conversation ${existingConversationId}`);
           }
@@ -164,12 +152,7 @@ export class ContextService {
       try {
         if (typeof window !== 'undefined') {
           const event = new CustomEvent('documentContextUpdated', {
-            detail: { 
-              documentId, 
-              documentName, 
-              action: 'added',
-              conversationId: this.conversationId 
-            }
+            detail: { documentId, documentName, action: 'added' }
           });
           window.dispatchEvent(event);
           console.log(`Event dispatched for document added: ${documentName}`);
@@ -203,11 +186,7 @@ export class ContextService {
       try {
         if (typeof window !== 'undefined') {
           const event = new CustomEvent('documentContextUpdated', {
-            detail: { 
-              documentId, 
-              action: 'removed',
-              conversationId: this.conversationId 
-            }
+            detail: { documentId, action: 'removed' }
           });
           window.dispatchEvent(event);
           console.log(`Event dispatched for document removed: ${documentId}`);
@@ -302,23 +281,6 @@ export class ContextService {
       if (refreshedContext) {
         this.context = refreshedContext;
         console.log(`Context refreshed from storage for ${this.conversationId}`);
-        
-        // Dispatch event that context was refreshed
-        if (typeof window !== 'undefined' && this.context.documentContext) {
-          try {
-            const event = new CustomEvent('documentContextUpdated', {
-              detail: { 
-                action: 'context-refreshed', 
-                conversationId: this.conversationId,
-                documentCount: this.context.documentContext.length
-              }
-            });
-            window.dispatchEvent(event);
-          } catch (eventError) {
-            console.error('Error dispatching document context refreshed event:', eventError);
-          }
-        }
-        
         return true;
       }
     } catch (error) {
