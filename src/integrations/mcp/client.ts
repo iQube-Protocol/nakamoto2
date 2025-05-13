@@ -2,6 +2,8 @@
 import { MCPClientOptions, MCPContext, DocumentMetadata } from './types';
 import { GoogleDriveService } from './GoogleDriveService';
 import { ContextService } from './context';
+import { MCPApiService } from './services/MCPApiService';
+import { MCPDocumentService } from './services/MCPDocumentService';
 import { toast } from 'sonner';
 
 export { type MCPContext, type MCPClientOptions } from './types';
@@ -10,21 +12,22 @@ export { type MCPContext, type MCPClientOptions } from './types';
  * Main MCP Client that coordinates Google Drive and Context services
  */
 export class MCPClient {
-  public serverUrl: string;
-  private authToken: string | null;
+  private apiService: MCPApiService;
   private contextService: ContextService;
   private driveService: GoogleDriveService;
+  private documentService: MCPDocumentService;
   private initialized: boolean = false;
   
   constructor(options: MCPClientOptions = {}) {
-    this.serverUrl = options.serverUrl || 'https://mcp-gdrive-server.example.com';
-    this.authToken = options.authToken || null;
-    this.contextService = new ContextService(options.metisActive || false);
+    // Initialize services
+    this.apiService = new MCPApiService(options.serverUrl, options.authToken);
     this.driveService = new GoogleDriveService();
+    this.contextService = new ContextService(options.metisActive || false);
+    this.documentService = new MCPDocumentService(this.driveService);
     
     console.log('MCP Client initialized with options:', {
-      serverUrl: this.serverUrl,
-      hasAuthToken: !!this.authToken,
+      serverUrl: this.apiService.getServerUrl(),
+      hasAuthToken: !!options.authToken,
       metisActive: options.metisActive
     });
   }
@@ -83,49 +86,14 @@ export class MCPClient {
    * Load document metadata from Google Drive
    */
   async listDocuments(folderId?: string): Promise<DocumentMetadata[]> {
-    return this.driveService.listDocuments(folderId);
+    return this.documentService.listDocuments(folderId);
   }
   
   /**
    * Fetch a specific document and add its content to the context
    */
   async fetchDocumentContent(documentId: string): Promise<string | null> {
-    try {
-      // First get the file metadata
-      const fileMetadata = await this.driveService.gapi.client.drive.files.get({
-        fileId: documentId,
-        fields: 'name,mimeType'
-      });
-      
-      const fileName = fileMetadata.result.name;
-      const mimeType = fileMetadata.result.mimeType;
-      
-      console.log(`Fetching document: ${fileName}, type: ${mimeType}`);
-      
-      // Fetch the document content
-      const documentContent = await this.driveService.fetchDocumentContent({
-        id: documentId,
-        name: fileName,
-        mimeType: mimeType
-      });
-      
-      if (!documentContent) {
-        console.error(`Document content is empty for ${fileName}`);
-        toast.error('Document content is empty', {
-          description: `Could not extract content from ${fileName}`
-        });
-        return null;
-      }
-      
-      console.log(`Successfully fetched document content for ${fileName}, length: ${documentContent.length}`);
-      return documentContent;
-    } catch (error) {
-      console.error(`Error fetching document ${documentId}:`, error);
-      toast.error('Failed to fetch document', { 
-        description: error instanceof Error ? error.message : 'Unknown error' 
-      });
-      return null;
-    }
+    return this.documentService.fetchDocumentContent(documentId);
   }
   
   /**
@@ -232,14 +200,14 @@ export class MCPClient {
    * Set the authentication token
    */
   setAuthToken(token: string): void {
-    this.authToken = token;
+    this.apiService.setAuthToken(token);
   }
   
   /**
    * Set the server URL
    */
   setServerUrl(url: string): void {
-    this.serverUrl = url;
+    this.apiService.setServerUrl(url);
   }
   
   /**
