@@ -149,6 +149,15 @@ async function fetchKBAIKnowledge(options: any, requestId: string) {
 
 // Main Supabase Edge Function handler
 serve(async (req) => {
+  // Improved CORS handling for preflight requests
+  if (req.method === 'OPTIONS') {
+    console.log("Handling OPTIONS preflight request");
+    return new Response(null, { 
+      status: 204,
+      headers: corsHeaders
+    });
+  }
+  
   // Special endpoint for health check
   const url = new URL(req.url);
   if (url.pathname.endsWith('/health')) {
@@ -169,15 +178,6 @@ serve(async (req) => {
     );
   }
 
-  // Improved CORS handling for preflight requests
-  if (req.method === 'OPTIONS') {
-    console.log("Handling OPTIONS preflight request");
-    return new Response(null, { 
-      status: 204,
-      headers: corsHeaders
-    });
-  }
-  
   try {
     // Parse the request body
     const { options, requestId } = await req.json();
