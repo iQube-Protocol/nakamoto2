@@ -6,7 +6,7 @@ import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import { Search, RefreshCw, WifiOff } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
-import { KBAIKnowledgeItem } from '@/integrations/kbai/KBAIMCPService';
+import { KBAIKnowledgeItem } from '@/integrations/kbai';
 import { useKnowledgeBase } from '@/hooks/mcp/useKnowledgeBase';
 
 interface KnowledgeBaseProps {
