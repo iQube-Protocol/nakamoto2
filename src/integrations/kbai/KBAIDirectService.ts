@@ -1,30 +1,11 @@
-
 import { RetryService } from '@/services/RetryService';
 import { EventSourcePolyfill } from 'event-source-polyfill';
+import { KBAIKnowledgeItem, KBAIQueryOptions, ConnectionStatus } from './index';
 
 // KBAI MCP server endpoint and credentials
 const KBAI_MCP_ENDPOINT = 'https://api.kbai.org/MCP/sse';
 const KBAI_AUTH_TOKEN = '85abed95769d4b2ea1cb6bfaa8a67193';
 const KBAI_KB_TOKEN = 'KB00000001_CRPTMONDS';
-
-export interface KBAIKnowledgeItem {
-  id: string;
-  title: string;
-  content: string;
-  type: string;
-  source: string;
-  relevance: number;
-  timestamp?: string;
-}
-
-export interface KBAIQueryOptions {
-  query?: string;
-  category?: string;
-  limit?: number;
-  includeMetadata?: boolean;
-}
-
-export type ConnectionStatus = 'disconnected' | 'connecting' | 'connected' | 'error';
 
 /**
  * Service for direct communication with KBAI MCP server via SSE
@@ -204,7 +185,7 @@ export class KBAIDirectService {
       type: item.type || 'general',
       source: item.source || 'KBAI',
       relevance: item.relevance || item.score || 0.5,
-      timestamp: item.timestamp || new Date().toISOString()
+      timestamp: item.timestamp || new Date().toISOString()  // Ensure timestamp is always set
     };
   }
 

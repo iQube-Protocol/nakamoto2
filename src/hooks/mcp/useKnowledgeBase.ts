@@ -1,6 +1,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
-import { getKBAIService, KBAIKnowledgeItem, KBAIQueryOptions } from '@/integrations/kbai/KBAIMCPService';
+import { KBAIKnowledgeItem, KBAIQueryOptions } from '@/integrations/kbai';
+import { getKBAIService } from '@/integrations/kbai/KBAIMCPService';
 
 export interface KnowledgeBaseState {
   items: KBAIKnowledgeItem[];

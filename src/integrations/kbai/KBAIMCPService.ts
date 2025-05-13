@@ -1,28 +1,11 @@
 import { toast } from 'sonner';
-import { getKBAIDirectService } from './index';
-
-export interface KBAIKnowledgeItem {
-  id: string;
-  title: string;
-  content: string;
-  type: string;
-  source: string;
-  relevance: number;
-  timestamp: string;
-}
-
-export interface KBAIQueryOptions {
-  query?: string;
-  category?: string;
-  limit?: number;
-  includeMetadata?: boolean;
-}
+import { KBAIKnowledgeItem, KBAIQueryOptions, ConnectionStatus, getKBAIDirectService } from './index';
 
 /**
  * Service for communicating with KBAI MCP server via direct API connection
  */
 export class KBAIMCPService {
-  private connectionStatus: 'disconnected' | 'connecting' | 'connected' | 'error' = 'disconnected';
+  private connectionStatus: ConnectionStatus = 'disconnected';
   private cache: Map<string, { data: KBAIKnowledgeItem[], timestamp: number }> = new Map();
   private cacheLifetime = 5 * 60 * 1000; // 5 minutes
 
@@ -73,7 +56,7 @@ export class KBAIMCPService {
   /**
    * Get connection status
    */
-  getConnectionStatus(): 'disconnected' | 'connecting' | 'connected' | 'error' {
+  getConnectionStatus(): ConnectionStatus {
     return this.connectionStatus;
   }
   
