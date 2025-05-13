@@ -44,10 +44,15 @@ export interface KBAIConnectorResponse {
 // Diagnostic result format
 export interface DiagnosticResult {
   edgeFunctionHealthy?: boolean;
+  corsConfigured?: boolean;
   connectionStatus?: ConnectionStatus;
   errorMessage?: string | null;
   timestamp: string;
   error?: string;
+  details?: {
+    edgeFunctionUrl?: string;
+    [key: string]: any;
+  };
 }
 
 // Cache entry structure

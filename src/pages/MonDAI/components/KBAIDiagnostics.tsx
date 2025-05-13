@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
-import { AlertCircle, CheckCircle2, Loader2 } from 'lucide-react';
+import { AlertCircle, CheckCircle2, Loader2, Globe, Server } from 'lucide-react';
 import { DiagnosticResult } from '@/integrations/kbai/types';
 import { 
   Dialog,
@@ -74,11 +74,15 @@ const KBAIDiagnostics: React.FC<KBAIDiagnosticsProps> = ({
             </div>
             
             {results && (
-              <div className="space-y-2 bg-muted p-3 rounded-md">
+              <div className="space-y-3 bg-muted p-3 rounded-md">
                 <h3 className="font-medium">Diagnostic Results:</h3>
-                <div className="text-sm space-y-2">
-                  <div className="flex items-center justify-between">
-                    <span>Edge Function Health:</span>
+                
+                <div className="grid gap-2">
+                  <div className="flex items-center justify-between bg-background p-2 rounded-md">
+                    <span className="flex items-center">
+                      <Server className="w-4 h-4 mr-2 text-muted-foreground" />
+                      Edge Function Health:
+                    </span>
                     <span className="flex items-center">
                       {results.edgeFunctionHealthy ? 
                         <CheckCircle2 className="w-4 h-4 text-green-500 mr-1" /> : 
@@ -88,15 +92,35 @@ const KBAIDiagnostics: React.FC<KBAIDiagnosticsProps> = ({
                     </span>
                   </div>
                   
-                  {results.error && (
-                    <div className="text-red-500 text-xs mt-1 bg-red-50 p-2 rounded">
-                      Error: {results.error}
-                    </div>
-                  )}
-                  
-                  <div className="text-xs text-muted-foreground mt-2">
-                    Timestamp: {new Date(results.timestamp).toLocaleString()}
+                  <div className="flex items-center justify-between bg-background p-2 rounded-md">
+                    <span className="flex items-center">
+                      <Globe className="w-4 h-4 mr-2 text-muted-foreground" />
+                      CORS Configuration:
+                    </span>
+                    <span className="flex items-center">
+                      {results.corsConfigured ? 
+                        <CheckCircle2 className="w-4 h-4 text-green-500 mr-1" /> : 
+                        <AlertCircle className="w-4 h-4 text-red-500 mr-1" />
+                      }
+                      {results.corsConfigured ? 'Configured' : 'Not Verified'}
+                    </span>
                   </div>
+                </div>
+                
+                {results.details?.edgeFunctionUrl && (
+                  <div className="text-xs text-muted-foreground mt-2">
+                    Edge Function URL: {results.details.edgeFunctionUrl}
+                  </div>
+                )}
+                
+                {results.error && (
+                  <div className="text-red-500 text-xs mt-1 bg-red-50 p-2 rounded">
+                    Error: {results.error}
+                  </div>
+                )}
+                
+                <div className="text-xs text-muted-foreground mt-2">
+                  Timestamp: {new Date(results.timestamp).toLocaleString()}
                 </div>
               </div>
             )}

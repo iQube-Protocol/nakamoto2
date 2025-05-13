@@ -22,7 +22,10 @@ const ConnectionStatusAlert: React.FC<ConnectionStatusAlertProps> = ({
 }) => {
   if (connectionStatus === 'connected' || connectionStatus === 'connecting') return null;
   
-  const isDeploymentError = errorMessage?.includes('Edge function not') || false;
+  const isDeploymentError = errorMessage?.includes('Edge function not') || 
+                           errorMessage?.includes('deployed') ||
+                           errorMessage?.includes('NetworkError') ||
+                           false;
   
   return (
     <div className="mb-4 p-3 bg-amber-500/10 border border-amber-500/30 rounded-md flex items-center">
@@ -31,7 +34,7 @@ const ConnectionStatusAlert: React.FC<ConnectionStatusAlertProps> = ({
         <p className="font-medium">Knowledge Base Using Fallback Data</p>
         <p className="text-muted-foreground text-xs mt-1">
           {isDeploymentError ? 
-            "Edge function not deployed. MonDAI is using local fallback data." : 
+            "Edge function not deployed or accessible. MonDAI is using local fallback data." : 
             errorMessage || "Using fallback knowledge data."}
         </p>
       </div>
@@ -41,7 +44,7 @@ const ConnectionStatusAlert: React.FC<ConnectionStatusAlertProps> = ({
           onRunDiagnostics={onRunDiagnostics}
         />
         
-        {isDeploymentError && (
+        {(isDeploymentError || connectionStatus === 'error') && (
           <Button
             variant="outline"
             size="sm"
