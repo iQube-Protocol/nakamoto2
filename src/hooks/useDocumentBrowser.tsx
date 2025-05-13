@@ -1,78 +1,47 @@
 
-import { useState, useEffect } from 'react';
 import { useMCP } from '@/hooks/use-mcp';
+import { 
+  useDocumentNavigation, 
+  useDocumentLoading,
+  useDocumentSelection,
+  UseDocumentBrowserResult 
+} from './document-browser';
 
-interface FolderHistory {
-  id: string;
-  name: string;
-}
-
-export function useDocumentBrowser() {
+/**
+ * Main hook for document browsing functionality
+ * Composes smaller hooks to provide a complete document browsing experience
+ */
+export function useDocumentBrowser(): UseDocumentBrowserResult {
   const { listDocuments, documents, isLoading, driveConnected } = useMCP();
-  const [currentFolder, setCurrentFolder] = useState('');
-  const [folderHistory, setFolderHistory] = useState<FolderHistory[]>([]);
-  const [isOpen, setIsOpen] = useState(false);
   
-  // Fetch documents when dialog opens or folder changes
-  useEffect(() => {
-    if (isOpen && driveConnected) {
-      listDocuments(currentFolder);
-    }
-  }, [isOpen, driveConnected, currentFolder, listDocuments]);
-
-  const handleDocumentClick = (doc: any) => {
-    if (doc.mimeType.includes('folder')) {
-      // Save current folder to history before navigating
-      if (currentFolder) {
-        // Find the current folder name from documents
-        const currentFolderDoc = documents.find(d => d.id === currentFolder);
-        if (currentFolderDoc) {
-          setFolderHistory([...folderHistory, {
-            id: currentFolder,
-            name: currentFolderDoc.name
-          }]);
-        }
-      }
-      setCurrentFolder(doc.id);
-    }
-    return doc;
-  };
-
-  const handleBack = () => {
-    if (folderHistory.length > 0) {
-      // Go back to the previous folder
-      const newHistory = [...folderHistory];
-      const lastFolder = newHistory.pop();
-      setFolderHistory(newHistory);
-      setCurrentFolder(lastFolder?.id || '');
-    } else {
-      // Go back to root
-      setCurrentFolder('');
-    }
-  };
+  // Use the navigation hook to handle folder navigation state
+  const {
+    currentFolder,
+    setCurrentFolder,
+    folderHistory,
+    setFolderHistory,
+    isOpen,
+    setIsOpen,
+    handleBack,
+    navigateToFolder,
+    navigateToRoot
+  } = useDocumentNavigation();
   
-  const navigateToFolder = (folderId: string, historyIndex?: number) => {
-    if (historyIndex !== undefined) {
-      // Navigate to specific folder in history
-      setCurrentFolder(folderId);
-      setFolderHistory(folderHistory.slice(0, historyIndex));
-    } else {
-      setCurrentFolder(folderId);
-    }
-  };
+  // Use the loading hook to handle document loading
+  const {
+    refreshCurrentFolder
+  } = useDocumentLoading(isOpen, driveConnected, currentFolder, listDocuments);
   
-  const navigateToRoot = () => {
-    setCurrentFolder('');
-    setFolderHistory([]);
-  };
-  
-  const refreshCurrentFolder = () => {
-    if (driveConnected) {
-      // Only refresh if we're actually connected to avoid unnecessary calls
-      console.log(`Refreshing folder: ${currentFolder || 'root'}`);
-      listDocuments(currentFolder);
-    }
-  };
+  // Use the selection hook to handle document selection
+  const {
+    handleDocumentClick
+  } = useDocumentSelection(
+    documents,
+    currentFolder,
+    folderHistory,
+    setCurrentFolder,
+    setFolderHistory
+  );
 
   return {
     documents,
