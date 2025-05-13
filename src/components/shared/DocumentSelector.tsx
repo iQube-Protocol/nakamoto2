@@ -87,6 +87,21 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
     if (success) {
       // If connection was successful, refresh documents
       refreshCurrentFolder();
+      
+      // Dispatch an event to notify that drive connection status changed
+      // This will trigger document context reload in other components
+      const event = new CustomEvent('driveConnectionChanged', { 
+        detail: { connected: true } 
+      });
+      window.dispatchEvent(event);
+      
+      // Also dispatch documentContextUpdated event to refresh any existing context
+      const updateEvent = new CustomEvent('documentContextUpdated', { 
+        detail: { action: 'connection-established' } 
+      });
+      window.dispatchEvent(updateEvent);
+      
+      toast.success('Connected to Google Drive');
     }
     return success;
   };

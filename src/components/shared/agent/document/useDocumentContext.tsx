@@ -15,9 +15,10 @@ export default function useDocumentContext({ conversationId, onDocumentAdded }: 
   const { client, fetchDocument, isLoading } = useMCP();
   const [selectedDocuments, setSelectedDocuments] = useState<any[]>([]);
   const [viewingDocument, setViewingDocument] = useState<{id: string, content: string, name: string, mimeType: string} | null>(null);
+  const [lastConversationId, setLastConversationId] = useState<string | null>(null);
   
   // Load document context when conversation ID or client changes
-  const loadDocumentContext = useCallback(async () => {
+  const loadDocumentContext = useCallback(async (forceRefresh = false) => {
     if (!client) {
       console.log("Cannot load document context: MCP client not available");
       return;
@@ -27,6 +28,15 @@ export default function useDocumentContext({ conversationId, onDocumentAdded }: 
       console.log("Cannot load document context: Conversation ID not available");
       return;
     }
+    
+    // Skip reload if conversation ID hasn't changed and no force refresh
+    if (conversationId === lastConversationId && !forceRefresh) {
+      console.log(`Skipping reload for same conversation ID: ${conversationId}`);
+      return;
+    }
+    
+    console.log(`Loading document context for conversation ${conversationId}${forceRefresh ? ' (forced)' : ''}`);
+    setLastConversationId(conversationId);
     
     try {
       // Always initialize context first to ensure we have the latest
@@ -76,18 +86,20 @@ export default function useDocumentContext({ conversationId, onDocumentAdded }: 
         description: error instanceof Error ? error.message : "Unknown error"
       });
     }
-  }, [client, conversationId]);
+  }, [client, conversationId, lastConversationId]);
   
   // Initial load of document context
   useEffect(() => {
-    loadDocumentContext();
-  }, [loadDocumentContext]);
+    if (conversationId && conversationId !== lastConversationId) {
+      loadDocumentContext();
+    }
+  }, [conversationId, loadDocumentContext, lastConversationId]);
   
   // Set up event listeners for context changes
   useEffect(() => {
     const handleContextUpdate = (event: CustomEvent) => {
       console.log("Document context updated event received:", event.detail);
-      loadDocumentContext();
+      loadDocumentContext(true);
     };
     
     // TypeScript type assertion for custom event
@@ -97,7 +109,7 @@ export default function useDocumentContext({ conversationId, onDocumentAdded }: 
     const handleTabVisibilityChange = () => {
       if (!document.hidden && client && conversationId) {
         console.log("Document became visible, reloading document context");
-        loadDocumentContext();
+        loadDocumentContext(true);
       }
     };
     

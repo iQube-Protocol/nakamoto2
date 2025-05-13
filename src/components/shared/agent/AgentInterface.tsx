@@ -69,7 +69,7 @@ const AgentInterface = ({
   // Handle document context updates from parent component
   useEffect(() => {
     if (documentContextUpdated > 0) {
-      console.log(`Document context updated (${documentContextUpdated}), refreshing UI`);
+      console.log(`Document context updated externally (${documentContextUpdated}), refreshing UI`);
       setDocumentUpdates(prev => prev + 1);
     }
   }, [documentContextUpdated]);
@@ -77,20 +77,47 @@ const AgentInterface = ({
   // Listen for document context updates from anywhere in the application
   useEffect(() => {
     const handleContextUpdate = (event: Event) => {
-      console.log("Document context updated event received in AgentInterface");
+      const detail = (event as CustomEvent).detail;
+      console.log("Document context updated event received in AgentInterface:", detail);
       setDocumentUpdates(prev => prev + 1);
     };
     
+    const handleDriveConnection = (event: Event) => {
+      const detail = (event as CustomEvent).detail;
+      console.log("Drive connection changed event received in AgentInterface:", detail);
+      setDocumentUpdates(prev => prev + 1);
+      
+      // If connected for the first time, display a helpful message
+      if (detail?.connected) {
+        toast.success('Connected to Google Drive', {
+          description: 'You can now add documents to your conversation'
+        });
+      }
+    };
+    
     window.addEventListener('documentContextUpdated', handleContextUpdate);
+    window.addEventListener('driveConnectionChanged', handleDriveConnection);
+    
+    // Also check when the tab becomes visible
+    const handleVisibilityChange = () => {
+      if (!document.hidden) {
+        console.log("Tab became visible, refreshing document context in AgentInterface");
+        setDocumentUpdates(prev => prev + 1);
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
     
     return () => {
       window.removeEventListener('documentContextUpdated', handleContextUpdate);
+      window.removeEventListener('driveConnectionChanged', handleDriveConnection);
+      document.removeEventListener('visibilitychange', handleVisibilityChange);
     };
   }, []);
 
   const handleDocumentAdded = () => {
     // Notify the user that document context has been updated
-    toast.success('Document context has been updated');
+    toast.success('Document added to conversation');
     
     // Add a system message to inform the user about documents
     const systemMessage: AgentMessage = {

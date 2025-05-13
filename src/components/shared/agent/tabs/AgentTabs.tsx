@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ChatTab from './ChatTab';
 import DocumentContext from '../DocumentContext';
@@ -46,6 +46,24 @@ const AgentTabs: React.FC<AgentTabsProps> = ({
     // Always switch to chat tab when a message is sent
     setActiveTab('chat');
   };
+  
+  // Track last active tab to detect tab changes
+  const [previousTab, setPreviousTab] = React.useState(activeTab);
+  
+  // Effect to dispatch document refresh event when switching to documents tab
+  useEffect(() => {
+    if (activeTab === 'documents' && previousTab !== 'documents') {
+      console.log('Switched to documents tab, triggering document context refresh');
+      // Dispatch an event to trigger document context reload
+      const event = new CustomEvent('documentContextUpdated', { 
+        detail: { action: 'tab-switched', timestamp: Date.now() } 
+      });
+      window.dispatchEvent(event);
+    }
+    
+    // Update previous tab
+    setPreviousTab(activeTab);
+  }, [activeTab, previousTab]);
 
   return (
     <Tabs 
