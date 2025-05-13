@@ -176,7 +176,8 @@ export class KBAIMCPService {
       
       // Cache the fallback items to avoid repeated errors
       const fallbackItems = getFallbackItems();
-      this.cache.addToCache(cacheKey, fallbackItems);
+      const errorCacheKey = this.cache.getCacheKey(options);
+      this.cache.addToCache(errorCacheKey, fallbackItems);
       
       return fallbackItems;
     }
