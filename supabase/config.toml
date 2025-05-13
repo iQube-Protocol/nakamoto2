@@ -10,3 +10,4 @@ verify_jwt = false
 [functions."kbai-connector"]
 verify_jwt = false
 cors = {origins = ["*"], headers = ["Content-Type", "Authorization", "x-client-info", "apikey", "x-request-id"]}
+
