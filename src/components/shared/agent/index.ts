@@ -1,2 +1,2 @@
 
-export { default as AgentInterface } from '../AgentInterface';
+export { default as AgentInterface } from './AgentInterface';
