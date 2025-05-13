@@ -1,5 +1,5 @@
-
 import { toast } from 'sonner';
+import { getKBAIDirectService } from './index';
 
 export interface KBAIKnowledgeItem {
   id: string;
@@ -19,7 +19,7 @@ export interface KBAIQueryOptions {
 }
 
 /**
- * Service for communicating with KBAI MCP server via Supabase edge functions
+ * Service for communicating with KBAI MCP server via direct API connection
  */
 export class KBAIMCPService {
   private connectionStatus: 'disconnected' | 'connecting' | 'connected' | 'error' = 'disconnected';
@@ -42,23 +42,17 @@ export class KBAIMCPService {
       this.connectionStatus = 'connecting';
       console.log('Fetching knowledge items from KBAI MCP server with options:', options);
       
-      // Fetch from Supabase edge function
-      const { data, error } = await this.callKBAIConnector(options);
+      // Use the direct KBAI service instead of Supabase edge function
+      const directService = getKBAIDirectService();
+      const items = await directService.fetchKnowledgeItems(options);
       
-      if (error) {
-        console.error('Error fetching KBAI knowledge:', error);
-        this.connectionStatus = 'error';
-        throw new Error(`KBAI knowledge fetch error: ${error.message || 'Unknown error'}`);
-      }
+      // Update our connection status based on the direct service
+      this.connectionStatus = directService.getConnectionStatus();
       
-      if (!data || !Array.isArray(data.items)) {
-        console.warn('Invalid response from KBAI connector:', data);
-        this.connectionStatus = 'error';
+      if (!items || items.length === 0) {
+        console.warn('No items returned from KBAI, using fallback items');
         return this.getFallbackItems();
       }
-      
-      const items = data.items.map(this.transformKnowledgeItem);
-      this.connectionStatus = 'connected';
       
       // Cache the results
       this.addToCache(cacheKey, items);
@@ -89,46 +83,10 @@ export class KBAIMCPService {
   reset(): void {
     this.connectionStatus = 'disconnected';
     this.cache.clear();
-  }
-  
-  /**
-   * Call the KBAI connector edge function
-   */
-  private async callKBAIConnector(options: KBAIQueryOptions) {
-    // In a real implementation, this would call the Supabase edge function
-    // For now, we'll simulate the call with a mock response
     
-    // TODO: Replace with actual Supabase edge function call
-    // return await supabase.functions.invoke('kbai-connector', {
-    //   body: { options }
-    // });
-    
-    // Mock implementation for testing
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve({
-          data: {
-            items: this.getMockKnowledgeItems(options)
-          },
-          error: null
-        });
-      }, 500);
-    });
-  }
-  
-  /**
-   * Transform raw knowledge item from KBAI format
-   */
-  private transformKnowledgeItem(item: any): KBAIKnowledgeItem {
-    return {
-      id: item.id || `kb-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
-      title: item.title || 'Untitled Knowledge Item',
-      content: item.content || item.text || '',
-      type: item.type || 'general',
-      source: item.source || 'KBAI',
-      relevance: item.relevance || item.score || 0.5,
-      timestamp: item.timestamp || new Date().toISOString()
-    };
+    // Also reset the direct service
+    const directService = getKBAIDirectService();
+    directService.reset();
   }
   
   /**
@@ -164,66 +122,6 @@ export class KBAIMCPService {
         timestamp: new Date().toISOString()
       }
     ];
-  }
-  
-  /**
-   * Get mock knowledge items for testing
-   */
-  private getMockKnowledgeItems(options: KBAIQueryOptions): any[] {
-    let items = [
-      {
-        id: 'kb-001',
-        title: 'Blockchain Fundamentals',
-        content: 'A blockchain is a distributed database that maintains a continuously growing list of records, called blocks, which are linked using cryptography.',
-        type: 'concept',
-        source: 'KBAI',
-        relevance: 0.95,
-        timestamp: new Date().toISOString()
-      },
-      {
-        id: 'kb-002',
-        title: 'Token Economics',
-        content: 'Token economics involves the study of economic systems governed by the properties of tokens, including their supply, distribution, and incentives.',
-        type: 'concept',
-        source: 'KBAI',
-        relevance: 0.85,
-        timestamp: new Date().toISOString()
-      },
-      {
-        id: 'kb-003',
-        title: 'DeFi: Decentralized Finance',
-        content: 'DeFi refers to financial applications built on blockchain technologies, generally using smart contracts. These applications are open to anyone with an internet connection.',
-        type: 'guide',
-        source: 'KBAI',
-        relevance: 0.9,
-        timestamp: new Date().toISOString()
-      },
-      {
-        id: 'kb-004',
-        title: 'NFTs Explained',
-        content: 'Non-fungible tokens (NFTs) are cryptographic assets on a blockchain with unique identification codes that distinguish them from each other.',
-        type: 'guide',
-        source: 'KBAI',
-        relevance: 0.8,
-        timestamp: new Date().toISOString()
-      }
-    ];
-    
-    // Filter by query if provided
-    if (options.query) {
-      const query = options.query.toLowerCase();
-      items = items.filter(item => 
-        item.title.toLowerCase().includes(query) || 
-        item.content.toLowerCase().includes(query)
-      );
-    }
-    
-    // Apply limit if provided
-    if (options.limit && options.limit > 0) {
-      items = items.slice(0, options.limit);
-    }
-    
-    return items;
   }
   
   /**

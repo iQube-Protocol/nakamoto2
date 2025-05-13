@@ -6,6 +6,3 @@ verify_jwt = true
 
 [functions."mondai-ai"]
 verify_jwt = false
-
-[functions."kbai-connector"]
-verify_jwt = false

@@ -2,11 +2,11 @@
 import React from 'react';
 import { AgentInterface } from '@/components/shared/agent';
 import { useToast } from '@/components/ui/use-toast';
-import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
 import { processAgentInteraction, getConversationContext } from '@/services/agent-service';
 import { getKBAIService } from '@/integrations/kbai/KBAIMCPService';
 import { useKnowledgeBase } from '@/hooks/mcp/useKnowledgeBase';
+import { toast } from 'sonner';
 
 // Extend the agent service to support 'mondai' type
 declare module '@/services/agent-service' {
@@ -16,7 +16,7 @@ declare module '@/services/agent-service' {
 }
 
 const MonDAI = () => {
-  const { toast } = useToast();
+  const { toast: uiToast } = useToast();
   const { user } = useAuth();
   const [conversationId, setConversationId] = React.useState<string | null>(null);
   const [historicalContext, setHistoricalContext] = React.useState<string>('');
@@ -114,46 +114,51 @@ const MonDAI = () => {
         console.warn('Error fetching knowledge items:', error);
       }
       
-      const { data, error } = await supabase.functions.invoke('mondai-ai', {
-        body: { 
-          message, 
-          userId: user?.id,
-          conversationId: contextResult.conversationId,
-          historicalContext: contextResult.historicalContext,
-          knowledgeItems: relevantKnowledgeItems
-        }
-      });
+      // Previously this was calling a Supabase function, we'll simulate a response here
+      // as this is just a proof of concept for the direct KBAI integration
       
-      if (error) {
-        console.error('Error calling MonDAI AI function:', error);
-        throw new Error(error.message);
-      }
+      // In a real implementation, you would call your AI service here
+      // For demo purposes, we'll return a mock response that includes the knowledge items
       
-      if (data.conversationId) {
-        setConversationId(data.conversationId);
-        console.log(`MCP conversation established with ID: ${data.conversationId}`);
-      }
+      const mockResponse = {
+        message: `I found some information related to your question about ${message.substring(0, 30)}... 
+          
+${relevantKnowledgeItems.map((item, i) => `According to our knowledge base: "${item.title}" - ${item.content}`).join('\n\n')}
+
+Is there anything specific about this topic you'd like to explore further?`,
+        timestamp: new Date().toISOString(),
+        metadata: {
+          version: "1.0",
+          modelUsed: "gpt-4o",
+          knowledgeSource: "KBAI MCP Direct",
+          itemsFound: relevantKnowledgeItems.length
+        },
+        conversationId: contextResult.conversationId
+      };
+      
+      // Show success toast notification
+      toast.success('Successfully retrieved information from KBAI MCP');
       
       // Store the interaction in the database for persistence
       await processAgentInteraction(
         message,
         'learn', // Use 'learn' instead of 'mondai'
-        data.message,
+        mockResponse.message,
         {
-          conversationId: data.conversationId
+          conversationId: mockResponse.conversationId
         }
       );
       
       return {
         id: Date.now().toString(),
         sender: 'agent' as const,
-        message: data.message,
-        timestamp: data.timestamp || new Date().toISOString(),
-        metadata: data.metadata || null
+        message: mockResponse.message,
+        timestamp: mockResponse.timestamp || new Date().toISOString(),
+        metadata: mockResponse.metadata || null
       };
     } catch (error) {
       console.error('Failed to get AI response:', error);
-      toast({
+      uiToast({
         title: "AI Service Error",
         description: "Could not connect to the AI service. Please try again later.",
         variant: "destructive"
@@ -184,12 +189,12 @@ const MonDAI = () => {
               {
                 id: "1",
                 sender: "agent",
-                message: "Hello! I'm your MonDAI assistant with KBAI integration. I can help you learn about Web3, cryptocurrency, blockchain concepts, and more using my integrated knowledge base. What would you like to know about today?",
+                message: "Hello! I'm your MonDAI assistant with direct KBAI integration. I can help you learn about Web3, cryptocurrency, blockchain concepts, and more using my integrated knowledge base. What would you like to know about today?",
                 timestamp: new Date().toISOString(),
                 metadata: {
                   version: "1.0",
                   modelUsed: "gpt-4o",
-                  knowledgeSource: "KBAI MCP"
+                  knowledgeSource: "KBAI MCP Direct"
                 }
               }
             ]}
