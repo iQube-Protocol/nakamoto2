@@ -149,12 +149,24 @@ async function fetchKBAIKnowledge(options: any, requestId: string) {
 
 // Main Supabase Edge Function handler
 serve(async (req) => {
-  // Improved CORS handling for preflight requests
+  // Log all incoming requests with details
+  console.log(`[${new Date().toISOString()}] Request received:`, {
+    method: req.method,
+    url: req.url,
+    headers: Object.fromEntries(req.headers.entries())
+  });
+  
+  // Always add CORS headers to every response
+  const responseHeaders = {
+    ...corsHeaders
+  };
+
+  // Handle OPTIONS requests immediately (CORS preflight)
   if (req.method === 'OPTIONS') {
     console.log("Handling OPTIONS preflight request");
     return new Response(null, { 
       status: 204,
-      headers: corsHeaders
+      headers: responseHeaders
     });
   }
   
@@ -166,12 +178,13 @@ serve(async (req) => {
       JSON.stringify({ 
         status: "ok", 
         timestamp: new Date().toISOString(),
-        environment: "edge function" 
+        environment: "edge function",
+        version: "1.0.1" // Adding version for tracking
       }),
       {
         status: 200,
         headers: {
-          ...corsHeaders,
+          ...responseHeaders,
           'Content-Type': 'application/json'
         }
       }
@@ -179,36 +192,67 @@ serve(async (req) => {
   }
 
   try {
+    // For debugging, dump raw request body to console
+    try {
+      const clonedReq = req.clone();
+      const rawBody = await clonedReq.text();
+      console.log('Raw request body:', rawBody);
+    } catch (e) {
+      console.log('Could not log raw request body:', e);
+    }
+    
     // Parse the request body
-    const { options, requestId } = await req.json();
-    const requestTrackingId = requestId || crypto.randomUUID();
-    
-    // Log request info for debugging
-    console.log(`KBAI connector request received at ${new Date().toISOString()}`, 
-      { requestId: requestTrackingId, options });
-    
-    // Fetch knowledge from KBAI
-    const result = await fetchKBAIKnowledge(options, requestTrackingId);
-    
-    // Log response summary
-    console.log('KBAI connector response summary:', { 
-      requestId: requestTrackingId,
-      status: result.status, 
-      itemCount: result.items?.length || 0, 
-      hasError: !!result.error 
-    });
-    
-    // Return the result with proper CORS headers
-    return new Response(
-      JSON.stringify(result),
-      {
-        status: 200,
-        headers: {
-          ...corsHeaders,
-          'Content-Type': 'application/json'
+    try {
+      const { options, requestId } = await req.json();
+      const requestTrackingId = requestId || crypto.randomUUID();
+      
+      // Log request info for debugging
+      console.log(`KBAI connector request received at ${new Date().toISOString()}`, 
+        { requestId: requestTrackingId, options });
+      
+      // Fetch knowledge from KBAI
+      const result = await fetchKBAIKnowledge(options, requestTrackingId);
+      
+      // Log response summary
+      console.log('KBAI connector response summary:', { 
+        requestId: requestTrackingId,
+        status: result.status, 
+        itemCount: result.items?.length || 0, 
+        hasError: !!result.error 
+      });
+      
+      // Return the result with proper CORS headers
+      return new Response(
+        JSON.stringify(result),
+        {
+          status: 200,
+          headers: {
+            ...responseHeaders,
+            'Content-Type': 'application/json'
+          }
         }
-      }
-    );
+      );
+    } catch (jsonError) {
+      console.error('JSON parsing error:', jsonError);
+      return new Response(
+        JSON.stringify({
+          status: 400,
+          error: `Invalid request format: ${jsonError.message}`,
+          items: mockKnowledgeItems,
+          metadata: {
+            source: 'KBAI MCP (error fallback)',
+            timestamp: new Date().toISOString()
+          }
+        }),
+        {
+          status: 200, // Return 200 even on error to prevent CORS issues
+          headers: {
+            ...responseHeaders,
+            'Content-Type': 'application/json'
+          }
+        }
+      );
+    }
   } catch (error) {
     console.error('Error in kbai-connector:', error);
     const errorId = crypto.randomUUID();
@@ -227,7 +271,7 @@ serve(async (req) => {
       {
         status: 200, // Return 200 even on error to prevent CORS issues
         headers: {
-          ...corsHeaders,
+          ...responseHeaders,
           'Content-Type': 'application/json'
         }
       }
