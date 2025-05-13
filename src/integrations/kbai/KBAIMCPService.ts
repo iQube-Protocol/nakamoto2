@@ -16,10 +16,11 @@ import {
  */
 export class KBAIMCPService {
   private connectionStatus: ConnectionStatus = 'disconnected';
-  private maxRetries = 3;
+  private maxRetries = 2; // Reduced from 3 to reduce wait time
   private retryDelay = 1000; // Start with 1 second delay
   private lastErrorMessage: string | null = null;
   private currentRequestId: string | null = null;
+  private hasShownDeploymentError = false; // Track if we've shown the deployment error
   
   // Component services
   private cache: KBAICache;
@@ -78,7 +79,22 @@ export class KBAIMCPService {
       if (!isHealthy) {
         console.warn('KBAI edge function health check failed - edge function may not be deployed');
         this.lastErrorMessage = "Edge function not reachable. Verify deployment of the 'kbai-connector' function to Supabase.";
-        throw new Error(this.lastErrorMessage);
+        this.connectionStatus = 'error';
+        
+        // Only show the toast error once per session, not on every attempt
+        if (!this.hasShownDeploymentError) {
+          toast.error("Knowledge Base Connection Failed", {
+            description: "Edge function not deployed. Using fallback data.",
+            duration: 5000
+          });
+          this.hasShownDeploymentError = true;
+        }
+        
+        // Cache the fallback items to avoid repeated errors
+        const fallbackItems = getFallbackItems();
+        this.cache.addToCache(cacheKey, fallbackItems);
+        
+        return fallbackItems;
       } else {
         console.log('KBAI edge function health check passed, proceeding with request');
       }
@@ -123,6 +139,7 @@ export class KBAIMCPService {
           const items = response.data.items.map(this.transformKnowledgeItem);
           this.connectionStatus = 'connected';
           this.lastErrorMessage = null;
+          this.hasShownDeploymentError = false;
           
           // Cache the results
           this.cache.addToCache(cacheKey, items);
@@ -150,12 +167,18 @@ export class KBAIMCPService {
       this.lastErrorMessage = error instanceof Error ? error.message : String(error);
       console.error('Failed to fetch KBAI knowledge after all retries:', error);
       
-      // Show detailed error toast
-      toast.error("Knowledge base connection failed", {
-        description: `Reason: ${this.lastErrorMessage}. Using fallback data.`
-      });
+      // Show detailed error toast only if it's not a deployment error (which we've already shown)
+      if (!this.hasShownDeploymentError) {
+        toast.error("Knowledge base connection failed", {
+          description: `Using fallback data.`
+        });
+      }
       
-      return getFallbackItems();
+      // Cache the fallback items to avoid repeated errors
+      const fallbackItems = getFallbackItems();
+      this.cache.addToCache(cacheKey, fallbackItems);
+      
+      return fallbackItems;
     }
   }
   
@@ -176,6 +199,7 @@ export class KBAIMCPService {
     this.connectionStatus = 'disconnected';
     this.cache.clear();
     this.lastErrorMessage = null;
+    this.hasShownDeploymentError = false;
   }
   
   /**

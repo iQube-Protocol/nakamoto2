@@ -8,8 +8,9 @@ import { processAgentInteraction, getConversationContext } from '@/services/agen
 import { getKBAIService } from '@/integrations/kbai';
 import { useKnowledgeBase } from '@/hooks/mcp/useKnowledgeBase';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle } from 'lucide-react';
+import { AlertTriangle, Info } from 'lucide-react';
 import { toast } from 'sonner';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 
 // Extend the agent service to support 'mondai' type
 declare module '@/services/agent-service' {
@@ -26,6 +27,7 @@ const MonDAI = () => {
   const [isLoading, setIsLoading] = React.useState<boolean>(false);
   const [activeTab, setActiveTab] = React.useState<'chat' | 'knowledge' | 'documents'>('chat');
   const [documentUpdates, setDocumentUpdates] = React.useState<number>(0);
+  const [showDeploymentHelp, setShowDeploymentHelp] = React.useState<boolean>(false);
   
   // Initialize knowledge base with improved error handling
   const { 
@@ -55,7 +57,6 @@ const MonDAI = () => {
         await fetchKnowledgeItems();
       } catch (error) {
         console.error("Error initializing KBAI:", error);
-        toast("Knowledge base connection issue: Could not connect to KBAI service. Using fallback data.");
       }
     };
     
@@ -118,6 +119,11 @@ const MonDAI = () => {
     }
   };
 
+  // Show deployment help dialog
+  const handleShowDeploymentHelp = () => {
+    setShowDeploymentHelp(true);
+  };
+
   const handleAIMessage = async (message: string) => {
     try {
       // Get conversation context, including history if available
@@ -144,7 +150,6 @@ const MonDAI = () => {
         console.log(`Found ${relevantKnowledgeItems.length} relevant knowledge items for query`);
       } catch (error) {
         console.warn('Error fetching knowledge items:', error);
-        toast("Knowledge Base Error: Could not fetch relevant knowledge items. Using fallback data.");
       }
       
       const { data, error } = await supabase.functions.invoke('mondai-ai', {
@@ -201,23 +206,40 @@ const MonDAI = () => {
   const renderConnectionStatus = () => {
     if (connectionStatus === 'connected' || connectionStatus === 'connecting') return null;
     
+    const isDeploymentError = errorMessage?.includes('Edge function not') || false;
+    
     return (
       <div className="mb-4 p-3 bg-amber-500/10 border border-amber-500/30 rounded-md flex items-center">
         <AlertTriangle className="text-amber-500 mr-2" size={18} />
         <div className="flex-1 text-sm">
-          <p className="font-medium">Knowledge Base Disconnected</p>
+          <p className="font-medium">Knowledge Base Using Fallback Data</p>
           <p className="text-muted-foreground text-xs mt-1">
-            {errorMessage || "Could not establish connection to the knowledge base."}
+            {isDeploymentError ? 
+              "Edge function not deployed. MonDAI is using local fallback data." : 
+              errorMessage || "Using fallback knowledge data."}
           </p>
         </div>
-        <Button
-          variant="outline"
-          size="sm"
-          onClick={handleManualReconnect}
-          className="ml-2 border-amber-500/40 text-amber-600 hover:text-amber-700"
-        >
-          Reconnect
-        </Button>
+        <div className="flex gap-2">
+          {isDeploymentError && (
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleShowDeploymentHelp}
+              className="ml-2 border-amber-500/40 text-amber-600 hover:text-amber-700"
+            >
+              <Info size={14} className="mr-1" />
+              Help
+            </Button>
+          )}
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleManualReconnect}
+            className="ml-2 border-amber-500/40 text-amber-600 hover:text-amber-700"
+          >
+            Retry
+          </Button>
+        </div>
       </div>
     );
   };
@@ -251,6 +273,38 @@ const MonDAI = () => {
           />
         </div>
       </div>
+      
+      <Dialog open={showDeploymentHelp} onOpenChange={setShowDeploymentHelp}>
+        <DialogContent className="sm:max-w-[500px]">
+          <DialogHeader>
+            <DialogTitle>Deploy Edge Function</DialogTitle>
+            <DialogDescription>
+              To enable the knowledge base integration, you need to deploy the "kbai-connector" edge function to your Supabase project.
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 mt-4">
+            <div className="bg-muted p-3 rounded text-sm">
+              <h3 className="font-medium mb-2">Deployment Options</h3>
+              <ol className="list-decimal ml-5 space-y-3">
+                <li>
+                  <span className="font-medium">Supabase Dashboard:</span> Log in to Supabase, go to Edge Functions section, 
+                  create a new function named "kbai-connector" and copy the code from your project.
+                </li>
+                <li>
+                  <span className="font-medium">Supabase CLI:</span> Install the Supabase CLI, log in, and run 
+                  <pre className="bg-background p-2 rounded mt-1 font-mono text-xs">supabase functions deploy kbai-connector</pre>
+                </li>
+              </ol>
+            </div>
+            <p className="text-sm text-muted-foreground">
+              Until the function is deployed, MonDAI will operate using local fallback data instead of live knowledge base data.
+            </p>
+            <Button className="w-full" onClick={() => setShowDeploymentHelp(false)}>
+              Close
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
