@@ -41,7 +41,9 @@ export function useDocumentActions({
       const enrichedDocument = await addDocumentToContext(client, conversationId, document, fetchDocument);
       
       // Add content to the document object for local tracking
-      setSelectedDocuments(prev => [...prev, enrichedDocument]);
+      // Fix: Instead of using a function that returns an array, directly set the new array
+      const updatedDocuments = [...selectedDocuments, enrichedDocument];
+      setSelectedDocuments(updatedDocuments);
       
       // Dispatch event that document context was updated
       dispatchDocumentContextUpdated(document.id, 'added');
@@ -70,7 +72,9 @@ export function useDocumentActions({
     
     if (removed) {
       // Update local state
-      setSelectedDocuments(prev => prev.filter(doc => doc.id !== documentId));
+      // Fix: Instead of using a function that returns an array, directly set the new array
+      const filteredDocuments = selectedDocuments.filter(doc => doc.id !== documentId);
+      setSelectedDocuments(filteredDocuments);
       
       // Dispatch event that document context was updated
       dispatchDocumentContextUpdated(documentId, 'removed');
