@@ -6,7 +6,7 @@ import { useMCP } from '@/hooks/use-mcp';
 interface UseDocumentActionsProps {
   conversationId: string | null;
   selectedDocuments: any[];
-  setSelectedDocuments: (docs: any[]) => void;
+  setSelectedDocuments: React.Dispatch<React.SetStateAction<any[]>>;
   onDocumentAdded?: () => void;
 }
 
@@ -54,7 +54,7 @@ export function useDocumentActions({
       
       // Add content to the document object for local tracking
       document.content = content;
-      setSelectedDocuments(prev => [...prev, document]);
+      setSelectedDocuments([...selectedDocuments, document]);
       
       // Extract document type from mimeType
       const documentType = document.mimeType.split('/').pop() || 'unknown';
@@ -138,7 +138,7 @@ export function useDocumentActions({
       }
       
       // Update local state
-      setSelectedDocuments(prev => prev.filter(doc => doc.id !== documentId));
+      setSelectedDocuments(selectedDocuments.filter(doc => doc.id !== documentId));
       toast.success(`Document "${documentName}" removed from context`);
     } catch (error) {
       console.error('Error removing document:', error);

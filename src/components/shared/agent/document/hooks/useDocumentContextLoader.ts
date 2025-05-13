@@ -5,7 +5,7 @@ import { useMCP } from '@/hooks/use-mcp';
 
 interface UseDocumentContextLoaderProps {
   conversationId: string | null;
-  setSelectedDocuments: (docs: any[]) => void;
+  setSelectedDocuments: React.Dispatch<React.SetStateAction<any[]>>;
 }
 
 /**
