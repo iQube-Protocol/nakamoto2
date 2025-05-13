@@ -28,7 +28,8 @@ const MonDAI = () => {
     errorMessage,
     handleDocumentContextUpdated,
     handleManualReconnect,
-    handleShowDeploymentHelp
+    handleShowDeploymentHelp,
+    runDiagnostics
   } = useKnowledgeBaseStatus();
 
   // Set fullscreen mode effect for mobile
@@ -51,6 +52,7 @@ const MonDAI = () => {
             errorMessage={errorMessage}
             onReconnect={handleManualReconnect}
             onShowHelp={handleShowDeploymentHelp}
+            onRunDiagnostics={runDiagnostics}
           />
           
           <AgentInterface

@@ -1,20 +1,24 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { AlertTriangle, Info } from 'lucide-react';
+import { AlertTriangle, Info, RefreshCw } from 'lucide-react';
+import KBAIDiagnostics from './KBAIDiagnostics';
+import { DiagnosticResult } from '@/integrations/kbai/types';
 
 interface ConnectionStatusAlertProps {
   connectionStatus: 'connected' | 'connecting' | 'disconnected' | 'error';
   errorMessage?: string | null;
   onReconnect: () => void;
   onShowHelp: () => void;
+  onRunDiagnostics: () => Promise<DiagnosticResult>;
 }
 
 const ConnectionStatusAlert: React.FC<ConnectionStatusAlertProps> = ({
   connectionStatus,
   errorMessage,
   onReconnect,
-  onShowHelp
+  onShowHelp,
+  onRunDiagnostics
 }) => {
   if (connectionStatus === 'connected' || connectionStatus === 'connecting') return null;
   
@@ -32,12 +36,17 @@ const ConnectionStatusAlert: React.FC<ConnectionStatusAlertProps> = ({
         </p>
       </div>
       <div className="flex gap-2">
+        <KBAIDiagnostics
+          connectionStatus={connectionStatus}
+          onRunDiagnostics={onRunDiagnostics}
+        />
+        
         {isDeploymentError && (
           <Button
             variant="outline"
             size="sm"
             onClick={onShowHelp}
-            className="ml-2 border-amber-500/40 text-amber-600 hover:text-amber-700"
+            className="border-amber-500/40 text-amber-600 hover:text-amber-700"
           >
             <Info size={14} className="mr-1" />
             Help
@@ -47,8 +56,9 @@ const ConnectionStatusAlert: React.FC<ConnectionStatusAlertProps> = ({
           variant="outline"
           size="sm"
           onClick={onReconnect}
-          className="ml-2 border-amber-500/40 text-amber-600 hover:text-amber-700"
+          className="border-amber-500/40 text-amber-600 hover:text-amber-700"
         >
+          <RefreshCw size={14} className="mr-1" />
           Retry
         </Button>
       </div>
