@@ -1,4 +1,3 @@
-
 import { MCPContext } from '../types';
 import { LocalStorageService } from './LocalStorageService';
 import { DocumentManager } from './DocumentManager';
@@ -157,15 +156,15 @@ export class ContextService {
       return false;
     }
     
-    const { context, removed, documentName } = this.documentManager.removeDocumentFromContext(this.context, documentId);
+    const result = this.documentManager.removeDocumentFromContext(this.context, documentId);
     
-    if (removed) {
-      this.context = context;
+    if (result.removed) {
+      this.context = result.context;
       this.persistContext();
-      this.eventManager.dispatchDocumentEvent('removed', documentId, documentName);
+      this.eventManager.dispatchDocumentEvent('removed', documentId, result.documentName);
     }
     
-    return removed;
+    return result.removed;
   }
   
   /**

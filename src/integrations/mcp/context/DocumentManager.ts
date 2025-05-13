@@ -69,10 +69,10 @@ export class DocumentManager {
   /**
    * Remove document from context
    */
-  removeDocumentFromContext(context: MCPContext, documentId: string): { context: MCPContext, removed: boolean } {
+  removeDocumentFromContext(context: MCPContext, documentId: string): { context: MCPContext, removed: boolean, documentName: string } {
     if (!context.documentContext) {
       console.log('No document context exists to remove from');
-      return { context, removed: false };
+      return { context, removed: false, documentName: '' };
     }
     
     // Find the document to log its name before removal
@@ -92,7 +92,7 @@ export class DocumentManager {
       console.log(`Document ${documentName} not found in context`);
     }
     
-    return { context, removed };
+    return { context, removed, documentName };
   }
   
   /**
