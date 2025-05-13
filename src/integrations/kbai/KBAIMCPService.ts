@@ -1,4 +1,3 @@
-
 import { toast } from 'sonner';
 import { KBAICache } from './KBAICache';
 import { KBAIConnector } from './KBAIConnector';
@@ -15,7 +14,8 @@ import {
 } from './types';
 
 /**
- * Service for communicating with KBAI MCP server via Supabase edge functions
+ * LEGACY Service for communicating with KBAI MCP server via Supabase edge functions
+ * This is kept for reference but not used by default anymore since we're using direct API calls
  */
 export class KBAIMCPService {
   private connectionStatus: ConnectionStatus = 'disconnected';
@@ -34,6 +34,8 @@ export class KBAIMCPService {
     const projectRef = 'odzaacarlkmxqrpmggwe'; // Using the value from config.toml
     const edgeFunctionUrl = `https://${projectRef}.supabase.co/functions/v1/kbai-connector`;
     
+    console.warn('Creating legacy KBAIMCPService - this service is no longer used by default');
+    
     // Initialize component services
     this.cache = new KBAICache();
     this.connector = new KBAIConnector(projectRef);
@@ -42,7 +44,7 @@ export class KBAIMCPService {
     this.transformer = new KBAIItemTransformer();
     this.retryService = new KBAIRetryService();
     
-    console.log(`KBAIMCPService initialized with edge function URL: ${edgeFunctionUrl}`);
+    console.log(`[LEGACY] KBAIMCPService initialized with edge function URL: ${edgeFunctionUrl}`);
   }
 
   /**
@@ -178,18 +180,8 @@ export class KBAIMCPService {
   }
 }
 
-// Singleton instance for use throughout the app
-let kbaiServiceInstance: KBAIMCPService | null = null;
-
-/**
- * Get the global KBAI service instance
- */
-export const getKBAIService = (): KBAIMCPService => {
-  if (!kbaiServiceInstance) {
-    kbaiServiceInstance = new KBAIMCPService();
-  }
-  return kbaiServiceInstance;
+// Legacy factory function - no longer used by default
+export const createKBAIMCPService = (): KBAIMCPService => {
+  console.warn('Creating legacy KBAIMCPService - direct API connection is now used by default');
+  return new KBAIMCPService();
 };
-
-// Re-export types for convenience
-export * from './types';

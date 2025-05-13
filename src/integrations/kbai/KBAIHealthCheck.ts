@@ -1,6 +1,10 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { DiagnosticResult } from './types';
+
+/**
+ * Legacy KBAI health check service for edge function diagnostics
+ * This is kept for reference but not used by default anymore since we're using direct API calls
+ */
 
 /**
  * Handle health checks for KBAI service

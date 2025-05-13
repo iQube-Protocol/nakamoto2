@@ -1,16 +1,21 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { KBAIQueryOptions, KBAIConnectorResponse } from './types';
 
 /**
- * Service to handle communication with KBAI server via Supabase edge functions
+ * Legacy KBAI connector that uses Supabase edge functions
+ * This is kept for reference but not used by default anymore since we're using direct API calls
+ */
+
+/**
+ * Call the KBAI connector edge function
  */
 export class KBAIConnector {
-  private edgeFunctionUrl: string;
+  private readonly edgeFunctionUrl: string;
   
   constructor(projectRef: string) {
     this.edgeFunctionUrl = `https://${projectRef}.supabase.co/functions/v1/kbai-connector`;
-    console.log(`KBAIConnector initialized with edge function URL: ${this.edgeFunctionUrl}`);
+    console.log('[LEGACY] KBAIConnector initialized with edge function URL:', this.edgeFunctionUrl);
+    console.warn('This legacy connector is no longer used by default. The app now uses direct API calls.');
   }
   
   /**
