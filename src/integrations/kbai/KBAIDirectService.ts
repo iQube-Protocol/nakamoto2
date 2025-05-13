@@ -19,13 +19,24 @@ export class KBAIDirectService {
   private readonly cacheManager: CacheManager;
   private readonly retryService: RetryService;
   private connectionAttempts = 0;
-  private maxConnectionAttempts = 3;
+  private maxConnectionAttempts = 5; // Increased from 3
+  private lastConnectionAttempt = 0;
+  private connectionCooldown = 10000; // 10 seconds between connection attempts
   
   constructor() {
     this.cacheManager = new CacheManager();
     this.retryService = new RetryService({
       maxRetries: 3,
       baseDelay: 1000,
+      maxDelay: 10000, // 10 seconds max delay
+      exponentialFactor: 1.5, // Gentler backoff
+      retryCondition: (error: any) => {
+        // Don't retry on authentication errors
+        if (error.status === 401 || error.status === 403) {
+          return false;
+        }
+        return true;
+      }
     });
   }
 
@@ -44,14 +55,32 @@ export class KBAIDirectService {
 
   /**
    * Check if the KBAI API is healthy and accessible
+   * @param forceCheck Force a check even if one was recently performed
    */
-  public async checkApiHealth(): Promise<boolean> {
+  public async checkApiHealth(forceCheck = false): Promise<boolean> {
     try {
+      const now = Date.now();
+      
+      // Don't check too frequently unless forced
+      if (!forceCheck && now - this.lastConnectionAttempt < this.connectionCooldown) {
+        console.log(`Skipping health check - cool down period (${Math.round((now - this.lastConnectionAttempt) / 1000)}s < ${this.connectionCooldown / 1000}s)`);
+        return this.connectionStatus === 'connected'; // Return current status
+      }
+      
+      this.lastConnectionAttempt = now;
       this.connectionStatus = 'connecting';
-      const isHealthy = await checkApiHealth(KBAI_MCP_ENDPOINT, this.getAuthHeaders());
+      
+      console.log(`Performing KBAI API health check at ${new Date().toISOString()}`);
+      
+      const isHealthy = await this.retryService.execute(async () => {
+        return await checkApiHealth(KBAI_MCP_ENDPOINT, this.getAuthHeaders());
+      });
+      
       this.connectionStatus = isHealthy ? 'connected' : 'error';
+      console.log(`KBAI health check result: ${isHealthy ? 'healthy' : 'unhealthy'}`);
       return isHealthy;
     } catch (error) {
+      console.error('KBAI health check error:', error);
       this.connectionStatus = 'error';
       return false;
     }
@@ -65,7 +94,7 @@ export class KBAIDirectService {
       const cacheKey = this.cacheManager.getCacheKey(options);
       const cachedData = this.cacheManager.getFromCache(cacheKey);
       
-      if (cachedData) {
+      if (cachedData && options.query !== 'force-refresh') {
         console.log('Using cached KBAI knowledge items:', cachedData);
         return cachedData;
       }
@@ -83,11 +112,11 @@ export class KBAIDirectService {
         this.connectionAttempts++;
         console.log(`KBAI connection attempt ${this.connectionAttempts}/${this.maxConnectionAttempts}`);
         
-        isHealthy = await this.checkApiHealth();
+        isHealthy = await this.checkApiHealth(true);
         
         if (!isHealthy && this.connectionAttempts < this.maxConnectionAttempts) {
           // Wait before trying again with exponential backoff
-          const delay = Math.min(1000 * Math.pow(2, this.connectionAttempts - 1), 5000);
+          const delay = Math.min(1000 * Math.pow(2, this.connectionAttempts - 1), 8000);
           console.log(`Waiting ${delay}ms before next connection attempt`);
           await new Promise(resolve => setTimeout(resolve, delay));
         }
@@ -136,6 +165,39 @@ export class KBAIDirectService {
   }
 
   /**
+   * Force refresh connection and cache
+   */
+  public async forceRefresh(): Promise<boolean> {
+    try {
+      console.log('Force refreshing KBAI connection');
+      this.cacheManager.clearCache();
+      this.connectionAttempts = 0;
+      this.lastConnectionAttempt = 0;
+      
+      // Force health check
+      const isHealthy = await this.checkApiHealth(true);
+      
+      if (isHealthy) {
+        toast.success('Successfully connected to knowledge base', {
+          description: 'Your connection has been refreshed'
+        });
+      } else {
+        toast.error('Failed to connect to knowledge base', {
+          description: 'Please try again later'
+        });
+      }
+      
+      return isHealthy;
+    } catch (error) {
+      console.error('Force refresh failed:', error);
+      toast.error('Connection refresh failed', {
+        description: error instanceof Error ? error.message : 'Unknown error'
+      });
+      return false;
+    }
+  }
+
+  /**
    * Get connection status
    */
   public getConnectionStatus(): ConnectionStatus {
@@ -148,6 +210,7 @@ export class KBAIDirectService {
   public reset(): void {
     this.connectionStatus = 'disconnected';
     this.connectionAttempts = 0;
+    this.lastConnectionAttempt = 0;
     this.cacheManager.clearCache();
   }
 }

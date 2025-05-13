@@ -4,10 +4,16 @@ import { Card } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
-import { Search, RefreshCw, WifiOff } from 'lucide-react';
+import { Search, RefreshCw, WifiOff, AlertTriangle } from 'lucide-react';
 import { Skeleton } from '@/components/ui/skeleton';
 import { KBAIKnowledgeItem } from '@/integrations/kbai';
 import { useKnowledgeBase } from '@/hooks/mcp/useKnowledgeBase';
+import {
+  Tooltip,
+  TooltipContent,
+  TooltipProvider,
+  TooltipTrigger,
+} from "@/components/ui/tooltip";
 
 interface KnowledgeBaseProps {
   agentType: 'learn' | 'earn' | 'connect';
@@ -21,6 +27,7 @@ const KnowledgeBase = ({ agentType }: KnowledgeBaseProps) => {
     isLoading,
     connectionStatus,
     fetchKnowledgeItems,
+    retryConnection,
     searchKnowledge,
     resetSearch
   } = useKnowledgeBase({
@@ -39,7 +46,12 @@ const KnowledgeBase = ({ agentType }: KnowledgeBaseProps) => {
   
   // Handle refresh
   const handleRefresh = () => {
-    fetchKnowledgeItems();
+    fetchKnowledgeItems(true);
+  };
+  
+  // Handle retry connection
+  const handleRetryConnection = async () => {
+    await retryConnection();
   };
   
   // Render knowledge item
@@ -75,20 +87,43 @@ const KnowledgeBase = ({ agentType }: KnowledgeBaseProps) => {
     if (connectionStatus === 'connected') return null;
     
     return (
-      <div className={`p-2 rounded text-sm flex items-center gap-1 mb-4 ${
+      <div className={`p-2 rounded text-sm flex items-center gap-2 mb-4 ${
         connectionStatus === 'error' 
           ? 'bg-destructive/10 text-destructive' 
-          : 'bg-amber-500/10 text-amber-500'
+          : connectionStatus === 'connecting'
+            ? 'bg-amber-500/10 text-amber-500'
+            : 'bg-slate-500/10 text-slate-500'
       }`}>
         {connectionStatus === 'error' ? (
           <>
-            <WifiOff size={16} />
-            <span>Could not connect to knowledge base. Using fallback data.</span>
+            <AlertTriangle size={16} />
+            <span>Connection to knowledge base failed.</span>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleRetryConnection} 
+              className="ml-auto h-7 px-2"
+            >
+              Retry
+            </Button>
+          </>
+        ) : connectionStatus === 'connecting' ? (
+          <>
+            <span className="animate-pulse">●</span>
+            <span>Connecting to knowledge base...</span>
           </>
         ) : (
           <>
-            <span className="animate-pulse">●</span>
-            <span>{connectionStatus === 'connecting' ? 'Connecting...' : 'Disconnected'}</span>
+            <WifiOff size={16} />
+            <span>Disconnected from knowledge base</span>
+            <Button 
+              variant="outline" 
+              size="sm" 
+              onClick={handleRetryConnection} 
+              className="ml-auto h-7 px-2"
+            >
+              Connect
+            </Button>
           </>
         )}
       </div>
@@ -130,15 +165,24 @@ const KnowledgeBase = ({ agentType }: KnowledgeBaseProps) => {
         <h4 className="text-sm font-medium">
           {searchQuery ? `Results for "${searchQuery}"` : "Relevant Knowledge"}
         </h4>
-        <Button
-          variant="ghost"
-          size="sm"
-          onClick={handleRefresh}
-          disabled={isLoading}
-          className="h-8 px-2"
-        >
-          <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
-        </Button>
+        <TooltipProvider>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleRefresh}
+                disabled={isLoading}
+                className="h-8 px-2"
+              >
+                <RefreshCw size={16} className={isLoading ? 'animate-spin' : ''} />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent>
+              <p>Refresh knowledge items</p>
+            </TooltipContent>
+          </Tooltip>
+        </TooltipProvider>
       </div>
       
       <div className="flex-1 overflow-hidden">
@@ -148,7 +192,18 @@ const KnowledgeBase = ({ agentType }: KnowledgeBaseProps) => {
               items.length > 0 ? 
                 items.map(renderKnowledgeItem) : 
                 <div className="col-span-full text-center py-8 text-muted-foreground">
-                  No knowledge items found.
+                  {connectionStatus === 'error' ? (
+                    <div className="flex flex-col items-center gap-3">
+                      <AlertTriangle className="h-12 w-12 text-amber-500" />
+                      <p>Connection error. Unable to load knowledge items.</p>
+                      <Button onClick={handleRetryConnection} variant="outline">
+                        <RefreshCw size={16} className="mr-2" />
+                        Retry Connection
+                      </Button>
+                    </div>
+                  ) : (
+                    'No knowledge items found.'
+                  )}
                 </div>
             )}
           </div>

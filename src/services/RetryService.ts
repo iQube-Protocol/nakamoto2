@@ -7,6 +7,7 @@ export interface RetryOptions {
   baseDelay: number;
   maxDelay?: number;
   exponentialFactor?: number;
+  retryCondition?: (error: any) => boolean;
 }
 
 export class RetryService {
@@ -14,12 +15,14 @@ export class RetryService {
   private baseDelay: number;
   private maxDelay: number;
   private exponentialFactor: number;
+  private retryCondition?: (error: any) => boolean;
 
   constructor(options: RetryOptions) {
     this.maxRetries = options.maxRetries;
     this.baseDelay = options.baseDelay;
     this.maxDelay = options.maxDelay || 30000; // Default max delay: 30 seconds
     this.exponentialFactor = options.exponentialFactor || 2; // Default exponential factor
+    this.retryCondition = options.retryCondition;
   }
 
   /**
@@ -37,7 +40,14 @@ export class RetryService {
       } catch (error) {
         lastError = error instanceof Error ? error : new Error(String(error));
         
+        // Check if we should retry based on the custom retry condition
+        if (this.retryCondition && !this.retryCondition(error)) {
+          console.log(`Retry condition not met, will not retry`);
+          break;
+        }
+        
         if (retries === this.maxRetries) {
+          console.log(`Maximum retries (${this.maxRetries}) reached, giving up`);
           break; // Max retries reached, will throw the error after loop
         }
 
@@ -55,5 +65,28 @@ export class RetryService {
 
     // If we get here, all retries have failed
     throw lastError || new Error('Operation failed after maximum retry attempts');
+  }
+  
+  /**
+   * Check if an operation should be retried based on its error
+   * @param error The error to check
+   * @returns Whether the operation should be retried
+   */
+  shouldRetry(error: any): boolean {
+    if (this.retryCondition) {
+      return this.retryCondition(error);
+    }
+    
+    // Default retry logic - retry on network errors or 5xx server errors
+    // but not on 4xx client errors or other specific errors
+    if (error instanceof TypeError && error.message.includes('NetworkError')) {
+      return true;
+    }
+    
+    if (error.status && error.status >= 500 && error.status < 600) {
+      return true;
+    }
+    
+    return false;
   }
 }
