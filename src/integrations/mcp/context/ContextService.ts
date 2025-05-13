@@ -4,6 +4,8 @@ import { LocalStorageService } from './LocalStorageService';
 import { DocumentManager } from './DocumentManager';
 import { MessageManager } from './MessageManager';
 import { ContextStorageService } from './types';
+import { ContextEventManager } from './ContextEventManager';
+import { ContextValidator } from './ContextValidator';
 
 /**
  * Service for managing conversation context
@@ -15,12 +17,16 @@ export class ContextService {
   private storageService: ContextStorageService;
   private documentManager: DocumentManager;
   private messageManager: MessageManager;
+  private eventManager: ContextEventManager;
+  private validator: ContextValidator;
   
   constructor(metisActive: boolean = false, storageService?: ContextStorageService) {
     this.metisActive = metisActive;
     this.storageService = storageService || new LocalStorageService();
     this.documentManager = new DocumentManager();
     this.messageManager = new MessageManager();
+    this.eventManager = new ContextEventManager();
+    this.validator = new ContextValidator();
     
     console.log('Context service initialized with metisActive:', metisActive);
   }
@@ -41,21 +47,8 @@ export class ContextService {
           this.conversationId = existingConversationId;
           console.log(`Loaded local context for conversation ${existingConversationId}`);
           
-          // Log document context if available
-          if (this.context.documentContext && this.context.documentContext.length > 0) {
-            console.log(`Found ${this.context.documentContext.length} documents in stored context:`, 
-              this.context.documentContext.map(doc => doc.documentName));
-              
-            // Verify document content integrity
-            this.context.documentContext.forEach((doc, i) => {
-              console.log(`Document ${i+1}: ${doc.documentName}, Content length: ${doc.content?.length || 0}`);
-              if (!doc.content || doc.content.length === 0) {
-                console.warn(`⚠️ Document ${doc.documentName} has no content! This will affect agent functionality.`);
-              }
-            });
-          } else {
-            console.log(`No documents found in stored context for conversation ${existingConversationId}`);
-          }
+          // Validate document context if available
+          this.validator.validateDocumentContext(this.context);
           
           return existingConversationId;
         }
@@ -147,19 +140,7 @@ export class ContextService {
       );
       
       this.persistContext();
-      
-      // Dispatch an event to notify that document context was updated
-      try {
-        if (typeof window !== 'undefined') {
-          const event = new CustomEvent('documentContextUpdated', {
-            detail: { documentId, documentName, action: 'added' }
-          });
-          window.dispatchEvent(event);
-          console.log(`Event dispatched for document added: ${documentName}`);
-        }
-      } catch (eventError) {
-        console.error('Error dispatching document context updated event:', eventError);
-      }
+      this.eventManager.dispatchDocumentEvent('added', documentId, documentName);
       
       console.log(`Successfully added document ${documentName} to context. Content length: ${content.length}`);
     } catch (error) {
@@ -176,24 +157,12 @@ export class ContextService {
       return false;
     }
     
-    const { context, removed } = this.documentManager.removeDocumentFromContext(this.context, documentId);
+    const { context, removed, documentName } = this.documentManager.removeDocumentFromContext(this.context, documentId);
     
     if (removed) {
       this.context = context;
       this.persistContext();
-      
-      // Dispatch an event to notify that document context was updated
-      try {
-        if (typeof window !== 'undefined') {
-          const event = new CustomEvent('documentContextUpdated', {
-            detail: { documentId, action: 'removed' }
-          });
-          window.dispatchEvent(event);
-          console.log(`Event dispatched for document removed: ${documentId}`);
-        }
-      } catch (eventError) {
-        console.error('Error dispatching document context updated event:', eventError);
-      }
+      this.eventManager.dispatchDocumentEvent('removed', documentId, documentName);
     }
     
     return removed;
@@ -205,16 +174,11 @@ export class ContextService {
   private persistContext(): void {
     if (this.context && this.conversationId) {
       try {
+        // Validate before saving
+        this.validator.validateBeforeSave(this.context);
+        
         this.storageService.saveContext(this.conversationId, this.context);
         console.log(`Context for ${this.conversationId} persisted to storage`);
-        
-        // Debug log: check if documents are saved in the context
-        if (this.context.documentContext && this.context.documentContext.length > 0) {
-          console.log(`Saved context has ${this.context.documentContext.length} documents`);
-          this.context.documentContext.forEach((doc, i) => {
-            console.log(`Document ${i+1}: ${doc.documentName}, content length: ${doc.content.length}`);
-          });
-        }
       } catch (error) {
         console.error('Error persisting context:', error);
       }
@@ -227,14 +191,7 @@ export class ContextService {
   getModelContext(): MCPContext | null {
     if (this.context) {
       // Verify document context integrity before returning
-      if (this.context.documentContext && this.context.documentContext.length > 0) {
-        console.log(`Getting model context with ${this.context.documentContext.length} documents`);
-        const invalidDocs = this.context.documentContext.filter(doc => !doc.content || doc.content.length === 0);
-        if (invalidDocs.length > 0) {
-          console.warn(`⚠️ Found ${invalidDocs.length} documents with invalid content:`, 
-            invalidDocs.map(d => d.documentName));
-        }
-      }
+      this.validator.validateDocumentContext(this.context);
     }
     return this.context;
   }
