@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { AgentMessage } from '@/lib/types';
 import MessageContent from './message/MessageContent';
@@ -6,11 +7,13 @@ import MetadataBadge from './message/MetadataBadge';
 import AgentRecommendation from './AgentRecommendation';
 import AgentActivationModal from './AgentActivationModal';
 import { useToast } from '@/components/ui/use-toast';
+
 interface MessageItemProps {
   message: AgentMessage;
   isPlaying: boolean;
   onPlayAudio: (messageId: string) => void;
 }
+
 const MessageItem = ({
   message,
   isPlaying,
@@ -36,10 +39,12 @@ const MessageItem = ({
       }
     }
   }, [message]);
+
   const handleActivateAgent = () => {
     setShowRecommendation(false);
     setShowActivationModal(true);
   };
+
   const handleDismissRecommendation = () => {
     setShowRecommendation(false);
     toast({
@@ -48,6 +53,7 @@ const MessageItem = ({
       variant: "default"
     });
   };
+
   const handleConfirmPayment = async (): Promise<boolean> => {
     // Simulate payment processing
     return new Promise(resolve => {
@@ -56,6 +62,7 @@ const MessageItem = ({
       }, 3000);
     });
   };
+
   const handleActivationComplete = () => {
     setMetisActive(true);
     toast({
@@ -74,7 +81,9 @@ const MessageItem = ({
     if (message.sender === 'system') return 'system-message';
     return 'agent-message';
   };
-  return <div className="">
+
+  return (
+    <div className={getMessageClass()}>
       <div className="flex">
         <div className="flex-1">
           <div className="flex items-center justify-between mb-1">
@@ -109,6 +118,8 @@ const MessageItem = ({
       </div>
       
       <AgentActivationModal isOpen={showActivationModal} onClose={() => setShowActivationModal(false)} agentName="Metis" fee={5} onConfirmPayment={handleConfirmPayment} onComplete={handleActivationComplete} />
-    </div>;
+    </div>
+  );
 };
+
 export default MessageItem;

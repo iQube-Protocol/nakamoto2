@@ -2,6 +2,7 @@
 import React from 'react';
 import { Loader2 } from 'lucide-react';
 import DocumentCard from './DocumentCard';
+import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface DocumentListProps {
   documents: any[];
@@ -27,25 +28,27 @@ const DocumentList: React.FC<DocumentListProps> = ({
     );
   }
 
-  if (documents.length === 0) {
-    return (
-      <div className="text-center py-8 text-sm text-muted-foreground">
-        No documents in context. Add documents to enhance your agent's responses.
-      </div>
-    );
-  }
-
   return (
-    <div className="space-y-2">
-      {documents.map(doc => (
-        <DocumentCard
-          key={doc.id}
-          document={doc}
-          onView={onViewDocument}
-          onRemove={onRemoveDocument}
-        />
-      ))}
-    </div>
+    <ScrollArea className="h-[400px]">
+      <div className="p-4">
+        {documents.length === 0 ? (
+          <div className="text-center py-8 text-sm text-muted-foreground">
+            No documents in context. Add documents to enhance your agent's responses.
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {documents.map(doc => (
+              <DocumentCard
+                key={doc.id}
+                document={doc}
+                onView={onViewDocument}
+                onRemove={onRemoveDocument}
+              />
+            ))}
+          </div>
+        )}
+      </div>
+    </ScrollArea>
   );
 };
 
