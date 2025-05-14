@@ -1,5 +1,6 @@
 
 import { getKBAIService } from '@/integrations/kbai/KBAIMCPService';
+import { getKBAIDirectService } from '@/integrations/kbai/KBAIDirectService';
 import { getConversationContext, processAgentInteraction } from '@/services/agent-service';
 import { toast } from 'sonner';
 
@@ -33,25 +34,45 @@ export async function generateMonDAIResponse(
     conversationId = crypto.randomUUID();
   }
 
+  // Check if we're in fallback mode
+  const directService = getKBAIDirectService();
+  const isInFallbackMode = directService.isInFallbackMode();
+  const connectionStatus = directService.getConnectionStatus();
+
   // Get relevant knowledge items for the message
   let relevantKnowledgeItems = [];
+  let knowledgeSource = "Offline Knowledge Base";
+  
   try {
-    const kbaiService = getKBAIService();
-    relevantKnowledgeItems = await kbaiService.fetchKnowledgeItems({
-      query: message,
-      limit: 3
-    });
+    if (isInFallbackMode) {
+      console.log('Using direct fallback data for query', message);
+      // Get fallback items directly from KBAI direct service
+      relevantKnowledgeItems = await directService.fetchKnowledgeItems({
+        query: message,
+        limit: 3
+      });
+    } else {
+      // Try regular KBAI service first
+      const kbaiService = getKBAIService();
+      relevantKnowledgeItems = await kbaiService.fetchKnowledgeItems({
+        query: message,
+        limit: 3
+      });
+      
+      // If connected, update knowledge source
+      if (kbaiService.getConnectionStatus() === 'connected') {
+        knowledgeSource = "KBAI MCP Direct";
+        toast.success('Successfully retrieved information from KBAI');
+      }
+    }
+    
     console.log(`Found ${relevantKnowledgeItems.length} relevant knowledge items for query`);
   } catch (error) {
     console.warn('Error fetching knowledge items:', error);
+    // Don't show error toast, just use fallback
   }
 
-  // Show toast notification
-  toast.success('Successfully retrieved information from KBAI MCP');
-
-  // In the future, this could call the actual MonDAI service
-  // For now, we'll generate a simulated response
-  
+  // Generate response based on available knowledge
   let responseMessage = '';
   
   if (relevantKnowledgeItems.length > 0) {
@@ -73,8 +94,10 @@ Would you like to know more about a related topic, or would you prefer to explor
     metadata: {
       version: "1.0",
       modelUsed: "gpt-4o",
-      knowledgeSource: "KBAI MCP Direct",
-      itemsFound: relevantKnowledgeItems.length
+      knowledgeSource,
+      itemsFound: relevantKnowledgeItems.length,
+      connectionStatus,
+      isOffline: isInFallbackMode
     }
   };
 }
