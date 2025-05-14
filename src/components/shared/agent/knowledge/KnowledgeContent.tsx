@@ -21,7 +21,7 @@ const KnowledgeContent = ({
 }: KnowledgeContentProps) => {
   return (
     <div className="flex-1 overflow-hidden">
-      <ScrollArea className="h-full pr-4">
+      <ScrollArea className="h-[400px] pr-4">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-4">
           {isLoading ? (
             <KnowledgeSkeleton />
