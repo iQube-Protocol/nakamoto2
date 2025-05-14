@@ -11,65 +11,80 @@ export async function addDocumentToContext(
   fetchDocument: (id: string) => Promise<string | null>
 ) {
   if (!client) {
+    toast.error('Cannot add document', { description: 'MCP client not initialized' });
     throw new Error('MCP client not initialized');
   }
   
   if (!conversationId) {
+    toast.error('Cannot add document', { description: 'No active conversation' });
     throw new Error('No active conversation');
   }
   
-  // Check if document is already in context (this will be handled by the hook)
-  
   console.log(`Adding document to context: ${document.name} (${document.id})`);
   
-  // Initialize the context with the conversation ID
-  await client.initializeContext(conversationId);
-  
-  // Fetch document content
-  const content = await fetchDocument(document.id);
-  if (!content) {
-    throw new Error('Failed to fetch document content');
-  }
-  
-  console.log(`Document content fetched, length: ${content.length}`);
-  
-  // Extract document type from mimeType
-  const documentType = document.mimeType.split('/').pop() || 'unknown';
-  
-  // Add to model context
-  console.log(`Adding document to MCP context: ${document.name}, type: ${documentType}`);
-  client.addDocumentToContext(
-    document.id,
-    document.name,
-    documentType,
-    content
-  );
-  
-  // Verify the document was added to context
-  const updatedContext = client.getModelContext();
-  const docInContext = updatedContext?.documentContext?.find(d => d.documentId === document.id);
-  
-  if (docInContext) {
-    console.log(`Document successfully added to context. Content length: ${docInContext.content.length}`);
+  try {
+    // Initialize the context with the conversation ID
+    await client.initializeContext(conversationId);
     
-    // Double-check content
-    if (docInContext.content.length === 0) {
+    // Fetch document content
+    console.log(`Fetching content for ${document.name}`);
+    const content = await fetchDocument(document.id);
+    
+    if (!content) {
+      console.error(`No content retrieved for ${document.name}`);
+      throw new Error('Failed to fetch document content');
+    }
+    
+    // Verify content is not empty
+    if (content.trim().length === 0) {
+      console.error(`Empty content retrieved for ${document.name}`);
+      throw new Error('Document content is empty');
+    }
+    
+    console.log(`Document content fetched, length: ${content.length}`);
+    
+    // Extract document type from mimeType
+    const documentType = document.mimeType.split('/').pop() || 'unknown';
+    
+    // Add to model context
+    console.log(`Adding document to MCP context: ${document.name}, type: ${documentType}`);
+    client.addDocumentToContext(
+      document.id,
+      document.name,
+      documentType,
+      content
+    );
+    
+    // Verify the document was added to context
+    const updatedContext = client.getModelContext();
+    const docInContext = updatedContext?.documentContext?.find(d => d.documentId === document.id);
+    
+    if (!docInContext) {
+      console.error("Document not found in context after adding!");
+      throw new Error("Failed to add document to context");
+    }
+    
+    if (!docInContext.content || docInContext.content.length === 0) {
       console.error("Document added but content is empty!");
       throw new Error("Document content is empty after adding to context");
     }
-  } else {
-    console.error("Document not found in context after adding!");
-    throw new Error("Failed to add document to context");
+    
+    console.log(`Document successfully added to context. Content length: ${docInContext.content.length}`);
+    
+    // Document with content for local tracking
+    return {
+      id: document.id,
+      name: document.name,
+      mimeType: document.mimeType,
+      content: content
+    };
+  } catch (error) {
+    console.error('Error adding document to context:', error);
+    toast.error('Failed to add document to context', {
+      description: error instanceof Error ? error.message : 'Unknown error'
+    });
+    throw error;
   }
-  
-  // Document with content for local tracking will be added by the hook
-  
-  return {
-    id: document.id,
-    name: document.name,
-    mimeType: document.mimeType,
-    content: content
-  };
 }
 
 /**
@@ -82,7 +97,7 @@ export function removeDocumentFromContext(
   documentName: string
 ) {
   try {
-    console.log(`Removing document from context: ${documentId}`);
+    console.log(`Removing document from context: ${documentId} (${documentName})`);
     
     // Remove from the client context
     if (client && conversationId) {
@@ -132,7 +147,9 @@ export async function loadDocumentsFromContext(client: any, conversationId: stri
     const context = client.getModelContext();
     console.log("Loading document context. Context available:", !!context);
     
-    if (context?.documentContext) {
+    if (context?.documentContext && Array.isArray(context.documentContext)) {
+      console.log(`Found ${context.documentContext.length} documents in context`);
+      
       const docs = context.documentContext.map(doc => ({
         id: doc.documentId,
         name: doc.documentName,
@@ -157,7 +174,7 @@ export async function loadDocumentsFromContext(client: any, conversationId: stri
         
         if (contentMissing) {
           console.error("Some documents have missing content! Attempting recovery...");
-          // This isn't ideal but we'll try to work with what we have
+          // We'll return what we have anyway and let the UI handle display
         }
       }
       
@@ -179,6 +196,7 @@ export async function loadDocumentsFromContext(client: any, conversationId: stri
  * Dispatches a document context updated event
  */
 export function dispatchDocumentContextUpdated(documentId: string, action: string) {
+  console.log(`Dispatching document context updated event: ${action} ${documentId}`);
   const event = new CustomEvent('documentContextUpdated', { 
     detail: { documentId, action } 
   });

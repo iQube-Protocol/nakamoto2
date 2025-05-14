@@ -26,15 +26,27 @@ export class MCPDocumentService {
   async fetchDocumentContent(documentId: string): Promise<string | null> {
     try {
       // First get the file metadata
+      console.log(`Fetching metadata for document ${documentId}`);
       const fileMetadata = await this.driveService.gapi.client.drive.files.get({
         fileId: documentId,
         fields: 'name,mimeType'
       });
       
+      if (!fileMetadata || !fileMetadata.result) {
+        console.error(`Could not fetch metadata for document ${documentId}`);
+        throw new Error('Failed to fetch document metadata');
+      }
+      
       const fileName = fileMetadata.result.name;
       const mimeType = fileMetadata.result.mimeType;
       
       console.log(`Fetching document: ${fileName}, type: ${mimeType}`);
+      
+      // Check if it's a folder
+      if (mimeType.includes('folder')) {
+        console.error('Cannot fetch content for folder');
+        throw new Error('Cannot fetch content for a folder');
+      }
       
       // Fetch the document content
       const documentContent = await this.driveService.fetchDocumentContent({
@@ -47,6 +59,15 @@ export class MCPDocumentService {
         console.error(`Document content is empty for ${fileName}`);
         toast.error('Document content is empty', {
           description: `Could not extract content from ${fileName}`
+        });
+        return null;
+      }
+      
+      // Verify the content is not just whitespace
+      if (documentContent.trim().length === 0) {
+        console.error(`Document content is only whitespace for ${fileName}`);
+        toast.error('Document content is empty', {
+          description: `Could not extract meaningful content from ${fileName}`
         });
         return null;
       }

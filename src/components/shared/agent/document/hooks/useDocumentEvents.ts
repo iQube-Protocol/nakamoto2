@@ -1,47 +1,53 @@
-
-import { useEffect, useCallback } from 'react';
+import { useEffect, useRef, useCallback } from 'react';
 
 /**
- * Hook to handle document context event listeners
+ * Hook for listening to document context events
  */
-export function useDocumentEvents(loadDocumentContext: () => Promise<void>) {
-  // Set up event listeners for context changes
+export function useDocumentEvents(callback: () => void) {
+  // Keep track of the callback with a ref
+  const callbackRef = useRef(callback);
+  
+  // Update ref when callback changes
   useEffect(() => {
-    const handleContextUpdate = (event: Event) => {
-      console.log("Document context updated event received:", (event as CustomEvent).detail);
-      loadDocumentContext();
+    callbackRef.current = callback;
+  }, [callback]);
+  
+  // Set up event listener for document context updates
+  useEffect(() => {
+    const handleDocumentUpdate = (event: CustomEvent) => {
+      console.log('Document context updated event received:', event.detail);
+      callbackRef.current();
     };
     
-    // TypeScript type assertion for custom event
-    window.addEventListener('documentContextUpdated', handleContextUpdate as EventListener);
+    // Add event listener with type assertion
+    window.addEventListener('documentContextUpdated', handleDocumentUpdate as EventListener);
     
-    // Also reload when tab becomes visible
-    const handleTabVisibilityChange = () => {
-      if (!document.hidden) {
-        console.log("Document became visible, reloading document context");
-        loadDocumentContext();
-      }
-    };
-    
-    document.addEventListener('visibilitychange', handleTabVisibilityChange);
-    
-    // Clean up listeners
     return () => {
-      window.removeEventListener('documentContextUpdated', handleContextUpdate as EventListener);
-      document.removeEventListener('visibilitychange', handleTabVisibilityChange);
+      // Remove event listener with type assertion
+      window.removeEventListener('documentContextUpdated', handleDocumentUpdate as EventListener);
     };
-  }, [loadDocumentContext]);
+  }, []);
 }
 
 /**
- * Hook to handle document updates from parent components
+ * Hook for handling document updates from parent components
  */
-export function useDocumentUpdates(documentUpdates: number = 0, loadDocumentContext: () => Promise<void>) {
-  // Reload document context when documentUpdates changes
+export function useDocumentUpdates(documentUpdates: number, callback: () => void) {
+  // Keep track of the callback with a ref
+  const callbackRef = useRef(callback);
+  const prevUpdatesRef = useRef(documentUpdates);
+  
+  // Update ref when callback changes
   useEffect(() => {
-    if (documentUpdates > 0) {
-      console.log(`DocumentContext received update signal (${documentUpdates}), reloading documents`);
-      loadDocumentContext();
+    callbackRef.current = callback;
+  }, [callback]);
+  
+  // Handle documentUpdates prop changes
+  useEffect(() => {
+    if (documentUpdates > 0 && documentUpdates !== prevUpdatesRef.current) {
+      console.log(`Document updates trigger detected: ${prevUpdatesRef.current} -> ${documentUpdates}`);
+      callbackRef.current();
+      prevUpdatesRef.current = documentUpdates;
     }
-  }, [documentUpdates, loadDocumentContext]);
+  }, [documentUpdates]);
 }

@@ -56,21 +56,34 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
   };
   
   const handleFileSelection = async (doc: any) => {
-    const result = handleDocumentClick(doc);
-    // If not a folder, pass the document to the parent component
-    if (!doc.mimeType.includes('folder')) {
-      try {
+    try {
+      // Only process the document if it's not a folder
+      if (!doc.mimeType.includes('folder')) {
+        console.log('Selecting document for context:', doc.name);
+        
+        // Handle document click (this returns the document or a Promise)
+        const result = handleDocumentClick(doc);
+        
+        // Process document selection
         await onDocumentSelect(result);
-        // Close dialog after document is selected
+        
+        // Only close dialog after successful document addition
         setIsOpen(false);
         toast.success('Document added to context');
-      } catch (error) {
-        console.error('Error selecting document:', error);
-        if (error.message?.includes('already in context')) {
-          toast.info('Document already in context');
-        } else {
-          toast.error('Failed to add document to context');
-        }
+      } else {
+        // If it's a folder, let the normal folder navigation happen
+        handleDocumentClick(doc);
+      }
+    } catch (error) {
+      console.error('Error selecting document:', error);
+      
+      // Show appropriate error message but keep dialog open for retry
+      if (error.message?.includes('already in context')) {
+        toast.info('Document already in context');
+      } else {
+        toast.error('Failed to add document to context', { 
+          description: error instanceof Error ? error.message : 'Unknown error'
+        });
       }
     }
   };

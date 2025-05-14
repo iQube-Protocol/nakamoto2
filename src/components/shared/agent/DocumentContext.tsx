@@ -28,15 +28,21 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
     handleRemoveDocument,
     handleViewDocument,
     loadDocumentContext // Function to reload document context
-  } = useDocumentContext({ conversationId, onDocumentAdded });
+  } = useDocumentContext({ 
+    conversationId, 
+    onDocumentAdded 
+  });
   
-  // Reload document context when documentUpdates changes
+  // Log when the component renders to debug updates
   useEffect(() => {
+    console.log(`DocumentContext rendering with conversationId: ${conversationId}`);
+    console.log(`DocumentContext has ${selectedDocuments?.length || 0} documents`);
+    console.log(`DocumentContext documentUpdates: ${documentUpdates}`);
     if (documentUpdates > 0) {
-      console.log(`DocumentContext received update signal (${documentUpdates}), reloading documents`);
+      console.log(`Refreshing document context due to documentUpdates: ${documentUpdates}`);
       loadDocumentContext();
     }
-  }, [documentUpdates, loadDocumentContext]);
+  }, [conversationId, documentUpdates, selectedDocuments?.length, loadDocumentContext]);
   
   return (
     <div className="flex flex-col h-full overflow-hidden">
