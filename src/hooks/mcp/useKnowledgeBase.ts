@@ -45,9 +45,8 @@ export function useKnowledgeBase(options = {}) {
     try {
       const kbaiService = new KBAIMCPService();
       await kbaiService.reset();
-      const directService = await kbaiService.forceRefresh?.();
       
-      // Re-fetch knowledge items
+      // Re-fetch knowledge items after reset
       return fetchKnowledgeItems(true);
     } catch (error) {
       console.error('Error retrying connection:', error);
