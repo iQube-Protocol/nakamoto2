@@ -6,11 +6,13 @@ export { default as MessageList } from './MessageList';
 export { default as MessageItem } from './MessageItem';
 export { default as AgentInputBar } from './AgentInputBar';
 export { default as EmptyConversation } from './EmptyConversation';
-export { default as KnowledgeBase } from './KnowledgeBase';
 export { default as ReliabilityIndicator } from './ReliabilityIndicator';
 export { default as DocumentContext } from './DocumentContext';
 export { default as ChatTab } from './tabs/ChatTab';
 export { default as AgentTabs } from './tabs/AgentTabs';
+
+// Export KnowledgeBase from the new location
+export { KnowledgeBase } from './knowledge';
 
 // Export all hooks from the hooks directory
 export * from './hooks';

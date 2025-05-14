@@ -3,7 +3,7 @@ import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ChatTab from './ChatTab';
 import DocumentContext from '../DocumentContext';
-import KnowledgeBase from '../KnowledgeBase';
+import { KnowledgeBase } from '../knowledge';
 import AgentInputBar from '../AgentInputBar';
 import { AgentMessage } from '@/lib/types';
 
