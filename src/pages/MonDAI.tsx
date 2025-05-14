@@ -117,15 +117,7 @@ const MonDAI = () => {
               {/* This is empty space for alignment */}
             </div>
             <div className="flex items-center gap-2">
-              {(connectionStatus === 'error' || connectionStatus === 'disconnected') && <Button variant="outline" size="sm" onClick={handleManualRetry} disabled={isRetrying}>
-                  {isRetrying ? <>
-                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-                      Connecting...
-                    </> : <>
-                      <RefreshCw className="h-4 w-4 mr-2" />
-                      Retry Connection
-                    </>}
-                </Button>}
+              {connectionStatus === 'error' || connectionStatus === 'disconnected'}
             </div>
           </div>
           
