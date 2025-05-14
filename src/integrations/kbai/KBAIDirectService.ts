@@ -1,3 +1,4 @@
+
 import { RetryService } from '@/services/RetryService';
 import { KBAIKnowledgeItem, KBAIQueryOptions, ConnectionStatus } from './index';
 import { connectToSSE, checkApiHealth } from './utils/sseConnection';
@@ -6,6 +7,7 @@ import { CacheManager } from './utils/cacheManager';
 import { toast } from 'sonner';
 
 // KBAI MCP server endpoint and credentials
+// Using a more compatible endpoint format without the trailing slash
 const KBAI_MCP_ENDPOINT = 'https://api.kbai.org/MCP/sse';
 const KBAI_AUTH_TOKEN = '85abed95769d4b2ea1cb6bfaa8a67193';
 const KBAI_KB_TOKEN = 'KB00000001_CRPTMONDS';
@@ -20,7 +22,7 @@ export class KBAIDirectService {
   private connectionAttempts = 0;
   private maxConnectionAttempts = 3; // Reduced number of attempts before falling back
   private lastConnectionAttempt = 0;
-  private connectionCooldown = 10000; // 10 seconds between connection attempts
+  private connectionCooldown = 5000; // 5 seconds between connection attempts (reduced)
   private useFallbackMode = false; // Flag to indicate if we should use fallback mode
   
   constructor() {
@@ -32,9 +34,16 @@ export class KBAIDirectService {
       exponentialFactor: 1.5,
       retryCondition: (error: any) => {
         // Don't retry on authentication errors or if we're in fallback mode
-        if (error.status === 401 || error.status === 403 || this.useFallbackMode) {
+        console.log("Evaluating retry condition for error:", error);
+        if (this.useFallbackMode) {
+          console.log("In fallback mode, skipping retry");
           return false;
         }
+        if (error && (error.status === 401 || error.status === 403)) {
+          console.log("Auth error, skipping retry");
+          return false;
+        }
+        console.log("Allowing retry attempt");
         return true;
       }
     });
@@ -56,7 +65,7 @@ export class KBAIDirectService {
    */
   public async checkApiHealth(forceCheck = false): Promise<boolean> {
     try {
-      if (this.useFallbackMode) {
+      if (this.useFallbackMode && !forceCheck) {
         console.log('In fallback mode, skipping health check');
         return false;
       }
@@ -80,20 +89,34 @@ export class KBAIDirectService {
       console.log(`KBAI health check result: ${isHealthy ? 'healthy' : 'unhealthy'}`);
       
       // If not healthy and we've tried enough times, enter fallback mode
-      if (!isHealthy && this.connectionAttempts >= this.maxConnectionAttempts) {
-        console.log(`Entering fallback mode after ${this.connectionAttempts} failed attempts`);
-        this.useFallbackMode = true;
+      if (!isHealthy) {
+        this.connectionAttempts++;
+        console.log(`Connection attempt ${this.connectionAttempts}/${this.maxConnectionAttempts}`);
         
-        // Show toast only once when entering fallback mode
-        toast.info('Using offline knowledge base', {
-          description: 'Unable to connect to KBAI server, using cached data'
-        });
+        if (this.connectionAttempts >= this.maxConnectionAttempts) {
+          console.log(`Entering fallback mode after ${this.connectionAttempts} failed attempts`);
+          this.useFallbackMode = true;
+          
+          // Show toast only once when entering fallback mode
+          toast.info('Using offline knowledge base', {
+            description: 'Unable to connect to KBAI server, using cached data'
+          });
+        }
+      } else {
+        // Reset attempts on successful connection
+        this.connectionAttempts = 0;
       }
       
       return isHealthy;
     } catch (error) {
       console.error('KBAI health check error:', error);
       this.connectionStatus = 'error';
+      this.connectionAttempts++;
+      
+      if (this.connectionAttempts >= this.maxConnectionAttempts) {
+        this.useFallbackMode = true;
+      }
+      
       return false;
     }
   }
@@ -109,7 +132,7 @@ export class KBAIDirectService {
       // If we're in fallback mode or have cache and not forcing refresh, use cache/fallback
       if ((this.useFallbackMode || cachedData) && options.query !== 'force-refresh') {
         if (cachedData) {
-          console.log('Using cached KBAI knowledge items:', cachedData);
+          console.log('Using cached KBAI knowledge items:', cachedData.length);
           return cachedData;
         } else {
           console.log('In fallback mode, using fallback data');
@@ -121,16 +144,14 @@ export class KBAIDirectService {
       if (options.query === 'force-refresh') {
         this.useFallbackMode = false;
         this.connectionAttempts = 0;
+        console.log('Force refresh: Resetting fallback mode and connection attempts');
       }
       
       this.connectionStatus = 'connecting';
       console.log('Fetching knowledge items from KBAI MCP server with options:', options);
       
-      // Increment connection attempts
-      this.connectionAttempts++;
-      console.log(`KBAI connection attempt ${this.connectionAttempts}/${this.maxConnectionAttempts}`);
-      
-      const isHealthy = await this.checkApiHealth(true);
+      // Check API health first
+      const isHealthy = await this.checkApiHealth(options.query === 'force-refresh');
       
       if (!isHealthy) {
         console.warn('KBAI API is not healthy, using fallback data');
@@ -146,6 +167,7 @@ export class KBAIDirectService {
       
       // Try connecting with retry logic for the SSE connection
       try {
+        console.log('Attempting SSE connection to KBAI server...');
         const items = await this.retryService.execute(() => 
           connectToSSE({
             endpoint: KBAI_MCP_ENDPOINT,
@@ -153,6 +175,8 @@ export class KBAIDirectService {
             ...options
           })
         );
+        
+        console.log(`SSE connection successful, received ${items?.length || 0} items`);
         
         if (!items || items.length === 0) {
           console.warn('No items returned from KBAI, using fallback data');
@@ -211,16 +235,32 @@ export class KBAIDirectService {
       const isHealthy = await this.checkApiHealth(true);
       
       if (isHealthy) {
-        toast.success('Successfully connected to knowledge base', {
-          description: 'Your connection has been refreshed'
-        });
+        // Try to fetch some data to confirm connection works
+        try {
+          const items = await this.fetchKnowledgeItems({ query: 'force-refresh', limit: 3 });
+          const success = items && items.length > 0 && !this.useFallbackMode;
+          
+          if (success) {
+            toast.success('Successfully connected to knowledge base', {
+              description: 'Your connection has been refreshed'
+            });
+            return true;
+          } else {
+            toast.info('Using offline knowledge base', {
+              description: 'Unable to fetch data from KBAI server, using local data'
+            });
+            return false;
+          }
+        } catch (fetchError) {
+          console.error("Error fetching data after health check:", fetchError);
+          return false;
+        }
       } else {
         toast.info('Using offline knowledge base', {
           description: 'Unable to connect to KBAI server, using local data'
         });
+        return false;
       }
-      
-      return isHealthy;
     } catch (error) {
       console.error('Force refresh failed:', error);
       toast.error('Connection refresh failed', {

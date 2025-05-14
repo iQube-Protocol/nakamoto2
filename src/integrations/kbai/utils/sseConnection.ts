@@ -1,3 +1,4 @@
+
 import { EventSourcePolyfill } from 'event-source-polyfill';
 import { KBAIKnowledgeItem } from '../index';
 import { toast } from 'sonner';
@@ -25,7 +26,7 @@ export async function connectToSSE(options: SSEConnectionOptions): Promise<KBAIK
       query = '', 
       limit = 10, 
       category = '',
-      timeout = 25000 // Increased to 25 seconds
+      timeout = 20000 // 20 seconds timeout
     } = options;
     
     // Construct query string with parameters
@@ -37,20 +38,22 @@ export async function connectToSSE(options: SSEConnectionOptions): Promise<KBAIK
     const fullEndpoint = `${endpoint}?${params.toString()}`;
     console.log('Connecting to SSE endpoint:', fullEndpoint);
     
-    // Minimal headers to reduce CORS issues - only keep essential ones
-    const minimalHeaders = {
-      'x-auth-token': headers['x-auth-token'],
-      'x-kb-token': headers['x-kb-token']
-    };
+    // Debug header info
+    console.log('Connection headers:', JSON.stringify({
+      'x-auth-token': headers['x-auth-token'] ? '[PRESENT]' : '[MISSING]',
+      'x-kb-token': headers['x-kb-token'] ? '[PRESENT]' : '[MISSING]'
+    }));
     
-    // Use EventSource polyfill to support custom headers
+    // Set up EventSource with minimal headers
     const eventSource = new EventSourcePolyfill(fullEndpoint, {
-      headers: minimalHeaders,
+      headers,
       withCredentials: false, // Explicitly false for CORS
-      heartbeatTimeout: 20000 // 20 seconds heartbeat timeout
+      heartbeatTimeout: 15000 // 15 seconds heartbeat timeout
     });
     
     const knowledgeItems: KBAIKnowledgeItem[] = [];
+    
+    // Set connection timeout
     const connectionTimeout = setTimeout(() => {
       if (eventSource.readyState !== eventSource.CLOSED) {
         console.log(`SSE connection timed out after ${timeout/1000}s, closing connection`);
@@ -75,6 +78,7 @@ export async function connectToSSE(options: SSEConnectionOptions): Promise<KBAIK
       }
     }, 8000);
     
+    // Event handlers
     eventSource.onopen = (event) => {
       console.log('SSE connection opened successfully', event);
     };
@@ -131,8 +135,8 @@ export async function connectToSSE(options: SSEConnectionOptions): Promise<KBAIK
       clearTimeout(initialDataTimeout);
       eventSource.close();
       
-      // Always resolve with fallback data to ensure the app continues to function
-      reject(new Error('SSE connection failed - CORS issue detected'));
+      // Always resolve with error to ensure the app continues to function
+      reject(new Error('SSE connection failed - possible CORS or network issue'));
     };
   });
 }
@@ -162,66 +166,64 @@ export async function checkApiHealth(
   try {
     console.log('Checking API health for endpoint:', endpoint);
     
-    // Try to use WebSocket connection first if available
-    if (window.WebSocket) {
-      try {
-        const wsEndpoint = endpoint.replace(/^http/, 'ws');
-        console.log('Attempting WebSocket connection to:', wsEndpoint);
-        
-        return new Promise((resolve) => {
-          const socket = new WebSocket(wsEndpoint);
-          
-          // Set a timeout for the WebSocket connection attempt
-          const timeout = setTimeout(() => {
-            console.log('WebSocket connection timeout');
-            socket.close();
-            resolve(false);
-          }, 5000);
-          
-          socket.onopen = () => {
-            console.log('WebSocket connection successful');
-            clearTimeout(timeout);
-            socket.close();
-            resolve(true);
-          };
-          
-          socket.onerror = () => {
-            console.log('WebSocket connection failed, falling back to HTTP');
-            clearTimeout(timeout);
-            resolve(false);
-          };
-        });
-      } catch (wsError) {
-        console.log('WebSocket connection failed:', wsError);
-        // Continue with HTTP fallback
-      }
-    }
-    
-    // Minimal headers for health check - only keep essential ones
-    const minimalHeaders = {
-      'x-auth-token': headers['x-auth-token'],
-      'x-kb-token': headers['x-kb-token']
-    };
-    
-    // Use a simple HEAD request with a timeout
-    const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 5000);
-    
+    // First try a simple fetch with no-cors mode and minimal headers
     try {
-      // Try with no-cors mode
+      console.log('Attempting fetch with no-cors mode...');
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      
       const response = await fetch(endpoint, {
         method: 'HEAD',
-        headers: minimalHeaders,
+        headers: {
+          'x-auth-token': headers['x-auth-token'],
+          'x-kb-token': headers['x-kb-token']
+        },
         signal: controller.signal,
         mode: 'no-cors', // Try no-cors mode first
       });
       
       clearTimeout(timeoutId);
-      
       console.log('No-cors request completed without error');
       return true; // If no exception is thrown with no-cors, consider it a success
-    } catch (noCorsError) {
-      console.error('No-cors request failed:', noCorsError);
+    } catch (fetchError) {
+      console.error('No-cors fetch failed:', fetchError);
+      
+      // If the fetch failed, try WebSocket
+      if (window.WebSocket) {
+        try {
+          // Create a web socket URL by replacing http with ws
+          const wsEndpoint = endpoint.replace(/^http/, 'ws');
+          console.log('Attempting WebSocket connection to:', wsEndpoint);
+          
+          return new Promise((resolve) => {
+            const socket = new WebSocket(wsEndpoint);
+            
+            // Set a timeout for the WebSocket connection attempt
+            const timeout = setTimeout(() => {
+              console.log('WebSocket connection timeout');
+              socket.close();
+              resolve(false);
+            }, 5000);
+            
+            socket.onopen = () => {
+              console.log('WebSocket connection successful');
+              clearTimeout(timeout);
+              socket.close();
+              resolve(true);
+            };
+            
+            socket.onerror = (wsError) => {
+              console.log('WebSocket connection failed:', wsError);
+              clearTimeout(timeout);
+              resolve(false);
+            };
+          });
+        } catch (wsError) {
+          console.log('WebSocket connection setup failed:', wsError);
+          return false;
+        }
+      }
+      
       return false;
     }
   } catch (error) {
