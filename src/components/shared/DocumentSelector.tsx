@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
   Dialog,
@@ -51,31 +51,50 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
     refreshCurrentFolder
   } = useDocumentBrowser();
   
+  // Add local processing state
+  const [processingDoc, setProcessingDoc] = useState<string | null>(null);
+  
   const handleDialogChange = (open: boolean) => {
-    setIsOpen(open);
+    // Only allow closing if we're not currently processing a document
+    if (!open && !processingDoc) {
+      setIsOpen(open);
+    } else if (!open && processingDoc) {
+      // If trying to close while processing, show a message
+      toast.info('Please wait until document processing completes');
+    } else {
+      setIsOpen(open);
+    }
   };
   
   const handleFileSelection = async (doc: any) => {
+    // If it's a folder, just navigate to it
+    if (doc.mimeType.includes('folder')) {
+      handleDocumentClick(doc);
+      return;
+    }
+    
     try {
-      // Only process the document if it's not a folder
-      if (!doc.mimeType.includes('folder')) {
-        console.log('Selecting document for context:', doc.name);
-        
-        // Handle document click (this returns the document or a Promise)
-        const result = handleDocumentClick(doc);
-        
-        // Process document selection
-        await onDocumentSelect(result);
-        
-        // Only close dialog after successful document addition
-        setIsOpen(false);
-        toast.success('Document added to context');
-      } else {
-        // If it's a folder, let the normal folder navigation happen
-        handleDocumentClick(doc);
-      }
+      // Mark this document as processing
+      setProcessingDoc(doc.id);
+      console.log('Processing document selection:', doc.name);
+      
+      // Handle document click (this returns the document or a Promise)
+      const result = handleDocumentClick(doc);
+      
+      // Process document selection
+      await onDocumentSelect(result);
+      
+      // Clear processing state
+      setProcessingDoc(null);
+      
+      // Only close dialog after successful document addition
+      setIsOpen(false);
+      toast.success('Document added to context');
     } catch (error) {
       console.error('Error selecting document:', error);
+      
+      // Clear processing state
+      setProcessingDoc(null);
       
       // Show appropriate error message but keep dialog open for retry
       if (error.message?.includes('already in context')) {
@@ -146,7 +165,8 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
             {/* File grid */}
             <FileGrid
               documents={documents}
-              isLoading={documentsLoading}
+              isLoading={documentsLoading || !!processingDoc}
+              processingDocId={processingDoc}
               currentFolder={currentFolder}
               handleDocumentClick={handleFileSelection}
               handleBack={handleBack}
@@ -167,8 +187,17 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
                 Reset Connection
               </Button>
               <div className="flex gap-2">
-                <Button variant="outline" onClick={() => setIsOpen(false)}>Cancel</Button>
-                <Button onClick={refreshCurrentFolder}>
+                <Button 
+                  variant="outline" 
+                  onClick={() => !processingDoc && setIsOpen(false)}
+                  disabled={!!processingDoc}
+                >
+                  Cancel
+                </Button>
+                <Button 
+                  onClick={refreshCurrentFolder}
+                  disabled={!!processingDoc}
+                >
                   Refresh
                 </Button>
               </div>

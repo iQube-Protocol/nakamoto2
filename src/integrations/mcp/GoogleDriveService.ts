@@ -1,5 +1,7 @@
+
 import { toast } from 'sonner';
 import { DocumentMetadata } from './types';
+import { RetryService } from '@/services/RetryService';
 
 /**
  * Service for Google Drive integration and document management
@@ -9,9 +11,23 @@ export class GoogleDriveService {
   private tokenClient: any = null;
   private isApiLoaded: boolean = false;
   private isAuthenticated: boolean = false;
+  private retryService: RetryService;
   
   constructor() {
     console.log('Google Drive Service initialized');
+    this.retryService = new RetryService({
+      maxRetries: 3,
+      baseDelay: 1000,
+      maxDelay: 8000,
+      retryCondition: (error) => {
+        // Only retry network/CORS/auth errors, not user errors
+        return error && (
+          error.toString().includes('Network Error') || 
+          error.toString().includes('CORS') ||
+          (error.status && (error.status === 401 || error.status === 403))
+        );
+      }
+    });
     this.loadGoogleApi();
   }
   
@@ -68,6 +84,45 @@ export class GoogleDriveService {
     
     return this.isApiLoaded;
   }
+
+  /**
+   * Verify and possibly refresh Google auth token
+   */
+  private async verifyAuthToken(): Promise<boolean> {
+    if (!this.isAuthenticated || !this.gapi?.auth?.getToken()) {
+      console.warn('Not authenticated or missing token');
+      return false;
+    }
+
+    try {
+      // Test if the token is valid with a simple API call
+      await this.gapi.client.drive.about.get({
+        fields: 'user'
+      });
+      return true;
+    } catch (error) {
+      console.warn('Token validation failed, attempting refresh', error);
+      
+      // If we have the token client, request a new token
+      if (this.tokenClient) {
+        try {
+          await new Promise<void>(resolve => {
+            this.tokenClient.requestAccessToken({
+              callback: () => {
+                console.log('Token refreshed successfully');
+                resolve();
+              }
+            });
+          });
+          return true;
+        } catch (refreshError) {
+          console.error('Token refresh failed:', refreshError);
+          return false;
+        }
+      }
+      return false;
+    }
+  }
   
   /**
    * Connect to Google Drive and authorize access
@@ -105,7 +160,7 @@ export class GoogleDriveService {
       });
       
       // Request access token
-      this.tokenClient.requestAccessToken();
+      this.tokenClient.requestAccessToken({prompt: ''});
       
       return true;
     } catch (error) {
@@ -172,6 +227,9 @@ export class GoogleDriveService {
     }
     
     try {
+      // Verify authentication token before proceeding
+      await this.verifyAuthToken();
+      
       const query = folderId ? 
         `'${folderId}' in parents and trashed = false` : 
         `'root' in parents and trashed = false`;
@@ -196,7 +254,7 @@ export class GoogleDriveService {
   }
   
   /**
-   * Fetch a specific document's content
+   * Fetch a specific document's content with retry
    */
   async fetchDocumentContent(document: DocumentMetadata): Promise<string | null> {
     const documentId = document.id;
@@ -214,49 +272,87 @@ export class GoogleDriveService {
     }
     
     try {
-      // Handle different file types
-      let documentContent = '';
-      
-      // For Google Docs, Sheets, and Slides, we need to export them in a readable format
-      if (mimeType.includes('google-apps')) {
-        const exportMimeType = this.getExportMimeType(mimeType);
-        const exportResponse = await this.gapi.client.drive.files.export({
-          fileId: documentId,
-          mimeType: exportMimeType
-        });
-        
-        documentContent = exportResponse.body;
-      } else {
-        // For other file types, use the files.get method with alt=media
-        const response = await fetch(
-          `https://www.googleapis.com/drive/v3/files/${documentId}?alt=media`,
-          {
-            headers: {
-              'Authorization': `Bearer ${this.gapi.auth.getToken().access_token}`
-            }
-          }
-        );
-        
-        // Check if response is ok and get content
-        if (response.ok) {
-          // For text-based files
-          if (mimeType.includes('text') || mimeType.includes('json') || 
-              mimeType.includes('javascript') || mimeType.includes('xml') ||
-              mimeType.includes('html') || mimeType.includes('css')) {
-            documentContent = await response.text();
-          } else {
-            // For binary files, we can only provide basic info
-            documentContent = `This file (${fileName}) is a binary file of type ${mimeType} and cannot be displayed as text.`;
-          }
-        } else {
-          throw new Error(`Failed to fetch file content: ${response.statusText}`);
-        }
+      // First verify token validity
+      const validToken = await this.verifyAuthToken();
+      if (!validToken) {
+        throw new Error('Authentication token is invalid or expired');
       }
       
-      return documentContent;
+      return await this.retryService.execute(async () => {
+        let documentContent = '';
+        
+        // For Google Docs, Sheets, and Slides, use GAPI's export method
+        if (mimeType.includes('google-apps')) {
+          console.log(`Exporting Google document: ${fileName}`);
+          const exportMimeType = this.getExportMimeType(mimeType);
+          const exportResponse = await this.gapi.client.drive.files.export({
+            fileId: documentId,
+            mimeType: exportMimeType
+          });
+          
+          if (!exportResponse || !exportResponse.body) {
+            throw new Error(`No content received for Google document ${fileName}`);
+          }
+          
+          documentContent = exportResponse.body;
+          console.log(`Successfully exported Google document: ${fileName}, content length: ${documentContent.length}`);
+        } else {
+          // For other file types, use GAPI's get method with alt=media
+          console.log(`Fetching non-Google document: ${fileName}`);
+          
+          // Try using GAPI first for better error handling
+          try {
+            const response = await this.gapi.client.drive.files.get({
+              fileId: documentId,
+              alt: 'media'
+            });
+            
+            if (response && response.body !== undefined) {
+              documentContent = response.body;
+            } else {
+              throw new Error('Empty response from GAPI');
+            }
+          } catch (gapiError) {
+            console.warn('GAPI fetch failed, falling back to fetch API:', gapiError);
+            
+            // Fallback to fetch API
+            const response = await fetch(
+              `https://www.googleapis.com/drive/v3/files/${documentId}?alt=media`,
+              {
+                headers: {
+                  'Authorization': `Bearer ${this.gapi.auth.getToken().access_token}`,
+                  'Content-Type': 'application/json'
+                }
+              }
+            );
+            
+            if (!response.ok) {
+              throw new Error(`Failed to fetch file content: ${response.statusText}`);
+            }
+            
+            // For text-based files
+            if (mimeType.includes('text') || mimeType.includes('json') || 
+                mimeType.includes('javascript') || mimeType.includes('xml') ||
+                mimeType.includes('html') || mimeType.includes('css')) {
+              documentContent = await response.text();
+            } else {
+              // For binary files, provide basic info
+              documentContent = `This file (${fileName}) is a binary file of type ${mimeType} and cannot be displayed as text.`;
+            }
+          }
+        }
+        
+        // Validate content
+        if (!documentContent || documentContent.trim().length === 0) {
+          throw new Error(`Retrieved empty content for ${fileName}`);
+        }
+        
+        console.log(`Successfully fetched document content for ${fileName}, length: ${documentContent.length}`);
+        return documentContent;
+      });
     } catch (error) {
-      console.error(`Error fetching document ${documentId}:`, error);
-      toast.error('Failed to fetch document', { 
+      console.error(`Error fetching document ${documentId} (${fileName}):`, error);
+      toast.error('Failed to fetch document content', { 
         description: error instanceof Error ? error.message : 'Unknown error' 
       });
       return null;

@@ -2,22 +2,37 @@
 import { toast } from 'sonner';
 import { DocumentMetadata } from '../types';
 import { GoogleDriveService } from '../GoogleDriveService';
+import { RetryService } from '@/services/RetryService';
 
 /**
  * Service for handling document operations with MCP
  */
 export class MCPDocumentService {
   private driveService: GoogleDriveService;
+  private retryService: RetryService;
   
   constructor(driveService: GoogleDriveService) {
     this.driveService = driveService;
+    this.retryService = new RetryService({
+      maxRetries: 2,
+      baseDelay: 800,
+      maxDelay: 5000
+    });
   }
   
   /**
    * List documents from Google Drive
    */
   async listDocuments(folderId?: string): Promise<DocumentMetadata[]> {
-    return this.driveService.listDocuments(folderId);
+    try {
+      return await this.retryService.execute(() => this.driveService.listDocuments(folderId));
+    } catch (error) {
+      console.error('Error in listDocuments:', error);
+      toast.error('Failed to list documents', {
+        description: error instanceof Error ? error.message : 'Unknown error'
+      });
+      return [];
+    }
   }
   
   /**
@@ -27,10 +42,19 @@ export class MCPDocumentService {
     try {
       // First get the file metadata
       console.log(`Fetching metadata for document ${documentId}`);
-      const fileMetadata = await this.driveService.gapi.client.drive.files.get({
-        fileId: documentId,
-        fields: 'name,mimeType'
-      });
+      let fileMetadata;
+      
+      try {
+        fileMetadata = await this.retryService.execute(() => 
+          this.driveService.gapi.client.drive.files.get({
+            fileId: documentId,
+            fields: 'name,mimeType'
+          })
+        );
+      } catch (metadataError) {
+        console.error(`Could not fetch metadata for document ${documentId}:`, metadataError);
+        throw new Error('Failed to fetch document metadata');
+      }
       
       if (!fileMetadata || !fileMetadata.result) {
         console.error(`Could not fetch metadata for document ${documentId}`);
@@ -76,9 +100,22 @@ export class MCPDocumentService {
       return documentContent;
     } catch (error) {
       console.error(`Error fetching document ${documentId}:`, error);
-      toast.error('Failed to fetch document', { 
-        description: error instanceof Error ? error.message : 'Unknown error' 
-      });
+      
+      // Show appropriate error message based on error type
+      if (error instanceof Error && error.toString().includes('Network Error')) {
+        toast.error('Network error while fetching document', { 
+          description: 'Please check your internet connection'
+        });
+      } else if (error instanceof Error && error.toString().includes('Authentication')) {
+        toast.error('Authentication error', { 
+          description: 'Your Google Drive session may have expired. Please reconnect.'
+        });
+      } else {
+        toast.error('Failed to fetch document', { 
+          description: error instanceof Error ? error.message : 'Unknown error' 
+        });
+      }
+      
       return null;
     }
   }

@@ -11,11 +11,13 @@ export async function addDocumentToContext(
   fetchDocument: (id: string) => Promise<string | null>
 ) {
   if (!client) {
+    console.error('MCP client not initialized');
     toast.error('Cannot add document', { description: 'MCP client not initialized' });
     throw new Error('MCP client not initialized');
   }
   
   if (!conversationId) {
+    console.error('No active conversation ID');
     toast.error('Cannot add document', { description: 'No active conversation' });
     throw new Error('No active conversation');
   }
@@ -24,6 +26,7 @@ export async function addDocumentToContext(
   
   try {
     // Initialize the context with the conversation ID
+    console.log(`Initializing context for conversation ${conversationId}`);
     await client.initializeContext(conversationId);
     
     // Fetch document content
@@ -41,23 +44,38 @@ export async function addDocumentToContext(
       throw new Error('Document content is empty');
     }
     
-    console.log(`Document content fetched, length: ${content.length}`);
+    console.log(`Document content fetched successfully for ${document.name}, length: ${content.length}`);
     
     // Extract document type from mimeType
     const documentType = document.mimeType.split('/').pop() || 'unknown';
     
     // Add to model context
     console.log(`Adding document to MCP context: ${document.name}, type: ${documentType}`);
-    client.addDocumentToContext(
-      document.id,
-      document.name,
-      documentType,
-      content
-    );
+    
+    try {
+      client.addDocumentToContext(
+        document.id,
+        document.name,
+        documentType,
+        content
+      );
+      
+      console.log(`Document ${document.name} added to MCP context`);
+    } catch (contextError) {
+      console.error(`Error adding document to context:`, contextError);
+      throw new Error(`Failed to add to context: ${contextError.message || 'Unknown error'}`);
+    }
     
     // Verify the document was added to context
     const updatedContext = client.getModelContext();
-    const docInContext = updatedContext?.documentContext?.find(d => d.documentId === document.id);
+    console.log('Retrieved context after document addition');
+    
+    if (!updatedContext || !updatedContext.documentContext) {
+      console.error("Document context is null or undefined after adding!");
+      throw new Error("Failed to add document: context not available");
+    }
+    
+    const docInContext = updatedContext.documentContext.find(d => d.documentId === document.id);
     
     if (!docInContext) {
       console.error("Document not found in context after adding!");
@@ -100,24 +118,44 @@ export function removeDocumentFromContext(
     console.log(`Removing document from context: ${documentId} (${documentName})`);
     
     // Remove from the client context
-    if (client && conversationId) {
-      // Remove from MCP context first
-      const removed = client.removeDocumentFromContext(documentId);
-      console.log(`Document ${documentId} removal from MCP context: ${removed ? 'successful' : 'failed'}`);
-      
-      // Verify document was removed
-      const updatedContext = client.getModelContext();
-      const stillInContext = updatedContext?.documentContext?.some(d => d.documentId === documentId);
-      
-      if (stillInContext) {
-        console.warn(`Document ${documentName} still in context after removal attempt!`);
-      } else {
-        console.log(`Document ${documentName} successfully removed from context`);
-      }
+    if (!client) {
+      console.error('MCP client not available for document removal');
+      toast.error('Failed to remove document', {
+        description: 'MCP client not available'
+      });
+      return false;
     }
     
-    toast.success(`Document "${documentName}" removed from context`);
-    return true;
+    if (!conversationId) {
+      console.error('No conversation ID available for document removal');
+      toast.error('Failed to remove document', {
+        description: 'No active conversation'
+      });
+      return false;
+    }
+    
+    // Make sure context is initialized
+    client.initializeContext(conversationId)
+      .then(() => console.log("Context initialized for document removal"))
+      .catch(error => console.error("Error initializing context for document removal:", error));
+    
+    // Remove from MCP context
+    const removed = client.removeDocumentFromContext(documentId);
+    console.log(`Document ${documentId} removal from MCP context: ${removed ? 'successful' : 'failed'}`);
+    
+    // Verify document was removed
+    const updatedContext = client.getModelContext();
+    const stillInContext = updatedContext?.documentContext?.some(d => d.documentId === documentId);
+    
+    if (stillInContext) {
+      console.warn(`Document ${documentName} still in context after removal attempt!`);
+      toast.error('Failed to remove document from context');
+      return false;
+    } else {
+      console.log(`Document ${documentName} successfully removed from context`);
+      toast.success(`Document "${documentName}" removed from context`);
+      return true;
+    }
   } catch (error) {
     console.error('Error removing document:', error);
     toast.error('Failed to remove document');
@@ -141,48 +179,66 @@ export async function loadDocumentsFromContext(client: any, conversationId: stri
   
   try {
     // Always initialize context first to ensure we have the latest
+    console.log(`Initializing context for conversation ${conversationId}`);
     await client.initializeContext(conversationId);
     console.log(`Context initialized for conversation ${conversationId}`);
     
+    // Force refresh from storage
+    client.getModelContext();
+    
+    // Get context again after refresh
     const context = client.getModelContext();
     console.log("Loading document context. Context available:", !!context);
     
-    if (context?.documentContext && Array.isArray(context.documentContext)) {
-      console.log(`Found ${context.documentContext.length} documents in context`);
-      
-      const docs = context.documentContext.map(doc => ({
-        id: doc.documentId,
-        name: doc.documentName,
-        mimeType: `application/${doc.documentType}`,
-        content: doc.content
-      }));
-      
-      if (docs.length === 0) {
-        console.log("Document context is empty");
-      } else {
-        console.log(`Documents loaded: ${docs.length}`, docs.map(d => d.name));
-        
-        // Verify document content is loaded
-        let contentMissing = false;
-        docs.forEach((doc, index) => {
-          console.log(`Document ${index + 1}: ${doc.name}, Content length: ${doc.content?.length || 0}`);
-          if (!doc.content || doc.content.length === 0) {
-            console.warn(`⚠️ Document ${doc.name} has no content!`);
-            contentMissing = true;
-          }
-        });
-        
-        if (contentMissing) {
-          console.error("Some documents have missing content! Attempting recovery...");
-          // We'll return what we have anyway and let the UI handle display
-        }
-      }
-      
-      return docs;
+    if (!context) {
+      console.error("Failed to get model context");
+      return [];
     }
     
-    console.log("No document context available");
-    return [];
+    if (!context.documentContext) {
+      console.log("Document context is not available");
+      return [];
+    }
+    
+    if (!Array.isArray(context.documentContext)) {
+      console.error("Document context is not an array!");
+      return [];
+    }
+    
+    console.log(`Found ${context.documentContext.length} documents in context`);
+    
+    const docs = context.documentContext.map(doc => ({
+      id: doc.documentId,
+      name: doc.documentName,
+      mimeType: `application/${doc.documentType}`,
+      content: doc.content
+    }));
+    
+    if (docs.length === 0) {
+      console.log("Document context is empty");
+    } else {
+      console.log(`Documents loaded: ${docs.length}`, docs.map(d => d.name));
+      
+      // Verify document content is loaded
+      let contentMissing = false;
+      docs.forEach((doc, index) => {
+        console.log(`Document ${index + 1}: ${doc.name}, Content length: ${doc.content?.length || 0}`);
+        if (!doc.content || doc.content.length === 0) {
+          console.warn(`⚠️ Document ${doc.name} has no content!`);
+          contentMissing = true;
+        }
+      });
+      
+      if (contentMissing) {
+        console.error("Some documents have missing content! Attempting recovery...");
+        toast.warning("Some documents have incomplete content", {
+          description: "This may affect AI responses"
+        });
+        // We'll return what we have anyway and let the UI handle display
+      }
+    }
+    
+    return docs;
   } catch (error) {
     console.error("Error loading document context:", error);
     toast.error("Failed to load document context", {
