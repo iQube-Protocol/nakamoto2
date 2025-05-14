@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useCallback } from 'react';
 import { AgentInterface } from '@/components/shared/agent';
 import { useKnowledgeBase } from '@/hooks/mcp/useKnowledgeBase';
@@ -95,7 +94,6 @@ const MonDAI = () => {
       setIsRetrying(false);
     }
   };
-  
   const getStatusDescription = () => {
     if (kbLoading || isRetrying) return "Connecting to knowledge base...";
     switch (connectionStatus) {
@@ -109,29 +107,9 @@ const MonDAI = () => {
         return "Community agent with offline knowledge base";
     }
   };
-  
-  return (
-    <div className="container py-6 max-w-7xl mx-auto h-full agent-interface">
+  return <div className="container py-6 max-w-7xl mx-auto h-full agent-interface">
       <div className="grid gap-6 h-full">
-        {showConnectionAlert && connectionStatus !== 'connected' && (
-          <Alert variant="warning" className="mb-4">
-            <AlertTriangle className="h-4 w-4" />
-            <AlertDescription className="flex justify-between items-center">
-              <span>Unable to connect to knowledge base. Using offline mode.</span>
-              <Button 
-                variant="outline" 
-                size="sm" 
-                onClick={handleManualRetry} 
-                disabled={isRetrying}
-                className="ml-2 flex gap-2 items-center"
-              >
-                {isRetrying && <Loader2 className="h-3 w-3 animate-spin" />}
-                <RefreshCw className="h-3.5 w-3.5" />
-                Retry Connection
-              </Button>
-            </AlertDescription>
-          </Alert>
-        )}
+        {showConnectionAlert && connectionStatus !== 'connected'}
         
         <div className="flex flex-col h-full">
           <div className="flex flex-row justify-between items-center mb-2">
@@ -139,50 +117,24 @@ const MonDAI = () => {
               {/* This is empty space for alignment */}
             </div>
             <div className="flex items-center gap-2">
-              {(connectionStatus === 'error' || connectionStatus === 'disconnected') && (
-                <Button
-                  variant="outline"
-                  size="sm"
-                  onClick={handleManualRetry}
-                  disabled={isRetrying || kbLoading}
-                  className="flex items-center gap-1"
-                >
-                  {(isRetrying || kbLoading) ? 
-                    <Loader2 className="h-3 w-3 animate-spin" /> : 
-                    <RefreshCw className="h-3.5 w-3.5" />
-                  }
-                  Reconnect KB
-                </Button>
-              )}
+              {connectionStatus === 'error' || connectionStatus === 'disconnected'}
             </div>
           </div>
           
-          <AgentInterface 
-            title="MonDAI" 
-            description={getStatusDescription()} 
-            agentType="learn" // Using learn type for compatibility
-            onMessageSubmit={handleAIMessage} 
-            onDocumentAdded={handleDocumentContextUpdated} 
-            documentContextUpdated={documentUpdates} 
-            conversationId={conversationId} 
-            initialMessages={[{
-              id: "1",
-              sender: "agent",
-              message: connectionStatus === 'connected' 
-                ? "Hello! I'm your MonDAI assistant with direct KBAI integration. I can help you learn about Web3, cryptocurrency, blockchain concepts, and more using my integrated knowledge base. What would you like to know about today?" 
-                : "Hello! I'm your MonDAI assistant. I'm currently using an offline knowledge base for Web3 concepts. You can still ask me about blockchain, cryptocurrency, and other topics. What would you like to explore today?",
-              timestamp: new Date().toISOString(),
-              metadata: {
-                version: "1.0",
-                modelUsed: "gpt-4o",
-                knowledgeSource: connectionStatus === 'connected' ? "KBAI MCP Direct" : "Offline Knowledge Base"
-              }
-            }]} 
-          />
+          <AgentInterface title="MonDAI" description={getStatusDescription()} agentType="learn" // Using learn type for compatibility
+        onMessageSubmit={handleAIMessage} onDocumentAdded={handleDocumentContextUpdated} documentContextUpdated={documentUpdates} conversationId={conversationId} initialMessages={[{
+          id: "1",
+          sender: "agent",
+          message: connectionStatus === 'connected' ? "Hello! I'm your MonDAI assistant with direct KBAI integration. I can help you learn about Web3, cryptocurrency, blockchain concepts, and more using my integrated knowledge base. What would you like to know about today?" : "Hello! I'm your MonDAI assistant. I'm currently using an offline knowledge base for Web3 concepts. You can still ask me about blockchain, cryptocurrency, and other topics. What would you like to explore today?",
+          timestamp: new Date().toISOString(),
+          metadata: {
+            version: "1.0",
+            modelUsed: "gpt-4o",
+            knowledgeSource: connectionStatus === 'connected' ? "KBAI MCP Direct" : "Offline Knowledge Base"
+          }
+        }]} />
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default MonDAI;
