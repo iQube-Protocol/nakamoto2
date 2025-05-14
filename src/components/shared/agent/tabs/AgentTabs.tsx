@@ -62,7 +62,10 @@ const AgentTabs: React.FC<AgentTabsProps> = ({
       </div>
 
       <div className="flex-1 overflow-hidden flex flex-col">
-        <TabsContent value="chat" className="h-full m-0 p-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col flex-1">
+        <TabsContent 
+          value="chat" 
+          className="h-[calc(100%-80px)] m-0 p-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col flex-1"
+        >
           <ChatTab 
             messages={messages}
             playing={playing}
@@ -72,7 +75,10 @@ const AgentTabs: React.FC<AgentTabsProps> = ({
           />
         </TabsContent>
         
-        <TabsContent value="documents" className="h-full m-0 p-4 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col flex-1">
+        <TabsContent 
+          value="documents" 
+          className="h-[calc(100%-80px)] m-0 p-4 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col flex-1"
+        >
           <DocumentContext 
             conversationId={conversationId}
             onDocumentAdded={handleDocumentAdded}
@@ -80,7 +86,10 @@ const AgentTabs: React.FC<AgentTabsProps> = ({
           />
         </TabsContent>
 
-        <TabsContent value="knowledge" className="h-full m-0 p-4 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col flex-1">
+        <TabsContent 
+          value="knowledge" 
+          className="h-[calc(100%-80px)] m-0 p-4 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col flex-1"
+        >
           <KnowledgeBase agentType={agentType} />
         </TabsContent>
       </div>

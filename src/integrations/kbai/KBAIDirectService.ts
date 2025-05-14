@@ -1,4 +1,3 @@
-
 import { RetryService } from '@/services/RetryService';
 import { KBAIKnowledgeItem, KBAIQueryOptions, ConnectionStatus } from './index';
 import { connectToSSE, checkApiHealth } from './utils/sseConnection';
@@ -24,9 +23,9 @@ export class KBAIDirectService {
   private readonly cacheManager: CacheManager;
   private readonly retryService: RetryService;
   private connectionAttempts = 0;
-  private maxConnectionAttempts = 2; // Reduced number of attempts before falling back
+  private maxConnectionAttempts = 1; // Reduced to 1 to prevent continuous retrying
   private lastConnectionAttempt = 0;
-  private connectionCooldown = 3000; // 3 seconds between connection attempts (reduced)
+  private connectionCooldown = 5000; // Increased to 5 seconds to reduce connection attempts
   private useFallbackMode = false; // Flag to indicate if we should use fallback mode
   private currentEndpointIndex = 0; // Track which endpoint we're currently using
   
@@ -133,15 +132,10 @@ export class KBAIDirectService {
       this.connectionStatus = isHealthy ? 'connected' : 'error';
       console.log(`KBAI health check result: ${isHealthy ? 'healthy' : 'unhealthy'}`);
       
-      // If not healthy and we've tried enough times, enter fallback mode
+      // If not healthy, immediately switch to fallback mode instead of retrying
       if (!isHealthy) {
-        this.connectionAttempts++;
-        console.log(`Connection attempt ${this.connectionAttempts}/${this.maxConnectionAttempts}`);
-        
-        if (this.connectionAttempts >= this.maxConnectionAttempts) {
-          console.log(`Entering fallback mode after ${this.connectionAttempts} failed attempts`);
-          this.useFallbackMode = true;
-        }
+        this.useFallbackMode = true;
+        console.log(`Entering fallback mode due to failed connection attempt`);
       } else {
         // Reset attempts on successful connection
         this.connectionAttempts = 0;
@@ -151,11 +145,7 @@ export class KBAIDirectService {
     } catch (error) {
       console.error('KBAI health check error:', error);
       this.connectionStatus = 'error';
-      this.connectionAttempts++;
-      
-      if (this.connectionAttempts >= this.maxConnectionAttempts) {
-        this.useFallbackMode = true;
-      }
+      this.useFallbackMode = true;
       
       return false;
     }

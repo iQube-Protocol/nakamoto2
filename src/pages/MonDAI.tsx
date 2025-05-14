@@ -27,7 +27,6 @@ const MonDAI = () => {
   
   // Track manual retry attempts
   const [isRetrying, setIsRetrying] = useState(false);
-  const [retryCount, setRetryCount] = useState(0);
   const [showConnectionAlert, setShowConnectionAlert] = useState(false);
   
   // Initialize knowledge base
@@ -50,60 +49,10 @@ const MonDAI = () => {
     };
   }, []);
   
-  // Enhanced connection handler with more aggressive retry strategy
-  const attemptConnection = useCallback(async (attempt = 0, isManual = false) => {
-    if (isManual) {
-      setIsRetrying(true);
-      toast.info('Attempting to connect to knowledge base...', { duration: 3000 });
-    }
-    
-    try {
-      console.log(`MonDAI: Connection attempt ${attempt + 1}...`);
-      
-      // Try direct connection refresh first
-      const success = await retryConnection();
-      
-      if (success) {
-        setRetryCount(0);
-        setShowConnectionAlert(false);
-        if (isManual) {
-          toast.success('Successfully connected to knowledge base!');
-        }
-        return true;
-      } else {
-        // If automatic retry and we haven't shown an alert yet, show it
-        if (!isManual && !showConnectionAlert && attempt >= 2) {
-          setShowConnectionAlert(true);
-        }
-        
-        if (isManual) {
-          toast.error('Unable to connect to knowledge base', {
-            description: 'Using offline mode with fallback data',
-            duration: 5000
-          });
-        }
-        return false;
-      }
-    } catch (error) {
-      console.error('Error during connection attempt:', error);
-      if (isManual) {
-        toast.error('Connection retry failed', {
-          description: 'Please try again later',
-        });
-      }
-      return false;
-    } finally {
-      if (isManual) {
-        setIsRetrying(false);
-      }
-    }
-  }, [retryConnection]);
-  
-  // Check KBAI connection on initial load with more aggressive retry strategy
+  // Check KBAI connection on initial load - without continuous retries
   useEffect(() => {
     console.log("MonDAI: Initializing connection to knowledge base");
     
-    const maxRetries = 5; // Increased from 3
     const initialCheck = async () => {
       try {
         // First attempt to load knowledge items
@@ -111,33 +60,9 @@ const MonDAI = () => {
         await fetchKnowledgeItems();
         
         if (connectionStatus === 'error' || connectionStatus === 'disconnected') {
-          console.log('Initial connection failed, starting retry sequence');
-          
-          // Try force refresh immediately
-          const success = await attemptConnection(0);
-          if (!success) {
-            // Set up retries with shorter delays
-            const retrySequence = async (retryCount = 0) => {
-              if (retryCount >= maxRetries) {
-                console.log('All retry attempts failed, showing connection alert');
-                setShowConnectionAlert(true);
-                return;
-              }
-              
-              const delay = Math.min(1500 * Math.pow(1.5, retryCount), 8000); // Shorter exponential backoff
-              console.log(`Scheduling retry ${retryCount + 1} in ${delay/1000}s...`);
-              
-              setTimeout(async () => {
-                const success = await attemptConnection(retryCount + 1);
-                if (!success && retryCount + 1 < maxRetries) {
-                  retrySequence(retryCount + 1);
-                }
-              }, delay);
-            };
-            
-            // Start retry sequence
-            retrySequence();
-          }
+          console.log('Initial connection failed');
+          // Show the connection alert after initial failure
+          setShowConnectionAlert(true);
         }
       } catch (error) {
         console.error('Error in initial connection setup:', error);
@@ -146,12 +71,33 @@ const MonDAI = () => {
     };
     
     initialCheck();
-  }, [fetchKnowledgeItems, connectionStatus, attemptConnection]);
+  }, [fetchKnowledgeItems]);
 
   // Handle manual connection retry
   const handleManualRetry = async () => {
-    setRetryCount(prev => prev + 1);
-    await attemptConnection(retryCount, true);
+    setIsRetrying(true);
+    toast.info('Attempting to connect to knowledge base...', { duration: 3000 });
+    
+    try {
+      const success = await retryConnection();
+      
+      if (success) {
+        setShowConnectionAlert(false);
+        toast.success('Successfully connected to knowledge base!');
+      } else {
+        toast.error('Unable to connect to knowledge base', {
+          description: 'Using offline mode with fallback data',
+          duration: 5000
+        });
+      }
+    } catch (error) {
+      console.error('Error during retry attempt:', error);
+      toast.error('Connection retry failed', {
+        description: 'Please try again later',
+      });
+    } finally {
+      setIsRetrying(false);
+    }
   };
 
   const getStatusDescription = () => {

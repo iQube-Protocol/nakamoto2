@@ -186,8 +186,8 @@ const KnowledgeBase = ({ agentType }: KnowledgeBaseProps) => {
       </div>
       
       <div className="flex-1 overflow-hidden">
-        <ScrollArea className="h-full">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pr-4">
+        <ScrollArea className="h-full pr-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4 pb-4">
             {isLoading ? renderSkeleton() : (
               items.length > 0 ? 
                 items.map(renderKnowledgeItem) : 
