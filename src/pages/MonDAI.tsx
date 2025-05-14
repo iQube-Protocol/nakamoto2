@@ -1,11 +1,12 @@
 
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { AgentInterface } from '@/components/shared/agent';
 import { useKnowledgeBase } from '@/hooks/mcp/useKnowledgeBase';
 import { useMondAI } from '@/hooks/use-mondai';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { Loader2, RefreshCw } from 'lucide-react';
+import { Loader2, RefreshCw, AlertTriangle } from 'lucide-react';
+import { Alert, AlertDescription } from '@/components/ui/alert';
 
 // Extend the agent service to support 'mondai' type
 declare module '@/services/agent-service' {
@@ -26,6 +27,8 @@ const MonDAI = () => {
   
   // Track manual retry attempts
   const [isRetrying, setIsRetrying] = useState(false);
+  const [retryCount, setRetryCount] = useState(0);
+  const [showConnectionAlert, setShowConnectionAlert] = useState(false);
   
   // Initialize knowledge base
   const { 
@@ -47,78 +50,108 @@ const MonDAI = () => {
     };
   }, []);
   
-  // Check KBAI connection on initial load and auto-retry with exponential backoff
-  useEffect(() => {
-    console.log("MonDAI: Initializing connection to knowledge base");
-    const maxRetries = 3;
-    const checkConnection = async (retryCount = 0) => {
-      try {
-        console.log(`MonDAI: Attempt ${retryCount + 1} to connect to knowledge base...`);
-        // First attempt to load knowledge items
-        await fetchKnowledgeItems();
-        
-        console.log(`MonDAI: Connection status after fetch: ${connectionStatus}`);
-        
-        if (connectionStatus === 'error' && retryCount < maxRetries) {
-          const delay = Math.min(2000 * Math.pow(2, retryCount), 10000); // exponential backoff
-          console.log(`Connection failed, retrying in ${delay/1000}s (attempt ${retryCount + 1}/${maxRetries})...`);
-          
-          setTimeout(async () => {
-            console.log(`MonDAI: Starting retry attempt ${retryCount + 1}...`);
-            const success = await retryConnection();
-            console.log(`MonDAI: Retry attempt ${retryCount + 1} result: ${success ? 'success' : 'failure'}`);
-            
-            if (!success && retryCount + 1 < maxRetries) {
-              checkConnection(retryCount + 1);
-            } else if (!success) {
-              console.log('All retry attempts failed, using fallback data');
-              toast.info('Using offline knowledge base', {
-                description: 'Connection to knowledge base unavailable. Using local data.',
-                duration: 5000,
-              });
-            }
-          }, delay);
-        } else if (connectionStatus === 'connected') {
-          console.log('MonDAI: Successfully connected to KBAI service!');
-        }
-      } catch (error) {
-        console.error('Error in initial connection check:', error);
-        if (retryCount < maxRetries) {
-          setTimeout(() => checkConnection(retryCount + 1), 2000);
-        }
-      }
-    };
+  // Enhanced connection handler with more aggressive retry strategy
+  const attemptConnection = useCallback(async (attempt = 0, isManual = false) => {
+    if (isManual) {
+      setIsRetrying(true);
+      toast.info('Attempting to connect to knowledge base...', { duration: 3000 });
+    }
     
-    checkConnection();
-  }, []);
-
-  // Handle manual connection retry
-  const handleManualRetry = async () => {
-    setIsRetrying(true);
     try {
-      console.log('MonDAI: Manual connection retry initiated');
-      toast.info('Attempting to reconnect to knowledge base...', {
-        duration: 3000,
-      });
+      console.log(`MonDAI: Connection attempt ${attempt + 1}...`);
       
+      // Try direct connection refresh first
       const success = await retryConnection();
       
       if (success) {
-        toast.success('Successfully connected to knowledge base!');
+        setRetryCount(0);
+        setShowConnectionAlert(false);
+        if (isManual) {
+          toast.success('Successfully connected to knowledge base!');
+        }
+        return true;
       } else {
-        toast.error('Unable to connect to knowledge base', {
-          description: 'Using offline mode with fallback data',
-          duration: 5000
-        });
+        // If automatic retry and we haven't shown an alert yet, show it
+        if (!isManual && !showConnectionAlert && attempt >= 2) {
+          setShowConnectionAlert(true);
+        }
+        
+        if (isManual) {
+          toast.error('Unable to connect to knowledge base', {
+            description: 'Using offline mode with fallback data',
+            duration: 5000
+          });
+        }
+        return false;
       }
     } catch (error) {
-      console.error('Error during manual retry:', error);
-      toast.error('Connection retry failed', {
-        description: 'Please try again later',
-      });
+      console.error('Error during connection attempt:', error);
+      if (isManual) {
+        toast.error('Connection retry failed', {
+          description: 'Please try again later',
+        });
+      }
+      return false;
     } finally {
-      setIsRetrying(false);
+      if (isManual) {
+        setIsRetrying(false);
+      }
     }
+  }, [retryConnection]);
+  
+  // Check KBAI connection on initial load with more aggressive retry strategy
+  useEffect(() => {
+    console.log("MonDAI: Initializing connection to knowledge base");
+    
+    const maxRetries = 5; // Increased from 3
+    const initialCheck = async () => {
+      try {
+        // First attempt to load knowledge items
+        console.log('MonDAI: Initial connection attempt...');
+        await fetchKnowledgeItems();
+        
+        if (connectionStatus === 'error' || connectionStatus === 'disconnected') {
+          console.log('Initial connection failed, starting retry sequence');
+          
+          // Try force refresh immediately
+          const success = await attemptConnection(0);
+          if (!success) {
+            // Set up retries with shorter delays
+            const retrySequence = async (retryCount = 0) => {
+              if (retryCount >= maxRetries) {
+                console.log('All retry attempts failed, showing connection alert');
+                setShowConnectionAlert(true);
+                return;
+              }
+              
+              const delay = Math.min(1500 * Math.pow(1.5, retryCount), 8000); // Shorter exponential backoff
+              console.log(`Scheduling retry ${retryCount + 1} in ${delay/1000}s...`);
+              
+              setTimeout(async () => {
+                const success = await attemptConnection(retryCount + 1);
+                if (!success && retryCount + 1 < maxRetries) {
+                  retrySequence(retryCount + 1);
+                }
+              }, delay);
+            };
+            
+            // Start retry sequence
+            retrySequence();
+          }
+        }
+      } catch (error) {
+        console.error('Error in initial connection setup:', error);
+        setShowConnectionAlert(true);
+      }
+    };
+    
+    initialCheck();
+  }, [fetchKnowledgeItems, connectionStatus, attemptConnection]);
+
+  // Handle manual connection retry
+  const handleManualRetry = async () => {
+    setRetryCount(prev => prev + 1);
+    await attemptConnection(retryCount, true);
   };
 
   const getStatusDescription = () => {
@@ -134,6 +167,23 @@ const MonDAI = () => {
   return (
     <div className="container py-6 max-w-7xl mx-auto h-full agent-interface">
       <div className="grid gap-6 h-full">
+        {showConnectionAlert && connectionStatus !== 'connected' && (
+          <Alert variant="warning" className="mb-4">
+            <AlertTriangle className="h-4 w-4 mr-2" />
+            <AlertDescription>
+              Unable to connect to the knowledge base. Using offline data instead. 
+              <Button 
+                variant="link" 
+                className="px-2 py-0 h-auto font-semibold" 
+                onClick={handleManualRetry}
+                disabled={isRetrying}
+              >
+                Try reconnecting
+              </Button>
+            </AlertDescription>
+          </Alert>
+        )}
+        
         <div className="flex flex-col h-full">
           <div className="flex flex-row justify-between items-center mb-2">
             <div className="flex-1">

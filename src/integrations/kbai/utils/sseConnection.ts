@@ -26,7 +26,7 @@ export async function connectToSSE(options: SSEConnectionOptions): Promise<KBAIK
       query = '', 
       limit = 10, 
       category = '',
-      timeout = 20000 // 20 seconds timeout
+      timeout = 15000 // Reduced to 15 seconds timeout
     } = options;
     
     // Construct query string with parameters
@@ -44,11 +44,11 @@ export async function connectToSSE(options: SSEConnectionOptions): Promise<KBAIK
       'x-kb-token': headers['x-kb-token'] ? '[PRESENT]' : '[MISSING]'
     }));
     
-    // Set up EventSource with minimal headers
+    // Set up EventSource with minimal headers and shorter timeouts
     const eventSource = new EventSourcePolyfill(fullEndpoint, {
       headers,
       withCredentials: false, // Explicitly false for CORS
-      heartbeatTimeout: 15000 // 15 seconds heartbeat timeout
+      heartbeatTimeout: 10000 // Reduced to 10 seconds heartbeat timeout
     });
     
     const knowledgeItems: KBAIKnowledgeItem[] = [];
@@ -72,11 +72,11 @@ export async function connectToSSE(options: SSEConnectionOptions): Promise<KBAIK
     // Set a shorter "initial data" timeout
     const initialDataTimeout = setTimeout(() => {
       if (knowledgeItems.length === 0 && eventSource.readyState !== eventSource.CLOSED) {
-        console.log('No initial data received within 8s, closing connection');
+        console.log('No initial data received within 5s, closing connection');
         eventSource.close();
         reject(new Error('No initial data received'));
       }
-    }, 8000);
+    }, 5000); // Reduced to 5 seconds
     
     // Event handlers
     eventSource.onopen = (event) => {
@@ -157,7 +157,7 @@ export function transformKnowledgeItem(item: any): KBAIKnowledgeItem {
 }
 
 /**
- * Check the health of an API endpoint
+ * Check the health of an API endpoint using multiple methods
  */
 export async function checkApiHealth(
   endpoint: string, 
@@ -166,32 +166,56 @@ export async function checkApiHealth(
   try {
     console.log('Checking API health for endpoint:', endpoint);
     
-    // First try a simple fetch with no-cors mode and minimal headers
+    // First try a simple fetch with minimal headers
     try {
-      console.log('Attempting fetch with no-cors mode...');
+      console.log('Attempting simplified fetch health check...');
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      const timeoutId = setTimeout(() => controller.abort(), 4000); // Shorter timeout
       
       const response = await fetch(endpoint, {
-        method: 'HEAD',
+        method: 'HEAD', // Just checking if endpoint exists
         headers: {
           'x-auth-token': headers['x-auth-token'],
-          'x-kb-token': headers['x-kb-token']
         },
         signal: controller.signal,
-        mode: 'no-cors', // Try no-cors mode first
+        mode: 'no-cors', // No-cors mode to avoid CORS issues
       });
       
       clearTimeout(timeoutId);
-      console.log('No-cors request completed without error');
-      return true; // If no exception is thrown with no-cors, consider it a success
+      console.log('Health check completed successfully using no-cors mode');
+      return true;
     } catch (fetchError) {
-      console.error('No-cors fetch failed:', fetchError);
+      console.error('Primary health check failed:', fetchError);
       
-      // If the fetch failed, try WebSocket
+      // Try alternative APIs on the same domain without full URL
+      try {
+        const domainMatch = endpoint.match(/^(https?:\/\/[^\/]+)/);
+        if (domainMatch) {
+          const domainRoot = domainMatch[1];
+          console.log(`Trying alternative domain root check: ${domainRoot}`);
+          
+          const controller = new AbortController();
+          const timeoutId = setTimeout(() => controller.abort(), 3000);
+          
+          await fetch(`${domainRoot}/health`, { 
+            method: 'HEAD',
+            signal: controller.signal,
+            mode: 'no-cors'
+          });
+          
+          clearTimeout(timeoutId);
+          console.log('Alternative domain health check passed');
+          return true;
+        }
+      } catch (domainError) {
+        console.log('Alternative domain check failed:', domainError);
+      }
+      
+      console.log('All fetch attempts failed, trying WebSocket...');
+      
+      // Try WebSocket as last resort
       if (window.WebSocket) {
         try {
-          // Create a web socket URL by replacing http with ws
           const wsEndpoint = endpoint.replace(/^http/, 'ws');
           console.log('Attempting WebSocket connection to:', wsEndpoint);
           
@@ -203,7 +227,7 @@ export async function checkApiHealth(
               console.log('WebSocket connection timeout');
               socket.close();
               resolve(false);
-            }, 5000);
+            }, 3000); // Shorter timeout
             
             socket.onopen = () => {
               console.log('WebSocket connection successful');
@@ -227,7 +251,7 @@ export async function checkApiHealth(
       return false;
     }
   } catch (error) {
-    console.error('API health check failed:', error);
+    console.error('API health check failed completely:', error);
     return false;
   }
 }
