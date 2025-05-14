@@ -10,12 +10,14 @@ interface KnowledgeContentProps {
   items: KBAIKnowledgeItem[];
   isLoading: boolean;
   connectionStatus: 'disconnected' | 'connecting' | 'connected' | 'error';
+  onRetryConnection?: () => void;
 }
 
 const KnowledgeContent = ({ 
   items, 
   isLoading, 
-  connectionStatus
+  connectionStatus,
+  onRetryConnection
 }: KnowledgeContentProps) => {
   return (
     <div className="flex-1 overflow-hidden">
@@ -26,7 +28,10 @@ const KnowledgeContent = ({
           ) : (
             items.length > 0 ? 
               items.map(item => <KnowledgeItem key={item.id} item={item} />) : 
-              <EmptyState connectionStatus={connectionStatus} />
+              <EmptyState 
+                connectionStatus={connectionStatus} 
+                onRetryConnection={onRetryConnection}
+              />
           )}
         </div>
       </ScrollArea>

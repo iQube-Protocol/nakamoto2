@@ -38,6 +38,24 @@ export function useKnowledgeBase(options = {}) {
     }
   }, [options]);
 
+  // Retry connection to KBAI
+  const retryConnection = useCallback(async () => {
+    setConnectionStatus('connecting');
+    
+    try {
+      const kbaiService = new KBAIMCPService();
+      await kbaiService.reset();
+      const directService = await kbaiService.forceRefresh?.();
+      
+      // Re-fetch knowledge items
+      return fetchKnowledgeItems(true);
+    } catch (error) {
+      console.error('Error retrying connection:', error);
+      setConnectionStatus('error');
+      return false;
+    }
+  }, [fetchKnowledgeItems]);
+
   // Search knowledge items
   const searchKnowledge = useCallback(async (query: string) => {
     setIsLoading(true);
@@ -78,6 +96,7 @@ export function useKnowledgeBase(options = {}) {
     isLoading,
     searchQuery,
     fetchKnowledgeItems,
+    retryConnection,
     searchKnowledge,
     resetSearch
   };

@@ -19,6 +19,7 @@ const KnowledgeBase = ({ agentType }: KnowledgeBaseProps) => {
     isLoading,
     connectionStatus,
     fetchKnowledgeItems,
+    retryConnection,
     searchKnowledge,
     resetSearch
   } = useKnowledgeBase({
@@ -39,6 +40,11 @@ const KnowledgeBase = ({ agentType }: KnowledgeBaseProps) => {
   const handleRefresh = () => {
     fetchKnowledgeItems(true);
   };
+  
+  // Handle retry connection
+  const handleRetryConnection = async () => {
+    await retryConnection();
+  };
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -54,6 +60,7 @@ const KnowledgeBase = ({ agentType }: KnowledgeBaseProps) => {
         
         <ConnectionStatus 
           status={connectionStatus}
+          onRetryConnection={handleRetryConnection}
         />
       </div>
       
@@ -67,6 +74,7 @@ const KnowledgeBase = ({ agentType }: KnowledgeBaseProps) => {
         items={items}
         isLoading={isLoading}
         connectionStatus={connectionStatus}
+        onRetryConnection={handleRetryConnection}
       />
     </div>
   );
