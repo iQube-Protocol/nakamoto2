@@ -15,16 +15,19 @@ interface UseDocumentContextProps {
  * Custom hook for managing document context
  */
 export default function useDocumentContext({ conversationId, onDocumentAdded }: UseDocumentContextProps) {
-  const { client, fetchDocument, isLoading } = useMCP();
+  const { client, fetchDocument, isLoading: mcpLoading } = useMCP();
   const [selectedDocuments, setSelectedDocuments] = useState<any[]>([]);
+  const [isLoading, setIsLoading] = useState(false);
   const [forceRefresh, setForceRefresh] = useState(0);
   
   // Load document context when conversation ID or client changes or on forced refresh
   const loadDocumentContext = useCallback(async () => {
     console.log(`Loading document context for conversation: ${conversationId}`);
+    setIsLoading(true);
     
     if (!conversationId || !client) {
       console.log('Missing conversation ID or client, cannot load documents');
+      setIsLoading(false);
       return;
     }
     
@@ -41,6 +44,8 @@ export default function useDocumentContext({ conversationId, onDocumentAdded }: 
     } catch (error) {
       console.error('Error loading document context:', error);
       toast.error('Failed to load document context');
+    } finally {
+      setIsLoading(false);
     }
   }, [client, conversationId]);
   
@@ -66,14 +71,6 @@ export default function useDocumentContext({ conversationId, onDocumentAdded }: 
     loadDocumentContext();
   });
   
-  // Handle refresh trigger from documentUpdates prop
-  const handleDocumentUpdates = useCallback((updates: number) => {
-    if (updates > 0) {
-      console.log(`Document updates property changed: ${updates}`);
-      setForceRefresh(prev => prev + 1);
-    }
-  }, []);
-  
   // Document actions (select, remove, view)
   const {
     viewingDocument,
@@ -84,7 +81,23 @@ export default function useDocumentContext({ conversationId, onDocumentAdded }: 
   } = useDocumentActions({
     client,
     conversationId, 
-    fetchDocument,
+    fetchDocument: async (documentId: string) => {
+      setIsLoading(true);
+      try {
+        console.log(`Fetching document content for ${documentId}`);
+        const content = await fetchDocument(documentId);
+        if (!content) {
+          throw new Error('Failed to fetch document content');
+        }
+        console.log(`Document content fetched, length: ${content.length}`);
+        return content;
+      } catch (error) {
+        console.error(`Error fetching document ${documentId}:`, error);
+        throw error;
+      } finally {
+        setIsLoading(false);
+      }
+    },
     onDocumentAdded: () => {
       // Call the parent callback if provided
       if (onDocumentAdded) {
@@ -97,19 +110,17 @@ export default function useDocumentContext({ conversationId, onDocumentAdded }: 
     selectedDocuments,
     setSelectedDocuments
   });
-  
-  // Handle document updates from parent components
-  useDocumentUpdates(0, loadDocumentContext);
 
   return {
     selectedDocuments,
     viewingDocument,
     setViewingDocument,
-    isLoading,
+    isLoading: isLoading || mcpLoading,
     handleDocumentSelect,
     handleRemoveDocument,
     handleViewDocument,
     loadDocumentContext,
-    forceRefresh
+    forceRefresh,
+    refreshDocuments: () => setForceRefresh(prev => prev + 1)
   };
 }
