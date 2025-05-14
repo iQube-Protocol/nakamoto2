@@ -74,6 +74,24 @@ const fallbackKnowledgeItems: KBAIKnowledgeItem[] = [
     source: 'MonDAI Knowledge Base',
     relevance: 0.65,
     timestamp: new Date().toISOString()
+  },
+  {
+    id: 'kb-fallback-9',
+    title: 'Layer 2 Scaling Solutions',
+    content: 'Layer 2 refers to a set of off-chain solutions built on top of layer 1 blockchains that aim to improve transaction speed and reduce costs. Examples include rollups, sidechains, and state channels.',
+    type: 'concept',
+    source: 'MonDAI Knowledge Base',
+    relevance: 0.62,
+    timestamp: new Date().toISOString()
+  },
+  {
+    id: 'kb-fallback-10',
+    title: 'Tokenomics',
+    content: 'Tokenomics is the study of the economics of a token or cryptocurrency. It includes factors like token supply, distribution, utility, and mechanisms that affect its value and market behavior.',
+    type: 'concept',
+    source: 'MonDAI Knowledge Base',
+    relevance: 0.60,
+    timestamp: new Date().toISOString()
   }
 ];
 
