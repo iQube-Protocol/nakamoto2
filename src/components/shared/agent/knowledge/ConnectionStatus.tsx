@@ -1,14 +1,12 @@
 
 import React from 'react';
-import { Button } from '@/components/ui/button';
-import { AlertTriangle, WifiOff } from 'lucide-react';
+import { WifiOff } from 'lucide-react';
 
 interface ConnectionStatusProps {
   status: 'disconnected' | 'connecting' | 'connected' | 'error';
-  onRetryConnection: () => void;
 }
 
-const ConnectionStatus = ({ status, onRetryConnection }: ConnectionStatusProps) => {
+const ConnectionStatus = ({ status }: ConnectionStatusProps) => {
   if (status === 'connected') return null;
   
   return (
@@ -19,20 +17,7 @@ const ConnectionStatus = ({ status, onRetryConnection }: ConnectionStatusProps) 
           ? 'bg-amber-500/10 text-amber-500'
           : 'bg-slate-500/10 text-slate-500'
     }`}>
-      {status === 'error' ? (
-        <>
-          <AlertTriangle size={16} />
-          <span>Connection to knowledge base failed.</span>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={onRetryConnection} 
-            className="ml-auto h-7 px-2"
-          >
-            Retry
-          </Button>
-        </>
-      ) : status === 'connecting' ? (
+      {status === 'connecting' ? (
         <>
           <span className="animate-pulse">●</span>
           <span>Connecting to knowledge base...</span>
@@ -41,14 +26,6 @@ const ConnectionStatus = ({ status, onRetryConnection }: ConnectionStatusProps) 
         <>
           <WifiOff size={16} />
           <span>Disconnected from knowledge base</span>
-          <Button 
-            variant="outline" 
-            size="sm" 
-            onClick={onRetryConnection} 
-            className="ml-auto h-7 px-2"
-          >
-            Connect
-          </Button>
         </>
       )}
     </div>
