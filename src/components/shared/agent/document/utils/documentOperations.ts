@@ -89,6 +89,9 @@ export async function addDocumentToContext(
     
     console.log(`Document successfully added to context. Content length: ${docInContext.content.length}`);
     
+    // Dispatch a document update event
+    dispatchDocumentContextUpdated(document.id, 'add');
+    
     // Document with content for local tracking
     return {
       id: document.id,
@@ -98,9 +101,22 @@ export async function addDocumentToContext(
     };
   } catch (error) {
     console.error('Error adding document to context:', error);
-    toast.error('Failed to add document to context', {
-      description: error instanceof Error ? error.message : 'Unknown error'
-    });
+    
+    // Enhanced error handling with specific messages
+    if (error.toString().includes('NetworkError') || error.toString().includes('network error')) {
+      toast.error('Network error adding document', {
+        description: 'Please check your internet connection and try again'
+      });
+    } else if (error.toString().includes('content is empty')) {
+      toast.error('Document content is empty', {
+        description: 'The document has no text content that can be processed'
+      });
+    } else {
+      toast.error('Failed to add document to context', {
+        description: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+    
     throw error;
   }
 }

@@ -315,14 +315,15 @@ export class GoogleDriveService {
           } catch (gapiError) {
             console.warn('GAPI fetch failed, falling back to fetch API:', gapiError);
             
-            // Fallback to fetch API
+            // Fallback to fetch API with CORS mode explicitly set
             const response = await fetch(
               `https://www.googleapis.com/drive/v3/files/${documentId}?alt=media`,
               {
                 headers: {
                   'Authorization': `Bearer ${this.gapi.auth.getToken().access_token}`,
                   'Content-Type': 'application/json'
-                }
+                },
+                mode: 'cors' // Explicitly set CORS mode
               }
             );
             
@@ -352,9 +353,26 @@ export class GoogleDriveService {
       });
     } catch (error) {
       console.error(`Error fetching document ${documentId} (${fileName}):`, error);
-      toast.error('Failed to fetch document content', { 
-        description: error instanceof Error ? error.message : 'Unknown error' 
-      });
+      
+      // Enhanced error reporting with specific messages for different error types
+      if (error.toString().includes('NetworkError') || error.toString().includes('network error')) {
+        toast.error('Network error fetching document', { 
+          description: 'Please check your connection and try again' 
+        });
+      } else if (error.toString().includes('CORS') || error.toString().includes('cross-origin')) {
+        toast.error('Cross-origin error fetching document', { 
+          description: 'Document access denied due to security settings' 
+        });
+      } else if (error.toString().includes('Authorization') || error.toString().includes('auth')) {
+        toast.error('Authorization error', { 
+          description: 'Please reconnect to Google Drive and try again' 
+        });
+      } else {
+        toast.error('Failed to fetch document content', { 
+          description: error instanceof Error ? error.message : 'Unknown error' 
+        });
+      }
+      
       return null;
     }
   }
