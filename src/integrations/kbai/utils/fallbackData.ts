@@ -121,7 +121,7 @@ const topicSpecificItems: Record<string, KBAIKnowledgeItem[]> = {
     {
       id: 'kb-ethereum-1',
       title: 'Ethereum Virtual Machine',
-      content: 'The Ethereum Virtual Machine (EVM) is a computation engine that acts as a decentralized computer with millions of executable projects. It's the environment in which all Ethereum accounts and smart contracts live.',
+      content: 'The Ethereum Virtual Machine (EVM) is a computation engine that acts as a decentralized computer with millions of executable projects. It is the environment in which all Ethereum accounts and smart contracts live.',
       type: 'concept',
       source: 'MonDAI Knowledge Base',
       relevance: 1.0,
