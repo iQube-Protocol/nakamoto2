@@ -2,6 +2,8 @@
 interface RetryOptions {
   maxRetries: number;
   baseDelay: number;
+  maxDelay?: number;
+  exponentialFactor?: number;
   retryCondition?: (error: any) => boolean;
 }
 
@@ -11,11 +13,15 @@ interface RetryOptions {
 export class RetryService {
   private maxRetries: number;
   private baseDelay: number;
+  private maxDelay: number;
+  private exponentialFactor: number;
   private retryCondition?: (error: any) => boolean;
 
   constructor(options: RetryOptions) {
     this.maxRetries = options.maxRetries || 3;
     this.baseDelay = options.baseDelay || 1000;
+    this.maxDelay = options.maxDelay || 10000; // Default max delay of 10 seconds
+    this.exponentialFactor = options.exponentialFactor || 2;
     this.retryCondition = options.retryCondition;
   }
 
@@ -43,8 +49,11 @@ export class RetryService {
           break;
         }
         
-        // Calculate delay with exponential backoff
-        const delay = this.baseDelay * Math.pow(2, attempt);
+        // Calculate delay with exponential backoff, capped at maxDelay
+        const delay = Math.min(
+          this.baseDelay * Math.pow(this.exponentialFactor, attempt),
+          this.maxDelay
+        );
         console.log(`Retrying in ${delay}ms after error:`, error);
         
         // Wait before retrying
