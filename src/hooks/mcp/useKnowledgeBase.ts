@@ -6,10 +6,11 @@ import { KBAIMCPService } from '@/integrations/kbai';
 interface KnowledgeBaseParams {
   query?: string;
   refresh?: boolean;
+  limit?: number;
   [key: string]: any; // Allow additional parameters
 }
 
-export function useKnowledgeBase(options = {}) {
+export function useKnowledgeBase(options: Record<string, any> = {}) {
   const [items, setItems] = useState<any[]>([]);
   const [connectionStatus, setConnectionStatus] = useState<'disconnected' | 'connecting' | 'connected' | 'error'>('disconnected');
   const [isLoading, setIsLoading] = useState(false);

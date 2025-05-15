@@ -1,3 +1,4 @@
+
 /**
  * Types for document browser hooks
  */
@@ -16,7 +17,7 @@ export interface DocumentFolder {
 export interface UseDocumentBrowserResult {
   documents: any[];
   isLoading: boolean;
-  currentFolder: string;
+  currentFolder: DocumentFolder;
   folderHistory: FolderHistory[];
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
@@ -25,4 +26,11 @@ export interface UseDocumentBrowserResult {
   navigateToFolder: (folderId: string, historyIndex?: number) => void;
   navigateToRoot: () => void;
   refreshCurrentFolder: () => void;
+}
+
+export interface KnowledgeBaseParams {
+  query?: string;
+  refresh?: boolean;
+  limit?: number;
+  [key: string]: any; // Allow additional parameters
 }
