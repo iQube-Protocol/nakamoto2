@@ -190,4 +190,12 @@ export class MCPDocumentService {
       return null;
     }
   }
+  
+  /**
+   * Reset proxy error state to retry using proxy
+   */
+  resetProxyErrorState(): void {
+    this.lastProxyError = 0;
+    driveProxyService.resetErrorState();
+  }
 }

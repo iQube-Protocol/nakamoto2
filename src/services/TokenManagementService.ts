@@ -1,150 +1,98 @@
 
-import { toast } from 'sonner';
-
-interface TokenInfo {
-  token: string;
-  expiry: number; // timestamp when token expires
-  refreshInProgress: boolean;
-}
-
 /**
- * Service for enhanced token management with proactive refresh
+ * Service for managing authentication tokens
+ * Helps prevent token expiration issues by tracking expiry and refreshing
  */
 export class TokenManagementService {
-  private tokenStore: Map<string, TokenInfo> = new Map();
-  private refreshThresholdMs = 5 * 60 * 1000; // Refresh 5 minutes before expiry
-  private refreshCallbacks: Map<string, (tokenClient: any) => Promise<void>> = new Map();
+  private tokens: Map<string, {
+    token: string;
+    expiresAt: number;
+    refreshCallback?: () => Promise<void>;
+  }> = new Map();
   
   /**
-   * Register a callback to refresh a specific token type
+   * Store a token with expiry time
    */
-  registerRefreshCallback(tokenType: string, callback: (tokenClient: any) => Promise<void>): void {
-    this.refreshCallbacks.set(tokenType, callback);
-  }
-  
-  /**
-   * Store token with expiry information
-   */
-  storeToken(tokenType: string, token: string, expiresInSeconds: number = 3600): void {
-    const expiry = Date.now() + (expiresInSeconds * 1000);
+  storeToken(service: string, token: string, expiresInSeconds: number): void {
+    // Calculate expiry time with a safety margin
+    const expiresAt = Date.now() + (expiresInSeconds * 1000) - 60000; // 1 minute safety margin
     
-    this.tokenStore.set(tokenType, {
+    this.tokens.set(service, {
       token,
-      expiry,
-      refreshInProgress: false
+      expiresAt,
+      refreshCallback: this.tokens.get(service)?.refreshCallback
     });
     
-    console.log(`Stored ${tokenType} token, expires in ${expiresInSeconds} seconds`);
-    
-    // Schedule refresh before expiry
-    this.scheduleTokenRefresh(tokenType);
+    console.log(`Stored ${service} token, expires in ${expiresInSeconds} seconds`);
   }
   
   /**
-   * Get token and refresh if needed
+   * Get a stored token
    */
-  async getToken(tokenType: string, tokenClient: any): Promise<string | null> {
-    const tokenInfo = this.tokenStore.get(tokenType);
+  getToken(service: string): string | null {
+    const tokenData = this.tokens.get(service);
+    if (!tokenData) return null;
     
-    if (!tokenInfo) {
-      console.log(`No ${tokenType} token found`);
+    // If token is expired but we have a refresh callback, try to refresh
+    if (!this.isTokenValid(service) && tokenData.refreshCallback) {
+      console.log(`Token for ${service} is expired, attempting refresh`);
+      // Execute refresh asynchronously, don't wait for it
+      tokenData.refreshCallback().catch(error => {
+        console.error(`Failed to refresh token for ${service}:`, error);
+      });
       return null;
     }
     
-    // Check if token is expired or close to expiry
-    const now = Date.now();
-    const shouldRefresh = tokenInfo.expiry - now < this.refreshThresholdMs;
+    return tokenData.token;
+  }
+  
+  /**
+   * Check if a token is valid and not expired
+   */
+  isTokenValid(service: string): boolean {
+    const tokenData = this.tokens.get(service);
+    if (!tokenData) return false;
     
-    if (shouldRefresh && !tokenInfo.refreshInProgress) {
-      console.log(`Token ${tokenType} needs refresh`);
-      this.refreshToken(tokenType, tokenClient);
+    const isValid = Date.now() < tokenData.expiresAt;
+    
+    if (!isValid) {
+      console.log(`Token for ${service} is expired`);
     }
     
-    return tokenInfo.token;
+    return isValid;
   }
   
   /**
-   * Check if token is valid
+   * Register a callback to refresh the token when needed
    */
-  isTokenValid(tokenType: string): boolean {
-    const tokenInfo = this.tokenStore.get(tokenType);
-    if (!tokenInfo) return false;
+  registerRefreshCallback(service: string, refreshCallback: () => Promise<void>): void {
+    const tokenData = this.tokens.get(service);
     
-    const now = Date.now();
-    return tokenInfo.expiry > now;
-  }
-  
-  /**
-   * Schedule token refresh before expiry
-   */
-  private scheduleTokenRefresh(tokenType: string): void {
-    const tokenInfo = this.tokenStore.get(tokenType);
-    if (!tokenInfo) return;
-    
-    const now = Date.now();
-    const timeToRefresh = Math.max(0, tokenInfo.expiry - this.refreshThresholdMs - now);
-    
-    console.log(`Scheduling ${tokenType} token refresh in ${timeToRefresh / 1000} seconds`);
-    
-    setTimeout(() => {
-      const callback = this.refreshCallbacks.get(tokenType);
-      if (callback) {
-        this.refreshToken(tokenType, null);
-      } else {
-        console.warn(`No refresh callback registered for ${tokenType}`);
-      }
-    }, timeToRefresh);
-  }
-  
-  /**
-   * Refresh token using registered callback
-   */
-  private async refreshToken(tokenType: string, tokenClient: any): Promise<void> {
-    const tokenInfo = this.tokenStore.get(tokenType);
-    if (!tokenInfo || tokenInfo.refreshInProgress) return;
-    
-    // Mark refresh as in progress
-    this.tokenStore.set(tokenType, {
-      ...tokenInfo,
-      refreshInProgress: true
+    this.tokens.set(service, {
+      token: tokenData?.token || '',
+      expiresAt: tokenData?.expiresAt || 0,
+      refreshCallback
     });
     
-    try {
-      console.log(`Refreshing ${tokenType} token...`);
-      
-      const callback = this.refreshCallbacks.get(tokenType);
-      if (!callback) {
-        console.error(`No refresh callback registered for ${tokenType}`);
-        return;
-      }
-      
-      await callback(tokenClient);
-      console.log(`Successfully refreshed ${tokenType} token`);
-    } catch (error) {
-      console.error(`Error refreshing ${tokenType} token:`, error);
-      toast.error(`Failed to refresh ${tokenType} credentials`, {
-        description: 'You may need to reconnect the service'
-      });
-      
-      // Update token info to no longer show refresh in progress
-      const currentTokenInfo = this.tokenStore.get(tokenType);
-      if (currentTokenInfo) {
-        this.tokenStore.set(tokenType, {
-          ...currentTokenInfo,
-          refreshInProgress: false
-        });
-      }
-    }
+    console.log(`Registered refresh callback for ${service}`);
   }
   
   /**
-   * Remove token
+   * Remove a stored token
    */
-  clearToken(tokenType: string): void {
-    this.tokenStore.delete(tokenType);
-    console.log(`Cleared ${tokenType} token`);
+  removeToken(service: string): void {
+    this.tokens.delete(service);
+    console.log(`Removed token for ${service}`);
+  }
+  
+  /**
+   * Clear all stored tokens
+   */
+  clearTokens(): void {
+    this.tokens.clear();
+    console.log('Cleared all tokens');
   }
 }
 
-// Singleton instance for global use
+// Create singleton instance
 export const tokenManagementService = new TokenManagementService();

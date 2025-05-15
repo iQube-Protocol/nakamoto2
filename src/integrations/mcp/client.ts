@@ -38,6 +38,7 @@ export class MCPClient {
   async initializeContext(existingConversationId?: string): Promise<string> {
     const convId = await this.contextService.initializeContext(existingConversationId);
     this.initialized = true;
+    console.log(`MCP context initialized with conversation ID: ${convId}`);
     return convId;
   }
   
@@ -216,6 +217,15 @@ export class MCPClient {
   isInitialized(): boolean {
     return this.initialized;
   }
+  
+  /**
+   * Reset all MCP client state and services
+   */
+  reset(): void {
+    this.initialized = false;
+    this.contextService.reset();
+    console.log('MCP client has been reset');
+  }
 }
 
 // Singleton instance for global use
@@ -237,4 +247,13 @@ export const getMCPClient = (options?: MCPClientOptions): MCPClient => {
   }
   
   return mcpClientInstance;
+};
+
+// Utility function to reset the MCP client
+export const resetMCPClient = (): void => {
+  if (mcpClientInstance) {
+    mcpClientInstance.reset();
+  }
+  mcpClientInstance = null;
+  console.log('Global MCP client instance has been reset');
 };

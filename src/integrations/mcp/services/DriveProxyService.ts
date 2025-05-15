@@ -7,6 +7,10 @@ import { toast } from 'sonner';
  * to avoid CORS issues
  */
 export class DriveProxyService {
+  private lastError: Error | null = null;
+  private errorTimestamp: number = 0;
+  private cooldownPeriod: number = 60000; // 1 minute cooldown after errors
+  
   /**
    * Send a proxied request to Google Drive API
    */
@@ -21,6 +25,12 @@ export class DriveProxyService {
       query?: string;
     }
   ): Promise<any> {
+    // Check if we're in cooldown period after an error
+    if (this.lastError && Date.now() - this.errorTimestamp < this.cooldownPeriod) {
+      console.warn('DriveProxyService: In cooldown period after previous error:', this.lastError.message);
+      throw this.lastError;
+    }
+    
     try {
       console.log(`Sending ${method} request to Google Drive API via proxy: ${endpoint}`);
       
@@ -35,14 +45,28 @@ export class DriveProxyService {
       
       if (error) {
         console.error('Drive proxy error:', error);
-        throw new Error(`Drive proxy error: ${error.message || 'Unknown error'}`);
+        this.setError(new Error(`Drive proxy error: ${error.message || 'Unknown error'}`));
+        throw this.lastError;
       }
+      
+      // Clear any previous errors on success
+      this.lastError = null;
+      this.errorTimestamp = 0;
       
       return data;
     } catch (error) {
       console.error('Drive proxy request failed:', error);
+      this.setError(error instanceof Error ? error : new Error(String(error)));
       throw error;
     }
+  }
+  
+  /**
+   * Set error state with timestamp
+   */
+  private setError(error: Error): void {
+    this.lastError = error;
+    this.errorTimestamp = Date.now();
   }
   
   /**
@@ -100,6 +124,14 @@ export class DriveProxyService {
       console.error('Drive connection test failed:', error);
       return false;
     }
+  }
+  
+  /**
+   * Reset error state to allow retrying after cooldown period
+   */
+  resetErrorState(): void {
+    this.lastError = null;
+    this.errorTimestamp = 0;
   }
 }
 

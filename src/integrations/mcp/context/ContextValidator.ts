@@ -52,4 +52,45 @@ export class ContextValidator {
       console.log('Document sizes before storage:', docSizes);
     }
   }
+  
+  /**
+   * Complete context validation including messages and documents
+   */
+  validateFullContext(context: MCPContext): boolean {
+    let isValid = true;
+    
+    // Validate document context
+    if (context.documentContext) {
+      const invalidDocs = context.documentContext.filter(doc => !doc.content || doc.content.length === 0);
+      
+      if (invalidDocs.length > 0) {
+        console.warn(`⚠️ Invalid document context detected: ${invalidDocs.length} documents with missing content`);
+        isValid = false;
+      }
+      
+      // Check for suspiciously short content
+      const shortDocs = context.documentContext.filter(doc => 
+        doc.content && doc.content.length > 0 && doc.content.length < 20
+      );
+      
+      if (shortDocs.length > 0) {
+        console.warn(`⚠️ Suspiciously short document content detected for:`, 
+          shortDocs.map(d => d.documentName));
+        isValid = false;
+      }
+    }
+    
+    // Validate conversation context
+    if (context.conversationContext && context.conversationContext.length === 0) {
+      console.warn("⚠️ Empty conversation context");
+    }
+    
+    // Validate conversation ID
+    if (!context.conversationId) {
+      console.warn("⚠️ Missing conversation ID in context");
+      isValid = false;
+    }
+    
+    return isValid;
+  }
 }
