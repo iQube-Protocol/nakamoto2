@@ -9,7 +9,8 @@ import { toast } from 'sonner';
 export class DriveProxyService {
   private lastError: Error | null = null;
   private errorTimestamp: number = 0;
-  private cooldownPeriod: number = 60000; // 1 minute cooldown after errors
+  private cooldownPeriod: number = 10000; // Reduced from 60 seconds to 10 seconds
+  private retryCount: number = 0;
   
   /**
    * Send a proxied request to Google Drive API
@@ -34,28 +35,70 @@ export class DriveProxyService {
     try {
       console.log(`Sending ${method} request to Google Drive API via proxy: ${endpoint}`);
       
-      const { data, error } = await supabase.functions.invoke('gdrive-proxy', {
-        body: {
-          method,
-          endpoint,
-          accessToken,
-          ...options
+      try {
+        const { data, error } = await supabase.functions.invoke('gdrive-proxy', {
+          body: {
+            method,
+            endpoint,
+            accessToken,
+            ...options
+          }
+        });
+        
+        if (error) {
+          console.error('Drive proxy error:', error);
+          throw new Error(`Drive proxy error: ${error.message || 'Unknown error'}`);
         }
-      });
-      
-      if (error) {
-        console.error('Drive proxy error:', error);
-        this.setError(new Error(`Drive proxy error: ${error.message || 'Unknown error'}`));
-        throw this.lastError;
+        
+        // Clear any previous errors on success
+        this.lastError = null;
+        this.errorTimestamp = 0;
+        this.retryCount = 0;
+        
+        return data;
+      } catch (proxyError) {
+        console.error('Drive proxy request failed:', proxyError);
+        
+        if (this.retryCount >= 2) {
+          this.setError(proxyError instanceof Error ? proxyError : new Error(String(proxyError)));
+          this.retryCount = 0;
+          throw proxyError;
+        }
+        
+        this.retryCount++;
+        console.log(`Retrying Edge Function request (attempt ${this.retryCount})`);
+        
+        await new Promise(resolve => setTimeout(resolve, 1000));
+        
+        try {
+          const response = await fetch(`${window.location.origin}/api/drive-proxy`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({
+              method,
+              endpoint,
+              accessToken,
+              ...options
+            }),
+          });
+          
+          if (!response.ok) {
+            throw new Error(`HTTP error ${response.status}`);
+          }
+          
+          const data = await response.json();
+          this.retryCount = 0;
+          return data;
+        } catch (fallbackError) {
+          console.error('Drive proxy fallback error:', fallbackError);
+          this.setError(fallbackError instanceof Error ? fallbackError : new Error(String(fallbackError)));
+          this.retryCount = 0;
+          throw fallbackError;
+        }
       }
-      
-      // Clear any previous errors on success
-      this.lastError = null;
-      this.errorTimestamp = 0;
-      
-      return data;
     } catch (error) {
-      console.error('Drive proxy request failed:', error);
       this.setError(error instanceof Error ? error : new Error(String(error)));
       throw error;
     }
@@ -132,6 +175,8 @@ export class DriveProxyService {
   resetErrorState(): void {
     this.lastError = null;
     this.errorTimestamp = 0;
+    this.retryCount = 0;
+    console.log('Drive proxy error state reset');
   }
 }
 

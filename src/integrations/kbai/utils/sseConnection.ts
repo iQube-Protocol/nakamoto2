@@ -115,11 +115,10 @@ export const connectToSSE = async (options: {
     let buffer = "";
     let reading = true;
 
-    // Read 3 seconds maximum
     const timeoutId = setTimeout(() => {
       reading = false;
-      console.log('SSE reading timed out after 3 seconds');
-    }, 3000);
+      console.log('SSE reading timed out after 10 seconds');
+    }, 10000);
 
     while (reading) {
       const { done, value } = await reader.read();
