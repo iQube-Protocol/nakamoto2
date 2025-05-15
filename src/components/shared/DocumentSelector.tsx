@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -16,6 +17,7 @@ import ConnectionForm from './document/ConnectionForm';
 import FolderBreadcrumb from './document/FolderBreadcrumb';
 import FileGrid from './document/FileGrid';
 import { toast } from 'sonner';
+import { DocumentFolder } from '@/hooks/document-browser/types';
 
 interface DocumentSelectorProps {
   onDocumentSelect: (document: any) => void;
@@ -158,8 +160,8 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
             <FolderBreadcrumb
               currentFolder={currentFolder}
               folderHistory={folderHistory}
-              navigateToFolder={(folderId: string, historyIndex?: number) => 
-                navigateToFolder(folderId, historyIndex)}
+              navigateToFolder={(folder: DocumentFolder, historyIndex?: number) => 
+                navigateToFolder(folder)}
               navigateToRoot={() => navigateToRoot()}
             />
           

@@ -23,7 +23,7 @@ export interface UseDocumentBrowserResult {
   setIsOpen: (isOpen: boolean) => void;
   handleDocumentClick: (doc: any) => any;
   handleBack: () => void;
-  navigateToFolder: (folderId: string, historyIndex?: number) => void;
+  navigateToFolder: (folder: DocumentFolder) => void;
   navigateToRoot: () => void;
   refreshCurrentFolder: () => void;
 }

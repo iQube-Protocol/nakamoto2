@@ -1,17 +1,13 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { useMCP } from '@/hooks/use-mcp';
-
-interface DocumentFolder {
-  id: string;
-  name: string;
-}
+import { DocumentFolder, FolderHistory } from '@/hooks/document-browser/types';
 
 export interface UseDocumentBrowserResult {
   documents: any[];
   isLoading: boolean;
-  currentFolder: DocumentFolder | null;
-  folderHistory: DocumentFolder[];
+  currentFolder: DocumentFolder;
+  folderHistory: FolderHistory[];
   isOpen: boolean;
   setIsOpen: (open: boolean) => void;
   handleDocumentClick: (doc: any) => any;
@@ -28,8 +24,8 @@ export function useDocumentBrowser(): UseDocumentBrowserResult {
   const { listDocuments, fetchDocument, isLoading: mcpLoading, driveConnected } = useMCP();
   const [documents, setDocuments] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [currentFolder, setCurrentFolder] = useState<DocumentFolder | null>(null);
-  const [folderHistory, setFolderHistory] = useState<DocumentFolder[]>([]);
+  const [currentFolder, setCurrentFolder] = useState<DocumentFolder>({ id: '', name: 'Root' });
+  const [folderHistory, setFolderHistory] = useState<FolderHistory[]>([]);
   const [isOpen, setIsOpen] = useState(false);
 
   // Load documents when dialog opens
@@ -60,7 +56,7 @@ export function useDocumentBrowser(): UseDocumentBrowserResult {
   // Navigate to a folder
   const navigateToFolder = useCallback((folder: DocumentFolder) => {
     console.log(`Navigating to folder: ${folder.name}`);
-    setFolderHistory(prev => currentFolder ? [...prev, currentFolder] : prev);
+    setFolderHistory(prev => [...prev, currentFolder]);
     setCurrentFolder(folder);
   }, [currentFolder]);
   
@@ -68,18 +64,19 @@ export function useDocumentBrowser(): UseDocumentBrowserResult {
   const navigateToRoot = useCallback(() => {
     console.log('Navigating to root folder');
     setFolderHistory([]);
-    setCurrentFolder(null);
+    setCurrentFolder({ id: '', name: 'Root' });
   }, []);
   
   // Go back to previous folder
   const handleBack = useCallback(() => {
     if (folderHistory.length > 0) {
-      const previousFolder = folderHistory[folderHistory.length - 1];
-      setFolderHistory(prev => prev.slice(0, -1));
+      const newHistory = [...folderHistory];
+      const previousFolder = newHistory.pop() as DocumentFolder;
+      setFolderHistory(newHistory);
       setCurrentFolder(previousFolder);
       console.log(`Navigating back to: ${previousFolder.name}`);
     } else {
-      setCurrentFolder(null);
+      setCurrentFolder({ id: '', name: 'Root' });
       console.log('Navigating back to root');
     }
   }, [folderHistory]);

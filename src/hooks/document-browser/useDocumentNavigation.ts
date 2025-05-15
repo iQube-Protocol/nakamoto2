@@ -1,12 +1,12 @@
 
 import { useState } from 'react';
-import { FolderHistory } from './types';
+import { DocumentFolder, FolderHistory } from './types';
 
 /**
  * Hook for handling document browser navigation state and actions
  */
 export function useDocumentNavigation() {
-  const [currentFolder, setCurrentFolder] = useState('');
+  const [currentFolder, setCurrentFolder] = useState<DocumentFolder>({ id: '', name: 'Root' });
   const [folderHistory, setFolderHistory] = useState<FolderHistory[]>([]);
   const [isOpen, setIsOpen] = useState(false);
   
@@ -19,23 +19,27 @@ export function useDocumentNavigation() {
       const newHistory = [...folderHistory];
       const lastFolder = newHistory.pop();
       setFolderHistory(newHistory);
-      setCurrentFolder(lastFolder?.id || '');
+      if (lastFolder) {
+        setCurrentFolder(lastFolder);
+      } else {
+        setCurrentFolder({ id: '', name: 'Root' });
+      }
     } else {
       // Go back to root
-      setCurrentFolder('');
+      setCurrentFolder({ id: '', name: 'Root' });
     }
   };
   
   /**
    * Navigate to a specific folder
    */
-  const navigateToFolder = (folderId: string, historyIndex?: number) => {
+  const navigateToFolder = (folder: DocumentFolder, historyIndex?: number) => {
     if (historyIndex !== undefined) {
       // Navigate to specific folder in history
-      setCurrentFolder(folderId);
+      setCurrentFolder(folder);
       setFolderHistory(folderHistory.slice(0, historyIndex));
     } else {
-      setCurrentFolder(folderId);
+      setCurrentFolder(folder);
     }
   };
   
@@ -43,7 +47,7 @@ export function useDocumentNavigation() {
    * Navigate to root folder and clear history
    */
   const navigateToRoot = () => {
-    setCurrentFolder('');
+    setCurrentFolder({ id: '', name: 'Root' });
     setFolderHistory([]);
   };
 
