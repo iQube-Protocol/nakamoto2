@@ -39,7 +39,7 @@ const MonDAI = () => {
     console.log("MonDAI: Initializing connection to knowledge base");
     const initialCheck = async () => {
       try {
-        // First attempt to load knowledge items - use object parameter instead of boolean
+        // First attempt to load knowledge items - use object parameter
         console.log('MonDAI: Initial connection attempt...');
         await fetchKnowledgeItems({ refresh: false });
       } catch (error) {

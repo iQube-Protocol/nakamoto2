@@ -23,9 +23,9 @@ export class KBAIDirectService {
   private readonly cacheManager: CacheManager;
   private readonly retryService: RetryService;
   private connectionAttempts = 0;
-  private maxConnectionAttempts = 1; // Reduced to 1 to prevent continuous retrying
+  private maxConnectionAttempts = 2; // Increased from 1 to 2
   private lastConnectionAttempt = 0;
-  private connectionCooldown = 5000; // Increased to 5 seconds to reduce connection attempts
+  private connectionCooldown = 5000; // Reduced from 10000 to allow more frequent health checks
   private useFallbackMode = false; // Flag to indicate if we should use fallback mode
   private currentEndpointIndex = 0; // Track which endpoint we're currently using
   
@@ -102,10 +102,21 @@ export class KBAIDirectService {
       
       console.log(`Performing KBAI API health check at ${new Date().toISOString()}`);
       
-      // Try current endpoint
-      let isHealthy = await checkApiHealth(this.getCurrentEndpoint(), this.getAuthHeaders());
+      // Try current endpoint with a timeout
+      let isHealthy = false;
+      try {
+        const healthCheckPromise = checkApiHealth(this.getCurrentEndpoint(), this.getAuthHeaders());
+        const timeoutPromise = new Promise<boolean>((resolve) => {
+          setTimeout(() => resolve(false), 5000);
+        });
+        
+        isHealthy = await Promise.race([healthCheckPromise, timeoutPromise]);
+      } catch (healthCheckError) {
+        console.warn(`Health check failed for endpoint ${this.getCurrentEndpoint()}:`, healthCheckError);
+        isHealthy = false;
+      }
       
-      // If not healthy, try other endpoints
+      // If not healthy, try other endpoints with individual timeouts
       if (!isHealthy) {
         const originalEndpoint = this.currentEndpointIndex;
         
@@ -114,10 +125,20 @@ export class KBAIDirectService {
           const nextEndpoint = this.switchToNextEndpoint();
           console.log(`Trying alternative endpoint: ${nextEndpoint}`);
           
-          isHealthy = await checkApiHealth(nextEndpoint, this.getAuthHeaders());
-          if (isHealthy) {
-            console.log(`Found working endpoint: ${nextEndpoint}`);
-            break;
+          try {
+            const alternateCheckPromise = checkApiHealth(nextEndpoint, this.getAuthHeaders());
+            const timeoutPromise = new Promise<boolean>((resolve) => {
+              setTimeout(() => resolve(false), 5000);
+            });
+            
+            isHealthy = await Promise.race([alternateCheckPromise, timeoutPromise]);
+            
+            if (isHealthy) {
+              console.log(`Found working endpoint: ${nextEndpoint}`);
+              break;
+            }
+          } catch (endpointError) {
+            console.warn(`Health check failed for endpoint ${nextEndpoint}:`, endpointError);
           }
         }
         
