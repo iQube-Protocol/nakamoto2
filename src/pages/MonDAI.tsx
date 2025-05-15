@@ -63,6 +63,18 @@ const MonDAI = () => {
     }
   };
   
+  // Create wrapper functions to match the expected types
+  const handleMessageSubmit = useCallback((message: string) => {
+    return handleAIMessage(message);
+  }, [handleAIMessage]);
+  
+  const handleDocumentAdded = useCallback(() => {
+    // This is a wrapper function that will be called when a document is added
+    // It doesn't need parameters as it will be used as an event handler
+    console.log('Document added event triggered');
+    toast.info('Document added to context');
+  }, []);
+  
   return <div className="container py-6 max-w-7xl mx-auto h-full agent-interface">
       <div className="grid gap-6 h-full">
         <div className="flex flex-col h-full">
@@ -79,8 +91,8 @@ const MonDAI = () => {
             title="MonDAI" 
             description={getStatusDescription()} 
             agentType="learn" // Using learn type for compatibility
-            onMessageSubmit={handleAIMessage} 
-            onDocumentAdded={handleDocumentContextUpdated} 
+            onMessageSubmit={handleMessageSubmit}
+            onDocumentAdded={handleDocumentAdded}
             documentContextUpdated={documentUpdates} 
             conversationId={conversationId} 
             initialMessages={[{

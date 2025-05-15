@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { useConversationId } from '@/components/shared/agent/hooks/useConversationId';
 import { useDocumentLoading } from '@/hooks/use-document-loading';
+import { AgentMessage } from '@/lib/types';
 
 export function useMondAI() {
   const [documentUpdates, setDocumentUpdates] = useState(0);
@@ -21,8 +22,14 @@ export function useMondAI() {
   
   // Handle AI message submission with retry
   const handleAIMessage = useCallback(
-    async (message: string) => {
-      if (!message.trim()) return null;
+    async (message: string): Promise<AgentMessage> => {  // Explicitly typed as AgentMessage
+      if (!message.trim()) return {
+        id: `empty-${Date.now()}`,
+        sender: 'agent' as const,  // Use const assertion to ensure correct type
+        message: 'Please enter a message.',
+        timestamp: new Date().toISOString(),
+        metadata: { status: 'error' }
+      };
       
       setIsLoading(true);
       try {
@@ -50,7 +57,7 @@ export function useMondAI() {
         
         return {
           id: data.id || `msg-${Date.now()}`,
-          sender: 'agent',
+          sender: 'agent' as const,  // Use const assertion to ensure correct type
           message: data.response,
           timestamp: new Date().toISOString(),
           metadata: {
@@ -66,7 +73,7 @@ export function useMondAI() {
         
         return {
           id: `error-${Date.now()}`,
-          sender: 'agent',
+          sender: 'agent' as const,  // Use const assertion to ensure correct type
           message: 'Sorry, I encountered an error processing your request. Please try again.',
           timestamp: new Date().toISOString(),
           metadata: { status: 'error' }
@@ -80,7 +87,7 @@ export function useMondAI() {
   
   // Document context update handler with error handling
   const handleDocumentContextUpdated = useCallback(
-    async (document: any) => {
+    async (document: any) => {  // Keep the parameter
       try {
         console.log(`MonDAI: Processing document ${document.name} for context`);
         

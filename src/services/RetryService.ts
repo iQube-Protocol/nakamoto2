@@ -5,6 +5,7 @@ interface RetryOptions {
   maxRetries: number;
   baseDelay: number;
   maxDelay: number;
+  exponentialFactor?: number;  // Added this property
   jitter?: boolean;
   retryCondition?: (error: any) => boolean;
   onRetry?: (error: any, attempt: number) => void;
