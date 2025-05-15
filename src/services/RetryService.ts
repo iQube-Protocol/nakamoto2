@@ -15,7 +15,7 @@ interface RetryOptions {
 export class RetryService {
   private options: RetryOptions;
   
-  constructor(options: RetryOptions) {
+  constructor(options: Partial<RetryOptions> = {}) {
     this.options = {
       maxRetries: 3,
       baseDelay: 300,
@@ -60,5 +60,15 @@ export class RetryService {
     }
     
     throw lastError;
+  }
+  
+  /**
+   * Modify retry options
+   */
+  setOptions(options: Partial<RetryOptions>): void {
+    this.options = {
+      ...this.options,
+      ...options
+    };
   }
 }

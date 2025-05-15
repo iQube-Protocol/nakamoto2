@@ -4,6 +4,8 @@ import { AgentInterface } from '@/components/shared/agent';
 import { useKnowledgeBase } from '@/hooks/mcp/useKnowledgeBase';
 import { useMondAI } from '@/hooks/use-mondai';
 import { toast } from 'sonner';
+import { Button } from '@/components/ui/button';
+import { AlertCircle, RefreshCw } from 'lucide-react';
 
 const MonDAI = () => {
   // Use our custom hook
@@ -22,15 +24,29 @@ const MonDAI = () => {
     connectionStatus,
     isLoading: kbLoading
   } = useKnowledgeBase();
+  
+  // System status tracking
+  const [systemStatus, setSystemStatus] = useState<'initializing' | 'ready' | 'error'>('initializing');
 
   // Set fullscreen mode effect for mobile
   useEffect(() => {
     // Add a class to the root element for fullscreen styling
     document.documentElement.classList.add('fullscreen-mode');
+    
+    // Start initializing system
+    setSystemStatus('initializing');
+    
+    // After a short delay, consider the system ready
+    const timer = setTimeout(() => {
+      if (systemStatus === 'initializing') {
+        setSystemStatus('ready');
+      }
+    }, 3000);
 
     // Remove the class when component unmounts
     return () => {
       document.documentElement.classList.remove('fullscreen-mode');
+      clearTimeout(timer);
     };
   }, []);
 
@@ -42,15 +58,17 @@ const MonDAI = () => {
         // First attempt to load knowledge items
         console.log('MonDAI: Initial connection attempt...');
         await fetchKnowledgeItems();
+        setSystemStatus('ready');
       } catch (error) {
         console.error('Error in initial connection setup:', error);
+        setSystemStatus('error');
       }
     };
     initialCheck();
   }, [fetchKnowledgeItems]);
 
   const getStatusDescription = () => {
-    if (kbLoading) return "Connecting to knowledge base...";
+    if (kbLoading || systemStatus === 'initializing') return "Connecting to knowledge base...";
     switch (connectionStatus) {
       case 'connected':
         return "Community agent with KBAI integration";
@@ -61,6 +79,25 @@ const MonDAI = () => {
       default:
         return "Community agent with offline knowledge base";
     }
+  };
+  
+  // Force refresh system
+  const handleForceRefresh = () => {
+    toast.info('Refreshing system...');
+    
+    setSystemStatus('initializing');
+    
+    // Attempt to refresh knowledge base
+    fetchKnowledgeItems()
+      .then(() => {
+        setSystemStatus('ready');
+        toast.success('System refreshed');
+      })
+      .catch(error => {
+        console.error('Error refreshing system:', error);
+        setSystemStatus('error');
+        toast.error('Failed to refresh system');
+      });
   };
   
   // Create wrapper functions to match the expected types
@@ -80,7 +117,21 @@ const MonDAI = () => {
         <div className="flex flex-col h-full">
           <div className="flex flex-row justify-between items-center mb-2">
             <div className="flex-1">
-              {/* This is empty space for alignment */}
+              {systemStatus === 'error' && (
+                <div className="flex items-center text-amber-500 text-sm">
+                  <AlertCircle className="h-4 w-4 mr-1" />
+                  <span>System experiencing issues</span>
+                  <Button 
+                    variant="ghost" 
+                    size="sm" 
+                    onClick={handleForceRefresh}
+                    className="ml-2"
+                  >
+                    <RefreshCw className="h-3.5 w-3.5 mr-1" />
+                    Refresh
+                  </Button>
+                </div>
+              )}
             </div>
             <div className="flex items-center gap-2">
               {/* Connection status indicators removed */}
