@@ -1,68 +1,165 @@
 
+import { toast } from 'sonner';
+
 interface RetryOptions {
   maxRetries: number;
   baseDelay: number;
-  maxDelay?: number;
-  exponentialFactor?: number;
+  maxDelay: number;
+  jitter?: boolean;
   retryCondition?: (error: any) => boolean;
+  onRetry?: (error: any, attempt: number) => void;
+  retryNotification?: boolean;
 }
 
 /**
- * Service for handling automatic retry logic with exponential backoff
+ * Service for handling retries with exponential backoff and improved error handling
  */
 export class RetryService {
-  private maxRetries: number;
-  private baseDelay: number;
-  private maxDelay: number;
-  private exponentialFactor: number;
-  private retryCondition?: (error: any) => boolean;
-
+  private options: RetryOptions;
+  private lastErrorTime: number = 0;
+  private errorCooldown: number = 3000; // Minimum time between error notifications
+  
   constructor(options: RetryOptions) {
-    this.maxRetries = options.maxRetries || 3;
-    this.baseDelay = options.baseDelay || 1000;
-    this.maxDelay = options.maxDelay || 10000; // Default max delay of 10 seconds
-    this.exponentialFactor = options.exponentialFactor || 2;
-    this.retryCondition = options.retryCondition;
+    this.options = {
+      maxRetries: 3,
+      baseDelay: 1000,
+      maxDelay: 10000,
+      jitter: true,
+      retryNotification: true,
+      ...options
+    };
   }
-
+  
   /**
    * Execute a function with retry logic
    */
   async execute<T>(fn: () => Promise<T>): Promise<T> {
     let lastError: any;
     let attempt = 0;
-
-    while (attempt <= this.maxRetries) {
+    
+    while (attempt <= this.options.maxRetries) {
       try {
         if (attempt > 0) {
-          console.log(`Retry attempt ${attempt}/${this.maxRetries}...`);
+          console.log(`Retry attempt ${attempt} of ${this.options.maxRetries}`);
         }
         
         return await fn();
       } catch (error) {
         lastError = error;
+        attempt++;
         
-        // Check if we should retry based on the error and current attempt
-        if (attempt >= this.maxRetries || 
-            (this.retryCondition && !this.retryCondition(error))) {
-          console.error(`All retry attempts failed (${attempt}/${this.maxRetries}):`, error);
+        // Check if we should retry based on error type
+        const shouldRetry = attempt <= this.options.maxRetries && 
+          (!this.options.retryCondition || this.options.retryCondition(error));
+        
+        if (!shouldRetry) {
+          console.log(`Not retrying after attempt ${attempt}: ${error.message || 'Unknown error'}`);
           break;
         }
         
-        // Calculate delay with exponential backoff, capped at maxDelay
-        const delay = Math.min(
-          this.baseDelay * Math.pow(this.exponentialFactor, attempt),
-          this.maxDelay
-        );
-        console.log(`Retrying in ${delay}ms after error:`, error);
+        // Calculate delay with exponential backoff
+        const delay = this.calculateDelay(attempt);
         
-        // Wait before retrying
+        // Call onRetry callback if provided
+        if (this.options.onRetry) {
+          this.options.onRetry(error, attempt);
+        }
+        
+        // Show retry notification if enabled and not too frequent
+        if (this.options.retryNotification && this.shouldShowNotification()) {
+          this.lastErrorTime = Date.now();
+          
+          // Show different messages based on error category
+          if (this.isNetworkError(error)) {
+            toast.error('Network error detected', {
+              description: `Retrying in ${Math.round(delay / 1000)}s (${attempt}/${this.options.maxRetries})`,
+              duration: 3000,
+            });
+          } else if (this.isAuthError(error)) {
+            toast.error('Authentication error', {
+              description: `Attempting to refresh credentials (${attempt}/${this.options.maxRetries})`,
+              duration: 3000,
+            });
+          } else if (this.isCorsError(error)) {
+            toast.error('CORS policy error', {
+              description: `Trying alternative connection method (${attempt}/${this.options.maxRetries})`,
+              duration: 3000,
+            });
+          } else {
+            toast.error('Operation failed', {
+              description: `Retrying in ${Math.round(delay / 1000)}s (${attempt}/${this.options.maxRetries})`,
+              duration: 3000,
+            });
+          }
+        }
+        
+        // Wait before next attempt
+        console.log(`Waiting ${delay}ms before retry attempt ${attempt}`);
         await new Promise(resolve => setTimeout(resolve, delay));
-        attempt++;
       }
     }
     
-    // If we've exhausted all retries, throw the last error
+    // If we get here, all retries failed
+    console.error(`All ${this.options.maxRetries} retry attempts failed. Last error:`, lastError);
     throw lastError;
+  }
+  
+  /**
+   * Calculate delay with exponential backoff and optional jitter
+   */
+  private calculateDelay(attempt: number): number {
+    const exponentialDelay = Math.min(
+      this.options.maxDelay,
+      this.options.baseDelay * Math.pow(2, attempt - 1)
+    );
+    
+    if (this.options.jitter) {
+      // Add random jitter (±25% of delay)
+      const jitterFactor = 0.75 + Math.random() * 0.5;
+      return Math.floor(exponentialDelay * jitterFactor);
+    }
+    
+    return exponentialDelay;
+  }
+  
+  /**
+   * Determine if we should show a notification based on cooldown
+   */
+  private shouldShowNotification(): boolean {
+    return Date.now() - this.lastErrorTime > this.errorCooldown;
+  }
+  
+  /**
+   * Check if an error is related to network connectivity
+   */
+  private isNetworkError(error: any): boolean {
+    const errorString = String(error).toLowerCase();
+    return errorString.includes('network') || 
+      errorString.includes('timeout') || 
+      errorString.includes('aborted') ||
+      errorString.includes('offline');
+  }
+  
+  /**
+   * Check if an error is related to authentication
+   */
+  private isAuthError(error: any): boolean {
+    const errorString = String(error).toLowerCase();
+    return errorString.includes('auth') || 
+      errorString.includes('unauthorized') || 
+      errorString.includes('forbidden') ||
+      errorString.includes('login') ||
+      error.status === 401 || 
+      error.status === 403;
+  }
+  
+  /**
+   * Check if an error is related to CORS
+   */
+  private isCorsError(error: any): boolean {
+    const errorString = String(error).toLowerCase();
+    return errorString.includes('cors') || 
+      errorString.includes('origin') ||
+      errorString.includes('cross');
   }
 }

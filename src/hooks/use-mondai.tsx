@@ -1,111 +1,116 @@
 
-import React from 'react';
-import { useToast } from '@/components/ui/use-toast';
-import { useAuth } from '@/hooks/use-auth';
-import { getConversationContext } from '@/services/agent-service';
-import { AgentMessage } from '@/lib/types';
-import { processMonDAIInteraction } from '@/services/mondai-service';
+import { useState, useCallback, useEffect } from 'react';
+import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
+import { useConversationId } from '@/components/shared/agent/hooks/useConversationId';
+import { useDocumentLoading } from '@/hooks/use-document-loading';
 
 export function useMondAI() {
-  const { toast: uiToast } = useToast();
-  const { user } = useAuth();
-  const [conversationId, setConversationId] = React.useState<string | null>(null);
-  const [historicalContext, setHistoricalContext] = React.useState<string>('');
-  const [isLoading, setIsLoading] = React.useState<boolean>(false);
-  const [activeTab, setActiveTab] = React.useState<'chat' | 'knowledge' | 'documents'>('chat');
-  const [documentUpdates, setDocumentUpdates] = React.useState<number>(0);
-
-  // Load conversation context when component mounts
-  React.useEffect(() => {
-    const loadContext = async () => {
-      if (!conversationId) {
-        console.log('No conversationId provided, skipping context load');
-        return;
-      }
+  const [documentUpdates, setDocumentUpdates] = useState(0);
+  const [isLoading, setIsLoading] = useState(false);
+  const { conversationId } = useConversationId(null);
+  const { addDocumentToContext } = useDocumentLoading();
+  
+  // Reset document updates counter when conversation changes
+  useEffect(() => {
+    if (conversationId) {
+      console.log(`MonDAI: Initializing with conversation ID ${conversationId}`);
+      setDocumentUpdates(0);
+    }
+  }, [conversationId]);
+  
+  // Handle AI message submission with retry
+  const handleAIMessage = useCallback(
+    async (message: string) => {
+      if (!message.trim()) return null;
       
       setIsLoading(true);
       try {
-        // Use 'learn' instead of 'mondai' to match the existing agent types
-        const context = await getConversationContext(conversationId, 'learn');
-        if (context.historicalContext) {
-          setHistoricalContext(context.historicalContext);
-          console.log('Loaded historical context for MonDAI agent');
+        console.log(`MonDAI: Sending message to AI service, conversation: ${conversationId}`);
+        
+        // Make request to Supabase Edge Function
+        const { data, error } = await supabase.functions.invoke('mondai-ai', {
+          body: { 
+            message,
+            conversationId
+          }
+        });
+        
+        if (error) {
+          console.error('Edge function error:', error);
+          throw new Error(`Error: ${error.message}`);
         }
         
-        if (context.conversationId !== conversationId) {
-          setConversationId(context.conversationId);
+        if (!data || !data.response) {
+          console.error('Invalid response from mondai-ai function:', data);
+          throw new Error('Invalid response from AI service');
         }
+        
+        console.log('MonDAI: Received response from AI service');
+        
+        return {
+          id: data.id || `msg-${Date.now()}`,
+          sender: 'agent',
+          message: data.response,
+          timestamp: new Date().toISOString(),
+          metadata: {
+            documentsUsed: data.documentsUsed || false,
+            conversationId: data.conversationId || conversationId
+          }
+        };
       } catch (error) {
-        console.error('Error loading conversation context:', error);
+        console.error('Error in handleAIMessage:', error);
+        toast.error('Failed to get AI response', {
+          description: error instanceof Error ? error.message : 'Unknown error'
+        });
+        
+        return {
+          id: `error-${Date.now()}`,
+          sender: 'agent',
+          message: 'Sorry, I encountered an error processing your request. Please try again.',
+          timestamp: new Date().toISOString(),
+          metadata: { status: 'error' }
+        };
       } finally {
         setIsLoading(false);
       }
-    };
-    
-    loadContext();
-  }, [conversationId]);
-
-  // Handle document context updates
-  const handleDocumentContextUpdated = () => {
-    setDocumentUpdates(prev => prev + 1);
-  };
+    },
+    [conversationId]
+  );
   
-  // Handle tab changes
-  const handleTabChange = (tab: 'chat' | 'knowledge' | 'documents') => {
-    setActiveTab(tab);
-  };
-
-  const handleAIMessage = async (message: string) => {
-    try {
-      // Get conversation context, including history if available
-      const contextResult = await getConversationContext(conversationId, 'learn');
-      
-      if (contextResult.conversationId !== conversationId) {
-        setConversationId(contextResult.conversationId);
-        console.log(`Setting new conversation ID: ${contextResult.conversationId}`);
+  // Document context update handler with error handling
+  const handleDocumentContextUpdated = useCallback(
+    async (document: any) => {
+      try {
+        console.log(`MonDAI: Processing document ${document.name} for context`);
+        
+        if (!conversationId) {
+          console.error('No conversation ID available');
+          toast.error('Cannot add document', {
+            description: 'No active conversation'
+          });
+          return;
+        }
+        
+        await addDocumentToContext(document, conversationId);
+        
+        // Increment document updates to trigger refresh
+        setDocumentUpdates(prev => prev + 1);
+        
+        console.log(`MonDAI: Document ${document.name} added to context`);
+      } catch (error) {
+        console.error('Error in handleDocumentContextUpdated:', error);
+        // Toast is already shown in addDocumentToContext
       }
-      
-      if (contextResult.historicalContext !== historicalContext) {
-        setHistoricalContext(contextResult.historicalContext);
-        console.log('Updated historical context for MonDAI agent');
-      }
-      
-      // Use our service to handle the message interaction
-      const response = await processMonDAIInteraction(message, contextResult.conversationId);
-      
-      // Return a properly formatted agent message
-      return {
-        id: Date.now().toString(),
-        sender: 'agent' as const,
-        message: response.message,
-        timestamp: response.timestamp,
-        metadata: response.metadata
-      };
-    } catch (error) {
-      console.error('Failed to get AI response:', error);
-      uiToast({
-        title: "AI Service Error",
-        description: "Could not connect to the AI service. Please try again later.",
-        variant: "destructive"
-      });
-      
-      // Return error message if the service fails
-      return {
-        id: Date.now().toString(),
-        sender: 'agent' as const,
-        message: "I'm sorry, I couldn't process your request. Please try again later.",
-        timestamp: new Date().toISOString(),
-      };
-    }
-  };
-
+    },
+    [conversationId, addDocumentToContext]
+  );
+  
   return {
     conversationId,
     isLoading,
-    activeTab,
     documentUpdates,
     handleAIMessage,
-    handleDocumentContextUpdated,
-    handleTabChange,
+    handleDocumentContextUpdated
   };
 }
