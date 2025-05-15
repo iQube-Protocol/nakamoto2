@@ -25,6 +25,7 @@ export interface MCPContext {
     source?: 'google-drive' | 'local' | 'other';
     metisActive?: boolean;
   };
+  timestamp?: string; // Added timestamp property to match reference build
 }
 
 export interface MCPClientOptions {

@@ -39,9 +39,9 @@ const MonDAI = () => {
     console.log("MonDAI: Initializing connection to knowledge base");
     const initialCheck = async () => {
       try {
-        // First attempt to load knowledge items
+        // First attempt to load knowledge items - use object parameter instead of boolean
         console.log('MonDAI: Initial connection attempt...');
-        await fetchKnowledgeItems();
+        await fetchKnowledgeItems({ refresh: false });
       } catch (error) {
         console.error('Error in initial connection setup:', error);
       }
@@ -49,6 +49,7 @@ const MonDAI = () => {
     initialCheck();
   }, [fetchKnowledgeItems]);
 
+  // Get description based on connection status
   const getStatusDescription = () => {
     if (kbLoading) return "Connecting to knowledge base...";
     switch (connectionStatus) {
@@ -70,12 +71,12 @@ const MonDAI = () => {
   
   const handleDocumentAdded = useCallback(() => {
     // This is a wrapper function that will be called when a document is added
-    // It doesn't need parameters as it will be used as an event handler
     console.log('Document added event triggered');
     toast.info('Document added to context');
   }, []);
   
-  return <div className="container py-6 max-w-7xl mx-auto h-full agent-interface">
+  return (
+    <div className="container py-6 max-w-7xl mx-auto h-full agent-interface">
       <div className="grid gap-6 h-full">
         <div className="flex flex-col h-full">
           <div className="flex flex-row justify-between items-center mb-2">
@@ -111,7 +112,8 @@ const MonDAI = () => {
           />
         </div>
       </div>
-    </div>;
+    </div>
+  );
 };
 
 export default MonDAI;
