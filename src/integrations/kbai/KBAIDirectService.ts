@@ -23,7 +23,7 @@ export class KBAIDirectService {
   private readonly cacheManager: CacheManager;
   private readonly retryService: RetryService;
   private connectionAttempts = 0;
-  private maxConnectionAttempts = 3; // Increased to allow 3 attempts
+  private maxConnectionAttempts = 1; // Reduced to 1 to prevent continuous retrying
   private lastConnectionAttempt = 0;
   private connectionCooldown = 5000; // Increased to 5 seconds to reduce connection attempts
   private useFallbackMode = false; // Flag to indicate if we should use fallback mode
@@ -32,7 +32,7 @@ export class KBAIDirectService {
   constructor() {
     this.cacheManager = new CacheManager();
     this.retryService = new RetryService({
-      maxRetries: 2, // Allow 2 retries (3 attempts total)
+      maxRetries: 1, // Reduced number of retries
       baseDelay: 800,
       maxDelay: 3000, // Reduced max delay
       exponentialFactor: 1.5,
@@ -47,15 +47,7 @@ export class KBAIDirectService {
           console.log("Auth error, skipping retry");
           return false;
         }
-        
-        // Only retry if we haven't exceeded max attempts
-        if (this.connectionAttempts >= this.maxConnectionAttempts) {
-          console.log(`Max connection attempts (${this.maxConnectionAttempts}) reached, skipping retry`);
-          return false;
-        }
-        
-        this.connectionAttempts++;
-        console.log(`Allowing retry attempt ${this.connectionAttempts} of ${this.maxConnectionAttempts}`);
+        console.log("Allowing retry attempt");
         return true;
       }
     });
@@ -109,7 +101,7 @@ export class KBAIDirectService {
       this.lastConnectionAttempt = now;
       this.connectionStatus = 'connecting';
       
-      console.log(`Performing KBAI API health check at ${new Date().toISOString()} (attempt ${this.connectionAttempts + 1} of ${this.maxConnectionAttempts})`);
+      console.log(`Performing KBAI API health check at ${new Date().toISOString()}`);
       
       // Try current endpoint
       let isHealthy = await checkApiHealth(this.getCurrentEndpoint(), this.getAuthHeaders());
@@ -140,12 +132,10 @@ export class KBAIDirectService {
       this.connectionStatus = isHealthy ? 'connected' : 'error';
       console.log(`KBAI health check result: ${isHealthy ? 'healthy' : 'unhealthy'}`);
       
-      // If not healthy, only switch to fallback mode after reaching max attempts
+      // If not healthy, immediately switch to fallback mode instead of retrying
       if (!isHealthy) {
-        if (this.connectionAttempts >= this.maxConnectionAttempts - 1) {
-          this.useFallbackMode = true;
-          console.log(`Entering fallback mode after ${this.connectionAttempts} failed connection attempts`);
-        }
+        this.useFallbackMode = true;
+        console.log(`Entering fallback mode due to failed connection attempt`);
       } else {
         // Reset attempts on successful connection
         this.connectionAttempts = 0;
@@ -155,11 +145,7 @@ export class KBAIDirectService {
     } catch (error) {
       console.error('KBAI health check error:', error);
       this.connectionStatus = 'error';
-      
-      // Only enter fallback mode after max attempts
-      if (this.connectionAttempts >= this.maxConnectionAttempts - 1) {
-        this.useFallbackMode = true;
-      }
+      this.useFallbackMode = true;
       
       return false;
     }
@@ -197,8 +183,8 @@ export class KBAIDirectService {
       // Check API health first
       const isHealthy = await this.checkApiHealth(options.query === 'force-refresh');
       
-      if (!isHealthy && this.connectionAttempts >= this.maxConnectionAttempts) {
-        console.warn('KBAI API is not healthy after max retry attempts, using fallback data');
+      if (!isHealthy) {
+        console.warn('KBAI API is not healthy, using fallback data');
         
         // If we have cache, use it as primary fallback
         if (cachedData) {
@@ -238,12 +224,7 @@ export class KBAIDirectService {
         return items;
       } catch (sseError) {
         console.error('SSE connection error:', sseError);
-        this.connectionAttempts++;
-        
-        if (this.connectionAttempts >= this.maxConnectionAttempts) {
-          this.connectionStatus = 'error';
-          this.useFallbackMode = true;
-        }
+        this.connectionStatus = 'error';
         
         if (cachedData) {
           return cachedData;
@@ -251,11 +232,10 @@ export class KBAIDirectService {
         return getFallbackItems(options.query || '');
       }
     } catch (error) {
+      this.connectionStatus = 'error';
       console.error('Failed to fetch KBAI knowledge:', error);
-      this.connectionAttempts++;
       
       if (this.connectionAttempts >= this.maxConnectionAttempts) {
-        this.connectionStatus = 'error';
         this.useFallbackMode = true;
       }
       
