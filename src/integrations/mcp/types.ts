@@ -52,6 +52,7 @@ export interface MCPContext {
     metisActive?: boolean;
     source?: string;
   };
+  timestamp?: number; // Added timestamp field for storage management
 }
 
 /**

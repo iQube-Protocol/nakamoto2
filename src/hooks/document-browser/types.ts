@@ -1,3 +1,4 @@
+
 /**
  * Types for document browser hooks
  */
@@ -25,4 +26,12 @@ export interface UseDocumentBrowserResult {
   navigateToFolder: (folderId: string, historyIndex?: number) => void;
   navigateToRoot: () => void;
   refreshCurrentFolder: () => void;
+}
+
+// Add type for knowledge base parameters
+export interface KnowledgeBaseParams {
+  forceOfflineFirst?: boolean;
+  query?: string;
+  limit?: number;
+  [key: string]: any;
 }
