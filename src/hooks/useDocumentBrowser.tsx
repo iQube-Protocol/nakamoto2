@@ -1,25 +1,7 @@
 
 import { useState, useCallback, useEffect } from 'react';
 import { useMCP } from '@/hooks/use-mcp';
-
-interface DocumentFolder {
-  id: string;
-  name: string;
-}
-
-export interface UseDocumentBrowserResult {
-  documents: any[];
-  isLoading: boolean;
-  currentFolder: DocumentFolder | null;
-  folderHistory: DocumentFolder[];
-  isOpen: boolean;
-  setIsOpen: (open: boolean) => void;
-  handleDocumentClick: (doc: any) => any;
-  handleBack: () => void;
-  navigateToFolder: (folder: DocumentFolder) => void;
-  navigateToRoot: () => void;
-  refreshCurrentFolder: () => Promise<void>;
-}
+import { FolderHistory, DocumentFolder, UseDocumentBrowserResult } from '@/hooks/document-browser/types';
 
 /**
  * Main hook for document browsing functionality
@@ -28,8 +10,8 @@ export function useDocumentBrowser(): UseDocumentBrowserResult {
   const { listDocuments, fetchDocument, isLoading: mcpLoading, driveConnected } = useMCP();
   const [documents, setDocuments] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
-  const [currentFolder, setCurrentFolder] = useState<DocumentFolder | null>(null);
-  const [folderHistory, setFolderHistory] = useState<DocumentFolder[]>([]);
+  const [currentFolder, setCurrentFolder] = useState<string>('');
+  const [folderHistory, setFolderHistory] = useState<FolderHistory[]>([]);
   const [isOpen, setIsOpen] = useState(false);
 
   // Load documents when dialog opens
@@ -45,8 +27,8 @@ export function useDocumentBrowser(): UseDocumentBrowserResult {
     
     setIsLoading(true);
     try {
-      console.log(`Loading documents from ${currentFolder?.name || 'root'} folder`);
-      const docs = await listDocuments(currentFolder?.id);
+      console.log(`Loading documents from ${currentFolder || 'root'} folder`);
+      const docs = await listDocuments(currentFolder || undefined);
       setDocuments(docs || []);
       console.log(`Loaded ${docs?.length || 0} documents`);
     } catch (error) {
@@ -58,17 +40,36 @@ export function useDocumentBrowser(): UseDocumentBrowserResult {
   }, [currentFolder, driveConnected, listDocuments]);
   
   // Navigate to a folder
-  const navigateToFolder = useCallback((folder: DocumentFolder) => {
-    console.log(`Navigating to folder: ${folder.name}`);
-    setFolderHistory(prev => currentFolder ? [...prev, currentFolder] : prev);
-    setCurrentFolder(folder);
-  }, [currentFolder]);
+  const navigateToFolder = useCallback((folderId: string, historyIndex?: number) => {
+    if (historyIndex !== undefined) {
+      // Navigate to specific folder in history
+      setCurrentFolder(folderId);
+      setFolderHistory(prev => prev.slice(0, historyIndex));
+    } else {
+      // Get folder name from documents list
+      const folder = documents.find(doc => doc.id === folderId);
+      
+      if (currentFolder) {
+        // Add current folder to history
+        setFolderHistory(prev => [
+          ...prev,
+          {
+            id: currentFolder,
+            name: documents.find(d => d.id === currentFolder)?.name || 'Unknown'
+          }
+        ]);
+      }
+      
+      console.log(`Navigating to folder: ${folder?.name || folderId}`);
+      setCurrentFolder(folderId);
+    }
+  }, [currentFolder, documents]);
   
   // Navigate to root
   const navigateToRoot = useCallback(() => {
     console.log('Navigating to root folder');
     setFolderHistory([]);
-    setCurrentFolder(null);
+    setCurrentFolder('');
   }, []);
   
   // Go back to previous folder
@@ -76,10 +77,10 @@ export function useDocumentBrowser(): UseDocumentBrowserResult {
     if (folderHistory.length > 0) {
       const previousFolder = folderHistory[folderHistory.length - 1];
       setFolderHistory(prev => prev.slice(0, -1));
-      setCurrentFolder(previousFolder);
+      setCurrentFolder(previousFolder.id);
       console.log(`Navigating back to: ${previousFolder.name}`);
     } else {
-      setCurrentFolder(null);
+      setCurrentFolder('');
       console.log('Navigating back to root');
     }
   }, [folderHistory]);
@@ -90,10 +91,7 @@ export function useDocumentBrowser(): UseDocumentBrowserResult {
     
     // If it's a folder, navigate to it
     if (doc.mimeType.includes('folder')) {
-      navigateToFolder({
-        id: doc.id,
-        name: doc.name
-      });
+      navigateToFolder(doc.id);
       return null;
     }
     
