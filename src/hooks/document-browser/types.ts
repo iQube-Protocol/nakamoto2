@@ -1,4 +1,3 @@
-
 /**
  * Types for document browser hooks
  */
@@ -6,6 +5,12 @@
 export interface FolderHistory {
   id: string;
   name: string;
+}
+
+export interface DocumentFolder {
+  id: string;
+  name: string;
+  // Add any other properties needed
 }
 
 export interface UseDocumentBrowserResult {

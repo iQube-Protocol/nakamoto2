@@ -35,7 +35,6 @@ export class KBAIDirectService {
       maxRetries: 1, // Reduced number of retries
       baseDelay: 800,
       maxDelay: 3000, // Reduced max delay
-      exponentialFactor: 1.5,
       retryCondition: (error: any) => {
         // Don't retry on authentication errors or if we're in fallback mode
         console.log("Evaluating retry condition for error:", error);

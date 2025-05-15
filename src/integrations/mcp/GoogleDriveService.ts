@@ -1,4 +1,3 @@
-
 import { toast } from 'sonner';
 import { DocumentMetadata } from './types';
 import { RetryService } from '@/services/RetryService';
@@ -361,7 +360,10 @@ export class GoogleDriveService {
         fields: 'files(id, name, mimeType, modifiedTime)'
       }));
       
-      return response.result.files.map((file: any): DocumentMetadata => ({
+      // Add type assertion to safely access result property
+      const responseData = response as { result: { files: any[] } };
+      
+      return responseData.result.files.map((file: any): DocumentMetadata => ({
         id: file.id,
         name: file.name,
         mimeType: file.mimeType,
@@ -434,7 +436,9 @@ export class GoogleDriveService {
         })
       );
       
-      return response.body;
+      // Add type assertion for response
+      const responseData = response as { body: string };
+      return responseData.body;
     } catch (error) {
       console.error(`Error exporting Google Workspace document ${document.name}:`, error);
       throw error;
@@ -470,7 +474,9 @@ export class GoogleDriveService {
         })
       );
       
-      return response.body;
+      // Add type assertion for response
+      const responseData = response as { body: string };
+      return responseData.body;
     } catch (error) {
       console.error(`Error downloading document ${document.name}:`, error);
       throw error;

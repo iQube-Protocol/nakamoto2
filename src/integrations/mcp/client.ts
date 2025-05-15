@@ -1,4 +1,3 @@
-
 import { MCPClientOptions, MCPContext, DocumentMetadata } from './types';
 import { GoogleDriveService } from './GoogleDriveService';
 import { ContextService } from './context';
@@ -223,7 +222,8 @@ export class MCPClient {
    */
   reset(): void {
     this.initialized = false;
-    this.contextService.reset();
+    // Use contextService methods to perform reset without directly accessing reset property
+    this.contextService.initializeContext(); // Re-initialize rather than reset
     console.log('MCP client has been reset');
   }
 }

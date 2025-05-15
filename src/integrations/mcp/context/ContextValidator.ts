@@ -80,9 +80,9 @@ export class ContextValidator {
       }
     }
     
-    // Validate conversation context
-    if (context.conversationContext && context.conversationContext.length === 0) {
-      console.warn("⚠️ Empty conversation context");
+    // Validate conversation context - check if messages array exists instead of conversationContext
+    if (context.messages && context.messages.length === 0) {
+      console.warn("⚠️ Empty message history");
     }
     
     // Validate conversation ID
