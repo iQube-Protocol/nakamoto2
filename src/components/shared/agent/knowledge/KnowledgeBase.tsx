@@ -18,6 +18,8 @@ const KnowledgeBase = ({ agentType }: KnowledgeBaseProps) => {
     items,
     isLoading,
     connectionStatus,
+    connectionAttempts,
+    maxRetries,
     fetchKnowledgeItems,
     retryConnection,
     searchKnowledge,
@@ -60,6 +62,8 @@ const KnowledgeBase = ({ agentType }: KnowledgeBaseProps) => {
         
         <ConnectionStatus 
           status={connectionStatus}
+          connectionAttempts={connectionAttempts}
+          maxRetries={maxRetries}
           onRetryConnection={handleRetryConnection}
         />
       </div>
