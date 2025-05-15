@@ -2,17 +2,14 @@
 import { useState, useEffect, useCallback } from 'react';
 import { KBAIMCPService } from '@/integrations/kbai';
 
-// Define parameter type to accept either boolean or object
-type FetchParams = boolean | Record<string, any>;
-
 export function useKnowledgeBase(options = {}) {
   const [items, setItems] = useState<any[]>([]);
   const [connectionStatus, setConnectionStatus] = useState<'disconnected' | 'connecting' | 'connected' | 'error'>('disconnected');
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
 
-  // Fetch knowledge items - modified to handle different parameter types
-  const fetchKnowledgeItems = useCallback(async (params: FetchParams = false) => {
+  // Fetch knowledge items
+  const fetchKnowledgeItems = useCallback(async (refresh = false) => {
     setIsLoading(true);
     setConnectionStatus('connecting');
     
@@ -20,22 +17,12 @@ export function useKnowledgeBase(options = {}) {
       console.log('Fetching knowledge items...');
       const kbaiService = new KBAIMCPService();
       
-      // Handle different parameter types
-      const refresh = typeof params === 'boolean' ? params : false;
-      const additionalOptions = typeof params === 'object' ? params : {};
-      
       // Clear cache if refreshing
       if (refresh) {
         kbaiService.reset();
       }
       
-      // Merge options with any additional options passed
-      const mergedOptions = {
-        ...options,
-        ...additionalOptions
-      };
-      
-      const result = await kbaiService.fetchKnowledgeItems(mergedOptions);
+      const result = await kbaiService.fetchKnowledgeItems(options);
       
       setItems(result);
       setConnectionStatus(kbaiService.getConnectionStatus());
@@ -68,7 +55,7 @@ export function useKnowledgeBase(options = {}) {
     }
   }, [fetchKnowledgeItems]);
 
-  // Search knowledge items - updated to use the updated fetchKnowledgeItems
+  // Search knowledge items
   const searchKnowledge = useCallback(async (query: string) => {
     setIsLoading(true);
     setSearchQuery(query);

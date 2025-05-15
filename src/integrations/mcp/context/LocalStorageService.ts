@@ -1,13 +1,13 @@
+
 import { MCPContext } from '../types';
 import { ContextStorageService, StorageOptions } from './types';
 
 /**
- * Service for storing MCP context in browser's localStorage with quota management
+ * Service for storing MCP context in browser's localStorage
  */
 export class LocalStorageService implements ContextStorageService {
   private storage: Storage;
   private keyPrefix: string;
-  private maxDocumentSize: number = 50000; // ~50KB max per document to avoid quota issues
   
   constructor(options: StorageOptions = {}) {
     this.storage = options.storage || (typeof localStorage !== 'undefined' ? localStorage : null);
@@ -19,7 +19,7 @@ export class LocalStorageService implements ContextStorageService {
   }
   
   /**
-   * Save context to storage with quota management
+   * Save context to storage
    */
   saveContext(conversationId: string, context: MCPContext): void {
     if (!this.storage) {
@@ -28,141 +28,85 @@ export class LocalStorageService implements ContextStorageService {
     }
     
     try {
-      // First, try to clear old data to free up space
-      this.pruneOldContexts(conversationId);
-      
-      // Prepare context for storage - limit document content size
-      const storableContext = this.prepareForStorage(context);
       const key = `${this.keyPrefix}${conversationId}`;
       
+      // First, verify document content integrity before saving
+      if (context.documentContext && context.documentContext.length > 0) {
+        const invalidDocs = context.documentContext.filter(doc => !doc.content || doc.content.length === 0);
+        if (invalidDocs.length > 0) {
+          console.warn(`⚠️ Attempting to save context with ${invalidDocs.length} invalid documents:`, 
+            invalidDocs.map(d => d.documentName));
+        }
+        
+        // Log document sizes for debugging
+        const docSizes = context.documentContext.map(doc => ({
+          name: doc.documentName,
+          size: doc.content ? doc.content.length : 0
+        }));
+        console.log('Document sizes before storage:', docSizes);
+      }
+      
       // Serialize and save to storage
-      const serialized = JSON.stringify(storableContext);
+      const serialized = JSON.stringify(context);
       this.storage.setItem(key, serialized);
       
-      console.log(`Successfully saved context for conversation ${conversationId}`);
+      // Verify that the context was saved correctly by reading it back
+      const savedItem = this.storage.getItem(key);
+      if (!savedItem) {
+        throw new Error(`Context for ${conversationId} was not saved properly`);
+      }
+      
+      // Verify that document content survived serialization
+      const savedContext = JSON.parse(savedItem) as MCPContext;
+      if (savedContext.documentContext && context.documentContext) {
+        const originalDocCount = context.documentContext.length;
+        const savedDocCount = savedContext.documentContext.length;
+        
+        if (originalDocCount !== savedDocCount) {
+          console.error(`Document count mismatch after saving. Original: ${originalDocCount}, Saved: ${savedDocCount}`);
+        } else {
+          console.log(`Successfully saved context with ${savedDocCount} documents for conversation ${conversationId}`);
+        }
+        
+        // Check content integrity
+        let hasContentLoss = false;
+        savedContext.documentContext.forEach((doc, i) => {
+          const originalDoc = context.documentContext!.find(d => d.documentId === doc.documentId);
+          if (originalDoc && originalDoc.content.length !== doc.content.length) {
+            console.error(`Content length mismatch for document ${doc.documentName}. Original: ${originalDoc.content.length}, Saved: ${doc.content.length}`);
+            hasContentLoss = true;
+          }
+        });
+        
+        if (hasContentLoss) {
+          console.error('⚠️ Document content loss detected during save operation');
+        }
+      }
+      
     } catch (error) {
       console.error('Error saving context to storage:', error);
       
+      // Try with a smaller payload if the error might be related to storage limits
       if (error instanceof DOMException && error.name === 'QuotaExceededError') {
-        this.handleQuotaExceeded(conversationId, context);
-      }
-    }
-  }
-  
-  /**
-   * Handle quota exceeded error by trimming content
-   */
-  private handleQuotaExceeded(conversationId: string, context: MCPContext): void {
-    try {
-      console.warn('Storage quota exceeded. Attempting emergency cleanup...');
-      
-      // Remove all other contexts
-      this.clearAllContextsExcept(conversationId);
-      
-      // Create a minimal version of the context
-      const minimalContext: MCPContext = {
-        ...context,
-        documentContext: context.documentContext ? 
-          context.documentContext.map(doc => ({
-            ...doc,
-            content: doc.content ? doc.content.substring(0, 1000) + '...[truncated]' : ''
-          })) : []
-      };
-      
-      // Try to save the minimal context
-      const key = `${this.keyPrefix}${conversationId}`;
-      this.storage.setItem(key, JSON.stringify(minimalContext));
-      console.log('Saved minimal context after quota exceeded');
-    } catch (error) {
-      console.error('Failed to save even minimal context:', error);
-      // Clear all localStorage as last resort
-      this.clearStorage();
-    }
-  }
-  
-  /**
-   * Clear all stored contexts except the current one
-   */
-  private clearAllContextsExcept(currentId: string): void {
-    try {
-      const keysToRemove: string[] = [];
-      
-      // Find all context keys except the current one
-      for (let i = 0; i < this.storage.length; i++) {
-        const key = this.storage.key(i);
-        if (key && key.startsWith(this.keyPrefix) && !key.endsWith(currentId)) {
-          keysToRemove.push(key);
-        }
-      }
-      
-      // Remove them
-      keysToRemove.forEach(key => this.storage.removeItem(key));
-      console.log(`Cleared ${keysToRemove.length} old contexts to free space`);
-    } catch (error) {
-      console.error('Error clearing old contexts:', error);
-    }
-  }
-  
-  /**
-   * Clear the oldest contexts to make room for new ones
-   */
-  private pruneOldContexts(currentId: string): void {
-    try {
-      // Keep only the 3 most recent contexts
-      const contextKeys: {key: string, timestamp: number}[] = [];
-      
-      for (let i = 0; i < this.storage.length; i++) {
-        const key = this.storage.key(i);
-        if (key && key.startsWith(this.keyPrefix) && !key.endsWith(currentId)) {
-          try {
-            const content = this.storage.getItem(key);
-            if (content) {
-              const parsed = JSON.parse(content);
-              const timestamp = parsed.timestamp || 0;
-              contextKeys.push({key, timestamp});
-            }
-          } catch (e) {
-            contextKeys.push({key, timestamp: 0}); // Can't parse, consider old
+        console.warn('Storage quota exceeded. Attempting to save without document content...');
+        try {
+          // Create a version without document content for fallback
+          const minimalContext = { ...context };
+          if (minimalContext.documentContext) {
+            minimalContext.documentContext = minimalContext.documentContext.map(doc => ({
+              ...doc,
+              content: `[Content removed due to storage limitations. Document: ${doc.documentName}]`
+            }));
           }
+          
+          const key = `${this.keyPrefix}${conversationId}`;
+          this.storage.setItem(key, JSON.stringify(minimalContext));
+          console.log('Saved context with reduced document content');
+        } catch (fallbackError) {
+          console.error('Failed to save even with reduced document content:', fallbackError);
         }
       }
-      
-      // Sort by timestamp (oldest first) and remove all but the 3 newest
-      contextKeys.sort((a, b) => a.timestamp - b.timestamp);
-      
-      if (contextKeys.length > 3) {
-        const toRemove = contextKeys.slice(0, contextKeys.length - 3);
-        toRemove.forEach(item => this.storage.removeItem(item.key));
-        console.log(`Pruned ${toRemove.length} old contexts`);
-      }
-    } catch (error) {
-      console.error('Error pruning old contexts:', error);
     }
-  }
-  
-  /**
-   * Prepare context for storage by limiting document content size
-   */
-  private prepareForStorage(context: MCPContext): MCPContext {
-    const prepared = {...context};
-    
-    // Add timestamp for pruning
-    prepared.timestamp = Date.now();
-    
-    // Limit document content size
-    if (prepared.documentContext && prepared.documentContext.length > 0) {
-      prepared.documentContext = prepared.documentContext.map(doc => {
-        if (doc.content && doc.content.length > this.maxDocumentSize) {
-          return {
-            ...doc,
-            content: doc.content.substring(0, this.maxDocumentSize) + '...[content truncated to save space]'
-          };
-        }
-        return doc;
-      });
-    }
-    
-    return prepared;
   }
   
   /**
@@ -185,11 +129,24 @@ export class LocalStorageService implements ContextStorageService {
       
       const parsedContext = JSON.parse(storedContext) as MCPContext;
       
-      // Update timestamp on load to mark recently accessed
-      parsedContext.timestamp = Date.now();
-      this.storage.setItem(key, JSON.stringify(parsedContext));
+      // Verify document content integrity after loading
+      if (parsedContext.documentContext && parsedContext.documentContext.length > 0) {
+        console.log(`Loaded context with ${parsedContext.documentContext.length} documents for ${conversationId}`);
+        
+        // Check for empty document content
+        const emptyDocs = parsedContext.documentContext.filter(doc => !doc.content || doc.content.length === 0);
+        if (emptyDocs.length > 0) {
+          console.warn(`⚠️ ${emptyDocs.length} documents have empty content after loading:`, 
+            emptyDocs.map(d => d.documentName));
+        }
+        
+        parsedContext.documentContext.forEach((doc, i) => {
+          console.log(`Document ${i+1}: ${doc.documentName}, Content length: ${doc.content?.length || 0}`);
+        });
+      } else {
+        console.log(`Loaded context for ${conversationId} without document context`);
+      }
       
-      console.log(`Loaded context for ${conversationId} with ${parsedContext.documentContext?.length || 0} documents`);
       return parsedContext;
     } catch (error) {
       console.error('Error loading context from storage:', error);
@@ -209,33 +166,19 @@ export class LocalStorageService implements ContextStorageService {
     try {
       const key = `${this.keyPrefix}${conversationId}`;
       this.storage.removeItem(key);
-      console.log(`Removed context for ${conversationId}`);
+      
+      // Verify deletion
+      const itemExists = this.storage.getItem(key) !== null;
+      if (itemExists) {
+        console.warn(`Failed to remove context for ${conversationId} from storage`);
+        return false;
+      }
+      
+      console.log(`Successfully removed context for ${conversationId} from storage`);
       return true;
     } catch (error) {
       console.error('Error removing context from storage:', error);
       return false;
-    }
-  }
-  
-  /**
-   * Clear all storage (emergency use only)
-   */
-  private clearStorage(): void {
-    try {
-      // Only clear MCP-related items, not all localStorage
-      const keysToRemove: string[] = [];
-      
-      for (let i = 0; i < this.storage.length; i++) {
-        const key = this.storage.key(i);
-        if (key && key.startsWith(this.keyPrefix)) {
-          keysToRemove.push(key);
-        }
-      }
-      
-      keysToRemove.forEach(key => this.storage.removeItem(key));
-      console.log(`Emergency cleanup: removed ${keysToRemove.length} items from localStorage`);
-    } catch (error) {
-      console.error('Failed to clear storage:', error);
     }
   }
 }

@@ -1,5 +1,5 @@
 
-import React, { useEffect, useState, useCallback, memo } from 'react';
+import React, { useEffect, useState, useCallback } from 'react';
 import { AgentInterface } from '@/components/shared/agent';
 import { useKnowledgeBase } from '@/hooks/mcp/useKnowledgeBase';
 import { useMondAI } from '@/hooks/use-mondai';
@@ -7,8 +7,7 @@ import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
 import { AlertCircle, RefreshCw } from 'lucide-react';
 
-// Memoized component to prevent unnecessary rerenders
-const MonDAI = memo(() => {
+const MonDAI = () => {
   // Use our custom hook
   const {
     conversationId,
@@ -18,17 +17,16 @@ const MonDAI = memo(() => {
     handleDocumentContextUpdated
   } = useMondAI();
 
-  // Initialize knowledge base with reduced frequency of updates
+  // Initialize knowledge base
   const {
     items: knowledgeItems,
     fetchKnowledgeItems,
     connectionStatus,
     isLoading: kbLoading
-  } = useKnowledgeBase({ forceOfflineFirst: true });
+  } = useKnowledgeBase();
   
   // System status tracking
   const [systemStatus, setSystemStatus] = useState<'initializing' | 'ready' | 'error'>('initializing');
-  const [initAttempted, setInitAttempted] = useState(false);
 
   // Set fullscreen mode effect for mobile
   useEffect(() => {
@@ -38,12 +36,12 @@ const MonDAI = memo(() => {
     // Start initializing system
     setSystemStatus('initializing');
     
-    // After a short delay, consider the system ready regardless of backend status
+    // After a short delay, consider the system ready
     const timer = setTimeout(() => {
       if (systemStatus === 'initializing') {
         setSystemStatus('ready');
       }
-    }, 2000); // Reduced from 3000ms to 2000ms
+    }, 3000);
 
     // Remove the class when component unmounts
     return () => {
@@ -52,26 +50,22 @@ const MonDAI = memo(() => {
     };
   }, []);
 
-  // Check KBAI connection on initial load once only
+  // Check KBAI connection on initial load without continuous retries
   useEffect(() => {
-    if (initAttempted) return;
-    
-    setInitAttempted(true);
     console.log("MonDAI: Initializing connection to knowledge base");
-    
-    // Lazy load knowledge base after a delay
-    const timer = setTimeout(() => {
-      fetchKnowledgeItems({ forceOfflineFirst: true })
-        .then(() => {
-          setSystemStatus('ready');
-        })
-        .catch(() => {
-          setSystemStatus('ready'); // Still set ready, just with offline mode
-        });
-    }, 3000); // Delay initial load to improve page responsiveness
-    
-    return () => clearTimeout(timer);
-  }, [fetchKnowledgeItems, initAttempted]);
+    const initialCheck = async () => {
+      try {
+        // First attempt to load knowledge items
+        console.log('MonDAI: Initial connection attempt...');
+        await fetchKnowledgeItems();
+        setSystemStatus('ready');
+      } catch (error) {
+        console.error('Error in initial connection setup:', error);
+        setSystemStatus('error');
+      }
+    };
+    initialCheck();
+  }, [fetchKnowledgeItems]);
 
   const getStatusDescription = () => {
     if (kbLoading || systemStatus === 'initializing') return "Connecting to knowledge base...";
@@ -81,38 +75,30 @@ const MonDAI = memo(() => {
       case 'connecting':
         return "Establishing knowledge base connection...";
       case 'error':
-      case 'disconnected':
+        return "Community agent with offline knowledge base";
       default:
         return "Community agent with offline knowledge base";
     }
   };
   
-  // Force refresh system with debounce
-  const [isRefreshing, setIsRefreshing] = useState(false);
-  const handleForceRefresh = useCallback(() => {
-    if (isRefreshing) return;
-    
-    setIsRefreshing(true);
+  // Force refresh system
+  const handleForceRefresh = () => {
     toast.info('Refreshing system...');
     
     setSystemStatus('initializing');
     
-    // Attempt to refresh knowledge base after a short delay
-    setTimeout(() => {
-      fetchKnowledgeItems({ query: 'force-refresh' })
-        .then(() => {
-          setSystemStatus('ready');
-          toast.success('System refreshed');
-        })
-        .catch(() => {
-          setSystemStatus('ready'); // Still set ready, just with offline mode
-          toast.error('Failed to refresh online system, using offline mode');
-        })
-        .finally(() => {
-          setIsRefreshing(false);
-        });
-    }, 500);
-  }, [fetchKnowledgeItems, isRefreshing]);
+    // Attempt to refresh knowledge base
+    fetchKnowledgeItems()
+      .then(() => {
+        setSystemStatus('ready');
+        toast.success('System refreshed');
+      })
+      .catch(error => {
+        console.error('Error refreshing system:', error);
+        setSystemStatus('error');
+        toast.error('Failed to refresh system');
+      });
+  };
   
   // Create wrapper functions to match the expected types
   const handleMessageSubmit = useCallback((message: string) => {
@@ -121,6 +107,7 @@ const MonDAI = memo(() => {
   
   const handleDocumentAdded = useCallback(() => {
     // This is a wrapper function that will be called when a document is added
+    // It doesn't need parameters as it will be used as an event handler
     console.log('Document added event triggered');
     toast.info('Document added to context');
   }, []);
@@ -138,14 +125,16 @@ const MonDAI = memo(() => {
                     variant="ghost" 
                     size="sm" 
                     onClick={handleForceRefresh}
-                    disabled={isRefreshing}
                     className="ml-2"
                   >
-                    <RefreshCw className={`h-3.5 w-3.5 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
-                    {isRefreshing ? 'Refreshing...' : 'Refresh'}
+                    <RefreshCw className="h-3.5 w-3.5 mr-1" />
+                    Refresh
                   </Button>
                 </div>
               )}
+            </div>
+            <div className="flex items-center gap-2">
+              {/* Connection status indicators removed */}
             </div>
           </div>
           
@@ -174,6 +163,6 @@ const MonDAI = memo(() => {
         </div>
       </div>
     </div>;
-});
+};
 
 export default MonDAI;

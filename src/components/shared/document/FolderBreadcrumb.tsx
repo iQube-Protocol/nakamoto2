@@ -2,7 +2,11 @@
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { FolderOpen } from 'lucide-react';
-import { FolderHistory } from '@/hooks/document-browser/types';
+
+interface FolderHistory {
+  id: string;
+  name: string;
+}
 
 interface FolderBreadcrumbProps {
   currentFolder: string;
@@ -43,7 +47,7 @@ const FolderBreadcrumb: React.FC<FolderBreadcrumbProps> = ({
         </React.Fragment>
       ))}
       
-      {currentFolder && folderHistory.length === 0 && (
+      {currentFolder && !folderHistory.length && (
         <>
           <span className="mx-1">/</span>
           <span className="text-muted-foreground">Current Folder</span>

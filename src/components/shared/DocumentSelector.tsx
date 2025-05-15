@@ -158,8 +158,9 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
             <FolderBreadcrumb
               currentFolder={currentFolder}
               folderHistory={folderHistory}
-              navigateToFolder={navigateToFolder}
-              navigateToRoot={navigateToRoot}
+              navigateToFolder={(folderId: string, historyIndex?: number) => 
+                navigateToFolder(folderId, historyIndex)}
+              navigateToRoot={() => navigateToRoot()}
             />
           
             {/* File grid */}
