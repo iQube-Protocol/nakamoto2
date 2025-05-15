@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Button } from '@/components/ui/button';
 import {
@@ -162,7 +161,7 @@ const DocumentSelector: React.FC<DocumentSelectorProps> = ({
               folderHistory={folderHistory}
               navigateToFolder={(folder: DocumentFolder, historyIndex?: number) => 
                 navigateToFolder(folder)}
-              navigateToRoot={() => navigateToRoot()}
+              navigateToRoot={navigateToRoot}
             />
           
             {/* File grid */}
