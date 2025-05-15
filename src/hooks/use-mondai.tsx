@@ -14,12 +14,21 @@ export function useMondAI() {
   const { addDocumentToContext } = useDocumentLoading();
   const { client: mcpClient, isInitialized, reinitializeClient } = useMCP();
   const contextInitialized = useRef<boolean>(false);
+  const contextInitPromise = useRef<Promise<void> | null>(null);
   
-  // Initialize MCP context when conversation changes
+  // Initialize MCP context when conversation changes with deduplication
   useEffect(() => {
     if (conversationId && mcpClient && isInitialized && !contextInitialized.current) {
+      // If we already have a pending initialization, don't start another
+      if (contextInitPromise.current) {
+        console.log(`MonDAI: Context initialization already in progress for ${conversationId}`);
+        return;
+      }
+
       console.log(`MonDAI: Initializing MCP context for conversation ID ${conversationId}`);
-      mcpClient.initializeContext(conversationId)
+      
+      // Create and store the initialization promise
+      contextInitPromise.current = mcpClient.initializeContext(conversationId)
         .then(() => {
           console.log(`MonDAI: Successfully initialized context for conversation ${conversationId}`);
           contextInitialized.current = true;
@@ -27,9 +36,10 @@ export function useMondAI() {
         })
         .catch(error => {
           console.error(`MonDAI: Failed to initialize context for conversation ${conversationId}:`, error);
-          toast.error('Failed to initialize document context', {
-            description: 'Try refreshing the page or adding documents again'
-          });
+          // Don't show toast here - too disruptive and not critical for user
+        })
+        .finally(() => {
+          contextInitPromise.current = null;
         });
     } else if (conversationId) {
       console.log(`MonDAI: Conversation ID available (${conversationId}) but MCP not ready:`,
@@ -37,7 +47,45 @@ export function useMondAI() {
     }
   }, [conversationId, mcpClient, isInitialized]);
   
-  // Handle AI message submission with retry and robust error handling
+  // Throttled context initialization function
+  const initializeContextIfNeeded = useCallback(async () => {
+    if (!mcpClient || !conversationId) {
+      return false;
+    }
+    
+    if (contextInitialized.current) {
+      return true;
+    }
+    
+    // If we already have a pending initialization, wait for it
+    if (contextInitPromise.current) {
+      try {
+        await contextInitPromise.current;
+        return true;
+      } catch (error) {
+        return false;
+      }
+    }
+    
+    try {
+      // Create new initialization promise
+      contextInitPromise.current = mcpClient.initializeContext(conversationId)
+        .then(() => {
+          contextInitialized.current = true;
+          console.log(`MonDAI: Late-initialized context for conversation ${conversationId}`);
+        });
+      
+      await contextInitPromise.current;
+      contextInitPromise.current = null;
+      return true;
+    } catch (error) {
+      contextInitPromise.current = null;
+      console.error('MonDAI: Failed to late-initialize context:', error);
+      return false;
+    }
+  }, [mcpClient, conversationId]);
+  
+  // Handle AI message submission with throttling to prevent hammering the API
   const handleAIMessage = useCallback(
     async (message: string): Promise<AgentMessage> => {
       if (!message.trim()) return {
@@ -48,31 +96,18 @@ export function useMondAI() {
         metadata: { status: 'error' }
       };
       
-      // Ensure context is initialized
-      if (mcpClient && conversationId && !contextInitialized.current) {
-        try {
-          await mcpClient.initializeContext(conversationId);
-          console.log(`MonDAI: Late-initialized context for conversation ${conversationId}`);
-          contextInitialized.current = true;
-        } catch (error) {
-          console.error('MonDAI: Failed to late-initialize context:', error);
-          // Continue anyway, as we might still be able to handle the message
-        }
-      }
+      // Try to ensure context is initialized, but don't block if it fails
+      await initializeContextIfNeeded().catch(() => {});
       
       setIsLoading(true);
       try {
         console.log(`MonDAI: Sending message to AI service, conversation: ${conversationId}`);
         
-        // Add message to context if MCP is available
+        // Add message to context if MCP is available - don't await this
         if (mcpClient && conversationId && contextInitialized.current) {
-          try {
-            await mcpClient.addUserMessage(message);
-            console.log('MonDAI: Added user message to MCP context');
-          } catch (error) {
-            console.error('MonDAI: Failed to add message to context:', error);
-            // Non-fatal, continue with request
-          }
+          mcpClient.addUserMessage(message)
+            .then(() => console.log('MonDAI: Added user message to MCP context'))
+            .catch(error => console.error('MonDAI: Failed to add message to context:', error));
         }
         
         // Make request to Supabase Edge Function
@@ -95,15 +130,11 @@ export function useMondAI() {
         
         console.log('MonDAI: Received response from AI service');
         
-        // Add response to context if MCP is available
+        // Add response to context if MCP is available - don't await this
         if (mcpClient && conversationId && contextInitialized.current && data.response) {
-          try {
-            await mcpClient.addAgentResponse(data.response);
-            console.log('MonDAI: Added agent response to MCP context');
-          } catch (error) {
-            console.error('MonDAI: Failed to add response to context:', error);
-            // Non-fatal, continue with response handling
-          }
+          mcpClient.addAgentResponse(data.response)
+            .then(() => console.log('MonDAI: Added agent response to MCP context'))
+            .catch(error => console.error('MonDAI: Failed to add response to context:', error));
         }
         
         return {
@@ -144,7 +175,7 @@ export function useMondAI() {
         setIsLoading(false);
       }
     },
-    [conversationId, mcpClient, contextInitialized]
+    [conversationId, mcpClient, initializeContextIfNeeded]
   );
   
   // Document context update handler with improved error handling
@@ -161,36 +192,24 @@ export function useMondAI() {
           return;
         }
         
-        // If MCP client isn't initialized, try to reinitialize
-        if (!mcpClient || !isInitialized) {
-          toast.info('Initializing document system...', {
-            duration: 3000
-          });
-          
-          // Try to reinitialize
-          const success = reinitializeClient();
-          if (!success) {
-            throw new Error('Could not initialize document system');
-          }
-          
-          // Allow time for initialization
-          await new Promise(resolve => setTimeout(resolve, 1000));
-        }
+        // Try to initialize context first
+        await initializeContextIfNeeded();
         
-        // Make sure context is initialized for this conversation
-        if (mcpClient && !contextInitialized.current) {
-          await mcpClient.initializeContext(conversationId);
-          contextInitialized.current = true;
-          console.log(`MonDAI: Late-initialized context for conversation ${conversationId}`);
-        }
-        
-        // Add document to context
-        await addDocumentToContext(document, conversationId);
-        
-        // Increment document updates to trigger refresh
-        setDocumentUpdates(prev => prev + 1);
-        
-        console.log(`MonDAI: Document ${document.name} added to context`);
+        // Add document to context - with a short timeout to not block UI
+        setTimeout(() => {
+          addDocumentToContext(document, conversationId)
+            .then(() => {
+              // Increment document updates to trigger refresh
+              setDocumentUpdates(prev => prev + 1);
+              console.log(`MonDAI: Document ${document.name} added to context`);
+            })
+            .catch(error => {
+              console.error('Error in handleDocumentContextUpdated:', error);
+              toast.error('Failed to add document to context', {
+                description: error instanceof Error ? error.message : 'Unknown error'
+              });
+            });
+        }, 100);
       } catch (error) {
         console.error('Error in handleDocumentContextUpdated:', error);
         toast.error('Failed to add document to context', {
@@ -198,7 +217,7 @@ export function useMondAI() {
         });
       }
     },
-    [conversationId, mcpClient, isInitialized, reinitializeClient, addDocumentToContext]
+    [conversationId, addDocumentToContext, initializeContextIfNeeded]
   );
   
   return {

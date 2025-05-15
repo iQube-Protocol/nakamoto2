@@ -12,57 +12,31 @@ export const checkApiHealth = async (
   try {
     console.log(`Testing connection to ${endpoint}`);
     
-    // First try: Simple fetch with no-cors mode to check if the server is reachable
-    const healthEndpoint = endpoint.replace('/sse', '/health') || endpoint;
+    // Use a simple fetch with timeout
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 2000); // 2 second timeout
     
     try {
+      const healthEndpoint = endpoint.replace('/sse', '/health') || endpoint;
+      
       const response = await fetch(healthEndpoint, {
         method: 'HEAD',
-        mode: 'no-cors',
         headers,
-        cache: 'no-cache'
+        cache: 'no-cache',
+        signal: controller.signal
       });
       
-      // If we get here, at least the server responded
-      console.log('Server responded to HEAD request');
-      return true;
+      clearTimeout(timeoutId);
+      
+      // If we get a response, the endpoint is reachable
+      console.log(`Health check response: ${response.status}`);
+      return response.ok || response.status === 200;
     } catch (fetchError) {
-      console.log('HEAD request failed, trying websocket check');
+      clearTimeout(timeoutId);
+      console.log('HEAD request failed:', fetchError);
       
-      // Try using WebSocket as a fallback to check connectivity
-      return new Promise((resolve) => {
-        // Extract hostname and create WebSocket URL
-        try {
-          const url = new URL(endpoint);
-          const wsUrl = `${url.protocol === 'https:' ? 'wss' : 'ws'}://${url.hostname}/health`;
-          
-          const ws = new WebSocket(wsUrl);
-          
-          // Set timeout to close connection after 2 seconds
-          const timeout = setTimeout(() => {
-            ws.close();
-            console.log('WebSocket connection timed out');
-            resolve(false);
-          }, 2000);
-          
-          ws.onopen = () => {
-            clearTimeout(timeout);
-            ws.close();
-            console.log('WebSocket connection successful');
-            resolve(true);
-          };
-          
-          ws.onerror = () => {
-            clearTimeout(timeout);
-            ws.close();
-            console.log('WebSocket connection failed');
-            resolve(false);
-          };
-        } catch (wsError) {
-          console.log('WebSocket connection attempt failed', wsError);
-          resolve(false);
-        }
-      });
+      // Consider endpoints unreachable after timeout
+      return false;
     }
   } catch (error) {
     console.error('KBAI health check error:', error);
@@ -90,85 +64,113 @@ export const connectToSSE = async (options: {
     if (query) url.searchParams.append('query', query);
     if (limit) url.searchParams.append('limit', limit.toString());
 
-    // Use standard fetch with SSE processing instead of EventSource
-    const response = await fetch(url.toString(), {
-      method: 'GET',
-      headers: {
-        ...headers,
-        'Accept': 'text/event-stream',
-        'Cache-Control': 'no-cache'
-      }
-    });
-
-    if (!response.ok) {
-      throw new Error(`SSE connection failed: ${response.status} ${response.statusText}`);
-    }
-
-    if (!response.body) {
-      throw new Error('Response body is null');
-    }
-
-    // Process SSE response
-    const results: any[] = [];
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = "";
-    let reading = true;
-
-    // Read 3 seconds maximum
+    // Use AbortController for timeout
+    const controller = new AbortController();
     const timeoutId = setTimeout(() => {
-      reading = false;
-      console.log('SSE reading timed out after 3 seconds');
+      controller.abort();
+      console.log('SSE request timed out after 3 seconds');
     }, 3000);
 
-    while (reading) {
-      const { done, value } = await reader.read();
-      
-      if (done) {
-        clearTimeout(timeoutId);
-        break;
+    try {
+      // Use standard fetch with SSE processing
+      const response = await fetch(url.toString(), {
+        method: 'GET',
+        headers: {
+          ...headers,
+          'Accept': 'text/event-stream',
+          'Cache-Control': 'no-cache'
+        },
+        signal: controller.signal
+      });
+
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        throw new Error(`SSE connection failed: ${response.status} ${response.statusText}`);
       }
 
-      // Append to buffer and process
-      buffer += decoder.decode(value, { stream: true });
-      
-      // Process complete SSE messages
-      const messages = buffer.split('\n\n');
-      buffer = messages.pop() || ''; // Keep the last incomplete message in buffer
+      if (!response.body) {
+        throw new Error('Response body is null');
+      }
 
-      for (const message of messages) {
-        if (!message.trim()) continue;
+      // Process SSE response
+      const results: any[] = [];
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let reading = true;
+
+      // Set another timeout for the reading process
+      const readTimeoutId = setTimeout(() => {
+        reading = false;
+        console.log('SSE reading timed out after 2 seconds');
+        // If we have some results already, consider it successful
+        if (results.length > 0) {
+          console.log(`Got partial results (${results.length}) before timeout`);
+        }
+      }, 2000);
+
+      while (reading) {
+        const { done, value } = await reader.read();
         
-        const lines = message.split('\n');
-        const eventData = lines
-          .filter(line => line.startsWith('data:'))
-          .map(line => line.slice(5).trim())
-          .join('');
+        if (done) {
+          clearTimeout(readTimeoutId);
+          break;
+        }
 
-        if (eventData) {
-          try {
-            const data = JSON.parse(eventData);
-            if (Array.isArray(data)) {
-              results.push(...data);
-            } else {
-              results.push(data);
+        // Append to buffer and process
+        buffer += decoder.decode(value, { stream: true });
+        
+        // Process complete SSE messages
+        const messages = buffer.split('\n\n');
+        buffer = messages.pop() || ''; // Keep the last incomplete message in buffer
+
+        for (const message of messages) {
+          if (!message.trim()) continue;
+          
+          const lines = message.split('\n');
+          const eventData = lines
+            .filter(line => line.startsWith('data:'))
+            .map(line => line.slice(5).trim())
+            .join('');
+
+          if (eventData) {
+            try {
+              const data = JSON.parse(eventData);
+              if (Array.isArray(data)) {
+                results.push(...data);
+              } else {
+                results.push(data);
+              }
+            } catch (e) {
+              console.error('Failed to parse SSE data', eventData);
             }
-          } catch (e) {
-            console.error('Failed to parse SSE data', eventData);
           }
+        }
+
+        // If we got enough results, stop reading
+        if (results.length >= limit) {
+          clearTimeout(readTimeoutId);
+          reading = false;
+          break;
         }
       }
 
-      // If we got enough results or we've been reading too long
-      if (results.length >= limit) {
-        clearTimeout(timeoutId);
-        reading = false;
-        break;
+      console.log(`SSE connection successful, received ${results.length} items`);
+      
+      // Return whatever results we have, even if we timed out
+      return results;
+    } catch (error) {
+      clearTimeout(timeoutId);
+      
+      // If aborted due to timeout, return a friendly error
+      if (error.name === 'AbortError') {
+        console.log('SSE connection was aborted due to timeout');
+        throw new Error('Connection timed out');
       }
+      
+      throw error;
     }
-
-    console.log(`SSE connection successful, received ${results.length} items`);
-    return results;
   } catch (error) {
     console.error('SSE connection error:', error);
     throw error;
