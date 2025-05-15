@@ -1,4 +1,3 @@
-
 import { MCPClientOptions, MCPContext, DocumentMetadata } from './types';
 import { GoogleDriveService } from './GoogleDriveService';
 import { ContextService } from './context';
@@ -236,16 +235,6 @@ let mcpClientInstance: MCPClient | null = null;
  * Get the global MCP client instance
  */
 export const getMCPClient = (options?: MCPClientOptions): MCPClient => {
-  // Force creating a new instance if requested
-  if (options?.forceNewInstance) {
-    console.log("Creating new MCP client instance (forced)");
-    if (mcpClientInstance) {
-      mcpClientInstance.reset();
-    }
-    mcpClientInstance = new MCPClient(options);
-    return mcpClientInstance;
-  }
-  
   if (!mcpClientInstance) {
     console.log("Creating new MCP client instance");
     mcpClientInstance = new MCPClient(options);
