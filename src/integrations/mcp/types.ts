@@ -25,7 +25,7 @@ export interface MCPContext {
     source?: 'google-drive' | 'local' | 'other';
     metisActive?: boolean;
   };
-  timestamp: string; // Required timestamp
+  timestamp: string; // Required timestamp field
 }
 
 export interface MCPClientOptions {

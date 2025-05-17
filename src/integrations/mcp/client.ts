@@ -1,3 +1,4 @@
+
 import { MCPClientOptions, MCPContext, DocumentMetadata } from './types';
 import { GoogleDriveService } from './GoogleDriveService';
 import { ContextService } from './context';
@@ -24,7 +25,7 @@ export class MCPClient {
     // Initialize services
     this.apiService = new MCPApiService(options.serverUrl, options.authToken);
     this.driveService = new GoogleDriveService();
-    this.contextService = new ContextService(options.metisActive || false, this.debug);
+    this.contextService = new ContextService(options.metisActive || false);
     this.documentService = new MCPDocumentService(this.driveService, this.debug);
     
     if (this.debug) {

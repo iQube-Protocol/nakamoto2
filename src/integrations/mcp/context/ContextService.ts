@@ -69,7 +69,8 @@ export class ContextService {
           modelPreference: "gpt-4o-mini",
           metisActive: this.metisActive,
           source: 'google-drive'
-        }
+        },
+        timestamp: new Date().toISOString() // Add the required timestamp field
       };
       
       console.log(`Created new conversation context with ID: ${newConversationId}`);
