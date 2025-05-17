@@ -6,7 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Form, FormField, FormItem, FormLabel, FormControl, FormDescription, FormMessage } from "@/components/ui/form";
 import { Settings, WifiOff } from "lucide-react";
 import { useForm } from "react-hook-form";
-import { toast } from 'sonner';
+import { sonnerToast as toast } from '@/hooks/use-toast';
 import { getKBAIDirectService } from '@/integrations/kbai/KBAIDirectService';
 
 interface KBAIServerConfigProps {

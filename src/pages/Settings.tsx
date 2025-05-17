@@ -5,7 +5,7 @@ import IQubeSelector from '@/components/settings/IQubeSelector';
 import IQubeActivationManager from '@/components/settings/IQubeActivationManager';
 import AgentRecommendationHandler from '@/components/settings/AgentRecommendationHandler';
 import SettingsContainer from '@/components/settings/SettingsContainer';
-import { toast } from 'sonner';
+import { sonnerToast as toast } from '@/hooks/use-toast';
 import { useMetisAgent } from '@/hooks/use-metis-agent';
 
 const Settings = () => {

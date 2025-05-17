@@ -179,5 +179,5 @@ function useToast() {
   };
 }
 
-// Export both our custom toast and the sonner toast
-export { useToast, toast, sonnerToast as toast };
+// Export our custom toast hook and the sonner toast function with a different name
+export { useToast, toast, sonnerToast };

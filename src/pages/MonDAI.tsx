@@ -1,9 +1,8 @@
-
 import React, { useEffect, useState } from 'react';
 import { AgentInterface } from '@/components/shared/agent';
 import { useKnowledgeBase } from '@/hooks/mcp/useKnowledgeBase';
 import { useMondAI } from '@/hooks/use-mondai';
-import { toast } from 'sonner';
+import { sonnerToast as toast } from '@/hooks/use-toast';
 import { Button } from '@/components/ui/button';
 import { Loader2, RefreshCw, Settings } from 'lucide-react';
 import { getKBAIDirectService, KBAIServerSettings } from '@/integrations/kbai/KBAIDirectService';
