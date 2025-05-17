@@ -5,6 +5,7 @@ import { ContextService } from './context';
 import { MCPApiService } from './services/MCPApiService';
 import { MCPDocumentService } from './services/MCPDocumentService';
 import { toast } from 'sonner';
+import { triggerDocumentRecovery } from '@/components/shared/agent/document/utils/documentOperations';
 
 export { type MCPContext, type MCPClientOptions } from './types';
 
@@ -30,6 +31,11 @@ export class MCPClient {
       hasAuthToken: !!options.authToken,
       metisActive: options.metisActive
     });
+    
+    // Register document fetch function for content recovery
+    this.contextService.registerDocumentFetchFunction(
+      this.fetchDocumentContent.bind(this)
+    );
   }
   
   /**
@@ -138,6 +144,10 @@ export class MCPClient {
       
       if (!docInContext.content || docInContext.content.length === 0) {
         console.error(`Document ${documentName} added but content is empty!`);
+        
+        // Try to trigger recovery for this document
+        triggerDocumentRecovery(documentId, documentName, 'Empty content after addition');
+        
         throw new Error(`Document ${documentName} added with empty content`);
       }
       

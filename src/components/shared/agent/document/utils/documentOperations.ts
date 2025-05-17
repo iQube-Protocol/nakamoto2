@@ -22,54 +22,72 @@ export async function addDocumentToContext(
   
   console.log(`Adding document to context: ${document.name} (${document.id})`);
   
-  // Initialize the context with the conversation ID
-  await client.initializeContext(conversationId);
-  
-  // Fetch document content
-  const content = await fetchDocument(document.id);
-  if (!content) {
-    throw new Error('Failed to fetch document content');
-  }
-  
-  console.log(`Document content fetched, length: ${content.length}`);
-  
-  // Extract document type from mimeType
-  const documentType = document.mimeType.split('/').pop() || 'unknown';
-  
-  // Add to model context
-  console.log(`Adding document to MCP context: ${document.name}, type: ${documentType}`);
-  client.addDocumentToContext(
-    document.id,
-    document.name,
-    documentType,
-    content
-  );
-  
-  // Verify the document was added to context
-  const updatedContext = client.getModelContext();
-  const docInContext = updatedContext?.documentContext?.find(d => d.documentId === document.id);
-  
-  if (docInContext) {
-    console.log(`Document successfully added to context. Content length: ${docInContext.content.length}`);
+  try {
+    // Initialize the context with the conversation ID
+    await client.initializeContext(conversationId);
     
-    // Double-check content
-    if (docInContext.content.length === 0) {
-      console.error("Document added but content is empty!");
-      throw new Error("Document content is empty after adding to context");
+    // Fetch document content
+    console.log(`Fetching content for document ${document.name}...`);
+    const content = await fetchDocument(document.id);
+    if (!content) {
+      throw new Error('Failed to fetch document content');
     }
-  } else {
-    console.error("Document not found in context after adding!");
-    throw new Error("Failed to add document to context");
+    
+    console.log(`Document content fetched, length: ${content.length}`);
+    
+    // Extract document type from mimeType
+    const documentType = document.mimeType.split('/').pop() || 'unknown';
+    
+    // Add to model context
+    console.log(`Adding document to MCP context: ${document.name}, type: ${documentType}`);
+    client.addDocumentToContext(
+      document.id,
+      document.name,
+      documentType,
+      content
+    );
+    
+    // Verify the document was added to context
+    const updatedContext = client.getModelContext();
+    const docInContext = updatedContext?.documentContext?.find(d => d.documentId === document.id);
+    
+    if (docInContext) {
+      console.log(`Document successfully added to context. Content length: ${docInContext.content.length}`);
+      
+      // Double-check content
+      if (docInContext.content.length === 0) {
+        console.error("Document added but content is empty!");
+        throw new Error("Document content is empty after adding to context");
+      }
+    } else {
+      console.error("Document not found in context after adding!");
+      throw new Error("Failed to add document to context");
+    }
+    
+    // Document with content for local tracking
+    return {
+      id: document.id,
+      name: document.name,
+      mimeType: document.mimeType,
+      content: content,
+      added: new Date().toISOString()
+    };
+  } catch (error) {
+    console.error(`Error adding document ${document.name} to context:`, error);
+    
+    // Check if it's a storage quota error
+    if (error instanceof Error && error.message.includes('storage')) {
+      toast.error('Storage limit exceeded', {
+        description: 'The document is too large to store in the browser. Try splitting it into smaller documents.'
+      });
+    } else {
+      toast.error('Failed to add document', {
+        description: error instanceof Error ? error.message : 'Unknown error'
+      });
+    }
+    
+    throw error;
   }
-  
-  // Document with content for local tracking will be added by the hook
-  
-  return {
-    id: document.id,
-    name: document.name,
-    mimeType: document.mimeType,
-    content: content
-  };
 }
 
 /**
@@ -80,7 +98,7 @@ export function removeDocumentFromContext(
   conversationId: string | null,
   documentId: string,
   documentName: string
-) {
+): boolean {
   try {
     console.log(`Removing document from context: ${documentId}`);
     
@@ -99,10 +117,15 @@ export function removeDocumentFromContext(
       } else {
         console.log(`Document ${documentName} successfully removed from context`);
       }
+      
+      if (removed) {
+        toast.success(`Document "${documentName}" removed from context`);
+      }
+      
+      return removed;
     }
     
-    toast.success(`Document "${documentName}" removed from context`);
-    return true;
+    return false;
   } catch (error) {
     console.error('Error removing document:', error);
     toast.error('Failed to remove document');
@@ -113,7 +136,7 @@ export function removeDocumentFromContext(
 /**
  * Loads document context from the MCP client
  */
-export async function loadDocumentsFromContext(client: any, conversationId: string | null) {
+export async function loadDocumentsFromContext(client: any, conversationId: string | null): Promise<any[]> {
   if (!client) {
     console.log("Cannot load document context: MCP client not available");
     return [];
@@ -129,36 +152,43 @@ export async function loadDocumentsFromContext(client: any, conversationId: stri
     await client.initializeContext(conversationId);
     console.log(`Context initialized for conversation ${conversationId}`);
     
+    // Get context and verify it exists
     const context = client.getModelContext();
     console.log("Loading document context. Context available:", !!context);
     
-    if (context?.documentContext) {
+    if (!context) {
+      console.warn('No context available after initialization');
+      return [];
+    }
+    
+    if (context.documentContext) {
       const docs = context.documentContext.map(doc => ({
         id: doc.documentId,
         name: doc.documentName,
         mimeType: `application/${doc.documentType}`,
-        content: doc.content
+        content: doc.content,
+        metadata: doc.metadata || {}
       }));
       
       if (docs.length === 0) {
         console.log("Document context is empty");
-      } else {
-        console.log(`Documents loaded: ${docs.length}`, docs.map(d => d.name));
-        
-        // Verify document content is loaded
-        let contentMissing = false;
-        docs.forEach((doc, index) => {
-          console.log(`Document ${index + 1}: ${doc.name}, Content length: ${doc.content?.length || 0}`);
-          if (!doc.content || doc.content.length === 0) {
-            console.warn(`⚠️ Document ${doc.name} has no content!`);
-            contentMissing = true;
-          }
-        });
-        
-        if (contentMissing) {
-          console.error("Some documents have missing content! Attempting recovery...");
-          // This isn't ideal but we'll try to work with what we have
+        return [];
+      }
+      
+      console.log(`Documents loaded: ${docs.length}`, docs.map(d => d.name));
+      
+      // Verify document content is loaded
+      let contentMissing = false;
+      docs.forEach((doc, index) => {
+        console.log(`Document ${index + 1}: ${doc.name}, Content length: ${doc.content?.length || 0}`);
+        if (!doc.content || doc.content.length === 0) {
+          console.warn(`⚠️ Document ${doc.name} has no content!`);
+          contentMissing = true;
         }
+      });
+      
+      if (contentMissing) {
+        console.error("Some documents have missing content!");
       }
       
       return docs;
@@ -178,9 +208,69 @@ export async function loadDocumentsFromContext(client: any, conversationId: stri
 /**
  * Dispatches a document context updated event
  */
-export function dispatchDocumentContextUpdated(documentId: string, action: string) {
+export function dispatchDocumentContextUpdated(documentId: string, action: string, details?: any): void {
+  if (typeof window === 'undefined') return;
+  
   const event = new CustomEvent('documentContextUpdated', { 
-    detail: { documentId, action } 
+    detail: { 
+      documentId, 
+      action,
+      timestamp: Date.now(),
+      ...details
+    } 
   });
+  
   window.dispatchEvent(event);
+  console.log(`Dispatched documentContextUpdated event for ${action} action on document ${documentId}`);
+}
+
+/**
+ * Trigger document content recovery
+ */
+export function triggerDocumentRecovery(documentId: string, documentName: string, reason: string): void {
+  if (typeof window === 'undefined') return;
+  
+  const event = new CustomEvent('documentContentRecoveryNeeded', { 
+    detail: { 
+      documentId,
+      documentName,
+      reason,
+      timestamp: Date.now()
+    } 
+  });
+  
+  window.dispatchEvent(event);
+  console.log(`Triggered recovery for document ${documentName}: ${reason}`);
+}
+
+/**
+ * Get estimated storage usage
+ */
+export function getStorageUsage(): { used: number, available: number, percentUsed: number } {
+  try {
+    let totalBytes = 0;
+    
+    // Calculate localStorage usage
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key) {
+        const value = localStorage.getItem(key) || '';
+        totalBytes += (key.length + value.length) * 2; // Unicode characters ~2 bytes each
+      }
+    }
+    
+    // Estimate available space (5MB is common limit)
+    const estimatedLimit = 5 * 1024 * 1024;
+    const remainingBytes = Math.max(0, estimatedLimit - totalBytes);
+    const percentUsed = (totalBytes / estimatedLimit) * 100;
+    
+    return {
+      used: totalBytes,
+      available: remainingBytes,
+      percentUsed
+    };
+  } catch (e) {
+    console.error('Error calculating storage usage:', e);
+    return { used: 0, available: 0, percentUsed: 0 };
+  }
 }
