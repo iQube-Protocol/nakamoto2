@@ -5,7 +5,9 @@ import { useKnowledgeBase } from '@/hooks/mcp/useKnowledgeBase';
 import { useMondAI } from '@/hooks/use-mondai';
 import { toast } from 'sonner';
 import { Button } from '@/components/ui/button';
-import { Loader2, RefreshCw } from 'lucide-react';
+import { Loader2, RefreshCw, Settings } from 'lucide-react';
+import { getKBAIDirectService, KBAIServerSettings } from '@/integrations/kbai/KBAIDirectService';
+import { KBAIServerConfig } from '@/components/shared/agent/KBAIServerConfig';
 
 // Extend the agent service to support 'mondai' type
 declare module '@/services/agent-service' {
@@ -26,6 +28,11 @@ const MonDAI = () => {
   
   // Track manual retry attempts
   const [isRetrying, setIsRetrying] = useState(false);
+  const [serverConfig, setServerConfig] = useState<KBAIServerSettings>(() => {
+    // Initialize from the service
+    const kbaiService = getKBAIDirectService();
+    return kbaiService.getServerConfig();
+  });
   
   // Initialize knowledge base
   const { 
@@ -35,6 +42,12 @@ const MonDAI = () => {
     connectionStatus,
     isLoading: kbLoading
   } = useKnowledgeBase();
+
+  // Handle server config updates
+  const handleConfigUpdate = (config: KBAIServerSettings) => {
+    setServerConfig(config);
+    // The service will already be updated from within the config component
+  };
 
   // Set fullscreen mode effect for mobile
   useEffect(() => {
@@ -140,6 +153,11 @@ const MonDAI = () => {
               {/* This is empty space for alignment */}
             </div>
             <div className="flex items-center gap-2">
+              <KBAIServerConfig 
+                onConfigUpdate={handleConfigUpdate}
+                currentSettings={serverConfig}
+              />
+            
               {(connectionStatus === 'error' || connectionStatus === 'disconnected') && (
                 <Button 
                   variant="outline" 

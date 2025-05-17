@@ -6,11 +6,16 @@ import { getFallbackItems } from './utils/fallbackData';
 import { CacheManager } from './utils/cacheManager';
 import { toast } from 'sonner';
 
-// KBAI MCP server endpoint and credentials
-// Using a more compatible endpoint format without the trailing slash
-const KBAI_MCP_ENDPOINT = 'https://api.kbai.org/MCP/sse';
-const KBAI_AUTH_TOKEN = '85abed95769d4b2ea1cb6bfaa8a67193';
-const KBAI_KB_TOKEN = 'KB00000001_CRPTMONDS';
+// KBAI MCP server default settings
+const DEFAULT_KBAI_MCP_ENDPOINT = 'https://api.kbai.org/MCP/sse';
+const DEFAULT_KBAI_AUTH_TOKEN = '85abed95769d4b2ea1cb6bfaa8a67193';
+const DEFAULT_KBAI_KB_TOKEN = 'KB00000001_CRPTMONDS';
+
+export interface KBAIServerSettings {
+  serverUrl: string;
+  authToken: string;
+  kbToken: string;
+}
 
 /**
  * Service for direct communication with KBAI MCP server via SSE
@@ -25,7 +30,17 @@ export class KBAIDirectService {
   private connectionCooldown = 5000; // 5 seconds between connection attempts (reduced)
   private useFallbackMode = false; // Flag to indicate if we should use fallback mode
   
+  // Server configuration
+  private serverUrl: string;
+  private authToken: string;
+  private kbToken: string;
+
   constructor() {
+    // Try to get settings from local storage or use defaults
+    this.serverUrl = localStorage.getItem('kbai_server_url') || DEFAULT_KBAI_MCP_ENDPOINT;
+    this.authToken = localStorage.getItem('kbai_auth_token') || DEFAULT_KBAI_AUTH_TOKEN;
+    this.kbToken = localStorage.getItem('kbai_kb_token') || DEFAULT_KBAI_KB_TOKEN;
+
     this.cacheManager = new CacheManager();
     this.retryService = new RetryService({
       maxRetries: 2, // Reduced number of retries
@@ -50,12 +65,44 @@ export class KBAIDirectService {
   }
 
   /**
+   * Update server configuration
+   */
+  public updateServerConfig(config: KBAIServerSettings): void {
+    this.serverUrl = config.serverUrl;
+    this.authToken = config.authToken;
+    this.kbToken = config.kbToken;
+    
+    // Reset connection state when config changes
+    this.connectionStatus = 'disconnected';
+    this.connectionAttempts = 0;
+    this.useFallbackMode = false;
+    
+    // Store in local storage for persistence
+    localStorage.setItem('kbai_server_url', config.serverUrl);
+    localStorage.setItem('kbai_auth_token', config.authToken);
+    localStorage.setItem('kbai_kb_token', config.kbToken);
+    
+    console.log('KBAI server configuration updated');
+  }
+  
+  /**
+   * Get current server configuration
+   */
+  public getServerConfig(): KBAIServerSettings {
+    return {
+      serverUrl: this.serverUrl,
+      authToken: this.authToken,
+      kbToken: this.kbToken
+    };
+  }
+
+  /**
    * Get authentication headers for KBAI API requests
    */
   private getAuthHeaders(): Record<string, string> {
     return {
-      'x-auth-token': KBAI_AUTH_TOKEN,
-      'x-kb-token': KBAI_KB_TOKEN
+      'x-auth-token': this.authToken,
+      'x-kb-token': this.kbToken
     };
   }
 
@@ -82,8 +129,9 @@ export class KBAIDirectService {
       this.connectionStatus = 'connecting';
       
       console.log(`Performing KBAI API health check at ${new Date().toISOString()}`);
+      console.log(`Using server URL: ${this.serverUrl}`);
       
-      const isHealthy = await checkApiHealth(KBAI_MCP_ENDPOINT, this.getAuthHeaders());
+      const isHealthy = await checkApiHealth(this.serverUrl, this.getAuthHeaders());
       
       this.connectionStatus = isHealthy ? 'connected' : 'error';
       console.log(`KBAI health check result: ${isHealthy ? 'healthy' : 'unhealthy'}`);
@@ -170,7 +218,7 @@ export class KBAIDirectService {
         console.log('Attempting SSE connection to KBAI server...');
         const items = await this.retryService.execute(() => 
           connectToSSE({
-            endpoint: KBAI_MCP_ENDPOINT,
+            endpoint: this.serverUrl,
             headers: this.getAuthHeaders(),
             ...options
           })
