@@ -19,6 +19,11 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ agentType }) => {
   
   const agentKnowledgeItems = getAgentKnowledgeItems();
   
+  // Create a handler function that will call fetchKnowledgeItems with forceRefresh=true
+  const handleRefreshClick = (e: React.MouseEvent<HTMLButtonElement>) => {
+    fetchKnowledgeItems(true);
+  };
+  
   return (
     <div className="flex flex-col h-[400px] overflow-hidden">
       <div className="mb-4 flex justify-between items-center">
@@ -27,7 +32,7 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ agentType }) => {
           variant="ghost" 
           size="sm" 
           className="flex gap-1 items-center"
-          onClick={fetchKnowledgeItems}
+          onClick={handleRefreshClick}
           disabled={isLoading}
         >
           {isLoading ? 
@@ -57,8 +62,10 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ agentType }) => {
                     className="p-2 border rounded-md hover:bg-accent cursor-pointer"
                   >
                     <h4 className="font-medium">{item.title}</h4>
-                    {item.description && (
-                      <p className="text-xs text-muted-foreground">{item.description}</p>
+                    {item.content && (
+                      <p className="text-xs text-muted-foreground">
+                        {item.content.length > 100 ? `${item.content.substring(0, 100)}...` : item.content}
+                      </p>
                     )}
                   </div>
                 ))}
