@@ -1,64 +1,92 @@
 
 /**
- * Options for configuring the retry service
+ * Utility service for handling API retries with exponential backoff
  */
-interface RetryOptions {
+export interface RetryOptions {
   maxRetries: number;
   baseDelay: number;
-  maxDelay: number;
+  maxDelay?: number;
+  exponentialFactor?: number;
   retryCondition?: (error: any) => boolean;
 }
 
-/**
- * Service for handling retries with exponential backoff
- */
 export class RetryService {
-  private options: RetryOptions;
-  
+  private maxRetries: number;
+  private baseDelay: number;
+  private maxDelay: number;
+  private exponentialFactor: number;
+  private retryCondition?: (error: any) => boolean;
+
   constructor(options: RetryOptions) {
-    this.options = {
-      maxRetries: 3,
-      baseDelay: 300,
-      maxDelay: 5000,
-      ...options
-    };
+    this.maxRetries = options.maxRetries;
+    this.baseDelay = options.baseDelay;
+    this.maxDelay = options.maxDelay || 30000; // Default max delay: 30 seconds
+    this.exponentialFactor = options.exponentialFactor || 2; // Default exponential factor
+    this.retryCondition = options.retryCondition;
   }
-  
+
   /**
    * Execute a function with retry logic
+   * @param fn The async function to execute with retry logic
+   * @returns The result of the function
    */
   async execute<T>(fn: () => Promise<T>): Promise<T> {
-    let lastError: any;
-    let attempt = 0;
-    
-    while (attempt <= this.options.maxRetries) {
+    let retries = 0;
+    let lastError: Error | null = null;
+
+    while (retries <= this.maxRetries) {
       try {
-        if (attempt > 0) {
-          console.log(`Retry attempt ${attempt} of ${this.options.maxRetries}`);
-        }
         return await fn();
       } catch (error) {
-        lastError = error;
-        attempt++;
+        lastError = error instanceof Error ? error : new Error(String(error));
         
-        // Check if we should retry based on the error
-        if (attempt > this.options.maxRetries || 
-           (this.options.retryCondition && !this.options.retryCondition(error))) {
+        // Check if we should retry based on the custom retry condition
+        if (this.retryCondition && !this.retryCondition(error)) {
+          console.log(`Retry condition not met, will not retry`);
           break;
         }
         
+        if (retries === this.maxRetries) {
+          console.log(`Maximum retries (${this.maxRetries}) reached, giving up`);
+          break; // Max retries reached, will throw the error after loop
+        }
+
         // Calculate delay with exponential backoff and jitter
         const delay = Math.min(
-          this.options.baseDelay * Math.pow(2, attempt - 1) * (0.9 + Math.random() * 0.2),
-          this.options.maxDelay
+          this.baseDelay * Math.pow(this.exponentialFactor, retries) + Math.random() * 1000,
+          this.maxDelay
         );
         
-        console.log(`Retrying after ${delay.toFixed(0)}ms due to error:`, error);
-        
+        console.log(`Retry attempt ${retries + 1}/${this.maxRetries} after ${Math.round(delay)}ms`);
         await new Promise(resolve => setTimeout(resolve, delay));
+        retries++;
       }
     }
+
+    // If we get here, all retries have failed
+    throw lastError || new Error('Operation failed after maximum retry attempts');
+  }
+  
+  /**
+   * Check if an operation should be retried based on its error
+   * @param error The error to check
+   * @returns Whether the operation should be retried
+   */
+  shouldRetry(error: any): boolean {
+    if (this.retryCondition) {
+      return this.retryCondition(error);
+    }
     
-    throw lastError;
+    // Default retry logic - retry on network errors or 5xx server errors
+    // but not on 4xx client errors or other specific errors
+    if (error instanceof TypeError && error.message.includes('NetworkError')) {
+      return true;
+    }
+    
+    if (error.status && error.status >= 500 && error.status < 600) {
+      return true;
+    }
+    
+    return false;
   }
 }

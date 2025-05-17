@@ -1,175 +1,233 @@
 
-/**
- * Check if the API is healthy by testing a simple connection
- * @param endpoint The API endpoint to check
- * @param headers Authentication headers to use
- * @returns Whether the endpoint is healthy
- */
-export const checkApiHealth = async (
-  endpoint: string, 
-  headers: Record<string, string>
-): Promise<boolean> => {
-  try {
-    console.log(`Testing connection to ${endpoint}`);
-    
-    // First try: Simple fetch with no-cors mode to check if the server is reachable
-    const healthEndpoint = endpoint.replace('/sse', '/health') || endpoint;
-    
-    try {
-      const response = await fetch(healthEndpoint, {
-        method: 'HEAD',
-        mode: 'no-cors',
-        headers,
-        cache: 'no-cache'
-      });
-      
-      // If we get here, at least the server responded
-      console.log('Server responded to HEAD request');
-      return true;
-    } catch (fetchError) {
-      console.log('HEAD request failed, trying websocket check');
-      
-      // Try using WebSocket as a fallback to check connectivity
-      return new Promise((resolve) => {
-        // Extract hostname and create WebSocket URL
-        try {
-          const url = new URL(endpoint);
-          const wsUrl = `${url.protocol === 'https:' ? 'wss' : 'ws'}://${url.hostname}/health`;
-          
-          const ws = new WebSocket(wsUrl);
-          
-          // Set timeout to close connection after 2 seconds
-          const timeout = setTimeout(() => {
-            ws.close();
-            console.log('WebSocket connection timed out');
-            resolve(false);
-          }, 2000);
-          
-          ws.onopen = () => {
-            clearTimeout(timeout);
-            ws.close();
-            console.log('WebSocket connection successful');
-            resolve(true);
-          };
-          
-          ws.onerror = () => {
-            clearTimeout(timeout);
-            ws.close();
-            console.log('WebSocket connection failed');
-            resolve(false);
-          };
-        } catch (wsError) {
-          console.log('WebSocket connection attempt failed', wsError);
-          resolve(false);
-        }
-      });
-    }
-  } catch (error) {
-    console.error('KBAI health check error:', error);
-    return false;
-  }
-};
+import { EventSourcePolyfill } from 'event-source-polyfill';
+import { KBAIKnowledgeItem } from '../index';
+import { toast } from 'sonner';
 
 /**
- * Connect to the KBAI server using SSE (Server-Sent Events)
- * @param options Connection options
- * @returns Array of knowledge items
+ * Connect to the KBAI server using Server-Sent Events
  */
-export const connectToSSE = async (options: {
+export interface SSEConnectionOptions {
   endpoint: string;
   headers: Record<string, string>;
   query?: string;
   limit?: number;
-}): Promise<any[]> => {
-  try {
-    const { endpoint, headers, query, limit = 10 } = options;
-    console.log(`Connecting to SSE endpoint: ${endpoint}`);
+  category?: string;
+  timeout?: number;
+}
 
-    // Build URL with query parameters
-    const url = new URL(endpoint);
-    if (query) url.searchParams.append('query', query);
-    if (limit) url.searchParams.append('limit', limit.toString());
-
-    // Use standard fetch with SSE processing instead of EventSource
-    const response = await fetch(url.toString(), {
-      method: 'GET',
-      headers: {
-        ...headers,
-        'Accept': 'text/event-stream',
-        'Cache-Control': 'no-cache'
-      }
+/**
+ * Connect to an SSE endpoint and handle incoming knowledge items
+ */
+export async function connectToSSE(options: SSEConnectionOptions): Promise<KBAIKnowledgeItem[]> {
+  return new Promise((resolve, reject) => {
+    const { 
+      endpoint, 
+      headers, 
+      query = '', 
+      limit = 10, 
+      category = '',
+      timeout = 20000 // 20 seconds timeout
+    } = options;
+    
+    // Construct query string with parameters
+    const params = new URLSearchParams();
+    if (query) params.append('query', query);
+    if (limit) params.append('limit', limit.toString());
+    if (category) params.append('category', category);
+    
+    const fullEndpoint = `${endpoint}?${params.toString()}`;
+    console.log('Connecting to SSE endpoint:', fullEndpoint);
+    
+    // Debug header info
+    console.log('Connection headers:', JSON.stringify({
+      'x-auth-token': headers['x-auth-token'] ? '[PRESENT]' : '[MISSING]',
+      'x-kb-token': headers['x-kb-token'] ? '[PRESENT]' : '[MISSING]'
+    }));
+    
+    // Set up EventSource with minimal headers
+    const eventSource = new EventSourcePolyfill(fullEndpoint, {
+      headers,
+      withCredentials: false, // Explicitly false for CORS
+      heartbeatTimeout: 15000 // 15 seconds heartbeat timeout
     });
-
-    if (!response.ok) {
-      throw new Error(`SSE connection failed: ${response.status} ${response.statusText}`);
-    }
-
-    if (!response.body) {
-      throw new Error('Response body is null');
-    }
-
-    // Process SSE response
-    const results: any[] = [];
-    const reader = response.body.getReader();
-    const decoder = new TextDecoder();
-    let buffer = "";
-    let reading = true;
-
-    const timeoutId = setTimeout(() => {
-      reading = false;
-      console.log('SSE reading timed out after 10 seconds');
-    }, 10000);
-
-    while (reading) {
-      const { done, value } = await reader.read();
-      
-      if (done) {
-        clearTimeout(timeoutId);
-        break;
-      }
-
-      // Append to buffer and process
-      buffer += decoder.decode(value, { stream: true });
-      
-      // Process complete SSE messages
-      const messages = buffer.split('\n\n');
-      buffer = messages.pop() || ''; // Keep the last incomplete message in buffer
-
-      for (const message of messages) {
-        if (!message.trim()) continue;
+    
+    const knowledgeItems: KBAIKnowledgeItem[] = [];
+    
+    // Set connection timeout
+    const connectionTimeout = setTimeout(() => {
+      if (eventSource.readyState !== eventSource.CLOSED) {
+        console.log(`SSE connection timed out after ${timeout/1000}s, closing connection`);
+        eventSource.close();
         
-        const lines = message.split('\n');
-        const eventData = lines
-          .filter(line => line.startsWith('data:'))
-          .map(line => line.slice(5).trim())
-          .join('');
-
-        if (eventData) {
-          try {
-            const data = JSON.parse(eventData);
-            if (Array.isArray(data)) {
-              results.push(...data);
-            } else {
-              results.push(data);
-            }
-          } catch (e) {
-            console.error('Failed to parse SSE data', eventData);
-          }
+        // If we have at least some items, consider it a partial success
+        if (knowledgeItems.length > 0) {
+          console.log(`Returning ${knowledgeItems.length} partial results due to timeout`);
+          resolve(knowledgeItems);
+        } else {
+          reject(new Error('SSE connection timed out without receiving any data'));
         }
       }
-
-      // If we got enough results or we've been reading too long
-      if (results.length >= limit) {
-        clearTimeout(timeoutId);
-        reading = false;
-        break;
+    }, timeout);
+    
+    // Set a shorter "initial data" timeout
+    const initialDataTimeout = setTimeout(() => {
+      if (knowledgeItems.length === 0 && eventSource.readyState !== eventSource.CLOSED) {
+        console.log('No initial data received within 8s, closing connection');
+        eventSource.close();
+        reject(new Error('No initial data received'));
       }
-    }
+    }, 8000);
+    
+    // Event handlers
+    eventSource.onopen = (event) => {
+      console.log('SSE connection opened successfully', event);
+    };
+    
+    eventSource.onmessage = (event) => {
+      try {
+        // Clear the initial data timeout as soon as we get a message
+        clearTimeout(initialDataTimeout);
+        console.log('Received SSE event data:', event.data);
+        
+        let data;
+        try {
+          data = JSON.parse(event.data);
+        } catch (parseError) {
+          console.warn('Failed to parse SSE event as JSON, trying alternative formats', parseError);
+          
+          // Try alternative format - some SSE servers send data differently
+          // Check if it's a string that needs further processing
+          if (typeof event.data === 'string' && event.data.includes('{')) {
+            const jsonStr = event.data.substring(event.data.indexOf('{'));
+            try {
+              data = JSON.parse(jsonStr);
+            } catch (e) {
+              console.error('Alternative parsing failed too:', e);
+              // Continue with event loop, don't add this item
+              return;
+            }
+          } else {
+            // If we can't parse it at all, just continue
+            return;
+          }
+        }
+        
+        // Transform raw data into KBAIKnowledgeItem
+        const item = transformKnowledgeItem(data);
+        knowledgeItems.push(item);
+        
+        // If we've reached the limit, close connection and resolve
+        if (knowledgeItems.length >= limit) {
+          console.log(`Received target number of items (${limit}), closing connection`);
+          clearTimeout(connectionTimeout);
+          clearTimeout(initialDataTimeout);
+          eventSource.close();
+          resolve(knowledgeItems);
+        }
+      } catch (error) {
+        console.error('Error processing SSE message:', error);
+      }
+    };
+    
+    eventSource.onerror = (error) => {
+      console.error('SSE connection error:', error);
+      clearTimeout(connectionTimeout);
+      clearTimeout(initialDataTimeout);
+      eventSource.close();
+      
+      // Always resolve with error to ensure the app continues to function
+      reject(new Error('SSE connection failed - possible CORS or network issue'));
+    };
+  });
+}
 
-    console.log(`SSE connection successful, received ${results.length} items`);
-    return results;
+/**
+ * Transform raw knowledge item from KBAI format
+ */
+export function transformKnowledgeItem(item: any): KBAIKnowledgeItem {
+  return {
+    id: item.id || `kb-${Date.now()}-${Math.floor(Math.random() * 1000)}`,
+    title: item.title || item.name || 'Untitled Knowledge Item',
+    content: item.content || item.text || item.description || '',
+    type: item.type || 'general',
+    source: item.source || 'KBAI',
+    relevance: item.relevance || item.score || 0.5,
+    timestamp: item.timestamp || new Date().toISOString()
+  };
+}
+
+/**
+ * Check the health of an API endpoint
+ */
+export async function checkApiHealth(
+  endpoint: string, 
+  headers: Record<string, string>
+): Promise<boolean> {
+  try {
+    console.log('Checking API health for endpoint:', endpoint);
+    
+    // First try a simple fetch with no-cors mode and minimal headers
+    try {
+      console.log('Attempting fetch with no-cors mode...');
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 5000);
+      
+      const response = await fetch(endpoint, {
+        method: 'HEAD',
+        headers: {
+          'x-auth-token': headers['x-auth-token'],
+          'x-kb-token': headers['x-kb-token']
+        },
+        signal: controller.signal,
+        mode: 'no-cors', // Try no-cors mode first
+      });
+      
+      clearTimeout(timeoutId);
+      console.log('No-cors request completed without error');
+      return true; // If no exception is thrown with no-cors, consider it a success
+    } catch (fetchError) {
+      console.error('No-cors fetch failed:', fetchError);
+      
+      // If the fetch failed, try WebSocket
+      if (window.WebSocket) {
+        try {
+          // Create a web socket URL by replacing http with ws
+          const wsEndpoint = endpoint.replace(/^http/, 'ws');
+          console.log('Attempting WebSocket connection to:', wsEndpoint);
+          
+          return new Promise((resolve) => {
+            const socket = new WebSocket(wsEndpoint);
+            
+            // Set a timeout for the WebSocket connection attempt
+            const timeout = setTimeout(() => {
+              console.log('WebSocket connection timeout');
+              socket.close();
+              resolve(false);
+            }, 5000);
+            
+            socket.onopen = () => {
+              console.log('WebSocket connection successful');
+              clearTimeout(timeout);
+              socket.close();
+              resolve(true);
+            };
+            
+            socket.onerror = (wsError) => {
+              console.log('WebSocket connection failed:', wsError);
+              clearTimeout(timeout);
+              resolve(false);
+            };
+          });
+        } catch (wsError) {
+          console.log('WebSocket connection setup failed:', wsError);
+          return false;
+        }
+      }
+      
+      return false;
+    }
   } catch (error) {
-    console.error('SSE connection error:', error);
-    throw error;
+    console.error('API health check failed:', error);
+    return false;
   }
-};
+}

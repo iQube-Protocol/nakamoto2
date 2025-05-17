@@ -1,14 +1,14 @@
 
-import { DocumentFolder, FolderHistory } from './types';
+import { FolderHistory } from './types';
 
 /**
  * Hook for handling document selection logic
  */
 export function useDocumentSelection(
   documents: any[],
-  currentFolder: DocumentFolder,
+  currentFolder: string,
   folderHistory: FolderHistory[],
-  setCurrentFolder: (folder: DocumentFolder) => void,
+  setCurrentFolder: (folder: string) => void,
   setFolderHistory: (history: FolderHistory[]) => void
 ) {
   /**
@@ -18,12 +18,16 @@ export function useDocumentSelection(
     if (doc.mimeType.includes('folder')) {
       // Save current folder to history before navigating
       if (currentFolder) {
-        setFolderHistory([...folderHistory, currentFolder]);
+        // Find the current folder name from documents
+        const currentFolderDoc = documents.find(d => d.id === currentFolder);
+        if (currentFolderDoc) {
+          setFolderHistory([...folderHistory, {
+            id: currentFolder,
+            name: currentFolderDoc.name
+          }]);
+        }
       }
-      setCurrentFolder({
-        id: doc.id,
-        name: doc.name
-      });
+      setCurrentFolder(doc.id);
     }
     return doc;
   };

@@ -3,7 +3,6 @@ import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import "https://deno.land/x/xhr@0.1.0/mod.ts";
 
 const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-const DEBUG = true;
 
 const corsHeaders = {
   'Access-Control-Allow-Origin': '*',
@@ -54,10 +53,8 @@ serve(async (req) => {
       documentContext 
     } = await req.json();
     
-    if (DEBUG) {
-      console.log(`Processing request for conversation ${conversationId} with historical context: ${historicalContext ? 'present' : 'none'}`);
-      console.log(`Document context received: ${documentContext ? documentContext.length + ' documents' : 'none'}`);
-    }
+    console.log(`Processing request for conversation ${conversationId} with historical context: ${historicalContext ? 'present' : 'none'}`);
+    console.log(`Document context received: ${documentContext ? documentContext.length + ' documents' : 'none'}`);
     
     // Validate document context if provided
     let validatedDocumentContext = documentContext;
@@ -74,15 +71,8 @@ serve(async (req) => {
           typeof doc.content === 'string' &&
           doc.content.length > 0;
         
-        if (!isValid && DEBUG) {
+        if (!isValid) {
           console.log(`Filtering out invalid document: ${doc?.documentName || 'unknown'}`);
-          if (!doc) {
-            console.log(`Document is null or undefined`);
-          } else if (!doc.content) {
-            console.log(`Document ${doc.documentName || 'unknown'} has no content`);
-          } else if (doc.content.length === 0) {
-            console.log(`Document ${doc.documentName || 'unknown'} has empty content`);
-          }
         }
         
         if (doc && doc.content && doc.content.length > 0) {
@@ -94,25 +84,20 @@ serve(async (req) => {
       
       if (validatedDocumentContext.length > 0) {
         documentsIncluded = true;
-        if (DEBUG) {
-          console.log("Documents included in context with contents:", 
-            validatedDocumentContext.map((doc: any) => ({
-              name: doc.documentName,
-              type: doc.documentType,
-              contentLength: doc.content?.length || 0,
-              contentPreview: doc.content ? (doc.content.substring(0, 50) + '...') : 'NO CONTENT'
-            })));
-        }
+        console.log("Documents included in context with contents:", 
+          validatedDocumentContext.map((doc: any) => ({
+            name: doc.documentName,
+            type: doc.documentType,
+            contentLength: doc.content?.length || 0
+          })));
       } else {
         console.log("No valid documents with content were found in the request");
       }
       
-      if (DEBUG) {
-        console.log(`Documents with content: ${documentsWithContent} out of ${documentContext.length} received`);
-        
-        if (documentsWithContent === 0 && documentContext.length > 0) {
-          console.log("⚠️ All documents are missing content! This will affect agent response.");
-        }
+      console.log(`Documents with content: ${documentsWithContent} out of ${documentContext.length} received`);
+      
+      if (documentsWithContent === 0 && documentContext.length > 0) {
+        console.log("⚠️ All documents are missing content! This will affect agent response.");
       }
     }
     
@@ -134,9 +119,7 @@ serve(async (req) => {
       // Update document context if provided
       if (validatedDocumentContext && validatedDocumentContext.length > 0) {
         mcpContext.documentContext = validatedDocumentContext;
-        if (DEBUG) {
-          console.log(`Updated document context for conversation ${conversationId}, now has ${validatedDocumentContext.length} documents with content`);
-        }
+        console.log(`Updated document context for conversation ${conversationId}, now has ${validatedDocumentContext.length} documents with content`);
       }
     } else {
       // Create new conversation context
@@ -154,13 +137,13 @@ serve(async (req) => {
             blakQube
           },
           environment: "web3_education",
-          modelPreference: "gpt-4o",  // Using gpt-4o instead of -mini for better document handling
+          modelPreference: "gpt-4o-mini",
           metisActive: metisActive || false
         },
         documentContext: validatedDocumentContext || []
       };
       
-      if (validatedDocumentContext && validatedDocumentContext.length > 0 && DEBUG) {
+      if (validatedDocumentContext && validatedDocumentContext.length > 0) {
         console.log(`New conversation ${newConversationId} created with ${validatedDocumentContext.length} documents`);
       }
     }
@@ -219,14 +202,12 @@ Additionally, consider the following iQube data for personalization:
       mcpContext.documentContext.forEach((doc, index) => {
         if (doc.content && doc.content.length > 0) {
           const contentLength = doc.content.length;
-          const previewLength = Math.min(contentLength, 3000);
+          const previewLength = Math.min(contentLength, 2000);
           
           systemPrompt += `\nDocument ${index + 1}: ${doc.documentName} (Type: ${doc.documentType})\n`;
           systemPrompt += `Content: ${doc.content.substring(0, previewLength)}${contentLength > previewLength ? '...(content truncated)' : ''}\n`;
           
-          if (DEBUG) {
-            console.log(`Including document ${index + 1}: ${doc.documentName}, content length: ${contentLength}`);
-          }
+          console.log(`Including document ${index + 1}: ${doc.documentName}, content length: ${contentLength}`);
         } else {
           systemPrompt += `\nDocument ${index + 1}: ${doc.documentName} (Type: ${doc.documentType}) - NOTE: Document has no content\n`;
           console.log(`⚠️ Document ${index + 1}: ${doc.documentName} has no content to include`);
@@ -238,7 +219,7 @@ Additionally, consider the following iQube data for personalization:
 
     // Add historical context if provided
     if (historicalContext && historicalContext.length > 0) {
-      if (DEBUG) console.log('Adding historical context to system prompt');
+      console.log('Adding historical context to system prompt');
       systemPrompt += `\n\n${historicalContext}`;
     }
 
@@ -269,13 +250,6 @@ When the user asks about crypto risks, token security, or wallet protection, pro
       formattedMessages.push({ role: msg.role, content: msg.content });
     });
 
-    // For debugging purposes only
-    if (DEBUG) {
-      console.log(`Using model: ${mcpContext.metadata.modelPreference || 'gpt-4o'}`)
-      console.log(`Sending ${formattedMessages.length} messages to OpenAI`);
-      console.log(`System prompt length: ${systemPrompt.length} chars`);
-    }
-
     // Call OpenAI API
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
       method: 'POST',
@@ -284,9 +258,8 @@ When the user asks about crypto risks, token security, or wallet protection, pro
         'Content-Type': 'application/json',
       },
       body: JSON.stringify({
-        model: mcpContext.metadata.modelPreference || 'gpt-4o',
+        model: mcpContext.metadata.modelPreference || 'gpt-4o-mini',
         messages: formattedMessages,
-        temperature: 0.7,
       }),
     });
 
@@ -299,10 +272,6 @@ When the user asks about crypto risks, token security, or wallet protection, pro
     const data = await response.json();
     const aiResponse = data.choices[0].message.content;
     
-    if (DEBUG) {
-      console.log(`Received response from OpenAI, length: ${aiResponse.length} chars`);
-    }
-    
     // Add AI response to context
     mcpContext.messages.push({
       role: 'assistant',
@@ -314,10 +283,8 @@ When the user asks about crypto risks, token security, or wallet protection, pro
     conversationStore.set(mcpContext.conversationId, mcpContext);
     
     // Log context state (helpful for debugging)
-    if (DEBUG) {
-      console.log(`Conversation ${mcpContext.conversationId} updated, now has ${mcpContext.messages.length} messages`);
-      console.log(`Metis status: ${mcpContext.metadata.metisActive ? 'Active' : 'Inactive'}`);
-    }
+    console.log(`Conversation ${mcpContext.conversationId} updated, now has ${mcpContext.messages.length} messages`);
+    console.log(`Metis status: ${mcpContext.metadata.metisActive ? 'Active' : 'Inactive'}`);
     
     // Return the AI response with MCP metadata
     return new Response(JSON.stringify({ 

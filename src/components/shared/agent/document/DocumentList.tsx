@@ -1,8 +1,7 @@
 
-import React, { useEffect } from 'react';
+import React from 'react';
 import { Loader2 } from 'lucide-react';
 import DocumentCard from './DocumentCard';
-import { ScrollArea } from '@/components/ui/scroll-area';
 
 interface DocumentListProps {
   documents: any[];
@@ -20,16 +19,6 @@ const DocumentList: React.FC<DocumentListProps> = ({
   onViewDocument,
   onRemoveDocument
 }) => {
-  // Log documents for debugging
-  useEffect(() => {
-    console.log(`DocumentList rendering with ${documents?.length || 0} documents`);
-    if (documents?.length > 0) {
-      documents.forEach(doc => {
-        console.log(`- Document: ${doc.name || 'unnamed'}, ID: ${doc.id || 'no-id'}`);
-      });
-    }
-  }, [documents]);
-
   if (isLoading) {
     return (
       <div className="flex justify-center p-4">
@@ -38,27 +27,25 @@ const DocumentList: React.FC<DocumentListProps> = ({
     );
   }
 
-  return (
-    <ScrollArea className="h-[400px]">
-      <div className="p-4">
-        {!documents || documents.length === 0 ? (
-          <div className="text-center py-8 text-sm text-muted-foreground">
-            No documents in context. Add documents to enhance your agent's responses.
-          </div>
-        ) : (
-          <div className="space-y-2">
-            {documents.map(doc => (
-              <DocumentCard
-                key={doc.id}
-                document={doc}
-                onView={onViewDocument}
-                onRemove={onRemoveDocument}
-              />
-            ))}
-          </div>
-        )}
+  if (documents.length === 0) {
+    return (
+      <div className="text-center py-8 text-sm text-muted-foreground">
+        No documents in context. Add documents to enhance your agent's responses.
       </div>
-    </ScrollArea>
+    );
+  }
+
+  return (
+    <div className="space-y-2">
+      {documents.map(doc => (
+        <DocumentCard
+          key={doc.id}
+          document={doc}
+          onView={onViewDocument}
+          onRemove={onRemoveDocument}
+        />
+      ))}
+    </div>
   );
 };
 

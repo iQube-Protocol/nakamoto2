@@ -1,16 +1,13 @@
 
 import React from 'react';
-import { ChevronLeft, Folder, FileText } from 'lucide-react';
-import { Button } from '@/components/ui/button';
-import { Skeleton } from '@/components/ui/skeleton';
-import { AspectRatio } from '@/components/ui/aspect-ratio';
-import { DocumentFolder } from '@/hooks/document-browser/types';
+import { Card } from '@/components/ui/card';
+import { Loader2, FolderOpen } from 'lucide-react';
+import FileIcon from '@/components/shared/agent/document/FileIcon';
 
 interface FileGridProps {
   documents: any[];
   isLoading: boolean;
-  processingDocId?: string | null;
-  currentFolder: DocumentFolder;
+  currentFolder: string;
   handleDocumentClick: (doc: any) => void;
   handleBack: () => void;
 }
@@ -18,73 +15,53 @@ interface FileGridProps {
 const FileGrid: React.FC<FileGridProps> = ({
   documents,
   isLoading,
-  processingDocId,
   currentFolder,
   handleDocumentClick,
   handleBack
 }) => {
   if (isLoading) {
     return (
-      <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-        {Array(8).fill(0).map((_, i) => (
-          <div key={i} className="flex flex-col items-center">
-            <AspectRatio ratio={1} className="mb-2 w-full">
-              <Skeleton className="h-full w-full" />
-            </AspectRatio>
-            <Skeleton className="h-4 w-20" />
-          </div>
-        ))}
+      <div className="flex h-full items-center justify-center">
+        <div className="flex flex-col items-center gap-2">
+          <Loader2 className="h-8 w-8 animate-spin text-muted-foreground" />
+          <p className="text-sm text-muted-foreground">Loading documents...</p>
+        </div>
       </div>
     );
   }
-
+  
   return (
-    <div className="space-y-4">
-      {/* Back button - only show if we're in a folder (currentFolder has an ID) */}
-      {currentFolder.id && (
-        <Button
-          variant="outline"
-          size="sm"
-          className="mb-2 flex items-center gap-1"
+    <div className="grid grid-cols-2 gap-2">
+      {currentFolder && (
+        <Card 
+          className="p-4 cursor-pointer hover:bg-accent"
           onClick={handleBack}
         >
-          <ChevronLeft className="h-4 w-4" />
-          Back
-        </Button>
+          <div className="flex items-center gap-2">
+            <FolderOpen className="h-5 w-5 text-amber-500" />
+            <span>Back</span>
+          </div>
+        </Card>
       )}
-
-      {documents.length === 0 ? (
-        <div className="text-center py-8 text-muted-foreground">
-          No documents found in this folder
-        </div>
-      ) : (
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-4">
-          {documents.map((doc) => (
-            <Button
-              key={doc.id}
-              variant="ghost"
-              className={`h-auto flex flex-col items-center p-2 space-y-2 ${
-                processingDocId === doc.id ? 'opacity-50 pointer-events-none' : ''
-              }`}
-              onClick={() => handleDocumentClick(doc)}
-            >
-              <AspectRatio ratio={1} className="w-full bg-background rounded-md flex items-center justify-center">
-                {doc.mimeType.includes('folder') ? (
-                  <Folder className="h-12 w-12 text-blue-500" />
-                ) : (
-                  <FileText className="h-12 w-12 text-slate-500" />
-                )}
-              </AspectRatio>
-              <span className="text-xs text-center line-clamp-2">{doc.name}</span>
-              {processingDocId === doc.id && (
-                <span className="text-xs text-muted-foreground animate-pulse">
-                  Processing...
-                </span>
-              )}
-            </Button>
-          ))}
+      
+      {documents.length === 0 && (
+        <div className="col-span-2 text-center py-8 text-muted-foreground">
+          {currentFolder ? 'This folder is empty' : 'No documents found in root folder'}
         </div>
       )}
+      
+      {documents.map((doc) => (
+        <Card 
+          key={doc.id} 
+          className="p-4 cursor-pointer hover:bg-accent"
+          onClick={() => handleDocumentClick(doc)}
+        >
+          <div className="flex items-center gap-2">
+            <FileIcon mimeType={doc.mimeType} />
+            <span className="truncate text-sm">{doc.name}</span>
+          </div>
+        </Card>
+      ))}
     </div>
   );
 };

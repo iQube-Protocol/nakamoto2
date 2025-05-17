@@ -1,64 +1,47 @@
 
-import { useEffect } from 'react';
+import { useEffect, useCallback } from 'react';
 
 /**
- * Hook to listen for document context events
+ * Hook to handle document context event listeners
  */
-export const useDocumentEvents = (onContextChange: () => void) => {
-  // Set up event listeners for document context changes
+export function useDocumentEvents(loadDocumentContext: () => Promise<void>) {
+  // Set up event listeners for context changes
   useEffect(() => {
-    const handleContextChange = () => {
-      console.log('Document context changed event received');
-      onContextChange();
+    const handleContextUpdate = (event: Event) => {
+      console.log("Document context updated event received:", (event as CustomEvent).detail);
+      loadDocumentContext();
     };
     
-    // Listen for document context change events
-    window.addEventListener('document-context-changed', handleContextChange);
-    window.addEventListener('document-added', handleContextChange);
-    window.addEventListener('document-removed', handleContextChange);
+    // TypeScript type assertion for custom event
+    window.addEventListener('documentContextUpdated', handleContextUpdate as EventListener);
     
-    // Clean up
+    // Also reload when tab becomes visible
+    const handleTabVisibilityChange = () => {
+      if (!document.hidden) {
+        console.log("Document became visible, reloading document context");
+        loadDocumentContext();
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleTabVisibilityChange);
+    
+    // Clean up listeners
     return () => {
-      window.removeEventListener('document-context-changed', handleContextChange);
-      window.removeEventListener('document-added', handleContextChange);
-      window.removeEventListener('document-removed', handleContextChange);
+      window.removeEventListener('documentContextUpdated', handleContextUpdate as EventListener);
+      document.removeEventListener('visibilitychange', handleTabVisibilityChange);
     };
-  }, [onContextChange]);
-};
+  }, [loadDocumentContext]);
+}
 
 /**
- * Hook to listen for document updates from external sources
+ * Hook to handle document updates from parent components
  */
-export const useDocumentUpdates = (documentUpdates: number, onUpdate: () => void) => {
-  // Listen for document updates from parent component
+export function useDocumentUpdates(documentUpdates: number = 0, loadDocumentContext: () => Promise<void>) {
+  // Reload document context when documentUpdates changes
   useEffect(() => {
     if (documentUpdates > 0) {
-      console.log(`Document updates detected (${documentUpdates}), triggering refresh`);
-      onUpdate();
+      console.log(`DocumentContext received update signal (${documentUpdates}), reloading documents`);
+      loadDocumentContext();
     }
-  }, [documentUpdates, onUpdate]);
-};
-
-/**
- * Dispatch a document context change event
- */
-export const dispatchDocumentContextChanged = () => {
-  const event = new CustomEvent('document-context-changed');
-  window.dispatchEvent(event);
-};
-
-/**
- * Dispatch a document added event
- */
-export const dispatchDocumentAdded = (documentId?: string) => {
-  const event = new CustomEvent('document-added', { detail: { documentId } });
-  window.dispatchEvent(event);
-};
-
-/**
- * Dispatch a document removed event
- */
-export const dispatchDocumentRemoved = (documentId?: string) => {
-  const event = new CustomEvent('document-removed', { detail: { documentId } });
-  window.dispatchEvent(event);
-};
+  }, [documentUpdates, loadDocumentContext]);
+}

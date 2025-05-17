@@ -1,37 +1,37 @@
 
-import React, { useEffect, useState, useCallback } from 'react';
+import React, { useEffect, useState } from 'react';
 import { AgentInterface } from '@/components/shared/agent';
 import { useKnowledgeBase } from '@/hooks/mcp/useKnowledgeBase';
 import { useMondAI } from '@/hooks/use-mondai';
 import { toast } from 'sonner';
-import { getMCPClient } from '@/integrations/mcp/client';
+import { Button } from '@/components/ui/button';
+import { Loader2, RefreshCw } from 'lucide-react';
+
+// Extend the agent service to support 'mondai' type
+declare module '@/services/agent-service' {
+  interface ConversationContextOptions {
+    agentType: "learn" | "earn" | "connect" | "mondai";
+  }
+}
 
 const MonDAI = () => {
-  // Enable debug mode for MCP client
-  useEffect(() => {
-    const mcpClient = getMCPClient({ debug: true });
-    mcpClient.setDebugMode(true);
-    console.log("MonDAI: Debug mode enabled for MCP client");
-    
-    return () => {
-      // Reset debug mode when component unmounts
-      mcpClient.setDebugMode(false);
-    };
-  }, []);
-  
   // Use our custom hook
   const {
     conversationId,
     isLoading,
     documentUpdates,
     handleAIMessage,
-    handleDocumentContextUpdated
+    handleDocumentContextUpdated,
   } = useMondAI();
-
+  
+  // Track manual retry attempts
+  const [isRetrying, setIsRetrying] = useState(false);
+  
   // Initialize knowledge base
-  const {
+  const { 
     items: knowledgeItems,
     fetchKnowledgeItems,
+    retryConnection,
     connectionStatus,
     isLoading: kbLoading
   } = useKnowledgeBase();
@@ -40,91 +40,97 @@ const MonDAI = () => {
   useEffect(() => {
     // Add a class to the root element for fullscreen styling
     document.documentElement.classList.add('fullscreen-mode');
-
+    
     // Remove the class when component unmounts
     return () => {
       document.documentElement.classList.remove('fullscreen-mode');
     };
   }, []);
-
-  // Check KBAI connection on initial load without continuous retries
+  
+  // Check KBAI connection on initial load and auto-retry with exponential backoff
   useEffect(() => {
     console.log("MonDAI: Initializing connection to knowledge base");
-    const initialCheck = async () => {
+    const maxRetries = 3;
+    const checkConnection = async (retryCount = 0) => {
       try {
-        // First attempt to load knowledge items - use object parameter
-        console.log('MonDAI: Initial connection attempt...');
-        await fetchKnowledgeItems({ refresh: false });
-      } catch (error) {
-        console.error('Error in initial connection setup:', error);
-      }
-    };
-    initialCheck();
-  }, [fetchKnowledgeItems]);
-
-  // Get description based on connection status
-  const getStatusDescription = () => {
-    if (kbLoading) return "Connecting to knowledge base...";
-    switch (connectionStatus) {
-      case 'connected':
-        return "Community agent with KBAI integration";
-      case 'connecting':
-        return "Establishing knowledge base connection...";
-      case 'error':
-        return "Community agent with offline knowledge base";
-      default:
-        return "Community agent with offline knowledge base";
-    }
-  };
-  
-  // Create wrapper functions to match the expected types
-  const handleMessageSubmit = useCallback(async (message: string) => {
-    console.log(`MonDAI: handleMessageSubmit called with message: ${message}`);
-    
-    // Ensure MCP context is initialized with debug
-    const mcpClient = getMCPClient({ debug: true });
-    if (conversationId) {
-      try {
-        await mcpClient.initializeContext(conversationId);
-        console.log(`MonDAI: Context initialized for conversation ${conversationId}`);
+        console.log(`MonDAI: Attempt ${retryCount + 1} to connect to knowledge base...`);
+        // First attempt to load knowledge items
+        await fetchKnowledgeItems();
         
-        // Debug log all documents in context
-        const context = mcpClient.getModelContext();
-        if (context?.documentContext) {
-          console.log(`Documents in context before sending message: ${context.documentContext.length}`);
-          context.documentContext.forEach((doc, i) => {
-            console.log(`Document ${i+1}: ${doc.documentName} (${doc.documentType})`);
-            console.log(`  Content length: ${doc.content?.length || 0} chars`);
-            if (doc.content) {
-              console.log(`  Content preview: ${doc.content.substring(0, 100)}...`);
-            } else {
-              console.log(`  ⚠️ No content available!`);
+        console.log(`MonDAI: Connection status after fetch: ${connectionStatus}`);
+        
+        if (connectionStatus === 'error' && retryCount < maxRetries) {
+          const delay = Math.min(2000 * Math.pow(2, retryCount), 10000); // exponential backoff
+          console.log(`Connection failed, retrying in ${delay/1000}s (attempt ${retryCount + 1}/${maxRetries})...`);
+          
+          setTimeout(async () => {
+            console.log(`MonDAI: Starting retry attempt ${retryCount + 1}...`);
+            const success = await retryConnection();
+            console.log(`MonDAI: Retry attempt ${retryCount + 1} result: ${success ? 'success' : 'failure'}`);
+            
+            if (!success && retryCount + 1 < maxRetries) {
+              checkConnection(retryCount + 1);
+            } else if (!success) {
+              console.log('All retry attempts failed, using fallback data');
+              toast.info('Using offline knowledge base', {
+                description: 'Connection to knowledge base unavailable. Using local data.',
+                duration: 5000,
+              });
             }
-          });
-        } else {
-          console.log('No documents in context');
+          }, delay);
+        } else if (connectionStatus === 'connected') {
+          console.log('MonDAI: Successfully connected to KBAI service!');
         }
       } catch (error) {
-        console.error('Error initializing MCP context:', error);
+        console.error('Error in initial connection check:', error);
+        if (retryCount < maxRetries) {
+          setTimeout(() => checkConnection(retryCount + 1), 2000);
+        }
       }
-    }
+    };
     
-    return handleAIMessage(message);
-  }, [handleAIMessage, conversationId]);
-  
-  const handleDocumentAdded = useCallback(() => {
-    // This is a wrapper function that will be called when a document is added
-    console.log('Document added event triggered');
-    toast.info('Document added to context');
-    
-    // Debug log documents after adding
-    setTimeout(() => {
-      const mcpClient = getMCPClient();
-      const context = mcpClient.getModelContext();
-      console.log(`Documents in context after adding: ${context?.documentContext?.length || 0}`);
-    }, 500);
+    checkConnection();
   }, []);
-  
+
+  // Handle manual connection retry
+  const handleManualRetry = async () => {
+    setIsRetrying(true);
+    try {
+      console.log('MonDAI: Manual connection retry initiated');
+      toast.info('Attempting to reconnect to knowledge base...', {
+        duration: 3000,
+      });
+      
+      const success = await retryConnection();
+      
+      if (success) {
+        toast.success('Successfully connected to knowledge base!');
+      } else {
+        toast.error('Unable to connect to knowledge base', {
+          description: 'Using offline mode with fallback data',
+          duration: 5000
+        });
+      }
+    } catch (error) {
+      console.error('Error during manual retry:', error);
+      toast.error('Connection retry failed', {
+        description: 'Please try again later',
+      });
+    } finally {
+      setIsRetrying(false);
+    }
+  };
+
+  const getStatusDescription = () => {
+    if (kbLoading || isRetrying) return "Connecting to knowledge base...";
+    switch (connectionStatus) {
+      case 'connected': return "Community agent with KBAI integration";
+      case 'connecting': return "Establishing knowledge base connection...";
+      case 'error': return "Community agent with offline knowledge base";
+      default: return "Community agent with offline knowledge base";
+    }
+  };
+
   return (
     <div className="container py-6 max-w-7xl mx-auto h-full agent-interface">
       <div className="grid gap-6 h-full">
@@ -134,31 +140,52 @@ const MonDAI = () => {
               {/* This is empty space for alignment */}
             </div>
             <div className="flex items-center gap-2">
-              {/* Connection status indicators removed */}
+              {(connectionStatus === 'error' || connectionStatus === 'disconnected') && (
+                <Button 
+                  variant="outline" 
+                  size="sm" 
+                  onClick={handleManualRetry}
+                  disabled={isRetrying}
+                >
+                  {isRetrying ? (
+                    <>
+                      <Loader2 className="h-4 w-4 mr-2 animate-spin" />
+                      Connecting...
+                    </>
+                  ) : (
+                    <>
+                      <RefreshCw className="h-4 w-4 mr-2" />
+                      Retry Connection
+                    </>
+                  )}
+                </Button>
+              )}
             </div>
           </div>
           
-          <AgentInterface 
-            title="MonDAI" 
-            description={getStatusDescription()} 
+          <AgentInterface
+            title="MonDAI"
+            description={getStatusDescription()}
             agentType="learn" // Using learn type for compatibility
-            onMessageSubmit={handleMessageSubmit}
-            onDocumentAdded={handleDocumentAdded}
-            documentContextUpdated={documentUpdates} 
-            conversationId={conversationId} 
-            initialMessages={[{
-              id: "1",
-              sender: "agent",
-              message: connectionStatus === 'connected' 
-                ? "Hello! I'm your MonDAI assistant with direct KBAI integration. I can help you learn about Web3, cryptocurrency, blockchain concepts, and more using my integrated knowledge base. What would you like to know about today?" 
-                : "Hello! I'm your MonDAI assistant. I'm currently using an offline knowledge base for Web3 concepts. You can still ask me about blockchain, cryptocurrency, and other topics. What would you like to explore today?",
-              timestamp: new Date().toISOString(),
-              metadata: {
-                version: "1.0",
-                modelUsed: "gpt-4o",
-                knowledgeSource: connectionStatus === 'connected' ? "KBAI MCP Direct" : "Offline Knowledge Base"
+            onMessageSubmit={handleAIMessage}
+            onDocumentAdded={handleDocumentContextUpdated}
+            documentContextUpdated={documentUpdates}
+            conversationId={conversationId}
+            initialMessages={[
+              {
+                id: "1",
+                sender: "agent",
+                message: connectionStatus === 'connected'
+                  ? "Hello! I'm your MonDAI assistant with direct KBAI integration. I can help you learn about Web3, cryptocurrency, blockchain concepts, and more using my integrated knowledge base. What would you like to know about today?"
+                  : "Hello! I'm your MonDAI assistant. I'm currently using an offline knowledge base for Web3 concepts. You can still ask me about blockchain, cryptocurrency, and other topics. What would you like to explore today?",
+                timestamp: new Date().toISOString(),
+                metadata: {
+                  version: "1.0",
+                  modelUsed: "gpt-4o",
+                  knowledgeSource: connectionStatus === 'connected' ? "KBAI MCP Direct" : "Offline Knowledge Base"
+                }
               }
-            }]} 
+            ]}
           />
         </div>
       </div>

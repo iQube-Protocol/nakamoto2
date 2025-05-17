@@ -1,139 +1,95 @@
-import { useState, useCallback } from 'react';
+
+import { useState } from 'react';
 import { toast } from 'sonner';
-import { addDocumentToContext, removeDocumentFromContext } from '../utils/documentOperations';
-import { dispatchDocumentAdded, dispatchDocumentRemoved } from './useDocumentEvents';
-import { MCPClient } from '@/integrations/mcp/client';
+import { 
+  addDocumentToContext, 
+  removeDocumentFromContext,
+  dispatchDocumentContextUpdated
+} from '../utils/documentOperations';
 
 interface UseDocumentActionsProps {
-  client: MCPClient | null;
+  client: any;
   conversationId: string | null;
-  fetchDocument: (documentId: string) => Promise<string | null>;
+  fetchDocument: (id: string) => Promise<string | null>;
   onDocumentAdded?: () => void;
   selectedDocuments: any[];
-  setSelectedDocuments: React.Dispatch<React.SetStateAction<any[]>>;
+  setSelectedDocuments: (docs: any[]) => void;
 }
 
 /**
- * Hook for document action operations
+ * Hook to handle document selection, removal, and viewing actions
  */
-export const useDocumentActions = ({
+export function useDocumentActions({
   client,
   conversationId,
   fetchDocument,
   onDocumentAdded,
   selectedDocuments,
   setSelectedDocuments
-}: UseDocumentActionsProps) => {
-  const [viewingDocument, setViewingDocument] = useState<any>(null);
+}: UseDocumentActionsProps) {
+  const [viewingDocument, setViewingDocument] = useState<{id: string, content: string, name: string, mimeType: string} | null>(null);
   
-  // Handle document selection to add to context
-  const handleDocumentSelect = useCallback(async (document: any) => {
-    if (!client || !conversationId) {
-      toast.error('Cannot add document', {
-        description: 'MCP client or conversation ID not available'
-      });
-      throw new Error('MCP client or conversation ID not available');
-    }
-    
-    try {
-      const isFolder = document.mimeType.includes('folder');
-      
-      if (isFolder) {
-        toast.error('Cannot add folders', {
-          description: 'Only documents can be added to the conversation context'
-        });
-        throw new Error('Cannot add folders to context');
-      }
-      
-      // Check if document is already in the context
-      const isAlreadyAdded = selectedDocuments.some(doc => doc.id === document.id);
-      if (isAlreadyAdded) {
-        toast.info('Document already added');
-        throw new Error('Document already in context');
-      }
-      
-      // Add document to context
-      const added = await addDocumentToContext(client, conversationId, document);
-      
-      if (added) {
-        // Update selected documents list
-        setSelectedDocuments(prev => [
-          ...prev,
-          {
-            ...document,
-            inContext: true
-          }
-        ]);
-        
-        toast.success('Document added to context');
-        
-        // Trigger events
-        dispatchDocumentAdded(document.id);
-        if (onDocumentAdded) onDocumentAdded();
-      }
-      
-      return document;
-    } catch (error) {
-      console.error('Error selecting document:', error);
-      throw error;
-    }
-  }, [client, conversationId, selectedDocuments, setSelectedDocuments, onDocumentAdded]);
-  
-  // Handle document removal from context
-  const handleRemoveDocument = useCallback((documentId: string) => {
-    if (!client) {
-      toast.error('Cannot remove document', {
-        description: 'MCP client not available'
-      });
+  const handleDocumentSelect = async (document: any) => {
+    // Check if document is already in context
+    if (selectedDocuments.some(doc => doc.id === document.id)) {
+      toast.error('Document already in context');
       return;
     }
     
-    const removed = removeDocumentFromContext(client, documentId);
-    
-    if (removed) {
-      setSelectedDocuments(prev => prev.filter(doc => doc.id !== documentId));
-      toast.success('Document removed from context');
-      
-      // Trigger events
-      dispatchDocumentRemoved(documentId);
-    } else {
-      toast.error('Failed to remove document');
-    }
-  }, [client, setSelectedDocuments]);
-  
-  // Handle viewing document content
-  const handleViewDocument = useCallback(async (document: any) => {
-    if (!document) return;
-    
     try {
-      // If document already has content, use it
-      if (document.content) {
-        setViewingDocument({
-          ...document,
-          content: document.content
-        });
-        return;
+      // Add document to context
+      const enrichedDocument = await addDocumentToContext(client, conversationId, document, fetchDocument);
+      
+      // Add content to the document object for local tracking
+      // Fix: Instead of using a function that returns an array, directly set the new array
+      const updatedDocuments = [...selectedDocuments, enrichedDocument];
+      setSelectedDocuments(updatedDocuments);
+      
+      // Dispatch event that document context was updated
+      dispatchDocumentContextUpdated(document.id, 'added');
+      
+      if (onDocumentAdded) {
+        onDocumentAdded();
       }
       
-      // Otherwise fetch content
-      const content = await fetchDocument(document.id);
-      
-      if (content) {
-        setViewingDocument({
-          ...document,
-          content
-        });
-      } else {
-        toast.error('Failed to load document content');
-      }
+      toast.success('Document added to conversation context');
+      return document;
     } catch (error) {
-      console.error('Error viewing document:', error);
-      toast.error('Failed to load document', {
+      console.error('Error handling document selection:', error);
+      toast.error('Failed to add document', {
         description: error instanceof Error ? error.message : 'Unknown error'
       });
+      throw error;
     }
-  }, [fetchDocument]);
+  };
   
+  const handleRemoveDocument = (documentId: string) => {
+    // Find the document name before removing it
+    const documentToRemove = selectedDocuments.find(doc => doc.id === documentId);
+    const documentName = documentToRemove?.name || documentId;
+    
+    const removed = removeDocumentFromContext(client, conversationId, documentId, documentName);
+    
+    if (removed) {
+      // Update local state
+      // Fix: Instead of using a function that returns an array, directly set the new array
+      const filteredDocuments = selectedDocuments.filter(doc => doc.id !== documentId);
+      setSelectedDocuments(filteredDocuments);
+      
+      // Dispatch event that document context was updated
+      dispatchDocumentContextUpdated(documentId, 'removed');
+    }
+  };
+  
+  const handleViewDocument = (document: any) => {
+    setViewingDocument({
+      id: document.id,
+      name: document.name,
+      content: document.content || "Content not available",
+      mimeType: document.mimeType
+    });
+  };
+
   return {
     viewingDocument,
     setViewingDocument,
@@ -141,4 +97,4 @@ export const useDocumentActions = ({
     handleRemoveDocument,
     handleViewDocument
   };
-};
+}

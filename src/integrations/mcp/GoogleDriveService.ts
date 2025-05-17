@@ -1,9 +1,5 @@
 import { toast } from 'sonner';
 import { DocumentMetadata } from './types';
-import { RetryService } from '@/services/RetryService';
-import { documentValidationService } from '@/services/DocumentValidationService';
-import { tokenManagementService } from '@/services/TokenManagementService';
-import { driveProxyService } from './services/DriveProxyService';
 
 /**
  * Service for Google Drive integration and document management
@@ -13,24 +9,9 @@ export class GoogleDriveService {
   private tokenClient: any = null;
   private isApiLoaded: boolean = false;
   private isAuthenticated: boolean = false;
-  private retryService: RetryService;
-  private useProxy: boolean = true; // Flag to use proxy service when available
   
   constructor() {
     console.log('Google Drive Service initialized');
-    this.retryService = new RetryService({
-      maxRetries: 3,
-      baseDelay: 1000,
-      maxDelay: 8000,
-      retryCondition: (error) => {
-        // Only retry network/CORS/auth errors, not user errors
-        return error && (
-          error.toString().includes('Network Error') || 
-          error.toString().includes('CORS') ||
-          (error.status && (error.status === 401 || error.status === 403))
-        );
-      }
-    });
     this.loadGoogleApi();
   }
   
@@ -87,109 +68,6 @@ export class GoogleDriveService {
     
     return this.isApiLoaded;
   }
-
-  /**
-   * Verify and possibly refresh Google auth token
-   */
-  private async verifyAuthToken(): Promise<boolean> {
-    if (!this.isAuthenticated || !this.gapi?.auth?.getToken()) {
-      console.warn('Not authenticated or missing token');
-      return false;
-    }
-
-    try {
-      // Get the token
-      const token = this.gapi.auth.getToken();
-      if (!token || !token.access_token) {
-        console.warn('No access token available');
-        return false;
-      }
-      
-      // Check if token is valid in our token service
-      if (tokenManagementService.isTokenValid('google-drive')) {
-        console.log('Token is valid according to token service');
-        return true;
-      }
-      
-      // Test if the token is valid with a connection test
-      let isValid = false;
-      
-      if (this.useProxy) {
-        // Test using proxy service
-        try {
-          isValid = await driveProxyService.testConnection(token.access_token);
-        } catch (proxyError) {
-          console.warn('Proxy connection test failed:', proxyError);
-          // Fall back to direct test
-          isValid = false;
-        }
-      }
-      
-      if (!isValid) {
-        // Try direct API call if proxy failed or isn't used
-        try {
-          await this.gapi.client.drive.about.get({
-            fields: 'user'
-          });
-          isValid = true;
-        } catch (directError) {
-          console.warn('Direct API token validation failed:', directError);
-          isValid = false;
-        }
-      }
-      
-      if (isValid) {
-        return true;
-      }
-      
-      console.warn('Token validation failed, requesting new token');
-      
-      // If we have the token client, request a new token
-      if (this.tokenClient) {
-        try {
-          await new Promise<void>((resolve, reject) => {
-            const timeoutId = setTimeout(() => {
-              reject(new Error('Token refresh timed out'));
-            }, 10000); // 10 second timeout
-            
-            this.tokenClient.requestAccessToken({
-              callback: (tokenResponse: any) => {
-                clearTimeout(timeoutId);
-                if (tokenResponse && tokenResponse.access_token) {
-                  console.log('Token refreshed successfully');
-                  
-                  // Store token in token management service
-                  if (tokenResponse.expires_in) {
-                    tokenManagementService.storeToken(
-                      'google-drive',
-                      tokenResponse.access_token,
-                      tokenResponse.expires_in
-                    );
-                  }
-                  
-                  resolve();
-                } else {
-                  reject(new Error('No token received during refresh'));
-                }
-              },
-              error: (error: any) => {
-                clearTimeout(timeoutId);
-                reject(error);
-              }
-            });
-          });
-          return true;
-        } catch (refreshError) {
-          console.error('Token refresh failed:', refreshError);
-          return false;
-        }
-      }
-      return false;
-    } catch (error) {
-      console.error('Error during token verification:', error);
-      return false;
-    }
-  }
   
   /**
    * Connect to Google Drive and authorize access
@@ -218,22 +96,6 @@ export class GoogleDriveService {
           if (tokenResponse && tokenResponse.access_token) {
             this.isAuthenticated = true;
             localStorage.setItem('gdrive-connected', 'true');
-            
-            // Store token in token management service
-            if (tokenResponse.expires_in) {
-              tokenManagementService.storeToken(
-                'google-drive',
-                tokenResponse.access_token,
-                tokenResponse.expires_in
-              );
-            }
-            
-            // Register refresh callback
-            tokenManagementService.registerRefreshCallback(
-              'google-drive',
-              this.refreshToken.bind(this)
-            );
-            
             toast.success('Connected to Google Drive', {
               description: 'Your Google Drive documents are now available to the AI agents'
             });
@@ -243,7 +105,7 @@ export class GoogleDriveService {
       });
       
       // Request access token
-      this.tokenClient.requestAccessToken({prompt: ''});
+      this.tokenClient.requestAccessToken();
       
       return true;
     } catch (error) {
@@ -256,230 +118,193 @@ export class GoogleDriveService {
   }
   
   /**
-   * Refresh token using token client
-   */
-  private async refreshToken(): Promise<void> {
-    if (!this.tokenClient) {
-      throw new Error('No token client available for refresh');
-    }
-    
-    return new Promise<void>((resolve, reject) => {
-      const timeoutId = setTimeout(() => {
-        reject(new Error('Token refresh timed out'));
-      }, 10000); // 10 second timeout
-      
-      this.tokenClient.requestAccessToken({
-        callback: (tokenResponse: any) => {
-          clearTimeout(timeoutId);
-          if (tokenResponse && tokenResponse.access_token) {
-            console.log('Token refreshed successfully via callback');
-            
-            // Store token in token management service
-            if (tokenResponse.expires_in) {
-              tokenManagementService.storeToken(
-                'google-drive',
-                tokenResponse.access_token,
-                tokenResponse.expires_in
-              );
-            }
-            
-            resolve();
-          } else {
-            reject(new Error('No token received during refresh'));
-          }
-        },
-        error: (error: any) => {
-          clearTimeout(timeoutId);
-          reject(error);
-        },
-        prompt: ''  // Don't show UI for refresh
-      });
-    });
-  }
-  
-  /**
    * Reset Google Drive connection
    */
   async resetDriveConnection(): Promise<boolean> {
+    console.log('Resetting Google Drive connection');
+    
     try {
-      // Clear token info
-      if (this.gapi && this.gapi.client) {
-        console.log('Resetting Google Drive connection');
-        this.gapi.client.setToken(null);
+      // Clear any cached tokens from Google Auth
+      if (this.gapi && this.gapi.auth) {
+        try {
+          // Try to clear the token
+          const token = this.gapi.auth.getToken();
+          if (token) {
+            this.gapi.auth.setToken(null);
+            console.log('Successfully cleared auth token');
+          }
+        } catch (e) {
+          console.log('No token to clear or error clearing token', e);
+        }
       }
-      
-      // Clear local storage
-      localStorage.removeItem('gdrive-connected');
-      
+
       // Reset authentication state
       this.isAuthenticated = false;
       
-      // Remove stored token
-      tokenManagementService.removeToken('google-drive');
+      // Reset stored credentials in localStorage
+      localStorage.removeItem('gdrive-connected');
       
+      // Create new token client for future authentication
+      if ((window as any).google && (window as any).google.accounts && (window as any).google.accounts.oauth2) {
+        this.tokenClient = null;
+      }
+      
+      console.log('Google Drive connection has been reset');
       return true;
     } catch (error) {
-      console.error('Error resetting Google Drive connection:', error);
-      return false;
+      console.error('Error resetting Drive connection:', error);
+      throw error;
     }
   }
   
   /**
-   * List documents and folders from Google Drive
+   * Load document metadata from Google Drive
    */
   async listDocuments(folderId?: string): Promise<DocumentMetadata[]> {
+    console.log(`Listing documents${folderId ? ' in folder ' + folderId : ''}`);
+    
+    if (!this.isAuthenticated) {
+      console.error('Not authenticated with Google Drive');
+      toast.error('Not connected to Google Drive', { 
+        description: 'Please connect to Google Drive first' 
+      });
+      return [];
+    }
+    
     try {
-      await this.verifyAuthToken();
+      const query = folderId ? 
+        `'${folderId}' in parents and trashed = false` : 
+        `'root' in parents and trashed = false`;
       
-      // Try proxy first if available
-      if (this.useProxy) {
-        try {
-          const token = this.gapi?.auth?.getToken()?.access_token;
-          if (token) {
-            const response = await driveProxyService.listFiles(token, folderId);
-            if (response && response.files) {
-              return response.files.map((file: any): DocumentMetadata => ({
-                id: file.id,
-                name: file.name,
-                mimeType: file.mimeType,
-                modifiedTime: file.modifiedTime
-              }));
-            }
-          }
-        } catch (proxyError) {
-          console.warn('Proxy list documents failed:', proxyError);
-          // Fall back to direct API
-        }
-      }
+      const response = await this.gapi.client.drive.files.list({
+        q: query,
+        fields: 'files(id, name, mimeType, modifiedTime)',
+        orderBy: 'modifiedTime desc',
+        pageSize: 50
+      });
       
-      // Direct API call
-      const response = await this.retryService.execute(() => this.gapi.client.drive.files.list({
-        q: folderId 
-          ? `'${folderId}' in parents and trashed = false` 
-          : `'root' in parents and trashed = false`,
-        fields: 'files(id, name, mimeType, modifiedTime)'
-      }));
-      
-      // Add type assertion to safely access result property
-      const responseData = response as { result: { files: any[] } };
-      
-      return responseData.result.files.map((file: any): DocumentMetadata => ({
-        id: file.id,
-        name: file.name,
-        mimeType: file.mimeType,
-        modifiedTime: file.modifiedTime
-      }));
+      const files = response.result.files;
+      console.log(`Found ${files.length} files in Google Drive`, files);
+      return files;
     } catch (error) {
-      console.error('Error listing documents:', error);
-      throw error;
+      console.error('Error listing documents from Google Drive:', error);
+      toast.error('Failed to list documents', { 
+        description: error instanceof Error ? error.message : 'Unknown error' 
+      });
+      return [];
     }
   }
   
   /**
-   * Fetch document content from Google Drive
+   * Fetch a specific document's content
    */
   async fetchDocumentContent(document: DocumentMetadata): Promise<string | null> {
-    try {
-      await this.verifyAuthToken();
-      
-      console.log(`Fetching content for document: ${document.name} (${document.mimeType})`);
-      
-      // Special handling for Google Docs, Sheets, etc.
-      if (document.mimeType.includes('google-apps')) {
-        return this.fetchGoogleWorkspaceDocument(document);
-      } else {
-        // Regular file download
-        return this.fetchRegularDocument(document);
-      }
-    } catch (error) {
-      console.error(`Error fetching document ${document.name}:`, error);
-      throw error;
-    }
-  }
-  
-  /**
-   * Fetch Google Workspace document (Docs, Sheets, etc.)
-   */
-  private async fetchGoogleWorkspaceDocument(document: DocumentMetadata): Promise<string | null> {
-    // Determine export MIME type based on document type
-    let exportMimeType = 'text/plain';
+    const documentId = document.id;
+    const fileName = document.name;
+    const mimeType = document.mimeType;
     
-    if (document.mimeType.includes('spreadsheet')) {
-      exportMimeType = 'text/csv';
-    } else if (document.mimeType.includes('presentation')) {
-      exportMimeType = 'text/plain';
-    } else if (document.mimeType.includes('drawing')) {
-      exportMimeType = 'application/pdf'; // Later we'll need to extract text from PDF
-    }
+    console.log(`Fetching document content for ${documentId} (${fileName})`);
     
-    // Try proxy first for Google Workspace documents
-    if (this.useProxy) {
-      try {
-        const token = this.gapi?.auth?.getToken()?.access_token;
-        if (token) {
-          const content = await driveProxyService.exportFile(token, document.id, exportMimeType);
-          if (content) {
-            return content;
-          }
-        }
-      } catch (proxyError) {
-        console.warn('Proxy export document failed:', proxyError);
-        // Fall back to direct API
-      }
+    if (!this.isAuthenticated) {
+      console.error('Not authenticated with Google Drive');
+      toast.error('Not connected to Google Drive', { 
+        description: 'Please connect to Google Drive first' 
+      });
+      return null;
     }
     
     try {
-      const response = await this.retryService.execute(() => 
-        this.gapi.client.drive.files.export({
-          fileId: document.id, 
+      // Handle different file types
+      let documentContent = '';
+      
+      // For Google Docs, Sheets, and Slides, we need to export them in a readable format
+      if (mimeType.includes('google-apps')) {
+        const exportMimeType = this.getExportMimeType(mimeType);
+        const exportResponse = await this.gapi.client.drive.files.export({
+          fileId: documentId,
           mimeType: exportMimeType
-        })
-      );
+        });
+        
+        documentContent = exportResponse.body;
+      } else {
+        // For other file types, use the files.get method with alt=media
+        const response = await fetch(
+          `https://www.googleapis.com/drive/v3/files/${documentId}?alt=media`,
+          {
+            headers: {
+              'Authorization': `Bearer ${this.gapi.auth.getToken().access_token}`
+            }
+          }
+        );
+        
+        // Check if response is ok and get content
+        if (response.ok) {
+          // For text-based files
+          if (mimeType.includes('text') || mimeType.includes('json') || 
+              mimeType.includes('javascript') || mimeType.includes('xml') ||
+              mimeType.includes('html') || mimeType.includes('css')) {
+            documentContent = await response.text();
+          } else {
+            // For binary files, we can only provide basic info
+            documentContent = `This file (${fileName}) is a binary file of type ${mimeType} and cannot be displayed as text.`;
+          }
+        } else {
+          throw new Error(`Failed to fetch file content: ${response.statusText}`);
+        }
+      }
       
-      // Add type assertion for response
-      const responseData = response as { body: string };
-      return responseData.body;
+      return documentContent;
     } catch (error) {
-      console.error(`Error exporting Google Workspace document ${document.name}:`, error);
-      throw error;
+      console.error(`Error fetching document ${documentId}:`, error);
+      toast.error('Failed to fetch document', { 
+        description: error instanceof Error ? error.message : 'Unknown error' 
+      });
+      return null;
     }
   }
   
   /**
-   * Fetch regular document content
+   * Get the appropriate export MIME type for Google Workspace files
    */
-  private async fetchRegularDocument(document: DocumentMetadata): Promise<string | null> {
-    // Try proxy first for regular documents
-    if (this.useProxy) {
-      try {
-        const token = this.gapi?.auth?.getToken()?.access_token;
-        if (token) {
-          const content = await driveProxyService.downloadFile(token, document.id);
-          if (content) {
-            return content;
-          }
-        }
-      } catch (proxyError) {
-        console.warn('Proxy download document failed:', proxyError);
-        // Fall back to direct API
-      }
+  private getExportMimeType(originalMimeType: string): string {
+    switch (originalMimeType) {
+      case 'application/vnd.google-apps.document':
+        return 'text/plain';
+      case 'application/vnd.google-apps.spreadsheet':
+        return 'text/csv';
+      case 'application/vnd.google-apps.presentation':
+        return 'text/plain';
+      default:
+        return 'text/plain';
     }
-    
-    // Direct download
-    try {
-      const response = await this.retryService.execute(() => 
-        this.gapi.client.drive.files.get({
-          fileId: document.id,
-          alt: 'media'
-        })
-      );
-      
-      // Add type assertion for response
-      const responseData = response as { body: string };
-      return responseData.body;
-    } catch (error) {
-      console.error(`Error downloading document ${document.name}:`, error);
-      throw error;
-    }
+  }
+  
+  /**
+   * Get simplified document type from MIME type
+   */
+  getDocumentType(mimeType: string): string {
+    if (mimeType.includes('pdf')) return 'pdf';
+    if (mimeType.includes('word') || mimeType.includes('document')) return 'doc';
+    if (mimeType.includes('sheet') || mimeType.includes('excel') || mimeType.includes('csv')) return 'sheet';
+    if (mimeType.includes('presentation') || mimeType.includes('powerpoint')) return 'slide';
+    if (mimeType.includes('text') || mimeType.includes('txt')) return 'txt';
+    if (mimeType.includes('image')) return 'image';
+    if (mimeType.includes('audio')) return 'audio';
+    if (mimeType.includes('video')) return 'video';
+    return 'file';
+  }
+  
+  /**
+   * Check if API is loaded and authenticated
+   */
+  isReady(): boolean {
+    return this.isApiLoaded && this.isAuthenticated;
+  }
+  
+  /**
+   * Get authentication status
+   */
+  isConnected(): boolean {
+    return this.isAuthenticated;
   }
 }

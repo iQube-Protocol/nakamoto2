@@ -17,25 +17,19 @@ export class MCPClient {
   private driveService: GoogleDriveService;
   private documentService: MCPDocumentService;
   private initialized: boolean = false;
-  private debug: boolean = false;
   
   constructor(options: MCPClientOptions = {}) {
-    this.debug = options.debug || false;
-    
     // Initialize services
     this.apiService = new MCPApiService(options.serverUrl, options.authToken);
     this.driveService = new GoogleDriveService();
     this.contextService = new ContextService(options.metisActive || false);
-    this.documentService = new MCPDocumentService(this.driveService, this.debug);
+    this.documentService = new MCPDocumentService(this.driveService);
     
-    if (this.debug) {
-      console.log('MCP Client initialized with options:', {
-        serverUrl: this.apiService.getServerUrl(),
-        hasAuthToken: !!options.authToken,
-        metisActive: options.metisActive,
-        debug: this.debug
-      });
-    }
+    console.log('MCP Client initialized with options:', {
+      serverUrl: this.apiService.getServerUrl(),
+      hasAuthToken: !!options.authToken,
+      metisActive: options.metisActive
+    });
   }
   
   /**
@@ -44,7 +38,6 @@ export class MCPClient {
   async initializeContext(existingConversationId?: string): Promise<string> {
     const convId = await this.contextService.initializeContext(existingConversationId);
     this.initialized = true;
-    if (this.debug) console.log(`MCP context initialized with conversation ID: ${convId}`);
     return convId;
   }
   
@@ -149,7 +142,6 @@ export class MCPClient {
       }
       
       console.log(`Successfully added document ${documentName} to MCP context, content length: ${docInContext.content.length}`);
-      if (this.debug) console.log(`Document content sample: ${docInContext.content.substring(0, 100)}...`);
     } catch (error) {
       console.error(`Error adding document to context: ${error instanceof Error ? error.message : 'Unknown error'}`);
       throw error;
@@ -180,21 +172,7 @@ export class MCPClient {
     // Force refresh from storage to ensure we have latest
     this.contextService.refreshContextFromStorage();
     
-    const context = this.contextService.getModelContext();
-    
-    // Debug logging for document context
-    if (this.debug && context?.documentContext) {
-      console.log(`Context contains ${context.documentContext.length} documents:`);
-      context.documentContext.forEach((doc, i) => {
-        console.log(`Document ${i+1}: ${doc.documentName}`);
-        console.log(`  Type: ${doc.documentType}, Content length: ${doc.content?.length || 0}`);
-        if (!doc.content || doc.content.length === 0) {
-          console.warn(`  ⚠️ Document has NO CONTENT!`);
-        }
-      });
-    }
-    
-    return context;
+    return this.contextService.getModelContext();
   }
   
   /**
@@ -238,27 +216,6 @@ export class MCPClient {
   isInitialized(): boolean {
     return this.initialized;
   }
-  
-  /**
-   * Enable debug mode
-   */
-  setDebugMode(debug: boolean): void {
-    this.debug = debug;
-    if (this.documentService) {
-      this.documentService.setDebugMode(debug);
-    }
-    console.log(`MCP Client debug mode ${debug ? 'enabled' : 'disabled'}`);
-  }
-  
-  /**
-   * Reset all MCP client state and services
-   */
-  reset(): void {
-    this.initialized = false;
-    // Use contextService methods to perform reset without directly accessing reset property
-    this.contextService.initializeContext(); // Re-initialize rather than reset
-    console.log('MCP client has been reset');
-  }
 }
 
 // Singleton instance for global use
@@ -277,17 +234,7 @@ export const getMCPClient = (options?: MCPClientOptions): MCPClient => {
     if (options.serverUrl) mcpClientInstance.setServerUrl(options.serverUrl);
     if (options.authToken) mcpClientInstance.setAuthToken(options.authToken);
     if (options.metisActive !== undefined) mcpClientInstance.setMetisActive(options.metisActive);
-    if (options.debug !== undefined) mcpClientInstance.setDebugMode(options.debug);
   }
   
   return mcpClientInstance;
-};
-
-// Utility function to reset the MCP client
-export const resetMCPClient = (): void => {
-  if (mcpClientInstance) {
-    mcpClientInstance.reset();
-  }
-  mcpClientInstance = null;
-  console.log('Global MCP client instance has been reset');
 };

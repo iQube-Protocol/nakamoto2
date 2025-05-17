@@ -8,29 +8,16 @@ export interface FolderHistory {
   name: string;
 }
 
-export interface DocumentFolder {
-  id: string;
-  name: string;
-  // Add any other properties needed
-}
-
 export interface UseDocumentBrowserResult {
   documents: any[];
   isLoading: boolean;
-  currentFolder: DocumentFolder;
+  currentFolder: string;
   folderHistory: FolderHistory[];
   isOpen: boolean;
   setIsOpen: (isOpen: boolean) => void;
   handleDocumentClick: (doc: any) => any;
   handleBack: () => void;
-  navigateToFolder: (folder: DocumentFolder) => void;
+  navigateToFolder: (folderId: string, historyIndex?: number) => void;
   navigateToRoot: () => void;
   refreshCurrentFolder: () => void;
-}
-
-export interface KnowledgeBaseParams {
-  query?: string;
-  refresh?: boolean;
-  limit?: number;
-  [key: string]: any; // Allow additional parameters
 }
