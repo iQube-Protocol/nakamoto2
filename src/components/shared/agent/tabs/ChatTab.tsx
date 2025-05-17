@@ -20,20 +20,20 @@ const ChatTab: React.FC<ChatTabProps> = ({
   handlePlayAudio
 }) => {
   return (
-    <div className="flex flex-col h-full overflow-hidden">
-      <div className="flex-1 overflow-y-auto">
-        {messages.length === 0 ? (
+    <div className="flex flex-col h-[400px] overflow-hidden">
+      {messages.length === 0 ? (
+        <div className="flex-1 flex items-center justify-center">
           <EmptyConversation agentType={agentType} />
-        ) : (
-          <MessageList 
-            messages={messages} 
-            isProcessing={false} // This is now controlled at the parent level
-            playing={playing} 
-            onPlayAudio={handlePlayAudio} 
-            messagesEndRef={messagesEndRef}
-          />
-        )}
-      </div>
+        </div>
+      ) : (
+        <MessageList 
+          messages={messages} 
+          isProcessing={false} // This is now controlled at the parent level
+          playing={playing} 
+          onPlayAudio={handlePlayAudio} 
+          messagesEndRef={messagesEndRef}
+        />
+      )}
     </div>
   );
 };

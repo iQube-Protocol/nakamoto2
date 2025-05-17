@@ -20,8 +20,8 @@ const MessageList = ({
   messagesEndRef
 }: MessageListProps) => {
   return (
-    <div className="flex-1 overflow-hidden">
-      <ScrollArea className="h-[400px]">
+    <div className="flex-1 h-full overflow-hidden">
+      <ScrollArea className="h-full pb-2">
         <div className="p-4 space-y-4">
           {messages.map((msg) => (
             <MessageItem 

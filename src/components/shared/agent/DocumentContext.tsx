@@ -3,6 +3,7 @@ import React, { useEffect } from 'react';
 import { Separator } from '@/components/ui/separator';
 import { Button } from '@/components/ui/button';
 import { FileText, RefreshCw } from 'lucide-react';
+import { ScrollArea } from '@/components/ui/scroll-area';
 import DocumentSelector from '../DocumentSelector';
 import DocumentList from './document/DocumentList';
 import DocumentViewer from './document/DocumentViewer';
@@ -39,7 +40,7 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
   }, [documentUpdates, loadDocumentContext]);
   
   return (
-    <div className="flex flex-col h-full overflow-hidden">
+    <div className="flex flex-col h-[400px] overflow-hidden">
       <div className="mb-4 flex justify-between items-center">
         <h3 className="text-sm font-medium">Documents in Context</h3>
         <div className="flex gap-2">
@@ -67,12 +68,16 @@ const DocumentContext: React.FC<DocumentContextProps> = ({
       <Separator className="mb-4" />
       
       <div className="flex-1 overflow-hidden">
-        <DocumentList
-          documents={selectedDocuments}
-          isLoading={isLoading}
-          onViewDocument={handleViewDocument}
-          onRemoveDocument={handleRemoveDocument}
-        />
+        <ScrollArea className="h-full">
+          <div className="p-2">
+            <DocumentList
+              documents={selectedDocuments}
+              isLoading={isLoading}
+              onViewDocument={handleViewDocument}
+              onRemoveDocument={handleRemoveDocument}
+            />
+          </div>
+        </ScrollArea>
       </div>
       
       {/* Document content viewer dialog */}
