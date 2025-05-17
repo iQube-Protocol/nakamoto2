@@ -1,4 +1,3 @@
-
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { 
@@ -13,7 +12,7 @@ interface UseDocumentActionsProps {
   fetchDocument: (id: string) => Promise<string | null>;
   onDocumentAdded?: () => void;
   selectedDocuments: any[];
-  setSelectedDocuments: (docs: any[]) => void;
+  setSelectedDocuments: (docs: any[] | ((prevDocs: any[]) => any[])) => void;
 }
 
 /**
@@ -43,15 +42,13 @@ export function useDocumentActions({
         const content = await fetchDocument(documentId);
         
         if (content) {
-          // Update local state
-          const updatedDocs = selectedDocuments.map(doc => {
+          // Update local state - Fix this line to use function style state update
+          setSelectedDocuments((prevDocs) => prevDocs.map(doc => {
             if (doc.id === documentId) {
               return { ...doc, content };
             }
             return doc;
-          });
-          
-          setSelectedDocuments(updatedDocs);
+          }));
           
           // Clear any error for this document
           const newErrors = new Map(documentErrors);
@@ -186,15 +183,13 @@ export function useDocumentActions({
       const content = await fetchDocument(documentId);
       
       if (content && content.length > 0) {
-        // Update local state
-        const updatedDocs = selectedDocuments.map(d => {
+        // Update local state - Fix this line to use function style state update
+        setSelectedDocuments((prevDocs) => prevDocs.map(d => {
           if (d.id === documentId) {
             return { ...d, content };
           }
           return d;
-        });
-        
-        setSelectedDocuments(updatedDocs);
+        }));
         
         // Clear any error for this document
         const newErrors = new Map(documentErrors);

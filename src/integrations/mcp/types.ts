@@ -1,30 +1,42 @@
-
 /**
  * Types related to the Model Context Protocol (MCP)
  */
 
+export interface MCPDocumentContext {
+  documentId: string;
+  documentName: string;
+  documentType: string;
+  content: string;
+  summary?: string;
+  lastModified?: string;
+  metadata?: {
+    originalLength?: number;
+    addedTimestamp?: string;
+    recoveryTimestamp?: string;
+    [key: string]: any;
+  };
+}
+
+export interface MCPContextMetadata {
+  userProfile?: Record<string, any>;
+  environment?: string;
+  modelPreference?: string;
+  source?: 'google-drive' | 'local' | 'other';
+  metisActive?: boolean;
+  contextVersion?: string;
+}
+
 export interface MCPContext {
   conversationId: string;
-  documentContext?: {
-    documentId: string;
-    documentName: string;
-    documentType: string;
-    content: string;
-    summary?: string;
-    lastModified?: string;
-  }[];
-  messages: Array<{
-    role: string;
-    content: string;
-    timestamp: string;
-  }>;
-  metadata: {
-    userProfile?: Record<string, any>;
-    environment?: string;
-    modelPreference?: string;
-    source?: 'google-drive' | 'local' | 'other';
-    metisActive?: boolean;
-  };
+  messages: MCPMessage[];
+  documentContext?: MCPDocumentContext[];
+  metadata: MCPContextMetadata;
+}
+
+export interface MCPMessage {
+  role: string;
+  content: string;
+  timestamp: string;
 }
 
 export interface MCPClientOptions {
