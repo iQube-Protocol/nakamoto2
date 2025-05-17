@@ -9,6 +9,9 @@ export { default as FileIcon } from './FileIcon';
 export { default as useDocumentContext } from './useDocumentContext';
 export { useDocumentEvents, useDocumentUpdates } from './hooks/useDocumentEvents';
 export { useDocumentActions } from './hooks/useDocumentActions';
+export { useDocumentRecovery } from './hooks/useDocumentRecovery';
+export { useDocumentSelection } from './hooks/useDocumentSelection';
+export { useDocumentViewer } from './hooks/useDocumentViewer';
 
 // Export document utilities
 export * from './utils/documentOperations';
