@@ -34,6 +34,16 @@ export const loadDocumentsFromContext = async (
       content: doc.content
     }));
     
+    // Log document details
+    console.log(`Loaded ${documents.length} documents from context for conversation ${conversationId}`);
+    documents.forEach((doc, i) => {
+      console.log(`Document ${i+1}: ${doc.name} (${doc.mimeType})`);
+      console.log(`  Content length: ${doc.content?.length || 0} chars`);
+      if (!doc.content || doc.content.length === 0) {
+        console.warn(`  ⚠️ Document ${doc.name} has NO CONTENT!`);
+      }
+    });
+    
     return documents;
   } catch (error) {
     console.error('Error loading documents from context:', error);
@@ -58,6 +68,8 @@ export const addDocumentToContext = async (
       return false;
     }
     
+    console.log(`Adding document ${document.name} to context ${conversationId}`);
+    
     // Initialize context with conversation ID
     await client.initializeContext(conversationId);
     
@@ -72,8 +84,10 @@ export const addDocumentToContext = async (
     // Fetch document content if not already available
     let content = document.content;
     if (!content) {
+      console.log(`Fetching content for document ${document.name} (${document.id})`);
       if (typeof document.getContent === 'function') {
         content = await document.getContent();
+        console.log(`Retrieved content using getContent() method, length: ${content?.length || 0}`);
       } else {
         throw new Error('Document has no content or getContent method');
       }
@@ -81,6 +95,14 @@ export const addDocumentToContext = async (
     
     if (!content) {
       throw new Error(`Could not get content for document ${document.name}`);
+    }
+    
+    // Validate content
+    if (content.length < 10) {
+      console.warn(`Document ${document.name} has suspiciously short content: "${content}"`);
+      toast.warning('Document content may be incomplete', {
+        description: 'The document content is very short and may not be complete'
+      });
     }
     
     // Add document to context
@@ -92,6 +114,17 @@ export const addDocumentToContext = async (
     );
     
     console.log(`Added document ${document.name} to context, content length: ${content.length}`);
+    
+    // Verify document was added
+    const updatedContext = client.getModelContext();
+    const docInContext = updatedContext?.documentContext?.find(doc => doc.documentId === document.id);
+    
+    if (!docInContext) {
+      console.error(`Failed to verify document ${document.name} in context`);
+      return false;
+    }
+    
+    console.log(`Successfully verified document ${document.name} in context`);
     return true;
   } catch (error) {
     console.error('Error adding document to context:', error);
@@ -116,6 +149,7 @@ export const removeDocumentFromContext = (
     }
     
     const result = client.removeDocumentFromContext(documentId);
+    console.log(`Document ${documentId} removal result: ${result}`);
     return result;
   } catch (error) {
     console.error('Error removing document from context:', error);

@@ -25,13 +25,14 @@ export interface MCPContext {
     source?: 'google-drive' | 'local' | 'other';
     metisActive?: boolean;
   };
-  timestamp: string; // Changed from optional to required
+  timestamp: string; // Required timestamp
 }
 
 export interface MCPClientOptions {
   serverUrl?: string;
   authToken?: string;
   metisActive?: boolean;
+  debug?: boolean; // Added debug option
 }
 
 export interface DocumentMetadata {
@@ -39,4 +40,5 @@ export interface DocumentMetadata {
   name: string;
   mimeType: string;
   modifiedTime?: string;
+  content?: string; // Make content optional in metadata
 }

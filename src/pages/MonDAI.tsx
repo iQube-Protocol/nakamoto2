@@ -4,8 +4,21 @@ import { AgentInterface } from '@/components/shared/agent';
 import { useKnowledgeBase } from '@/hooks/mcp/useKnowledgeBase';
 import { useMondAI } from '@/hooks/use-mondai';
 import { toast } from 'sonner';
+import { getMCPClient } from '@/integrations/mcp/client';
 
 const MonDAI = () => {
+  // Enable debug mode for MCP client
+  useEffect(() => {
+    const mcpClient = getMCPClient({ debug: true });
+    mcpClient.setDebugMode(true);
+    console.log("MonDAI: Debug mode enabled for MCP client");
+    
+    return () => {
+      // Reset debug mode when component unmounts
+      mcpClient.setDebugMode(false);
+    };
+  }, []);
+  
   // Use our custom hook
   const {
     conversationId,
@@ -65,14 +78,51 @@ const MonDAI = () => {
   };
   
   // Create wrapper functions to match the expected types
-  const handleMessageSubmit = useCallback((message: string) => {
+  const handleMessageSubmit = useCallback(async (message: string) => {
+    console.log(`MonDAI: handleMessageSubmit called with message: ${message}`);
+    
+    // Ensure MCP context is initialized with debug
+    const mcpClient = getMCPClient({ debug: true });
+    if (conversationId) {
+      try {
+        await mcpClient.initializeContext(conversationId);
+        console.log(`MonDAI: Context initialized for conversation ${conversationId}`);
+        
+        // Debug log all documents in context
+        const context = mcpClient.getModelContext();
+        if (context?.documentContext) {
+          console.log(`Documents in context before sending message: ${context.documentContext.length}`);
+          context.documentContext.forEach((doc, i) => {
+            console.log(`Document ${i+1}: ${doc.documentName} (${doc.documentType})`);
+            console.log(`  Content length: ${doc.content?.length || 0} chars`);
+            if (doc.content) {
+              console.log(`  Content preview: ${doc.content.substring(0, 100)}...`);
+            } else {
+              console.log(`  ⚠️ No content available!`);
+            }
+          });
+        } else {
+          console.log('No documents in context');
+        }
+      } catch (error) {
+        console.error('Error initializing MCP context:', error);
+      }
+    }
+    
     return handleAIMessage(message);
-  }, [handleAIMessage]);
+  }, [handleAIMessage, conversationId]);
   
   const handleDocumentAdded = useCallback(() => {
     // This is a wrapper function that will be called when a document is added
     console.log('Document added event triggered');
     toast.info('Document added to context');
+    
+    // Debug log documents after adding
+    setTimeout(() => {
+      const mcpClient = getMCPClient();
+      const context = mcpClient.getModelContext();
+      console.log(`Documents in context after adding: ${context?.documentContext?.length || 0}`);
+    }, 500);
   }, []);
   
   return (

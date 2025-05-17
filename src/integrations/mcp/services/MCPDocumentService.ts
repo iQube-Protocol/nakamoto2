@@ -15,9 +15,11 @@ export class MCPDocumentService {
   private useProxy: boolean = true; // Default to using proxy when available
   private lastProxyError: number = 0;
   private proxyErrorCooldown: number = 60000; // 1 minute cooldown after proxy errors
+  private debug: boolean = false;
   
-  constructor(driveService: GoogleDriveService) {
+  constructor(driveService: GoogleDriveService, debug: boolean = false) {
     this.driveService = driveService;
+    this.debug = debug;
     this.retryService = new RetryService({
       maxRetries: 3,
       baseDelay: 800,
@@ -45,9 +47,14 @@ export class MCPDocumentService {
     // Retry on network and auth errors
     return errorStr.includes('network error') || 
       errorStr.includes('cors') ||
-      errorStr.includes('authorization') ||
       errorStr.includes('auth') ||
       (error.status && (error.status === 401 || error.status === 403 || error.status >= 500));
+  }
+
+  private log(message: string, ...args: any[]): void {
+    if (this.debug) {
+      console.log(`[MCPDocumentService] ${message}`, ...args);
+    }
   }
   
   /**
@@ -55,6 +62,7 @@ export class MCPDocumentService {
    */
   async listDocuments(folderId?: string): Promise<DocumentMetadata[]> {
     try {
+      this.log(`Listing documents${folderId ? ` in folder ${folderId}` : ''}`);
       return await this.retryService.execute(() => this.driveService.listDocuments(folderId));
     } catch (error) {
       console.error('Error in listDocuments:', error);
@@ -71,7 +79,7 @@ export class MCPDocumentService {
   async fetchDocumentContent(documentId: string): Promise<string | null> {
     try {
       // First get the file metadata
-      console.log(`Fetching metadata for document ${documentId}`);
+      this.log(`Fetching metadata for document ${documentId}`);
       let fileMetadata;
       
       try {
@@ -83,7 +91,7 @@ export class MCPDocumentService {
               const metadata = await driveProxyService.getFileMetadata(token, documentId);
               if (metadata && metadata.name) {
                 fileMetadata = { result: metadata };
-                console.log('Got metadata via proxy');
+                this.log('Got metadata via proxy');
               }
             }
           } catch (proxyError) {
@@ -115,7 +123,7 @@ export class MCPDocumentService {
       const fileName = fileMetadata.result.name;
       const mimeType = fileMetadata.result.mimeType;
       
-      console.log(`Fetching document: ${fileName}, type: ${mimeType}`);
+      this.log(`Fetching document: ${fileName}, type: ${mimeType}`);
       
       // Check if it's a folder
       if (mimeType.includes('folder')) {
@@ -167,7 +175,8 @@ export class MCPDocumentService {
         return null;
       }
       
-      console.log(`Successfully fetched document content for ${fileName}, length: ${documentContent.length}`);
+      this.log(`Successfully fetched document content for ${fileName}, length: ${documentContent.length}`);
+      console.log(`Document ${fileName} content sample:`, documentContent.substring(0, 200) + '...');
       return documentContent;
     } catch (error) {
       console.error(`Error fetching document ${documentId}:`, error);
@@ -197,5 +206,13 @@ export class MCPDocumentService {
   resetProxyErrorState(): void {
     this.lastProxyError = 0;
     driveProxyService.resetErrorState();
+  }
+  
+  /**
+   * Enable or disable debug logging
+   */
+  setDebugMode(debug: boolean): void {
+    this.debug = debug;
+    this.log(`Debug mode ${debug ? 'enabled' : 'disabled'}`);
   }
 }
