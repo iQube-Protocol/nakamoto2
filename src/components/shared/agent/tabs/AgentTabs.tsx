@@ -14,7 +14,7 @@ interface AgentTabsProps {
   inputValue: string;
   isProcessing: boolean;
   playing: string | null;
-  agentType: 'learn' | 'earn' | 'connect';
+  agentType: 'learn' | 'earn' | 'connect' | 'mondai';
   messagesEndRef: React.RefObject<HTMLDivElement>;
   conversationId: string | null;
   handleInputChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;

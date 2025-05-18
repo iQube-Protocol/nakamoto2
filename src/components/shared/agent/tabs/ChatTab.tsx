@@ -7,7 +7,7 @@ import EmptyConversation from '../EmptyConversation';
 interface ChatTabProps {
   messages: AgentMessage[];
   playing: string | null;
-  agentType: 'learn' | 'earn' | 'connect';
+  agentType: 'learn' | 'earn' | 'connect' | 'mondai';
   messagesEndRef: React.RefObject<HTMLDivElement>;
   handlePlayAudio: (messageId: string) => void;
 }
