@@ -8,7 +8,7 @@ import { useUserInteractions } from '@/hooks/use-user-interactions';
  * Hook to load and manage message history
  */
 export const useMessageHistory = (
-  agentType: 'learn' | 'earn' | 'connect' | 'mondai',
+  agentType: 'learn' | 'earn' | 'connect', // We'll handle 'mondai' separately in useAgentMessages.tsx
   initialMessages: AgentMessage[] = [],
   setMessages: React.Dispatch<React.SetStateAction<AgentMessage[]>>
 ) => {
