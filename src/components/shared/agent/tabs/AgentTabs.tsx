@@ -47,6 +47,9 @@ const AgentTabs: React.FC<AgentTabsProps> = ({
     setActiveTab('chat');
   };
 
+  // Convert 'mondai' to 'learn' for KnowledgeBase component
+  const knowledgeBaseAgentType = agentType === 'mondai' ? 'learn' : agentType;
+
   return (
     <Tabs 
       value={activeTab} 
@@ -81,7 +84,7 @@ const AgentTabs: React.FC<AgentTabsProps> = ({
         </TabsContent>
 
         <TabsContent value="knowledge" className="h-full m-0 p-4 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col flex-1">
-          <KnowledgeBase agentType={agentType} />
+          <KnowledgeBase agentType={knowledgeBaseAgentType} />
         </TabsContent>
       </div>
 
