@@ -1,4 +1,3 @@
-
 import { KBAIKnowledgeItem } from '../index';
 
 // Expanded set of fallback knowledge items
@@ -16,6 +15,33 @@ const fallbackKnowledgeItems: KBAIKnowledgeItem[] = [
     id: 'kb-fallback-2',
     title: 'What is Web3?',
     content: 'Web3 represents the next evolution of the internet, built on blockchain technology. It emphasizes decentralization, user ownership of data and content, and trustless interactions without intermediaries.',
+    type: 'concept',
+    source: 'MonDAI Knowledge Base',
+    relevance: 0.95,
+    timestamp: new Date().toISOString()
+  },
+  {
+    id: 'kb-mondai-overview',
+    title: 'Meet Aigent MonDAI',
+    content: 'Aigent MonDAI is your guide to the world of crypto-agentic AI. She\'s a smart, friendly assistant built specifically for the CryptoMondays community to help you learn, earn, and connect in the Web3 and blockchain space. What makes MonDAI truly special is that she\'s not just an AI — she\'s a crypto-agentic AI built to serve you, not harvest your data.',
+    type: 'agent-info',
+    source: 'MonDAI Knowledge Base',
+    relevance: 1.0,
+    timestamp: new Date().toISOString()
+  },
+  {
+    id: 'kb-mondai-details',
+    title: 'How MonDAI Works',
+    content: 'MonDAI uses iQubes — secure, smart building blocks that allow her to learn what matters most to you and deliver highly personalized, context-aware support. They let her protect your privacy, respect your choices, and give you meaningful insights and opportunities without ever selling your data or locking you into a walled garden. MonDAI is built to empower you to understand, participate in, and shape the future of decentralized tech.',
+    type: 'agent-info',
+    source: 'MonDAI Knowledge Base',
+    relevance: 0.98,
+    timestamp: new Date().toISOString()
+  },
+  {
+    id: 'kb-iqubes-explained',
+    title: 'Understanding iQubes',
+    content: 'iQubes are secure, privacy-preserving data structures that power MonDAI\'s personalized experiences. They allow MonDAI to provide context-aware support while protecting your data sovereignty. iQubes enable MonDAI to learn your preferences and provide relevant insights without compromising your privacy.',
     type: 'concept',
     source: 'MonDAI Knowledge Base',
     relevance: 0.95,
@@ -158,6 +184,35 @@ const topicSpecificItems: Record<string, KBAIKnowledgeItem[]> = {
       relevance: 1.0,
       timestamp: new Date().toISOString()
     }
+  ],
+  'mondai': [
+    {
+      id: 'kb-mondai-full',
+      title: 'Aigent MonDAI: Your Guide to Crypto-Agentic AI',
+      content: 'Aigent MonDAI isn\'t just another AI assistant — she\'s your smart, friendly guide to everything Web3, blockchain, and decentralized AI, built specifically for the CryptoMondays community. Think of her as a digital co-pilot who helps you learn, earn, and connect — all while making sense of a fast-moving, often confusing crypto world.\n\nShe\'s here to answer your questions, introduce you to important conversations, point you to useful opportunities, and help you grow your knowledge and network — whether you\'re brand new to crypto or a seasoned Web3 explorer.\n\nWhat makes MonDAI truly special is that she\'s not just an AI — she\'s a crypto-agentic AI. That means she\'s not powered by big tech or stuck in a centralized box. Instead, MonDAI is built to serve you, not harvest your data. She\'s open, transparent, and aligned with the values of decentralization — where individuals own their data, shape their identity, and unlock real value from their participation.\n\nBehind the scenes, MonDAI uses something called iQubes — don\'t worry, you don\'t need to be a tech expert to benefit from them. iQubes are secure, smart building blocks that allow MonDAI to learn what matters most to you and deliver highly personalized, context-aware support. They let her protect your privacy, respect your choices, and give you meaningful insights and opportunities without ever selling your data or locking you into a walled garden.\n\nIn short, Aigent MonDAI is built to empower you — to help you understand, participate in, and shape the future of decentralized tech. She\'s easy to talk to, always learning, and most importantly, she\'s on your side.',
+      type: 'agent-info',
+      source: 'MonDAI Knowledge Base',
+      relevance: 1.0,
+      timestamp: new Date().toISOString()
+    },
+    {
+      id: 'kb-mondai-purpose',
+      title: 'The Purpose of MonDAI',
+      content: 'MonDAI was created to help bridge the gap between complex Web3 technologies and everyday users. Her goal is to make blockchain concepts accessible, help users discover earning opportunities, and connect with like-minded individuals in the CryptoMondays community. She serves as both an educational resource and practical tool for navigating the decentralized technology landscape.',
+      type: 'agent-info',
+      source: 'MonDAI Knowledge Base',
+      relevance: 0.9,
+      timestamp: new Date().toISOString()
+    },
+    {
+      id: 'kb-mondai-features',
+      title: 'Key Features of MonDAI',
+      content: 'MonDAI offers personalized learning pathways based on your interests and knowledge level, identifies relevant earning opportunities in the crypto space, facilitates connections within the Web3 community, and provides real-time insights on market trends. All this while maintaining your data sovereignty through iQubes technology.',
+      type: 'agent-info',
+      source: 'MonDAI Knowledge Base',
+      relevance: 0.85,
+      timestamp: new Date().toISOString()
+    }
   ]
 };
 
@@ -177,6 +232,11 @@ export const getFallbackItems = (query: string = ''): KBAIKnowledgeItem[] => {
       relevantItems = [...relevantItems, ...topicSpecificItems[topic]];
     }
   });
+  
+  // If query contains "mondai" but we didn't match the exact topic, still show mondai items
+  if (lowerQuery.includes('mondai') && !relevantItems.length) {
+    relevantItems = [...relevantItems, ...topicSpecificItems['mondai']];
+  }
   
   // If no topic-specific items or query is empty, return all fallback items
   if (relevantItems.length === 0 || !query) {

@@ -20,4 +20,21 @@ export class DocumentEventHelper {
       console.log(`Dispatched documentContextUpdated event for ${action} action on document ${details.documentName || documentId}`);
     }
   }
+  
+  /**
+   * Dispatch custom event when knowledge base is updated
+   */
+  dispatchKnowledgeBaseUpdatedEvent(action: 'refreshed' | 'itemAdded' | 'itemRemoved', details: any): void {
+    if (typeof window !== 'undefined') {
+      const event = new CustomEvent('knowledgeBaseUpdated', { 
+        detail: { 
+          action,
+          timestamp: Date.now(),
+          ...details
+        } 
+      });
+      window.dispatchEvent(event);
+      console.log(`Dispatched knowledgeBaseUpdated event for ${action} action`);
+    }
+  }
 }

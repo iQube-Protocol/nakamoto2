@@ -3,6 +3,7 @@ import { getKBAIService } from '@/integrations/kbai/KBAIMCPService';
 import { getKBAIDirectService } from '@/integrations/kbai/KBAIDirectService';
 import { getConversationContext, processAgentInteraction } from '@/services/agent-service';
 import { toast } from 'sonner';
+import { KBAIKnowledgeItem } from '@/integrations/kbai';
 
 export interface MonDAIResponse {
   conversationId: string;
@@ -40,22 +41,28 @@ export async function generateMonDAIResponse(
   const connectionStatus = directService.getConnectionStatus();
 
   // Get relevant knowledge items for the message
-  let relevantKnowledgeItems = [];
+  let relevantKnowledgeItems: KBAIKnowledgeItem[] = [];
   let knowledgeSource = "Offline Knowledge Base";
   
   try {
+    // First check if we're asking about MonDAI specifically
+    const isMonDAIQuery = message.toLowerCase().includes('mondai') || 
+                         message.toLowerCase().includes('aigent') ||
+                         message.toLowerCase().includes('crypto-agentic') ||
+                         message.toLowerCase().includes('iqubes');
+    
     if (isInFallbackMode) {
       console.log('Using direct fallback data for query', message);
       // Get fallback items directly from KBAI direct service
       relevantKnowledgeItems = await directService.fetchKnowledgeItems({
-        query: message,
+        query: isMonDAIQuery ? 'mondai' : message, // Force mondai items if it's a relevant query
         limit: 3
       });
     } else {
       // Try regular KBAI service first
       const kbaiService = getKBAIService();
       relevantKnowledgeItems = await kbaiService.fetchKnowledgeItems({
-        query: message,
+        query: isMonDAIQuery ? 'mondai' : message, // Force mondai items if it's a relevant query
         limit: 3
       });
       
@@ -76,11 +83,26 @@ export async function generateMonDAIResponse(
   let responseMessage = '';
   
   if (relevantKnowledgeItems.length > 0) {
-    responseMessage = `I found some information related to your question about ${message.substring(0, 30)}... 
+    // Check if any of the items are about MonDAI
+    const mondaiItems = relevantKnowledgeItems.filter(item => 
+      item.type === 'agent-info' || (item.title && item.title.toLowerCase().includes('mondai'))
+    );
+    
+    if (mondaiItems.length > 0) {
+      // If we found MonDAI information items, create a more personalized response
+      responseMessage = `I can tell you about myself! I am Aigent MonDAI, your guide to the world of crypto-agentic AI.
+      
+${mondaiItems.map((item, i) => `${item.content}`).join('\n\n')}
+
+Is there anything specific about my capabilities or how I can help you that you'd like to know more about?`;
+    } else {
+      // Regular response for other knowledge items
+      responseMessage = `I found some information related to your question about ${message.substring(0, 30)}... 
       
 ${relevantKnowledgeItems.map((item, i) => `According to our knowledge base: "${item.title}" - ${item.content}`).join('\n\n')}
 
 Is there anything specific about this topic you'd like to explore further?`;
+    }
   } else {
     responseMessage = `I understand you're asking about "${message}". While I don't have specific knowledge items about this topic in my database, I can try to help with general information.
     
