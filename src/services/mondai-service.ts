@@ -91,23 +91,36 @@ export async function generateMonDAIResponse(
     
     if (mondaiItems.length > 0) {
       // If we found MonDAI information items, create a more personalized response
-      responseMessage = `I can tell you about myself! I am Aigent MonDAI, your guide to the world of crypto-agentic AI.
-      
-${mondaiItems.map((item, i) => `${item.content}`).join('\n\n')}
+      // Use a more concise format that summarizes the knowledge rather than quoting it directly
+      responseMessage = `I'm Aigent MonDAI, your guide to crypto-agentic AI.
 
-Is there anything specific about my capabilities or how I can help you that you'd like to know more about?`;
+Based on what I know, I can help you understand ${mondaiItems[0].content.split('.')[0].trim().toLowerCase()}.
+
+My capabilities include analyzing blockchain trends, providing personalized learning paths, and offering crypto risk assessments.
+
+Is there a specific aspect of my functionality you'd like to explore?
+
+${shouldOfferDiagram(message) ? 
+  "\nWould you like me to create a diagram illustrating how I work with iQubes and blockchain data?" : ""}`;
     } else {
-      // Regular response for other knowledge items
-      responseMessage = `I found some information related to your question about ${message.substring(0, 30)}... 
+      // Regular response for other knowledge items - more concise and user-friendly
+      const topicSummary = extractMainTopic(message);
       
-${relevantKnowledgeItems.map((item, i) => `According to our knowledge base: "${item.title}" - ${item.content}`).join('\n\n')}
+      responseMessage = `Here's what I know about ${topicSummary}:
 
-Is there anything specific about this topic you'd like to explore further?`;
+${summarizeKnowledgeItems(relevantKnowledgeItems)}
+
+${shouldOfferDiagram(message) ? 
+  "\nWould you like me to see a visual diagram explaining this concept?" : ""}
+
+What specific aspect would you like to know more about?`;
     }
   } else {
-    responseMessage = `I understand you're asking about "${message}". While I don't have specific knowledge items about this topic in my database, I can try to help with general information.
-    
-Would you like to know more about a related topic, or would you prefer to explore other areas of Web3 and blockchain technology?`;
+    responseMessage = `I understand you're asking about "${extractMainTopic(message)}".
+
+While I don't have specific knowledge items about this topic in my database, I can help with general information on Web3 and blockchain concepts.
+
+Would you like to explore related topics instead? I'm happy to guide you through the basics if this is a new area for you.`;
   }
 
   return {
@@ -123,6 +136,62 @@ Would you like to know more about a related topic, or would you prefer to explor
       isOffline: isInFallbackMode
     }
   };
+}
+
+/**
+ * Determine if we should offer to create a diagram based on the query content
+ */
+function shouldOfferDiagram(message: string): boolean {
+  const complexTopics = [
+    'how', 'process', 'workflow', 'architecture', 'structure', 
+    'lifecycle', 'relationship', 'system', 'network', 'framework',
+    'interaction', 'protocol', 'blockchain', 'consensus', 'transaction',
+    'explain', 'mechanism', 'function', 'diagram'
+  ];
+  
+  const messageLower = message.toLowerCase();
+  return complexTopics.some(topic => messageLower.includes(topic));
+}
+
+/**
+ * Extract the main topic from a user message
+ */
+function extractMainTopic(message: string): string {
+  // Simple extraction of the main topic - could be enhanced with NLP
+  const words = message.split(' ');
+  if (words.length <= 3) return message;
+  
+  // Try to find key nouns by removing common question words
+  const questionWords = ['what', 'how', 'why', 'when', 'where', 'who', 'is', 'are', 'can', 'could', 'would', 'will', 'do', 'does', 'about'];
+  const filteredWords = words.filter(word => !questionWords.includes(word.toLowerCase()));
+  
+  if (filteredWords.length > 0) {
+    return filteredWords.slice(0, 3).join(' ') + (filteredWords.length > 3 ? '...' : '');
+  }
+  
+  return message.substring(0, 30) + (message.length > 30 ? '...' : '');
+}
+
+/**
+ * Summarize knowledge items into a concise, readable format
+ */
+function summarizeKnowledgeItems(items: KBAIKnowledgeItem[]): string {
+  if (!items || items.length === 0) return '';
+  
+  // Instead of directly quoting, create a summarized version
+  let summary = '';
+  
+  items.forEach((item, index) => {
+    // Extract key points from the content
+    const contentLines = item.content.split(/\.\s+/).filter(line => line.length > 20);
+    const keyPoints = contentLines.slice(0, 2).map(line => line.trim() + (line.endsWith('.') ? '' : '.'));
+    
+    if (keyPoints.length > 0) {
+      summary += `• ${keyPoints.join(' ')}\n\n`;
+    }
+  });
+  
+  return summary.trim();
 }
 
 /**
