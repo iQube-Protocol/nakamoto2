@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useRef } from 'react';
 import { Send, Mic, Paperclip } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
@@ -26,6 +26,7 @@ const AgentInputBar = ({
 }: AgentInputBarProps) => {
   const { toast } = useToast();
   const isMobile = useIsMobile();
+  const textareaRef = useRef<HTMLTextAreaElement>(null);
 
   const handleVoiceInput = () => {
     toast({
@@ -103,6 +104,7 @@ const AgentInputBar = ({
           </div>
           
           <Textarea
+            ref={textareaRef}
             value={inputValue}
             onChange={customHandleInputChange}
             onKeyDown={handleKeyDown || defaultHandleKeyDown}
@@ -117,6 +119,7 @@ const AgentInputBar = ({
               alignItems: 'center',
               overflow: 'auto',
             }}
+            disabled={isProcessing}
           />
         </div>
         

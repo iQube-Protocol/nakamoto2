@@ -25,7 +25,7 @@ const AgentHeader = ({ title, description, isProcessing }: AgentHeaderProps) => 
         </h2>
         <p className="text-sm text-muted-foreground">{description}</p>
       </div>
-      <ReliabilityIndicator />
+      <ReliabilityIndicator isProcessing={isProcessing} />
     </div>
   );
 };

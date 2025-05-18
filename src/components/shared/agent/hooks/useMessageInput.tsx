@@ -16,8 +16,7 @@ export const useMessageInput = () => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       if (inputValue.trim()) {
-        // Create a synthetic form event
-        const formEvent = new Event('submit', { bubbles: true }) as unknown as React.FormEvent;
+        const formEvent = new Event('submit', { bubbles: true, cancelable: true }) as unknown as React.FormEvent;
         handleSubmit(formEvent);
       }
     }
