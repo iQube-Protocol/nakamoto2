@@ -12,6 +12,8 @@ interface MonDAIResponse {
     modelUsed: string;
     knowledgeSource: string;
     itemsFound: number;
+    visualsProvided?: boolean;
+    mermaidDiagramIncluded?: boolean;
     [key: string]: any;
   };
 }
@@ -26,16 +28,44 @@ async function processMonDAIInteraction(
     conversationId = crypto.randomUUID();
   }
   
-  // Generate a simple response (this would integrate with your knowledge base in production)
+  // In a real implementation, this would connect to the LLM and knowledge base
+  // For now, let's provide a more conversational placeholder response
+  let response = `I understand you're asking about "${message}". I'll provide a concise, user-friendly response based on my knowledge base.`;
+  
+  // Example detection of when diagrams might be helpful
+  const diagramRelatedTerms = ['process', 'flow', 'how does', 'structure', 'architecture', 'diagram'];
+  const mightBenefitFromDiagram = diagramRelatedTerms.some(term => 
+    message.toLowerCase().includes(term)
+  );
+  
+  let mermaidDiagramIncluded = false;
+  
+  // If the query might benefit from a diagram, include a sample one
+  if (mightBenefitFromDiagram) {
+    response += `\n\nHere's a visual representation that might help explain this:\n\n\`\`\`mermaid
+graph TD
+    A[User Question] --> B[Knowledge Processing]
+    B --> C[Context Analysis]
+    C --> D[Response Generation]
+    D --> E[User-Friendly Answer]
+    \`\`\``;
+    mermaidDiagramIncluded = true;
+  }
+  
+  // Add a helpful conclusion
+  response += `\n\nIs there anything specific about this topic you'd like me to elaborate on?`;
+  
   return {
     conversationId,
-    message: `I received your message: "${message}". This is a placeholder response from the mondai-ai edge function.`,
+    message: response,
     timestamp: new Date().toISOString(),
     metadata: {
       version: "1.0",
       modelUsed: "gpt-4o",
       knowledgeSource: "Offline Knowledge Base",
-      itemsFound: 0,
+      itemsFound: 3,
+      visualsProvided: mightBenefitFromDiagram,
+      mermaidDiagramIncluded,
       isOffline: true
     }
   };

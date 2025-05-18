@@ -71,6 +71,11 @@ const MonDAIInterface: React.FC = () => {
     checkConnection();
   }, []);
 
+  // Initial welcome message with instructions about mermaid diagrams and visuals
+  const initialMessage = connectionStatus === 'connected'
+    ? "Hello! I'm your MonDAI assistant with direct KBAI integration. I can help you learn about Web3, cryptocurrency, blockchain concepts, and more using my integrated knowledge base. I'll provide concise, easy-to-understand explanations, and can create visual diagrams when helpful. What would you like to know about today?"
+    : "Hello! I'm your MonDAI assistant. I'm currently using an offline knowledge base for Web3 concepts. I'll provide clear, concise explanations and can create visual diagrams for complex topics. What would you like to explore today?";
+
   return (
     <div className="container py-6 max-w-7xl mx-auto h-full agent-interface">
       <div className="grid gap-6 h-full">
@@ -86,7 +91,7 @@ const MonDAIInterface: React.FC = () => {
           <AgentInterface
             title="MonDAI"
             description={getStatusDescription()}
-            agentType="learn" // Using learn type for compatibility
+            agentType="mondai" 
             onMessageSubmit={handleAIMessage}
             onDocumentAdded={handleDocumentContextUpdated}
             documentContextUpdated={documentUpdates}
@@ -95,9 +100,7 @@ const MonDAIInterface: React.FC = () => {
               {
                 id: "1",
                 sender: "agent",
-                message: connectionStatus === 'connected'
-                  ? "Hello! I'm your MonDAI assistant with direct KBAI integration. I can help you learn about Web3, cryptocurrency, blockchain concepts, and more using my integrated knowledge base. What would you like to know about today?"
-                  : "Hello! I'm your MonDAI assistant. I'm currently using an offline knowledge base for Web3 concepts. You can still ask me about blockchain, cryptocurrency, and other topics. What would you like to explore today?",
+                message: initialMessage,
                 timestamp: new Date().toISOString(),
                 metadata: {
                   version: "1.0",
