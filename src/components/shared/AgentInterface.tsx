@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { AgentMessage } from '@/lib/types';
 import { Card } from '@/components/ui/card';
@@ -10,7 +11,7 @@ import './agent/styles/agent-interface.css'; // We'll create this file for style
 interface AgentInterfaceProps {
   title: string;
   description: string;
-  agentType: 'learn' | 'earn' | 'connect';
+  agentType: 'learn' | 'earn' | 'connect' | 'mondai';
   conversationId?: string | null; 
   initialMessages?: AgentMessage[];
   onMessageSubmit?: (message: string) => Promise<AgentMessage>;
