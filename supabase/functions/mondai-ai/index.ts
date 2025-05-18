@@ -1,6 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
+import { OpenAI } from 'https://esm.sh/openai@4.0.0';
 
 // Interface for the response
 interface MonDAIResponse {
@@ -16,6 +17,17 @@ interface MonDAIResponse {
     mermaidDiagramIncluded?: boolean;
     [key: string]: any;
   };
+}
+
+// Interface for knowledge items
+interface KnowledgeItem {
+  id: string;
+  title: string;
+  content: string;
+  type: string;
+  created_at?: string;
+  updated_at?: string;
+  metadata?: Record<string, any>;
 }
 
 /**
@@ -85,55 +97,107 @@ Use appropriate diagram types (flowchart, sequence, class, etc.) based on what y
 Your tone is conversational, upbeat, and always encouraging — like a helpful friend who knows the ropes of Web3 but never talks down. Use accessible language and avoid jargon unless necessary, and when you do use technical terms, briefly explain them.
 `;
 
-// Process a user message and generate a response
+/**
+ * Process the user's query with the OpenAI API
+ * @param message User's message
+ * @param knowledgeItems Relevant knowledge items
+ * @param conversationId Conversation ID for continuity
+ * @returns Processed response from the AI
+ */
+async function processWithOpenAI(
+  message: string,
+  knowledgeItems: KnowledgeItem[] = [],
+  conversationId: string,
+  historicalContext?: string
+): Promise<string> {
+  const openai = new OpenAI({
+    apiKey: Deno.env.get('OPENAI_API_KEY') || '',
+  });
+
+  // Format knowledge items for the AI prompt
+  let knowledgeContext = '';
+  if (knowledgeItems && knowledgeItems.length > 0) {
+    knowledgeContext = `
+### Knowledge Base Entries
+${knowledgeItems.map((item, index) => 
+    `
+[Entry ${index + 1}]
+Title: ${item.title || 'Untitled'}
+Content: ${item.content}
+Type: ${item.type || 'General'}
+`
+).join('\n')}
+
+Use the information above to inform your responses, summarize this knowledge - do not quote verbatim.
+`;
+  }
+
+  // Include historical context if available
+  const contextPrompt = historicalContext ? 
+    `Previous conversation context:\n${historicalContext}\n\nContinue the conversation based on this history.` : 
+    'This is a new conversation.';
+
+  const response = await openai.chat.completions.create({
+    model: "gpt-4o-mini", // Using gpt-4o-mini for cost efficiency, can be upgraded as needed
+    messages: [
+      { 
+        role: "system", 
+        content: `${MONDAI_SYSTEM_PROMPT}\n\n${contextPrompt}\n\n${knowledgeContext}` 
+      },
+      { 
+        role: "user", 
+        content: message 
+      }
+    ],
+    temperature: 0.7,
+    max_tokens: 1500,
+  });
+
+  return response.choices[0]?.message?.content || "I apologize, I wasn't able to process your request.";
+}
+
+/**
+ * Detects if the response includes a mermaid diagram
+ */
+function detectMermaidDiagram(content: string): boolean {
+  return content.includes("```mermaid");
+}
+
+/**
+ * Process a user message and generate a response
+ */
 async function processMonDAIInteraction(
   message: string, 
-  conversationId: string | null
+  conversationId: string | null,
+  knowledgeItems: KnowledgeItem[] = [],
+  historicalContext?: string
 ): Promise<MonDAIResponse> {
   // Generate a new conversation ID if none provided
   if (!conversationId) {
     conversationId = crypto.randomUUID();
   }
   
-  // In a real implementation, this would connect to the LLM and knowledge base
-  // For now, let's provide a more conversational placeholder response
-  let response = `I understand you're asking about "${message}". I'll provide a concise, user-friendly response based on my knowledge base.`;
+  // Process with the OpenAI API
+  const aiResponse = await processWithOpenAI(message, knowledgeItems, conversationId, historicalContext);
   
-  // Example detection of when diagrams might be helpful
-  const diagramRelatedTerms = ['process', 'flow', 'how does', 'structure', 'architecture', 'diagram'];
-  const mightBenefitFromDiagram = diagramRelatedTerms.some(term => 
-    message.toLowerCase().includes(term)
-  );
+  // Detect if response contains a mermaid diagram
+  const mermaidDiagramIncluded = detectMermaidDiagram(aiResponse);
   
-  let mermaidDiagramIncluded = false;
-  
-  // If the query might benefit from a diagram, include a sample one
-  if (mightBenefitFromDiagram) {
-    response += `\n\nHere's a visual representation that might help explain this:\n\n\`\`\`mermaid
-graph TD
-    A[User Question] --> B[Knowledge Processing]
-    B --> C[Context Analysis]
-    C --> D[Response Generation]
-    D --> E[User-Friendly Answer]
-    \`\`\``;
-    mermaidDiagramIncluded = true;
-  }
-  
-  // Add a helpful conclusion
-  response += `\n\nIs there anything specific about this topic you'd like me to elaborate on?`;
+  // Determine if response might benefit from visuals
+  const visualsProvided = mermaidDiagramIncluded || message.toLowerCase().includes('diagram');
   
   return {
     conversationId,
-    message: response,
+    message: aiResponse,
     timestamp: new Date().toISOString(),
     metadata: {
       version: "1.0",
-      modelUsed: "gpt-4o",
-      knowledgeSource: "Offline Knowledge Base",
-      itemsFound: 3,
-      visualsProvided: mightBenefitFromDiagram,
+      modelUsed: "gpt-4o-mini",
+      knowledgeSource: knowledgeItems.length > 0 ? "KBAI Knowledge Base" : "General Knowledge",
+      itemsFound: knowledgeItems.length,
+      visualsProvided,
       mermaidDiagramIncluded,
-      isOffline: true
+      isOffline: false
     }
   };
 }
@@ -148,7 +212,7 @@ serve(async (req) => {
   }
   
   try {
-    const { message, conversationId } = await req.json();
+    const { message, conversationId, knowledgeItems, historicalContext } = await req.json();
 
     if (!message) {
       return new Response(
@@ -162,8 +226,13 @@ serve(async (req) => {
       );
     }
 
-    // Process the message
-    const response = await processMonDAIInteraction(message, conversationId);
+    // Process the message with the provided knowledge items (if any)
+    const response = await processMonDAIInteraction(
+      message, 
+      conversationId, 
+      knowledgeItems || [],
+      historicalContext
+    );
 
     return new Response(
       JSON.stringify(response),

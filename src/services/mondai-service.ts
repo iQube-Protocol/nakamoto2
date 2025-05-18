@@ -4,6 +4,7 @@ import { getKBAIDirectService } from '@/integrations/kbai/KBAIDirectService';
 import { getConversationContext, processAgentInteraction } from '@/services/agent-service';
 import { toast } from 'sonner';
 import { KBAIKnowledgeItem } from '@/integrations/kbai';
+import { supabase } from '@/integrations/supabase/client';
 
 export interface MonDAIResponse {
   conversationId: string;
@@ -124,83 +125,129 @@ export async function generateMonDAIResponse(
       // Get fallback items directly from KBAI direct service
       relevantKnowledgeItems = await directService.fetchKnowledgeItems({
         query: isMonDAIQuery ? 'mondai' : message, // Force mondai items if it's a relevant query
-        limit: 3
+        limit: 5 // Increase limit for better context
       });
     } else {
       // Try regular KBAI service first
       const kbaiService = getKBAIService();
       relevantKnowledgeItems = await kbaiService.fetchKnowledgeItems({
         query: isMonDAIQuery ? 'mondai' : message, // Force mondai items if it's a relevant query
-        limit: 3
+        limit: 5 // Increase limit for better context
       });
       
       // If connected, update knowledge source
       if (kbaiService.getConnectionStatus() === 'connected') {
         knowledgeSource = "KBAI MCP Direct";
-        toast.success('Successfully retrieved information from KBAI');
+        console.log('Successfully retrieved information from KBAI');
       }
     }
     
     console.log(`Found ${relevantKnowledgeItems.length} relevant knowledge items for query`);
+    
+    // Debug log the knowledge items
+    if (relevantKnowledgeItems.length > 0) {
+      console.log('Sample knowledge item:', {
+        title: relevantKnowledgeItems[0].title,
+        type: relevantKnowledgeItems[0].type,
+        contentLength: relevantKnowledgeItems[0].content.length
+      });
+    }
   } catch (error) {
     console.warn('Error fetching knowledge items:', error);
     // Don't show error toast, just use fallback
   }
 
-  // Generate response based on available knowledge
-  let responseMessage = '';
-  
-  if (relevantKnowledgeItems.length > 0) {
-    // Check if any of the items are about MonDAI
-    const mondaiItems = relevantKnowledgeItems.filter(item => 
-      item.type === 'agent-info' || (item.title && item.title.toLowerCase().includes('mondai'))
-    );
+  try {
+    // Try to call the mondai-ai function with knowledge items
+    const { data, error } = await supabase.functions.invoke('mondai-ai', {
+      body: { 
+        message, 
+        conversationId,
+        knowledgeItems: relevantKnowledgeItems,
+        historicalContext: contextResult?.historicalContext
+      }
+    });
     
-    if (mondaiItems.length > 0) {
-      // If we found MonDAI information items, create a more personalized response
-      // Use a more concise format that summarizes the knowledge rather than quoting it directly
-      responseMessage = `I'm Aigent MonDAI, your guide to crypto-agentic AI.
-
-Based on what I know, I can help you understand ${mondaiItems[0].content.split('.')[0].trim().toLowerCase()}.
-
-My capabilities include analyzing blockchain trends, providing personalized learning paths, and offering crypto risk assessments.
-
-Is there a specific aspect of my functionality you'd like to explore?
-
-${shouldOfferDiagram(message) ? 
-  "\nWould you like me to create a diagram illustrating how I work with iQubes and blockchain data?" : ""}`;
-    } else {
-      // Regular response for other knowledge items - more concise and user-friendly
-      const topicSummary = extractMainTopic(message);
-      
-      responseMessage = `Here's what I know about ${topicSummary}:
-
-${summarizeKnowledgeItems(relevantKnowledgeItems)}
-
-${shouldOfferDiagram(message) ? 
-  "\nWould you like me to see a visual diagram explaining this concept?" : ""}
-
-What specific aspect would you like to know more about?`;
+    if (error) {
+      console.error('Error calling mondai-ai function:', error);
+      throw new Error(error.message);
     }
-  } else {
-    responseMessage = `I understand you're asking about "${extractMainTopic(message)}".
-
-While I don't have specific knowledge items about this topic in my database, I can help with general information on Web3 and blockchain concepts.
-
-Would you like to explore related topics instead? I'm happy to guide you through the basics if this is a new area for you.`;
+    
+    // Return the response from the edge function
+    return data;
+    
+  } catch (mondaiError) {
+    console.error('Error with mondai-ai function, falling back to learn-ai:', mondaiError);
+    
+    // Fallback to learn-ai with the MonDAI system prompt
+    try {
+      const { data, error } = await supabase.functions.invoke('learn-ai', {
+        body: { 
+          message, 
+          systemPrompt: MONDAI_SYSTEM_PROMPT,
+          conversationId,
+          historicalContext: contextResult?.historicalContext,
+          knowledgeItems: relevantKnowledgeItems
+        }
+      });
+      
+      if (error) {
+        console.error('Error calling learn-ai function as fallback:', error);
+        throw new Error(error.message);
+      }
+      
+      // Map learn-ai response format to MonDAI response format
+      return {
+        conversationId: data.conversationId || conversationId,
+        message: data.response || data.message,
+        timestamp: data.timestamp || new Date().toISOString(),
+        metadata: {
+          version: "1.0",
+          modelUsed: data.modelUsed || "gpt-4o",
+          knowledgeSource: knowledgeSource,
+          itemsFound: relevantKnowledgeItems.length,
+          connectionStatus,
+          isOffline: isInFallbackMode
+        }
+      };
+      
+    } catch (learnError) {
+      console.error('All AI function attempts failed:', learnError);
+      
+      // If both fail, use a very basic fallback response
+      return createBasicFallbackResponse(message, conversationId, relevantKnowledgeItems);
+    }
   }
+}
 
+/**
+ * Create a basic fallback response when all API calls fail
+ */
+function createBasicFallbackResponse(
+  message: string,
+  conversationId: string,
+  knowledgeItems: KBAIKnowledgeItem[]
+): MonDAIResponse {
+  // Extract main topic for more contextual response
+  const topic = extractMainTopic(message);
+  
+  const fallbackResponse = `I understand you're asking about ${topic}.
+
+I'm currently experiencing connection issues with my knowledge base, but I'd be happy to help once the connection is restored.
+
+Would you like to try a different question in the meantime?`;
+  
   return {
     conversationId,
-    message: responseMessage,
+    message: fallbackResponse,
     timestamp: new Date().toISOString(),
     metadata: {
       version: "1.0",
-      modelUsed: "gpt-4o",
-      knowledgeSource,
-      itemsFound: relevantKnowledgeItems.length,
-      connectionStatus,
-      isOffline: isInFallbackMode
+      modelUsed: "fallback",
+      knowledgeSource: "Offline Knowledge Base",
+      itemsFound: knowledgeItems.length,
+      connectionStatus: "error",
+      isOffline: true
     }
   };
 }
