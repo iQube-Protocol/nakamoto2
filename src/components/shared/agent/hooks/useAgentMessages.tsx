@@ -7,6 +7,7 @@ import { useMessageInput } from './useMessageInput';
 import { useAudioControl } from './useAudioControl';
 import { useMessageState } from './useMessageState';
 import { AgentMessage } from '@/lib/types';
+import { useEffect } from 'react';
 
 interface UseAgentMessagesProps {
   agentType: 'learn' | 'earn' | 'connect' | 'mondai';
@@ -30,7 +31,8 @@ export const useAgentMessages = ({
     setInputValue,
     isProcessing, 
     setIsProcessing,
-    handleInputChange
+    handleInputChange,
+    handleKeyDown
   } = useMessageInput();
   
   const {
@@ -61,6 +63,18 @@ export const useAgentMessages = ({
   
   const messagesEndRef = useScrollToBottom(messages);
 
+  // Handler for keyboard events (Enter key press)
+  const handleTextareaKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    handleKeyDown(e, handleSubmit);
+  };
+
+  // Effect to scroll to bottom when messages change
+  useEffect(() => {
+    if (messagesEndRef.current) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages]);
+
   return {
     messages,
     setMessages,
@@ -72,5 +86,6 @@ export const useAgentMessages = ({
     handleInputChange,
     handleSubmit,
     handlePlayAudio,
+    handleKeyDown: handleTextareaKeyDown
   };
 };

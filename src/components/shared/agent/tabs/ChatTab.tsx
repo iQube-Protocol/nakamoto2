@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import { AgentMessage } from '@/lib/types';
 import MessageList from '../MessageList';
 import EmptyConversation from '../EmptyConversation';
@@ -19,6 +19,13 @@ const ChatTab: React.FC<ChatTabProps> = ({
   messagesEndRef,
   handlePlayAudio
 }) => {
+  // Effect to scroll to the latest message whenever messages change or on initial load
+  useEffect(() => {
+    if (messagesEndRef.current && messages.length > 0) {
+      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
+    }
+  }, [messages, messagesEndRef]);
+
   return (
     <div className="flex flex-col h-[400px] overflow-hidden">
       {messages.length === 0 ? (

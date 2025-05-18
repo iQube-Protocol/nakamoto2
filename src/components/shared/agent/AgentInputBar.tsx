@@ -13,6 +13,7 @@ interface AgentInputBarProps {
   handleSubmit: (e: React.FormEvent) => void;
   isProcessing: boolean;
   agentType: 'learn' | 'earn' | 'connect' | 'mondai';
+  handleKeyDown?: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
 }
 
 const AgentInputBar = ({
@@ -20,7 +21,8 @@ const AgentInputBar = ({
   handleInputChange,
   handleSubmit,
   isProcessing,
-  agentType
+  agentType,
+  handleKeyDown
 }: AgentInputBarProps) => {
   const { toast } = useToast();
   const isMobile = useIsMobile();
@@ -39,7 +41,7 @@ const AgentInputBar = ({
     });
   };
 
-  const handleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+  const defaultHandleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       if (inputValue.trim()) {
@@ -103,7 +105,7 @@ const AgentInputBar = ({
           <Textarea
             value={inputValue}
             onChange={customHandleInputChange}
-            onKeyDown={handleKeyDown}
+            onKeyDown={handleKeyDown || defaultHandleKeyDown}
             placeholder={getPlaceholderText()}
             className="pl-24 min-h-[40px] max-h-32 flex-1 pr-3 py-2 flex items-center"
             style={{

@@ -59,6 +59,7 @@ const AgentInterface = ({
     handleInputChange,
     handleSubmit,
     handlePlayAudio,
+    handleKeyDown
   } = useAgentMessages({
     agentType,
     initialMessages,
@@ -138,6 +139,7 @@ const AgentInterface = ({
         handlePlayAudio={handlePlayAudio}
         handleDocumentAdded={handleDocumentAdded}
         documentUpdates={documentUpdates}
+        handleKeyDown={handleKeyDown}
       />
     </Card>
   );
