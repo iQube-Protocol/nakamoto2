@@ -40,14 +40,17 @@ export const useAgentMessages = ({
   
   const { conversationId } = useConversationId(externalConversationId);
   
+  // For backend interactions, map 'mondai' to 'learn'
+  const backendAgentType = agentType === 'mondai' ? 'learn' : agentType;
+  
   const { refreshInteractions } = useMessageHistory(
-    agentType,
+    backendAgentType, // Use 'learn' for 'mondai' when accessing backend services
     initialMessages,
     setMessages
   );
   
   const { handleSubmit } = useMessageSubmit(
-    agentType,
+    agentType, // Keep the original UI type for frontend display
     conversationId,
     setMessages,
     setIsProcessing,

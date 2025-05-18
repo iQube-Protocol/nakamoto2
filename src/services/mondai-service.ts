@@ -28,6 +28,7 @@ export async function generateMonDAIResponse(
   // Get conversation context if we have a conversationId
   let contextResult;
   if (conversationId) {
+    // Always use 'learn' for mondai backend requests
     contextResult = await getConversationContext(conversationId, 'learn');
     conversationId = contextResult.conversationId;
   } else {
@@ -134,10 +135,10 @@ export async function processMonDAIInteraction(
   // Generate response using the service
   const response = await generateMonDAIResponse(message, conversationId);
   
-  // Store the interaction using the agent service
+  // Store the interaction using the agent service - explicitly use 'learn' for mondai
   await processAgentInteraction(
     message,
-    'learn', // Use 'learn' instead of 'mondai' for compatibility
+    'learn', // Always use 'learn' instead of 'mondai' for backend compatibility
     response.message,
     {
       conversationId: response.conversationId

@@ -9,7 +9,7 @@ import { toast } from 'sonner';
  * Hook to handle message submission and processing
  */
 export const useMessageSubmit = (
-  agentType: 'learn' | 'earn' | 'connect',
+  agentType: 'learn' | 'earn' | 'connect' | 'mondai',
   conversationId: string | null,
   setMessages: React.Dispatch<React.SetStateAction<AgentMessage[]>>,
   setIsProcessing: React.Dispatch<React.SetStateAction<boolean>>,
@@ -143,7 +143,10 @@ export const useMessageSubmit = (
         // Also store this interaction in the database for consistency
         let agentResponse = '';
         
-        switch (agentType) {
+        // Use learn for mondai type as well
+        const backendAgentType = agentType === 'mondai' ? 'learn' : agentType;
+        
+        switch (backendAgentType) {
           case 'learn':
             agentResponse = `I'm your Learning Agent. Based on your iQube data, I recommend exploring topics related to ${Math.random() > 0.5 ? 'DeFi protocols' : 'NFT marketplaces'}. Would you like me to provide more information?`;
             break;
@@ -159,7 +162,7 @@ export const useMessageSubmit = (
         if (user) {
           const result = await processAgentInteraction(
             userMessage.message,
-            agentType,
+            backendAgentType, // Use learn instead of mondai here
             agentResponse
           );
           
