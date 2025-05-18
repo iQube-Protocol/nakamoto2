@@ -71,7 +71,7 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ agentType }) => {
                 {agentKnowledgeItems.map((item) => (
                   <div 
                     key={item.id} 
-                    className="p-2 border rounded-md hover:bg-accent cursor-pointer transition-colors"
+                    className="p-2 border rounded-md hover:bg-iqube-accent/20 cursor-pointer transition-colors"
                     onClick={() => handleItemClick(item)}
                   >
                     <div className="flex justify-between items-start">
