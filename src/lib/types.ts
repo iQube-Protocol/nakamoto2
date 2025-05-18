@@ -1,4 +1,3 @@
-
 // iQube types
 
 export interface MetaQube {
@@ -61,7 +60,7 @@ export interface AgentMessage {
 
 export interface AgentConversation {
   messages: AgentMessage[];
-  agentType: 'learn' | 'earn' | 'connect';
+  agentType: 'learn' | 'earn' | 'connect' | 'mondai';
 }
 
 // Dashboard metrics

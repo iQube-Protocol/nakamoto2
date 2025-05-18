@@ -3,7 +3,7 @@ import React from 'react';
 import { Bot } from 'lucide-react';
 
 interface EmptyConversationProps {
-  agentType: 'learn' | 'earn' | 'connect';
+  agentType: 'learn' | 'earn' | 'connect' | 'mondai';
 }
 
 const EmptyConversation = ({ agentType }: EmptyConversationProps) => {

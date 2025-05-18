@@ -9,7 +9,7 @@ import { useMessageState } from './useMessageState';
 import { AgentMessage } from '@/lib/types';
 
 interface UseAgentMessagesProps {
-  agentType: 'learn' | 'earn' | 'connect';
+  agentType: 'learn' | 'earn' | 'connect' | 'mondai';
   initialMessages?: AgentMessage[];
   conversationId?: string | null;
   onMessageSubmit?: (message: string) => Promise<AgentMessage>;
