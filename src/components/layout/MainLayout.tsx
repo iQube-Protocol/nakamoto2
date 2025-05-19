@@ -10,7 +10,7 @@ interface MainLayoutProps {
 
 const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   const isMobile = useIsMobile();
-  const { collapsed, mobileOpen, toggleSidebar, toggleMobileSidebar } = useSidebarState();
+  const { collapsed } = useSidebarState();
   
   return (
     <div className="flex h-screen overflow-hidden bg-background">
@@ -18,7 +18,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       <Sidebar />
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className={`flex-1 flex flex-col overflow-hidden ${!isMobile && !collapsed ? 'ml-64' : 'ml-16'}`}>
         {/* Page content */}
         <main className="flex-1 overflow-auto">
           {children}

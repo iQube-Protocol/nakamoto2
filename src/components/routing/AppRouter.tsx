@@ -4,6 +4,7 @@ import { Route, Routes, BrowserRouter as Router, useLocation, Navigate } from 'r
 import { AnimatePresence } from 'framer-motion';
 import { Toaster } from '@/components/ui/sonner';
 import ProtectedRoute from '../auth/ProtectedRoute';
+import MainLayout from '../layout/MainLayout';
 import SignUp from '../../pages/auth/SignUp';
 import SignIn from '../../pages/SignIn';
 import Index from '../../pages/Index';
@@ -21,6 +22,16 @@ import DataQube from '../../pages/qubes/DataQube';
 import { AuthProvider } from '@/hooks/use-auth';
 import OAuthCallback from '@/components/settings/OAuthCallback';
 
+const ProtectedLayoutRoute = ({ element }) => {
+  return (
+    <ProtectedRoute>
+      <MainLayout>
+        {element}
+      </MainLayout>
+    </ProtectedRoute>
+  );
+};
+
 const AppRoutes = () => {
   const location = useLocation();
   
@@ -31,16 +42,16 @@ const AppRoutes = () => {
         <Route path="/signin" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/oauth-callback" element={<OAuthCallback />} />
-        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-        <Route path="/learn" element={<ProtectedRoute><Learn /></ProtectedRoute>} />
-        <Route path="/earn" element={<ProtectedRoute><Earn /></ProtectedRoute>} />
-        <Route path="/connect" element={<ProtectedRoute><Connect /></ProtectedRoute>} />
-        <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-        <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-        <Route path="/mondai" element={<ProtectedRoute><MonDAI /></ProtectedRoute>} />
-        <Route path="/qubes/agent" element={<ProtectedRoute><AgentQube /></ProtectedRoute>} />
-        <Route path="/qubes/tool" element={<ProtectedRoute><ToolQube /></ProtectedRoute>} />
-        <Route path="/qubes/data" element={<ProtectedRoute><DataQube /></ProtectedRoute>} />
+        <Route path="/dashboard" element={<ProtectedLayoutRoute element={<Dashboard />} />} />
+        <Route path="/learn" element={<ProtectedLayoutRoute element={<Learn />} />} />
+        <Route path="/earn" element={<ProtectedLayoutRoute element={<Earn />} />} />
+        <Route path="/connect" element={<ProtectedLayoutRoute element={<Connect />} />} />
+        <Route path="/settings" element={<ProtectedLayoutRoute element={<Settings />} />} />
+        <Route path="/profile" element={<ProtectedLayoutRoute element={<Profile />} />} />
+        <Route path="/mondai" element={<ProtectedLayoutRoute element={<MonDAI />} />} />
+        <Route path="/qubes/agent" element={<ProtectedLayoutRoute element={<AgentQube />} />} />
+        <Route path="/qubes/tool" element={<ProtectedLayoutRoute element={<ToolQube />} />} />
+        <Route path="/qubes/data" element={<ProtectedLayoutRoute element={<DataQube />} />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AnimatePresence>
