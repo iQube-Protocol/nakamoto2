@@ -22,11 +22,8 @@ const ConnectionsTab = ({ settings, onConnectService }: ConnectionsTabProps) => 
       // Maintain backward compatibility with existing code
       onConnectService(service);
       
-      // Use our new connection service
-      const success = await toggleConnection(service as any);
-      if (success) {
-        toast.success(`${service.charAt(0).toUpperCase() + service.slice(1)} connection ${connections[service as any] ? 'removed' : 'established'} successfully`);
-      }
+      // Use our connection service
+      await toggleConnection(service as any);
     } catch (error) {
       console.error(`Error toggling ${service} connection:`, error);
       toast.error(`Failed to ${connections[service as any] ? 'disconnect' : 'connect'} ${service}`);
@@ -45,12 +42,9 @@ const ConnectionsTab = ({ settings, onConnectService }: ConnectionsTabProps) => 
         {error && (
           <Alert variant="destructive" className="mb-4">
             <AlertCircle className="h-4 w-4" />
-            <AlertTitle>Configuration Error</AlertTitle>
+            <AlertTitle>Connection Error</AlertTitle>
             <AlertDescription>
               {error}
-              <div className="mt-2 text-xs">
-                Please ensure the user_connections table exists in Supabase and OAuth credentials are properly configured.
-              </div>
             </AlertDescription>
           </Alert>
         )}

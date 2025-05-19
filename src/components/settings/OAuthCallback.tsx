@@ -6,7 +6,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Loader2, Check, X } from 'lucide-react';
 import { toast } from 'sonner';
 
-// Demo mode flag - should match the one in other files
+// Demo mode flag - set to false since we now have actual database integration
 const DEMO_MODE = false;
 
 const OAuthCallback = () => {
@@ -62,7 +62,7 @@ const OAuthCallback = () => {
         if (exchangeError) {
           console.error('Token exchange error:', exchangeError);
           setStatus('error');
-          toast.error('Failed to complete authentication. Edge function may not be deployed.');
+          toast.error(`Failed to complete authentication: ${exchangeError.message}`);
           setTimeout(() => navigate('/settings?tab=connections'), 3000);
           return;
         }

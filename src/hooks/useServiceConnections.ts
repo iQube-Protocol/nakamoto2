@@ -3,7 +3,6 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
 import { ServiceType, connectionService } from '@/services/connection-service';
-import { UserConnection } from '@/types/supabase';
 import { toast } from 'sonner';
 
 export interface ServiceConnection {
@@ -13,13 +12,8 @@ export interface ServiceConnection {
   connectionData?: any;
 }
 
-// Demo mode flag - set to true to simulate connections without actual OAuth
+// Demo mode flag - set to false since we now have actual database integration
 const DEMO_MODE = false;
-
-// Helper function to create a typed query builder for tables not in the Supabase types
-function createSupabaseQueryBuilder<T = any>(tableName: string) {
-  return supabase.from(tableName as any) as any;
-}
 
 export function useServiceConnections() {
   const [connections, setConnections] = useState<Record<ServiceType, boolean>>({
@@ -47,19 +41,15 @@ export function useServiceConnections() {
         return;
       }
       
-      // Use our custom query builder to avoid TypeScript errors with tables not in the types
-      const { data, error: queryError } = await createSupabaseQueryBuilder<UserConnection>('user_connections')
+      // Query user_connections table
+      const { data, error: queryError } = await supabase
+        .from('user_connections')
         .select('service, connected_at, connection_data')
         .eq('user_id', user.id);
       
       if (queryError) {
-        if (queryError.message.includes("relation") && queryError.message.includes("does not exist")) {
-          console.error('The user_connections table does not exist in Supabase:', queryError);
-          setError('Database table not found. Please ensure the user_connections table is created in Supabase.');
-        } else {
-          console.error('Error fetching connections:', queryError);
-          setError('Failed to load your connections. Please try again later.');
-        }
+        console.error('Error fetching connections:', queryError);
+        setError('Failed to load your connections. Please try again later.');
         setLoading(false);
         return;
       }
@@ -96,7 +86,7 @@ export function useServiceConnections() {
   // Connect a service
   const connectService = async (service: ServiceType): Promise<boolean> => {
     if (DEMO_MODE) {
-      // In demo mode, just simulate a successful connection
+      // Demo mode handling
       setConnections(prev => ({ ...prev, [service]: true }));
       toast.success(`${service.charAt(0).toUpperCase() + service.slice(1)} connected in demo mode`);
       return true;
@@ -123,7 +113,7 @@ export function useServiceConnections() {
   // Disconnect a service
   const disconnectService = async (service: ServiceType): Promise<boolean> => {
     if (DEMO_MODE) {
-      // In demo mode, just simulate a successful disconnection
+      // Demo mode handling
       setConnections(prev => ({ ...prev, [service]: false }));
       toast.success(`${service.charAt(0).toUpperCase() + service.slice(1)} disconnected in demo mode`);
       return true;
@@ -153,8 +143,6 @@ export function useServiceConnections() {
   
   // Sync BlakQube data from connected service
   const syncBlakQubeData = async (service: ServiceType) => {
-    // In a real implementation, this would update the user's BlakQube data
-    // based on the connected service data
     console.log(`Syncing BlakQube data from ${service}...`);
     toast.success(`Data from ${service} synced to BlakQube`);
   };

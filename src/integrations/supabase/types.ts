@@ -42,6 +42,33 @@ export type Database = {
         }
         Relationships: []
       }
+      user_connections: {
+        Row: {
+          connected_at: string
+          connection_data: Json | null
+          created_at: string
+          id: string
+          service: string
+          user_id: string
+        }
+        Insert: {
+          connected_at?: string
+          connection_data?: Json | null
+          created_at?: string
+          id?: string
+          service: string
+          user_id: string
+        }
+        Update: {
+          connected_at?: string
+          connection_data?: Json | null
+          created_at?: string
+          id?: string
+          service?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_interactions: {
         Row: {
           created_at: string | null
