@@ -1,8 +1,14 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { PostgrestQueryBuilder } from '@supabase/supabase-js';
 
 export type ServiceType = 'linkedin' | 'twitter' | 'telegram' | 'discord' | 'luma' | 'wallet';
+
+// Helper function to create a typed query builder for tables not in the Supabase types
+function createSupabaseQueryBuilder<T = any>(tableName: string): PostgrestQueryBuilder<any, any, any, any> {
+  return supabase.from(tableName) as unknown as PostgrestQueryBuilder<any, any, any, any>;
+}
 
 /**
  * Service for managing external service connections
@@ -55,12 +61,13 @@ export const connectionService = {
           const walletAddress = accounts[0];
           
           // Save wallet connection to Supabase
-          const { error } = await supabase.from('user_connections').upsert({
-            user_id: (await supabase.auth.getUser()).data.user?.id,
-            service: 'wallet',
-            connected_at: new Date().toISOString(),
-            connection_data: { address: walletAddress }
-          }) as unknown as { error: any };
+          const { error } = await createSupabaseQueryBuilder('user_connections')
+            .upsert({
+              user_id: (await supabase.auth.getUser()).data.user?.id,
+              service: 'wallet',
+              connected_at: new Date().toISOString(),
+              connection_data: { address: walletAddress }
+            });
           
           if (error) {
             console.error('Error saving wallet connection:', error);
@@ -89,11 +96,18 @@ export const connectionService = {
    */
   disconnectService: async (service: ServiceType): Promise<boolean> => {
     try {
-      const { error } = await supabase
-        .from('user_connections')
+      const userResult = await supabase.auth.getUser();
+      const userId = userResult.data.user?.id;
+      
+      if (!userId) {
+        toast.error('You must be logged in to disconnect services.');
+        return false;
+      }
+      
+      const { error } = await createSupabaseQueryBuilder('user_connections')
         .delete()
-        .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
-        .eq('service', service) as unknown as { error: any };
+        .eq('user_id', userId)
+        .eq('service', service);
       
       if (error) {
         console.error(`Error disconnecting ${service}:`, error);

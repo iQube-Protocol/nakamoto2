@@ -5,12 +5,18 @@ import { useAuth } from '@/hooks/use-auth';
 import { ServiceType, connectionService } from '@/services/connection-service';
 import { UserConnection } from '@/types/supabase';
 import { toast } from 'sonner';
+import { PostgrestQueryBuilder } from '@supabase/supabase-js';
 
 export interface ServiceConnection {
   service: ServiceType;
   connected: boolean;
   connectedAt?: string;
   connectionData?: any;
+}
+
+// Helper function to create a typed query builder for tables not in the Supabase types
+function createSupabaseQueryBuilder<T = any>(tableName: string): PostgrestQueryBuilder<any, any, any, any> {
+  return supabase.from(tableName) as unknown as PostgrestQueryBuilder<any, any, any, any>;
 }
 
 export function useServiceConnections() {
@@ -31,15 +37,10 @@ export function useServiceConnections() {
     
     setLoading(true);
     try {
-      // Use the generic query instead of typed query to avoid TypeScript errors
-      // Since we know the table exists in the database but not in the TypeScript types
-      const { data, error } = await supabase
-        .from('user_connections')
+      // Use our custom query builder to avoid TypeScript errors with tables not in the types
+      const { data, error } = await createSupabaseQueryBuilder<UserConnection>('user_connections')
         .select('service, connected_at, connection_data')
-        .eq('user_id', user.id) as unknown as { 
-          data: UserConnection[] | null, 
-          error: any 
-        };
+        .eq('user_id', user.id);
       
       if (error) {
         console.error('Error fetching connections:', error);

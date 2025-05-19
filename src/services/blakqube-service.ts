@@ -2,6 +2,12 @@
 import { supabase } from '@/integrations/supabase/client';
 import { BlakQube } from '@/lib/types';
 import { toast } from 'sonner';
+import { PostgrestQueryBuilder } from '@supabase/supabase-js';
+
+// Helper function to create a typed query builder for tables not in the Supabase types
+function createSupabaseQueryBuilder<T = any>(tableName: string): PostgrestQueryBuilder<any, any, any, any> {
+  return supabase.from(tableName) as unknown as PostgrestQueryBuilder<any, any, any, any>;
+}
 
 /**
  * Service for managing BlakQube data
@@ -15,15 +21,11 @@ export const blakQubeService = {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) return null;
       
-      // Use type casting to avoid TypeScript errors with tables not in the types
-      const { data, error } = await supabase
-        .from('blak_qubes')
+      // Use our custom query builder to avoid TypeScript errors
+      const { data, error } = await createSupabaseQueryBuilder('blak_qubes')
         .select('*')
         .eq('user_id', user.user.id)
-        .single() as unknown as { 
-          data: BlakQube & { id: string, user_id: string } | null, 
-          error: any 
-        };
+        .single();
       
       if (error && error.code !== 'PGRST116') { // PGRST116 = not found
         console.error('Error fetching BlakQube data:', error);
@@ -46,14 +48,10 @@ export const blakQubeService = {
       if (!user.user) return false;
       
       // Get current BlakQube data
-      const { data: blakQube, error: blakQubeError } = await supabase
-        .from('blak_qubes')
+      const { data: blakQube, error: blakQubeError } = await createSupabaseQueryBuilder('blak_qubes')
         .select('*')
         .eq('user_id', user.user.id)
-        .single() as unknown as {
-          data: BlakQube | null,
-          error: any
-        };
+        .single();
       
       if (blakQubeError && blakQubeError.code !== 'PGRST116') { // PGRST116 = not found
         console.error('Error fetching BlakQube data:', blakQubeError);
@@ -61,13 +59,9 @@ export const blakQubeService = {
       }
       
       // Get user connections
-      const { data: connections, error: connectionsError } = await supabase
-        .from('user_connections')
+      const { data: connections, error: connectionsError } = await createSupabaseQueryBuilder('user_connections')
         .select('service, connection_data')
-        .eq('user_id', user.user.id) as unknown as {
-          data: { service: string, connection_data: any }[] | null,
-          error: any
-        };
+        .eq('user_id', user.user.id);
       
       if (connectionsError) {
         console.error('Error fetching connections:', connectionsError);
@@ -140,12 +134,11 @@ export const blakQubeService = {
       }
       
       // Save updated BlakQube
-      const { error: updateError } = await supabase
-        .from('blak_qubes')
+      const { error: updateError } = await createSupabaseQueryBuilder('blak_qubes')
         .upsert({
           user_id: user.user.id,
           ...newBlakQube
-        } as any);
+        });
       
       if (updateError) {
         console.error('Error updating BlakQube:', updateError);
