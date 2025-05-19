@@ -15,7 +15,7 @@ export interface ServiceConnection {
 
 // Helper function to create a typed query builder for tables not in the Supabase types
 function createSupabaseQueryBuilder<T = any>(tableName: string) {
-  return supabase.from(tableName) as any;
+  return supabase.from(tableName as any) as any;
 }
 
 export function useServiceConnections() {
