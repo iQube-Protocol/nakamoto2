@@ -5,7 +5,6 @@ import { useAuth } from '@/hooks/use-auth';
 import { ServiceType, connectionService } from '@/services/connection-service';
 import { UserConnection } from '@/types/supabase';
 import { toast } from 'sonner';
-import { PostgrestQueryBuilder } from '@supabase/supabase-js';
 
 export interface ServiceConnection {
   service: ServiceType;
@@ -15,8 +14,8 @@ export interface ServiceConnection {
 }
 
 // Helper function to create a typed query builder for tables not in the Supabase types
-function createSupabaseQueryBuilder<T = any>(tableName: string): PostgrestQueryBuilder<any, any, any, any> {
-  return supabase.from(tableName) as unknown as PostgrestQueryBuilder<any, any, any, any>;
+function createSupabaseQueryBuilder<T = any>(tableName: string) {
+  return supabase.from(tableName) as any;
 }
 
 export function useServiceConnections() {

@@ -2,11 +2,10 @@
 import { supabase } from '@/integrations/supabase/client';
 import { BlakQube } from '@/lib/types';
 import { toast } from 'sonner';
-import { PostgrestQueryBuilder } from '@supabase/supabase-js';
 
 // Helper function to create a typed query builder for tables not in the Supabase types
-function createSupabaseQueryBuilder<T = any>(tableName: string): PostgrestQueryBuilder<any, any, any, any> {
-  return supabase.from(tableName) as unknown as PostgrestQueryBuilder<any, any, any, any>;
+function createSupabaseQueryBuilder<T = any>(tableName: string) {
+  return supabase.from(tableName) as any;
 }
 
 /**
