@@ -9,6 +9,9 @@ function createSupabaseQueryBuilder<T = any>(tableName: string) {
   return supabase.from(tableName as any) as any;
 }
 
+// Demo mode flag - set to true to simulate connections without actual OAuth
+const DEMO_MODE = false;
+
 /**
  * Service for managing external service connections
  */
@@ -18,16 +21,27 @@ export const connectionService = {
    */
   startOAuthFlow: async (service: ServiceType): Promise<boolean> => {
     try {
-      // In a real implementation, we would call a Supabase Edge Function to get an OAuth URL
-      // For now, we'll simulate this process
+      if (DEMO_MODE) {
+        console.log(`[DEMO MODE] Starting OAuth flow for ${service}`);
+        // In demo mode, simulate a successful connection
+        const demoData = { authUrl: `${window.location.origin}/oauth-callback?service=${service}&demo=true` };
+        
+        // Simulate redirect to OAuth provider (in demo mode, redirect to our callback)
+        setTimeout(() => {
+          window.location.href = demoData.authUrl;
+        }, 500); // Short delay to simulate API call
+        
+        return true;
+      }
       
+      // In a real implementation, we would call a Supabase Edge Function to get an OAuth URL
       const { data, error } = await supabase.functions.invoke(`connect-${service}`, {
-        body: { redirectUrl: `${window.location.origin}/settings?tab=connections` }
+        body: { redirectUrl: `${window.location.origin}/oauth-callback?service=${service}` }
       });
       
       if (error) {
         console.error(`Error starting ${service} OAuth flow:`, error);
-        toast.error(`Failed to connect to ${service}. Please try again.`);
+        toast.error(`Failed to connect to ${service}. Please check Edge Function configuration.`);
         return false;
       }
       
@@ -51,6 +65,31 @@ export const connectionService = {
    */
   connectWallet: async (): Promise<boolean> => {
     try {
+      if (DEMO_MODE) {
+        console.log('[DEMO MODE] Connecting wallet');
+        
+        // In demo mode, simulate a successful wallet connection
+        const demoWalletAddress = '0x71C7656EC7ab88b098defB751B7401B5f6d8976F';
+        
+        // Save wallet connection to Supabase (this will still fail if the table doesn't exist)
+        // but we'll handle that error gracefully
+        try {
+          await createSupabaseQueryBuilder('user_connections')
+            .upsert({
+              user_id: (await supabase.auth.getUser()).data.user?.id,
+              service: 'wallet',
+              connected_at: new Date().toISOString(),
+              connection_data: { address: demoWalletAddress }
+            });
+        } catch (err) {
+          console.log('Expected demo mode error with user_connections table:', err);
+          // We don't return false here because in demo mode we want to succeed anyway
+        }
+        
+        toast.success('Demo wallet connected successfully!');
+        return true;
+      }
+      
       // Check if Web3 provider exists
       if (typeof window.ethereum !== 'undefined') {
         // Request account access
@@ -59,23 +98,35 @@ export const connectionService = {
         if (accounts && accounts.length > 0) {
           const walletAddress = accounts[0];
           
-          // Save wallet connection to Supabase
-          const { error } = await createSupabaseQueryBuilder('user_connections')
-            .upsert({
-              user_id: (await supabase.auth.getUser()).data.user?.id,
-              service: 'wallet',
-              connected_at: new Date().toISOString(),
-              connection_data: { address: walletAddress }
-            });
-          
-          if (error) {
+          try {
+            // Save wallet connection to Supabase
+            const { error } = await createSupabaseQueryBuilder('user_connections')
+              .upsert({
+                user_id: (await supabase.auth.getUser()).data.user?.id,
+                service: 'wallet',
+                connected_at: new Date().toISOString(),
+                connection_data: { address: walletAddress }
+              });
+            
+            if (error) {
+              // Check if the error is because the table doesn't exist
+              if (error.message.includes("relation") && error.message.includes("does not exist")) {
+                console.error('The user_connections table does not exist in Supabase:', error);
+                toast.error('Database configuration error. The user_connections table is missing.');
+              } else {
+                console.error('Error saving wallet connection:', error);
+                toast.error('Failed to save wallet connection.');
+              }
+              return false;
+            }
+            
+            toast.success('Wallet connected successfully!');
+            return true;
+          } catch (error) {
             console.error('Error saving wallet connection:', error);
-            toast.error('Failed to save wallet connection.');
+            toast.error('Failed to save wallet connection to database.');
             return false;
           }
-          
-          toast.success('Wallet connected successfully!');
-          return true;
         }
       } else {
         toast.error('No Web3 provider found. Please install MetaMask or another Web3 wallet.');
@@ -95,6 +146,13 @@ export const connectionService = {
    */
   disconnectService: async (service: ServiceType): Promise<boolean> => {
     try {
+      if (DEMO_MODE) {
+        console.log(`[DEMO MODE] Disconnecting ${service}`);
+        // In demo mode, simulate a successful disconnection
+        toast.success(`${service.charAt(0).toUpperCase() + service.slice(1)} disconnected successfully.`);
+        return true;
+      }
+      
       const userResult = await supabase.auth.getUser();
       const userId = userResult.data.user?.id;
       
@@ -103,19 +161,31 @@ export const connectionService = {
         return false;
       }
       
-      const { error } = await createSupabaseQueryBuilder('user_connections')
-        .delete()
-        .eq('user_id', userId)
-        .eq('service', service);
-      
-      if (error) {
-        console.error(`Error disconnecting ${service}:`, error);
-        toast.error(`Failed to disconnect ${service}.`);
+      try {
+        const { error } = await createSupabaseQueryBuilder('user_connections')
+          .delete()
+          .eq('user_id', userId)
+          .eq('service', service);
+        
+        if (error) {
+          // Check if the error is because the table doesn't exist
+          if (error.message.includes("relation") && error.message.includes("does not exist")) {
+            console.error('The user_connections table does not exist in Supabase:', error);
+            toast.error('Database configuration error. The user_connections table is missing.');
+          } else {
+            console.error(`Error disconnecting ${service}:`, error);
+            toast.error(`Failed to disconnect ${service}.`);
+          }
+          return false;
+        }
+        
+        toast.success(`${service.charAt(0).toUpperCase() + service.slice(1)} disconnected successfully.`);
+        return true;
+      } catch (error) {
+        console.error(`Error in disconnectService for ${service}:`, error);
+        toast.error(`Failed to disconnect ${service}. Database error.`);
         return false;
       }
-      
-      toast.success(`${service.charAt(0).toUpperCase() + service.slice(1)} disconnected successfully.`);
-      return true;
     } catch (error) {
       console.error(`Error disconnecting ${service}:`, error);
       toast.error(`Failed to disconnect ${service}.`);

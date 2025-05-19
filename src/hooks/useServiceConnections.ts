@@ -13,6 +13,9 @@ export interface ServiceConnection {
   connectionData?: any;
 }
 
+// Demo mode flag - set to true to simulate connections without actual OAuth
+const DEMO_MODE = false;
+
 // Helper function to create a typed query builder for tables not in the Supabase types
 function createSupabaseQueryBuilder<T = any>(tableName: string) {
   return supabase.from(tableName as any) as any;
@@ -28,6 +31,7 @@ export function useServiceConnections() {
     wallet: false
   });
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
   
   // Fetch connection status for all services
@@ -35,14 +39,28 @@ export function useServiceConnections() {
     if (!user) return;
     
     setLoading(true);
+    setError(null);
     try {
+      if (DEMO_MODE) {
+        // In demo mode, just return the current state
+        setLoading(false);
+        return;
+      }
+      
       // Use our custom query builder to avoid TypeScript errors with tables not in the types
-      const { data, error } = await createSupabaseQueryBuilder<UserConnection>('user_connections')
+      const { data, error: queryError } = await createSupabaseQueryBuilder<UserConnection>('user_connections')
         .select('service, connected_at, connection_data')
         .eq('user_id', user.id);
       
-      if (error) {
-        console.error('Error fetching connections:', error);
+      if (queryError) {
+        if (queryError.message.includes("relation") && queryError.message.includes("does not exist")) {
+          console.error('The user_connections table does not exist in Supabase:', queryError);
+          setError('Database table not found. Please ensure the user_connections table is created in Supabase.');
+        } else {
+          console.error('Error fetching connections:', queryError);
+          setError('Failed to load your connections. Please try again later.');
+        }
+        setLoading(false);
         return;
       }
       
@@ -69,6 +87,7 @@ export function useServiceConnections() {
       setConnections(newConnections);
     } catch (error) {
       console.error('Error in fetchConnections:', error);
+      setError('An unexpected error occurred while loading your connections.');
     } finally {
       setLoading(false);
     }
@@ -76,6 +95,13 @@ export function useServiceConnections() {
   
   // Connect a service
   const connectService = async (service: ServiceType): Promise<boolean> => {
+    if (DEMO_MODE) {
+      // In demo mode, just simulate a successful connection
+      setConnections(prev => ({ ...prev, [service]: true }));
+      toast.success(`${service.charAt(0).toUpperCase() + service.slice(1)} connected in demo mode`);
+      return true;
+    }
+    
     if (service === 'wallet') {
       const success = await connectionService.connectWallet();
       if (success) {
@@ -84,17 +110,36 @@ export function useServiceConnections() {
       }
       return success;
     } else {
-      return connectionService.startOAuthFlow(service);
+      try {
+        return await connectionService.startOAuthFlow(service);
+      } catch (error) {
+        console.error(`Error starting OAuth flow for ${service}:`, error);
+        toast.error(`Failed to connect to ${service}. The service may not be configured properly.`);
+        return false;
+      }
     }
   };
   
   // Disconnect a service
   const disconnectService = async (service: ServiceType): Promise<boolean> => {
-    const success = await connectionService.disconnectService(service);
-    if (success) {
+    if (DEMO_MODE) {
+      // In demo mode, just simulate a successful disconnection
       setConnections(prev => ({ ...prev, [service]: false }));
+      toast.success(`${service.charAt(0).toUpperCase() + service.slice(1)} disconnected in demo mode`);
+      return true;
     }
-    return success;
+    
+    try {
+      const success = await connectionService.disconnectService(service);
+      if (success) {
+        setConnections(prev => ({ ...prev, [service]: false }));
+      }
+      return success;
+    } catch (error) {
+      console.error(`Error disconnecting ${service}:`, error);
+      toast.error(`Failed to disconnect from ${service}. Please try again.`);
+      return false;
+    }
   };
   
   // Toggle connection state
@@ -124,6 +169,7 @@ export function useServiceConnections() {
   return {
     connections,
     loading,
+    error,
     connectService,
     disconnectService,
     toggleConnection,

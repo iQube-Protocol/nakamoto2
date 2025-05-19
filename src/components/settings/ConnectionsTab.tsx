@@ -1,12 +1,13 @@
 
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { Shield, Linkedin, MessageCircle, Twitter, Users, Wallet, Globe } from 'lucide-react';
+import { Shield, Linkedin, MessageCircle, Twitter, Users, Wallet, Globe, AlertCircle } from 'lucide-react';
 import ServiceConnection from './ServiceConnection';
 import { useServiceConnections } from '@/hooks/useServiceConnections';
 import { UserSettings } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
+import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
 
 interface ConnectionsTabProps {
   settings: UserSettings;
@@ -14,7 +15,7 @@ interface ConnectionsTabProps {
 }
 
 const ConnectionsTab = ({ settings, onConnectService }: ConnectionsTabProps) => {
-  const { connections, loading, toggleConnection } = useServiceConnections();
+  const { connections, loading, error, toggleConnection } = useServiceConnections();
   
   const handleServiceToggle = async (service: keyof UserSettings['connected']) => {
     try {
@@ -41,6 +42,19 @@ const ConnectionsTab = ({ settings, onConnectService }: ConnectionsTabProps) => 
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        {error && (
+          <Alert variant="destructive" className="mb-4">
+            <AlertCircle className="h-4 w-4" />
+            <AlertTitle>Configuration Error</AlertTitle>
+            <AlertDescription>
+              {error}
+              <div className="mt-2 text-xs">
+                Please ensure the user_connections table exists in Supabase and OAuth credentials are properly configured.
+              </div>
+            </AlertDescription>
+          </Alert>
+        )}
+        
         {loading ? (
           <div className="flex justify-center p-6">
             <Loader2 className="h-6 w-6 animate-spin text-iqube-primary" />
@@ -85,6 +99,7 @@ const ConnectionsTab = ({ settings, onConnectService }: ConnectionsTabProps) => 
             />
           </div>
         )}
+        
         <div className="bg-amber-500/10 border border-amber-500/30 rounded-md p-4 text-sm">
           <h4 className="font-medium mb-1 flex items-center">
             <Shield className="h-4 w-4 mr-2 text-amber-500" /> Data Privacy Notice

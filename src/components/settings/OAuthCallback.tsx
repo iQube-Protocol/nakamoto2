@@ -6,6 +6,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Loader2, Check, X } from 'lucide-react';
 import { toast } from 'sonner';
 
+// Demo mode flag - should match the one in other files
+const DEMO_MODE = false;
+
 const OAuthCallback = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -16,6 +19,7 @@ const OAuthCallback = () => {
   const code = searchParams.get('code');
   const error = searchParams.get('error');
   const state = searchParams.get('state');
+  const isDemo = searchParams.get('demo') === 'true' || DEMO_MODE;
   
   useEffect(() => {
     const completeOAuth = async () => {
@@ -25,6 +29,15 @@ const OAuthCallback = () => {
         setStatus('error');
         toast.error(`Authentication failed: ${error}`);
         setTimeout(() => navigate('/settings?tab=connections'), 3000);
+        return;
+      }
+      
+      // Special handling for demo mode
+      if (isDemo) {
+        console.log(`[DEMO MODE] Processing OAuth callback for ${service}`);
+        setStatus('success');
+        toast.success(`Successfully connected to ${service} (Demo Mode)`);
+        setTimeout(() => navigate('/settings?tab=connections'), 1500);
         return;
       }
       
@@ -49,7 +62,7 @@ const OAuthCallback = () => {
         if (exchangeError) {
           console.error('Token exchange error:', exchangeError);
           setStatus('error');
-          toast.error('Failed to complete authentication');
+          toast.error('Failed to complete authentication. Edge function may not be deployed.');
           setTimeout(() => navigate('/settings?tab=connections'), 3000);
           return;
         }
@@ -68,7 +81,7 @@ const OAuthCallback = () => {
     };
     
     completeOAuth();
-  }, [code, error, navigate, service, state]);
+  }, [code, error, navigate, service, state, isDemo]);
   
   const getServiceName = (serviceCode: string | null) => {
     if (!serviceCode) return 'this service';
@@ -107,7 +120,7 @@ const OAuthCallback = () => {
           )}
           <p className="mt-4 text-muted-foreground">
             {status === 'processing' && 'Please wait while we complete your authentication...'}
-            {status === 'success' && `Successfully connected to ${getServiceName(service)}! Redirecting...`}
+            {status === 'success' && `Successfully connected to ${getServiceName(service)}${isDemo ? ' (Demo Mode)' : ''}! Redirecting...`}
             {status === 'error' && 'There was a problem connecting your account. Redirecting...'}
           </p>
         </CardContent>
