@@ -18,7 +18,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       <Sidebar />
 
       {/* Main content */}
-      <div className={`flex-1 flex flex-col overflow-hidden ${!isMobile && !collapsed ? 'ml-64' : 'ml-16'}`}>
+      <div className="flex-1 flex flex-col overflow-hidden">
         {/* Page content */}
         <main className="flex-1 overflow-auto">
           {children}
