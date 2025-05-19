@@ -60,7 +60,7 @@ export const connectionService = {
             service: 'wallet',
             connected_at: new Date().toISOString(),
             connection_data: { address: walletAddress }
-          });
+          }) as unknown as { error: any };
           
           if (error) {
             console.error('Error saving wallet connection:', error);
@@ -93,7 +93,7 @@ export const connectionService = {
         .from('user_connections')
         .delete()
         .eq('user_id', (await supabase.auth.getUser()).data.user?.id)
-        .eq('service', service);
+        .eq('service', service) as unknown as { error: any };
       
       if (error) {
         console.error(`Error disconnecting ${service}:`, error);

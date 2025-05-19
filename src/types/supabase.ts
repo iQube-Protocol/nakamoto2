@@ -1,4 +1,3 @@
-
 import { Database } from '@/integrations/supabase/types';
 
 export type UserConnection = {
@@ -35,4 +34,6 @@ export type BlakQubeTable = {
     created_at: string;
     updated_at: string;
   };
+  Insert: Omit<BlakQubeTable['Row'], 'id' | 'created_at' | 'updated_at'>;
+  Update: Partial<Omit<BlakQubeTable['Row'], 'id' | 'created_at' | 'updated_at'>>;
 }

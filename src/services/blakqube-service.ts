@@ -15,7 +15,7 @@ export const blakQubeService = {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) return null;
       
-      // Use generic query to avoid TypeScript errors with tables not in the types
+      // Use type casting to avoid TypeScript errors with tables not in the types
       const { data, error } = await supabase
         .from('blak_qubes')
         .select('*')
