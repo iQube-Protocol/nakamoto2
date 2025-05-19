@@ -10,9 +10,12 @@ const OAuthCallback = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [status, setStatus] = useState<'processing' | 'success' | 'error'>('processing');
+  
+  // Extract parameters from URL
   const service = searchParams.get('service');
   const code = searchParams.get('code');
   const error = searchParams.get('error');
+  const state = searchParams.get('state');
   
   useEffect(() => {
     const completeOAuth = async () => {
@@ -36,7 +39,11 @@ const OAuthCallback = () => {
       try {
         // Call Supabase Edge Function to exchange code for token
         const { data, error: exchangeError } = await supabase.functions.invoke(`oauth-callback-${service}`, {
-          body: { code, redirectUri: window.location.origin + window.location.pathname }
+          body: { 
+            code, 
+            redirectUri: window.location.origin + window.location.pathname,
+            state 
+          }
         });
         
         if (exchangeError) {
@@ -61,7 +68,21 @@ const OAuthCallback = () => {
     };
     
     completeOAuth();
-  }, [code, error, navigate, service]);
+  }, [code, error, navigate, service, state]);
+  
+  const getServiceName = (serviceCode: string | null) => {
+    if (!serviceCode) return 'this service';
+    
+    const services: Record<string, string> = {
+      linkedin: 'LinkedIn',
+      twitter: 'Twitter',
+      discord: 'Discord',
+      telegram: 'Telegram',
+      luma: 'Luma'
+    };
+    
+    return services[serviceCode.toLowerCase()] || serviceCode;
+  };
   
   return (
     <div className="flex items-center justify-center h-[80vh]">
@@ -86,7 +107,7 @@ const OAuthCallback = () => {
           )}
           <p className="mt-4 text-muted-foreground">
             {status === 'processing' && 'Please wait while we complete your authentication...'}
-            {status === 'success' && `Successfully connected to ${service}! Redirecting...`}
+            {status === 'success' && `Successfully connected to ${getServiceName(service)}! Redirecting...`}
             {status === 'error' && 'There was a problem connecting your account. Redirecting...'}
           </p>
         </CardContent>

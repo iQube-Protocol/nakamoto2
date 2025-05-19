@@ -15,18 +15,22 @@ export const blakQubeService = {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) return null;
       
+      // Use generic query to avoid TypeScript errors with tables not in the types
       const { data, error } = await supabase
         .from('blak_qubes')
         .select('*')
         .eq('user_id', user.user.id)
-        .single();
+        .single() as unknown as { 
+          data: BlakQube & { id: string, user_id: string } | null, 
+          error: any 
+        };
       
-      if (error) {
+      if (error && error.code !== 'PGRST116') { // PGRST116 = not found
         console.error('Error fetching BlakQube data:', error);
         return null;
       }
       
-      return data as unknown as BlakQube;
+      return data as BlakQube;
     } catch (error) {
       console.error('Error in getBlakQubeData:', error);
       return null;
@@ -46,7 +50,10 @@ export const blakQubeService = {
         .from('blak_qubes')
         .select('*')
         .eq('user_id', user.user.id)
-        .single();
+        .single() as unknown as {
+          data: BlakQube | null,
+          error: any
+        };
       
       if (blakQubeError && blakQubeError.code !== 'PGRST116') { // PGRST116 = not found
         console.error('Error fetching BlakQube data:', blakQubeError);
@@ -57,7 +64,10 @@ export const blakQubeService = {
       const { data: connections, error: connectionsError } = await supabase
         .from('user_connections')
         .select('service, connection_data')
-        .eq('user_id', user.user.id);
+        .eq('user_id', user.user.id) as unknown as {
+          data: { service: string, connection_data: any }[] | null,
+          error: any
+        };
       
       if (connectionsError) {
         console.error('Error fetching connections:', connectionsError);
@@ -135,7 +145,7 @@ export const blakQubeService = {
         .upsert({
           user_id: user.user.id,
           ...newBlakQube
-        });
+        } as any);
       
       if (updateError) {
         console.error('Error updating BlakQube:', updateError);

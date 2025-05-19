@@ -6,6 +6,7 @@ import ServiceConnection from './ServiceConnection';
 import { useServiceConnections } from '@/hooks/useServiceConnections';
 import { UserSettings } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
+import { toast } from 'sonner';
 
 interface ConnectionsTabProps {
   settings: UserSettings;
@@ -16,11 +17,19 @@ const ConnectionsTab = ({ settings, onConnectService }: ConnectionsTabProps) => 
   const { connections, loading, toggleConnection } = useServiceConnections();
   
   const handleServiceToggle = async (service: keyof UserSettings['connected']) => {
-    // Maintain backward compatibility with existing code
-    onConnectService(service);
-    
-    // Use our new connection service
-    await toggleConnection(service as any);
+    try {
+      // Maintain backward compatibility with existing code
+      onConnectService(service);
+      
+      // Use our new connection service
+      const success = await toggleConnection(service as any);
+      if (success) {
+        toast.success(`${service.charAt(0).toUpperCase() + service.slice(1)} connection ${connections[service as any] ? 'removed' : 'established'} successfully`);
+      }
+    } catch (error) {
+      console.error(`Error toggling ${service} connection:`, error);
+      toast.error(`Failed to ${connections[service as any] ? 'disconnect' : 'connect'} ${service}`);
+    }
   };
   
   return (

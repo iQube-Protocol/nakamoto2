@@ -17,7 +17,7 @@ serve(async (req) => {
   }
 
   try {
-    const { code, redirectUri } = await req.json();
+    const { code, redirectUri, state } = await req.json();
     
     // Create Supabase client
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
@@ -117,9 +117,3 @@ serve(async (req) => {
     );
   }
 });
-
-// To invoke:
-// curl -i --location --request POST 'http://localhost:54321/functions/v1/oauth-callback-linkedin' \
-//   --header 'Authorization: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6ImFub24iLCJleHAiOjE5ODM4MTI5OTZ9.CRXP1A7WOeoJeXxjNni43kdQwgnWNReilDMblYTn_I0' \
-//   --header 'Content-Type: application/json' \
-//   --data '{"code":"AQQm...","redirectUri":"http://localhost:5173/oauth-callback"}'
