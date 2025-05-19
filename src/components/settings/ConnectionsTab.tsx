@@ -3,7 +3,9 @@ import React from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Shield, Linkedin, MessageCircle, Twitter, Users, Wallet, Globe } from 'lucide-react';
 import ServiceConnection from './ServiceConnection';
+import { useServiceConnections } from '@/hooks/useServiceConnections';
 import { UserSettings } from '@/lib/types';
+import { Loader2 } from 'lucide-react';
 
 interface ConnectionsTabProps {
   settings: UserSettings;
@@ -11,6 +13,16 @@ interface ConnectionsTabProps {
 }
 
 const ConnectionsTab = ({ settings, onConnectService }: ConnectionsTabProps) => {
+  const { connections, loading, toggleConnection } = useServiceConnections();
+  
+  const handleServiceToggle = async (service: keyof UserSettings['connected']) => {
+    // Maintain backward compatibility with existing code
+    onConnectService(service);
+    
+    // Use our new connection service
+    await toggleConnection(service as any);
+  };
+  
   return (
     <Card>
       <CardHeader className="pb-2">
@@ -20,44 +32,50 @@ const ConnectionsTab = ({ settings, onConnectService }: ConnectionsTabProps) => 
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <ServiceConnection 
-            name="LinkedIn"
-            icon={<Linkedin className="h-5 w-5 text-iqube-primary" />}
-            connected={settings.connected.linkedin}
-            onConnect={() => onConnectService('linkedin')}
-          />
-          <ServiceConnection 
-            name="Luma"
-            icon={<Globe className="h-5 w-5 text-iqube-primary" />}
-            connected={settings.connected.luma}
-            onConnect={() => onConnectService('luma')}
-          />
-          <ServiceConnection 
-            name="Telegram"
-            icon={<MessageCircle className="h-5 w-5 text-iqube-primary" />}
-            connected={settings.connected.telegram}
-            onConnect={() => onConnectService('telegram')}
-          />
-          <ServiceConnection 
-            name="Twitter"
-            icon={<Twitter className="h-5 w-5 text-iqube-primary" />}
-            connected={settings.connected.twitter}
-            onConnect={() => onConnectService('twitter')}
-          />
-          <ServiceConnection 
-            name="Discord"
-            icon={<Users className="h-5 w-5 text-iqube-primary" />}
-            connected={settings.connected.discord}
-            onConnect={() => onConnectService('discord')}
-          />
-          <ServiceConnection 
-            name="Wallet"
-            icon={<Wallet className="h-5 w-5 text-iqube-primary" />}
-            connected={settings.connected.wallet}
-            onConnect={() => onConnectService('wallet')}
-          />
-        </div>
+        {loading ? (
+          <div className="flex justify-center p-6">
+            <Loader2 className="h-6 w-6 animate-spin text-iqube-primary" />
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <ServiceConnection 
+              name="LinkedIn"
+              icon={<Linkedin className="h-5 w-5 text-iqube-primary" />}
+              connected={connections.linkedin}
+              onConnect={() => handleServiceToggle('linkedin')}
+            />
+            <ServiceConnection 
+              name="Luma"
+              icon={<Globe className="h-5 w-5 text-iqube-primary" />}
+              connected={connections.luma}
+              onConnect={() => handleServiceToggle('luma')}
+            />
+            <ServiceConnection 
+              name="Telegram"
+              icon={<MessageCircle className="h-5 w-5 text-iqube-primary" />}
+              connected={connections.telegram}
+              onConnect={() => handleServiceToggle('telegram')}
+            />
+            <ServiceConnection 
+              name="Twitter"
+              icon={<Twitter className="h-5 w-5 text-iqube-primary" />}
+              connected={connections.twitter}
+              onConnect={() => handleServiceToggle('twitter')}
+            />
+            <ServiceConnection 
+              name="Discord"
+              icon={<Users className="h-5 w-5 text-iqube-primary" />}
+              connected={connections.discord}
+              onConnect={() => handleServiceToggle('discord')}
+            />
+            <ServiceConnection 
+              name="Wallet"
+              icon={<Wallet className="h-5 w-5 text-iqube-primary" />}
+              connected={connections.wallet}
+              onConnect={() => handleServiceToggle('wallet')}
+            />
+          </div>
+        )}
         <div className="bg-amber-500/10 border border-amber-500/30 rounded-md p-4 text-sm">
           <h4 className="font-medium mb-1 flex items-center">
             <Shield className="h-4 w-4 mr-2 text-amber-500" /> Data Privacy Notice

@@ -1,100 +1,60 @@
 
-import React from "react";
-import { Routes, Route, Navigate } from "react-router-dom";
-import MainLayout from "../layout/MainLayout";
-import Dashboard from "@/pages/Dashboard";
-import MonDAI from "@/pages/MonDAI";
-import Settings from "@/pages/Settings";
-import SignIn from "@/pages/SignIn"; // Updated import path
-import SignUp from "@/pages/auth/SignUp";
-import NotFound from "@/pages/NotFound";
-import SplashScreen from "@/pages/SplashScreen";
-import Profile from "@/pages/Profile";
-import DataQube from "@/pages/qubes/DataQube";
-import AgentQube from "@/pages/qubes/AgentQube";
-import ToolQube from "@/pages/qubes/ToolQube";
-import ProtectedRoute from "../auth/ProtectedRoute";
-import { AuthProvider } from "@/hooks/use-auth";
+import React from 'react';
+import { Route, Routes, BrowserRouter as Router, useLocation, Navigate } from 'react-router-dom';
+import { AnimatePresence } from 'framer-motion';
+import { Toaster } from '@/components/ui/sonner';
+import ProtectedRoute from '../auth/ProtectedRoute';
+import SignUp from '../../pages/auth/SignUp';
+import SignIn from '../../pages/SignIn';
+import Index from '../../pages/Index';
+import Dashboard from '../../pages/Dashboard';
+import Settings from '../../pages/Settings';
+import Learn from '../../pages/Learn';
+import Earn from '../../pages/Earn';
+import Connect from '../../pages/Connect';
+import NotFound from '../../pages/NotFound';
+import Profile from '../../pages/Profile';
+import MonDAI from '../../pages/MonDAI';
+import AgentQube from '../../pages/qubes/AgentQube';
+import ToolQube from '../../pages/qubes/ToolQube';
+import DataQube from '../../pages/qubes/DataQube';
+import { AuthProvider } from '@/hooks/use-auth';
+import OAuthCallback from '@/components/settings/OAuthCallback';
+
+const AppRoutes = () => {
+  const location = useLocation();
+  
+  return (
+    <AnimatePresence mode="wait">
+      <Routes location={location} key={location.pathname}>
+        <Route path="/" element={<Index />} />
+        <Route path="/signin" element={<SignIn />} />
+        <Route path="/signup" element={<SignUp />} />
+        <Route path="/oauth-callback" element={<OAuthCallback />} />
+        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+        <Route path="/learn" element={<ProtectedRoute><Learn /></ProtectedRoute>} />
+        <Route path="/earn" element={<ProtectedRoute><Earn /></ProtectedRoute>} />
+        <Route path="/connect" element={<ProtectedRoute><Connect /></ProtectedRoute>} />
+        <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+        <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+        <Route path="/mondai" element={<ProtectedRoute><MonDAI /></ProtectedRoute>} />
+        <Route path="/qubes/agent" element={<ProtectedRoute><AgentQube /></ProtectedRoute>} />
+        <Route path="/qubes/tool" element={<ProtectedRoute><ToolQube /></ProtectedRoute>} />
+        <Route path="/qubes/data" element={<ProtectedRoute><DataQube /></ProtectedRoute>} />
+        <Route path="*" element={<NotFound />} />
+      </Routes>
+    </AnimatePresence>
+  );
+};
 
 const AppRouter = () => {
   return (
-    <AuthProvider>
-      <Routes>
-        {/* Public routes */}
-        <Route path="/signin" element={<SignIn />} />
-        <Route path="/signup" element={<SignUp />} />
-        <Route path="/splash" element={<SplashScreen />} />
-        
-        {/* Protected routes with main layout */}
-        <Route path="/" element={
-          <ProtectedRoute>
-            <MainLayout>
-              <Dashboard />
-            </MainLayout>
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/dashboard" element={
-          <ProtectedRoute>
-            <MainLayout>
-              <Dashboard />
-            </MainLayout>
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/mondai" element={
-          <ProtectedRoute>
-            <MainLayout>
-              <MonDAI />
-            </MainLayout>
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/settings" element={
-          <ProtectedRoute>
-            <MainLayout>
-              <Settings />
-            </MainLayout>
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/profile" element={
-          <ProtectedRoute>
-            <MainLayout>
-              <Profile />
-            </MainLayout>
-          </ProtectedRoute>
-        } />
-        
-        {/* iQubes routes */}
-        <Route path="/qubes/dataqube" element={
-          <ProtectedRoute>
-            <MainLayout>
-              <DataQube />
-            </MainLayout>
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/qubes/agentqube" element={
-          <ProtectedRoute>
-            <MainLayout>
-              <AgentQube />
-            </MainLayout>
-          </ProtectedRoute>
-        } />
-        
-        <Route path="/qubes/toolqube" element={
-          <ProtectedRoute>
-            <MainLayout>
-              <ToolQube />
-            </MainLayout>
-          </ProtectedRoute>
-        } />
-        
-        {/* Catch-all route for 404 */}
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </AuthProvider>
+    <Router>
+      <AuthProvider>
+        <AppRoutes />
+        <Toaster />
+      </AuthProvider>
+    </Router>
   );
 };
 
