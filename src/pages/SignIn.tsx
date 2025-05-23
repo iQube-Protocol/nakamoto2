@@ -14,11 +14,11 @@ const SignIn = () => {
   const navigate = useNavigate();
   const { user } = useAuth();
   
-  // Check if user is already logged in
+  // Check if user is already logged in - redirect to dashboard specifically
   useEffect(() => {
     if (user) {
       console.log("User already logged in, redirecting to dashboard");
-      navigate('/dashboard');
+      navigate('/dashboard', { replace: true });
     }
   }, [user, navigate]);
 
