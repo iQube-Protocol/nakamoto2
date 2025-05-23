@@ -19,7 +19,7 @@ interface IQubesSectionProps {
   handleIQubeClick: (iqubeId: string) => void;
   toggleIQubeActive: (e: React.MouseEvent<HTMLDivElement>, qubeName: string) => void;
   location: { pathname: string };
-  toggleMobileSidebar?: () => void;  // Add this line to accept the toggleMobileSidebar prop
+  toggleMobileSidebar?: () => void;
 }
 
 const IQubesSection: React.FC<IQubesSectionProps> = ({
@@ -99,13 +99,13 @@ const IQubesSection: React.FC<IQubesSectionProps> = ({
             iQubesOpen && "transform rotate-180"
           )} />
         </CollapsibleTrigger>
-        <CollapsibleContent className="mt-1 space-y-1">
+        <CollapsibleContent className="mt-1 space-y-2 py-1">
           {iQubeItems.map((qube) => (
             <div 
               key={qube.id}
               className={cn(
-                "flex items-center justify-between px-2 py-1.5 text-sm rounded-md hover:bg-accent/30 cursor-pointer",
-                location.pathname === '/settings' && selectedIQube === qube.name && "bg-accent/20"
+                "flex items-center justify-between px-2 py-2 text-sm rounded-md hover:bg-accent/30 cursor-pointer",
+                location.pathname === qube.href && "bg-accent/20"
               )}
               onClick={() => handleIQubeItemClick(qube.name)}
             >

@@ -34,7 +34,7 @@ const MainNavigation: React.FC<MainNavigationProps> = ({
   toggleMobileSidebar
 }) => {
   return (
-    <div className="flex-1 px-3 space-y-1">
+    <div className="flex-1 px-3 space-y-2">
       {/* Regular Nav Items */}
       {navItems.map((item, index) => (
         <NavItem 
@@ -49,19 +49,21 @@ const MainNavigation: React.FC<MainNavigationProps> = ({
         </NavItem>
       ))}
       
-      {/* iQubes Section - Now placed directly under the navigation items */}
-      <IQubesSection 
-        iQubeItems={iQubeItems}
-        iQubesOpen={iQubesOpen}
-        toggleIQubesMenu={toggleIQubesMenu}
-        collapsed={collapsed}
-        selectedIQube={selectedIQube}
-        activeQubes={activeQubes}
-        handleIQubeClick={handleIQubeClick}
-        toggleIQubeActive={toggleIQubeActive}
-        location={location}
-        toggleMobileSidebar={toggleMobileSidebar}
-      />
+      {/* iQubes Section - with proper vertical spacing */}
+      <div className="mt-2 pt-1">
+        <IQubesSection 
+          iQubeItems={iQubeItems}
+          iQubesOpen={iQubesOpen}
+          toggleIQubesMenu={toggleIQubesMenu}
+          collapsed={collapsed}
+          selectedIQube={selectedIQube}
+          activeQubes={activeQubes}
+          handleIQubeClick={handleIQubeClick}
+          toggleIQubeActive={toggleIQubeActive}
+          location={location}
+          toggleMobileSidebar={toggleMobileSidebar}
+        />
+      </div>
     </div>
   );
 };
