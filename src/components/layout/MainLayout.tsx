@@ -20,7 +20,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
       </div>
 
       {/* Main content */}
-      <div className="flex-1 flex flex-col overflow-hidden">
+      <div className="flex-1 flex flex-col overflow-hidden p-4">
         {/* Page content */}
         <main className="flex-1 overflow-auto">
           {children}

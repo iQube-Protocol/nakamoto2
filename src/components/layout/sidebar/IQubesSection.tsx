@@ -19,7 +19,7 @@ interface IQubesSectionProps {
   handleIQubeClick: (iqubeId: string) => void;
   toggleIQubeActive: (e: React.MouseEvent<HTMLDivElement>, qubeName: string) => void;
   location: { pathname: string };
-  toggleMobileSidebar?: () => void;  // Add this line to accept the toggleMobileSidebar prop
+  toggleMobileSidebar?: () => void;
 }
 
 const IQubesSection: React.FC<IQubesSectionProps> = ({
@@ -61,7 +61,7 @@ const IQubesSection: React.FC<IQubesSectionProps> = ({
 
   if (collapsed) {
     return (
-      <div className="pt-2">
+      <div className="pt-4">
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -83,11 +83,11 @@ const IQubesSection: React.FC<IQubesSectionProps> = ({
   }
 
   return (
-    <div className="pt-2">
+    <div className="pt-4">
       <Collapsible
         open={iQubesOpen}
         onOpenChange={toggleIQubesMenu}
-        className="border-t pt-2"
+        className="border-t pt-4"
       >
         <CollapsibleTrigger className="flex w-full items-center justify-between p-2 hover:bg-accent/30 rounded-md">
           <div className="flex items-center">
@@ -99,12 +99,12 @@ const IQubesSection: React.FC<IQubesSectionProps> = ({
             iQubesOpen && "transform rotate-180"
           )} />
         </CollapsibleTrigger>
-        <CollapsibleContent className="mt-1 space-y-1">
+        <CollapsibleContent className="mt-2 space-y-2 px-2">
           {iQubeItems.map((qube) => (
             <div 
               key={qube.id}
               className={cn(
-                "flex items-center justify-between px-2 py-1.5 text-sm rounded-md hover:bg-accent/30 cursor-pointer",
+                "flex items-center justify-between px-2 py-2 text-sm rounded-md hover:bg-accent/30 cursor-pointer",
                 location.pathname === '/settings' && selectedIQube === qube.name && "bg-accent/20"
               )}
               onClick={() => handleIQubeItemClick(qube.name)}
