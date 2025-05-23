@@ -12,7 +12,7 @@ export interface NavItem {
 export const navItems: NavItem[] = [
   {
     name: 'Dashboard',
-    href: '/dashboard',
+    href: '/',
     icon: LayoutDashboard,
   },
   {
@@ -48,7 +48,7 @@ export const iQubeItems: QubeItem[] = [
     name: 'MonDAI',
     type: 'DataQube',
     icon: Database,
-    href: '/settings',
+    href: '/mondai',
     description: 'Community agent',
   },
   {
@@ -56,7 +56,7 @@ export const iQubeItems: QubeItem[] = [
     name: 'Metis',
     type: 'AgentQube',
     icon: Bot,
-    href: '/settings',
+    href: '/qubes/agent',
     description: 'Your AI assistant for learning',
   },
   {
@@ -64,7 +64,7 @@ export const iQubeItems: QubeItem[] = [
     name: 'GDrive',
     type: 'ToolQube',
     icon: FolderGit2,
-    href: '/settings',
+    href: '/qubes/tool',
     description: 'Connect your tools and resources',
   },
 ];
@@ -73,7 +73,7 @@ export const monDaiQubeData = {
   id: 'mondai',
   name: 'MonDAI iQube',
   type: 'Personal Data',
-  href: '/settings',
+  href: '/mondai',
   active: true
 };
 
@@ -81,6 +81,5 @@ export const metisQubeData = {
   id: 'metis',
   name: 'Metis AI',
   type: 'Assistant',
-  href: '/settings',
+  href: '/qubes/agent',
 };
-

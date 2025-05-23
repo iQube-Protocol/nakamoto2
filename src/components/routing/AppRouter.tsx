@@ -38,11 +38,11 @@ const AppRoutes = () => {
   return (
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
-        <Route path="/" element={<Index />} />
+        <Route path="/" element={<ProtectedLayoutRoute element={<Dashboard />} />} />
         <Route path="/signin" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/oauth-callback" element={<OAuthCallback />} />
-        <Route path="/dashboard" element={<ProtectedLayoutRoute element={<Dashboard />} />} />
+        <Route path="/dashboard" element={<Navigate to="/" replace />} />
         <Route path="/learn" element={<ProtectedLayoutRoute element={<Learn />} />} />
         <Route path="/earn" element={<ProtectedLayoutRoute element={<Earn />} />} />
         <Route path="/connect" element={<ProtectedLayoutRoute element={<Connect />} />} />
