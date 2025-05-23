@@ -48,7 +48,7 @@ export const iQubeItems: QubeItem[] = [
     name: 'MonDAI',
     type: 'DataQube',
     icon: Database,
-    href: '/settings',
+    href: '/mondai',
     description: 'Community agent',
   },
   {
@@ -73,7 +73,7 @@ export const monDaiQubeData = {
   id: 'mondai',
   name: 'MonDAI iQube',
   type: 'Personal Data',
-  href: '/settings',
+  href: '/mondai',
   active: true
 };
 
