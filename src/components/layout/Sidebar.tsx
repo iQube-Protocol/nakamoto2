@@ -70,19 +70,9 @@ const Sidebar = () => {
     // Set the selected iQube
     selectIQube(iqubeId);
     
-    // Navigate based on the iQube
-    if (iqubeId === "MonDAI") {
-      navigate('/mondai');
-    } else if (iqubeId === "Metis") {
-      navigate('/qubes/agent');
-    } else if (iqubeId === "GDrive") {
-      navigate('/qubes/tool');
-    } else {
-      // Default to settings
-      navigate('/settings');
-    }
+    // Navigate to settings page and send event to select this iQube
+    navigate('/settings');
     
-    // Send event to select this iQube in settings if needed
     const event = new CustomEvent('iqubeSelected', { 
       detail: { 
         iqubeId: iqubeId,
@@ -159,7 +149,7 @@ const Sidebar = () => {
     toggleIQubeActive,
     handleCloseMetisIQube,
     handleSignOut,
-    toggleMobileSidebar
+    toggleMobileSidebar // Pass this down to child components
   };
 
   // Render mobile sidebar if on mobile, otherwise render desktop sidebar
@@ -187,7 +177,7 @@ const Sidebar = () => {
   }
 
   return (
-    <div className="h-full border-r shadow-sm">
+    <div className="border-r shadow-sm w-auto">
       <SidebarContent {...sidebarContentProps} />
     </div>
   );

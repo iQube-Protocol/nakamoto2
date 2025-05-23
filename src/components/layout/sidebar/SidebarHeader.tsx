@@ -18,7 +18,7 @@ const SidebarHeader: React.FC<SidebarHeaderProps> = ({ collapsed, toggleSidebar 
       collapsed ? "justify-center" : "justify-between"
     )}>
       {!collapsed ? (
-        <Link to="/" className="flex items-center">
+        <Link to="/splash" className="flex items-center">
           <Bot className="h-6 w-6 text-iqube-primary mr-2" />
           <h1 className="text-lg font-bold bg-gradient-to-r from-iqube-primary to-iqube-accent inline-block text-transparent bg-clip-text">
             Aigent MonDAI
@@ -28,7 +28,7 @@ const SidebarHeader: React.FC<SidebarHeaderProps> = ({ collapsed, toggleSidebar 
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Link to="/">
+              <Link to="/splash">
                 <Bot className="h-6 w-6 text-iqube-primary" />
               </Link>
             </TooltipTrigger>
