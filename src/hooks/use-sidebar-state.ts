@@ -7,6 +7,7 @@ export function useSidebarState() {
   const [collapsed, setCollapsed] = useState(() => {
     // Try to get saved state from localStorage
     const savedState = localStorage.getItem('sidebar-collapsed');
+    // Default to collapsed on mobile, expanded on desktop
     return savedState ? JSON.parse(savedState) : isMobile;
   });
   
@@ -19,7 +20,10 @@ export function useSidebarState() {
   });
 
   // Add state to track which iQube is selected
-  const [selectedIQube, setSelectedIQube] = useState<string | null>('MonDAI');
+  const [selectedIQube, setSelectedIQube] = useState<string | null>(() => {
+    const savedState = localStorage.getItem('selected-iqube');
+    return savedState || 'MonDAI';
+  });
 
   useEffect(() => {
     // Save collapsed state to localStorage when it changes
@@ -30,6 +34,13 @@ export function useSidebarState() {
     // Save iQubes submenu state to localStorage
     localStorage.setItem('iqubes-collapsed', JSON.stringify(iQubesOpen));
   }, [iQubesOpen]);
+
+  useEffect(() => {
+    // Save selected iQube to localStorage
+    if (selectedIQube) {
+      localStorage.setItem('selected-iqube', selectedIQube);
+    }
+  }, [selectedIQube]);
 
   const toggleSidebar = () => {
     setCollapsed(!collapsed);
