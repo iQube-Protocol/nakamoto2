@@ -43,7 +43,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
       collapsed ? "w-16" : "w-64"
     )}>
       {/* Header with logo and collapse button */}
-      <div className="py-4">
+      <div className="py-2">
         <SidebarHeader collapsed={collapsed} toggleSidebar={toggleSidebar} />
       </div>
 

@@ -34,7 +34,7 @@ const MainNavigation: React.FC<MainNavigationProps> = ({
   toggleMobileSidebar
 }) => {
   return (
-    <div className="flex-1 px-3 py-4 space-y-4">
+    <div className="flex-1 px-3 py-2 space-y-1">
       {/* Regular Nav Items */}
       {navItems.map((item, index) => (
         <NavItem 

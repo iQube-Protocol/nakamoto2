@@ -61,7 +61,7 @@ const IQubesSection: React.FC<IQubesSectionProps> = ({
 
   if (collapsed) {
     return (
-      <div className="pt-4">
+      <div className="pt-2">
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -83,11 +83,11 @@ const IQubesSection: React.FC<IQubesSectionProps> = ({
   }
 
   return (
-    <div className="pt-4">
+    <div className="pt-2">
       <Collapsible
         open={iQubesOpen}
         onOpenChange={toggleIQubesMenu}
-        className="border-t pt-4"
+        className="border-t pt-2"
       >
         <CollapsibleTrigger className="flex w-full items-center justify-between p-2 hover:bg-accent/30 rounded-md">
           <div className="flex items-center">
@@ -99,7 +99,7 @@ const IQubesSection: React.FC<IQubesSectionProps> = ({
             iQubesOpen && "transform rotate-180"
           )} />
         </CollapsibleTrigger>
-        <CollapsibleContent className="mt-2 space-y-2 px-2">
+        <CollapsibleContent className="mt-1 space-y-1 px-2">
           {iQubeItems.map((qube) => (
             <div 
               key={qube.id}
