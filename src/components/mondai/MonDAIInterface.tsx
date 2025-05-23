@@ -5,8 +5,11 @@ import { useMondAI } from '@/hooks/use-mondai';
 import MonDAIHeader from './MonDAIHeader';
 import { useKBAIConnection } from '@/hooks/mondai/useKBAIConnection';
 import { sonnerToast as toast } from '@/hooks/use-toast';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const MonDAIInterface: React.FC = () => {
+  const isMobile = useIsMobile();
+  
   // Use our custom hook for MonDAI functionality
   const {
     conversationId,
@@ -26,16 +29,18 @@ const MonDAIInterface: React.FC = () => {
     handleManualRetry
   } = useKBAIConnection();
 
-  // Set fullscreen mode effect for mobile
+  // Set fullscreen mode effect for mobile only
   useEffect(() => {
-    // Add a class to the root element for fullscreen styling
-    document.documentElement.classList.add('fullscreen-mode');
+    if (isMobile) {
+      // Add a class to the root element for fullscreen styling on mobile
+      document.documentElement.classList.add('fullscreen-mode');
+    }
     
-    // Remove the class when component unmounts
+    // Remove the class when component unmounts or when not mobile
     return () => {
       document.documentElement.classList.remove('fullscreen-mode');
     };
-  }, []);
+  }, [isMobile]);
   
   // Check KBAI connection on initial load and auto-retry with exponential backoff
   useEffect(() => {
