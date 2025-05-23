@@ -19,6 +19,7 @@ import MonDAI from '../../pages/MonDAI';
 import AgentQube from '../../pages/qubes/AgentQube';
 import ToolQube from '../../pages/qubes/ToolQube';
 import DataQube from '../../pages/qubes/DataQube';
+import SplashPage from '../../pages/SplashPage';
 import { AuthProvider } from '@/hooks/use-auth';
 import OAuthCallback from '@/components/settings/OAuthCallback';
 
@@ -39,6 +40,7 @@ const AppRoutes = () => {
     <AnimatePresence mode="wait">
       <Routes location={location} key={location.pathname}>
         <Route path="/" element={<Index />} />
+        <Route path="/splash" element={<SplashPage />} />
         <Route path="/signin" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
         <Route path="/oauth-callback" element={<OAuthCallback />} />
