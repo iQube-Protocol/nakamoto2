@@ -39,11 +39,13 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
 }) => {
   return (
     <div className={cn(
-      "flex flex-col h-full bg-sidebar py-4 transition-all duration-300",
+      "flex flex-col h-full bg-sidebar transition-all duration-300",
       collapsed ? "w-16" : "w-64"
     )}>
       {/* Header with logo and collapse button */}
-      <SidebarHeader collapsed={collapsed} toggleSidebar={toggleSidebar} />
+      <div className="py-4">
+        <SidebarHeader collapsed={collapsed} toggleSidebar={toggleSidebar} />
+      </div>
 
       {/* Main Navigation */}
       <MainNavigation 
@@ -61,25 +63,27 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
         toggleMobileSidebar={toggleMobileSidebar}
       />
 
-      {/* Active iQubes */}
-      <ActiveIQubesList 
-        activeQubes={activeQubes}
-        collapsed={collapsed}
-        onIQubeClick={handleIQubeClick}
-        onCloseIQube={(e, qubeName) => {
-          e.stopPropagation();
-          if (qubeName === "Metis") {
-            handleCloseMetisIQube(e);
-          }
-        }}
-        toggleMobileSidebar={toggleMobileSidebar}
-      />
+      {/* Active iQubes - Fixed at bottom */}
+      <div className="mt-auto">
+        <ActiveIQubesList 
+          activeQubes={activeQubes}
+          collapsed={collapsed}
+          onIQubeClick={handleIQubeClick}
+          onCloseIQube={(e, qubeName) => {
+            e.stopPropagation();
+            if (qubeName === "Metis") {
+              handleCloseMetisIQube(e);
+            }
+          }}
+          toggleMobileSidebar={toggleMobileSidebar}
+        />
 
-      {/* Sign Out button */}
-      <SignOutButton collapsed={collapsed} onSignOut={handleSignOut} />
+        {/* Sign Out button */}
+        <SignOutButton collapsed={collapsed} onSignOut={handleSignOut} />
 
-      {/* Expand button when collapsed */}
-      {collapsed && <CollapseButton toggleSidebar={toggleSidebar} />}
+        {/* Expand button when collapsed */}
+        {collapsed && <CollapseButton toggleSidebar={toggleSidebar} />}
+      </div>
     </div>
   );
 };

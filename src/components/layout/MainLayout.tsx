@@ -15,9 +15,7 @@ const MainLayout: React.FC<MainLayoutProps> = ({ children }) => {
   return (
     <div className="flex h-screen overflow-hidden bg-background">
       {/* Sidebar - always present but may be collapsed */}
-      <div className={`${collapsed && !isMobile ? 'w-16' : 'w-64'} transition-all duration-300 shrink-0`}>
-        <Sidebar />
-      </div>
+      <Sidebar />
 
       {/* Main content */}
       <div className="flex-1 flex flex-col overflow-hidden p-4">

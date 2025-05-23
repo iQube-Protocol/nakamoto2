@@ -177,7 +177,7 @@ const Sidebar = () => {
   }
 
   return (
-    <div className="border-r shadow-sm w-auto">
+    <div className="border-r shadow-sm">
       <SidebarContent {...sidebarContentProps} />
     </div>
   );
