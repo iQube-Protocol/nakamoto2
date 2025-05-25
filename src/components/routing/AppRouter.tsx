@@ -20,6 +20,7 @@ import AgentQube from '../../pages/qubes/AgentQube';
 import ToolQube from '../../pages/qubes/ToolQube';
 import DataQube from '../../pages/qubes/DataQube';
 import SplashPage from '../../pages/SplashPage';
+import LegacyDashboard from '../../pages/LegacyDashboard';
 import { AuthProvider } from '@/hooks/use-auth';
 import OAuthCallback from '@/components/settings/OAuthCallback';
 
@@ -43,6 +44,7 @@ const AppRoutes = () => {
         <Route path="/splash" element={<SplashPage />} />
         <Route path="/signin" element={<SignIn />} />
         <Route path="/signup" element={<SignUp />} />
+        <Route path="/legacy" element={<LegacyDashboard />} />
         <Route path="/oauth-callback" element={<OAuthCallback />} />
         <Route path="/dashboard" element={<ProtectedLayoutRoute element={<Dashboard />} />} />
         <Route path="/learn" element={<ProtectedLayoutRoute element={<Learn />} />} />
