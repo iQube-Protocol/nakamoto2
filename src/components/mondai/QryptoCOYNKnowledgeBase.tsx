@@ -116,7 +116,7 @@ const QryptoCOYNKnowledgeBase = () => {
                     {renderKnowledgeItems(filteredQryptoItems, 'Qrypto COYN')}
                   </div>}
                 {filteredMetaKnytsItems.length > 0 && <div>
-                    <h3 className="text-lg font-semibold mb-3 text-violet-400">QryptoCOYN fictional lore: mẹtaKnyts</h3>
+                    <h3 className="font-semibold mb-3 text-violet-400 text-base">QryptoCOYN fictional lore: mẹtaKnyts</h3>
                     {renderKnowledgeItems(filteredMetaKnytsItems, 'mẹtaKnyts')}
                   </div>}
                 {filteredQryptoItems.length === 0 && filteredMetaKnytsItems.length === 0 && <p className="text-center text-gray-500 py-8">
