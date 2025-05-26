@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -6,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Search, BookOpen, Users, Lightbulb, Coins } from 'lucide-react';
 import { qryptoKB } from '@/services/qrypto-knowledge-base';
 import { metaKnytsKB } from '@/services/metaknyts-knowledge-base';
+
 const QryptoCOYNKnowledgeBase = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('both');
@@ -17,6 +19,7 @@ const QryptoCOYNKnowledgeBase = () => {
   // Filter items based on search
   const filteredQryptoItems = searchTerm ? qryptoKB.searchKnowledge(searchTerm) : qryptoItems;
   const filteredMetaKnytsItems = searchTerm ? metaKnytsKB.searchKnowledge(searchTerm) : metaKnytsItems;
+
   const getCategoryIcon = (category: string) => {
     switch (category) {
       case 'tokenomics':
@@ -31,6 +34,7 @@ const QryptoCOYNKnowledgeBase = () => {
         return <BookOpen className="h-4 w-4" />;
     }
   };
+
   const getCategoryColor = (category: string) => {
     switch (category) {
       case 'tokenomics':
@@ -53,12 +57,15 @@ const QryptoCOYNKnowledgeBase = () => {
         return 'bg-gray-100 text-gray-800';
     }
   };
-  const renderKnowledgeItems = (items: any[], knowledgeBase: string) => <div className="space-y-4">
-      {items.map(item => <Card key={item.id} className="hover:shadow-md transition-shadow">
+
+  const renderKnowledgeItems = (items: any[], knowledgeBase: string) => (
+    <div className="space-y-4">
+      {items.map(item => (
+        <Card key={item.id} className="hover:shadow-md transition-shadow">
           <CardHeader className="pb-2">
             <div className="flex items-start justify-between">
               <CardTitle className="text-lg leading-tight">{item.title}</CardTitle>
-              <Badge variant="outline" className={`ml-2 ${getCategoryColor(item.category)} flex items-center gap-1`}>
+              <Badge variant="outline" className={`ml-2 rounded-md ${getCategoryColor(item.category)} flex items-center gap-1`}>
                 {getCategoryIcon(item.category)}
                 {item.category}
               </Badge>
@@ -70,33 +77,48 @@ const QryptoCOYNKnowledgeBase = () => {
           <CardContent>
             <p className="text-sm text-gray-600 mb-3">{item.content}</p>
             <div className="flex flex-wrap gap-1">
-              {item.keywords.map((keyword: string) => <Badge key={keyword} variant="secondary" className="text-xs">
+              {item.keywords.map((keyword: string) => (
+                <Badge key={keyword} variant="secondary" className="text-xs rounded-md px-2 py-1">
                   {keyword}
-                </Badge>)}
+                </Badge>
+              ))}
             </div>
-            {item.connections && item.connections.length > 0 && <div className="mt-2 pt-2 border-t">
+            {item.connections && item.connections.length > 0 && (
+              <div className="mt-2 pt-2 border-t">
                 <p className="text-xs text-gray-500 mb-1">Connected to Qrypto COYN concepts:</p>
                 <div className="flex flex-wrap gap-1">
-                  {item.connections.map((connection: string) => <Badge key={connection} variant="outline" className="text-xs bg-blue-50">
+                  {item.connections.map((connection: string) => (
+                    <Badge key={connection} variant="outline" className="text-xs rounded-md px-2 py-1 bg-blue-50">
                       {connection}
-                    </Badge>)}
+                    </Badge>
+                  ))}
                 </div>
-              </div>}
+              </div>
+            )}
             <div className="mt-2 pt-2 border-t">
-              <Badge variant="outline" className="text-xs">
+              <Badge variant="outline" className="text-xs rounded-md px-2 py-1">
                 {knowledgeBase}
               </Badge>
             </div>
           </CardContent>
-        </Card>)}
-    </div>;
-  return <div className="h-full flex flex-col">
+        </Card>
+      ))}
+    </div>
+  );
+
+  return (
+    <div className="h-full flex flex-col">
       <div className="p-4 border-b">
         <h2 className="text-xl font-bold mb-2">Dual Knowledge Base</h2>
         <p className="text-sm text-gray-600 mb-4">Explore both QryptoCOYN factual knowledge base and fictional lore</p>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
-          <Input placeholder="Search both knowledge bases..." value={searchTerm} onChange={e => setSearchTerm(e.target.value)} className="pl-10" />
+          <Input
+            placeholder="Search both knowledge bases..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="pl-10"
+          />
         </div>
       </div>
 
@@ -111,34 +133,50 @@ const QryptoCOYNKnowledgeBase = () => {
           <div className="flex-1 overflow-y-auto p-4">
             <TabsContent value="both" className="mt-0">
               <div className="space-y-6">
-                {filteredQryptoItems.length > 0 && <div>
+                {filteredQryptoItems.length > 0 && (
+                  <div>
                     <h3 className="text-lg font-semibold mb-3 text-blue-700">QryptoCOYN Factual Knowledge</h3>
                     {renderKnowledgeItems(filteredQryptoItems, 'Qrypto COYN')}
-                  </div>}
-                {filteredMetaKnytsItems.length > 0 && <div>
+                  </div>
+                )}
+                {filteredMetaKnytsItems.length > 0 && (
+                  <div>
                     <h3 className="text-lg font-semibold mb-3 text-purple-700">QryptoCOYN fictional lore: mẹtaKnyts</h3>
                     {renderKnowledgeItems(filteredMetaKnytsItems, 'mẹtaKnyts')}
-                  </div>}
-                {filteredQryptoItems.length === 0 && filteredMetaKnytsItems.length === 0 && <p className="text-center text-gray-500 py-8">
+                  </div>
+                )}
+                {filteredQryptoItems.length === 0 && filteredMetaKnytsItems.length === 0 && (
+                  <p className="text-center text-gray-500 py-8">
                     No items found matching "{searchTerm}"
-                  </p>}
+                  </p>
+                )}
               </div>
             </TabsContent>
 
             <TabsContent value="qrypto" className="mt-0">
-              {filteredQryptoItems.length > 0 ? renderKnowledgeItems(filteredQryptoItems, 'Qrypto COYN') : <p className="text-center text-gray-500 py-8">
+              {filteredQryptoItems.length > 0 ? (
+                renderKnowledgeItems(filteredQryptoItems, 'Qrypto COYN')
+              ) : (
+                <p className="text-center text-gray-500 py-8">
                   {searchTerm ? `No Qrypto COYN items found matching "${searchTerm}"` : 'No Qrypto COYN items available'}
-                </p>}
+                </p>
+              )}
             </TabsContent>
 
             <TabsContent value="metaknyts" className="mt-0">
-              {filteredMetaKnytsItems.length > 0 ? renderKnowledgeItems(filteredMetaKnytsItems, 'mẹtaKnyts') : <p className="text-center text-gray-500 py-8">
+              {filteredMetaKnytsItems.length > 0 ? (
+                renderKnowledgeItems(filteredMetaKnytsItems, 'mẹtaKnyts')
+              ) : (
+                <p className="text-center text-gray-500 py-8">
                   {searchTerm ? `No mẹtaKnyts items found matching "${searchTerm}"` : 'No mẹtaKnyts items available'}
-                </p>}
+                </p>
+              )}
             </TabsContent>
           </div>
         </Tabs>
       </div>
-    </div>;
+    </div>
+  );
 };
+
 export default QryptoCOYNKnowledgeBase;
