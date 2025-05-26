@@ -159,9 +159,13 @@ p {
     }
   }
   
-  /* Hide sidebar completely on mobile when in fullscreen mode */
-  .fullscreen-mode .fixed.top-4.left-4 {
-    display: none;
+  /* Mobile menu button should always be visible - removed the fullscreen mode hiding rule */
+  .mobile-menu-button {
+    position: fixed !important;
+    top: max(1rem, env(safe-area-inset-top, 1rem)) !important;
+    left: max(1rem, env(safe-area-inset-left, 1rem)) !important;
+    z-index: 9999 !important;
+    display: block !important;
   }
 }
 
@@ -178,5 +182,13 @@ textarea::placeholder {
     padding-bottom: env(safe-area-inset-bottom);
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
+  }
+}
+
+/* Landscape mode optimizations */
+@media (max-width: 768px) and (orientation: landscape) {
+  .mobile-menu-button {
+    top: max(0.5rem, env(safe-area-inset-top, 0.5rem)) !important;
+    left: max(0.5rem, env(safe-area-inset-left, 0.5rem)) !important;
   }
 }
