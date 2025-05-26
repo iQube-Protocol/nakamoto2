@@ -1,10 +1,9 @@
-
 export interface QryptoKnowledgeItem {
   id: string;
   title: string;
   content: string;
   section: string;
-  category: 'tokenomics' | 'protocols' | 'consensus' | 'economics' | 'mechanics' | 'technical';
+  category: 'tokenomics' | 'protocols' | 'consensus' | 'economics' | 'mechanics' | 'technical' | 'legal' | 'implementation';
   keywords: string[];
   timestamp: string;
   source: string;
@@ -26,7 +25,7 @@ export class QryptoKnowledgeBase {
   }
 
   private initializeKnowledgeBase() {
-    // Initialize with the first batch of content
+    // Initialize with all content
     this.addKnowledgeItems([
       {
         id: 'qoyn-economy-fundamentals',
@@ -129,6 +128,90 @@ export class QryptoKnowledgeBase {
         keywords: ['ICP Chain Fusion', 'LayerZero', 'cross-chain', 'Bitcoin UTXOs', 'EVM'],
         timestamp: new Date().toISOString(),
         source: 'COYN Requirements'
+      },
+
+      // NEW LEGAL STRATEGY CONTENT
+      {
+        id: 'sec-bitcoin-precedent',
+        title: 'SEC Bitcoin Precedent & Non-Security Status',
+        content: `The SEC has repeatedly acknowledged that Bitcoin (BTC) is not a security, most notably in its 2018 report and 2020 dismissal of the Howey Test for BTC. The COYN protocol's technical underpinning of 1 Satoshi per iQube ties $QOYN to Bitcoin's non-security status. $QOYN's value derives from its utility in the ecosystem (accessing iQubes, staking, governance), not from expectations of profit tied to third-party efforts.`,
+        section: 'Bitcoin Satoshi Underpinning',
+        category: 'legal',
+        keywords: ['SEC', 'Bitcoin', 'non-security', 'Howey Test', 'Satoshi underpinning', 'utility token'],
+        timestamp: new Date().toISOString(),
+        source: '$QOYN Legal Strategy'
+      },
+      {
+        id: 'data-commodity-framework',
+        title: 'Data as Quantifiable Commodity',
+        content: `The COYN protocol positions data as a quantifiable, tradable commodity, with $QOYN acting as a medium for pricing and transacting this data. By framing $QOYN as a utility token for accessing and pricing data (not an investment), COYN avoids triggering the Howey Test. Data underpinned by iQubes is treated as a fungible or non-fungible commodity, similar to real-world assets like gold or oil.`,
+        section: 'Data Commodity Classification',
+        category: 'legal',
+        keywords: ['data commodity', 'Howey Test', 'utility token', 'fungible assets', 'data valuation'],
+        timestamp: new Date().toISOString(),
+        source: '$QOYN Legal Strategy'
+      },
+      {
+        id: 'regulatory-compliance-strategy',
+        title: 'Regulatory Strategy & Utility Focus',
+        content: `$QOYN's primary use cases include: Access to iQubes (required for all data transactions), Staking (earn rewards tied to protocol fees, not inflation), and Governance (token holders vote on technical parameters, not profit distribution). This utility-first model mirrors non-security tokens like Filecoin and Chainlink. Wyoming's blockchain-friendly laws provide a defensible jurisdictional framework.`,
+        section: 'Utility Focus & Compliance',
+        category: 'legal',
+        keywords: ['utility focus', 'Wyoming laws', 'protocol fees', 'governance', 'regulatory compliance'],
+        timestamp: new Date().toISOString(),
+        source: '$QOYN Legal Strategy'
+      },
+      {
+        id: 'legal-risk-mitigations',
+        title: 'Legal Risks & Mitigations',
+        content: `Potential SEC scrutiny of hybrid tokens is mitigated through clear documentation emphasizing $QOYN's utility over speculative gains, ensuring no revenue sharing (rewards tied to protocol fees, not enterprise profits), and transparency in Satoshi reserves through monthly audits. Third-party audits verify data's quantifiable value via iQube metadata and risk scores.`,
+        section: 'Risk Management',
+        category: 'legal',
+        keywords: ['SEC scrutiny', 'hybrid tokens', 'documentation', 'Satoshi reserves', 'third-party audits'],
+        timestamp: new Date().toISOString(),
+        source: '$QOYN Legal Strategy'
+      },
+
+      // NEW TCM SPECIFICATION CONTENT
+      {
+        id: 'tcm-bucket-allocation',
+        title: 'TCM Bucket Allocation Structure',
+        content: `The Techno Capital Machine allocates emissions as follows: 30% to Capital Bucket (Bitcoin and Ethereum stakers), 30% to Compute Bucket (software and hardware providers), 30% to Content Bucket (data and content creators), and 10% to Pool (for micro stable coin pegged to $0.01). This structure ensures balanced incentives across all three pillars of the ecosystem.`,
+        section: 'TCM Distribution Model',
+        category: 'implementation',
+        keywords: ['TCM buckets', 'Capital bucket', 'Compute bucket', 'Content bucket', 'micro stable coin'],
+        timestamp: new Date().toISOString(),
+        source: '$QOYN TCM Specification'
+      },
+      {
+        id: 'cross-chain-integration',
+        title: 'Cross-Chain Integration Architecture',
+        content: `ICP Chain Fusion enables secure interaction with Bitcoin, allowing ICP smart contracts to manage Bitcoin UTXOs directly. LayerZero provides safe and reliable communication between ICP, Bitcoin, and EVM blockchains. This architecture ensures interoperability while maintaining security and decentralization across multiple blockchain networks.`,
+        section: 'Technical Integration',
+        category: 'technical',
+        keywords: ['ICP Chain Fusion', 'LayerZero', 'cross-chain', 'Bitcoin UTXOs', 'EVM integration', 'interoperability'],
+        timestamp: new Date().toISOString(),
+        source: '$QOYN TCM Specification'
+      },
+      {
+        id: 'implementation-roadmap',
+        title: 'Implementation Roadmap',
+        content: `Pre-Launch: Secure enterprise iQube partnerships and create dashboard for real-time burn/APY tracking. Launch: Enforce mandatory Qrypto COYN usage for iQubes and implement governance voting for parameter adjustments. Post-Launch: Monitor and adjust tokenomics and staking mechanisms as needed. The roadmap ensures systematic deployment and continuous optimization.`,
+        section: 'Development Timeline',
+        category: 'implementation',
+        keywords: ['implementation roadmap', 'enterprise partnerships', 'governance voting', 'tokenomics adjustment'],
+        timestamp: new Date().toISOString(),
+        source: '$QOYN TCM Specification'
+      },
+      {
+        id: 'micro-stablecoin-framework',
+        title: 'Micro Stable Coin Framework',
+        content: `The micro stable coin is pegged 1:1 to $0.01 and funded by 10% of Qrypto COYN emissions allocated to the Pool. This micro stable coin facilitates transactions within the ecosystem, providing price stability for day-to-day operations while the main $QOYN token captures value appreciation. It serves as the transactional currency for iQube access and data pricing.`,
+        section: 'Stable Coin Mechanics',
+        category: 'tokenomics',
+        keywords: ['micro stable coin', '$0.01 peg', 'transactional currency', 'price stability', 'iQube transactions'],
+        timestamp: new Date().toISOString(),
+        source: '$QOYN TCM Specification'
       }
     ]);
   }

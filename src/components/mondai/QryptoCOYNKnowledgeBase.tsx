@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Button } from '@/components/ui/button';
@@ -34,7 +33,9 @@ const QryptoCOYNKnowledgeBase: React.FC = () => {
       'consensus': 'bg-purple-500/20 text-purple-700 border border-purple-500/30',
       'economics': 'bg-yellow-500/20 text-yellow-800 border border-yellow-500/30',
       'mechanics': 'bg-orange-500/20 text-orange-700 border border-orange-500/30',
-      'technical': 'bg-slate-500/20 text-slate-700 border border-slate-500/30'
+      'technical': 'bg-slate-500/20 text-slate-700 border border-slate-500/30',
+      'legal': 'bg-red-500/20 text-red-700 border border-red-500/30',
+      'implementation': 'bg-indigo-500/20 text-indigo-700 border border-indigo-500/30'
     };
     return colors[category] || 'bg-slate-500/20 text-slate-700 border border-slate-500/30';
   };
@@ -57,7 +58,6 @@ const QryptoCOYNKnowledgeBase: React.FC = () => {
         </div>
       </div>
 
-      {/* Search input with improved styling */}
       <div className="mb-4">
         <input
           type="text"
@@ -118,7 +118,6 @@ const QryptoCOYNKnowledgeBase: React.FC = () => {
         </ScrollArea>
       </div>
       
-      {/* Detailed knowledge item dialog */}
       <Dialog open={!!selectedItem} onOpenChange={(open) => !open && closeDialog()}>
         <DialogContent className="max-w-3xl max-h-[80vh] overflow-hidden flex flex-col">
           <DialogHeader>
