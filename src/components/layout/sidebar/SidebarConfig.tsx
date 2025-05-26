@@ -7,7 +7,7 @@ import {
   Users, 
   Settings, 
   User,
-  Cube,
+  Box,
   Wrench,
   Database
 } from 'lucide-react';
@@ -69,7 +69,7 @@ export const sidebarConfig: SidebarSection[] = [
       {
         id: 'agent-qube',
         label: 'Agent Qube',
-        icon: Cube,
+        icon: Box,
         href: '/qubes/agent',
         description: 'Agent configuration and management'
       },
