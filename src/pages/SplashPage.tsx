@@ -15,7 +15,7 @@ const SplashPage = () => {
           </h1>
           <div className="w-16 h-1 bg-qrypto-accent mx-auto mb-6"></div>
           <h2 className="text-2xl font-semibold text-qrypto-accent mb-2">
-            Nakamoto
+            Aigent Nakamoto
           </h2>
           <p className="text-lg text-white/80">
             Your intelligent cryptocurrency companion
