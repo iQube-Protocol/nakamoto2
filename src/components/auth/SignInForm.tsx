@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
@@ -8,22 +7,23 @@ import { Checkbox } from '@/components/ui/checkbox';
 import { toast } from 'sonner';
 import { Mail, Key, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
-
 const SignInForm = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const { signIn } = useAuth();
-
+  const {
+    signIn
+  } = useAuth();
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
     setIsLoading(true);
-    
     try {
-      const { error, success } = await signIn(email, password);
-      
+      const {
+        error,
+        success
+      } = await signIn(email, password);
       if (success) {
         toast.success('Signed in successfully');
         navigate('/dashboard');
@@ -37,18 +37,20 @@ const SignInForm = () => {
       setIsLoading(false);
     }
   };
-
   const demoSignIn = async () => {
     setIsLoading(true);
     setEmail('demo@mondai.io');
     setPassword('demo123');
-    
     try {
-      const { error, success } = await signIn('demo@mondai.io', 'demo123');
-      
+      const {
+        error,
+        success
+      } = await signIn('demo@mondai.io', 'demo123');
       if (success) {
         toast.success('Signed in with demo account');
-        navigate('/dashboard', { replace: true });
+        navigate('/dashboard', {
+          replace: true
+        });
       } else if (error) {
         toast.error(`Demo sign in failed: ${error.message}`);
       }
@@ -59,22 +61,12 @@ const SignInForm = () => {
       setIsLoading(false);
     }
   };
-
-  return (
-    <form onSubmit={handleSignIn} className="space-y-4">
+  return <form onSubmit={handleSignIn} className="space-y-4">
       <div className="space-y-2">
         <Label htmlFor="email">Email</Label>
         <div className="relative">
           <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-          <Input
-            id="email"
-            placeholder="you@example.com"
-            type="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="pl-10"
-            required
-          />
+          <Input id="email" placeholder="you@example.com" type="email" value={email} onChange={e => setEmail(e.target.value)} className="pl-10" required />
         </div>
       </div>
       <div className="space-y-2">
@@ -86,21 +78,8 @@ const SignInForm = () => {
         </div>
         <div className="relative">
           <Key className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-          <Input
-            id="password"
-            placeholder="••••••••"
-            type={showPassword ? 'text' : 'password'}
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="pl-10"
-            required
-          />
-          <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
-            tabIndex={-1}
-          >
+          <Input id="password" placeholder="••••••••" type={showPassword ? 'text' : 'password'} value={password} onChange={e => setPassword(e.target.value)} className="pl-10" required />
+          <button type="button" onClick={() => setShowPassword(!showPassword)} className="absolute right-3 top-3 text-muted-foreground hover:text-foreground" tabIndex={-1}>
             {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
           </button>
         </div>
@@ -124,17 +103,9 @@ const SignInForm = () => {
           <span className="bg-background px-2 text-muted-foreground">or</span>
         </div>
       </div>
-      <Button 
-        type="button" 
-        variant="outline" 
-        className="w-full" 
-        onClick={demoSignIn}
-        disabled={isLoading}
-      >
+      <Button type="button" variant="outline" onClick={demoSignIn} disabled={isLoading} className="w-full\nChange Sign in with demo account to Sign in as guest and enable users to enter the application with anonymous gust credentials">
         Sign in with demo account
       </Button>
-    </form>
-  );
+    </form>;
 };
-
 export default SignInForm;
