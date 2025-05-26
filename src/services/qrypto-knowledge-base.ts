@@ -129,8 +129,6 @@ export class QryptoKnowledgeBase {
         timestamp: new Date().toISOString(),
         source: 'COYN Requirements'
       },
-
-      // NEW LEGAL STRATEGY CONTENT
       {
         id: 'sec-bitcoin-precedent',
         title: 'SEC Bitcoin Precedent & Non-Security Status',
@@ -171,8 +169,6 @@ export class QryptoKnowledgeBase {
         timestamp: new Date().toISOString(),
         source: '$QOYN Legal Strategy'
       },
-
-      // NEW TCM SPECIFICATION CONTENT
       {
         id: 'tcm-bucket-allocation',
         title: 'TCM Bucket Allocation Structure',
@@ -212,6 +208,96 @@ export class QryptoKnowledgeBase {
         keywords: ['micro stable coin', '$0.01 peg', 'transactional currency', 'price stability', 'iQube transactions'],
         timestamp: new Date().toISOString(),
         source: '$QOYN TCM Specification'
+      },
+      {
+        id: 'smart-contract-requirements',
+        title: 'Smart Contract Technical Requirements',
+        content: `Smart Contract Requirements: Token Issuance (issues Qrypto COYN tokens to Bitcoin and Ethereum stakers), Staking Mechanism (allows contributors to stake Bitcoin and Ethereum for Qrypto COYN), Token Distribution (distributes based on staking), Capital/Compute/Content Buckets (allocates tokens per TCM model), and Pool (allocates 10% for micro stable coin). Built on Internet Computer Protocol (ICP) using Rust or Motoko with ICP Chain Fusion and LayerZero integration.`,
+        section: 'Smart Contract Specifications',
+        category: 'technical',
+        keywords: ['smart contracts', 'ICP', 'Rust', 'Motoko', 'token issuance', 'staking mechanism'],
+        timestamp: new Date().toISOString(),
+        source: '$QOYN TCM Requirements'
+      },
+      {
+        id: 'security-scalability-requirements',
+        title: 'Security & Scalability Requirements',
+        content: `Non-Functional Requirements include Security (ensures integrity of tokens and staking process), Scalability (handles large numbers of transactions and users), and Usability (designed for ease of interaction). Testing includes Unit Testing (thoroughly tests individual components), Integration Testing (verifies interaction with ecosystem components), and Security Auditing (undergoes review by security firm for vulnerabilities).`,
+        section: 'System Requirements',
+        category: 'technical',
+        keywords: ['security', 'scalability', 'unit testing', 'integration testing', 'security auditing'],
+        timestamp: new Date().toISOString(),
+        source: '$QOYN TCM Requirements'
+      },
+      {
+        id: 'por-rug-pull-mitigation',
+        title: 'Proof of Risk Rug Pull Mitigation',
+        content: `Dynamic Risk Scoring assigns risk scores to all participants based on iQube compliance and historical behavior. High-risk actors are excluded from governance or face higher staking requirements. Collateralized Participation requires developers to stake $QOYN proportional to their DataQube/AgentQube risk score (e.g., high-risk healthcare agentQube requires 10K $QOYN collateral, slashed if fraud occurs). Decentralized Audits compute risk scores via validator network, stored on-chain via Proof of State.`,
+        section: 'Risk Mitigation Framework',
+        category: 'consensus',
+        keywords: ['dynamic risk scoring', 'collateralized participation', 'decentralized audits', 'rug pull prevention'],
+        timestamp: new Date().toISOString(),
+        source: '$QOYN Price Risk Mitigation'
+      },
+      {
+        id: 'pop-market-integrity',
+        title: 'Proof of Price Market Integrity',
+        content: `Positive Risk-Based Pricing automatically adjusts prices downward if iQube risk score increases (e.g., data breaches, regulatory non-compliance). Auction-Based Price Discovery uses Dutch auctions for fair value discovery, preventing pump schemes by capping speculative bids. Liquidity Safeguards include 5% of protocol fees funding liquidity pool that stabilizes $QOYN during volatility, with slippage limits (≤5%) preventing flash crashes from whale dumps.`,
+        section: 'Market Integrity Framework',
+        category: 'economics',
+        keywords: ['price discovery', 'Dutch auctions', 'liquidity safeguards', 'market integrity', 'anti-manipulation'],
+        timestamp: new Date().toISOString(),
+        source: '$QOYN Price Risk Mitigation'
+      },
+      {
+        id: 'systemic-safeguards',
+        title: 'Combined PoR/PoP Systemic Safeguards',
+        content: `Early Warning System triggers alerts when iQube risk score spikes, freezing suspicious transactions (e.g., if dataset accuracy drops <30%, its iQube is quarantined). Insurance Fund uses 2% of fees to reimburse users affected by iQube failures, backed by PoR risk scores. Reputation Scores issue non-transferable Reputation Tokens to participants with low risk and high-trust scores, unlocking rewards. Governance allows $QOYN holders to vote on PoR collateral ratios or PoP auction rules.`,
+        section: 'Systemic Protection',
+        category: 'consensus',
+        keywords: ['early warning system', 'insurance fund', 'reputation scores', 'governance voting'],
+        timestamp: new Date().toISOString(),
+        source: '$QOYN Price Risk Mitigation'
+      },
+      {
+        id: 'intent-analysis-framework',
+        title: 'iQube Intent Analysis & Curation Framework',
+        content: `Automated Intent Analysis system developed by Edson Bope and Dele Atanda via Lehigh University processes text instructions, documents, audio, and video inputs using NLP/LLMs (GPT, LangChain). Intent Classification categorizes intents into predefined use cases (risk analysis, investment research). Data Collection uses SQL database querying and external API integration (CoinGecko, PubMed). Machine Learning Filtering trains classifiers to select records matching original intent, compiling into encrypted iQubes.`,
+        section: 'Data Curation Process',
+        category: 'technical',
+        keywords: ['intent analysis', 'NLP', 'LangChain', 'data curation', 'machine learning', 'automated processing'],
+        timestamp: new Date().toISOString(),
+        source: 'Declaration of Intent'
+      },
+      {
+        id: 'risk-scoring-framework',
+        title: 'iQube Information Risk Scoring Framework',
+        content: `Comprehensive risk evaluation framework by Amit Rajendra Patil and Dele Atanda evaluates risks for iQube combinations using risk_matrix mapping data attributes to risk levels (High/Medium/Low) across confidentiality, identifiability, sensitivity. Weighted Scoring applies weights to key risk types (Identifiability: 1.5, Security: 1.4). Dynamic Thresholding computes thresholds based on maximum achievable score (High Risk >65%, Medium Risk >35%). Regulatory Compliance maps attributes to legal frameworks (GDPR, HIPAA, CCPA).`,
+        section: 'Risk Assessment Framework',
+        category: 'consensus',
+        keywords: ['risk scoring', 'weighted scoring', 'dynamic thresholding', 'regulatory compliance', 'GDPR', 'HIPAA'],
+        timestamp: new Date().toISOString(),
+        source: 'Proof of Risk'
+      },
+      {
+        id: 'data-pricing-models',
+        title: 'Data Pricing Models & Components',
+        content: `Three pricing models evaluated by Toluope Shoaga and Dele Atanda: Model 1 (Risk Model): Price = Risk * 1/Expected Return. Model 2a (Z-Score Opportunity): Price = Risk * Expected Revenue + Time Value + Market Value. Model 2b (Z-Score Loss): Price = Risk * Expected Revenue + Compliance - Time Value. Price Components include Data Replication cost, Compliance (GDPR breach impact), Time Value (opportunity cost), and Market Risk (competitor data loss cost). All models use discount rates and probability adjustments.`,
+        section: 'Data Pricing Framework',
+        category: 'economics',
+        keywords: ['data pricing models', 'Z-Score approach', 'risk-based pricing', 'compliance costs', 'time value', 'market risk'],
+        timestamp: new Date().toISOString(),
+        source: 'Proof of Price'
+      },
+      {
+        id: 'tcm-deployment-architecture',
+        title: 'TCM Deployment & Maintenance Framework',
+        content: `Deployment Plan includes deployment on ICP blockchain according to specific plan and timeline. Maintenance & Updates ensure regular maintenance for security and functionality with update mechanisms for new features and fixes. Implementation Timeline: Weeks 1-3 (Intent Understanding), 4-6 (Intent Clarification), 7-9 (Data Collection), 10-11 (Record Selection). Technical Requirements include AI/ML tools (PyTorch, LangChain, scikit-learn), Data Processing (Pandas, NumPy, SQL), APIs/Scraping (RESTful APIs, Scrapy), and Security (encryption libraries).`,
+        section: 'Deployment Framework',
+        category: 'implementation',
+        keywords: ['deployment plan', 'maintenance updates', 'implementation timeline', 'technical requirements', 'AI/ML tools'],
+        timestamp: new Date().toISOString(),
+        source: 'Raw TCM Specification'
       }
     ]);
   }
