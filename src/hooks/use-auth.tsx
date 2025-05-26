@@ -2,7 +2,7 @@
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
 
 interface AuthContextProps {
@@ -27,6 +27,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
+  const location = useLocation();
 
   useEffect(() => {
     console.log("Auth provider initialized");
@@ -44,9 +45,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           // Handle specific auth events
           if (event === 'SIGNED_IN') {
             console.log("User signed in, session established");
+            // Redirect to dashboard after sign in
+            navigate('/mondai');
           } else if (event === 'SIGNED_OUT') {
             console.log("User signed out, session cleared");
             navigate('/signin');
+          } else if (event === 'TOKEN_REFRESHED') {
+            console.log("Token refreshed successfully");
+          } else if (event === 'USER_UPDATED') {
+            console.log("User updated");
           }
         }
       }
@@ -97,10 +104,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signUp = async (email: string, password: string, firstName?: string, lastName?: string) => {
     try {
-      // Get the current site URL for redirection
-      const redirectTo = `${window.location.origin}/signin`;
+      // Get the current site URL for redirection - use the current origin
+      const redirectTo = `${window.location.origin}/signin?confirmed=true`;
       
-      console.log("Attempting sign up for:", email);
+      console.log("Attempting sign up for:", email, "with redirect to:", redirectTo);
       
       const { data, error } = await supabase.auth.signUp({
         email,
@@ -120,6 +127,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       }
 
       console.log("Sign up successful:", data.user?.email);
+      
+      // Show success message
+      if (data.user && !data.session) {
+        toast.success("Please check your email and click the confirmation link to complete your registration.");
+      }
+      
       return { error: null, success: true };
     } catch (error) {
       console.error('Unexpected error during sign up:', error);

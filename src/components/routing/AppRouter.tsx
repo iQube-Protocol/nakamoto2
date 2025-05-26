@@ -22,6 +22,7 @@ import SplashPage from '../../pages/SplashPage';
 import LegacyDashboard from '../../pages/LegacyDashboard';
 import { AuthProvider } from '@/hooks/use-auth';
 import OAuthCallback from '@/components/settings/OAuthCallback';
+import EmailConfirmation from '@/components/auth/EmailConfirmation';
 
 const ProtectedLayoutRoute = ({ element }) => {
   return (
@@ -45,6 +46,7 @@ const AppRoutes = () => {
         <Route path="/signup" element={<SignUp />} />
         <Route path="/legacy" element={<LegacyDashboard />} />
         <Route path="/oauth-callback" element={<OAuthCallback />} />
+        <Route path="/auth/confirm" element={<EmailConfirmation />} />
         
         {/* Redirect /dashboard to /mondai */}
         <Route path="/dashboard" element={<Navigate to="/mondai" replace />} />

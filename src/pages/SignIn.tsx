@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useSearchParams } from 'react-router-dom';
 import { toast } from 'sonner';
 import AuthLayout from '@/components/auth/AuthLayout';
 import { useAuth } from '@/hooks/use-auth';
@@ -13,12 +13,21 @@ const SignIn = () => {
   
   const navigate = useNavigate();
   const { user } = useAuth();
+  const [searchParams] = useSearchParams();
+  
+  // Check for email confirmation
+  useEffect(() => {
+    const confirmed = searchParams.get('confirmed');
+    if (confirmed === 'true') {
+      toast.success("Email confirmed successfully! You can now sign in.");
+    }
+  }, [searchParams]);
   
   // Check if user is already logged in - redirect to dashboard specifically
   useEffect(() => {
     if (user) {
       console.log("User already logged in, redirecting to dashboard");
-      navigate('/dashboard', { replace: true });
+      navigate('/mondai', { replace: true });
     }
   }, [user, navigate]);
 
