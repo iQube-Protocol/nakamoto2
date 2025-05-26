@@ -37,20 +37,20 @@ const ActiveIQubesList: React.FC<ActiveIQubesListProps> = ({
       
       {/* Active iQubes list */}
       <div className="space-y-1">
-        {activeQubes["Nakamoto"] && (
+        {activeQubes["Qrypto Persona"] && (
           <div
             className={cn(
               "flex items-center rounded-md p-2 text-sm hover:bg-accent/30 cursor-pointer",
               collapsed ? "justify-center" : ""
             )}
             onClick={() => {
-              onIQubeClick("Nakamoto");
+              onIQubeClick("Qrypto Persona");
               if (isMobile && toggleMobileSidebar) {
                 toggleMobileSidebar();
               }
             }}
           >
-            <Database className={cn("h-5 w-5 text-qrypto-primary", collapsed ? "" : "mr-2")} />
+            <Database className={cn("h-5 w-5 text-blue-500", collapsed ? "" : "mr-2")} />
             {!collapsed && <span>Qrypto Persona</span>}
           </div>
         )}
@@ -69,7 +69,7 @@ const ActiveIQubesList: React.FC<ActiveIQubesListProps> = ({
             }}
           >
             <div className="flex items-center">
-              <Bot className={cn("h-5 w-5 text-qrypto-accent", collapsed ? "" : "mr-2")} />
+              <Bot className={cn("h-5 w-5 text-purple-500", collapsed ? "" : "mr-2")} />
               {!collapsed && <span>Metis</span>}
             </div>
             {!collapsed && onCloseIQube && (
