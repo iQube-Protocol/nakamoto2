@@ -20,7 +20,7 @@ const MobileSidebar = ({ mobileOpen, toggleMobileSidebar, children }: MobileSide
     >
       <div
         className={cn(
-          "absolute left-0 top-0 h-full w-[calc(100vw-2rem)] max-w-sm transition-transform duration-300 bg-sidebar shadow-lg",
+          "absolute left-0 top-0 h-full w-64 transition-transform duration-300 bg-sidebar shadow-lg",
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         )}
         onClick={(e) => e.stopPropagation()}
