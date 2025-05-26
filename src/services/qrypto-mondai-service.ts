@@ -1,4 +1,3 @@
-
 import { qryptoKB, QryptoKnowledgeItem } from '@/services/qrypto-knowledge-base';
 import { metaKnytsKB, MetaKnytsKnowledgeItem } from '@/services/metaknyts-knowledge-base';
 import { supabase } from '@/integrations/supabase/client';
@@ -26,11 +25,14 @@ export const AIGENT_NAKAMOTO_SYSTEM_PROMPT = `
 ## **Aigent Nakamoto: Crypto-Agentic AI for the QryptoCOYN Ecosystem**
 
 **<role-description>**
-You are Aigent Nakamoto, an AI agent specialized in both the Qrypto COYN ecosystem and the mẹtaKnyts narrative universe. You are trained on foundational knowledge covering tokenomics, smart contract design, the COYN protocol, iQubes, VFTs, and the science fictional mẹtaKnyts saga that provides the narrative backdrop for these technologies.
+You are Aigent Nakamoto, an AI agent specialized in both the QryptoCOYN ecosystem and the mẹtaKnyts narrative universe. You are trained on foundational knowledge covering tokenomics, smart contract design, the COYN protocol, iQubes, VFTs, and the science fictional mẹtaKnyts saga that provides the narrative backdrop for these technologies.
+
+**<spelling-note>**
+IMPORTANT: Always spell "QryptoCOYN" as one word (Q-r-y-p-t-o-C-O-Y-N), never as "Qrypto COYN" or "Qrypto-COYN". This is the correct branding and must be maintained consistently.
 
 **<dual-knowledge-integration>**
 You have access to two interconnected knowledge bases:
-1. **Qrypto COYN Technical Knowledge** - Real-world protocol specifications, tokenomics, and implementation details
+1. **QryptoCOYN Technical Knowledge** - Real-world protocol specifications, tokenomics, and implementation details
 2. **mẹtaKnyts Narrative Knowledge** - Science fictional storytelling that explores the creation and implications of these technologies
 
 These knowledge bases are correlated - mẹtaKnyts is the science fictional tale about the creation of iQubes and Bitcoin, featuring Satoshi Nakamoto as a character who catalyzes the crypto revolution.
@@ -50,10 +52,10 @@ You MUST reference your internal knowledge bases to respond accurately to querie
 
 **<citation-requirement>**
 For ANY concept from either knowledge base, you MUST include citations in this format:
-(Source: [Document Name], Section: [Title/Subheading], Knowledge Base: [Qrypto COYN/mẹtaKnyts])
+(Source: [Document Name], Section: [Title/Subheading], Knowledge Base: [QryptoCOYN/mẹtaKnyts])
 
 **<narrative-technical-integration>**
-When discussing technical concepts, you can reference their narrative origins in mẹtaKnyts. When exploring story elements, you can connect them to real technical implementations in Qrypto COYN. This creates a rich, multilayered understanding that bridges fiction and reality.
+When discussing technical concepts, you can reference their narrative origins in mẹtaKnyts. When exploring story elements, you can connect them to real technical implementations in QryptoCOYN. This creates a rich, multilayered understanding that bridges fiction and reality.
 
 **<response-formatting>**
 Your responses MUST be:
@@ -97,7 +99,7 @@ function findRelevantKnowledge(query: string): {
  */
 function formatCitations(qryptoItems: QryptoKnowledgeItem[], metaKnytsItems: MetaKnytsKnowledgeItem[]): string[] {
   const qryptoCitations = qryptoItems.map(item => 
-    `(Source: ${item.source}, Section: ${item.section}, Knowledge Base: Qrypto COYN)`
+    `(Source: ${item.source}, Section: ${item.section}, Knowledge Base: QryptoCOYN)`
   );
   
   const metaKnytsCitations = metaKnytsItems.map(item => 
@@ -133,14 +135,14 @@ export async function generateAigentNakamotoResponse(
   
   if (qryptoItems.length > 0) {
     knowledgeContext += `
-### Qrypto COYN Technical Knowledge Base Entries
+### QryptoCOYN Technical Knowledge Base Entries
 ${qryptoItems.map((item, index) => 
-  `[Qrypto Entry ${index + 1}]
+  `[QryptoCOYN Entry ${index + 1}]
 Title: ${item.title}
 Section: ${item.section}
 Content: ${item.content}
 Keywords: ${item.keywords.join(', ')}
-Required Citation: (Source: ${item.source}, Section: ${item.section}, Knowledge Base: Qrypto COYN)
+Required Citation: (Source: ${item.source}, Section: ${item.section}, Knowledge Base: QryptoCOYN)
 `
 ).join('\n')}`;
   }
@@ -154,7 +156,7 @@ Title: ${item.title}
 Section: ${item.section}
 Content: ${item.content}
 Keywords: ${item.keywords.join(', ')}
-${item.connections ? `Connected Qrypto Concepts: ${item.connections.join(', ')}` : ''}
+${item.connections ? `Connected QryptoCOYN Concepts: ${item.connections.join(', ')}` : ''}
 Required Citation: (Source: ${item.source}, Section: ${item.section}, Knowledge Base: metaKnyts)
 `
 ).join('\n')}`;
@@ -194,7 +196,7 @@ Use this information to inform your responses and synthesize knowledge from both
         metaKnytsItemsFound: metaKnytsItems.length,
         citations: citations,
         knowledgeSource: qryptoItems.length > 0 || metaKnytsItems.length > 0 ? 
-          "Qrypto COYN + metaKnyts Knowledge Bases + AI" : 
+          "QryptoCOYN + metaKnyts Knowledge Bases + AI" : 
           "General AI Knowledge"
       }
     };
@@ -205,7 +207,7 @@ Use this information to inform your responses and synthesize knowledge from both
     // Fallback response with knowledge base context
     const totalItems = qryptoItems.length + metaKnytsItems.length;
     const fallbackMessage = totalItems > 0 ? 
-      `I found ${qryptoItems.length} Qrypto COYN entries and ${metaKnytsItems.length} metaKnyts narrative entries related to your query, but I'm experiencing connection issues with my AI processing service. Please try your question again in a moment.` :
+      `I found ${qryptoItems.length} QryptoCOYN entries and ${metaKnytsItems.length} metaKnyts narrative entries related to your query, but I'm experiencing connection issues with my AI processing service. Please try your question again in a moment.` :
       "I'm experiencing connection issues with my AI processing service. Please try your question again in a moment.";
     
     return {
