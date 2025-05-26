@@ -1,9 +1,9 @@
+
 import React from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { getConversationContext } from '@/services/agent-service';
 import { AgentMessage } from '@/lib/types';
-import { processMonDAIInteraction } from '@/services/mondai-service';
 import { generateAigentNakamotoResponse } from '@/services/qrypto-mondai-service';
 
 export function useMondAI() {
@@ -57,8 +57,16 @@ export function useMondAI() {
 
   const handleAIMessage = async (message: string) => {
     try {
-      // Use the enhanced Qrypto COYN service
+      console.log('MonDAI: Sending message to enhanced Aigent Nakamoto service');
+      
+      // Use the enhanced Qrypto COYN + metaKnyts service
       const response = await generateAigentNakamotoResponse(message, conversationId);
+      
+      console.log('MonDAI: Received response with metadata:', {
+        qryptoItems: response.metadata.qryptoItemsFound,
+        metaKnytsItems: response.metadata.metaKnytsItemsFound,
+        citations: response.metadata.citations?.length || 0
+      });
       
       // Update conversation ID if it changed
       if (response.conversationId !== conversationId) {

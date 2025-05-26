@@ -1,65 +1,52 @@
-import React, { useEffect } from 'react';
-import SimplifiedAgentInterface from '@/components/shared/agent/SimplifiedAgentInterface';
+
+import React from 'react';
+import { SimplifiedAgentInterface } from '@/components/shared/agent';
 import { useMondAI } from '@/hooks/use-mondai';
-import { useIsMobile } from '@/hooks/use-mobile';
 
 const SimplifiedMonDAIInterface: React.FC = () => {
-  const isMobile = useIsMobile();
-  
-  // Use our custom hook for MonDAI functionality (simplified version)
   const {
     conversationId,
-    documentUpdates,
     handleAIMessage,
-    handleDocumentContextUpdated,
   } = useMondAI();
 
-  // Set fullscreen mode effect for mobile only
-  useEffect(() => {
-    if (isMobile) {
-      // Add a class to the root element for fullscreen styling on mobile
-      document.documentElement.classList.add('fullscreen-mode');
-    }
-    
-    // Remove the class when component unmounts or when not mobile
-    return () => {
-      document.documentElement.classList.remove('fullscreen-mode');
-    };
-  }, [isMobile]);
+  // Enhanced initial message that mentions both knowledge bases
+  const initialMessage = `Hello! I'm Aigent Nakamoto, your crypto-agentic AI assistant with access to both the **Qrypto COYN technical knowledge base** and the **mẹtaKnyts narrative universe**.
 
-  // Welcome message for Aigent Nakamoto with Qrypto COYN knowledge base
-  const initialMessage = "Hello! I'm Aigent Nakamoto, your intelligent companion for the Qrypto COYN ecosystem. I have specialized knowledge about iQubes, the $QOYN token economy, Techno Capital Machine (TCM), Proof of Risk/Price/State consensus frameworks, and the broader crypto-agentic landscape. I can explain complex concepts with clear diagrams, provide accurate information with proper citations, and guide you through the innovative world of data-as-an-asset. What aspect of the Qrypto COYN ecosystem would you like to explore?";
+I can help you with:
+• **Technical concepts**: iQubes, VFTs, COYN Protocol, tokenomics, smart contracts
+• **Narrative elements**: mẹtaKnyts characters (KnowOne, Satoshi Nakamoto, FANG Gang, BAT Pack)
+• **Worldbuilding**: Terra/Digitterra dual reality framework
+• **Philosophy**: Clean Data principles, decentralized AI governance
+
+Try asking about "metaKnyts", "KnowOne", "Terra and Digitterra", or any crypto/Web3 concept. I'll provide insights from both technical and narrative perspectives with proper citations.
+
+What would you like to explore today?`;
 
   return (
-    <div className="container py-6 max-w-7xl mx-auto h-full agent-interface">
-      <div className="grid gap-6 h-full">
-        <div className="flex flex-col h-full">          
-          <SimplifiedAgentInterface
-            title="Aigent Nakamoto"
-            description="Your intelligent companion for the Qrypto COYN ecosystem"
-            agentType="mondai" 
-            onMessageSubmit={handleAIMessage}
-            onDocumentAdded={handleDocumentContextUpdated}
-            documentContextUpdated={documentUpdates}
-            conversationId={conversationId}
-            initialMessages={[
-              {
-                id: "1",
-                sender: "agent",
-                message: initialMessage,
-                timestamp: new Date().toISOString(),
-                metadata: {
-                  version: "1.0",
-                  modelUsed: "gpt-4o-mini",
-                  knowledgeSource: "Qrypto COYN Knowledge Base",
-                  qryptoItemsFound: 0,
-                  citations: []
-                }
-              }
-            ]}
-          />
-        </div>
-      </div>
+    <div className="h-screen flex flex-col">
+      <SimplifiedAgentInterface
+        title="Aigent Nakamoto"
+        description="Crypto-Agentic AI for Qrypto COYN + mẹtaKnyts"
+        agentType="mondai" 
+        onMessageSubmit={handleAIMessage}
+        conversationId={conversationId}
+        initialMessages={[
+          {
+            id: "1",
+            sender: "agent",
+            message: initialMessage,
+            timestamp: new Date().toISOString(),
+            metadata: {
+              version: "1.0",
+              modelUsed: "gpt-4o-mini",
+              knowledgeSource: "Qrypto COYN + mẹtaKnyts Knowledge Bases",
+              qryptoItemsFound: 0,
+              metaKnytsItemsFound: 0,
+              citations: []
+            }
+          }
+        ]}
+      />
     </div>
   );
 };
