@@ -29,14 +29,14 @@ const QryptoCOYNKnowledgeBase: React.FC = () => {
 
   const getCategoryColor = (category: QryptoKnowledgeItem['category']) => {
     const colors = {
-      'tokenomics': 'bg-blue-100 text-blue-800',
-      'protocols': 'bg-green-100 text-green-800',
-      'consensus': 'bg-purple-100 text-purple-800',
-      'economics': 'bg-yellow-100 text-yellow-800',
-      'mechanics': 'bg-orange-100 text-orange-800',
-      'technical': 'bg-gray-100 text-gray-800'
+      'tokenomics': 'bg-blue-500/20 text-blue-700 border border-blue-500/30',
+      'protocols': 'bg-green-500/20 text-green-700 border border-green-500/30',
+      'consensus': 'bg-purple-500/20 text-purple-700 border border-purple-500/30',
+      'economics': 'bg-yellow-500/20 text-yellow-800 border border-yellow-500/30',
+      'mechanics': 'bg-orange-500/20 text-orange-700 border border-orange-500/30',
+      'technical': 'bg-slate-500/20 text-slate-700 border border-slate-500/30'
     };
-    return colors[category] || 'bg-gray-100 text-gray-800';
+    return colors[category] || 'bg-slate-500/20 text-slate-700 border border-slate-500/30';
   };
   
   return (
@@ -57,14 +57,14 @@ const QryptoCOYNKnowledgeBase: React.FC = () => {
         </div>
       </div>
 
-      {/* Search input */}
+      {/* Search input with improved styling */}
       <div className="mb-4">
         <input
           type="text"
           placeholder="Search knowledge base..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          className="w-full px-3 py-2 text-sm border rounded-md focus:outline-none focus:ring-2 focus:ring-qrypto-primary/50"
+          className="w-full px-3 py-2 text-sm bg-background border border-input rounded-md focus:outline-none focus:ring-2 focus:ring-qrypto-primary/50 focus:border-qrypto-primary placeholder:text-muted-foreground"
         />
       </div>
       
@@ -97,7 +97,7 @@ const QryptoCOYNKnowledgeBase: React.FC = () => {
                     <div className="flex justify-between items-center">
                       <div className="flex flex-wrap gap-1">
                         {item.keywords.slice(0, 3).map((keyword, index) => (
-                          <span key={index} className="px-1.5 py-0.5 bg-gray-100 rounded text-xs">
+                          <span key={index} className="px-2 py-1 bg-muted/60 text-foreground/80 rounded text-xs border border-border/50">
                             {keyword}
                           </span>
                         ))}
@@ -141,7 +141,7 @@ const QryptoCOYNKnowledgeBase: React.FC = () => {
                 <h4 className="text-sm font-medium mb-2">Keywords:</h4>
                 <div className="flex flex-wrap gap-1">
                   {selectedItem.keywords.map((keyword, index) => (
-                    <span key={index} className="px-2 py-1 bg-qrypto-accent/20 rounded text-xs">
+                    <span key={index} className="px-2 py-1 bg-muted/60 text-foreground/80 rounded text-xs border border-border/50">
                       {keyword}
                     </span>
                   ))}
