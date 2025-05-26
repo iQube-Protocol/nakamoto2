@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { 
   ShieldCheck, 
@@ -20,9 +19,10 @@ interface ScoreTooltipProps {
   children: React.ReactNode;
   score?: number;
   type: 'reliability' | 'trust' | 'risk' | 'sensitivity' | 'accuracy' | 'verifiability' | 'dataQube' | 'voice' | 'attachment' | 'image' | 'mlModel' | 'agentQube';
+  customDescription?: string;
 }
 
-const ScoreTooltip: React.FC<ScoreTooltipProps> = ({ children, score, type }) => {
+const ScoreTooltip: React.FC<ScoreTooltipProps> = ({ children, score, type, customDescription }) => {
   const getTooltipContent = () => {
     switch(type) {
       case 'reliability':
@@ -114,10 +114,10 @@ const ScoreTooltip: React.FC<ScoreTooltipProps> = ({ children, score, type }) =>
           <div className="space-y-1">
             <div className="font-semibold flex items-center">
               <Brain className="h-4 w-4 mr-2 text-purple-500" />
-              AgentQube
+              Nakamoto
             </div>
             <div className="text-xs">
-              Advanced AI agent with specialized capabilities and configurable permissions.
+              {customDescription || "Advanced AI agent with specialized capabilities and configurable permissions."}
             </div>
           </div>
         );
