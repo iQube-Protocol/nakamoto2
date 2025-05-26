@@ -4,13 +4,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, BookOpen, Users, Lightbulb, Coins } from 'lucide-react';
+import { Search, BookOpen, Users, Lightbulb, Coins, ChevronRight } from 'lucide-react';
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Button } from '@/components/ui/button';
 import { qryptoKB } from '@/services/qrypto-knowledge-base';
 import { metaKnytsKB } from '@/services/metaknyts-knowledge-base';
 
 const QryptoCOYNKnowledgeBase = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('both');
+  const [selectedItem, setSelectedItem] = useState<any>(null);
 
   // Get all knowledge items
   const qryptoItems = qryptoKB.getAllKnowledge();
@@ -44,78 +47,114 @@ const QryptoCOYNKnowledgeBase = () => {
     switch (category) {
       case 'tokenomics':
       case 'economics':
-        return 'bg-green-100 text-green-800';
+        return 'bg-green-50 text-green-700 border-green-200';
       case 'characters':
-        return 'bg-purple-100 text-purple-800';
+        return 'bg-purple-50 text-purple-700 border-purple-200';
       case 'technology':
       case 'technical':
-        return 'bg-blue-100 text-blue-800';
+        return 'bg-blue-50 text-blue-700 border-blue-200';
       case 'worldbuilding':
-        return 'bg-orange-100 text-orange-800';
+        return 'bg-orange-50 text-orange-700 border-orange-200';
       case 'philosophy':
-        return 'bg-indigo-100 text-indigo-800';
+        return 'bg-indigo-50 text-indigo-700 border-indigo-200';
       case 'narrative':
-        return 'bg-pink-100 text-pink-800';
+        return 'bg-pink-50 text-pink-700 border-pink-200';
       case 'education':
-        return 'bg-yellow-100 text-yellow-800';
+        return 'bg-yellow-50 text-yellow-700 border-yellow-200';
       default:
-        return 'bg-gray-100 text-gray-800';
+        return 'bg-gray-50 text-gray-700 border-gray-200';
     }
+  };
+
+  const handleItemClick = (item: any) => {
+    setSelectedItem(item);
+  };
+
+  const closeDialog = () => {
+    setSelectedItem(null);
   };
 
   const renderKnowledgeItems = (items: any[], knowledgeBase: string) => (
     <div className="space-y-4">
-      {items.map(item => (
-        <Card key={item.id} className="hover:shadow-md transition-shadow">
-          <CardHeader className="pb-2">
-            <div className="flex items-start justify-between">
-              <CardTitle className="text-lg leading-tight">{item.title}</CardTitle>
-              <Badge variant="outline" className={`ml-2 rounded-md ${getCategoryColor(item.category)} flex items-center gap-1`}>
-                {getCategoryIcon(item.category)}
-                {item.category}
-              </Badge>
-            </div>
-            <CardDescription className="text-sm">
-              <strong>Source:</strong> {item.source} | <strong>Section:</strong> {item.section}
-            </CardDescription>
-          </CardHeader>
-          <CardContent>
-            <p className="text-sm text-gray-600 mb-3">{item.content}</p>
-            <div className="flex flex-wrap gap-1">
-              {item.keywords.map((keyword: string) => (
-                <Badge 
-                  key={keyword} 
-                  variant="secondary" 
-                  className={`text-xs rounded-md px-2 py-1 transition-colors ${
-                    knowledgeBase === 'QryptoCOYN' 
-                      ? 'bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100 hover:text-orange-800' 
-                      : 'hover:bg-secondary/80'
-                  }`}
-                >
-                  {keyword}
+      {items.map(item => {
+        // Truncate content for summary
+        const truncatedContent = item.content.length > 150 
+          ? `${item.content.substring(0, 150)}...` 
+          : item.content;
+        
+        // Show only first 3 keywords, with +X indicator if more
+        const visibleKeywords = item.keywords.slice(0, 3);
+        const remainingKeywords = item.keywords.length - 3;
+
+        return (
+          <Card key={item.id} className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => handleItemClick(item)}>
+            <CardHeader className="pb-2">
+              <div className="flex items-start justify-between">
+                <CardTitle className="text-lg leading-tight">{item.title}</CardTitle>
+                <Badge variant="outline" className={`ml-2 rounded-md ${getCategoryColor(item.category)} flex items-center gap-1`}>
+                  {getCategoryIcon(item.category)}
+                  {item.category}
                 </Badge>
-              ))}
-            </div>
-            {item.connections && item.connections.length > 0 && (
-              <div className="mt-2 pt-2 border-t">
-                <p className="text-xs text-gray-500 mb-1">Connected to QryptoCOYN concepts:</p>
-                <div className="flex flex-wrap gap-1">
-                  {item.connections.map((connection: string) => (
-                    <Badge key={connection} variant="outline" className="text-xs rounded-md px-2 py-1 bg-rose-50 text-rose-700 border-rose-200">
-                      {connection}
-                    </Badge>
-                  ))}
-                </div>
               </div>
-            )}
-            <div className="mt-2 pt-2 border-t">
-              <Badge variant="outline" className="text-xs rounded-md px-2 py-1">
-                {knowledgeBase}
-              </Badge>
-            </div>
-          </CardContent>
-        </Card>
-      ))}
+              <CardDescription className="text-sm">
+                <strong>Source:</strong> {item.source} | <strong>Section:</strong> {item.section}
+              </CardDescription>
+            </CardHeader>
+            <CardContent>
+              <p className="text-sm text-gray-600 mb-3">{truncatedContent}</p>
+              <div className="flex flex-wrap gap-1 mb-3">
+                {visibleKeywords.map((keyword: string) => (
+                  <Badge 
+                    key={keyword} 
+                    variant="secondary" 
+                    className={`text-xs rounded-md px-2 py-1 transition-colors ${
+                      knowledgeBase === 'QryptoCOYN' 
+                        ? 'bg-orange-50 text-orange-600 border-orange-200 hover:bg-orange-100' 
+                        : 'bg-violet-50 text-violet-600 border-violet-200 hover:bg-violet-100'
+                    }`}
+                  >
+                    {keyword}
+                  </Badge>
+                ))}
+                {remainingKeywords > 0 && (
+                  <Badge 
+                    variant="outline" 
+                    className="text-xs rounded-md px-2 py-1 bg-gray-50 text-gray-600 border-gray-200"
+                  >
+                    +{remainingKeywords}
+                  </Badge>
+                )}
+              </div>
+              {item.connections && item.connections.length > 0 && (
+                <div className="mb-3 pt-2 border-t">
+                  <p className="text-xs text-gray-500 mb-1">Connected to QryptoCOYN concepts:</p>
+                  <div className="flex flex-wrap gap-1">
+                    {item.connections.slice(0, 2).map((connection: string) => (
+                      <Badge key={connection} variant="outline" className="text-xs rounded-md px-2 py-1 bg-rose-50 text-rose-600 border-rose-200">
+                        {connection}
+                      </Badge>
+                    ))}
+                    {item.connections.length > 2 && (
+                      <Badge variant="outline" className="text-xs rounded-md px-2 py-1 bg-gray-50 text-gray-600 border-gray-200">
+                        +{item.connections.length - 2}
+                      </Badge>
+                    )}
+                  </div>
+                </div>
+              )}
+              <div className="flex justify-between items-center">
+                <Badge variant="outline" className="text-xs rounded-md px-2 py-1 bg-gray-50 text-gray-600 border-gray-200">
+                  {knowledgeBase}
+                </Badge>
+                <Button variant="ghost" size="sm" className="h-6 px-2 text-blue-600 hover:text-blue-800">
+                  <span className="text-xs">Read more</span>
+                  <ChevronRight className="h-3 w-3 ml-1" />
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
+        );
+      })}
     </div>
   );
 
@@ -186,6 +225,52 @@ const QryptoCOYNKnowledgeBase = () => {
           </div>
         </Tabs>
       </div>
+
+      {/* Detailed knowledge item dialog */}
+      <Dialog open={!!selectedItem} onOpenChange={(open) => !open && closeDialog()}>
+        <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
+          <DialogHeader>
+            <DialogTitle className="pr-8">{selectedItem?.title}</DialogTitle>
+            <DialogDescription className="text-xs">
+              Source: {selectedItem?.source} • Type: {selectedItem?.type}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="flex-1 overflow-y-auto p-4">
+            <div className="whitespace-pre-line mb-4">
+              {selectedItem?.content}
+            </div>
+            {selectedItem?.keywords && selectedItem.keywords.length > 0 && (
+              <div className="mb-4">
+                <h4 className="font-medium mb-2">Keywords:</h4>
+                <div className="flex flex-wrap gap-1">
+                  {selectedItem.keywords.map((keyword: string) => (
+                    <Badge key={keyword} variant="secondary" className="text-xs">
+                      {keyword}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+            {selectedItem?.connections && selectedItem.connections.length > 0 && (
+              <div>
+                <h4 className="font-medium mb-2">Connected Concepts:</h4>
+                <div className="flex flex-wrap gap-1">
+                  {selectedItem.connections.map((connection: string) => (
+                    <Badge key={connection} variant="outline" className="text-xs">
+                      {connection}
+                    </Badge>
+                  ))}
+                </div>
+              </div>
+            )}
+          </div>
+          <div className="border-t pt-2 flex justify-end">
+            <Button variant="outline" size="sm" onClick={closeDialog}>
+              Close
+            </Button>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   );
 };
