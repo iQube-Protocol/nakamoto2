@@ -1,6 +1,6 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { blakQubeService } from './blakqube-service';
 
 export type ServiceType = 'linkedin' | 'twitter' | 'telegram' | 'discord' | 'luma' | 'wallet';
 
@@ -79,6 +79,9 @@ export const connectionService = {
           console.log('Expected demo mode error:', err);
         }
         
+        // Update BlakQube with wallet address
+        await blakQubeService.updateBlakQubeFromConnections();
+        
         toast.success('Demo wallet connected successfully!');
         return true;
       }
@@ -92,11 +95,19 @@ export const connectionService = {
           const walletAddress = accounts[0];
           
           try {
+            const userResult = await supabase.auth.getUser();
+            const userId = userResult.data.user?.id;
+            
+            if (!userId) {
+              toast.error('You must be logged in to connect a wallet.');
+              return false;
+            }
+            
             // Save wallet connection to database
             const { error } = await (supabase as any)
               .from('user_connections')
               .upsert({
-                user_id: (await supabase.auth.getUser()).data.user?.id,
+                user_id: userId,
                 service: 'wallet',
                 connected_at: new Date().toISOString(),
                 connection_data: { address: walletAddress }
@@ -107,6 +118,9 @@ export const connectionService = {
               toast.error('Failed to save wallet connection.');
               return false;
             }
+            
+            // Update BlakQube with the new wallet address
+            await blakQubeService.updateBlakQubeFromConnections();
             
             toast.success('Wallet connected successfully!');
             return true;
@@ -160,6 +174,11 @@ export const connectionService = {
           console.error(`Error disconnecting ${service}:`, error);
           toast.error(`Failed to disconnect ${service}.`);
           return false;
+        }
+        
+        // If disconnecting wallet, also update BlakQube to remove wallet data
+        if (service === 'wallet') {
+          await blakQubeService.updateBlakQubeFromConnections();
         }
         
         toast.success(`${service.charAt(0).toUpperCase() + service.slice(1)} disconnected successfully.`);

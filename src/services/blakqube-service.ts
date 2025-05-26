@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { BlakQube } from '@/lib/types';
 import { toast } from 'sonner';
@@ -78,6 +77,9 @@ export const blakQubeService = {
         "Wallets-of-Interest": []
       };
       
+      // Check if wallet is still connected
+      const walletConnection = connections?.find((conn: any) => conn.service === 'wallet');
+      
       // Update BlakQube based on connections
       if (connections) {
         for (const connection of connections) {
@@ -94,7 +96,7 @@ export const blakQubeService = {
           }
           
           if (connection.service === 'wallet' && connection.connection_data?.address) {
-            // Set EVM public key
+            // Set EVM public key to the actual wallet address
             newBlakQube["EVM-Public-Key"] = connection.connection_data.address;
             
             // Add MetaMask to wallets of interest if not already there
@@ -102,6 +104,14 @@ export const blakQubeService = {
               newBlakQube["Wallets-of-Interest"] = [
                 ...(newBlakQube["Wallets-of-Interest"] || []),
                 "MetaMask"
+              ];
+            }
+            
+            // Add Ethereum mainnet to chain IDs if not already there
+            if (!newBlakQube["Chain-IDs"]?.includes("1")) {
+              newBlakQube["Chain-IDs"] = [
+                ...(newBlakQube["Chain-IDs"] || []),
+                "1"
               ];
             }
           }
@@ -130,6 +140,13 @@ export const blakQubeService = {
         }
       }
       
+      // If no wallet connection exists, clear wallet-related data
+      if (!walletConnection) {
+        newBlakQube["EVM-Public-Key"] = "";
+        newBlakQube["Wallets-of-Interest"] = (newBlakQube["Wallets-of-Interest"] || []).filter(wallet => wallet !== "MetaMask");
+        newBlakQube["Chain-IDs"] = (newBlakQube["Chain-IDs"] || []).filter(chainId => chainId !== "1");
+      }
+      
       // Save updated BlakQube
       const { error: updateError } = await (supabase as any)
         .from('blak_qubes')
@@ -143,6 +160,7 @@ export const blakQubeService = {
         return false;
       }
       
+      console.log('BlakQube updated successfully with wallet address:', newBlakQube["EVM-Public-Key"]);
       return true;
     } catch (error) {
       console.error('Error in updateBlakQubeFromConnections:', error);
