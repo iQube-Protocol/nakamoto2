@@ -155,16 +155,16 @@ const Sidebar = () => {
   if (isMobile) {
     return (
       <>
-        {/* Mobile Menu Button - More transparent for logo visibility */}
+        {/* Mobile Menu Button - Nearly transparent for logo visibility */}
         <Button 
           variant="ghost"
           size="icon"
-          className="fixed top-4 left-4 z-50 md:hidden bg-background/30 backdrop-blur-sm border shadow-sm hover:bg-background/50 transition-all"
+          className="fixed top-4 left-4 z-50 md:hidden bg-transparent hover:bg-white/10 border-0 shadow-none transition-all"
           onClick={toggleMobileSidebar}
           style={{ touchAction: 'manipulation' }}
           aria-label="Toggle menu"
         >
-          <Menu size={24} />
+          <Menu size={24} className="text-foreground/70" />
         </Button>
         
         <MobileSidebar 
