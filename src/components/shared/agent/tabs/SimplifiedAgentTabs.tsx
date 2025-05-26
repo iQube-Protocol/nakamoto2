@@ -1,6 +1,7 @@
-
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { Info } from 'lucide-react';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import ChatTab from './ChatTab';
 import KnowledgeBase from '../KnowledgeBase';
 import QryptoCOYNKnowledgeBase from '@/components/mondai/QryptoCOYNKnowledgeBase';
@@ -55,10 +56,29 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps> = ({
       className="flex-1 flex flex-col h-full"
     >
       <div className="border-b px-4">
-        <TabsList className="h-10">
-          <TabsTrigger value="chat" className="data-[state=active]:bg-qrypto-primary/20">Chat</TabsTrigger>
-          <TabsTrigger value="knowledge" className="data-[state=active]:bg-qrypto-primary/20">Knowledge Base</TabsTrigger>
-        </TabsList>
+        <div className="flex items-center justify-between">
+          <TabsList className="h-10">
+            <TabsTrigger value="chat" className="data-[state=active]:bg-qrypto-primary/20">Chat</TabsTrigger>
+            <TabsTrigger value="knowledge" className="data-[state=active]:bg-qrypto-primary/20">Knowledge Base</TabsTrigger>
+          </TabsList>
+          
+          {/* Show Dual Knowledge Base header only when knowledge tab is active and agent is mondai */}
+          {activeTab === 'knowledge' && agentType === 'mondai' && (
+            <div className="flex items-center gap-2">
+              <h2 className="text-lg font-bold">Dual Knowledge Base</h2>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <Info className="h-4 w-4 text-gray-400 cursor-help" />
+                  </TooltipTrigger>
+                  <TooltipContent>
+                    <p>Explore both QryptoCOYN factual knowledge base and fictional lore</p>
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
+            </div>
+          )}
+        </div>
       </div>
 
       <div className="flex-1 overflow-hidden flex flex-col">

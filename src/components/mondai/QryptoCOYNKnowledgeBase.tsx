@@ -3,10 +3,9 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Search, BookOpen, Users, Lightbulb, Coins, Info } from 'lucide-react';
+import { Search, BookOpen, Users, Lightbulb, Coins } from 'lucide-react';
 import { qryptoKB } from '@/services/qrypto-knowledge-base';
 import { metaKnytsKB } from '@/services/metaknyts-knowledge-base';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 const QryptoCOYNKnowledgeBase = () => {
   const [searchTerm, setSearchTerm] = useState('');
@@ -122,19 +121,6 @@ const QryptoCOYNKnowledgeBase = () => {
   return (
     <div className="h-full flex flex-col">
       <div className="p-4 border-b">
-        <div className="flex items-center gap-2 mb-4">
-          <h2 className="text-xl font-bold">Dual Knowledge Base</h2>
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Info className="h-4 w-4 text-gray-400 cursor-help" />
-              </TooltipTrigger>
-              <TooltipContent>
-                <p>Explore both QryptoCOYN factual knowledge base and fictional lore</p>
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        </div>
         <div className="relative">
           <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 text-gray-400 h-4 w-4" />
           <Input 
