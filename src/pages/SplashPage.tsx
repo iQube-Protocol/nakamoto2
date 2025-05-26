@@ -1,13 +1,9 @@
-
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
-
 const SplashPage = () => {
   const navigate = useNavigate();
-  
-  return (
-    <div className="h-screen flex flex-col items-center justify-center bg-gradient-to-br from-qrypto-dark via-qrypto-primary to-qrypto-secondary">
+  return <div className="h-screen flex flex-col items-center justify-center bg-gradient-to-br from-qrypto-dark via-qrypto-primary to-qrypto-secondary">
       <div className="container max-w-md text-center space-y-6 p-8">
         <div className="mb-8">
           <h1 className="text-5xl font-bold text-white mb-4">
@@ -17,27 +13,16 @@ const SplashPage = () => {
           <h2 className="text-2xl font-semibold text-qrypto-accent mb-2">
             Aigent Nakamoto
           </h2>
-          <p className="text-lg text-white/80">
-            Your intelligent cryptocurrency companion
-          </p>
+          <p className="text-lg text-white/80">Your intelligent QryptoCOYN companion</p>
         </div>
         
-        <p className="text-white/70 text-sm">
-          Navigate the world of Web3, understand cryptocurrency concepts, and explore decentralized finance with your AI-powered assistant.
-        </p>
+        <p className="text-white/70 text-sm">Navigate the world of AI agents, iQubes and QryptoCOYN. Understand crypto-agentic concpts, and explore decentralized AI with your AI-powered assistant.</p>
         
         <div className="flex flex-col space-y-4 mt-8">
-          <Button 
-            onClick={() => navigate('/signin')}
-            className="w-full bg-qrypto-accent hover:bg-qrypto-accent/90 text-white font-semibold py-3"
-          >
+          <Button onClick={() => navigate('/signin')} className="w-full bg-qrypto-accent hover:bg-qrypto-accent/90 text-white font-semibold py-3">
             Get Started
           </Button>
-          <Button
-            onClick={() => navigate('/mondai')}
-            variant="outline"
-            className="w-full border-white/30 text-white hover:bg-white/10"
-          >
+          <Button onClick={() => navigate('/mondai')} variant="outline" className="w-full border-white/30 text-white hover:bg-white/10">
             Try Nakamoto
           </Button>
         </div>
@@ -46,8 +31,6 @@ const SplashPage = () => {
           Powered by advanced AI technology
         </div>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default SplashPage;
