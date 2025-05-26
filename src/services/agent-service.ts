@@ -1,8 +1,11 @@
-
 import { storeUserInteraction } from './user-interaction-service';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { prepareConversationContext } from './conversation-summarizer';
+
+export interface ConversationContextOptions {
+  agentType: "learn" | "earn" | "connect" | "mondai";
+}
 
 export const processAgentInteraction = async (
   query: string,
