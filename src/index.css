@@ -14,16 +14,16 @@
     --popover: 240 10% 98%;
     --popover-foreground: 240 10% 5%;
 
-    --primary: 256 56% 57%;
+    --primary: 262 83% 58%;
     --primary-foreground: 240 10% 98%;
 
-    --secondary: 254 87% 76%;
+    --secondary: 262 83% 76%;
     --secondary-foreground: 240 10% 98%;
 
     --muted: 240 10% 90%;
     --muted-foreground: 240 10% 45%;
 
-    --accent: 168 89% 52%;
+    --accent: 24 95% 53%;
     --accent-foreground: 240 10% 98%;
 
     --destructive: 0 84% 60%;
@@ -31,18 +31,28 @@
 
     --border: 240 10% 80%;
     --input: 240 10% 80%;
-    --ring: 256 56% 57%;
+    --ring: 262 83% 58%;
 
     --radius: 0.5rem;
 
     --sidebar-background: 240 10% 98%;
     --sidebar-foreground: 240 10% 10%;
-    --sidebar-primary: 256 56% 57%;
+    --sidebar-primary: 262 83% 58%;
     --sidebar-primary-foreground: 240 10% 98%;
     --sidebar-accent: 240 10% 90%;
     --sidebar-accent-foreground: 240 10% 10%;
     --sidebar-border: 240 10% 90%;
-    --sidebar-ring: 256 56% 57%;
+    --sidebar-ring: 262 83% 58%;
+    
+    /* QryptoCOYN Color Variables */
+    --primary-purple: 262 83% 58%;
+    --dark-purple: 262 83% 45%;
+    --light-purple: 262 83% 70%;
+    --deep-purple: 262 83% 30%;
+    --primary-orange: 24 95% 53%;
+    --light-orange: 24 95% 65%;
+    --dark-orange: 24 95% 45%;
+    --warm-orange: 24 95% 70%;
     
     /* Tooltip styling for light mode */
     --tooltip-background: 0 0% 100%;
@@ -51,47 +61,47 @@
   }
 
   .dark {
-    --background: 240 10% 7%;
+    --background: 262 83% 6%;
     --foreground: 240 10% 95%;
 
-    --card: 240 10% 10%;
+    --card: 262 83% 8%;
     --card-foreground: 240 10% 95%;
 
-    --popover: 240 10% 15%;
+    --popover: 262 83% 12%;
     --popover-foreground: 240 10% 95%;
 
-    --primary: 256 56% 57%;
+    --primary: 262 83% 58%;
     --primary-foreground: 240 10% 98%;
 
-    --secondary: 254 87% 76%;
+    --secondary: 262 83% 76%;
     --secondary-foreground: 240 10% 5%;
 
-    --muted: 240 10% 25%;
+    --muted: 262 83% 20%;
     --muted-foreground: 240 10% 75%;
 
-    --accent: 168 89% 52%;
+    --accent: 24 95% 53%;
     --accent-foreground: 240 10% 5%;
 
     --destructive: 0 84% 60%;
     --destructive-foreground: 240 10% 98%;
 
-    --border: 240 10% 20%;
-    --input: 240 10% 20%;
-    --ring: 256 56% 57%;
+    --border: 262 83% 15%;
+    --input: 262 83% 15%;
+    --ring: 262 83% 58%;
 
-    --sidebar-background: 240 10% 5%;
+    --sidebar-background: 262 83% 4%;
     --sidebar-foreground: 240 10% 85%;
-    --sidebar-primary: 256 56% 57%;
+    --sidebar-primary: 262 83% 58%;
     --sidebar-primary-foreground: 240 10% 98%;
-    --sidebar-accent: 240 10% 15%;
+    --sidebar-accent: 262 83% 12%;
     --sidebar-accent-foreground: 240 10% 95%;
-    --sidebar-border: 240 10% 15%;
-    --sidebar-ring: 256 56% 57%;
+    --sidebar-border: 262 83% 12%;
+    --sidebar-ring: 262 83% 58%;
     
     /* Tooltip styling for dark mode */
-    --tooltip-background: 240 10% 15%;
+    --tooltip-background: 262 83% 12%;
     --tooltip-foreground: 240 10% 98%;
-    --tooltip-border: 240 10% 30%;
+    --tooltip-border: 262 83% 25%;
   }
 }
 
@@ -107,7 +117,7 @@
 
 @layer components {
   .iqube-gradient {
-    @apply bg-gradient-to-r from-iqube-primary via-iqube-secondary to-iqube-accent bg-[length:300%_100%] animate-gradient-flow;
+    @apply bg-gradient-to-r from-primary-purple via-light-purple to-primary-orange bg-[length:300%_100%] animate-gradient-flow;
   }
 
   .iqube-card {
@@ -115,11 +125,11 @@
   }
 
   .agent-message {
-    @apply p-4 rounded-lg my-2 bg-iqube-primary/15 border border-iqube-primary/30 text-foreground;
+    @apply p-4 rounded-lg my-2 bg-primary-purple/15 border border-primary-purple/30 text-foreground;
   }
 
   .user-message {
-    @apply p-4 rounded-lg my-2 bg-iqube-accent/15 border border-iqube-accent/30 text-foreground;
+    @apply p-4 rounded-lg my-2 bg-primary-orange/15 border border-primary-orange/30 text-foreground;
   }
 
   .score-badge {
@@ -140,27 +150,47 @@
 
   /* Light theme specific */
   .light .agent-message {
-    @apply bg-iqube-primary/10 border-iqube-primary/20;
+    @apply bg-primary-purple/10 border-primary-purple/20;
   }
 
   .light .user-message {
-    @apply bg-iqube-accent/10 border-iqube-accent/20;
+    @apply bg-primary-orange/10 border-primary-orange/20;
   }
 
   .light .iqube-card {
     @apply bg-card/90 border-border/30;
   }
   
-  /* Tooltip styles enhancement - explicitly define tooltip styling */
+  /* Tooltip styles enhancement */
   [role="tooltip"] {
     @apply bg-popover text-popover-foreground border border-border shadow-md z-50;
     @apply visible opacity-100;
   }
   
-  /* Extra styling to ensure tooltips are visible */
   .RadixTooltip--content {
     z-index: 50 !important;
     visibility: visible !important;
     opacity: 1 !important;
+  }
+
+  /* QryptoCOYN specific styles */
+  .primary-purple {
+    color: hsl(var(--primary-purple));
+  }
+
+  .primary-orange {
+    color: hsl(var(--primary-orange));
+  }
+
+  .qrypto-gradient {
+    @apply bg-gradient-to-r from-primary-purple to-primary-orange inline-block text-transparent bg-clip-text;
+  }
+
+  .qrypto-button {
+    @apply bg-primary-purple hover:bg-primary-orange transition-colors duration-300;
+  }
+
+  .qrypto-border {
+    @apply border-primary-purple hover:border-primary-orange transition-colors duration-300;
   }
 }

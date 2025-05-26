@@ -64,11 +64,38 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				},
 				iqube: {
-					primary: '#6E56CF',
-					secondary: '#9B8AFB',
-					accent: '#1DE9B6',
-					dark: '#1A1A2E',
-					light: '#F7F7FF'
+					primary: '#8B5CF6',
+					secondary: '#A78BFA',
+					accent: '#F97316',
+					dark: '#4C1D95',
+					light: '#FAF8FF'
+				},
+				// QryptoCOYN Brand Colors
+				'primary-purple': {
+					DEFAULT: '#8B5CF6',
+					50: '#F3F0FF',
+					100: '#E9E2FF',
+					200: '#D6CCFF',
+					300: '#BBA8FF',
+					400: '#A78BFA',
+					500: '#8B5CF6',
+					600: '#7C3AED',
+					700: '#6D28D9',
+					800: '#5B21B6',
+					900: '#4C1D95',
+				},
+				'primary-orange': {
+					DEFAULT: '#F97316',
+					50: '#FFF7ED',
+					100: '#FFEDD5',
+					200: '#FED7AA',
+					300: '#FDBA74',
+					400: '#FB923C',
+					500: '#F97316',
+					600: '#EA580C',
+					700: '#C2410C',
+					800: '#9A3412',
+					900: '#7C2D12',
 				}
 			},
 			borderRadius: {

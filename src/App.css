@@ -1,5 +1,5 @@
 
-/* App-specific styles that aren't covered by Tailwind */
+/* App-specific styles with QryptoCOYN purple/orange theme */
 
 /* Reduce overall spacing */
 .card {
@@ -48,10 +48,10 @@ p {
   background-color: #ef4444;
 }
 
-/* Agent message styles */
+/* Nakamoto agent message styles */
 .agent-message {
-  background-color: rgba(155, 135, 245, 0.1);
-  border: 1px solid rgba(155, 135, 245, 0.2);
+  background-color: rgba(139, 92, 246, 0.1);
+  border: 1px solid rgba(139, 92, 246, 0.2);
   border-radius: 0.5rem;
   padding: 0.75rem;
   max-width: 85%;
@@ -59,8 +59,8 @@ p {
 }
 
 .user-message {
-  background-color: rgba(255, 255, 255, 0.05);
-  border: 1px solid rgba(255, 255, 255, 0.1);
+  background-color: rgba(249, 115, 22, 0.1);
+  border: 1px solid rgba(249, 115, 22, 0.2);
   border-radius: 0.5rem;
   padding: 0.75rem;
   max-width: 85%;
@@ -78,7 +78,7 @@ p {
   display: inline-block;
   width: 2px;
   margin-right: 1px;
-  background-color: #9b87f5;
+  background-color: #8b5cf6;
   animation: waveform 0.5s infinite;
 }
 
@@ -92,6 +92,26 @@ p {
 
 .audio-waveform span:nth-child(4n) {
   animation-delay: 0.6s;
+}
+
+/* QryptoCOYN specific animations */
+@keyframes qrypto-glow {
+  0% { box-shadow: 0 0 5px rgba(139, 92, 246, 0.3); }
+  50% { box-shadow: 0 0 20px rgba(249, 115, 22, 0.5); }
+  100% { box-shadow: 0 0 5px rgba(139, 92, 246, 0.3); }
+}
+
+.qrypto-glow {
+  animation: qrypto-glow 2s ease-in-out infinite;
+}
+
+/* Gradient text for QryptoCOYN branding */
+.qrypto-brand {
+  background: linear-gradient(45deg, #8b5cf6, #f97316);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+  font-weight: bold;
 }
 
 /* Fullscreen mode for mobile devices only */
@@ -179,4 +199,20 @@ textarea::placeholder {
     padding-left: env(safe-area-inset-left);
     padding-right: env(safe-area-inset-right);
   }
+}
+
+/* QryptoCOYN theme transitions */
+* {
+  transition: background-color 0.3s ease, border-color 0.3s ease, color 0.3s ease;
+}
+
+/* Purple/Orange hover effects */
+.hover-purple:hover {
+  background-color: rgba(139, 92, 246, 0.1);
+  border-color: rgba(139, 92, 246, 0.3);
+}
+
+.hover-orange:hover {
+  background-color: rgba(249, 115, 22, 0.1);
+  border-color: rgba(249, 115, 22, 0.3);
 }
