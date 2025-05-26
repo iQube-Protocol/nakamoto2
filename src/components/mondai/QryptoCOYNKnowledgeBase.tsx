@@ -19,6 +19,11 @@ const QryptoCOYNKnowledgeBase = () => {
   const filteredQryptoItems = searchTerm ? qryptoKB.searchKnowledge(searchTerm) : qryptoItems;
   const filteredMetaKnytsItems = searchTerm ? metaKnytsKB.searchKnowledge(searchTerm) : metaKnytsItems;
 
+  // Calculate the count for the "Both" tab
+  const bothTabCount = searchTerm 
+    ? filteredQryptoItems.length + filteredMetaKnytsItems.length
+    : qryptoItems.length + metaKnytsItems.length;
+
   const getCategoryIcon = (category: string) => {
     switch (category) {
       case 'tokenomics':
@@ -132,7 +137,7 @@ const QryptoCOYNKnowledgeBase = () => {
       <div className="flex-1 overflow-hidden">
         <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
           <TabsList className="mx-4 mt-4 grid w-full grid-cols-3">
-            <TabsTrigger value="both">Both ({qryptoItems.length + metaKnytsItems.length})</TabsTrigger>
+            <TabsTrigger value="both">Both ({bothTabCount})</TabsTrigger>
             <TabsTrigger value="qrypto">Qrypto COYN ({filteredQryptoItems.length})</TabsTrigger>
             <TabsTrigger value="metaknyts">mẹtaKnyts ({filteredMetaKnytsItems.length})</TabsTrigger>
           </TabsList>
