@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Menu } from 'lucide-react';
@@ -154,17 +155,13 @@ const Sidebar = () => {
   if (isMobile) {
     return (
       <>
-        {/* Mobile Menu Button - Always visible with better positioning */}
+        {/* Mobile Menu Button - Nearly transparent for logo visibility */}
         <Button 
           variant="ghost"
           size="icon"
-          className="mobile-menu-button fixed z-50 md:hidden bg-transparent hover:bg-white/10 border-0 shadow-none transition-all opacity-20 hover:opacity-100"
+          className="fixed top-4 left-4 z-50 md:hidden bg-transparent hover:bg-white/10 border-0 shadow-none transition-all"
           onClick={toggleMobileSidebar}
-          style={{ 
-            touchAction: 'manipulation',
-            top: 'max(1rem, env(safe-area-inset-top, 1rem))',
-            left: 'max(1rem, env(safe-area-inset-left, 1rem))'
-          }}
+          style={{ touchAction: 'manipulation' }}
           aria-label="Toggle menu"
         >
           <Menu size={24} className="text-foreground/70" />
