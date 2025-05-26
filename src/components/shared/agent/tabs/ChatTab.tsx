@@ -27,7 +27,7 @@ const ChatTab: React.FC<ChatTabProps> = ({
   }, [messages, messagesEndRef]);
 
   return (
-    <div className="flex flex-col h-[400px] overflow-hidden">
+    <div className="flex flex-col h-full overflow-hidden">
       {messages.length === 0 ? (
         <div className="flex-1 flex items-center justify-center">
           <EmptyConversation agentType={agentType} />

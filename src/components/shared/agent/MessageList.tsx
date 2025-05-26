@@ -21,8 +21,8 @@ const MessageList = ({
 }: MessageListProps) => {
   return (
     <div className="flex-1 h-full overflow-hidden">
-      <ScrollArea className="h-full pb-2">
-        <div className="p-4 space-y-4">
+      <ScrollArea className="h-full">
+        <div className="p-4 pb-2 space-y-4">
           {messages.map((msg) => (
             <MessageItem 
               key={msg.id} 
