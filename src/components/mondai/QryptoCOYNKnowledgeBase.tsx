@@ -101,7 +101,7 @@ const QryptoCOYNKnowledgeBase = () => {
                 <p className="text-xs text-gray-500 mb-1">Connected to QryptoCOYN concepts:</p>
                 <div className="flex flex-wrap gap-1">
                   {item.connections.map((connection: string) => (
-                    <Badge key={connection} variant="outline" className="text-xs rounded-md px-2 py-1 bg-blue-50">
+                    <Badge key={connection} variant="outline" className="text-xs rounded-md px-2 py-1 bg-rose-50 text-rose-700 border-rose-200">
                       {connection}
                     </Badge>
                   ))}
