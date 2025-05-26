@@ -1,5 +1,5 @@
 
-export { QryptoKnowledgeItem } from './types';
+export type { QryptoKnowledgeItem } from './types';
 export { QryptoKnowledgeBase } from './QryptoKnowledgeBase';
 export { QRYPTO_KNOWLEDGE_DATA } from './knowledge-data';
 
