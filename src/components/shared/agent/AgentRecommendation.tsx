@@ -53,7 +53,7 @@ const AgentRecommendation = ({
           
           <div className="mt-3 flex items-center text-sm text-muted-foreground">
             <Wallet className="h-4 w-4 mr-1" />
-            <span>Micro fee: {fee} MonDAI tokens</span>
+            <span>Micro fee: {fee} $QOYN</span>
           </div>
           
           <div className="mt-4 flex space-x-3">
