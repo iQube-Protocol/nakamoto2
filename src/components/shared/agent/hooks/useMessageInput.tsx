@@ -17,13 +17,14 @@ export const useMessageInput = () => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       if (inputValue.trim()) {
-        // Create a synthetic form event
-        const syntheticEvent = {
-          preventDefault: () => {},
-          currentTarget: e.currentTarget.form,
-          target: e.currentTarget.form,
-        } as React.FormEvent;
-        handleSubmit(syntheticEvent);
+        // Find the form element and trigger submit event
+        const form = e.currentTarget.form;
+        if (form) {
+          // Create a proper form submit event
+          const submitEvent = new Event('submit', { bubbles: true, cancelable: true });
+          // Dispatch the event on the form, which will trigger the form's onSubmit handler
+          form.dispatchEvent(submitEvent);
+        }
       }
     }
   };
