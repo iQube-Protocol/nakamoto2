@@ -49,22 +49,22 @@ const QryptoCOYNKnowledgeBase = () => {
     switch (category) {
       case 'tokenomics':
       case 'economics':
-        return 'bg-green-50 text-green-700 border-green-200';
+        return 'bg-green-100/70 text-green-800 border-green-300/70';
       case 'characters':
-        return 'bg-purple-50 text-purple-700 border-purple-200';
+        return 'bg-purple-100/70 text-purple-800 border-purple-300/70';
       case 'technology':
       case 'technical':
-        return 'bg-blue-50 text-blue-700 border-blue-200';
+        return 'bg-blue-100/70 text-blue-800 border-blue-300/70';
       case 'worldbuilding':
-        return 'bg-orange-50 text-orange-700 border-orange-200';
+        return 'bg-orange-100/70 text-orange-800 border-orange-300/70';
       case 'philosophy':
-        return 'bg-indigo-50 text-indigo-700 border-indigo-200';
+        return 'bg-indigo-100/70 text-indigo-800 border-indigo-300/70';
       case 'narrative':
-        return 'bg-pink-50 text-pink-700 border-pink-200';
+        return 'bg-pink-100/70 text-pink-800 border-pink-300/70';
       case 'education':
-        return 'bg-yellow-50 text-yellow-700 border-yellow-200';
+        return 'bg-yellow-100/70 text-yellow-800 border-yellow-300/70';
       default:
-        return 'bg-gray-50 text-gray-700 border-gray-200';
+        return 'bg-gray-100/70 text-gray-800 border-gray-300/70';
     }
   };
 
@@ -111,8 +111,8 @@ const QryptoCOYNKnowledgeBase = () => {
                     variant="secondary" 
                     className={`text-xs rounded-md px-2 py-1 transition-colors ${
                       knowledgeBase === (isMobile ? 'COYN' : 'QryptoCOYN')
-                        ? 'bg-orange-50 text-orange-600 border-orange-200 hover:bg-orange-100' 
-                        : 'bg-violet-50 text-violet-600 border-violet-200 hover:bg-violet-100'
+                        ? 'bg-orange-100/70 text-orange-800 border-orange-300/70 hover:bg-orange-200/70' 
+                        : 'bg-violet-100/70 text-violet-800 border-violet-300/70 hover:bg-violet-200/70'
                     }`}
                   >
                     {keyword}
@@ -121,7 +121,7 @@ const QryptoCOYNKnowledgeBase = () => {
                 {remainingKeywords > 0 && (
                   <Badge 
                     variant="outline" 
-                    className="text-xs rounded-md px-2 py-1 bg-gray-50 text-gray-600 border-gray-200"
+                    className="text-xs rounded-md px-2 py-1 bg-gray-100/70 text-gray-800 border-gray-300/70"
                   >
                     +{remainingKeywords}
                   </Badge>
@@ -132,12 +132,12 @@ const QryptoCOYNKnowledgeBase = () => {
                   <p className="text-xs text-gray-500 mb-1">Connected to {isMobile ? 'COYN' : 'QryptoCOYN'} concepts:</p>
                   <div className="flex flex-wrap gap-1">
                     {item.connections.slice(0, 2).map((connection: string) => (
-                      <Badge key={connection} variant="outline" className="text-xs rounded-md px-2 py-1 bg-rose-50 text-rose-600 border-rose-200">
+                      <Badge key={connection} variant="outline" className="text-xs rounded-md px-2 py-1 bg-rose-100/70 text-rose-800 border-rose-300/70">
                         {connection}
                       </Badge>
                     ))}
                     {item.connections.length > 2 && (
-                      <Badge variant="outline" className="text-xs rounded-md px-2 py-1 bg-gray-50 text-gray-600 border-gray-200">
+                      <Badge variant="outline" className="text-xs rounded-md px-2 py-1 bg-gray-100/70 text-gray-800 border-gray-300/70">
                         +{item.connections.length - 2}
                       </Badge>
                     )}
@@ -145,7 +145,7 @@ const QryptoCOYNKnowledgeBase = () => {
                 </div>
               )}
               <div className="flex justify-between items-center">
-                <Badge variant="outline" className="text-xs rounded-md px-2 py-1 bg-gray-50 text-gray-600 border-gray-200">
+                <Badge variant="outline" className="text-xs rounded-md px-2 py-1 bg-gray-100/70 text-gray-800 border-gray-300/70">
                   {knowledgeBase}
                 </Badge>
                 <Button variant="ghost" size="sm" className="h-6 px-2 text-blue-600 hover:text-blue-800">
