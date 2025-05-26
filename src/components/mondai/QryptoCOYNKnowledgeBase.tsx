@@ -44,6 +44,7 @@ const QryptoCOYNKnowledgeBase = () => {
 
       <div className="flex-1 overflow-hidden">
         <KnowledgeList
+          activeTab={activeTab}
           filteredQryptoItems={filteredQryptoItems}
           filteredMetaKnytsItems={filteredMetaKnytsItems}
           searchTerm={searchTerm}
