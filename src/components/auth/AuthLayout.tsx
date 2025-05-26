@@ -15,7 +15,7 @@ const AuthLayout = ({
         <div className="mx-auto w-full max-w-md">
           <div className="mb-6">
             <Link to="/" className="flex items-center">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-iqube-primary to-iqube-accent flex items-center justify-center text-white font-bold text-xl">M</div>
+              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-iqube-primary to-iqube-accent flex items-center justify-center text-white font-bold text-xl\n\nShould be an N">M</div>
               <span className="ml-2 text-2xl font-bold\nThis should read Nakamoto.\n">MonDAI</span>
             </Link>
             <h2 className="mt-6 text-3xl font-extrabold text-foreground">{title}</h2>
