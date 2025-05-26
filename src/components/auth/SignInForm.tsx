@@ -15,7 +15,7 @@ const SignInForm = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
   const navigate = useNavigate();
-  const { signIn } = useAuth();
+  const { signIn, signInAsGuest } = useAuth();
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -38,10 +38,9 @@ const SignInForm = () => {
 
   const guestSignIn = async () => {
     setIsLoading(true);
-    // For guest access, navigate directly without authentication
     try {
       toast.success('Signed in as guest');
-      navigate('/mondai', { replace: true });
+      signInAsGuest();
     } catch (err) {
       console.error('Guest sign in error:', err);
       toast.error('An unexpected error occurred. Please try again.');

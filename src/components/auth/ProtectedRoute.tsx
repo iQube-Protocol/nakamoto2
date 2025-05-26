@@ -8,10 +8,10 @@ interface ProtectedRouteProps {
 }
 
 const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
-  const { user, loading } = useAuth();
+  const { user, isGuest, loading } = useAuth();
   const location = useLocation();
   
-  console.log("ProtectedRoute - Auth status:", { user: !!user, loading, path: location.pathname });
+  console.log("ProtectedRoute - Auth status:", { user: !!user, isGuest, loading, path: location.pathname });
   
   if (loading) {
     return (
@@ -24,12 +24,13 @@ const ProtectedRoute: React.FC<ProtectedRouteProps> = ({ children }) => {
     );
   }
   
-  if (!user) {
+  // Allow access if user is authenticated OR in guest mode
+  if (!user && !isGuest) {
     console.log("ProtectedRoute - Redirecting to signin page from", location.pathname);
     return <Navigate to="/signin" replace state={{ from: location }} />;
   }
   
-  console.log("ProtectedRoute - Authenticated, rendering children");
+  console.log("ProtectedRoute - Authenticated or guest, rendering children");
   return <>{children}</>;
 };
 

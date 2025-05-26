@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 interface AuthContextProps {
   session: Session | null;
   user: User | null;
+  isGuest: boolean;
   signIn: (email: string, password: string) => Promise<{
     error: Error | null;
     success: boolean;
@@ -16,6 +17,7 @@ interface AuthContextProps {
     error: Error | null;
     success: boolean;
   }>;
+  signInAsGuest: () => void;
   signOut: () => Promise<void>;
   loading: boolean;
 }
@@ -25,6 +27,7 @@ const AuthContext = createContext<AuthContextProps | undefined>(undefined);
 export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
+  const [isGuest, setIsGuest] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
@@ -33,6 +36,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     console.log("Auth provider initialized");
     let mounted = true;
     
+    // Check for guest mode from localStorage
+    const guestMode = localStorage.getItem('guestMode') === 'true';
+    if (guestMode) {
+      setIsGuest(true);
+      setLoading(false);
+      return;
+    }
+    
     // First set up the auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, newSession) => {
@@ -40,6 +51,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         if (mounted) {
           setSession(newSession);
           setUser(newSession?.user ?? null);
+          setIsGuest(false);
           setLoading(false);
           
           // Handle specific auth events
@@ -49,6 +61,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             navigate('/mondai');
           } else if (event === 'SIGNED_OUT') {
             console.log("User signed out, session cleared");
+            localStorage.removeItem('guestMode');
+            setIsGuest(false);
             navigate('/signin');
           } else if (event === 'TOKEN_REFRESHED') {
             console.log("Token refreshed successfully");
@@ -95,6 +109,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       console.log("Sign in successful:", data.user?.email);
       setUser(data.user);
       setSession(data.session);
+      setIsGuest(false);
+      localStorage.removeItem('guestMode');
       return { error: null, success: true };
     } catch (error) {
       console.error('Unexpected error during sign in:', error);
@@ -140,12 +156,23 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const signInAsGuest = () => {
+    console.log("Signing in as guest");
+    localStorage.setItem('guestMode', 'true');
+    setIsGuest(true);
+    setUser(null);
+    setSession(null);
+    navigate('/mondai', { replace: true });
+  };
+
   const signOut = async () => {
     console.log("Signing out");
     try {
       await supabase.auth.signOut();
       setUser(null);
       setSession(null);
+      setIsGuest(false);
+      localStorage.removeItem('guestMode');
       navigate('/signin', { replace: true });
     } catch (error) {
       console.error("Error during sign out:", error);
@@ -156,8 +183,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const value = {
     session,
     user,
+    isGuest,
     signIn,
     signUp,
+    signInAsGuest,
     signOut,
     loading,
   };
