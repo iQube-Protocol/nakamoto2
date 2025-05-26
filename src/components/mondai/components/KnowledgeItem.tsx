@@ -24,7 +24,7 @@ const KnowledgeItem = ({ item, knowledgeBase, onItemClick }: KnowledgeItemProps)
   const remainingKeywords = item.keywords.length - 3;
 
   return (
-    <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => onItemClick(item)}>
+    <Card className="hover:shadow-lg transition-all duration-200 cursor-pointer hover:scale-[1.02]" onClick={() => onItemClick(item)}>
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between">
           <CardTitle className="leading-tight text-base">{item.title}</CardTitle>
@@ -63,7 +63,7 @@ const KnowledgeItem = ({ item, knowledgeBase, onItemClick }: KnowledgeItemProps)
                 <Badge 
                   key={connection} 
                   variant="outline" 
-                  className="text-xs rounded-md px-2 py-1 bg-gray-500 text-white border-rose-300/70 hover:bg-amber-600"
+                  className="text-xs rounded-md px-2 py-1 bg-gray-500 text-white border-rose-300/70 hover:bg-amber-600 transition-colors"
                 >
                   {connection}
                 </Badge>
@@ -80,7 +80,7 @@ const KnowledgeItem = ({ item, knowledgeBase, onItemClick }: KnowledgeItemProps)
           <Badge variant="outline" className="text-xs rounded-md px-2 py-1 bg-gray-500 text-white border-gray-300/70">
             {knowledgeBase}
           </Badge>
-          <Button variant="ghost" size="sm" className="h-6 px-2 text-blue-600 hover:text-blue-800">
+          <Button variant="ghost" size="sm" className="h-6 px-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 transition-colors">
             <span className="text-xs">Read more</span>
             <ChevronRight className="h-3 w-3 ml-1" />
           </Button>
