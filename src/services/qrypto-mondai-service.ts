@@ -1,5 +1,4 @@
-
-import { qryptoKB, QryptoKnowledgeItem } from './qrypto-knowledge-base';
+import { qryptoKB, QryptoKnowledgeItem } from '@/services/qrypto-knowledge-base';
 import { supabase } from '@/integrations/supabase/client';
 import { getConversationContext } from '@/services/agent-service';
 
