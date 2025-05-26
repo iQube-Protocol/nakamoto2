@@ -8,7 +8,6 @@ import MainLayout from '../layout/MainLayout';
 import SignUp from '../../pages/auth/SignUp';
 import SignIn from '../../pages/SignIn';
 import Index from '../../pages/Index';
-import Dashboard from '../../pages/Dashboard';
 import Settings from '../../pages/Settings';
 import Learn from '../../pages/Learn';
 import Earn from '../../pages/Earn';
@@ -46,13 +45,16 @@ const AppRoutes = () => {
         <Route path="/signup" element={<SignUp />} />
         <Route path="/legacy" element={<LegacyDashboard />} />
         <Route path="/oauth-callback" element={<OAuthCallback />} />
-        <Route path="/dashboard" element={<ProtectedLayoutRoute element={<Dashboard />} />} />
+        
+        {/* Redirect /dashboard to /mondai */}
+        <Route path="/dashboard" element={<Navigate to="/mondai" replace />} />
+        
+        <Route path="/mondai" element={<ProtectedLayoutRoute element={<MonDAI />} />} />
         <Route path="/learn" element={<ProtectedLayoutRoute element={<Learn />} />} />
         <Route path="/earn" element={<ProtectedLayoutRoute element={<Earn />} />} />
         <Route path="/connect" element={<ProtectedLayoutRoute element={<Connect />} />} />
         <Route path="/settings" element={<ProtectedLayoutRoute element={<Settings />} />} />
         <Route path="/profile" element={<ProtectedLayoutRoute element={<Profile />} />} />
-        <Route path="/mondai" element={<ProtectedLayoutRoute element={<MonDAI />} />} />
         <Route path="/qubes/agent" element={<ProtectedLayoutRoute element={<AgentQube />} />} />
         <Route path="/qubes/tool" element={<ProtectedLayoutRoute element={<ToolQube />} />} />
         <Route path="/qubes/data" element={<ProtectedLayoutRoute element={<DataQube />} />} />

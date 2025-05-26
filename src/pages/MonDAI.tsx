@@ -1,6 +1,6 @@
 
 import React from 'react';
-import MonDAIInterface from '@/components/mondai/MonDAIInterface';
+import SimplifiedMonDAIInterface from '@/components/mondai/SimplifiedMonDAIInterface';
 
 // Extend the agent service to support 'mondai' type
 declare module '@/services/agent-service' {
@@ -10,7 +10,7 @@ declare module '@/services/agent-service' {
 }
 
 const MonDAI = () => {
-  return <MonDAIInterface />;
+  return <SimplifiedMonDAIInterface />;
 };
 
 export default MonDAI;

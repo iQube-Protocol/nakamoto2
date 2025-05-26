@@ -10,9 +10,9 @@ const Index = () => {
   useEffect(() => {
     if (!loading) {
       if (user) {
-        // User is authenticated, redirect to the main dashboard with sidebar
-        console.log("User authenticated, redirecting to dashboard");
-        navigate('/dashboard', { replace: true });
+        // User is authenticated, redirect directly to MonDAI agent
+        console.log("User authenticated, redirecting to MonDAI");
+        navigate('/mondai', { replace: true });
       } else {
         // User is not authenticated, redirect to sign in
         console.log("User not authenticated, redirecting to signin");
