@@ -32,7 +32,7 @@ export const checkIfSummarizationNeeded = async (
     }
     
     // Count unsummarized interactions for this conversation
-    const { data: interactions, error } = await supabase
+    const { data: interactions, error } = await (supabase as any)
       .from('user_interactions')
       .select('id')
       .eq('user_id', session.user.id)
@@ -70,7 +70,7 @@ export const getConversationSummaries = async (
     }
     
     // Get relevant summaries for the user and agent type, ordered by creation date
-    const { data: summaries, error } = await supabase
+    const { data: summaries, error } = await (supabase as any)
       .from('conversation_summaries')
       .select('*')
       .eq('user_id', session.user.id)

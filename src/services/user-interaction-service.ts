@@ -24,8 +24,8 @@ export const storeUserInteraction = async (data: InteractionData) => {
 
     console.log('Storing interaction for user:', data.user_id, 'type:', data.interactionType);
 
-    // Insert the interaction into the database
-    const { error, data: insertedData } = await supabase
+    // Insert the interaction into the database with type assertion
+    const { error, data: insertedData } = await (supabase as any)
       .from('user_interactions')
       .insert({
         query: data.query,
@@ -68,7 +68,7 @@ export const getUserInteractions = async (
     console.log('DB QUERY: Fetching interactions for user:', user_id, 'type:', interactionType || 'all');
 
     // Build the query based on whether we're filtering by interaction type
-    let query = supabase
+    let query = (supabase as any)
       .from('user_interactions')
       .select('*')
       .eq('user_id', user_id);
@@ -124,7 +124,7 @@ export const startUserSession = async () => {
       screenHeight: window.screen.height,
     };
 
-    const { error } = await supabase.from('user_sessions').insert({
+    const { error } = await (supabase as any).from('user_sessions').insert({
       device_info: deviceInfo,
       active: true,
       user_id
@@ -153,7 +153,7 @@ export const endUserSession = async (sessionId: string) => {
       return { success: false, error: new Error('User not authenticated') };
     }
     
-    const { error } = await supabase
+    const { error } = await (supabase as any)
       .from('user_sessions')
       .update({
         active: false,

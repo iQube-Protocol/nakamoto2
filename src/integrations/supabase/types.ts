@@ -9,7 +9,171 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      [_ in never]: never
+      blak_qubes: {
+        Row: {
+          "BTC-Public-Key": string
+          "Chain-IDs": string[]
+          created_at: string
+          Email: string
+          "EVM-Public-Key": string
+          id: string
+          "Local-City": string
+          Profession: string
+          "Tokens-of-Interest": string[]
+          updated_at: string
+          user_id: string
+          "Wallets-of-Interest": string[]
+          "Web3-Interests": string[]
+        }
+        Insert: {
+          "BTC-Public-Key"?: string
+          "Chain-IDs"?: string[]
+          created_at?: string
+          Email?: string
+          "EVM-Public-Key"?: string
+          id?: string
+          "Local-City"?: string
+          Profession?: string
+          "Tokens-of-Interest"?: string[]
+          updated_at?: string
+          user_id: string
+          "Wallets-of-Interest"?: string[]
+          "Web3-Interests"?: string[]
+        }
+        Update: {
+          "BTC-Public-Key"?: string
+          "Chain-IDs"?: string[]
+          created_at?: string
+          Email?: string
+          "EVM-Public-Key"?: string
+          id?: string
+          "Local-City"?: string
+          Profession?: string
+          "Tokens-of-Interest"?: string[]
+          updated_at?: string
+          user_id?: string
+          "Wallets-of-Interest"?: string[]
+          "Web3-Interests"?: string[]
+        }
+        Relationships: []
+      }
+      conversation_summaries: {
+        Row: {
+          conversation_type: string
+          created_at: string
+          id: string
+          included_interaction_ids: string[]
+          summary_text: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          conversation_type: string
+          created_at?: string
+          id?: string
+          included_interaction_ids?: string[]
+          summary_text: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          conversation_type?: string
+          created_at?: string
+          id?: string
+          included_interaction_ids?: string[]
+          summary_text?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_connections: {
+        Row: {
+          connected_at: string
+          connection_data: Json | null
+          created_at: string
+          id: string
+          service: string
+          user_id: string
+        }
+        Insert: {
+          connected_at?: string
+          connection_data?: Json | null
+          created_at?: string
+          id?: string
+          service: string
+          user_id: string
+        }
+        Update: {
+          connected_at?: string
+          connection_data?: Json | null
+          created_at?: string
+          id?: string
+          service?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_interactions: {
+        Row: {
+          created_at: string
+          id: string
+          interaction_type: string
+          metadata: Json | null
+          query: string
+          response: string
+          summarized: boolean
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          interaction_type: string
+          metadata?: Json | null
+          query: string
+          response: string
+          summarized?: boolean
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          interaction_type?: string
+          metadata?: Json | null
+          query?: string
+          response?: string
+          summarized?: boolean
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_sessions: {
+        Row: {
+          active: boolean
+          created_at: string
+          device_info: Json | null
+          id: string
+          session_end: string | null
+          user_id: string
+        }
+        Insert: {
+          active?: boolean
+          created_at?: string
+          device_info?: Json | null
+          id?: string
+          session_end?: string | null
+          user_id: string
+        }
+        Update: {
+          active?: boolean
+          created_at?: string
+          device_info?: Json | null
+          id?: string
+          session_end?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never

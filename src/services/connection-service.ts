@@ -68,7 +68,7 @@ export const connectionService = {
         
         // Save wallet connection to database in demo mode
         try {
-          await supabase.from('user_connections')
+          await (supabase as any).from('user_connections')
             .upsert({
               user_id: (await supabase.auth.getUser()).data.user?.id,
               service: 'wallet',
@@ -93,7 +93,7 @@ export const connectionService = {
           
           try {
             // Save wallet connection to database
-            const { error } = await supabase
+            const { error } = await (supabase as any)
               .from('user_connections')
               .upsert({
                 user_id: (await supabase.auth.getUser()).data.user?.id,
@@ -150,7 +150,7 @@ export const connectionService = {
       }
       
       try {
-        const { error } = await supabase
+        const { error } = await (supabase as any)
           .from('user_connections')
           .delete()
           .eq('user_id', userId)

@@ -3,11 +3,6 @@ import { supabase } from '@/integrations/supabase/client';
 import { BlakQube } from '@/lib/types';
 import { toast } from 'sonner';
 
-// Helper function to create a typed query builder for tables not in the Supabase types
-function createSupabaseQueryBuilder<T = any>(tableName: string) {
-  return supabase.from(tableName as any) as any;
-}
-
 /**
  * Service for managing BlakQube data
  */
@@ -20,8 +15,9 @@ export const blakQubeService = {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) return null;
       
-      // Use our custom query builder to avoid TypeScript errors
-      const { data, error } = await createSupabaseQueryBuilder('blak_qubes')
+      // Use type assertion to work around TypeScript issues
+      const { data, error } = await (supabase as any)
+        .from('blak_qubes')
         .select('*')
         .eq('user_id', user.user.id)
         .single();
@@ -47,7 +43,8 @@ export const blakQubeService = {
       if (!user.user) return false;
       
       // Get current BlakQube data
-      const { data: blakQube, error: blakQubeError } = await createSupabaseQueryBuilder('blak_qubes')
+      const { data: blakQube, error: blakQubeError } = await (supabase as any)
+        .from('blak_qubes')
         .select('*')
         .eq('user_id', user.user.id)
         .single();
@@ -58,7 +55,8 @@ export const blakQubeService = {
       }
       
       // Get user connections
-      const { data: connections, error: connectionsError } = await createSupabaseQueryBuilder('user_connections')
+      const { data: connections, error: connectionsError } = await (supabase as any)
+        .from('user_connections')
         .select('service, connection_data')
         .eq('user_id', user.user.id);
       
@@ -133,7 +131,8 @@ export const blakQubeService = {
       }
       
       // Save updated BlakQube
-      const { error: updateError } = await createSupabaseQueryBuilder('blak_qubes')
+      const { error: updateError } = await (supabase as any)
+        .from('blak_qubes')
         .upsert({
           user_id: user.user.id,
           ...newBlakQube

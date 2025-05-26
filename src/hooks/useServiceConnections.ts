@@ -41,8 +41,8 @@ export function useServiceConnections() {
         return;
       }
       
-      // Query user_connections table
-      const { data, error: queryError } = await supabase
+      // Query user_connections table with type assertion
+      const { data, error: queryError } = await (supabase as any)
         .from('user_connections')
         .select('service, connected_at, connection_data')
         .eq('user_id', user.id);
@@ -66,7 +66,7 @@ export function useServiceConnections() {
       
       // Update connections based on database results
       if (data) {
-        data.forEach(connection => {
+        data.forEach((connection: any) => {
           const serviceType = connection.service as ServiceType;
           if (Object.keys(newConnections).includes(serviceType)) {
             newConnections[serviceType] = true;

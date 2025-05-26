@@ -42,7 +42,7 @@ export const processAgentInteraction = async (
       
       // Try direct database insert as fallback
       console.log('Attempting direct database insert as fallback...');
-      const { data: directData, error: directError } = await supabase
+      const { data: directData, error: directError } = await (supabase as any)
         .from('user_interactions')
         .insert({
           query,
