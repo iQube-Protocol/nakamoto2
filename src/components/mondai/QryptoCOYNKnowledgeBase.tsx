@@ -1,4 +1,5 @@
 
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -141,7 +142,7 @@ const QryptoCOYNKnowledgeBase = () => {
             <TabsTrigger value="metaknyts">mẹtaKnyts ({filteredMetaKnytsItems.length})</TabsTrigger>
           </TabsList>
 
-          <div className="flex-1 overflow-y-auto p-4" style={{ height: 'calc(100% - 3.5rem)' }}>
+          <div className="flex-1 overflow-y-auto p-4" style={{ height: 'calc(100% - 7.5rem)' }}>
             <TabsContent value="both" className="mt-0">
               <div className="space-y-6">
                 {filteredQryptoItems.length > 0 && (
@@ -191,3 +192,4 @@ const QryptoCOYNKnowledgeBase = () => {
 };
 
 export default QryptoCOYNKnowledgeBase;
+
