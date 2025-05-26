@@ -39,8 +39,8 @@ const KnowledgeList = ({
   const hasAnyItems = hasQryptoItems || hasMetaKnytsItems;
 
   return (
-    <div className="flex-1 flex flex-col min-h-0">
-      <ScrollArea className="flex-1">
+    <div className="flex flex-col h-full overflow-hidden">
+      <ScrollArea className="h-full">
         <div className="p-4 pb-2">
           {showBothSections ? (
             <div className="space-y-6">

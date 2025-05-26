@@ -34,13 +34,13 @@ const QryptoCOYNKnowledgeBase = () => {
   };
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col overflow-hidden">
       <KnowledgeBaseSearch
         searchTerm={searchTerm}
         onSearchChange={setSearchTerm}
       />
 
-      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col">
+      <Tabs value={activeTab} onValueChange={setActiveTab} className="flex-1 flex flex-col overflow-hidden">
         <TabsList className="mx-4 mt-4 grid w-full grid-cols-3">
           <TabsTrigger value="both">Both ({bothTabCount})</TabsTrigger>
           <TabsTrigger value="qrypto">{isMobile ? 'COYN' : 'QryptoCOYN'} ({filteredQryptoItems.length})</TabsTrigger>
@@ -48,7 +48,7 @@ const QryptoCOYNKnowledgeBase = () => {
         </TabsList>
 
         <div className="flex-1 overflow-hidden">
-          <TabsContent value="both" className="mt-0 h-full">
+          <TabsContent value="both" className="mt-0 h-full overflow-hidden">
             <KnowledgeList
               filteredQryptoItems={filteredQryptoItems}
               filteredMetaKnytsItems={filteredMetaKnytsItems}
@@ -58,7 +58,7 @@ const QryptoCOYNKnowledgeBase = () => {
             />
           </TabsContent>
 
-          <TabsContent value="qrypto" className="mt-0 h-full">
+          <TabsContent value="qrypto" className="mt-0 h-full overflow-hidden">
             <KnowledgeList
               filteredQryptoItems={filteredQryptoItems}
               filteredMetaKnytsItems={[]}
@@ -68,7 +68,7 @@ const QryptoCOYNKnowledgeBase = () => {
             />
           </TabsContent>
 
-          <TabsContent value="metaknyts" className="mt-0 h-full">
+          <TabsContent value="metaknyts" className="mt-0 h-full overflow-hidden">
             <KnowledgeList
               filteredQryptoItems={[]}
               filteredMetaKnytsItems={filteredMetaKnytsItems}
