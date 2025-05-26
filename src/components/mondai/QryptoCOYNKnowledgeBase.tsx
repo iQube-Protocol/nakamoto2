@@ -112,7 +112,7 @@ const QryptoCOYNKnowledgeBase = () => {
             <TabsContent value="both" className="mt-0">
               <div className="space-y-6">
                 {filteredQryptoItems.length > 0 && <div>
-                    <h3 className="text-lg font-semibold mb-3 text-orange-400">QryptoCOYN Factual Knowledge</h3>
+                    <h3 className="font-semibold mb-3 text-orange-400 text-base">QryptoCOYN Factual Knowledge</h3>
                     {renderKnowledgeItems(filteredQryptoItems, 'Qrypto COYN')}
                   </div>}
                 {filteredMetaKnytsItems.length > 0 && <div>
