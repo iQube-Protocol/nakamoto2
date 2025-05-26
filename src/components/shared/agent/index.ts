@@ -1,6 +1,7 @@
 
 // Export all agent components for easy importing
 export { default as AgentInterface } from './AgentInterface';
+export { default as SimplifiedAgentInterface } from './SimplifiedAgentInterface';
 export { default as AgentHeader } from './AgentHeader';
 export { default as MessageList } from './MessageList';
 export { default as MessageItem } from './MessageItem';
