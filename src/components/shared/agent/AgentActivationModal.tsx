@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { 
   AlertCircle, 
@@ -145,11 +146,11 @@ const AgentActivationModal = ({
             <div className="border rounded-md p-4 mb-4">
               <div className="flex justify-between mb-2">
                 <span className="text-sm text-muted-foreground">Service Fee</span>
-                <span className="font-medium">{fee} MonDAI</span>
+                <span className="font-medium">{fee} $QOYN</span>
               </div>
               <div className="border-t pt-2 flex justify-between">
                 <span className="text-sm font-medium">Total</span>
-                <span className="font-semibold">{fee} MonDAI</span>
+                <span className="font-semibold">{fee} $QOYN</span>
               </div>
               
               <div className="mt-4 flex items-center gap-2">
