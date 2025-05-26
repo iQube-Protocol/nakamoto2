@@ -12,7 +12,7 @@ const Settings = () => {
   const [selectedIQube, setSelectedIQube] = useState(monDaiQubeData);
   const { metisActivated } = useMetisAgent();
   const [activeQubes, setActiveQubes] = useState<{[key: string]: boolean}>({
-    "MonDAI": true,
+    "Qrypto Persona": true,
     "Metis": metisActivated,
     "GDrive": false
   });

@@ -82,7 +82,7 @@ const SettingsInterface = ({
   };
 
   const isActive = (qubeName: string) => {
-    if (qubeName === "MonDAI iQube") return activeQubes["MonDAI"];
+    if (qubeName === "Qrypto Persona iQube") return activeQubes["Qrypto Persona"];
     if (qubeName === "Metis iQube") return activeQubes["Metis"];
     if (qubeName === "GDrive iQube") return activeQubes["GDrive"];
     return false;
@@ -90,7 +90,7 @@ const SettingsInterface = ({
 
   const toggleActive = () => {
     let qubeName = "";
-    if (metaQube["iQube-Identifier"] === "MonDAI iQube") qubeName = "MonDAI";
+    if (metaQube["iQube-Identifier"] === "Qrypto Persona iQube") qubeName = "Qrypto Persona";
     else if (metaQube["iQube-Identifier"] === "Metis iQube") qubeName = "Metis";
     else if (metaQube["iQube-Identifier"] === "GDrive iQube") qubeName = "GDrive";
     

@@ -40,7 +40,7 @@ export interface QubeItem {
 export const iQubeItems: QubeItem[] = [
   {
     id: 'dataqube',
-    name: 'Nakamoto',
+    name: 'Qrypto Persona',
     type: 'DataQube',
     icon: Database,
     href: '/settings',
@@ -58,7 +58,7 @@ export const iQubeItems: QubeItem[] = [
 
 export const nakamotoQubeData = {
   id: 'nakamoto',
-  name: 'Nakamoto iQube',
+  name: 'Qrypto Persona iQube',
   type: 'Personal Data',
   href: '/settings',
   active: true

@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useIsMobile } from '@/hooks/use-mobile';
 
@@ -22,7 +21,7 @@ export function useSidebarState() {
   // Add state to track which iQube is selected
   const [selectedIQube, setSelectedIQube] = useState<string | null>(() => {
     const savedState = localStorage.getItem('selected-iqube');
-    return savedState || 'MonDAI';
+    return savedState || 'Qrypto Persona';
   });
 
   useEffect(() => {

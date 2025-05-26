@@ -1,11 +1,11 @@
 
 import { MetaQube } from "@/lib/types";
 
-// Sample metaQube data for MonDAI (DataQube)
+// Sample metaQube data for Qrypto Persona (DataQube)
 export const monDaiQubeData: MetaQube = {
-  "iQube-Identifier": "MonDAI iQube",
+  "iQube-Identifier": "Qrypto Persona iQube",
   "iQube-Type": "DataQube",
-  "iQube-Designer": "Aigent MonDAI",
+  "iQube-Designer": "Aigent Qrypto Persona",
   "iQube-Use": "For learning, earning and networking in web3 communities",
   "Owner-Type": "Person",
   "Owner-Identifiability": "Semi-Identifiable",

@@ -1,3 +1,4 @@
+
 import { useState } from 'react';
 import { toast } from 'sonner';
 import { MetaQube } from '@/lib/types';
@@ -70,7 +71,7 @@ const modelQubePrivateData = {
 
 export function usePrivateData(selectedIQube: MetaQube) {
   // State for private data of each iQube type
-  const [mondaiPrivateData, setMondaiPrivateData] = useState(dataQubePrivateData);
+  const [qryptoPersonaPrivateData, setQryptoPersonaPrivateData] = useState(dataQubePrivateData);
   const [metisPrivateData, setMetisPrivateData] = useState(agentQubePrivateData);
   const [gdrivePrivateData, setGdrivePrivateData] = useState(toolQubePrivateData);
   const [contentPrivateData, setContentPrivateData] = useState(contentQubePrivateData);
@@ -87,7 +88,7 @@ export function usePrivateData(selectedIQube: MetaQube) {
     } else if (selectedIQube["iQube-Identifier"] === "Model iQube") {
       return modelPrivateData;
     } else {
-      return mondaiPrivateData;
+      return qryptoPersonaPrivateData;
     }
   };
 
@@ -102,7 +103,7 @@ export function usePrivateData(selectedIQube: MetaQube) {
     } else if (selectedIQube["iQube-Identifier"] === "Model iQube") {
       setModelPrivateData(newData);
     } else {
-      setMondaiPrivateData(newData);
+      setQryptoPersonaPrivateData(newData);
     }
 
     toast.success(`${selectedIQube["iQube-Identifier"]} Data Updated`);
