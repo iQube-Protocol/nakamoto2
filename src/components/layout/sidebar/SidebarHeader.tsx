@@ -19,9 +19,9 @@ const SidebarHeader: React.FC<SidebarHeaderProps> = ({ collapsed, toggleSidebar 
     )}>
       {!collapsed ? (
         <Link to="/mondai" className="flex items-center">
-          <Bot className="h-6 w-6 text-iqube-primary mr-2" />
-          <h1 className="text-lg font-bold bg-gradient-to-r from-iqube-primary to-iqube-accent inline-block text-transparent bg-clip-text">
-            Aigent MonDAI
+          <Bot className="h-6 w-6 text-qrypto-primary mr-2" />
+          <h1 className="text-lg font-bold bg-gradient-to-r from-qrypto-primary to-qrypto-accent inline-block text-transparent bg-clip-text">
+            QryptoCOYN
           </h1>
         </Link>
       ) : (
@@ -29,11 +29,11 @@ const SidebarHeader: React.FC<SidebarHeaderProps> = ({ collapsed, toggleSidebar 
           <Tooltip>
             <TooltipTrigger asChild>
               <Link to="/mondai">
-                <Bot className="h-6 w-6 text-iqube-primary" />
+                <Bot className="h-6 w-6 text-qrypto-primary" />
               </Link>
             </TooltipTrigger>
             <TooltipContent side="right">
-              Aigent MonDAI
+              QryptoCOYN
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>

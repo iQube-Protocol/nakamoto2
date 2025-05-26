@@ -63,12 +63,12 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
-				iqube: {
-					primary: '#6E56CF',
-					secondary: '#9B8AFB',
-					accent: '#1DE9B6',
-					dark: '#1A1A2E',
-					light: '#F7F7FF'
+				qrypto: {
+					primary: '#8B5CF6',     // Purple primary
+					secondary: '#A855F7',   // Purple secondary  
+					accent: '#FB923C',      // Orange accent
+					dark: '#1E1B4B',        // Dark purple
+					light: '#F3F4F6'        // Light background
 				}
 			},
 			borderRadius: {

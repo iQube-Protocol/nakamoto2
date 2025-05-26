@@ -29,15 +29,15 @@ const SimplifiedMonDAIInterface: React.FC = () => {
   }, [isMobile]);
 
   // Simplified welcome message for offline mode
-  const initialMessage = "Hello! I'm your MonDAI assistant. I'm ready to help you learn about Web3, cryptocurrency, blockchain concepts, and more using my integrated knowledge base. I'll provide clear, concise explanations and can create visual diagrams for complex topics. What would you like to explore today?";
+  const initialMessage = "Hello! I'm Nakamoto, your intelligent cryptocurrency and blockchain assistant. I'm here to help you learn about Web3, cryptocurrency, blockchain concepts, and more using my integrated knowledge base. I'll provide clear, concise explanations and can create visual diagrams for complex topics. What would you like to explore today?";
 
   return (
     <div className="container py-6 max-w-7xl mx-auto h-full agent-interface">
       <div className="grid gap-6 h-full">
         <div className="flex flex-col h-full">          
           <SimplifiedAgentInterface
-            title="MonDAI"
-            description="Your intelligent Web3 learning companion"
+            title="Nakamoto"
+            description="Your intelligent cryptocurrency companion"
             agentType="mondai" 
             onMessageSubmit={handleAIMessage}
             onDocumentAdded={handleDocumentContextUpdated}

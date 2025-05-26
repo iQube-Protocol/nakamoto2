@@ -14,7 +14,7 @@ const AgentHeader = ({ title, description, isProcessing }: AgentHeaderProps) => 
     <div className="p-4 border-b flex justify-between items-start">
       <div>
         <h2 className="text-xl font-semibold flex items-center">
-          <Bot className="mr-2 h-5 w-5 text-iqube-accent" />
+          <Bot className="mr-2 h-5 w-5 text-qrypto-accent" />
           {title}
           {isProcessing && (
             <span className="ml-2 flex items-center text-xs text-muted-foreground">

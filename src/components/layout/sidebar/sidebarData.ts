@@ -11,7 +11,7 @@ export interface NavItem {
 
 export const navItems: NavItem[] = [
   {
-    name: 'MonDAI',
+    name: 'Nakamoto',
     href: '/mondai',
     icon: Bot,
   },
@@ -40,7 +40,7 @@ export interface QubeItem {
 export const iQubeItems: QubeItem[] = [
   {
     id: 'dataqube',
-    name: 'MonDAI',
+    name: 'Nakamoto',
     type: 'DataQube',
     icon: Database,
     href: '/settings',
@@ -56,9 +56,9 @@ export const iQubeItems: QubeItem[] = [
   },
 ];
 
-export const monDaiQubeData = {
-  id: 'mondai',
-  name: 'MonDAI iQube',
+export const nakamotoQubeData = {
+  id: 'nakamoto',
+  name: 'Nakamoto iQube',
   type: 'Personal Data',
   href: '/settings',
   active: true

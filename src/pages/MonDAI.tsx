@@ -9,8 +9,8 @@ declare module '@/services/agent-service' {
   }
 }
 
-const MonDAI = () => {
+const Nakamoto = () => {
   return <SimplifiedMonDAIInterface />;
 };
 
-export default MonDAI;
+export default Nakamoto;

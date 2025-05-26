@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Menu } from 'lucide-react';
@@ -29,7 +28,7 @@ const Sidebar = () => {
   const { signOut } = useAuth();
   
   const [activeIQubes, setActiveIQubes] = useState<{[key: string]: boolean}>({
-    "MonDAI": true,
+    "Nakamoto": true,
     "Metis": metisActivated,
   });
 

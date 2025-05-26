@@ -14,16 +14,16 @@
     --popover: 240 10% 98%;
     --popover-foreground: 240 10% 5%;
 
-    --primary: 256 56% 57%;
+    --primary: 262 83% 58%;
     --primary-foreground: 240 10% 98%;
 
-    --secondary: 254 87% 76%;
+    --secondary: 262 69% 66%;
     --secondary-foreground: 240 10% 98%;
 
     --muted: 240 10% 90%;
     --muted-foreground: 240 10% 45%;
 
-    --accent: 168 89% 52%;
+    --accent: 24 95% 53%;
     --accent-foreground: 240 10% 98%;
 
     --destructive: 0 84% 60%;
@@ -31,18 +31,18 @@
 
     --border: 240 10% 80%;
     --input: 240 10% 80%;
-    --ring: 256 56% 57%;
+    --ring: 262 83% 58%;
 
     --radius: 0.5rem;
 
     --sidebar-background: 240 10% 98%;
     --sidebar-foreground: 240 10% 10%;
-    --sidebar-primary: 256 56% 57%;
+    --sidebar-primary: 262 83% 58%;
     --sidebar-primary-foreground: 240 10% 98%;
     --sidebar-accent: 240 10% 90%;
     --sidebar-accent-foreground: 240 10% 10%;
     --sidebar-border: 240 10% 90%;
-    --sidebar-ring: 256 56% 57%;
+    --sidebar-ring: 262 83% 58%;
     
     /* Tooltip styling for light mode */
     --tooltip-background: 0 0% 100%;
@@ -60,16 +60,16 @@
     --popover: 240 10% 15%;
     --popover-foreground: 240 10% 95%;
 
-    --primary: 256 56% 57%;
+    --primary: 262 83% 58%;
     --primary-foreground: 240 10% 98%;
 
-    --secondary: 254 87% 76%;
+    --secondary: 262 69% 66%;
     --secondary-foreground: 240 10% 5%;
 
     --muted: 240 10% 25%;
     --muted-foreground: 240 10% 75%;
 
-    --accent: 168 89% 52%;
+    --accent: 24 95% 53%;
     --accent-foreground: 240 10% 5%;
 
     --destructive: 0 84% 60%;
@@ -77,16 +77,16 @@
 
     --border: 240 10% 20%;
     --input: 240 10% 20%;
-    --ring: 256 56% 57%;
+    --ring: 262 83% 58%;
 
     --sidebar-background: 240 10% 5%;
     --sidebar-foreground: 240 10% 85%;
-    --sidebar-primary: 256 56% 57%;
+    --sidebar-primary: 262 83% 58%;
     --sidebar-primary-foreground: 240 10% 98%;
     --sidebar-accent: 240 10% 15%;
     --sidebar-accent-foreground: 240 10% 95%;
     --sidebar-border: 240 10% 15%;
-    --sidebar-ring: 256 56% 57%;
+    --sidebar-ring: 262 83% 58%;
     
     /* Tooltip styling for dark mode */
     --tooltip-background: 240 10% 15%;
@@ -106,20 +106,28 @@
 }
 
 @layer components {
-  .iqube-gradient {
-    @apply bg-gradient-to-r from-iqube-primary via-iqube-secondary to-iqube-accent bg-[length:300%_100%] animate-gradient-flow;
+  .qrypto-gradient {
+    @apply bg-gradient-to-r from-qrypto-primary via-qrypto-secondary to-qrypto-accent bg-[length:300%_100%] animate-gradient-flow;
   }
 
-  .iqube-card {
-    @apply bg-card/80 backdrop-blur-sm border border-border/50 shadow-md rounded-lg;
+  .qrypto-card {
+    background: rgba(139, 92, 246, 0.05);
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(139, 92, 246, 0.2);
+    box-shadow: 0 8px 32px rgba(139, 92, 246, 0.1);
+    @apply rounded-lg;
   }
 
   .agent-message {
-    @apply p-4 rounded-lg my-2 bg-iqube-primary/15 border border-iqube-primary/30 text-foreground;
+    background: rgba(139, 92, 246, 0.08);
+    border: 1px solid rgba(139, 92, 246, 0.2);
+    @apply p-4 rounded-lg my-2 text-foreground;
   }
 
   .user-message {
-    @apply p-4 rounded-lg my-2 bg-iqube-accent/15 border border-iqube-accent/30 text-foreground;
+    background: rgba(251, 146, 60, 0.08);
+    border: 1px solid rgba(251, 146, 60, 0.2);
+    @apply p-4 rounded-lg my-2 text-foreground;
   }
 
   .score-badge {
@@ -140,24 +148,26 @@
 
   /* Light theme specific */
   .light .agent-message {
-    @apply bg-iqube-primary/10 border-iqube-primary/20;
+    background: rgba(139, 92, 246, 0.06);
+    border: 1px solid rgba(139, 92, 246, 0.15);
   }
 
   .light .user-message {
-    @apply bg-iqube-accent/10 border-iqube-accent/20;
+    background: rgba(251, 146, 60, 0.06);
+    border: 1px solid rgba(251, 146, 60, 0.15);
   }
 
-  .light .iqube-card {
-    @apply bg-card/90 border-border/30;
+  .light .qrypto-card {
+    background: rgba(139, 92, 246, 0.03);
+    border: 1px solid rgba(139, 92, 246, 0.1);
   }
   
-  /* Tooltip styles enhancement - explicitly define tooltip styling */
+  /* Tooltip styles enhancement */
   [role="tooltip"] {
     @apply bg-popover text-popover-foreground border border-border shadow-md z-50;
     @apply visible opacity-100;
   }
   
-  /* Extra styling to ensure tooltips are visible */
   .RadixTooltip--content {
     z-index: 50 !important;
     visibility: visible !important;
