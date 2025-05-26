@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -86,8 +87,8 @@ const QryptoCOYNKnowledgeBase = () => {
                   key={keyword} 
                   variant="secondary" 
                   className={`text-xs rounded-md px-2 py-1 transition-colors ${
-                    knowledgeBase === 'Qrypto COYN' 
-                      ? 'bg-orange-100 text-orange-700 border-orange-200 hover:bg-orange-200 hover:text-orange-800' 
+                    knowledgeBase === 'QryptoCOYN' 
+                      ? 'bg-orange-50 text-orange-700 border-orange-200 hover:bg-orange-100 hover:text-orange-800' 
                       : 'hover:bg-secondary/80'
                   }`}
                 >
@@ -97,7 +98,7 @@ const QryptoCOYNKnowledgeBase = () => {
             </div>
             {item.connections && item.connections.length > 0 && (
               <div className="mt-2 pt-2 border-t">
-                <p className="text-xs text-gray-500 mb-1">Connected to Qrypto COYN concepts:</p>
+                <p className="text-xs text-gray-500 mb-1">Connected to QryptoCOYN concepts:</p>
                 <div className="flex flex-wrap gap-1">
                   {item.connections.map((connection: string) => (
                     <Badge key={connection} variant="outline" className="text-xs rounded-md px-2 py-1 bg-blue-50">
@@ -138,7 +139,7 @@ const QryptoCOYNKnowledgeBase = () => {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
           <TabsList className="mx-4 mt-4 grid w-full grid-cols-3">
             <TabsTrigger value="both">Both ({bothTabCount})</TabsTrigger>
-            <TabsTrigger value="qrypto">Qrypto COYN ({filteredQryptoItems.length})</TabsTrigger>
+            <TabsTrigger value="qrypto">QryptoCOYN ({filteredQryptoItems.length})</TabsTrigger>
             <TabsTrigger value="metaknyts">mẹtaKnyts ({filteredMetaKnytsItems.length})</TabsTrigger>
           </TabsList>
 
@@ -148,7 +149,7 @@ const QryptoCOYNKnowledgeBase = () => {
                 {filteredQryptoItems.length > 0 && (
                   <div>
                     <h3 className="font-semibold mb-3 text-orange-400 text-base">QryptoCOYN Factual Knowledge</h3>
-                    {renderKnowledgeItems(filteredQryptoItems, 'Qrypto COYN')}
+                    {renderKnowledgeItems(filteredQryptoItems, 'QryptoCOYN')}
                   </div>
                 )}
                 {filteredMetaKnytsItems.length > 0 && (
@@ -167,10 +168,10 @@ const QryptoCOYNKnowledgeBase = () => {
 
             <TabsContent value="qrypto" className="mt-0">
               {filteredQryptoItems.length > 0 ? (
-                renderKnowledgeItems(filteredQryptoItems, 'Qrypto COYN')
+                renderKnowledgeItems(filteredQryptoItems, 'QryptoCOYN')
               ) : (
                 <p className="text-center text-gray-500 py-8">
-                  {searchTerm ? `No Qrypto COYN items found matching "${searchTerm}"` : 'No Qrypto COYN items available'}
+                  {searchTerm ? `No QryptoCOYN items found matching "${searchTerm}"` : 'No QryptoCOYN items available'}
                 </p>
               )}
             </TabsContent>

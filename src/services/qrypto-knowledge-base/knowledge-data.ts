@@ -1,6 +1,23 @@
+
 import { QryptoKnowledgeItem } from './types';
 
 export const QRYPTO_KNOWLEDGE_DATA: QryptoKnowledgeItem[] = [
+  {
+    id: 'qryptocoyn-definition',
+    title: 'QryptoCOYN: Definition and Etymology',
+    content: `QryptoCOYN is a compound term combining two key concepts:
+    
+    Qrypto: Refers to Quantum-ready cryptography and information management. This represents advanced cryptographic systems designed to be secure against both classical and quantum computing attacks, ensuring long-term data protection in the evolving technological landscape.
+    
+    COYN: An anagram for "Currency Of Your Network" which relates to the value of your data and the network that you do to enrich, collate and curate it. It also relates to the value of your network which is reflected in your data assets. COYN represents the monetization and value creation from data assets and network effects.
+    
+    Together, QryptoCOYN represents a quantum-ready cryptocurrency framework that transforms data into valuable, tradable assets while maintaining the highest levels of security and privacy.`,
+    section: 'Core Concepts',
+    category: 'philosophy',
+    keywords: ['QryptoCOYN', 'Qrypto', 'COYN', 'quantum-ready cryptography', 'Currency Of Your Network', 'data assets', 'network value'],
+    timestamp: new Date().toISOString(),
+    source: 'QryptoCOYN Core Documentation'
+  },
   {
     id: 'qoyn-economy-fundamentals',
     title: '$QOYN Economy Fundamentals',
@@ -12,7 +29,7 @@ export const QRYPTO_KNOWLEDGE_DATA: QryptoKnowledgeItem[] = [
     category: 'protocols',
     keywords: ['iQube Protocol', 'Aigent Protocol', 'COYN Protocol', 'data-as-asset', 'risk'],
     timestamp: new Date().toISOString(),
-    source: 'Qrypto COYN Tokenomics'
+    source: 'QryptoCOYN Tokenomics'
   },
   {
     id: 'consensus-frameworks',
@@ -25,7 +42,7 @@ export const QRYPTO_KNOWLEDGE_DATA: QryptoKnowledgeItem[] = [
     category: 'consensus',
     keywords: ['Proof of Risk', 'Proof of Price', 'Proof of State', 'PoR', 'PoP'],
     timestamp: new Date().toISOString(),
-    source: 'Qrypto COYN Tokenomics'
+    source: 'QryptoCOYN Tokenomics'
   },
   {
     id: 'iqubes-functionality',
@@ -35,40 +52,40 @@ export const QRYPTO_KNOWLEDGE_DATA: QryptoKnowledgeItem[] = [
     category: 'protocols',
     keywords: ['iQubes', 'risk quantification', 'AI agents', 'datasets', 'contextual intelligence'],
     timestamp: new Date().toISOString(),
-    source: 'Qrypto COYN Tokenomics'
+    source: 'QryptoCOYN Tokenomics'
   },
   {
     id: 'tcm-model',
     title: 'Techno Capital Machine (TCM) Model',
     content: `The protocol uses the Techno Capital Machine Model (TCM) to reward users for staking three types of assets:
-    1. Capital - Capital providers are able to stake Ethereum or Bitcoin and earn yield from that stake in the form of Qrypto COYNs that are emitted on a daily basis pro rata
-    2. Compute - Compute providers are able to earn Qrypto COYN from contributing software and hardware to the iQube ecosystem for use by the ecosystem.
+    1. Capital - Capital providers are able to stake Ethereum or Bitcoin and earn yield from that stake in the form of QryptoCOYNs that are emitted on a daily basis pro rata
+    2. Compute - Compute providers are able to earn QryptoCOYN from contributing software and hardware to the iQube ecosystem for use by the ecosystem.
     3. Content - Content providers are rewarded for staking data and content (i.e. rich media, IP etc) to the ecosystem for use by third parties.`,
     section: 'Commercial Mechanics',
     category: 'mechanics',
     keywords: ['TCM', 'Techno Capital Machine', 'staking', 'Capital', 'Compute', 'Content'],
     timestamp: new Date().toISOString(),
-    source: 'Qrypto COYN Tokenomics'
+    source: 'QryptoCOYN Tokenomics'
   },
   {
     id: 'token-economics',
     title: '$QOYN Token Economics',
-    content: `100M Qrypto COYN tokens will be minted and dispersed over a 10 year period at a rate of 10M Qrypto COYN tokens per year. 30% of emissions will be assigned to each of the three pillars everyday at a rate of 8,219 tokens per pillar per day. The remaining 10% will go to a Treasury pool that will be used to provide liquidity, buy back tokens and manage the network.`,
+    content: `100M QryptoCOYN tokens will be minted and dispersed over a 10 year period at a rate of 10M QryptoCOYN tokens per year. 30% of emissions will be assigned to each of the three pillars everyday at a rate of 8,219 tokens per pillar per day. The remaining 10% will go to a Treasury pool that will be used to provide liquidity, buy back tokens and manage the network.`,
     section: 'Inflationary Emission Schedule',
     category: 'tokenomics',
     keywords: ['$QOYN', 'token distribution', 'emissions', 'Treasury pool', '100M tokens'],
     timestamp: new Date().toISOString(),
-    source: 'Qrypto COYN Tokenomics'
+    source: 'QryptoCOYN Tokenomics'
   },
   {
     id: 'deflationary-mechanics',
     title: 'Deflationary Mechanics',
-    content: `The 10% pool will be used also to acquire 10% of Qrypto COYN and convert 5% of emissions on a daily basis creating a deflationary mechanic intrinsic to the protocol. Marketplace Commissions (up to 30% fees) will generate revenue that will fund burns and staking. Dynamic Burns (e.g., 60–80% of fees) will offset inflation. Up to 30% APY Staking will lock supply.`,
+    content: `The 10% pool will be used also to acquire 10% of QryptoCOYN and convert 5% of emissions on a daily basis creating a deflationary mechanic intrinsic to the protocol. Marketplace Commissions (up to 30% fees) will generate revenue that will fund burns and staking. Dynamic Burns (e.g., 60–80% of fees) will offset inflation. Up to 30% APY Staking will lock supply.`,
     section: 'Deflationary Mechanics',
     category: 'tokenomics',
     keywords: ['deflationary', 'burns', 'staking', 'APY', 'marketplace commissions'],
     timestamp: new Date().toISOString(),
-    source: 'Qrypto COYN Tokenomics'
+    source: 'QryptoCOYN Tokenomics'
   },
   {
     id: 'bitcoin-security',
@@ -78,7 +95,7 @@ export const QRYPTO_KNOWLEDGE_DATA: QryptoKnowledgeItem[] = [
     category: 'technical',
     keywords: ['Bitcoin security', 'Satoshi', 'entanglement', 'TokenQube', 'security'],
     timestamp: new Date().toISOString(),
-    source: 'Qrypto COYN Tokenomics'
+    source: 'QryptoCOYN Tokenomics'
   },
   {
     id: 'proof-of-price-models',
@@ -91,7 +108,7 @@ export const QRYPTO_KNOWLEDGE_DATA: QryptoKnowledgeItem[] = [
     category: 'economics',
     keywords: ['Proof of Price', 'data pricing', 'risk models', 'Z-Score', 'opportunity cost'],
     timestamp: new Date().toISOString(),
-    source: 'Qrypto COYN Tokenomics'
+    source: 'QryptoCOYN Tokenomics'
   },
   {
     id: 'technical-architecture',
@@ -166,7 +183,7 @@ export const QRYPTO_KNOWLEDGE_DATA: QryptoKnowledgeItem[] = [
   {
     id: 'implementation-roadmap',
     title: 'Implementation Roadmap',
-    content: `Pre-Launch: Secure enterprise iQube partnerships and create dashboard for real-time burn/APY tracking. Launch: Enforce mandatory Qrypto COYN usage for iQubes and implement governance voting for parameter adjustments. Post-Launch: Monitor and adjust tokenomics and staking mechanisms as needed. The roadmap ensures systematic deployment and continuous optimization.`,
+    content: `Pre-Launch: Secure enterprise iQube partnerships and create dashboard for real-time burn/APY tracking. Launch: Enforce mandatory QryptoCOYN usage for iQubes and implement governance voting for parameter adjustments. Post-Launch: Monitor and adjust tokenomics and staking mechanisms as needed. The roadmap ensures systematic deployment and continuous optimization.`,
     section: 'Development Timeline',
     category: 'implementation',
     keywords: ['implementation roadmap', 'enterprise partnerships', 'governance voting', 'tokenomics adjustment'],
@@ -176,7 +193,7 @@ export const QRYPTO_KNOWLEDGE_DATA: QryptoKnowledgeItem[] = [
   {
     id: 'micro-stablecoin-framework',
     title: 'Micro Stable Coin Framework',
-    content: `The micro stable coin is pegged 1:1 to $0.01 and funded by 10% of Qrypto COYN emissions allocated to the Pool. This micro stable coin facilitates transactions within the ecosystem, providing price stability for day-to-day operations while the main $QOYN token captures value appreciation. It serves as the transactional currency for iQube access and data pricing.`,
+    content: `The micro stable coin is pegged 1:1 to $0.01 and funded by 10% of QryptoCOYN emissions allocated to the Pool. This micro stable coin facilitates transactions within the ecosystem, providing price stability for day-to-day operations while the main $QOYN token captures value appreciation. It serves as the transactional currency for iQube access and data pricing.`,
     section: 'Stable Coin Mechanics',
     category: 'tokenomics',
     keywords: ['micro stable coin', '$0.01 peg', 'transactional currency', 'price stability', 'iQube transactions'],
@@ -186,7 +203,7 @@ export const QRYPTO_KNOWLEDGE_DATA: QryptoKnowledgeItem[] = [
   {
     id: 'smart-contract-requirements',
     title: 'Smart Contract Technical Requirements',
-    content: `Smart Contract Requirements: Token Issuance (issues Qrypto COYN tokens to Bitcoin and Ethereum stakers), Staking Mechanism (allows contributors to stake Bitcoin and Ethereum for Qrypto COYN), Token Distribution (distributes based on staking), Capital/Compute/Content Buckets (allocates tokens per TCM model), and Pool (allocates 10% for micro stable coin). Built on Internet Computer Protocol (ICP) using Rust or Motoko with ICP Chain Fusion and LayerZero integration.`,
+    content: `Smart Contract Requirements: Token Issuance (issues QryptoCOYN tokens to Bitcoin and Ethereum stakers), Staking Mechanism (allows contributors to stake Bitcoin and Ethereum for QryptoCOYN), Token Distribution (distributes based on staking), Capital/Compute/Content Buckets (allocates tokens per TCM model), and Pool (allocates 10% for micro stable coin). Built on Internet Computer Protocol (ICP) using Rust or Motoko with ICP Chain Fusion and LayerZero integration.`,
     section: 'Smart Contract Architecture',
     category: 'technical',
     keywords: ['smart contracts', 'ICP', 'Rust', 'Motoko', 'token issuance', 'staking mechanism', 'security auditing'],
