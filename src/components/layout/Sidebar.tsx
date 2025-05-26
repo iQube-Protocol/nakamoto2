@@ -29,7 +29,7 @@ const Sidebar = () => {
   const { signOut } = useAuth();
   
   const [activeIQubes, setActiveIQubes] = useState<{[key: string]: boolean}>({
-    "Nakamoto": true,
+    "MonDAI": true,
     "Metis": metisActivated,
   });
 
@@ -99,7 +99,7 @@ const Sidebar = () => {
   };
 
   const toggleIQubeActive = (e: React.MouseEvent<HTMLDivElement>, qubeName: string) => {
-    e.stopPropagation();
+    e.stopPropagation(); // Prevent the click from triggering the parent element
     
     const newActiveState = !activeIQubes[qubeName];
     setActiveIQubes(prev => ({...prev, [qubeName]: newActiveState}));

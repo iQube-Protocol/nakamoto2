@@ -5,111 +5,93 @@
 
 @layer base {
   :root {
-    --background: 255 255 255;
-    --foreground: 23 23 25;
+    --background: 240 10% 98%;
+    --foreground: 240 10% 5%;
 
-    --card: 255 255 255;
-    --card-foreground: 23 23 25;
+    --card: 240 10% 95%;
+    --card-foreground: 240 10% 5%;
 
-    --popover: 255 255 255;
-    --popover-foreground: 23 23 25;
+    --popover: 240 10% 98%;
+    --popover-foreground: 240 10% 5%;
 
-    --primary: 91 33 182;
-    --primary-foreground: 255 255 255;
+    --primary: 256 56% 57%;
+    --primary-foreground: 240 10% 98%;
 
-    --secondary: 245 245 245;
-    --secondary-foreground: 23 23 25;
+    --secondary: 254 87% 76%;
+    --secondary-foreground: 240 10% 98%;
 
-    --muted: 248 250 252;
-    --muted-foreground: 100 116 139;
+    --muted: 240 10% 90%;
+    --muted-foreground: 240 10% 45%;
 
-    --accent: 194 65 12;
-    --accent-foreground: 255 255 255;
+    --accent: 168 89% 52%;
+    --accent-foreground: 240 10% 98%;
 
-    --destructive: 239 68 68;
-    --destructive-foreground: 255 255 255;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 240 10% 98%;
 
-    --border: 228 228 231;
-    --input: 228 228 231;
-    --ring: 91 33 182;
+    --border: 240 10% 80%;
+    --input: 240 10% 80%;
+    --ring: 256 56% 57%;
 
     --radius: 0.5rem;
 
-    --sidebar-background: 250 250 250;
-    --sidebar-foreground: 23 23 25;
-    --sidebar-primary: 91 33 182;
-    --sidebar-primary-foreground: 255 255 255;
-    --sidebar-accent: 243 244 246;
-    --sidebar-accent-foreground: 23 23 25;
-    --sidebar-border: 228 228 231;
-    --sidebar-ring: 91 33 182;
-    
-    /* QryptoCOYN Premium Color Variables */
-    --primary-purple: 91 33 182;
-    --dark-purple: 76 29 149;
-    --light-purple: 139 92 246;
-    --deep-purple: 59 7 100;
-    --primary-orange: 194 65 12;
-    --light-orange: 251 146 60;
-    --dark-orange: 154 52 18;
-    --warm-orange: 253 186 116;
-    
-    /* Premium styling */
-    --premium-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    --premium-glow: 0 0 0 1px rgba(91, 33, 182, 0.1), 0 4px 12px rgba(91, 33, 182, 0.1);
+    --sidebar-background: 240 10% 98%;
+    --sidebar-foreground: 240 10% 10%;
+    --sidebar-primary: 256 56% 57%;
+    --sidebar-primary-foreground: 240 10% 98%;
+    --sidebar-accent: 240 10% 90%;
+    --sidebar-accent-foreground: 240 10% 10%;
+    --sidebar-border: 240 10% 90%;
+    --sidebar-ring: 256 56% 57%;
     
     /* Tooltip styling for light mode */
-    --tooltip-background: 255 255 255;
-    --tooltip-foreground: 23 23 25;
-    --tooltip-border: 228 228 231;
+    --tooltip-background: 0 0% 100%;
+    --tooltip-foreground: 240 10% 5%;
+    --tooltip-border: 240 10% 80%;
   }
 
   .dark {
-    --background: 8 8 12;
-    --foreground: 250 250 250;
+    --background: 240 10% 7%;
+    --foreground: 240 10% 95%;
 
-    --card: 15 15 20;
-    --card-foreground: 250 250 250;
+    --card: 240 10% 10%;
+    --card-foreground: 240 10% 95%;
 
-    --popover: 15 15 20;
-    --popover-foreground: 250 250 250;
+    --popover: 240 10% 15%;
+    --popover-foreground: 240 10% 95%;
 
-    --primary: 139 92 246;
-    --primary-foreground: 8 8 12;
+    --primary: 256 56% 57%;
+    --primary-foreground: 240 10% 98%;
 
-    --secondary: 30 30 40;
-    --secondary-foreground: 250 250 250;
+    --secondary: 254 87% 76%;
+    --secondary-foreground: 240 10% 5%;
 
-    --muted: 25 25 35;
-    --muted-foreground: 161 161 170;
+    --muted: 240 10% 25%;
+    --muted-foreground: 240 10% 75%;
 
-    --accent: 251 146 60;
-    --accent-foreground: 8 8 12;
+    --accent: 168 89% 52%;
+    --accent-foreground: 240 10% 5%;
 
-    --destructive: 239 68 68;
-    --destructive-foreground: 250 250 250;
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 240 10% 98%;
 
-    --border: 39 39 42;
-    --input: 39 39 42;
-    --ring: 139 92 246;
+    --border: 240 10% 20%;
+    --input: 240 10% 20%;
+    --ring: 256 56% 57%;
 
-    --sidebar-background: 12 12 18;
-    --sidebar-foreground: 228 228 231;
-    --sidebar-primary: 139 92 246;
-    --sidebar-primary-foreground: 8 8 12;
-    --sidebar-accent: 20 20 28;
-    --sidebar-accent-foreground: 228 228 231;
-    --sidebar-border: 20 20 28;
-    --sidebar-ring: 139 92 246;
-    
-    /* Premium dark mode shadows */
-    --premium-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(139, 92, 246, 0.1);
-    --premium-glow: 0 0 0 1px rgba(139, 92, 246, 0.15), 0 4px 12px rgba(139, 92, 246, 0.2);
+    --sidebar-background: 240 10% 5%;
+    --sidebar-foreground: 240 10% 85%;
+    --sidebar-primary: 256 56% 57%;
+    --sidebar-primary-foreground: 240 10% 98%;
+    --sidebar-accent: 240 10% 15%;
+    --sidebar-accent-foreground: 240 10% 95%;
+    --sidebar-border: 240 10% 15%;
+    --sidebar-ring: 256 56% 57%;
     
     /* Tooltip styling for dark mode */
-    --tooltip-background: 15 15 20;
-    --tooltip-foreground: 250 250 250;
-    --tooltip-border: 39 39 42;
+    --tooltip-background: 240 10% 15%;
+    --tooltip-foreground: 240 10% 98%;
+    --tooltip-border: 240 10% 30%;
   }
 }
 
@@ -125,47 +107,19 @@
 
 @layer components {
   .iqube-gradient {
-    @apply bg-gradient-to-r from-purple-600 via-purple-500 to-orange-500 bg-[length:300%_100%] animate-gradient-flow;
+    @apply bg-gradient-to-r from-iqube-primary via-iqube-secondary to-iqube-accent bg-[length:300%_100%] animate-gradient-flow;
   }
 
   .iqube-card {
-    background-color: rgba(255, 255, 255, 0.95);
-    backdrop-filter: blur(4px);
-    border: 1px solid rgba(228, 228, 231, 0.5);
-    border-radius: 8px;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-  }
-
-  .premium-card {
-    background-color: rgba(255, 255, 255, 0.98);
-    border: 1px solid rgba(228, 228, 231, 0.3);
-    border-radius: 8px;
-    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
-    transition: all 0.3s ease;
-  }
-
-  .dark .premium-card {
-    background-color: rgba(15, 15, 20, 0.98);
-    border-color: rgba(39, 39, 42, 0.3);
-  }
-
-  .premium-card:hover {
-    box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.15), 0 4px 12px rgba(139, 92, 246, 0.2);
-    transform: translateY(-1px);
+    @apply bg-card/80 backdrop-blur-sm border border-border/50 shadow-md rounded-lg;
   }
 
   .agent-message {
-    @apply p-4 rounded-lg my-2 text-foreground;
-    background-color: rgba(139, 92, 246, 0.03);
-    border: 1px solid rgba(139, 92, 246, 0.1);
-    box-shadow: 0 1px 3px rgba(139, 92, 246, 0.05);
+    @apply p-4 rounded-lg my-2 bg-iqube-primary/15 border border-iqube-primary/30 text-foreground;
   }
 
   .user-message {
-    @apply p-4 rounded-lg my-2 text-foreground;
-    background-color: rgba(251, 146, 60, 0.03);
-    border: 1px solid rgba(251, 146, 60, 0.1);
-    box-shadow: 0 1px 3px rgba(251, 146, 60, 0.05);
+    @apply p-4 rounded-lg my-2 bg-iqube-accent/15 border border-iqube-accent/30 text-foreground;
   }
 
   .score-badge {
@@ -173,101 +127,40 @@
   }
 
   .score-low {
-    @apply bg-green-500/20 text-green-600 border border-green-500/30;
+    @apply bg-green-500/20 text-green-500 border border-green-500/30;
   }
 
   .score-medium {
-    @apply bg-yellow-500/20 text-yellow-600 border border-yellow-500/30;
+    @apply bg-yellow-500/20 text-yellow-500 border border-yellow-500/30;
   }
 
   .score-high {
-    @apply bg-red-500/20 text-red-600 border border-red-500/30;
+    @apply bg-red-500/20 text-red-500 border border-red-500/30;
   }
 
-  /* Premium button styles */
-  .premium-button {
-    @apply bg-purple-600 hover:bg-purple-700 text-white font-medium px-4 py-2 rounded-lg transition-all duration-300;
-    box-shadow: 0 1px 3px rgba(91, 33, 182, 0.2);
+  /* Light theme specific */
+  .light .agent-message {
+    @apply bg-iqube-primary/10 border-iqube-primary/20;
   }
 
-  .premium-button:hover {
-    box-shadow: 0 4px 12px rgba(91, 33, 182, 0.25);
-    transform: translateY(-1px);
+  .light .user-message {
+    @apply bg-iqube-accent/10 border-iqube-accent/20;
   }
 
-  .premium-button-outline {
-    @apply border border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white font-medium px-4 py-2 rounded-lg transition-all duration-300;
-  }
-
-  .accent-button {
-    @apply bg-orange-500 hover:bg-orange-600 text-white font-medium px-4 py-2 rounded-lg transition-all duration-300;
-    box-shadow: 0 1px 3px rgba(251, 146, 60, 0.2);
-  }
-
-  .accent-button:hover {
-    box-shadow: 0 4px 12px rgba(251, 146, 60, 0.25);
-    transform: translateY(-1px);
-  }
-
-  /* Dark theme adjustments */
-  .dark .iqube-card {
-    background-color: rgba(15, 15, 20, 0.95);
-    border-color: rgba(39, 39, 42, 0.2);
+  .light .iqube-card {
+    @apply bg-card/90 border-border/30;
   }
   
-  /* Tooltip styles enhancement */
+  /* Tooltip styles enhancement - explicitly define tooltip styling */
   [role="tooltip"] {
-    @apply bg-popover text-popover-foreground border border-border shadow-lg z-50 rounded-md;
+    @apply bg-popover text-popover-foreground border border-border shadow-md z-50;
     @apply visible opacity-100;
   }
   
+  /* Extra styling to ensure tooltips are visible */
   .RadixTooltip--content {
     z-index: 50 !important;
     visibility: visible !important;
     opacity: 1 !important;
-  }
-
-  /* QryptoCOYN specific premium styles */
-  .primary-purple {
-    color: hsl(var(--primary-purple));
-  }
-
-  .primary-orange {
-    color: hsl(var(--primary-orange));
-  }
-
-  .qrypto-gradient {
-    @apply bg-gradient-to-r from-purple-600 to-orange-500 inline-block text-transparent bg-clip-text font-semibold;
-  }
-
-  .qrypto-gradient-bg {
-    background: linear-gradient(to right, rgba(139, 92, 246, 0.05), rgba(251, 146, 60, 0.05));
-  }
-
-  .qrypto-button {
-    @apply bg-purple-600 hover:bg-orange-500 transition-all duration-300 text-white font-medium;
-    box-shadow: 0 1px 3px rgba(139, 92, 246, 0.2);
-  }
-
-  .qrypto-button:hover {
-    box-shadow: 0 4px 12px rgba(251, 146, 60, 0.25);
-  }
-
-  .qrypto-border {
-    @apply border-purple-600 hover:border-orange-500 transition-colors duration-300;
-  }
-
-  /* Premium interactive elements */
-  .premium-hover {
-    @apply transition-all duration-300 hover:shadow-md;
-  }
-
-  .premium-hover:hover {
-    box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.15), 0 4px 12px rgba(139, 92, 246, 0.2);
-    transform: translateY(-1px);
-  }
-
-  .premium-focus {
-    @apply focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-600/50;
   }
 }

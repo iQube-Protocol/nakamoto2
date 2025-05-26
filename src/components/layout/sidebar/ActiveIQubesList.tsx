@@ -37,28 +37,28 @@ const ActiveIQubesList: React.FC<ActiveIQubesListProps> = ({
       
       {/* Active iQubes list */}
       <div className="space-y-1">
-        {activeQubes["Nakamoto"] && (
+        {activeQubes["MonDAI"] && (
           <div
             className={cn(
-              "flex items-center rounded-md p-2 text-sm hover:bg-primary-purple/10 cursor-pointer transition-colors",
+              "flex items-center rounded-md p-2 text-sm hover:bg-accent/30 cursor-pointer",
               collapsed ? "justify-center" : ""
             )}
             onClick={() => {
-              onIQubeClick("Nakamoto");
+              onIQubeClick("MonDAI");
               if (isMobile && toggleMobileSidebar) {
                 toggleMobileSidebar();
               }
             }}
           >
-            <Database className={cn("h-5 w-5 text-primary-purple", collapsed ? "" : "mr-2")} />
-            {!collapsed && <span>Nakamoto</span>}
+            <Database className={cn("h-5 w-5 text-blue-500", collapsed ? "" : "mr-2")} />
+            {!collapsed && <span>MonDAI</span>}
           </div>
         )}
         
         {activeQubes["Metis"] && (
           <div
             className={cn(
-              "flex items-center justify-between rounded-md p-2 text-sm hover:bg-primary-orange/10 cursor-pointer group transition-colors",
+              "flex items-center justify-between rounded-md p-2 text-sm hover:bg-accent/30 cursor-pointer group",
               collapsed ? "justify-center" : ""
             )}
             onClick={() => {
@@ -69,7 +69,7 @@ const ActiveIQubesList: React.FC<ActiveIQubesListProps> = ({
             }}
           >
             <div className="flex items-center">
-              <Bot className={cn("h-5 w-5 text-primary-orange", collapsed ? "" : "mr-2")} />
+              <Bot className={cn("h-5 w-5 text-purple-500", collapsed ? "" : "mr-2")} />
               {!collapsed && <span>Metis</span>}
             </div>
             {!collapsed && onCloseIQube && (
