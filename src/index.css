@@ -129,33 +129,43 @@
   }
 
   .iqube-card {
-    @apply bg-card/95 backdrop-blur-sm border border-border/50 shadow-md rounded-lg;
-    box-shadow: var(--premium-shadow);
+    background-color: rgba(255, 255, 255, 0.95);
+    backdrop-filter: blur(4px);
+    border: 1px solid rgba(228, 228, 231, 0.5);
+    border-radius: 8px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
   }
 
   .premium-card {
-    @apply bg-card/98 border border-border/30 rounded-lg;
-    box-shadow: var(--premium-shadow);
+    background-color: rgba(255, 255, 255, 0.98);
+    border: 1px solid rgba(228, 228, 231, 0.3);
+    border-radius: 8px;
+    box-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
     transition: all 0.3s ease;
   }
 
+  .dark .premium-card {
+    background-color: rgba(15, 15, 20, 0.98);
+    border-color: rgba(39, 39, 42, 0.3);
+  }
+
   .premium-card:hover {
-    box-shadow: var(--premium-glow);
+    box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.15), 0 4px 12px rgba(139, 92, 246, 0.2);
     transform: translateY(-1px);
   }
 
   .agent-message {
     @apply p-4 rounded-lg my-2 text-foreground;
-    background-color: rgba(139, 92, 246, 0.05);
-    border: 1px solid rgba(139, 92, 246, 0.15);
-    box-shadow: 0 1px 3px rgba(139, 92, 246, 0.1);
+    background-color: rgba(139, 92, 246, 0.03);
+    border: 1px solid rgba(139, 92, 246, 0.1);
+    box-shadow: 0 1px 3px rgba(139, 92, 246, 0.05);
   }
 
   .user-message {
     @apply p-4 rounded-lg my-2 text-foreground;
-    background-color: rgba(251, 146, 60, 0.05);
-    border: 1px solid rgba(251, 146, 60, 0.15);
-    box-shadow: 0 1px 3px rgba(251, 146, 60, 0.1);
+    background-color: rgba(251, 146, 60, 0.03);
+    border: 1px solid rgba(251, 146, 60, 0.1);
+    box-shadow: 0 1px 3px rgba(251, 146, 60, 0.05);
   }
 
   .score-badge {
@@ -199,19 +209,10 @@
     transform: translateY(-1px);
   }
 
-  /* Light theme specific */
-  .light .agent-message {
-    background-color: rgba(139, 92, 246, 0.03);
-    border-color: rgba(139, 92, 246, 0.1);
-  }
-
-  .light .user-message {
-    background-color: rgba(251, 146, 60, 0.03);
-    border-color: rgba(251, 146, 60, 0.1);
-  }
-
-  .light .iqube-card {
-    @apply bg-white/90 border-border/20;
+  /* Dark theme adjustments */
+  .dark .iqube-card {
+    background-color: rgba(15, 15, 20, 0.95);
+    border-color: rgba(39, 39, 42, 0.2);
   }
   
   /* Tooltip styles enhancement */
@@ -262,7 +263,7 @@
   }
 
   .premium-hover:hover {
-    box-shadow: var(--premium-glow);
+    box-shadow: 0 0 0 1px rgba(139, 92, 246, 0.15), 0 4px 12px rgba(139, 92, 246, 0.2);
     transform: translateY(-1px);
   }
 
