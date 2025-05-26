@@ -76,7 +76,7 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps> = ({
         </TabsContent>
       </div>
 
-      {/* Input bar moved outside of tabs, always visible */}
+      {/* Input bar moved outside of tabs, always visible with improved mobile support */}
       <div className="mt-auto">
         <AgentInputBar
           inputValue={inputValue}

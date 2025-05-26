@@ -13,11 +13,17 @@ export const useMessageInput = () => {
   };
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>, handleSubmit: (e: React.FormEvent) => void) => {
+    // Improved mobile keyboard handling
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       if (inputValue.trim()) {
-        const formEvent = new Event('submit', { bubbles: true, cancelable: true }) as unknown as React.FormEvent;
-        handleSubmit(formEvent);
+        // Create a synthetic form event
+        const syntheticEvent = {
+          preventDefault: () => {},
+          currentTarget: e.currentTarget.form,
+          target: e.currentTarget.form,
+        } as React.FormEvent;
+        handleSubmit(syntheticEvent);
       }
     }
   };

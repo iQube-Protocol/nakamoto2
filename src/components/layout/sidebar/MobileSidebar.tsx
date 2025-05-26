@@ -12,17 +12,19 @@ const MobileSidebar = ({ mobileOpen, toggleMobileSidebar, children }: MobileSide
   return (
     <div
       className={cn(
-        "fixed inset-0 bg-background/80 backdrop-blur-sm z-40 transition-opacity duration-300",
+        "fixed inset-0 bg-background/80 backdrop-blur-sm z-40 transition-opacity duration-300 md:hidden",
         mobileOpen ? "opacity-100" : "opacity-0 pointer-events-none"
       )}
       onClick={toggleMobileSidebar}
+      style={{ touchAction: 'manipulation' }} // Improve touch responsiveness
     >
       <div
         className={cn(
-          "absolute left-0 top-0 h-full transition-transform duration-300 bg-sidebar",
+          "absolute left-0 top-0 h-full w-80 max-w-[85vw] transition-transform duration-300 bg-sidebar shadow-lg",
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         )}
         onClick={(e) => e.stopPropagation()}
+        style={{ touchAction: 'manipulation' }}
       >
         {children}
       </div>
