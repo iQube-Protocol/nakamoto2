@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Input } from '@/components/ui/input';
@@ -81,10 +80,10 @@ const QryptoCOYNKnowledgeBase = () => {
                 <Badge 
                   key={keyword} 
                   variant="secondary" 
-                  className={`text-xs rounded-md px-2 py-1 ${
+                  className={`text-xs rounded-md px-2 py-1 transition-colors ${
                     knowledgeBase === 'Qrypto COYN' 
-                      ? 'bg-orange-50 text-orange-700 border-orange-200' 
-                      : ''
+                      ? 'bg-orange-100 text-orange-700 border-orange-200 hover:bg-orange-200 hover:text-orange-800' 
+                      : 'hover:bg-secondary/80'
                   }`}
                 >
                   {keyword}
