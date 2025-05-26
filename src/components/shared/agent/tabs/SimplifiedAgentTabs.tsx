@@ -3,6 +3,7 @@ import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ChatTab from './ChatTab';
 import KnowledgeBase from '../KnowledgeBase';
+import QryptoCOYNKnowledgeBase from '@/components/mondai/QryptoCOYNKnowledgeBase';
 import AgentInputBar from '../AgentInputBar';
 import { AgentMessage } from '@/lib/types';
 
@@ -72,7 +73,11 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps> = ({
         </TabsContent>
 
         <TabsContent value="knowledge" className="h-full m-0 p-4 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col flex-1">
-          <KnowledgeBase agentType={knowledgeBaseAgentType} />
+          {agentType === 'mondai' ? (
+            <QryptoCOYNKnowledgeBase />
+          ) : (
+            <KnowledgeBase agentType={knowledgeBaseAgentType} />
+          )}
         </TabsContent>
       </div>
 
