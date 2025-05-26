@@ -34,7 +34,7 @@ const AuthLayout = ({
               <span className="text-4xl font-bold">M</span>
             </div>
           </div>
-          <h1 className="text-4xl font-bold mb-4 text-center">Aigent MonDAI</h1>
+          <h1 className="text-4xl font-bold mb-4 text-center">Aigent Nakamoto</h1>
           <p className="text-xl opacity-80 max-w-lg text-center">
             Your secure and privacy-focused gateway to Web3 communities
           </p>
