@@ -58,20 +58,22 @@ const SimplifiedAgentInterface = ({
         isProcessing={isProcessing} 
       />
 
-      <SimplifiedAgentTabs
-        activeTab={activeTab}
-        setActiveTab={setActiveTab}
-        messages={messages}
-        inputValue={inputValue}
-        isProcessing={isProcessing}
-        playing={playing}
-        agentType={agentType}
-        messagesEndRef={messagesEndRef}
-        conversationId={conversationId}
-        handleInputChange={handleInputChange}
-        handleSubmit={handleSubmit}
-        handlePlayAudio={handlePlayAudio}
-      />
+      <div className="flex-1 overflow-hidden">
+        <SimplifiedAgentTabs
+          activeTab={activeTab}
+          setActiveTab={setActiveTab}
+          messages={messages}
+          inputValue={inputValue}
+          isProcessing={isProcessing}
+          playing={playing}
+          agentType={agentType}
+          messagesEndRef={messagesEndRef}
+          conversationId={conversationId}
+          handleInputChange={handleInputChange}
+          handleSubmit={handleSubmit}
+          handlePlayAudio={handlePlayAudio}
+        />
+      </div>
     </Card>
   );
 };
