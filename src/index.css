@@ -55,8 +55,8 @@
     --warm-orange: 253 186 116;
     
     /* Premium styling */
-    --premium-shadow: 0 8px 25px -8px rgba(91, 33, 182, 0.2), 0 4px 12px -4px rgba(91, 33, 182, 0.1);
-    --premium-glow: 0 0 0 1px rgba(91, 33, 182, 0.08), 0 0 32px rgba(91, 33, 182, 0.15);
+    --premium-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -1px rgba(0, 0, 0, 0.06);
+    --premium-glow: 0 0 0 1px rgba(91, 33, 182, 0.1), 0 4px 12px rgba(91, 33, 182, 0.1);
     
     /* Tooltip styling for light mode */
     --tooltip-background: 255 255 255;
@@ -103,8 +103,8 @@
     --sidebar-ring: 139 92 246;
     
     /* Premium dark mode shadows */
-    --premium-shadow: 0 8px 25px -8px rgba(0, 0, 0, 0.4), 0 4px 12px -4px rgba(139, 92, 246, 0.2);
-    --premium-glow: 0 0 0 1px rgba(139, 92, 246, 0.12), 0 0 32px rgba(139, 92, 246, 0.25);
+    --premium-shadow: 0 4px 6px -1px rgba(0, 0, 0, 0.2), 0 2px 4px -1px rgba(139, 92, 246, 0.1);
+    --premium-glow: 0 0 0 1px rgba(139, 92, 246, 0.15), 0 4px 12px rgba(139, 92, 246, 0.2);
     
     /* Tooltip styling for dark mode */
     --tooltip-background: 15 15 20;
@@ -125,16 +125,16 @@
 
 @layer components {
   .iqube-gradient {
-    @apply bg-gradient-to-r from-purple-700 via-purple-500 to-orange-600 bg-[length:300%_100%] animate-gradient-flow;
+    @apply bg-gradient-to-r from-purple-600 via-purple-500 to-orange-500 bg-[length:300%_100%] animate-gradient-flow;
   }
 
   .iqube-card {
-    @apply bg-card/90 backdrop-blur-sm border border-border/50 shadow-lg rounded-lg;
+    @apply bg-card/95 backdrop-blur-sm border border-border/50 shadow-md rounded-lg;
     box-shadow: var(--premium-shadow);
   }
 
   .premium-card {
-    @apply bg-card border border-border/50 rounded-lg;
+    @apply bg-card/98 border border-border/30 rounded-lg;
     box-shadow: var(--premium-shadow);
     transition: all 0.3s ease;
   }
@@ -146,16 +146,16 @@
 
   .agent-message {
     @apply p-4 rounded-lg my-2 text-foreground;
-    background-color: rgba(91, 33, 182, 0.1);
-    border: 1px solid rgba(91, 33, 182, 0.2);
-    box-shadow: 0 2px 8px rgba(91, 33, 182, 0.1);
+    background-color: rgba(139, 92, 246, 0.05);
+    border: 1px solid rgba(139, 92, 246, 0.15);
+    box-shadow: 0 1px 3px rgba(139, 92, 246, 0.1);
   }
 
   .user-message {
     @apply p-4 rounded-lg my-2 text-foreground;
-    background-color: rgba(194, 65, 12, 0.1);
-    border: 1px solid rgba(194, 65, 12, 0.2);
-    box-shadow: 0 2px 8px rgba(194, 65, 12, 0.1);
+    background-color: rgba(251, 146, 60, 0.05);
+    border: 1px solid rgba(251, 146, 60, 0.15);
+    box-shadow: 0 1px 3px rgba(251, 146, 60, 0.1);
   }
 
   .score-badge {
@@ -176,42 +176,42 @@
 
   /* Premium button styles */
   .premium-button {
-    @apply bg-purple-700 hover:bg-purple-700/90 text-white font-medium px-4 py-2 rounded-lg transition-all duration-300;
-    box-shadow: 0 2px 4px rgba(91, 33, 182, 0.2);
+    @apply bg-purple-600 hover:bg-purple-700 text-white font-medium px-4 py-2 rounded-lg transition-all duration-300;
+    box-shadow: 0 1px 3px rgba(91, 33, 182, 0.2);
   }
 
   .premium-button:hover {
-    box-shadow: 0 4px 12px rgba(91, 33, 182, 0.3);
+    box-shadow: 0 4px 12px rgba(91, 33, 182, 0.25);
     transform: translateY(-1px);
   }
 
   .premium-button-outline {
-    @apply border-2 border-purple-700 text-purple-700 hover:bg-purple-700 hover:text-white font-medium px-4 py-2 rounded-lg transition-all duration-300;
+    @apply border border-purple-600 text-purple-600 hover:bg-purple-600 hover:text-white font-medium px-4 py-2 rounded-lg transition-all duration-300;
   }
 
   .accent-button {
-    @apply bg-orange-600 hover:bg-orange-600/90 text-white font-medium px-4 py-2 rounded-lg transition-all duration-300;
-    box-shadow: 0 2px 4px rgba(194, 65, 12, 0.2);
+    @apply bg-orange-500 hover:bg-orange-600 text-white font-medium px-4 py-2 rounded-lg transition-all duration-300;
+    box-shadow: 0 1px 3px rgba(251, 146, 60, 0.2);
   }
 
   .accent-button:hover {
-    box-shadow: 0 4px 12px rgba(194, 65, 12, 0.3);
+    box-shadow: 0 4px 12px rgba(251, 146, 60, 0.25);
     transform: translateY(-1px);
   }
 
   /* Light theme specific */
   .light .agent-message {
-    background-color: rgba(91, 33, 182, 0.08);
-    border-color: rgba(91, 33, 182, 0.15);
+    background-color: rgba(139, 92, 246, 0.03);
+    border-color: rgba(139, 92, 246, 0.1);
   }
 
   .light .user-message {
-    background-color: rgba(194, 65, 12, 0.08);
-    border-color: rgba(194, 65, 12, 0.15);
+    background-color: rgba(251, 146, 60, 0.03);
+    border-color: rgba(251, 146, 60, 0.1);
   }
 
   .light .iqube-card {
-    @apply bg-white/95 border-border/20;
+    @apply bg-white/90 border-border/20;
   }
   
   /* Tooltip styles enhancement */
@@ -236,38 +236,37 @@
   }
 
   .qrypto-gradient {
-    @apply bg-gradient-to-r from-purple-700 to-orange-600 inline-block text-transparent bg-clip-text font-semibold;
+    @apply bg-gradient-to-r from-purple-600 to-orange-500 inline-block text-transparent bg-clip-text font-semibold;
   }
 
   .qrypto-gradient-bg {
-    background: linear-gradient(to right, rgba(91, 33, 182, 0.1), rgba(194, 65, 12, 0.1));
+    background: linear-gradient(to right, rgba(139, 92, 246, 0.05), rgba(251, 146, 60, 0.05));
   }
 
   .qrypto-button {
-    @apply bg-purple-700 hover:bg-orange-600 transition-all duration-300 text-white font-medium;
-    box-shadow: 0 2px 8px rgba(91, 33, 182, 0.2);
+    @apply bg-purple-600 hover:bg-orange-500 transition-all duration-300 text-white font-medium;
+    box-shadow: 0 1px 3px rgba(139, 92, 246, 0.2);
   }
 
   .qrypto-button:hover {
-    box-shadow: 0 4px 16px rgba(194, 65, 12, 0.3);
+    box-shadow: 0 4px 12px rgba(251, 146, 60, 0.25);
   }
 
   .qrypto-border {
-    @apply border-purple-700 hover:border-orange-600 transition-colors duration-300;
+    @apply border-purple-600 hover:border-orange-500 transition-colors duration-300;
   }
 
   /* Premium interactive elements */
   .premium-hover {
-    @apply transition-all duration-300 hover:shadow-lg;
+    @apply transition-all duration-300 hover:shadow-md;
   }
 
   .premium-hover:hover {
     box-shadow: var(--premium-glow);
-    transform: translateY(-2px);
+    transform: translateY(-1px);
   }
 
   .premium-focus {
-    @apply focus:outline-none focus:ring-2 focus:ring-offset-2;
-    box-shadow: 0 0 0 2px rgba(91, 33, 182, 0.5);
+    @apply focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-purple-600/50;
   }
 }
