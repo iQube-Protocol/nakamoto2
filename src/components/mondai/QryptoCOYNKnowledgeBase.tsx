@@ -9,11 +9,13 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from '@/components/ui/button';
 import { qryptoKB } from '@/services/qrypto-knowledge-base';
 import { metaKnytsKB } from '@/services/metaknyts-knowledge-base';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 const QryptoCOYNKnowledgeBase = () => {
   const [searchTerm, setSearchTerm] = useState('');
   const [activeTab, setActiveTab] = useState('both');
   const [selectedItem, setSelectedItem] = useState<any>(null);
+  const isMobile = useIsMobile();
 
   // Get all knowledge items
   const qryptoItems = qryptoKB.getAllKnowledge();
@@ -108,7 +110,7 @@ const QryptoCOYNKnowledgeBase = () => {
                     key={keyword} 
                     variant="secondary" 
                     className={`text-xs rounded-md px-2 py-1 transition-colors ${
-                      knowledgeBase === 'QryptoCOYN' 
+                      knowledgeBase === (isMobile ? 'COYN' : 'QryptoCOYN')
                         ? 'bg-orange-50 text-orange-600 border-orange-200 hover:bg-orange-100' 
                         : 'bg-violet-50 text-violet-600 border-violet-200 hover:bg-violet-100'
                     }`}
@@ -127,7 +129,7 @@ const QryptoCOYNKnowledgeBase = () => {
               </div>
               {item.connections && item.connections.length > 0 && (
                 <div className="mb-3 pt-2 border-t">
-                  <p className="text-xs text-gray-500 mb-1">Connected to QryptoCOYN concepts:</p>
+                  <p className="text-xs text-gray-500 mb-1">Connected to {isMobile ? 'COYN' : 'QryptoCOYN'} concepts:</p>
                   <div className="flex flex-wrap gap-1">
                     {item.connections.slice(0, 2).map((connection: string) => (
                       <Badge key={connection} variant="outline" className="text-xs rounded-md px-2 py-1 bg-rose-50 text-rose-600 border-rose-200">
@@ -176,8 +178,8 @@ const QryptoCOYNKnowledgeBase = () => {
         <Tabs value={activeTab} onValueChange={setActiveTab} className="h-full flex flex-col">
           <TabsList className="mx-4 mt-4 grid w-full grid-cols-3">
             <TabsTrigger value="both">Both ({bothTabCount})</TabsTrigger>
-            <TabsTrigger value="qrypto">QryptoCOYN ({filteredQryptoItems.length})</TabsTrigger>
-            <TabsTrigger value="metaknyts">mẹtaKnyts ({filteredMetaKnytsItems.length})</TabsTrigger>
+            <TabsTrigger value="qrypto">{isMobile ? 'COYN' : 'QryptoCOYN'} ({filteredQryptoItems.length})</TabsTrigger>
+            <TabsTrigger value="metaknyts">{isMobile ? 'KNYT' : 'mẹtaKnyts'} ({filteredMetaKnytsItems.length})</TabsTrigger>
           </TabsList>
 
           <div className="flex-1 overflow-y-auto p-4 pb-2">
@@ -185,14 +187,14 @@ const QryptoCOYNKnowledgeBase = () => {
               <div className="space-y-6">
                 {filteredQryptoItems.length > 0 && (
                   <div>
-                    <h3 className="font-semibold mb-3 text-orange-400 text-base">QryptoCOYN Factual Knowledge</h3>
-                    {renderKnowledgeItems(filteredQryptoItems, 'QryptoCOYN')}
+                    <h3 className="font-semibold mb-3 text-orange-400 text-base">{isMobile ? 'COYN' : 'QryptoCOYN'} Factual Knowledge</h3>
+                    {renderKnowledgeItems(filteredQryptoItems, isMobile ? 'COYN' : 'QryptoCOYN')}
                   </div>
                 )}
                 {filteredMetaKnytsItems.length > 0 && (
                   <div>
-                    <h3 className="font-semibold mb-3 text-violet-400 text-base">QryptoCOYN fictional lore: mẹtaKnyts</h3>
-                    {renderKnowledgeItems(filteredMetaKnytsItems, 'mẹtaKnyts')}
+                    <h3 className="font-semibold mb-3 text-violet-400 text-base">{isMobile ? 'COYN' : 'QryptoCOYN'} fictional lore: {isMobile ? 'KNYT' : 'mẹtaKnyts'}</h3>
+                    {renderKnowledgeItems(filteredMetaKnytsItems, isMobile ? 'KNYT' : 'mẹtaKnyts')}
                   </div>
                 )}
                 {filteredQryptoItems.length === 0 && filteredMetaKnytsItems.length === 0 && (
@@ -205,20 +207,20 @@ const QryptoCOYNKnowledgeBase = () => {
 
             <TabsContent value="qrypto" className="mt-0">
               {filteredQryptoItems.length > 0 ? (
-                renderKnowledgeItems(filteredQryptoItems, 'QryptoCOYN')
+                renderKnowledgeItems(filteredQryptoItems, isMobile ? 'COYN' : 'QryptoCOYN')
               ) : (
                 <p className="text-center text-gray-500 py-8">
-                  {searchTerm ? `No QryptoCOYN items found matching "${searchTerm}"` : 'No QryptoCOYN items available'}
+                  {searchTerm ? `No ${isMobile ? 'COYN' : 'QryptoCOYN'} items found matching "${searchTerm}"` : `No ${isMobile ? 'COYN' : 'QryptoCOYN'} items available`}
                 </p>
               )}
             </TabsContent>
 
             <TabsContent value="metaknyts" className="mt-0">
               {filteredMetaKnytsItems.length > 0 ? (
-                renderKnowledgeItems(filteredMetaKnytsItems, 'mẹtaKnyts')
+                renderKnowledgeItems(filteredMetaKnytsItems, isMobile ? 'KNYT' : 'mẹtaKnyts')
               ) : (
                 <p className="text-center text-gray-500 py-8">
-                  {searchTerm ? `No mẹtaKnyts items found matching "${searchTerm}"` : 'No mẹtaKnyts items available'}
+                  {searchTerm ? `No ${isMobile ? 'KNYT' : 'mẹtaKnyts'} items found matching "${searchTerm}"` : `No ${isMobile ? 'KNYT' : 'mẹtaKnyts'} items available`}
                 </p>
               )}
             </TabsContent>
