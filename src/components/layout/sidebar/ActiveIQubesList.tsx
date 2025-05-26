@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { Database, Bot, FolderGit2, ChevronLeft } from 'lucide-react';
+import { Database, Bot, ChevronLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import NavItem from './NavItem';
@@ -82,24 +82,6 @@ const ActiveIQubesList: React.FC<ActiveIQubesListProps> = ({
                 <ChevronLeft size={14} />
               </Button>
             )}
-          </div>
-        )}
-        
-        {activeQubes["GDrive"] && (
-          <div
-            className={cn(
-              "flex items-center rounded-md p-2 text-sm hover:bg-accent/30 cursor-pointer",
-              collapsed ? "justify-center" : ""
-            )}
-            onClick={() => {
-              onIQubeClick("GDrive");
-              if (isMobile && toggleMobileSidebar) {
-                toggleMobileSidebar();
-              }
-            }}
-          >
-            <FolderGit2 className={cn("h-5 w-5 text-green-500", collapsed ? "" : "mr-2")} />
-            {!collapsed && <span>GDrive</span>}
           </div>
         )}
       </div>

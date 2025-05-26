@@ -1,5 +1,5 @@
 
-import { LucideIcon, LayoutDashboard, Database, Settings, FolderGit2, Bot, User } from 'lucide-react';
+import { LucideIcon, Database, Settings, FolderGit2, Bot, User } from 'lucide-react';
 import CubeIcon from '../sidebar/CubeIcon';
 
 export interface NavItem {
@@ -10,11 +10,6 @@ export interface NavItem {
 }
 
 export const navItems: NavItem[] = [
-  {
-    name: 'Dashboard',
-    href: '/dashboard',
-    icon: LayoutDashboard,
-  },
   {
     name: 'MonDAI',
     href: '/mondai',
@@ -59,14 +54,6 @@ export const iQubeItems: QubeItem[] = [
     href: '/settings',
     description: 'Your AI assistant for learning',
   },
-  {
-    id: 'toolqube',
-    name: 'GDrive',
-    type: 'ToolQube',
-    icon: FolderGit2,
-    href: '/settings',
-    description: 'Connect your tools and resources',
-  },
 ];
 
 export const monDaiQubeData = {
@@ -83,4 +70,3 @@ export const metisQubeData = {
   type: 'Assistant',
   href: '/settings',
 };
-

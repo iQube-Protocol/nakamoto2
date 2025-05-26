@@ -31,7 +31,6 @@ const Sidebar = () => {
   const [activeIQubes, setActiveIQubes] = useState<{[key: string]: boolean}>({
     "MonDAI": true,
     "Metis": metisActivated,
-    "GDrive": false
   });
 
   // Update Metis state whenever metisActivated changes
