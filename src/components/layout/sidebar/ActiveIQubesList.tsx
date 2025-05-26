@@ -51,7 +51,7 @@ const ActiveIQubesList: React.FC<ActiveIQubesListProps> = ({
             }}
           >
             <Database className={cn("h-5 w-5 text-qrypto-primary", collapsed ? "" : "mr-2")} />
-            {!collapsed && <span>Nakamoto</span>}
+            {!collapsed && <span>Qrypto Persona</span>}
           </div>
         )}
         
