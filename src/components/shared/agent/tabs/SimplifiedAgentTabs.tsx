@@ -55,8 +55,8 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps> = ({
     >
       <div className="border-b px-4">
         <TabsList className="h-10">
-          <TabsTrigger value="chat" className="data-[state=active]:bg-iqube-primary/20">Chat</TabsTrigger>
-          <TabsTrigger value="knowledge" className="data-[state=active]:bg-iqube-primary/20">Knowledge Base</TabsTrigger>
+          <TabsTrigger value="chat" className="data-[state=active]:bg-qrypto-primary/20">Chat</TabsTrigger>
+          <TabsTrigger value="knowledge" className="data-[state=active]:bg-qrypto-primary/20">Knowledge Base</TabsTrigger>
         </TabsList>
       </div>
 

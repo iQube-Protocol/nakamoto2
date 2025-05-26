@@ -9,8 +9,8 @@ declare module '@/services/agent-service' {
   }
 }
 
-const Nakamoto = () => {
+const QryptoCOYN = () => {
   return <SimplifiedMonDAIInterface />;
 };
 
-export default Nakamoto;
+export default QryptoCOYN;

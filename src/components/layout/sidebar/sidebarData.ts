@@ -44,7 +44,7 @@ export const iQubeItems: QubeItem[] = [
     type: 'DataQube',
     icon: Database,
     href: '/settings',
-    description: 'Community agent',
+    description: 'Cryptocurrency AI agent',
   },
   {
     id: 'agentqube',

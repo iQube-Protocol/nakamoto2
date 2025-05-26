@@ -69,6 +69,12 @@ export default {
 					accent: '#FB923C',      // Orange accent
 					dark: '#1E1B4B',        // Dark purple
 					light: '#F3F4F6'        // Light background
+				},
+				// Legacy support for any remaining references
+				iqube: {
+					primary: '#8B5CF6',
+					secondary: '#A855F7',
+					accent: '#FB923C'
 				}
 			},
 			borderRadius: {

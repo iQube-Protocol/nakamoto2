@@ -28,8 +28,8 @@ const SimplifiedMonDAIInterface: React.FC = () => {
     };
   }, [isMobile]);
 
-  // Simplified welcome message for offline mode
-  const initialMessage = "Hello! I'm Nakamoto, your intelligent cryptocurrency and blockchain assistant. I'm here to help you learn about Web3, cryptocurrency, blockchain concepts, and more using my integrated knowledge base. I'll provide clear, concise explanations and can create visual diagrams for complex topics. What would you like to explore today?";
+  // Welcome message for Nakamoto
+  const initialMessage = "Hello! I'm Nakamoto, your intelligent cryptocurrency and blockchain companion powered by QryptoCOYN. I'm here to help you navigate the world of Web3, understand cryptocurrency concepts, analyze blockchain technologies, and explore decentralized finance. I can provide clear explanations, create visual diagrams for complex topics, and guide you through the evolving crypto landscape. What would you like to explore today?";
 
   return (
     <div className="container py-6 max-w-7xl mx-auto h-full agent-interface">
@@ -37,7 +37,7 @@ const SimplifiedMonDAIInterface: React.FC = () => {
         <div className="flex flex-col h-full">          
           <SimplifiedAgentInterface
             title="Nakamoto"
-            description="Your intelligent cryptocurrency companion"
+            description="Your intelligent cryptocurrency companion powered by QryptoCOYN"
             agentType="mondai" 
             onMessageSubmit={handleAIMessage}
             onDocumentAdded={handleDocumentContextUpdated}
@@ -52,7 +52,7 @@ const SimplifiedMonDAIInterface: React.FC = () => {
                 metadata: {
                   version: "1.0",
                   modelUsed: "gpt-4o",
-                  knowledgeSource: "Offline Knowledge Base"
+                  knowledgeSource: "QryptoCOYN Knowledge Base"
                 }
               }
             ]}
