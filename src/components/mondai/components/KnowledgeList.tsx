@@ -39,53 +39,55 @@ const KnowledgeList = ({
   const hasAnyItems = hasQryptoItems || hasMetaKnytsItems;
 
   return (
-    <ScrollArea className="flex-1 h-full">
-      <div className="p-4 pb-2">
-        {showBothSections ? (
-          <div className="space-y-6">
-            {hasQryptoItems && (
-              <div>
-                <h3 className="font-semibold mb-3 text-orange-400 text-base">
-                  {isMobile ? 'COYN' : 'QryptoCOYN'} Factual Knowledge
-                </h3>
-                {renderKnowledgeItems(filteredQryptoItems, isMobile ? 'COYN' : 'QryptoCOYN')}
-              </div>
-            )}
-            {hasMetaKnytsItems && (
-              <div>
-                <h3 className="font-semibold mb-3 text-violet-400 text-base">
-                  {isMobile ? 'COYN' : 'QryptoCOYN'} fictional lore: {isMobile ? 'KNYT' : 'mẹtaKnyts'}
-                </h3>
-                {renderKnowledgeItems(filteredMetaKnytsItems, isMobile ? 'KNYT' : 'mẹtaKnyts')}
-              </div>
-            )}
-            {!hasAnyItems && (
-              <p className="text-center text-gray-500 py-8">
-                No items found matching "{searchTerm}"
-              </p>
-            )}
-          </div>
-        ) : (
-          <div>
-            {hasQryptoItems && renderKnowledgeItems(filteredQryptoItems, isMobile ? 'COYN' : 'QryptoCOYN')}
-            {hasMetaKnytsItems && renderKnowledgeItems(filteredMetaKnytsItems, isMobile ? 'KNYT' : 'mẹtaKnyts')}
-            {!hasAnyItems && (
-              <p className="text-center text-gray-500 py-8">
-                {searchTerm ? (
-                  hasQryptoItems || filteredQryptoItems.length === 0 ? 
-                  `No ${isMobile ? 'KNYT' : 'mẹtaKnyts'} items found matching "${searchTerm}"` :
-                  `No ${isMobile ? 'COYN' : 'QryptoCOYN'} items found matching "${searchTerm}"`
-                ) : (
-                  hasQryptoItems || filteredQryptoItems.length === 0 ?
-                  `No ${isMobile ? 'KNYT' : 'mẹtaKnyts'} items available` :
-                  `No ${isMobile ? 'COYN' : 'QryptoCOYN'} items available`
-                )}
-              </p>
-            )}
-          </div>
-        )}
-      </div>
-    </ScrollArea>
+    <div className="flex-1 flex flex-col min-h-0">
+      <ScrollArea className="flex-1">
+        <div className="p-4 pb-2">
+          {showBothSections ? (
+            <div className="space-y-6">
+              {hasQryptoItems && (
+                <div>
+                  <h3 className="font-semibold mb-3 text-orange-400 text-base">
+                    {isMobile ? 'COYN' : 'QryptoCOYN'} Factual Knowledge
+                  </h3>
+                  {renderKnowledgeItems(filteredQryptoItems, isMobile ? 'COYN' : 'QryptoCOYN')}
+                </div>
+              )}
+              {hasMetaKnytsItems && (
+                <div>
+                  <h3 className="font-semibold mb-3 text-violet-400 text-base">
+                    {isMobile ? 'COYN' : 'QryptoCOYN'} fictional lore: {isMobile ? 'KNYT' : 'mẹtaKnyts'}
+                  </h3>
+                  {renderKnowledgeItems(filteredMetaKnytsItems, isMobile ? 'KNYT' : 'mẹtaKnyts')}
+                </div>
+              )}
+              {!hasAnyItems && (
+                <p className="text-center text-gray-500 py-8">
+                  No items found matching "{searchTerm}"
+                </p>
+              )}
+            </div>
+          ) : (
+            <div>
+              {hasQryptoItems && renderKnowledgeItems(filteredQryptoItems, isMobile ? 'COYN' : 'QryptoCOYN')}
+              {hasMetaKnytsItems && renderKnowledgeItems(filteredMetaKnytsItems, isMobile ? 'KNYT' : 'mẹtaKnyts')}
+              {!hasAnyItems && (
+                <p className="text-center text-gray-500 py-8">
+                  {searchTerm ? (
+                    hasQryptoItems || filteredQryptoItems.length === 0 ? 
+                    `No ${isMobile ? 'KNYT' : 'mẹtaKnyts'} items found matching "${searchTerm}"` :
+                    `No ${isMobile ? 'COYN' : 'QryptoCOYN'} items found matching "${searchTerm}"`
+                  ) : (
+                    hasQryptoItems || filteredQryptoItems.length === 0 ?
+                    `No ${isMobile ? 'KNYT' : 'mẹtaKnyts'} items available` :
+                    `No ${isMobile ? 'COYN' : 'QryptoCOYN'} items available`
+                  )}
+                </p>
+              )}
+            </div>
+          )}
+        </div>
+      </ScrollArea>
+    </div>
   );
 };
 
