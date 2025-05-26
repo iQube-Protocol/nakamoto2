@@ -18,9 +18,9 @@ const SidebarHeader: React.FC<SidebarHeaderProps> = ({ collapsed, toggleSidebar 
       collapsed ? "justify-center" : "justify-between"
     )}>
       {!collapsed ? (
-        <Link to="/mondai" className="flex items-center">
-          <Bot className="h-6 w-6 text-primary-purple mr-2" />
-          <h1 className="text-lg font-bold bg-gradient-to-r from-primary-purple to-primary-orange inline-block text-transparent bg-clip-text">
+        <Link to="/mondai" className="flex items-center group">
+          <Bot className="h-7 w-7 text-primary-purple mr-3 transition-colors duration-300 group-hover:text-primary-orange" />
+          <h1 className="text-xl font-bold qrypto-gradient tracking-wide">
             QryptoCOYN
           </h1>
         </Link>
@@ -28,11 +28,11 @@ const SidebarHeader: React.FC<SidebarHeaderProps> = ({ collapsed, toggleSidebar 
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Link to="/mondai">
-                <Bot className="h-6 w-6 text-primary-purple" />
+              <Link to="/mondai" className="group">
+                <Bot className="h-7 w-7 text-primary-purple transition-colors duration-300 group-hover:text-primary-orange" />
               </Link>
             </TooltipTrigger>
-            <TooltipContent side="right">
+            <TooltipContent side="right" className="font-medium">
               QryptoCOYN
             </TooltipContent>
           </Tooltip>
@@ -44,7 +44,10 @@ const SidebarHeader: React.FC<SidebarHeaderProps> = ({ collapsed, toggleSidebar 
         variant="ghost" 
         size="icon" 
         onClick={toggleSidebar}
-        className={collapsed ? "hidden" : ""}
+        className={cn(
+          "text-primary-purple hover:text-primary-orange hover:bg-primary-purple/10 transition-all duration-300",
+          collapsed ? "hidden" : ""
+        )}
       >
         {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
       </Button>

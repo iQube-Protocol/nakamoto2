@@ -51,7 +51,7 @@ const SimplifiedAgentInterface = ({
   });
 
   return (
-    <Card className="flex flex-col h-full overflow-hidden bg-gradient-to-br from-primary-purple/5 to-primary-orange/5 border-primary-purple/20">
+    <Card className="flex flex-col h-full overflow-hidden premium-card bg-gradient-to-br from-primary-purple/5 via-background to-primary-orange/5 border-primary-purple/20">
       <AgentHeader 
         title={title} 
         description={description} 
