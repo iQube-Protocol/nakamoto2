@@ -29,8 +29,8 @@ const SignIn = () => {
 
   return (
     <AuthLayout 
-      title="Welcome to MonDAI" 
-      subtitle="Sign in to your MonDAI account or create a new one"
+      title="Welcome to Nakamoto" 
+      subtitle="Sign in to your Nakamoto account or create a new one"
     >
       <Tabs defaultValue="sign-in" className="w-full">
         <TabsList className="grid w-full grid-cols-2 mb-4">
