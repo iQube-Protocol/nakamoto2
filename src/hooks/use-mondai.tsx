@@ -1,10 +1,10 @@
-
 import React from 'react';
 import { useToast } from '@/components/ui/use-toast';
 import { useAuth } from '@/hooks/use-auth';
 import { getConversationContext } from '@/services/agent-service';
 import { AgentMessage } from '@/lib/types';
 import { processMonDAIInteraction } from '@/services/mondai-service';
+import { generateAigentNakamotoResponse } from '@/services/qrypto-mondai-service';
 
 export function useMondAI() {
   const { toast: uiToast } = useToast();
@@ -57,21 +57,14 @@ export function useMondAI() {
 
   const handleAIMessage = async (message: string) => {
     try {
-      // Get conversation context, including history if available
-      const contextResult = await getConversationContext(conversationId, 'learn');
+      // Use the enhanced Qrypto COYN service
+      const response = await generateAigentNakamotoResponse(message, conversationId);
       
-      if (contextResult.conversationId !== conversationId) {
-        setConversationId(contextResult.conversationId);
-        console.log(`Setting new conversation ID: ${contextResult.conversationId}`);
+      // Update conversation ID if it changed
+      if (response.conversationId !== conversationId) {
+        setConversationId(response.conversationId);
+        console.log(`Setting new conversation ID: ${response.conversationId}`);
       }
-      
-      if (contextResult.historicalContext !== historicalContext) {
-        setHistoricalContext(contextResult.historicalContext);
-        console.log('Updated historical context for MonDAI agent');
-      }
-      
-      // Use our service to handle the message interaction
-      const response = await processMonDAIInteraction(message, contextResult.conversationId);
       
       // Return a properly formatted agent message
       return {

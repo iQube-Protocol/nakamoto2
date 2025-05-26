@@ -1,0 +1,171 @@
+
+export interface QryptoKnowledgeItem {
+  id: string;
+  title: string;
+  content: string;
+  section: string;
+  category: 'tokenomics' | 'protocols' | 'consensus' | 'economics' | 'mechanics' | 'technical';
+  keywords: string[];
+  timestamp: string;
+  source: string;
+}
+
+export class QryptoKnowledgeBase {
+  private static instance: QryptoKnowledgeBase;
+  private knowledgeItems: QryptoKnowledgeItem[] = [];
+
+  private constructor() {
+    this.initializeKnowledgeBase();
+  }
+
+  public static getInstance(): QryptoKnowledgeBase {
+    if (!QryptoKnowledgeBase.instance) {
+      QryptoKnowledgeBase.instance = new QryptoKnowledgeBase();
+    }
+    return QryptoKnowledgeBase.instance;
+  }
+
+  private initializeKnowledgeBase() {
+    // Initialize with the first batch of content
+    this.addKnowledgeItems([
+      {
+        id: 'qoyn-economy-fundamentals',
+        title: '$QOYN Economy Fundamentals',
+        content: `The $QOYN economy is underpinned by three protocols:
+        1. iQube Protocol - containerised information management protocol where information primitives and intelligence assets are dynamically curated, quantified and accessed by the level of risk associated with using them in specific contexts.
+        2. Aigent Protocol - iQube compliant AI agents from different platforms with verifiable metrics matched with curated precise datasets (iQubes) that accelerate time to value.
+        3. COYN Protocol - a data-as-an asset backed digital currency framework where currencies are accurately priced based on data risk and utility.`,
+        section: 'Ecosystem Fundamentals',
+        category: 'protocols',
+        keywords: ['iQube Protocol', 'Aigent Protocol', 'COYN Protocol', 'data-as-asset', 'risk'],
+        timestamp: new Date().toISOString(),
+        source: 'Qrypto COYN Tokenomics'
+      },
+      {
+        id: 'consensus-frameworks',
+        title: 'Three Consensus Frameworks',
+        content: `Three Consensus Frameworks underpin the three protocols:
+        1. Proof of Risk - Quantifies the risk associated with using a particular dataset in a particular context.
+        2. Proof of Price - Prices data based on cost to underwrite the risk associated with using it per Proof-of-risk; and from assessing the value anticipated by the buyer to be generated from it.
+        3. Proof of State - enables the state of iQubes and agents that use them to be immutably verified.`,
+        section: 'Consensus Frameworks',
+        category: 'consensus',
+        keywords: ['Proof of Risk', 'Proof of Price', 'Proof of State', 'PoR', 'PoP'],
+        timestamp: new Date().toISOString(),
+        source: 'Qrypto COYN Tokenomics'
+      },
+      {
+        id: 'iqubes-functionality',
+        title: 'iQubes Functionality',
+        content: `iQubes accurately quantify the risk and value associated with using specific datasets, content, tools, models and AI agents, in specific contexts with high levels of precision and granularity. They bring relevant and precise data to AI agents and vice versa. iQubes also bring precise and contextually relevant AI agents to datasets. E.g. a health care iQube can corral a swarm of health agents as a financial information iQube can coral TradFi and DeFi agents.`,
+        section: 'iQubes Core Functionality',
+        category: 'protocols',
+        keywords: ['iQubes', 'risk quantification', 'AI agents', 'datasets', 'contextual intelligence'],
+        timestamp: new Date().toISOString(),
+        source: 'Qrypto COYN Tokenomics'
+      },
+      {
+        id: 'tcm-model',
+        title: 'Techno Capital Machine (TCM) Model',
+        content: `The protocol uses the Techno Capital Machine Model (TCM) to reward users for staking three types of assets:
+        1. Capital - Capital providers are able to stake Ethereum or Bitcoin and earn yield from that stake in the form of Qrypto COYNs that are emitted on a daily basis pro rata
+        2. Compute - Compute providers are able to earn Qrypto COYN from contributing software and hardware to the iQube ecosystem for use by the ecosystem.
+        3. Content - Content providers are rewarded for staking data and content (i.e. rich media, IP etc) to the ecosystem for use by third parties.`,
+        section: 'Commercial Mechanics',
+        category: 'mechanics',
+        keywords: ['TCM', 'Techno Capital Machine', 'staking', 'Capital', 'Compute', 'Content'],
+        timestamp: new Date().toISOString(),
+        source: 'Qrypto COYN Tokenomics'
+      },
+      {
+        id: 'token-economics',
+        title: '$QOYN Token Economics',
+        content: `100M Qrypto COYN tokens will be minted and dispersed over a 10 year period at a rate of 10M Qrypto COYN tokens per year. 30% of emissions will be assigned to each of the three pillars everyday at a rate of 8,219 tokens per pillar per day. The remaining 10% will go to a Treasury pool that will be used to provide liquidity, buy back tokens and manage the network.`,
+        section: 'Inflationary Emission Schedule',
+        category: 'tokenomics',
+        keywords: ['$QOYN', 'token distribution', 'emissions', 'Treasury pool', '100M tokens'],
+        timestamp: new Date().toISOString(),
+        source: 'Qrypto COYN Tokenomics'
+      },
+      {
+        id: 'deflationary-mechanics',
+        title: 'Deflationary Mechanics',
+        content: `The 10% pool will be used also to acquire 10% of Qrypto COYN and convert 5% of emissions on a daily basis creating a deflationary mechanic intrinsic to the protocol. Marketplace Commissions (up to 30% fees) will generate revenue that will fund burns and staking. Dynamic Burns (e.g., 60–80% of fees) will offset inflation. Up to 30% APY Staking will lock supply.`,
+        section: 'Deflationary Mechanics',
+        category: 'tokenomics',
+        keywords: ['deflationary', 'burns', 'staking', 'APY', 'marketplace commissions'],
+        timestamp: new Date().toISOString(),
+        source: 'Qrypto COYN Tokenomics'
+      },
+      {
+        id: 'bitcoin-security',
+        title: 'Bitcoin-Secured iQubes',
+        content: `The $COYN and iQube protocols leverage Bitcoin's security by technically anchoring each iQube and $COYN to a Satoshi (1/100,000,000 BTC), providing both with Bitcoin's world-leading data security. However, though each iQube and $COYN is technically entangled with a Satoshi they are not economically pegged to it, giving both Bitcoin grade security without pegging their market value to BTC.`,
+        section: 'Bitcoin Security',
+        category: 'technical',
+        keywords: ['Bitcoin security', 'Satoshi', 'entanglement', 'TokenQube', 'security'],
+        timestamp: new Date().toISOString(),
+        source: 'Qrypto COYN Tokenomics'
+      },
+      {
+        id: 'proof-of-price-models',
+        title: 'Proof of Price Models',
+        content: `Data can be intrinsically priced from two perspectives:
+        1. Obtaining new data (Negative risk – Opportunity for a Gain): This implies that acquiring new data introduces an opportunity.
+        2. Losing existing data (Positive risk – Risk of a Loss): This perspective frames data loss as a risk with potentially adverse consequences.
+        Three models are being evaluated: Risk Model, Z-Score approach (Opportunity for Gain), and Z-Score approach (Risk of a Loss).`,
+        section: 'Proof of Price Framework',
+        category: 'economics',
+        keywords: ['Proof of Price', 'data pricing', 'risk models', 'Z-Score', 'opportunity cost'],
+        timestamp: new Date().toISOString(),
+        source: 'Qrypto COYN Tokenomics'
+      },
+      {
+        id: 'technical-architecture',
+        title: 'Technical Architecture',
+        content: `ICP Chain Fusion will be used to enable trust-minimized, decentralized interaction with Bitcoin, allowing ICP smart contracts to natively manage Bitcoin UTXOs. LayerZero will be used to enable secure and reliable cross-chain message passing between ICP, Bitcoin, and EVM blockchains.`,
+        section: 'Technical Implementation',
+        category: 'technical',
+        keywords: ['ICP Chain Fusion', 'LayerZero', 'cross-chain', 'Bitcoin UTXOs', 'EVM'],
+        timestamp: new Date().toISOString(),
+        source: 'COYN Requirements'
+      }
+    ]);
+  }
+
+  public addKnowledgeItems(items: QryptoKnowledgeItem[]) {
+    this.knowledgeItems.push(...items);
+  }
+
+  public searchKnowledge(query: string): QryptoKnowledgeItem[] {
+    const queryLower = query.toLowerCase();
+    const searchTerms = queryLower.split(' ');
+    
+    return this.knowledgeItems.filter(item => {
+      const searchableText = `${item.title} ${item.content} ${item.keywords.join(' ')}`.toLowerCase();
+      return searchTerms.some(term => 
+        searchableText.includes(term) ||
+        item.keywords.some(keyword => keyword.toLowerCase().includes(term))
+      );
+    }).sort((a, b) => {
+      // Sort by relevance - items with more keyword matches first
+      const aMatches = searchTerms.filter(term => 
+        `${a.title} ${a.content} ${a.keywords.join(' ')}`.toLowerCase().includes(term)
+      ).length;
+      const bMatches = searchTerms.filter(term => 
+        `${b.title} ${b.content} ${b.keywords.join(' ')}`.toLowerCase().includes(term)
+      ).length;
+      return bMatches - aMatches;
+    });
+  }
+
+  public getAllKnowledge(): QryptoKnowledgeItem[] {
+    return this.knowledgeItems;
+  }
+
+  public getKnowledgeByCategory(category: QryptoKnowledgeItem['category']): QryptoKnowledgeItem[] {
+    return this.knowledgeItems.filter(item => item.category === category);
+  }
+}
+
+export const qryptoKB = QryptoKnowledgeBase.getInstance();

@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { OpenAI } from 'https://esm.sh/openai@4.0.0';
@@ -98,27 +97,62 @@ Your tone is conversational, upbeat, and always encouraging — like a helpful f
 `;
 
 /**
- * Process the user's query with the OpenAI API
- * @param message User's message
- * @param knowledgeItems Relevant knowledge items
- * @param conversationId Conversation ID for continuity
- * @returns Processed response from the AI
+ * Default Aigent Nakamoto system prompt
+ */
+const DEFAULT_AIGENT_NAKAMOTO_SYSTEM_PROMPT = `
+## **Aigent Nakamoto: Crypto-Agentic AI for the QryptoCOYN Ecosystem**
+
+**<role-description>**
+You are Aigent Nakamoto, an AI agent specialized in the Qrypto COYN ecosystem. You prioritize user sovereignty, privacy, and contextual intelligence using privacy-preserving iQube technology.
+
+**<personality>**
+* **Knowledgeable** – You have deep understanding of the Qrypto COYN ecosystem, tokenomics, and crypto-agentic concepts.
+* **Approachable** – You speak in simple, clear, and encouraging language.
+* **Precise** – You provide accurate information with proper citations when referencing knowledge base content.
+* **Action-oriented** – You help users understand and engage with the Qrypto COYN ecosystem effectively.
+
+**<response-formatting>**
+Your responses MUST be:
+1. Concise and user-friendly - focus on clarity over verbosity
+2. Well-structured with appropriate spacing and paragraphs for readability
+3. Direct and to-the-point, avoiding unnecessary text
+4. Include proper citations when referencing knowledge base content
+5. Natural and conversational, not overly formal or robotic
+
+**<mermaid-diagrams>**
+When explaining complex Qrypto COYN processes, offer to create visual aids using Mermaid diagrams:
+
+\`\`\`mermaid
+diagram-code-here
+\`\`\`
+
+**<tone-guidance>**
+Your tone is conversational, upbeat, and encouraging - like a knowledgeable friend who understands Web3 and Qrypto COYN but explains things clearly.
+`;
+
+/**
+ * Process the user's query with enhanced context
  */
 async function processWithOpenAI(
   message: string,
   knowledgeItems: KnowledgeItem[] = [],
   conversationId: string,
-  historicalContext?: string
+  historicalContext?: string,
+  systemPrompt?: string,
+  qryptoKnowledgeContext?: string
 ): Promise<string> {
   const openai = new OpenAI({
     apiKey: Deno.env.get('OPENAI_API_KEY') || '',
   });
 
-  // Format knowledge items for the AI prompt
-  let knowledgeContext = '';
+  // Use provided system prompt or default
+  const finalSystemPrompt = systemPrompt || DEFAULT_AIGENT_NAKAMOTO_SYSTEM_PROMPT;
+
+  // Format general knowledge items for the AI prompt
+  let generalKnowledgeContext = '';
   if (knowledgeItems && knowledgeItems.length > 0) {
-    knowledgeContext = `
-### Knowledge Base Entries
+    generalKnowledgeContext = `
+### Additional Knowledge Base Entries
 ${knowledgeItems.map((item, index) => 
     `
 [Entry ${index + 1}]
@@ -127,8 +161,6 @@ Content: ${item.content}
 Type: ${item.type || 'General'}
 `
 ).join('\n')}
-
-Use the information above to inform your responses, summarize this knowledge - do not quote verbatim.
 `;
   }
 
@@ -137,12 +169,20 @@ Use the information above to inform your responses, summarize this knowledge - d
     `Previous conversation context:\n${historicalContext}\n\nContinue the conversation based on this history.` : 
     'This is a new conversation.';
 
+  // Combine all context
+  const fullContext = [
+    finalSystemPrompt,
+    contextPrompt,
+    qryptoKnowledgeContext || '',
+    generalKnowledgeContext
+  ].filter(Boolean).join('\n\n');
+
   const response = await openai.chat.completions.create({
-    model: "gpt-4o-mini", // Using gpt-4o-mini for cost efficiency, can be upgraded as needed
+    model: "gpt-4o-mini",
     messages: [
       { 
         role: "system", 
-        content: `${MONDAI_SYSTEM_PROMPT}\n\n${contextPrompt}\n\n${knowledgeContext}` 
+        content: fullContext
       },
       { 
         role: "user", 
@@ -170,7 +210,9 @@ async function processMonDAIInteraction(
   message: string, 
   conversationId: string | null,
   knowledgeItems: KnowledgeItem[] = [],
-  historicalContext?: string
+  historicalContext?: string,
+  systemPrompt?: string,
+  qryptoKnowledgeContext?: string
 ): Promise<MonDAIResponse> {
   // Generate a new conversation ID if none provided
   if (!conversationId) {
@@ -178,7 +220,14 @@ async function processMonDAIInteraction(
   }
   
   // Process with the OpenAI API
-  const aiResponse = await processWithOpenAI(message, knowledgeItems, conversationId, historicalContext);
+  const aiResponse = await processWithOpenAI(
+    message, 
+    knowledgeItems, 
+    conversationId, 
+    historicalContext,
+    systemPrompt,
+    qryptoKnowledgeContext
+  );
   
   // Detect if response contains a mermaid diagram
   const mermaidDiagramIncluded = detectMermaidDiagram(aiResponse);
@@ -193,7 +242,8 @@ async function processMonDAIInteraction(
     metadata: {
       version: "1.0",
       modelUsed: "gpt-4o-mini",
-      knowledgeSource: knowledgeItems.length > 0 ? "KBAI Knowledge Base" : "General Knowledge",
+      knowledgeSource: qryptoKnowledgeContext ? "Qrypto COYN Knowledge Base + AI" : 
+                      knowledgeItems.length > 0 ? "KBAI Knowledge Base" : "General Knowledge",
       itemsFound: knowledgeItems.length,
       visualsProvided,
       mermaidDiagramIncluded,
@@ -212,7 +262,14 @@ serve(async (req) => {
   }
   
   try {
-    const { message, conversationId, knowledgeItems, historicalContext } = await req.json();
+    const { 
+      message, 
+      conversationId, 
+      knowledgeItems, 
+      historicalContext,
+      systemPrompt,
+      qryptoKnowledgeContext
+    } = await req.json();
 
     if (!message) {
       return new Response(
@@ -226,12 +283,14 @@ serve(async (req) => {
       );
     }
 
-    // Process the message with the provided knowledge items (if any)
+    // Process the message with enhanced context
     const response = await processMonDAIInteraction(
       message, 
       conversationId, 
       knowledgeItems || [],
-      historicalContext
+      historicalContext,
+      systemPrompt,
+      qryptoKnowledgeContext
     );
 
     return new Response(
