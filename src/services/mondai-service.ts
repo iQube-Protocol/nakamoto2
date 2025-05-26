@@ -1,3 +1,4 @@
+
 import { getKBAIService } from '@/integrations/kbai/KBAIMCPService';
 import { getKBAIDirectService } from '@/integrations/kbai/KBAIDirectService';
 import { getConversationContext, processAgentInteraction } from '@/services/agent-service';
@@ -151,140 +152,6 @@ Use appropriate diagram types (flowchart, sequence, class, etc.) based on what y
 **<tone-guidance>**
 Your tone is conversational, upbeat, and always encouraging — like a helpful friend who knows the ropes of Web3 but never talks down. Use accessible language and avoid jargon unless necessary, and when you do use technical terms, briefly explain them.
 `;
-
-/**
- * Processes a user query and generates a MonDAI response using KBAI integration
- */
-export async function generateMonDAIResponse(
-  message: string, 
-  conversationId: string | null
-): Promise<MonDAIResponse> {
-  // Get conversation context if we have a conversationId
-  let contextResult;
-  if (conversationId) {
-    // Always use 'learn' for mondai backend requests
-    contextResult = await getConversationContext(conversationId, 'learn');
-    conversationId = contextResult.conversationId;
-  } else {
-    // Generate a new conversation ID
-    conversationId = crypto.randomUUID();
-  }
-
-  // Check if we're in fallback mode
-  const directService = getKBAIDirectService();
-  const isInFallbackMode = directService.isInFallbackMode();
-  const connectionStatus = directService.getConnectionStatus();
-
-  // Get relevant knowledge items for the message
-  let relevantKnowledgeItems: KBAIKnowledgeItem[] = [];
-  let knowledgeSource = "Offline Knowledge Base";
-  
-  try {
-    // First check if we're asking about MonDAI specifically
-    const isMonDAIQuery = message.toLowerCase().includes('mondai') || 
-                         message.toLowerCase().includes('aigent') ||
-                         message.toLowerCase().includes('crypto-agentic') ||
-                         message.toLowerCase().includes('iqubes');
-    
-    if (isInFallbackMode) {
-      console.log('Using direct fallback data for query', message);
-      // Get fallback items directly from KBAI direct service
-      relevantKnowledgeItems = await directService.fetchKnowledgeItems({
-        query: isMonDAIQuery ? 'mondai' : message, // Force mondai items if it's a relevant query
-        limit: 5 // Increase limit for better context
-      });
-    } else {
-      // Try regular KBAI service first
-      const kbaiService = getKBAIService();
-      relevantKnowledgeItems = await kbaiService.fetchKnowledgeItems({
-        query: isMonDAIQuery ? 'mondai' : message, // Force mondai items if it's a relevant query
-        limit: 5 // Increase limit for better context
-      });
-      
-      // If connected, update knowledge source
-      if (kbaiService.getConnectionStatus() === 'connected') {
-        knowledgeSource = "KBAI MCP Direct";
-        console.log('Successfully retrieved information from KBAI');
-      }
-    }
-    
-    console.log(`Found ${relevantKnowledgeItems.length} relevant knowledge items for query`);
-    
-    // Debug log the knowledge items
-    if (relevantKnowledgeItems.length > 0) {
-      console.log('Sample knowledge item:', {
-        title: relevantKnowledgeItems[0].title,
-        type: relevantKnowledgeItems[0].type,
-        contentLength: relevantKnowledgeItems[0].content.length
-      });
-    }
-  } catch (error) {
-    console.warn('Error fetching knowledge items:', error);
-    // Don't show error toast, just use fallback
-  }
-
-  try {
-    // Try to call the mondai-ai function with knowledge items
-    const { data, error } = await supabase.functions.invoke('mondai-ai', {
-      body: { 
-        message, 
-        conversationId,
-        knowledgeItems: relevantKnowledgeItems,
-        historicalContext: contextResult?.historicalContext
-      }
-    });
-    
-    if (error) {
-      console.error('Error calling mondai-ai function:', error);
-      throw new Error(error.message);
-    }
-    
-    // Return the response from the edge function
-    return data;
-    
-  } catch (mondaiError) {
-    console.error('Error with mondai-ai function, falling back to learn-ai:', mondaiError);
-    
-    // Fallback to learn-ai with the MonDAI system prompt
-    try {
-      const { data, error } = await supabase.functions.invoke('learn-ai', {
-        body: { 
-          message, 
-          systemPrompt: MONDAI_SYSTEM_PROMPT,
-          conversationId,
-          historicalContext: contextResult?.historicalContext,
-          knowledgeItems: relevantKnowledgeItems
-        }
-      });
-      
-      if (error) {
-        console.error('Error calling learn-ai function as fallback:', error);
-        throw new Error(error.message);
-      }
-      
-      // Map learn-ai response format to MonDAI response format
-      return {
-        conversationId: data.conversationId || conversationId,
-        message: data.response || data.message,
-        timestamp: data.timestamp || new Date().toISOString(),
-        metadata: {
-          version: "1.0",
-          modelUsed: data.modelUsed || "gpt-4o",
-          knowledgeSource: knowledgeSource,
-          itemsFound: relevantKnowledgeItems.length,
-          connectionStatus,
-          isOffline: isInFallbackMode
-        }
-      };
-      
-    } catch (learnError) {
-      console.error('All AI function attempts failed:', learnError);
-      
-      // If both fail, use a very basic fallback response
-      return createBasicFallbackResponse(message, conversationId, relevantKnowledgeItems);
-    }
-  }
-}
 
 /**
  * Processes a user query and generates a Nakamoto response using KBAI integration
@@ -506,29 +373,6 @@ function summarizeKnowledgeItems(items: KBAIKnowledgeItem[]): string {
   });
   
   return summary.trim();
-}
-
-/**
- * Process a user message and generate a response, storing the interaction
- */
-export async function processMonDAIInteraction(
-  message: string,
-  conversationId: string | null
-) {
-  // Generate response using the service
-  const response = await generateMonDAIResponse(message, conversationId);
-  
-  // Store the interaction using the agent service - explicitly use 'learn' for mondai
-  await processAgentInteraction(
-    message,
-    'learn', // Always use 'learn' instead of 'mondai' for backend compatibility
-    response.message,
-    {
-      conversationId: response.conversationId
-    }
-  );
-  
-  return response;
 }
 
 /**
