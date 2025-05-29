@@ -1,36 +1,83 @@
+
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+
 const SplashPage = () => {
   const navigate = useNavigate();
-  return <div className="h-screen flex flex-col items-center justify-center bg-gradient-to-br from-qrypto-dark via-qrypto-primary to-qrypto-secondary">
-      <div className="container max-w-md text-center space-y-6 p-8">
-        <div className="mb-8">
-          <h1 className="text-5xl font-bold text-white mb-4">
-            QryptoCOYN
-          </h1>
-          <div className="w-16 h-1 bg-qrypto-accent mx-auto mb-6"></div>
-          <h2 className="text-2xl font-semibold text-qrypto-accent mb-2">
-            Aigent Nakamoto
-          </h2>
-          <p className="text-lg text-white/80">Your intelligent QryptoCOYN companion</p>
+
+  // Load Vimeo player script
+  useEffect(() => {
+    const script = document.createElement('script');
+    script.src = 'https://player.vimeo.com/api/player.js';
+    script.async = true;
+    document.head.appendChild(script);
+
+    return () => {
+      // Cleanup script on unmount
+      const existingScript = document.querySelector('script[src="https://player.vimeo.com/api/player.js"]');
+      if (existingScript) {
+        document.head.removeChild(existingScript);
+      }
+    };
+  }, []);
+
+  return (
+    <div className="h-screen flex flex-col bg-gradient-to-br from-qrypto-dark via-qrypto-primary to-qrypto-secondary">
+      <div className="container max-w-4xl mx-auto px-4 py-8 flex flex-col h-full">
+        {/* Video Section */}
+        <div className="flex-1 flex flex-col justify-center items-center space-y-8">
+          <div className="w-full max-w-3xl">
+            <div style={{ padding: '56.25% 0 0 0', position: 'relative' }}>
+              <iframe 
+                src="https://player.vimeo.com/video/1086475550?badge=0&autopause=0&player_id=0&app_id=58479" 
+                frameBorder="0" 
+                allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media" 
+                style={{ position: 'absolute', top: 0, left: 0, width: '100%', height: '100%' }} 
+                title="AIgent Nakamoto"
+                className="rounded-lg shadow-2xl"
+              />
+            </div>
+          </div>
+
+          {/* Title and Description */}
+          <div className="text-center space-y-4 max-w-2xl">
+            <h1 className="text-4xl md:text-5xl font-bold text-white">
+              QryptoCOYN
+            </h1>
+            <div className="w-16 h-1 bg-qrypto-accent mx-auto"></div>
+            <h2 className="text-xl md:text-2xl font-semibold text-qrypto-accent">
+              Aigent Nakamoto
+            </h2>
+            <p className="text-white/80 text-sm md:text-base">
+              Your intelligent QryptoCOYN companion
+            </p>
+          </div>
         </div>
-        
-        <p className="text-white/70 text-sm">Navigate the world of AI agents, iQubes and QryptoCOYN. Understand crypto-agentic concpts, and explore decentralized AI with your AI-powered assistant.</p>
-        
-        <div className="flex flex-col space-y-4 mt-8">
-          <Button onClick={() => navigate('/signin')} className="w-full bg-qrypto-accent hover:bg-qrypto-accent/90 text-white font-semibold py-3">
+
+        {/* Action Buttons */}
+        <div className="flex flex-col space-y-4 max-w-md mx-auto w-full pb-8">
+          <Button 
+            onClick={() => navigate('/signin')} 
+            className="w-full bg-qrypto-accent hover:bg-qrypto-accent/90 text-white font-semibold py-3"
+          >
             Get Started
           </Button>
-          <Button onClick={() => navigate('/mondai')} variant="outline" className="w-full border-white/30 text-white hover:bg-white/10">
+          <Button 
+            onClick={() => navigate('/mondai')} 
+            variant="outline" 
+            className="w-full border-white/30 text-white hover:bg-white/10"
+          >
             Try Nakamoto
           </Button>
         </div>
-        
-        <div className="text-xs text-white/50 mt-8">
+
+        <div className="text-xs text-white/50 text-center">
           Powered by advanced AI technology
         </div>
       </div>
-    </div>;
+    </div>
+  );
 };
+
 export default SplashPage;
