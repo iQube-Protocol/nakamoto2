@@ -1,6 +1,8 @@
+
 import React, { useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
+
 const SplashPage = () => {
   const navigate = useNavigate();
 
@@ -18,50 +20,127 @@ const SplashPage = () => {
       }
     };
   }, []);
-  return <div className="h-screen flex flex-col bg-gradient-to-br from-qrypto-dark via-qrypto-primary to-qrypto-secondary">
-      <div className="container max-w-4xl mx-auto px-4 py-8 flex flex-col h-full">
-        {/* Video Section */}
-        <div className="flex-1 flex flex-col justify-center items-center space-y-8">
-          <div className="w-full max-w-3xl">
+
+  return (
+    <div className="h-screen flex bg-gradient-to-br from-qrypto-dark via-qrypto-primary to-qrypto-secondary">
+      {/* Desktop/Landscape Layout */}
+      <div className="hidden lg:flex w-full">
+        {/* Video Section - Takes up most of the screen */}
+        <div className="flex-1 flex items-center justify-center p-4">
+          <div className="w-full max-w-5xl">
             <div style={{
-            padding: '56.25% 0 0 0',
-            position: 'relative'
-          }}>
-              <iframe src="https://player.vimeo.com/video/1086475550?badge=0&autopause=0&player_id=0&app_id=58479" frameBorder="0" allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media" style={{
-              position: 'absolute',
-              top: 0,
-              left: 0,
-              width: '100%',
-              height: '100%'
-            }} title="AIgent Nakamoto" className="rounded-lg shadow-2xl" />
+              padding: '56.25% 0 0 0',
+              position: 'relative'
+            }}>
+              <iframe 
+                src="https://player.vimeo.com/video/1086475550?badge=0&autopause=0&player_id=0&app_id=58479" 
+                frameBorder="0" 
+                allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media" 
+                style={{
+                  position: 'absolute',
+                  top: 0,
+                  left: 0,
+                  width: '100%',
+                  height: '100%'
+                }} 
+                title="AIgent Nakamoto" 
+                className="rounded-lg shadow-2xl" 
+              />
+            </div>
+          </div>
+        </div>
+
+        {/* Side Panel for Sign-in */}
+        <div className="w-80 flex flex-col justify-center items-center p-8 bg-black/20 backdrop-blur-sm">
+          <div className="text-center space-y-6 w-full">
+            <h2 className="text-2xl font-semibold text-qrypto-accent">
+              Aigent Nakamoto
+            </h2>
+            <p className="text-white/80 text-lg">Your iQube and COYN companion</p>
+            
+            <div className="flex flex-col space-y-4 w-full">
+              <Button 
+                onClick={() => navigate('/signin')} 
+                className="w-full bg-qrypto-accent hover:bg-qrypto-accent/90 text-white font-semibold py-3"
+              >
+                Get Started
+              </Button>
+              <Button 
+                onClick={() => navigate('/mondai')} 
+                variant="outline" 
+                className="w-full border-white/30 text-white hover:bg-white/10"
+              >
+                Try Nakamoto
+              </Button>
+            </div>
+
+            <div className="text-xs text-white/50">
+              Powered by advanced AI technology
+            </div>
+          </div>
+        </div>
+      </div>
+
+      {/* Mobile/Portrait Layout */}
+      <div className="flex lg:hidden flex-col h-full">
+        <div className="container max-w-4xl mx-auto px-4 py-8 flex flex-col h-full">
+          {/* Video Section */}
+          <div className="flex-1 flex flex-col justify-center items-center space-y-8">
+            <div className="w-full max-w-3xl">
+              <div style={{
+                padding: '56.25% 0 0 0',
+                position: 'relative'
+              }}>
+                <iframe 
+                  src="https://player.vimeo.com/video/1086475550?badge=0&autopause=0&player_id=0&app_id=58479" 
+                  frameBorder="0" 
+                  allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media" 
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%'
+                  }} 
+                  title="AIgent Nakamoto" 
+                  className="rounded-lg shadow-2xl" 
+                />
+              </div>
+            </div>
+
+            {/* Title and Description */}
+            <div className="text-center space-y-4 max-w-2xl">
+              <h2 className="text-xl md:text-2xl font-semibold text-qrypto-accent">
+                Aigent Nakamoto
+              </h2>
+              <p className="text-white/80 text-sm md:text-lg">Your iQube and COYN companion</p>
             </div>
           </div>
 
-          {/* Title and Description */}
-          <div className="text-center space-y-4 max-w-2xl">
-            
-            
-            <h2 className="text-xl md:text-2xl font-semibold text-qrypto-accent">
-              Aigent Nakamoto
-            </h2>
-            <p className="text-white/80 text-sm md:text-lg">Your iQube and COYN companion</p>
+          {/* Action Buttons */}
+          <div className="flex flex-col space-y-4 max-w-md mx-auto w-full pb-8">
+            <Button 
+              onClick={() => navigate('/signin')} 
+              className="w-full bg-qrypto-accent hover:bg-qrypto-accent/90 text-white font-semibold py-3"
+            >
+              Get Started
+            </Button>
+            <Button 
+              onClick={() => navigate('/mondai')} 
+              variant="outline" 
+              className="w-full border-white/30 text-white hover:bg-white/10"
+            >
+              Try Nakamoto
+            </Button>
+          </div>
+
+          <div className="text-xs text-white/50 text-center">
+            Powered by advanced AI technology
           </div>
         </div>
-
-        {/* Action Buttons */}
-        <div className="flex flex-col space-y-4 max-w-md mx-auto w-full pb-8">
-          <Button onClick={() => navigate('/signin')} className="w-full bg-qrypto-accent hover:bg-qrypto-accent/90 text-white font-semibold py-3">
-            Get Started
-          </Button>
-          <Button onClick={() => navigate('/mondai')} variant="outline" className="w-full border-white/30 text-white hover:bg-white/10">
-            Try Nakamoto
-          </Button>
-        </div>
-
-        <div className="text-xs text-white/50 text-center">
-          Powered by advanced AI technology
-        </div>
       </div>
-    </div>;
+    </div>
+  );
 };
+
 export default SplashPage;
