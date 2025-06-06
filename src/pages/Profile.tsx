@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -7,23 +6,24 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useUserInteractions } from '@/hooks/use-user-interactions';
 import { getRelativeTime } from '@/lib/utils';
-
 const Profile = () => {
-  const { user } = useAuth();
+  const {
+    user
+  } = useAuth();
   const [activeTab, setActiveTab] = useState<'learn' | 'earn' | 'connect'>('learn');
-  
+
   // Get user interactions for the active tab
-  const { interactions, refreshInteractions } = useUserInteractions(activeTab);
-  
+  const {
+    interactions,
+    refreshInteractions
+  } = useUserInteractions(activeTab);
+
   // Ensure we refresh the data when the tab changes
   useEffect(() => {
     refreshInteractions();
   }, [activeTab, refreshInteractions]);
-
   if (!user) return null;
-  
-  return (
-    <div className="container py-6">
+  return <div className="container py-6">
       <div className="grid gap-6">
         {/* Compressed user info section */}
         <Card>
@@ -66,22 +66,13 @@ const Profile = () => {
           <CardHeader className="pb-2">
             <CardTitle>Conversation History</CardTitle>
             <div className="flex space-x-2">
-              <button 
-                onClick={() => setActiveTab('learn')} 
-                className={`px-3 py-1 rounded ${activeTab === 'learn' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}
-              >
+              <button onClick={() => setActiveTab('learn')} className={`px-3 py-1 rounded ${activeTab === 'learn' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
                 Learn / MonDAI
               </button>
-              <button 
-                onClick={() => setActiveTab('earn')} 
-                className={`px-3 py-1 rounded ${activeTab === 'earn' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}
-              >
+              <button onClick={() => setActiveTab('earn')} className={`px-3 py-1 rounded ${activeTab === 'earn' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
                 Earn
               </button>
-              <button 
-                onClick={() => setActiveTab('connect')} 
-                className={`px-3 py-1 rounded ${activeTab === 'connect' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}
-              >
+              <button onClick={() => setActiveTab('connect')} className={`px-3 py-1 rounded ${activeTab === 'connect' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
                 Connect
               </button>
             </div>
@@ -89,52 +80,38 @@ const Profile = () => {
           <CardContent>
             <ScrollArea className="h-[400px] pr-4">
               <div className="space-y-4">
-                {interactions && interactions.length > 0 ? (
-                  interactions.map((interaction) => (
-                    <div key={interaction.id} className="space-y-3 p-4 border rounded-lg">
+                {interactions && interactions.length > 0 ? interactions.map(interaction => <div key={interaction.id} className="space-y-3 p-4 border rounded-lg">
                       {/* User Query */}
-                      {interaction.query && (
-                        <div className="bg-blue-50 p-3 rounded-lg">
+                      {interaction.query && <div className="p-3 rounded-lg bg-inherit">
                           <div className="flex items-center gap-2 mb-2">
                             <Badge variant="outline">You asked</Badge>
                             <span className="text-xs text-muted-foreground">
                               {new Date(interaction.created_at).toLocaleString()}
                             </span>
                           </div>
-                          <p className="text-sm">{interaction.query}</p>
-                        </div>
-                      )}
+                          <p className="text-sm text-zinc-100">{interaction.query}</p>
+                        </div>}
                       
                       {/* Agent Response */}
-                      {interaction.response && (
-                        <div className="bg-green-50 p-3 rounded-lg">
+                      {interaction.response && <div className="p-3 rounded-lg bg-gray-800">
                           <div className="flex items-center gap-2 mb-2">
                             <Badge variant="secondary">{interaction.interaction_type} agent responded</Badge>
                           </div>
                           <p className="text-sm">
-                            {interaction.response.length > 200 
-                              ? `${interaction.response.substring(0, 200)}...` 
-                              : interaction.response}
+                            {interaction.response.length > 200 ? `${interaction.response.substring(0, 200)}...` : interaction.response}
                           </p>
-                        </div>
-                      )}
-                    </div>
-                  ))
-                ) : (
-                  <div className="text-center p-6">
+                        </div>}
+                    </div>) : <div className="text-center p-6">
                     <p>No {activeTab === 'learn' ? 'Learn/MonDAI' : activeTab} conversations found.</p>
                     <p className="text-sm text-muted-foreground mt-2">
                       Start a conversation with the {activeTab === 'learn' ? 'Learn or MonDAI' : activeTab} agent to see your history here.
                     </p>
-                  </div>
-                )}
+                  </div>}
               </div>
             </ScrollArea>
           </CardContent>
         </Card>
       </div>
-    </div>
-  );
+    </div>;
 };
-
 export default Profile;
