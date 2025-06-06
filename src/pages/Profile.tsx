@@ -52,7 +52,7 @@ const Profile = () => {
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Status:</span>
                 <span>
-                  <Badge variant={user.email_confirmed_at ? "secondary" : "destructive"}>
+                  <Badge variant={user.email_confirmed_at ? "secondary" : "destructive"} className="bg-qrypto-primary">
                     {user.email_confirmed_at ? "Verified" : "Unverified"}
                   </Badge>
                 </span>
@@ -66,9 +66,7 @@ const Profile = () => {
           <CardHeader className="pb-2">
             <CardTitle>Conversation History</CardTitle>
             <div className="flex space-x-2">
-              <button onClick={() => setActiveTab('learn')} className={`px-3 py-1 rounded ${activeTab === 'learn' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
-                Learn / MonDAI
-              </button>
+              <button onClick={() => setActiveTab('learn')} className="bg-qrypto-primary px-[8px]">Learn  </button>
               <button onClick={() => setActiveTab('earn')} className={`px-3 py-1 rounded ${activeTab === 'earn' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
                 Earn
               </button>
@@ -95,7 +93,7 @@ const Profile = () => {
                       {/* Agent Response */}
                       {interaction.response && <div className="p-3 rounded-lg bg-[#23223f]/[0.32]">
                           <div className="flex items-center gap-2 mb-2">
-                            <Badge variant="secondary">{interaction.interaction_type} agent responded</Badge>
+                            <Badge variant="secondary" className="bg-qrypto-primary">{interaction.interaction_type} agent responded</Badge>
                           </div>
                           <p className="text-sm">
                             {interaction.response.length > 200 ? `${interaction.response.substring(0, 200)}...` : interaction.response}
