@@ -46,7 +46,10 @@ const AgentInputBar = ({
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       if (inputValue.trim()) {
-        handleSubmit(e);
+        const form = e.currentTarget.closest('form');
+        if (form) {
+          handleSubmit(new Event('submit', { bubbles: true, cancelable: true }) as unknown as React.FormEvent);
+        }
       }
     }
   };

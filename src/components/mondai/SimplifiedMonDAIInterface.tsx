@@ -1,16 +1,114 @@
 
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { SimplifiedAgentInterface } from '@/components/shared/agent';
 import { useMondAI } from '@/hooks/use-mondai';
+import { AgentMessage } from '@/lib/types';
+import { useUserInteractions } from '@/hooks/use-user-interactions';
+import { useAuth } from '@/hooks/use-auth';
 
 const SimplifiedMonDAIInterface: React.FC = () => {
   const {
     conversationId,
     handleAIMessage,
   } = useMondAI();
+  
+  const { user } = useAuth();
+  const [initialMessages, setInitialMessages] = useState<AgentMessage[]>([]);
+  const [isHistoryLoaded, setIsHistoryLoaded] = useState(false);
+  
+  // Use the user interactions hook to load previous messages
+  const { interactions, refreshInteractions } = useUserInteractions('learn');
+  
+  // Load conversation history when component mounts or user changes
+  useEffect(() => {
+    const loadConversationHistory = async () => {
+      if (!user || isHistoryLoaded) return;
+      
+      try {
+        console.log('Loading MonDAI conversation history...');
+        
+        // Refresh interactions to get the latest data
+        await refreshInteractions();
+        
+        if (interactions && interactions.length > 0) {
+          // Transform database records into message format
+          const historicalMessages = interactions.map((interaction): AgentMessage => {
+            return {
+              id: interaction.id,
+              sender: interaction.query ? 'user' : 'agent',
+              message: interaction.query || interaction.response,
+              timestamp: interaction.created_at,
+              metadata: interaction.metadata || undefined
+            };
+          });
+          
+          console.log(`Loaded ${historicalMessages.length} historical messages for MonDAI`);
+          
+          // Prepare the welcome message
+          const welcomeMessage = {
+            id: "1",
+            sender: "agent" as const,
+            message: getInitialMessage(),
+            timestamp: new Date().toISOString(),
+            metadata: {
+              version: "1.0",
+              modelUsed: "gpt-4o-mini",
+              knowledgeSource: "Qrypto COYN + mẹtaKnyts Knowledge Bases",
+              qryptoItemsFound: 0,
+              metaKnytsItemsFound: 0,
+              citations: []
+            }
+          };
+          
+          // Sort by timestamp to ensure chronological order
+          const sortedMessages = [...historicalMessages].sort((a, b) => 
+            new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+          );
+          
+          // Start with welcome message, then add history
+          setInitialMessages([welcomeMessage, ...sortedMessages]);
+          setIsHistoryLoaded(true);
+        } else {
+          // If no history, just set the welcome message
+          setInitialMessages([{
+            id: "1",
+            sender: "agent",
+            message: getInitialMessage(),
+            timestamp: new Date().toISOString(),
+            metadata: {
+              version: "1.0",
+              modelUsed: "gpt-4o-mini",
+              knowledgeSource: "Qrypto COYN + mẹtaKnyts Knowledge Bases",
+              qryptoItemsFound: 0,
+              metaKnytsItemsFound: 0,
+              citations: []
+            }
+          }]);
+          setIsHistoryLoaded(true);
+        }
+      } catch (error) {
+        console.error('Error loading conversation history:', error);
+        setInitialMessages([{
+          id: "1",
+          sender: "agent",
+          message: getInitialMessage(),
+          timestamp: new Date().toISOString(),
+          metadata: {
+            version: "1.0",
+            modelUsed: "gpt-4o-mini",
+            knowledgeSource: "Qrypto COYN + mẹtaKnyts Knowledge Bases"
+          }
+        }]);
+        setIsHistoryLoaded(true);
+      }
+    };
 
-  // Enhanced initial message that mentions both knowledge bases
-  const initialMessage = `Hello! I'm Aigent Nakamoto, your crypto-agentic AI assistant with access to both the **Qrypto COYN technical knowledge base** and the **mẹtaKnyts narrative universe**.
+    loadConversationHistory();
+  }, [user, interactions, refreshInteractions, isHistoryLoaded]);
+
+  // Function to generate the initial welcome message
+  const getInitialMessage = () => {
+    return `Hello! I'm Aigent Nakamoto, your crypto-agentic AI assistant with access to both the **Qrypto COYN technical knowledge base** and the **mẹtaKnyts narrative universe**.
 
 I can help you with:
 • **Technical concepts**: iQubes, VFTs, COYN Protocol, tokenomics, smart contracts
@@ -21,6 +119,7 @@ I can help you with:
 Try asking about "metaKnyts", "KnowOne", "Terra and Digitterra", or any crypto/Web3 concept. I'll provide insights from both technical and narrative perspectives with proper citations.
 
 What would you like to explore today?`;
+  };
 
   return (
     <div className="h-screen flex flex-col">
@@ -30,22 +129,7 @@ What would you like to explore today?`;
         agentType="mondai" 
         onMessageSubmit={handleAIMessage}
         conversationId={conversationId}
-        initialMessages={[
-          {
-            id: "1",
-            sender: "agent",
-            message: initialMessage,
-            timestamp: new Date().toISOString(),
-            metadata: {
-              version: "1.0",
-              modelUsed: "gpt-4o-mini",
-              knowledgeSource: "Qrypto COYN + mẹtaKnyts Knowledge Bases",
-              qryptoItemsFound: 0,
-              metaKnytsItemsFound: 0,
-              citations: []
-            }
-          }
-        ]}
+        initialMessages={initialMessages}
       />
     </div>
   );

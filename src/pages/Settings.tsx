@@ -1,5 +1,5 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { qubeData, monDaiQubeData } from '@/components/settings/QubeData';
 import IQubeSelector from '@/components/settings/IQubeSelector';
 import IQubeActivationManager from '@/components/settings/IQubeActivationManager';
@@ -12,7 +12,7 @@ const Settings = () => {
   const [selectedIQube, setSelectedIQube] = useState(monDaiQubeData);
   const { metisActivated } = useMetisAgent();
   const [activeQubes, setActiveQubes] = useState<{[key: string]: boolean}>({
-    "Qrypto Persona": true,
+    "Qrypto Persona": true, // Set to true by default
     "Metis": metisActivated,
     "GDrive": false
   });

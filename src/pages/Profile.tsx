@@ -1,277 +1,125 @@
-import React, { useState } from 'react';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle, CardFooter } from '@/components/ui/card';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { Tabs, TabsList, TabsTrigger, TabsContent } from '@/components/ui/tabs';
-import { Separator } from '@/components/ui/separator';
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+
+import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
+import { ScrollArea } from '@/components/ui/scroll-area';
+import { Badge } from '@/components/ui/badge';
+import { Separator } from '@/components/ui/separator';
 import { useUserInteractions } from '@/hooks/use-user-interactions';
-import { toast } from 'sonner';
+import { getRelativeTime } from '@/lib/utils';
 
 const Profile = () => {
   const { user } = useAuth();
-  const { interactions, loading: interactionsLoading } = useUserInteractions();
+  const [activeTab, setActiveTab] = useState<'learn' | 'earn' | 'connect'>('learn');
   
-  // Email update state
-  const [email, setEmail] = useState(user?.email || '');
-  const [emailUpdating, setEmailUpdating] = useState(false);
+  // Get user interactions for the active tab
+  const { interactions, refreshInteractions } = useUserInteractions(activeTab);
   
-  // Wallet state
-  const [walletAddress, setWalletAddress] = useState("0x71C7656EC7ab88b098defB751B7401B5f6d8976F");
-  const [isWalletConnected, setIsWalletConnected] = useState(true);
-  const [newWalletAddress, setNewWalletAddress] = useState("");
-  
-  const formatDate = (dateString: string | null) => {
-    if (!dateString) return 'N/A';
-    const date = new Date(dateString);
-    return new Intl.DateTimeFormat('en-US', { 
-      dateStyle: 'medium', 
-      timeStyle: 'short' 
-    }).format(date);
-  };
-  
-  const truncateWalletAddress = (address: string, start = 8, end = 6) => {
-    if (address.length <= start + end) return address;
-    return `${address.slice(0, start)}...${address.slice(-end)}`;
-  };
-  
-  const handleEmailUpdate = async () => {
-    // Email validation
-    if (!email || !email.includes('@')) {
-      toast.error('Please enter a valid email address');
-      return;
-    }
-    
-    setEmailUpdating(true);
-    try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      // In a real app, you would use Auth API to update the email
-      toast.success('Email updated successfully');
-    } catch (error) {
-      toast.error('Failed to update email');
-      console.error('Email update error:', error);
-    } finally {
-      setEmailUpdating(false);
-    }
-  };
-  
-  const handleConnectWallet = async () => {
-    try {
-      // Simulate wallet connection
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setIsWalletConnected(true);
-      toast.success('Wallet connected successfully');
-    } catch (error) {
-      toast.error('Failed to connect wallet');
-      console.error('Wallet connection error:', error);
-    }
-  };
-  
-  const handleDisconnectWallet = async () => {
-    try {
-      // Simulate wallet disconnection
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setIsWalletConnected(false);
-      toast.success('Wallet disconnected successfully');
-    } catch (error) {
-      toast.error('Failed to disconnect wallet');
-      console.error('Wallet disconnection error:', error);
-    }
-  };
-  
-  const handleChangeWallet = async () => {
-    if (!newWalletAddress || newWalletAddress.length < 10) {
-      toast.error('Please enter a valid wallet address');
-      return;
-    }
-    
-    try {
-      // Simulate wallet change
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      setWalletAddress(newWalletAddress);
-      setNewWalletAddress("");
-      toast.success('Wallet address updated successfully');
-    } catch (error) {
-      toast.error('Failed to update wallet address');
-      console.error('Wallet update error:', error);
-    }
-  };
+  // Ensure we refresh the data when the tab changes
+  useEffect(() => {
+    refreshInteractions();
+  }, [activeTab, refreshInteractions]);
 
+  if (!user) return null;
+  
   return (
-    <TooltipProvider>
-      <div className="flex flex-col gap-6 p-4 md:p-8">
-        <h1 className="text-3xl font-bold">Profile</h1>
-        
+    <div className="container py-6">
+      <div className="grid gap-6">
+        {/* Compressed user info section */}
         <Card>
-          <CardHeader>
-            <CardTitle>User Information</CardTitle>
-            <CardDescription>Your account details and preferences</CardDescription>
+          <CardHeader className="pb-2">
+            <CardTitle className="flex items-center justify-between">
+              <div>User Profile</div>
+              <Badge variant="outline">{user.email}</Badge>
+            </CardTitle>
           </CardHeader>
-          <CardContent>
-            <div className="space-y-6">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email Address</Label>
-                <div className="flex gap-2">
-                  <Input 
-                    id="email"
-                    value={email}
-                    onChange={(e) => setEmail(e.target.value)}
-                    placeholder="your-email@example.com"
-                    disabled={emailUpdating}
-                  />
-                  <Button onClick={handleEmailUpdate} disabled={emailUpdating}>
-                    {emailUpdating ? 'Updating...' : 'Update'}
-                  </Button>
-                </div>
+          <CardContent className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">User ID:</span>
+                <span className="font-mono text-xs bg-muted px-2 py-1 rounded">{user.id.substring(0, 8)}...</span>
               </div>
-              
-              <Separator />
-              
-              <div className="space-y-4">
-                <h3 className="text-lg font-medium">Wallet Management</h3>
-                
-                {isWalletConnected ? (
-                  <div className="space-y-4">
-                    <div className="flex items-center justify-between gap-2">
-                      <div className="min-w-0 flex-1">
-                        <p className="text-sm font-medium text-muted-foreground">Connected Wallet</p>
-                        <Tooltip>
-                          <TooltipTrigger asChild>
-                            <p className="font-mono text-xs truncate cursor-help">
-                              {truncateWalletAddress(walletAddress)}
-                            </p>
-                          </TooltipTrigger>
-                          <TooltipContent>
-                            <p className="font-mono text-xs">{walletAddress}</p>
-                          </TooltipContent>
-                        </Tooltip>
-                      </div>
-                      <Button variant="outline" onClick={handleDisconnectWallet} className="shrink-0">
-                        Disconnect
-                      </Button>
-                    </div>
-                    
-                    <div className="space-y-2">
-                      <Label htmlFor="new-wallet">Change Wallet Address</Label>
-                      <div className="flex gap-2">
-                        <Input
-                          id="new-wallet"
-                          value={newWalletAddress}
-                          onChange={(e) => setNewWalletAddress(e.target.value)}
-                          placeholder="Enter new wallet address"
-                        />
-                        <Button onClick={handleChangeWallet}>
-                          Change
-                        </Button>
-                      </div>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="flex justify-between items-center">
-                    <p className="text-sm">No wallet connected</p>
-                    <Button variant="default" onClick={handleConnectWallet}>
-                      Connect Wallet
-                    </Button>
-                  </div>
-                )}
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Last Sign In:</span>
+                <span>{getRelativeTime(new Date(user.last_sign_in_at || ''))}</span>
               </div>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">User ID</p>
-                  <p className="text-xs font-mono">{user?.id || 'Not logged in'}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Created At</p>
-                  <p>{user?.created_at ? formatDate(user.created_at) : 'Not available'}</p>
-                </div>
-                <div>
-                  <p className="text-sm font-medium text-muted-foreground">Last Sign In</p>
-                  <p>{user?.last_sign_in_at ? formatDate(user.last_sign_in_at) : 'Not available'}</p>
-                </div>
+            </div>
+            <div className="space-y-2">
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Account Created:</span>
+                <span>{new Date(user.created_at).toLocaleDateString()}</span>
+              </div>
+              <div className="flex justify-between">
+                <span className="text-muted-foreground">Status:</span>
+                <span>
+                  <Badge variant={user.email_confirmed_at ? "success" : "destructive"}>
+                    {user.email_confirmed_at ? "Verified" : "Unverified"}
+                  </Badge>
+                </span>
               </div>
             </div>
           </CardContent>
         </Card>
 
+        {/* Interaction history section with fixed height and scrolling */}
         <Card>
-          <CardHeader>
+          <CardHeader className="pb-2">
             <CardTitle>Interaction History</CardTitle>
-            <CardDescription>Your recent conversations with AI assistants</CardDescription>
+            <div className="flex space-x-2">
+              <button 
+                onClick={() => setActiveTab('learn')} 
+                className={`px-3 py-1 rounded ${activeTab === 'learn' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}
+              >
+                Learn
+              </button>
+              <button 
+                onClick={() => setActiveTab('earn')} 
+                className={`px-3 py-1 rounded ${activeTab === 'earn' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}
+              >
+                Earn
+              </button>
+              <button 
+                onClick={() => setActiveTab('connect')} 
+                className={`px-3 py-1 rounded ${activeTab === 'connect' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}
+              >
+                Connect
+              </button>
+            </div>
           </CardHeader>
           <CardContent>
-            <Tabs defaultValue="all">
-              <TabsList className="mb-4">
-                <TabsTrigger value="all">All</TabsTrigger>
-                <TabsTrigger value="learn">Learn</TabsTrigger>
-                <TabsTrigger value="earn">Earn</TabsTrigger>
-                <TabsTrigger value="connect">Connect</TabsTrigger>
-              </TabsList>
-
-              <TabsContent value="all" className="space-y-4">
-                {interactionsLoading ? (
-                  <p>Loading interaction history...</p>
-                ) : interactions && interactions.length > 0 ? (
-                  <div className="space-y-4">
-                    {interactions.slice(0, 10).map((interaction) => (
-                      <div key={interaction.id} className="border rounded-lg p-4 space-y-2">
-                        <div className="flex justify-between items-center">
-                          <span className="font-medium capitalize">{interaction.interaction_type} Interaction</span>
-                          <span className="text-xs text-muted-foreground">
-                            {formatDate(interaction.created_at)}
-                          </span>
-                        </div>
-                        <p className="font-semibold">Q: {interaction.query}</p>
-                        <p>A: {interaction.response.length > 100 
-                          ? `${interaction.response.substring(0, 100)}...` 
-                          : interaction.response}
-                        </p>
+            <ScrollArea className="h-[400px] pr-4">
+              <div className="space-y-6">
+                {interactions && interactions.length > 0 ? (
+                  interactions.map((interaction) => (
+                    <div key={interaction.id} className="space-y-2">
+                      <div>
+                        <span className="font-medium">Query: </span>
+                        <span>{interaction.query}</span>
                       </div>
-                    ))}
-                  </div>
-                ) : (
-                  <p>No interaction history found</p>
-                )}
-              </TabsContent>
-
-              {['learn', 'earn', 'connect'].map((type) => (
-                <TabsContent key={type} value={type} className="space-y-4">
-                  {interactionsLoading ? (
-                    <p>Loading {type} interactions...</p>
-                  ) : interactions && interactions.filter(i => i.interaction_type === type).length > 0 ? (
-                    <div className="space-y-4">
-                      {interactions
-                        .filter(i => i.interaction_type === type)
-                        .slice(0, 10)
-                        .map((interaction) => (
-                          <div key={interaction.id} className="border rounded-lg p-4 space-y-2">
-                            <div className="flex justify-between items-center">
-                              <span className="font-medium capitalize">{interaction.interaction_type} Interaction</span>
-                              <span className="text-xs text-muted-foreground">
-                                {formatDate(interaction.created_at)}
-                              </span>
-                            </div>
-                            <p className="font-semibold">Q: {interaction.query}</p>
-                            <p>A: {interaction.response.length > 100 
-                              ? `${interaction.response.substring(0, 100)}...` 
-                              : interaction.response}
-                            </p>
-                          </div>
-                        ))}
+                      <div>
+                        <span className="font-medium">Response: </span>
+                        <span className="text-sm">{interaction.response.length > 150 
+                          ? `${interaction.response.substring(0, 150)}...` 
+                          : interaction.response}</span>
+                      </div>
+                      <div className="flex justify-between text-xs text-muted-foreground">
+                        <span>{new Date(interaction.created_at).toLocaleString()}</span>
+                        <span>{interaction.interaction_type} agent</span>
+                      </div>
+                      <Separator />
                     </div>
-                  ) : (
-                    <p>No {type} interactions found</p>
-                  )}
-                </TabsContent>
-              ))}
-            </Tabs>
+                  ))
+                ) : (
+                  <div className="text-center p-6">
+                    <p>No {activeTab} interactions found.</p>
+                  </div>
+                )}
+              </div>
+            </ScrollArea>
           </CardContent>
         </Card>
       </div>
-    </TooltipProvider>
+    </div>
   );
 };
 

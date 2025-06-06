@@ -26,6 +26,11 @@ const ChatTab: React.FC<ChatTabProps> = ({
     }
   }, [messages, messagesEndRef]);
 
+  // Ensure messages are sorted by timestamp (oldest first)
+  const sortedMessages = [...messages].sort((a, b) => 
+    new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+  );
+
   return (
     <div className="flex flex-col h-full overflow-hidden">
       {messages.length === 0 ? (
@@ -34,7 +39,7 @@ const ChatTab: React.FC<ChatTabProps> = ({
         </div>
       ) : (
         <MessageList 
-          messages={messages} 
+          messages={sortedMessages} 
           isProcessing={false} // This is now controlled at the parent level
           playing={playing} 
           onPlayAudio={handlePlayAudio} 

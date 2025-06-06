@@ -29,8 +29,23 @@ const SimplifiedAgentInterface = ({
   onDocumentAdded,
   documentContextUpdated = 0,
 }: SimplifiedAgentInterfaceProps) => {
-  // Only chat and knowledge tabs for simplified interface
-  const [activeTab, setActiveTab] = useState<'chat' | 'knowledge'>('chat');
+  // Get active tab from localStorage or default to 'chat'
+  const getInitialTab = () => {
+    if (typeof window !== 'undefined') {
+      const savedTab = localStorage.getItem(`${agentType}-active-tab`);
+      if (savedTab && ['chat', 'knowledge'].includes(savedTab)) {
+        return savedTab as 'chat' | 'knowledge';
+      }
+    }
+    return 'chat';
+  };
+  
+  const [activeTab, setActiveTab] = useState<'chat' | 'knowledge'>(getInitialTab());
+  
+  // Save active tab to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem(`${agentType}-active-tab`, activeTab);
+  }, [activeTab, agentType]);
   
   const {
     messages,
@@ -43,6 +58,7 @@ const SimplifiedAgentInterface = ({
     handleInputChange,
     handleSubmit,
     handlePlayAudio,
+    handleKeyDown
   } = useAgentMessages({
     agentType,
     initialMessages,
@@ -72,6 +88,7 @@ const SimplifiedAgentInterface = ({
           handleInputChange={handleInputChange}
           handleSubmit={handleSubmit}
           handlePlayAudio={handlePlayAudio}
+          handleKeyDown={handleKeyDown}
         />
       </div>
     </Card>
