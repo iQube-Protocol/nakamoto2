@@ -17,13 +17,26 @@ export const useMessageInput = () => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       if (inputValue.trim()) {
-        // Create and dispatch a form submit event only once
+        // Create a properly typed form event
         const form = e.currentTarget.form;
         if (form) {
-          handleSubmit({
+          // First cast to unknown, then to React.FormEvent to satisfy TypeScript
+          const syntheticEvent = {
             preventDefault: () => {},
-            target: form
-          } as React.FormEvent);
+            target: form,
+            currentTarget: form,
+            bubbles: true,
+            cancelable: true,
+            defaultPrevented: false,
+            isDefaultPrevented: () => false,
+            isPropagationStopped: () => false,
+            persist: () => {},
+            stopPropagation: () => {},
+            nativeEvent: e.nativeEvent,
+            type: 'submit'
+          } as unknown as React.FormEvent;
+          
+          handleSubmit(syntheticEvent);
         }
       }
     }
