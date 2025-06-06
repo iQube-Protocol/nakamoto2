@@ -16,7 +16,7 @@ const SimplifiedMonDAIInterface: React.FC = () => {
   const [initialMessages, setInitialMessages] = useState<AgentMessage[]>([]);
   const [isHistoryLoaded, setIsHistoryLoaded] = useState(false);
   
-  // Use the user interactions hook to load previous messages
+  // Use the user interactions hook to load previous messages (using 'learn' type for mondai)
   const { interactions, refreshInteractions } = useUserInteractions('learn');
   
   // Load conversation history when component mounts or user changes
@@ -30,62 +30,65 @@ const SimplifiedMonDAIInterface: React.FC = () => {
         // Refresh interactions to get the latest data
         await refreshInteractions();
         
+        // Prepare the welcome message
+        const welcomeMessage: AgentMessage = {
+          id: "1",
+          sender: "agent",
+          message: getInitialMessage(),
+          timestamp: new Date().toISOString(),
+          metadata: {
+            version: "1.0",
+            modelUsed: "gpt-4o-mini",
+            knowledgeSource: "Qrypto COYN + mẹtaKnyts Knowledge Bases",
+            qryptoItemsFound: 0,
+            metaKnytsItemsFound: 0,
+            citations: []
+          }
+        };
+
         if (interactions && interactions.length > 0) {
-          // Transform database records into message format
-          const historicalMessages = interactions.map((interaction): AgentMessage => {
-            return {
-              id: interaction.id,
-              sender: interaction.query ? 'user' : 'agent',
-              message: interaction.query || interaction.response,
-              timestamp: interaction.created_at,
-              metadata: interaction.metadata || undefined
-            };
+          // Transform database records into message format - create BOTH user and agent messages
+          const historicalMessages: AgentMessage[] = [];
+          
+          interactions.forEach((interaction) => {
+            // Create user message from the query
+            if (interaction.query && interaction.query.trim()) {
+              historicalMessages.push({
+                id: `${interaction.id}-user`,
+                sender: 'user',
+                message: interaction.query,
+                timestamp: interaction.created_at,
+              });
+            }
+            
+            // Create agent message from the response
+            if (interaction.response && interaction.response.trim()) {
+              historicalMessages.push({
+                id: `${interaction.id}-agent`,
+                sender: 'agent',
+                message: interaction.response,
+                timestamp: interaction.created_at,
+                metadata: interaction.metadata || undefined
+              });
+            }
           });
           
-          console.log(`Loaded ${historicalMessages.length} historical messages for MonDAI`);
-          
-          // Prepare the welcome message
-          const welcomeMessage = {
-            id: "1",
-            sender: "agent" as const,
-            message: getInitialMessage(),
-            timestamp: new Date().toISOString(),
-            metadata: {
-              version: "1.0",
-              modelUsed: "gpt-4o-mini",
-              knowledgeSource: "Qrypto COYN + mẹtaKnyts Knowledge Bases",
-              qryptoItemsFound: 0,
-              metaKnytsItemsFound: 0,
-              citations: []
-            }
-          };
-          
-          // Sort by timestamp to ensure chronological order
-          const sortedMessages = [...historicalMessages].sort((a, b) => 
+          // Sort messages by timestamp to ensure proper chronological order
+          historicalMessages.sort((a, b) => 
             new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
           );
           
+          console.log(`Loaded ${historicalMessages.length} historical messages (${interactions.length} interactions) for MonDAI`);
+          
           // Start with welcome message, then add history
-          setInitialMessages([welcomeMessage, ...sortedMessages]);
-          setIsHistoryLoaded(true);
+          setInitialMessages([welcomeMessage, ...historicalMessages]);
         } else {
           // If no history, just set the welcome message
-          setInitialMessages([{
-            id: "1",
-            sender: "agent",
-            message: getInitialMessage(),
-            timestamp: new Date().toISOString(),
-            metadata: {
-              version: "1.0",
-              modelUsed: "gpt-4o-mini",
-              knowledgeSource: "Qrypto COYN + mẹtaKnyts Knowledge Bases",
-              qryptoItemsFound: 0,
-              metaKnytsItemsFound: 0,
-              citations: []
-            }
-          }]);
-          setIsHistoryLoaded(true);
+          console.log('No historical messages found for MonDAI');
+          setInitialMessages([welcomeMessage]);
         }
+        
+        setIsHistoryLoaded(true);
       } catch (error) {
         console.error('Error loading conversation history:', error);
         setInitialMessages([{

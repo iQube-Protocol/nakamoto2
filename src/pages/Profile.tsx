@@ -64,13 +64,13 @@ const Profile = () => {
         {/* Interaction history section with fixed height and scrolling */}
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle>Interaction History</CardTitle>
+            <CardTitle>Conversation History</CardTitle>
             <div className="flex space-x-2">
               <button 
                 onClick={() => setActiveTab('learn')} 
                 className={`px-3 py-1 rounded ${activeTab === 'learn' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}
               >
-                Learn
+                Learn / MonDAI
               </button>
               <button 
                 onClick={() => setActiveTab('earn')} 
@@ -88,30 +88,44 @@ const Profile = () => {
           </CardHeader>
           <CardContent>
             <ScrollArea className="h-[400px] pr-4">
-              <div className="space-y-6">
+              <div className="space-y-4">
                 {interactions && interactions.length > 0 ? (
                   interactions.map((interaction) => (
-                    <div key={interaction.id} className="space-y-2">
-                      <div>
-                        <span className="font-medium">Query: </span>
-                        <span>{interaction.query}</span>
-                      </div>
-                      <div>
-                        <span className="font-medium">Response: </span>
-                        <span className="text-sm">{interaction.response.length > 150 
-                          ? `${interaction.response.substring(0, 150)}...` 
-                          : interaction.response}</span>
-                      </div>
-                      <div className="flex justify-between text-xs text-muted-foreground">
-                        <span>{new Date(interaction.created_at).toLocaleString()}</span>
-                        <span>{interaction.interaction_type} agent</span>
-                      </div>
-                      <Separator />
+                    <div key={interaction.id} className="space-y-3 p-4 border rounded-lg">
+                      {/* User Query */}
+                      {interaction.query && (
+                        <div className="bg-blue-50 p-3 rounded-lg">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Badge variant="outline">You asked</Badge>
+                            <span className="text-xs text-muted-foreground">
+                              {new Date(interaction.created_at).toLocaleString()}
+                            </span>
+                          </div>
+                          <p className="text-sm">{interaction.query}</p>
+                        </div>
+                      )}
+                      
+                      {/* Agent Response */}
+                      {interaction.response && (
+                        <div className="bg-green-50 p-3 rounded-lg">
+                          <div className="flex items-center gap-2 mb-2">
+                            <Badge variant="secondary">{interaction.interaction_type} agent responded</Badge>
+                          </div>
+                          <p className="text-sm">
+                            {interaction.response.length > 200 
+                              ? `${interaction.response.substring(0, 200)}...` 
+                              : interaction.response}
+                          </p>
+                        </div>
+                      )}
                     </div>
                   ))
                 ) : (
                   <div className="text-center p-6">
-                    <p>No {activeTab} interactions found.</p>
+                    <p>No {activeTab === 'learn' ? 'Learn/MonDAI' : activeTab} conversations found.</p>
+                    <p className="text-sm text-muted-foreground mt-2">
+                      Start a conversation with the {activeTab === 'learn' ? 'Learn or MonDAI' : activeTab} agent to see your history here.
+                    </p>
                   </div>
                 )}
               </div>

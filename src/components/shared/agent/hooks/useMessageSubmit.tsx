@@ -111,6 +111,8 @@ export const useMessageSubmit = (
     }
 
     try {
+      let agentResponse: AgentMessage;
+      
       if (onMessageSubmit) {
         console.log(`Sending message to ${agentType} agent with conversation ID ${conversationId}`);
         
@@ -118,7 +120,7 @@ export const useMessageSubmit = (
           console.log("Including documents in request:", documentsInfo);
         }
         
-        const agentResponse = await onMessageSubmit(userMessage.message);
+        agentResponse = await onMessageSubmit(userMessage.message);
         
         // Add agent response to MCP context if available
         if (mcpClient && conversationId) {
@@ -129,8 +131,6 @@ export const useMessageSubmit = (
             console.error("Error adding agent response to MCP context:", error);
           }
         }
-        
-        setMessages(prev => [...prev, agentResponse]);
 
         // Check if documents were used in the response
         if (agentResponse.metadata?.documentsUsed) {
@@ -143,46 +143,61 @@ export const useMessageSubmit = (
         }
       } else {
         // Fallback for when no onMessageSubmit is provided
-        // Also store this interaction in the database for consistency
-        let agentResponse = '';
-        
-        // Use learn for mondai type as well
         const backendAgentType = agentType === 'mondai' ? 'learn' : agentType;
         
+        let responseText = '';
         switch (backendAgentType) {
           case 'learn':
-            agentResponse = `I'm your Learning Agent. Based on your iQube data, I recommend exploring topics related to ${Math.random() > 0.5 ? 'DeFi protocols' : 'NFT marketplaces'}. Would you like me to provide more information?`;
+            responseText = `I'm your Learning Agent. Based on your iQube data, I recommend exploring topics related to ${Math.random() > 0.5 ? 'DeFi protocols' : 'NFT marketplaces'}. Would you like me to provide more information?`;
             break;
           case 'earn':
-            agentResponse = `I'm your Earning Agent. Your MonDAI tokens have increased by ${(Math.random() * 5).toFixed(2)}% today. Would you like to see potential staking opportunities based on your iQube profile?`;
+            responseText = `I'm your Earning Agent. Your MonDAI tokens have increased by ${(Math.random() * 5).toFixed(2)}% today. Would you like to see potential staking opportunities based on your iQube profile?`;
             break;
           case 'connect':
-            agentResponse = `I'm your Connection Agent. Based on your interests in your iQube, I found ${Math.floor(Math.random() * 10) + 1} community members with similar interests in ${Math.random() > 0.5 ? 'DeFi' : 'NFTs'}. Would you like me to introduce you?`;
+            responseText = `I'm your Connection Agent. Based on your interests in your iQube, I found ${Math.floor(Math.random() * 10) + 1} community members with similar interests in ${Math.random() > 0.5 ? 'DeFi' : 'NFTs'}. Would you like me to introduce you?`;
             break;
         }
 
-        // Process and store the interaction
-        if (user) {
+        agentResponse = {
+          id: (Date.now() + 1).toString(),
+          sender: 'agent',
+          message: responseText,
+          timestamp: new Date().toISOString(),
+        };
+      }
+
+      // Store BOTH user message and agent response in the database
+      if (user) {
+        try {
+          console.log('Storing interaction in database:', {
+            userMessage: userMessage.message,
+            agentResponse: agentResponse.message,
+            agentType: agentType === 'mondai' ? 'learn' : agentType
+          });
+
           const result = await processAgentInteraction(
             userMessage.message,
-            backendAgentType, // Use learn instead of mondai here
-            agentResponse
+            agentType === 'mondai' ? 'learn' : agentType,
+            agentResponse.message
           );
           
           if (!result.success) {
             console.error('Failed to process agent interaction:', result.error);
+            toast.error('Failed to save conversation', {
+              description: 'Your conversation may not be saved to history'
+            });
+          } else {
+            console.log('Successfully stored interaction in database');
           }
+        } catch (error) {
+          console.error('Error storing interaction:', error);
+          toast.error('Failed to save conversation', {
+            description: 'Your conversation may not be saved to history'
+          });
         }
-
-        const newAgentMessage: AgentMessage = {
-          id: (Date.now() + 1).toString(),
-          sender: 'agent',
-          message: agentResponse,
-          timestamp: new Date().toISOString(),
-        };
-
-        setMessages(prev => [...prev, newAgentMessage]);
       }
+      
+      setMessages(prev => [...prev, agentResponse]);
       
       // After processing, refresh interactions to update the list
       if (user) {

@@ -28,18 +28,38 @@ export const useMessageHistory = (
         await refreshInteractions();
         
         if (interactions && interactions.length > 0) {
-          // Transform database records into message format
-          const historicalMessages = interactions.map((interaction): AgentMessage => {
-            return {
-              id: interaction.id,
-              sender: 'agent',
-              message: interaction.response,
-              timestamp: interaction.created_at,
-              metadata: interaction.metadata || undefined
-            };
+          // Transform database records into message format - create BOTH user and agent messages
+          const historicalMessages: AgentMessage[] = [];
+          
+          interactions.forEach((interaction) => {
+            // Create user message from the query
+            if (interaction.query && interaction.query.trim()) {
+              historicalMessages.push({
+                id: `${interaction.id}-user`,
+                sender: 'user',
+                message: interaction.query,
+                timestamp: interaction.created_at,
+              });
+            }
+            
+            // Create agent message from the response
+            if (interaction.response && interaction.response.trim()) {
+              historicalMessages.push({
+                id: `${interaction.id}-agent`,
+                sender: 'agent',
+                message: interaction.response,
+                timestamp: interaction.created_at,
+                metadata: interaction.metadata || undefined
+              });
+            }
           });
           
-          console.log(`Loaded ${historicalMessages.length} historical messages for ${agentType}`);
+          // Sort messages by timestamp to ensure proper chronological order
+          historicalMessages.sort((a, b) => 
+            new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+          );
+          
+          console.log(`Loaded ${historicalMessages.length} historical messages (${interactions.length} interactions) for ${agentType}`);
           
           // Only set messages if we have historical data and haven't loaded before
           if (historicalMessages.length > 0) {
