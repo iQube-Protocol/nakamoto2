@@ -51,9 +51,7 @@ const SplashPage = () => {
         {/* Action Buttons */}
         <div className="flex flex-col space-y-4 max-w-md mx-auto w-full pb-8">
           
-          <Button onClick={() => navigate('/mondai')} variant="outline" className="w-full border-white/30 text-white hover:bg-white/10">
-            Try Nakamoto
-          </Button>
+          <Button onClick={() => navigate('/mondai')} variant="outline" className="w-full border-white/30 text-white hover:bg-white/10">Try Aigent Nakamoto</Button>
         </div>
 
         <div className="text-xs text-white/50 text-center">Powered by iQubes & Aigentic AI</div>
