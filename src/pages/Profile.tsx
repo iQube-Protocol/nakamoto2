@@ -52,7 +52,7 @@ const Profile = () => {
               <div className="flex justify-between">
                 <span className="text-muted-foreground">Status:</span>
                 <span>
-                  <Badge variant={user.email_confirmed_at ? "success" : "destructive"}>
+                  <Badge variant={user.email_confirmed_at ? "secondary" : "destructive"}>
                     {user.email_confirmed_at ? "Verified" : "Unverified"}
                   </Badge>
                 </span>
