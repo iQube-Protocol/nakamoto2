@@ -34,9 +34,9 @@ const KnowledgeList = ({
     </div>
   );
 
-  const hasQryptoItems = filteredQryptoItems.length > 0;
-  const hasMetaKnytsItems = filteredMetaKnytsItems.length > 0;
-  const hasAnyItems = hasQryptoItems || hasMetaKnytsItems;
+  const hasIQubesItems = filteredQryptoItems.length > 0;
+  const hasCOYNItems = filteredMetaKnytsItems.length > 0;
+  const hasAnyItems = hasIQubesItems || hasCOYNItems;
 
   return (
     <div className="flex flex-col h-full overflow-hidden">
@@ -44,20 +44,20 @@ const KnowledgeList = ({
         <div className="p-4 pb-2">
           {showBothSections ? (
             <div className="space-y-6">
-              {hasQryptoItems && (
+              {hasIQubesItems && (
                 <div>
-                  <h3 className="font-semibold mb-3 text-orange-400 text-base">
-                    {isMobile ? 'COYN' : 'QryptoCOYN'} Factual Knowledge
+                  <h3 className="font-semibold mb-3 text-blue-400 text-base">
+                    iQubes Technical Knowledge
                   </h3>
-                  {renderKnowledgeItems(filteredQryptoItems, isMobile ? 'COYN' : 'QryptoCOYN')}
+                  {renderKnowledgeItems(filteredQryptoItems, 'iQubes')}
                 </div>
               )}
-              {hasMetaKnytsItems && (
+              {hasCOYNItems && (
                 <div>
-                  <h3 className="font-semibold mb-3 text-violet-400 text-base">
-                    {isMobile ? 'COYN' : 'QryptoCOYN'} fictional lore: {isMobile ? 'KNYT' : 'mẹtaKnyts'}
+                  <h3 className="font-semibold mb-3 text-orange-400 text-base">
+                    COYN Economic Framework
                   </h3>
-                  {renderKnowledgeItems(filteredMetaKnytsItems, isMobile ? 'KNYT' : 'mẹtaKnyts')}
+                  {renderKnowledgeItems(filteredMetaKnytsItems, 'COYN')}
                 </div>
               )}
               {!hasAnyItems && (
@@ -68,18 +68,18 @@ const KnowledgeList = ({
             </div>
           ) : (
             <div>
-              {hasQryptoItems && renderKnowledgeItems(filteredQryptoItems, isMobile ? 'COYN' : 'QryptoCOYN')}
-              {hasMetaKnytsItems && renderKnowledgeItems(filteredMetaKnytsItems, isMobile ? 'KNYT' : 'mẹtaKnyts')}
+              {hasIQubesItems && renderKnowledgeItems(filteredQryptoItems, 'iQubes')}
+              {hasCOYNItems && renderKnowledgeItems(filteredMetaKnytsItems, 'COYN')}
               {!hasAnyItems && (
                 <p className="text-center text-gray-500 py-8">
                   {searchTerm ? (
-                    hasQryptoItems || filteredQryptoItems.length === 0 ? 
-                    `No ${isMobile ? 'KNYT' : 'mẹtaKnyts'} items found matching "${searchTerm}"` :
-                    `No ${isMobile ? 'COYN' : 'QryptoCOYN'} items found matching "${searchTerm}"`
+                    hasIQubesItems || filteredQryptoItems.length === 0 ? 
+                    `No COYN items found matching "${searchTerm}"` :
+                    `No iQubes items found matching "${searchTerm}"`
                   ) : (
-                    hasQryptoItems || filteredQryptoItems.length === 0 ?
-                    `No ${isMobile ? 'KNYT' : 'mẹtaKnyts'} items available` :
-                    `No ${isMobile ? 'COYN' : 'QryptoCOYN'} items available`
+                    hasIQubesItems || filteredQryptoItems.length === 0 ?
+                    'No COYN items available' :
+                    'No iQubes items available'
                   )}
                 </p>
               )}
