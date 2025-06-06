@@ -44,7 +44,7 @@ const SplashPage = () => {
             <h2 className="text-xl md:text-2xl font-semibold text-qrypto-accent">
               Aigent Nakamoto
             </h2>
-            <p className="text-white/80 text-sm md:text-lg">Your iQube and COYN companion</p>
+            <p className="text-white/80 text-sm md:text-lg">Sign up for your personalized iQube and COYN AI Agent</p>
           </div>
         </div>
 
