@@ -5,7 +5,7 @@ import { Info } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import ChatTab from './ChatTab';
 import KnowledgeBase from '../KnowledgeBase';
-import iQubesKnowledgeBase from '@/components/mondai/iQubesKnowledgeBase';
+import IQubesKnowledgeBase from '@/components/mondai/iQubesKnowledgeBase';
 import AgentInputBar from '../AgentInputBar';
 import { AgentMessage } from '@/lib/types';
 
@@ -91,7 +91,7 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps> = ({
 
         <TabsContent value="knowledge" className="h-full m-0 p-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col flex-1">
           {agentType === 'mondai' ? (
-            <iQubesKnowledgeBase />
+            <IQubesKnowledgeBase />
           ) : (
             <KnowledgeBase agentType={knowledgeBaseAgentType} />
           )}
