@@ -14,6 +14,7 @@ interface AgentInputBarProps {
   isProcessing: boolean;
   agentType: 'learn' | 'earn' | 'connect' | 'mondai';
   handleKeyDown?: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
+  onAfterSubmit?: () => void;
 }
 
 const AgentInputBar = ({
@@ -22,7 +23,8 @@ const AgentInputBar = ({
   handleSubmit,
   isProcessing,
   agentType,
-  handleKeyDown
+  handleKeyDown,
+  onAfterSubmit
 }: AgentInputBarProps) => {
   const { toast } = useToast();
   const isMobile = useIsMobile();
@@ -42,8 +44,14 @@ const AgentInputBar = ({
     });
   };
 
-  // Remove the default key handler to avoid double submissions
-  // The handleKeyDown prop from useMessageInput will be used instead
+  // Enhanced form submit handler that calls the callback after submission
+  const handleFormSubmit = (e: React.FormEvent) => {
+    handleSubmit(e);
+    // Call the callback after submission if provided
+    if (onAfterSubmit) {
+      onAfterSubmit();
+    }
+  };
 
   // Custom input change handler to adjust textarea height
   const customHandleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -59,7 +67,7 @@ const AgentInputBar = ({
   };
 
   return (
-    <form onSubmit={handleSubmit} className="border-t p-4">
+    <form onSubmit={handleFormSubmit} className="border-t p-4">
       <div className="flex items-center space-x-2">
         <div className="relative flex-1 flex items-center">
           <div className="absolute left-3 flex items-center space-x-2">

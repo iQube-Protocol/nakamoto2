@@ -1,5 +1,4 @@
 
-
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Info } from 'lucide-react';
@@ -41,10 +40,8 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps> = ({
   handlePlayAudio,
   handleKeyDown
 }) => {
-  // Function to handle form submission and switch to chat tab
-  const handleFormSubmit = (e: React.FormEvent) => {
-    // First execute the original submit handler
-    handleSubmit(e);
+  // Function to handle tab switching after form submission
+  const handleAfterSubmit = () => {
     // Always switch to chat tab when a message is sent
     setActiveTab('chat');
   };
@@ -105,10 +102,11 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps> = ({
         <AgentInputBar 
           inputValue={inputValue} 
           handleInputChange={handleInputChange} 
-          handleSubmit={handleFormSubmit}
+          handleSubmit={handleSubmit}
           isProcessing={isProcessing} 
           agentType={agentType} 
-          handleKeyDown={handleKeyDown} 
+          handleKeyDown={handleKeyDown}
+          onAfterSubmit={handleAfterSubmit}
         />
       </div>
     </Tabs>
@@ -116,4 +114,3 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps> = ({
 };
 
 export default SimplifiedAgentTabs;
-
