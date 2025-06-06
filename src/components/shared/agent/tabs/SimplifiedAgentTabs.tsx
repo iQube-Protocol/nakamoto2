@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Info } from 'lucide-react';
@@ -44,10 +45,8 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps> = ({
   const handleFormSubmit = (e: React.FormEvent) => {
     // First execute the original submit handler
     handleSubmit(e);
-    // Then switch to chat tab if we're not already there
-    if (activeTab !== 'chat') {
-      setActiveTab('chat');
-    }
+    // Always switch to chat tab when a message is sent
+    setActiveTab('chat');
   };
 
   // Convert 'mondai' to 'learn' for KnowledgeBase component
@@ -117,3 +116,4 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps> = ({
 };
 
 export default SimplifiedAgentTabs;
+
