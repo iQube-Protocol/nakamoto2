@@ -82,7 +82,7 @@ const Profile = () => {
               <div className="space-y-4">
                 {interactions && interactions.length > 0 ? interactions.map(interaction => <div key={interaction.id} className="space-y-3 p-4 border rounded-lg">
                       {/* User Query */}
-                      {interaction.query && <div className="p-3 rounded-lg bg-inherit">
+                      {interaction.query && <div className="p-3 rounded-lg bg-[#2d1f17]/45">
                           <div className="flex items-center gap-2 mb-2">
                             <Badge variant="outline">You asked</Badge>
                             <span className="text-xs text-muted-foreground">
@@ -93,7 +93,7 @@ const Profile = () => {
                         </div>}
                       
                       {/* Agent Response */}
-                      {interaction.response && <div className="p-3 rounded-lg bg-gray-800">
+                      {interaction.response && <div className="p-3 rounded-lg bg-[#23223f]/[0.32]">
                           <div className="flex items-center gap-2 mb-2">
                             <Badge variant="secondary">{interaction.interaction_type} agent responded</Badge>
                           </div>
