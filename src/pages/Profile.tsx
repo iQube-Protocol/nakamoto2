@@ -64,7 +64,7 @@ const Profile = () => {
         {/* Interaction history section with fixed height and scrolling */}
         <Card>
           <CardHeader className="pb-2">
-            <CardTitle>Conversation History</CardTitle>
+            <CardTitle className="font-medium text-lg">History</CardTitle>
             <div className="flex space-x-2">
               <button onClick={() => setActiveTab('learn')} className="bg-qrypto-primary px-[8px]">Learn  </button>
               <button onClick={() => setActiveTab('earn')} className={`px-3 py-1 rounded ${activeTab === 'earn' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
