@@ -1,4 +1,3 @@
-
 import { QryptoKnowledgeItem } from './types';
 
 export const QRYPTO_KNOWLEDGE_DATA: QryptoKnowledgeItem[] = [
@@ -19,325 +18,303 @@ export const QRYPTO_KNOWLEDGE_DATA: QryptoKnowledgeItem[] = [
     source: 'QryptoCOYN Core Documentation'
   },
   {
-    id: 'qoyn-economy-fundamentals',
-    title: '$QOYN Economy Fundamentals',
-    content: `The $QOYN economy is underpinned by three protocols:
-    1. iQube Protocol - containerised information management protocol where information primitives and intelligence assets are dynamically curated, quantified and accessed by the level of risk associated with using them in specific contexts.
-    2. Aigent Protocol - iQube compliant AI agents from different platforms with verifiable metrics matched with curated precise datasets (iQubes) that accelerate time to value.
-    3. COYN Protocol - a data-as-an asset backed digital currency framework where currencies are accurately priced based on data risk and utility.`,
-    section: 'Ecosystem Fundamentals',
+    id: 'iqube-whitepaper-executive-summary',
+    title: 'iQube Protocol Executive Summary',
+    content: `The emergence of agentic AI—a new class of autonomous, goal-oriented systems—has created an urgent need for reliable, verifiable, and secure information assets. Current data systems are too centralized, too opaque, and too rigid to handle the complexity of AI systems that must act independently, adaptively, and ethically.
+
+The iQube Protocol is a groundbreaking solution designed to containerize data and intelligence into decentralized, cryptographically entangled primitives. By combining metaQubes (on-chain metadata), blakQubes (encrypted payloads), and tokenQubes (access and decryption keys), the protocol creates a trustless and verifiable information environment that meets the demands of agentic AI.
+
+The protocol bridges the trust gap in agentic AI by providing a cryptographically verifiable information container system that addresses the fundamental limitations of centralized and opaque data infrastructures. The dual-network architecture consists of an open permissionless network that hosts metaQubes and a private permissioned network that manages blakQubes, cryptographically entangled using hash functions and zero-knowledge proofs.
+
+By enabling data-as-an-asset valuation, integrating with AI orchestration via the Aigent Protocol, and leveraging the COYN economy's micro-stable coins for value exchange, the iQube Protocol provides the technical and economic foundation for a resilient, scalable, and ethical agentic AI economy.`,
+    section: 'Protocol Overview',
     category: 'protocols',
-    keywords: ['iQube Protocol', 'Aigent Protocol', 'COYN Protocol', 'data-as-asset', 'risk'],
+    keywords: ['iQube Protocol', 'agentic AI', 'metaQubes', 'blakQubes', 'tokenQubes', 'dual-network architecture', 'cryptographic entanglement'],
     timestamp: new Date().toISOString(),
-    source: 'QryptoCOYN Tokenomics'
+    source: 'iQube Whitepaper v0.1'
   },
   {
-    id: 'consensus-frameworks',
-    title: 'Three Consensus Frameworks',
-    content: `Three Consensus Frameworks underpin the three protocols:
-    1. Proof of Risk - Quantifies the risk associated with using a particular dataset in a particular context.
-    2. Proof of Price - Prices data based on cost to underwrite the risk associated with using it per Proof-of-risk; and from assessing the value anticipated by the buyer to be generated from it.
-    3. Proof of State - enables the state of iQubes and agents that use them to be immutably verified.`,
-    section: 'Consensus Frameworks',
-    category: 'consensus',
-    keywords: ['Proof of Risk', 'Proof of Price', 'Proof of State', 'PoR', 'PoP'],
+    id: 'iqube-problem-space',
+    title: 'iQube Protocol Problem Space',
+    content: `The iQube Protocol is designed to tackle four core problem spaces that limit the effectiveness of agentic AI systems:
+
+1. **Data Lockout:** Traditional data systems are fragmented, with critical data locked within corporate silos or private repositories. This fragmentation prevents AI agents from accessing complete, reliable datasets necessary for accurate reasoning and decision-making.
+
+2. **Unpredictable AI Outputs:** AI models trained on fragmented or unverified data often produce outputs of inconsistent quality, leading to unreliable recommendations and decisions. The iQube Protocol introduces metaQubes that embed provenance, quality metrics, and usage rights directly into the information container.
+
+3. **Intellectual Property Leakage:** In centralized systems, data assets are vulnerable to unauthorized access, copying, or misuse. The iQube Protocol uses cryptographically entangled primitives to enforce data integrity and control.
+
+4. **Systemic Risk:** Centralized architectures are prone to single points of failure and adversarial attacks. The iQube Protocol mitigates these risks through its dual-network design and cryptographic entanglement.
+
+By addressing these problem spaces, the iQube Protocol provides a secure, verifiable, and dynamic foundation for the agentic AI economy.`,
+    section: 'Problem Analysis',
+    category: 'philosophy',
+    keywords: ['data lockout', 'AI outputs', 'IP leakage', 'systemic risk', 'centralized systems', 'data fragmentation'],
     timestamp: new Date().toISOString(),
-    source: 'QryptoCOYN Tokenomics'
+    source: 'iQube Whitepaper v0.1'
   },
   {
-    id: 'iqubes-functionality',
-    title: 'iQubes Functionality',
-    content: `iQubes accurately quantify the risk and value associated with using specific datasets, content, tools, models and AI agents, in specific contexts with high levels of precision and granularity. They bring relevant and precise data to AI agents and vice versa. iQubes also bring precise and contextually relevant AI agents to datasets. E.g. a health care iQube can corral a swarm of health agents as a financial information iQube can coral TradFi and DeFi agents.`,
-    section: 'iQubes Core Functionality',
-    category: 'protocols',
-    keywords: ['iQubes', 'risk quantification', 'AI agents', 'datasets', 'contextual intelligence'],
+    id: 'iqube-design-philosophy',
+    title: 'iQube Protocol Design Philosophy',
+    content: `The iQube Protocol's design philosophy is anchored on three foundational principles:
+
+1. **Intent-Based Curation:** The protocol acknowledges that information is not uniformly valuable across all contexts. Data relevance, risk, and intended use vary depending on the AI service or decision-making process. The iQube Protocol incorporates a dynamic tagging and curation system embedded in metaQubes.
+
+2. **Context-Aware Risk Management:** Traditional encryption and access control systems treat data as static, applying uniform security measures regardless of context. The iQube Protocol integrates dynamic risk scoring mechanisms that evaluate both intrinsic risk and contextual risk.
+
+3. **Dual-Network Architecture:** To balance transparency with confidentiality, the iQube Protocol uses a dual-network design. The open permissionless network manages metaQubes, while the private permissioned network manages blakQubes. Cryptographic entanglement mechanisms bind the two networks together.
+
+By synthesizing these principles, the iQube Protocol creates a secure, composable, and risk-managed information environment, enabling AI agents to operate autonomously and responsibly in decentralized ecosystems.`,
+    section: 'Design Principles',
+    category: 'philosophy',
+    keywords: ['intent-based curation', 'context-aware risk', 'dual-network architecture', 'dynamic tagging', 'cryptographic entanglement'],
     timestamp: new Date().toISOString(),
-    source: 'QryptoCOYN Tokenomics'
+    source: 'iQube Whitepaper v0.1'
   },
   {
-    id: 'tcm-model',
-    title: 'Techno Capital Machine (TCM) Model',
-    content: `The protocol uses the Techno Capital Machine Model (TCM) to reward users for staking three types of assets:
-    1. Capital - Capital providers are able to stake Ethereum or Bitcoin and earn yield from that stake in the form of QryptoCOYNs that are emitted on a daily basis pro rata
-    2. Compute - Compute providers are able to earn QryptoCOYN from contributing software and hardware to the iQube ecosystem for use by the ecosystem.
-    3. Content - Content providers are rewarded for staking data and content (i.e. rich media, IP etc) to the ecosystem for use by third parties.`,
-    section: 'Commercial Mechanics',
-    category: 'mechanics',
-    keywords: ['TCM', 'Techno Capital Machine', 'staking', 'Capital', 'Compute', 'Content'],
-    timestamp: new Date().toISOString(),
-    source: 'QryptoCOYN Tokenomics'
-  },
-  {
-    id: 'token-economics',
-    title: '$QOYN Token Economics',
-    content: `100M QryptoCOYN tokens will be minted and dispersed over a 10 year period at a rate of 10M QryptoCOYN tokens per year. 30% of emissions will be assigned to each of the three pillars everyday at a rate of 8,219 tokens per pillar per day. The remaining 10% will go to a Treasury pool that will be used to provide liquidity, buy back tokens and manage the network.`,
-    section: 'Inflationary Emission Schedule',
-    category: 'tokenomics',
-    keywords: ['$QOYN', 'token distribution', 'emissions', 'Treasury pool', '100M tokens'],
-    timestamp: new Date().toISOString(),
-    source: 'QryptoCOYN Tokenomics'
-  },
-  {
-    id: 'deflationary-mechanics',
-    title: 'Deflationary Mechanics',
-    content: `The 10% pool will be used also to acquire 10% of QryptoCOYN and convert 5% of emissions on a daily basis creating a deflationary mechanic intrinsic to the protocol. Marketplace Commissions (up to 30% fees) will generate revenue that will fund burns and staking. Dynamic Burns (e.g., 60–80% of fees) will offset inflation. Up to 30% APY Staking will lock supply.`,
-    section: 'Deflationary Mechanics',
-    category: 'tokenomics',
-    keywords: ['deflationary', 'burns', 'staking', 'APY', 'marketplace commissions'],
-    timestamp: new Date().toISOString(),
-    source: 'QryptoCOYN Tokenomics'
-  },
-  {
-    id: 'bitcoin-security',
-    title: 'Bitcoin-Secured iQubes',
-    content: `The $COYN and iQube protocols leverage Bitcoin's security by technically anchoring each iQube and $COYN to a Satoshi (1/100,000,000 BTC), providing both with Bitcoin's world-leading data security. However, though each iQube and $COYN is technically entangled with a Satoshi they are not economically pegged to it, giving both Bitcoin grade security without pegging their market value to BTC.`,
-    section: 'Bitcoin Security',
+    id: 'iqube-three-primitives',
+    title: 'iQube Three Cryptographic Primitives',
+    content: `At the core of the iQube Protocol lies a modular and composable container system built from three cryptographic primitives:
+
+**metaQubes:** These are transparent, on-chain metadata containers that store information about data provenance, quality, usage rights, risk profiles, and compliance states. Each metaQube serves as a discovery and verification point for AI agents, providing them with a snapshot of the data asset's lineage and risk status before accessing the underlying content.
+
+**blakQubes:** These containers hold the encrypted payloads—raw or structured data—that represent the private, sensitive information asset. blakQubes are stored on a private permissioned network, ensuring confidentiality. They are cryptographically entangled with their corresponding metaQubes and tokenQubes.
+
+**tokenQubes:** These smart contract-enabled primitives govern access and decryption rights to blakQubes. They enforce dynamic, risk-aware key releases based on real-time risk scoring and identity states. The tokenQube design ensures that data consumers can only decrypt data if they meet the risk and identity conditions specified in the metaQube.
+
+This modular and entangled design allows iQubes to be transferred across networks, embedded in AI services, and integrated into composable workflows while maintaining verifiable risk, provenance, and usage rights.`,
+    section: 'Core Architecture',
     category: 'technical',
-    keywords: ['Bitcoin security', 'Satoshi', 'entanglement', 'TokenQube', 'security'],
+    keywords: ['metaQubes', 'blakQubes', 'tokenQubes', 'cryptographic primitives', 'entanglement', 'access control', 'risk scoring'],
     timestamp: new Date().toISOString(),
-    source: 'QryptoCOYN Tokenomics'
+    source: 'iQube Whitepaper v0.1'
   },
   {
-    id: 'proof-of-price-models',
-    title: 'Proof of Price Models',
-    content: `Data can be intrinsically priced from two perspectives:
-    1. Obtaining new data (Negative risk – Opportunity for a Gain): This implies that acquiring new data introduces an opportunity.
-    2. Losing existing data (Positive risk – Risk of a Loss): This perspective frames data loss as a risk with potentially adverse consequences.
-    Three models are being evaluated: Risk Model, Z-Score approach (Opportunity for Gain), and Z-Score approach (Risk of a Loss).`,
-    section: 'Proof of Price Framework',
-    category: 'economics',
-    keywords: ['Proof of Price', 'data pricing', 'risk models', 'Z-Score', 'opportunity cost'],
-    timestamp: new Date().toISOString(),
-    source: 'QryptoCOYN Tokenomics'
-  },
-  {
-    id: 'technical-architecture',
-    title: 'Technical Architecture',
-    content: `ICP Chain Fusion will be used to enable trust-minimized, decentralized interaction with Bitcoin, allowing ICP smart contracts to natively manage Bitcoin UTXOs. LayerZero will be used to enable secure and reliable cross-chain message passing between ICP, Bitcoin, and EVM blockchains.`,
-    section: 'Technical Implementation',
+    id: 'iqube-information-intelligence-primitives',
+    title: 'iQube Information & Intelligence Primitives',
+    content: `The iQube Protocol structures its information architecture through five core primitives:
+
+**DataQubes:** Structured data containers for tabular, relational, and highly organized information. Each DataQube includes metadata that captures data schema, quality metrics, and risk assessments, ensuring that AI agents can assess data trustworthiness and provenance before use.
+
+**ContentQubes:** Encrypted containers for unstructured data such as text documents, images, and multimedia. ContentQubes leverage cryptographic entanglement to tie their metadata and access controls into the same trustless framework.
+
+**ToolQubes:** Self-contained functional modules, such as AI pipelines, data transformation scripts, or analytics workflows. ToolQubes integrate with the Aigent Protocol to support dynamic AI service orchestration and compliance verification.
+
+**ModelQubes:** Containers for AI models, algorithms, and neural networks. ModelQubes include risk metadata detailing training data provenance, model sensitivity, and explainability factors. TokenQubes manage access to these models, enabling risk-based model sharing.
+
+**AgentQubes (Aigents):** Autonomous agents that operate in compliance with iQube standards. Each Aigent interacts with iQubes through the Aigent Protocol's Orchestration Agent, using the Context, Service, and State Layers.
+
+The entanglement of these primitives ensures that information assets are secure, auditable, with dynamic risk management and usage rights embedded directly into each container.`,
+    section: 'Data Primitives',
     category: 'technical',
-    keywords: ['ICP Chain Fusion', 'LayerZero', 'cross-chain', 'Bitcoin UTXOs', 'EVM'],
+    keywords: ['DataQubes', 'ContentQubes', 'ToolQubes', 'ModelQubes', 'AgentQubes', 'Aigents', 'data containers', 'AI orchestration'],
     timestamp: new Date().toISOString(),
-    source: 'COYN Requirements'
+    source: 'iQube Whitepaper v0.1'
   },
   {
-    id: 'sec-bitcoin-precedent',
-    title: 'SEC Bitcoin Precedent & Non-Security Status',
-    content: `The SEC has repeatedly acknowledged that Bitcoin (BTC) is not a security, most notably in its 2018 report and 2020 dismissal of the Howey Test for BTC. The COYN protocol's technical underpinning of 1 Satoshi per iQube ties $QOYN to Bitcoin's non-security status. $QOYN's value derives from its utility in the ecosystem (accessing iQubes, staking, governance), not from expectations of profit tied to third-party efforts.`,
-    section: 'Bitcoin Satoshi Underpinning',
-    category: 'legal',
-    keywords: ['SEC', 'Bitcoin', 'non-security', 'Howey Test', 'Satoshi underpinning', 'utility token'],
+    id: 'iqube-identity-privacy',
+    title: 'iQube Identity & Privacy Framework',
+    content: `Identity and privacy are core components of the iQube Protocol's approach to secure, trustless data sharing. The protocol leverages DiDQubes (Dynamic Decentralized Identifier Qubes) to manage identities dynamically across different states—anonymous, semi-anonymous, semi-identifiable, and fully identifiable—depending on contextual risk, regulatory requirements, and user preferences.
+
+**DiDQube Functionality:** DiDQubes act as decentralized identity containers that embed cryptographic proofs of identity state, risk level, and usage permissions. When AI agents or data consumers interact with an iQube, they use the DiDQube to verify the identity state of the data provider or owner.
+
+**Anonymization-On-Chain vs. Identifiability-In-App:** The protocol separates identity management into two domains:
+- **Anonymization-On-Chain:** Identity metadata stored in the permissionless network is anonymized using cryptographic techniques such as zero-knowledge proofs and threshold cryptography.
+- **Identifiability-In-App:** When AI agents or applications need to interact with data owners, the iQube Protocol uses secure connectors to reveal identity states on a contextual, permissioned basis.
+
+**Escrow Mechanisms:** For semi-anonymous or semi-identifiable states, the protocol uses smart contract-based escrow systems to temporarily hold identity information until risk and compliance checks are satisfied.
+
+By embedding dynamic identity management into the protocol's architecture, iQubes can maintain data integrity and privacy while supporting regulatory compliance and trustless interactions.`,
+    section: 'Identity Management',
+    category: 'technical',
+    keywords: ['DiDQubes', 'dynamic identity', 'anonymization', 'zero-knowledge proofs', 'identity states', 'escrow mechanisms'],
     timestamp: new Date().toISOString(),
-    source: '$QOYN Legal Strategy'
+    source: 'iQube Whitepaper v0.1'
   },
   {
-    id: 'data-commodity-framework',
-    title: 'Data as Quantifiable Commodity',
-    content: `The COYN protocol positions data as a quantifiable, tradable commodity, with $QOYN acting as a medium for pricing and transacting this data. By framing $QOYN as a utility token for accessing and pricing data (not an investment), COYN avoids triggering the Howey Test. Data underpinned by iQubes is treated as a fungible or non-fungible commodity, similar to real-world assets like gold or oil.`,
-    section: 'Data Commodity Classification',
-    category: 'legal',
-    keywords: ['data commodity', 'Howey Test', 'utility token', 'fungible assets', 'data valuation'],
-    timestamp: new Date().toISOString(),
-    source: '$QOYN Legal Strategy'
-  },
-  {
-    id: 'regulatory-compliance-strategy',
-    title: 'Regulatory Strategy & Utility Focus',
-    content: `$QOYN's primary use cases include: Access to iQubes (required for all data transactions), Staking (earn rewards tied to protocol fees, not inflation), and Governance (token holders vote on technical parameters, not profit distribution). This utility-first model mirrors non-security tokens like Filecoin and Chainlink. Wyoming's blockchain-friendly laws provide a defensible jurisdictional framework.`,
-    section: 'Utility Focus & Compliance',
-    category: 'legal',
-    keywords: ['utility focus', 'Wyoming laws', 'protocol fees', 'governance', 'regulatory compliance'],
-    timestamp: new Date().toISOString(),
-    source: '$QOYN Legal Strategy'
-  },
-  {
-    id: 'legal-risk-mitigations',
-    title: 'Legal Risks & Mitigations',
-    content: `Potential SEC scrutiny of hybrid tokens is mitigated through clear documentation emphasizing $QOYN's utility over speculative gains, ensuring no revenue sharing (rewards tied to protocol fees, not enterprise profits), and transparency in Satoshi reserves through monthly audits. Third-party audits verify data's quantifiable value via iQube metadata and risk scores.`,
+    id: 'iqube-risk-quantification',
+    title: 'iQube Risk Quantification Pipeline',
+    content: `Risk management within the iQube Protocol is a dynamic process that integrates both static and contextual elements to produce real-time risk assessments for each iQube.
+
+**Static (Intrinsic) Risk:** Static risk refers to the inherent sensitivity of a data asset, such as the presence of personally identifiable information (PII), trade secrets, or regulatory classification. Each iQube includes a static risk score embedded in its metaQube.
+
+**Dynamic (Contextual) Risk:** Dynamic risk factors are determined by the context in which data is accessed or requested. This includes the identity state of the requesting Aigent, the intended use case, current threat vectors, and real-time network conditions.
+
+**Proof-of-Risk Mechanism:** The Proof-of-Risk mechanism continuously evaluates and recalculates the dynamic risk score of an iQube based on real-time context. This risk score directly informs the tokenQube's smart contract logic, adjusting decryption thresholds, access permissions, and logging requirements in real time.
+
+**Risk Quantification Formula:**
+Risk = (Static Sensitivity Score × Weight A) + (Dynamic Contextual Score × Weight B)
+
+Weights A and B are configurable by protocol governance, allowing system operators to fine-tune the balance between intrinsic data risk and real-time usage risk. This dynamic risk quantification pipeline ensures that data is never accessed or processed without a comprehensive, context-sensitive risk evaluation.`,
     section: 'Risk Management',
-    category: 'legal',
-    keywords: ['SEC scrutiny', 'hybrid tokens', 'documentation', 'Satoshi reserves', 'third-party audits'],
-    timestamp: new Date().toISOString(),
-    source: '$QOYN Legal Strategy'
-  },
-  {
-    id: 'tcm-bucket-allocation',
-    title: 'TCM Bucket Allocation Structure',
-    content: `The Techno Capital Machine allocates emissions as follows: 30% to Capital Bucket (Bitcoin and Ethereum stakers), 30% to Compute Bucket (software and hardware providers), 30% to Content Bucket (data and content creators), and 10% to Pool (for micro stable coin pegged to $0.01). This structure ensures balanced incentives across all three pillars of the ecosystem.`,
-    section: 'TCM Distribution Model',
-    category: 'implementation',
-    keywords: ['TCM buckets', 'Capital bucket', 'Compute bucket', 'Content bucket', 'micro stable coin'],
-    timestamp: new Date().toISOString(),
-    source: '$QOYN TCM Specification'
-  },
-  {
-    id: 'cross-chain-integration',
-    title: 'Cross-Chain Integration Architecture',
-    content: `ICP Chain Fusion enables secure interaction with Bitcoin, allowing ICP smart contracts to manage Bitcoin UTXOs directly. LayerZero provides safe and reliable communication between ICP, Bitcoin, and EVM blockchains. This architecture ensures interoperability while maintaining security and decentralization across multiple blockchain networks.`,
-    section: 'Technical Integration',
     category: 'technical',
-    keywords: ['ICP Chain Fusion', 'LayerZero', 'cross-chain', 'Bitcoin UTXOs', 'EVM integration', 'interoperability'],
+    keywords: ['Proof-of-Risk', 'static risk', 'dynamic risk', 'risk scoring', 'contextual assessment', 'smart contracts'],
     timestamp: new Date().toISOString(),
-    source: '$QOYN TCM Specification'
+    source: 'iQube Whitepaper v0.1'
   },
   {
-    id: 'implementation-roadmap',
-    title: 'Implementation Roadmap',
-    content: `Pre-Launch: Secure enterprise iQube partnerships and create dashboard for real-time burn/APY tracking. Launch: Enforce mandatory QryptoCOYN usage for iQubes and implement governance voting for parameter adjustments. Post-Launch: Monitor and adjust tokenomics and staking mechanisms as needed. The roadmap ensures systematic deployment and continuous optimization.`,
-    section: 'Development Timeline',
-    category: 'implementation',
-    keywords: ['implementation roadmap', 'enterprise partnerships', 'governance voting', 'tokenomics adjustment'],
+    id: 'iqube-access-encryption-automation',
+    title: 'iQube Access & Encryption Automation',
+    content: `Access control in the iQube Protocol is managed through a highly dynamic, smart contract-driven system that leverages tokenQubes to enforce encryption key releases based on real-time risk scores.
+
+**Smart Contract Enforcement:** Each tokenQube is governed by a smart contract that encodes the access conditions for its corresponding blakQube. These conditions include risk thresholds, identity verification states, and usage rights as defined in the metaQube.
+
+**Risk Score Tiers:** Access permissions are divided into risk score tiers:
+- **Low Risk Tier:** Direct decryption key release to verified agents with compliant identity states.
+- **Medium Risk Tier:** Conditional key release with additional verifiable proof-of-purpose or proof-of-compliance.
+- **High Risk Tier:** Requires multi-signature approvals from designated compliance nodes or protocol governance entities.
+
+**Dynamic Encryption Layers:** The protocol supports dynamic encryption, where the encryption strength can be adjusted based on the risk score. For higher-risk data, tokenQubes can trigger on-the-fly re-encryption with stronger algorithms or longer key lengths.
+
+**Access Logging and Auditability:** Every key release and decryption event is logged immutably on-chain via the metaQube, ensuring full traceability and auditability.
+
+Through this dynamic, risk-aware encryption automation, the iQube Protocol creates a self-regulating data environment that adapts to real-time risk and identity states.`,
+    section: 'Access Control',
+    category: 'technical',
+    keywords: ['access control', 'smart contracts', 'dynamic encryption', 'risk tiers', 'audit trails', 'key management'],
     timestamp: new Date().toISOString(),
-    source: '$QOYN TCM Specification'
+    source: 'iQube Whitepaper v0.1'
   },
   {
-    id: 'micro-stablecoin-framework',
-    title: 'Micro Stable Coin Framework',
-    content: `The micro stable coin is pegged 1:1 to $0.01 and funded by 10% of QryptoCOYN emissions allocated to the Pool. This micro stable coin facilitates transactions within the ecosystem, providing price stability for day-to-day operations while the main $QOYN token captures value appreciation. It serves as the transactional currency for iQube access and data pricing.`,
-    section: 'Stable Coin Mechanics',
+    id: 'iqube-aigent-protocol-stack',
+    title: 'iQube Aigent Protocol Stack',
+    content: `The Aigent Protocol Stack orchestrates AI agent interactions with iQubes, ensuring that AI systems remain compliant, auditable, and risk-aware. It consists of three main layers managed by the Orchestration Agent:
+
+**Context Layer:** This layer manages dynamic context injection, allowing AI agents to understand the environment in which data is requested and processed. It uses metadata from metaQubes, identity state from DiDQubes, and risk scores from the risk quantification pipeline to adapt agent behavior dynamically.
+
+**Service Layer:** This layer manages AI service execution, including data transformations, analytics, and decision-making processes. The Service Layer integrates with ToolQubes and ModelQubes to provision AI models and workflows, ensuring they operate within the security and risk parameters defined by the protocol.
+
+**State Layer:** The State Layer manages immutable records of AI agent interactions with iQubes, ensuring that all transactions, state changes, and service executions are logged on-chain. This guarantees full auditability and accountability.
+
+**Orchestration Agent:** At the heart of the stack, the Orchestration Agent manages these three layers, ensuring that AI agents (Aigents) adhere to protocol standards at every step of data interaction. It enforces risk-based access, dynamic encryption, identity state compliance, and usage rights enforcement.
+
+Through the Aigent Protocol Stack, the iQube Protocol enables a robust, secure, and auditable agentic AI environment that aligns with the complex demands of modern data ecosystems.`,
+    section: 'AI Orchestration',
+    category: 'technical',
+    keywords: ['Aigent Protocol', 'Context Layer', 'Service Layer', 'State Layer', 'Orchestration Agent', 'AI compliance'],
+    timestamp: new Date().toISOString(),
+    source: 'iQube Whitepaper v0.1'
+  },
+  {
+    id: 'iqube-consensus-trio',
+    title: 'iQube Consensus Trio Framework',
+    content: `The iQube Protocol introduces a layered consensus framework to enforce trustless verification and coordination across its decentralized information ecosystem. This consensus framework comprises three interconnected mechanisms:
+
+**Proof-of-Risk:** This mechanism ensures that each iQube's risk profile is verifiable and audit-friendly. It uses a combination of static sensitivity scores and dynamic contextual risk assessments to produce a risk score that is cryptographically verifiable. AI agents and data consumers can verify that data they consume or process meets the protocol's risk standards.
+
+**Proof-of-Price:** This mechanism links risk profiles to the data's economic value, enforcing that higher-risk data is appropriately priced based on its sensitivity and usage context. Smart contracts compute a dynamic price for each iQube, taking into account risk, usage rights, and data quality as defined in the metaQube.
+
+**Proof-of-State:** This mechanism verifies the lifecycle states of iQubes and their interactions with AI agents. Every state transition—whether it's a change in risk profile, identity state, or usage status—is recorded immutably and cryptographically entangled with the data's provenance.
+
+Together, these three consensus mechanisms reinforce the iQube Protocol's commitment to risk-aware, fair, and transparent data exchange. They form the backbone of a trustless, agentic AI-ready data economy.`,
+    section: 'Consensus Framework',
+    category: 'consensus',
+    keywords: ['Proof-of-Risk', 'Proof-of-Price', 'Proof-of-State', 'consensus mechanisms', 'risk verification', 'economic value'],
+    timestamp: new Date().toISOString(),
+    source: 'iQube Whitepaper v0.1'
+  },
+  {
+    id: 'iqube-coyn-economic-layer',
+    title: 'iQube COYN Economic Layer',
+    content: `The economic engine of the iQube Protocol is the COYN economy, a novel framework that creates data-as-an-asset-backed types of digital currencies.
+
+**COYN Protocol:** At the core of the system, COYN protocol uses Proof-of-Risk and Proof-of-Price frameworks to quantify the value of data in the associated token networks. These proofs assess data value in terms of volume, quality, and risk profile, ensuring that data assets are priced fairly and transparently.
+
+**QryptoCOYN (Utility and Governance Token):** QryptoCOYN serves as the ecosystem's utility and governance token, capturing the value of the network, community, and overall economy. It facilitates staking, governance votes, and protocol upgrades, ensuring that participants are incentivized to maintain high data quality and protocol compliance.
+
+**QryptoCENT (Micro-Stable Coin):** To enable efficient pricing of agent transactions, the protocol introduces QryptoCENT, a micro-stable coin pegged to ₵0.01. QryptoCENT bridges the gap between Web2 AI agents, fiat currencies, and the crypto agent economy, providing a seamless on-ramp for traditional AI services to participate in decentralized ecosystems.
+
+**Data-as-an-Asset Standard:** By treating data as a verifiable, risk-priced asset, the protocol aligns incentives for data owners and buyers. The Proof-of-Risk and Proof-of-Price mechanisms ensure that data providers are compensated based on data quality, sensitivity, and usage rights.
+
+**Governance and Treasury Allocation:** A portion of COYN and QryptoCENT reserves is allocated to a decentralized treasury, supporting protocol upgrades, compliance frameworks, and risk management initiatives.`,
+    section: 'Economic Framework',
     category: 'tokenomics',
-    keywords: ['micro stable coin', '$0.01 peg', 'transactional currency', 'price stability', 'iQube transactions'],
+    keywords: ['COYN economy', 'QryptoCOYN', 'QryptoCENT', 'micro-stable coin', 'data-as-asset', 'governance token'],
     timestamp: new Date().toISOString(),
-    source: '$QOYN TCM Specification'
+    source: 'iQube Whitepaper v0.1'
   },
   {
-    id: 'smart-contract-requirements',
-    title: 'Smart Contract Technical Requirements',
-    content: `Smart Contract Requirements: Token Issuance (issues QryptoCOYN tokens to Bitcoin and Ethereum stakers), Staking Mechanism (allows contributors to stake Bitcoin and Ethereum for QryptoCOYN), Token Distribution (distributes based on staking), Capital/Compute/Content Buckets (allocates tokens per TCM model), and Pool (allocates 10% for micro stable coin). Built on Internet Computer Protocol (ICP) using Rust or Motoko with ICP Chain Fusion and LayerZero integration.`,
-    section: 'Smart Contract Architecture',
-    category: 'technical',
-    keywords: ['smart contracts', 'ICP', 'Rust', 'Motoko', 'token issuance', 'staking mechanism', 'security auditing'],
-    timestamp: new Date().toISOString(),
-    source: '$QOYN TCM Requirements'
-  },
-  {
-    id: 'coyn-protocol-architecture',
-    title: 'COYN Protocol Architecture Overview',
-    content: `The COYN Protocol is a Bitcoin-native, non-custodial framework for creating data-as-an-asset backed cryptocurrencies interoperable across Bitcoin and EVM blockchains. Core components include: ICP Chain Fusion Technology (enables trust-minimized Bitcoin interaction), LayerZero Decentralized Verifier Network (secure cross-chain message routing), EVM RPC Canister (on-chain interface for EVM interactions), and Layer 2 Rollup Solutions (zk-Rollups and Optimistic Rollups for enhanced throughput 1,000-10,000+ TPS).`,
-    section: 'Protocol Architecture',
-    category: 'technical',
-    keywords: ['COYN Protocol', 'Bitcoin-native', 'ICP Chain Fusion', 'LayerZero', 'cross-chain', 'rollups', 'EVM'],
-    timestamp: new Date().toISOString(),
-    source: 'COYN Protocol Tech Specs'
-  },
-  {
-    id: 'variant-fungibility-tokens',
-    title: 'Variant Fungibility Tokens (VFT) Framework',
-    content: `VFTs enable digital assets to transition between high, mid, and low fungibility states while anchored to Bitcoin Satoshis. Three asset types: COYN (high fungibility, ERC20/BRC-20 comparable), iQubeTemplates (medium fungibility, ERC1155 comparable), and iQubes (low fungibility, ERC721/NFT comparable). Every VFT maintains 1:1 cryptographic anchor to Bitcoin Satoshi for security without economic pegging. Token burn events trigger recycling of underlying Satoshis into newly minted iQubes, creating a closed-loop, Bitcoin-secured circular economy.`,
-    section: 'Token Standards',
-    category: 'technical',
-    keywords: ['VFT', 'Variant Fungibility Tokens', 'Bitcoin anchoring', 'fungibility states', 'token lifecycle', 'Satoshi recycling'],
-    timestamp: new Date().toISOString(),
-    source: 'COYN Protocol Tech Specs'
-  },
-  {
-    id: 'iqube-information-primitives',
-    title: 'iQube Information Primitives',
-    content: `iQubes are composed of three primitives: metaQubes (anonymous, public on-chain metadata stored as JSON on IPFS with ZK-proof attestations), blakQubes (encrypted, off-chain private data payloads with ZK-proof integrity verification), and tokenQubes (tokens holding decryption keys for blakQubes, granting permissioned access). Immutable entanglement between primitives ensures data consistency, integrity and provenance. Core operations include Curate, Quantify, Contain, Anonymize, Verify, and Control Access.`,
-    section: 'iQube Architecture',
-    category: 'technical',
-    keywords: ['metaQubes', 'blakQubes', 'tokenQubes', 'data primitives', 'encryption', 'access control', 'zero-knowledge proofs'],
-    timestamp: new Date().toISOString(),
-    source: 'COYN Protocol Tech Specs'
-  },
-  {
-    id: 'cross-chain-interoperability-framework',
-    title: 'Cross-Chain Interoperability Framework',
-    content: `LayerZero Integration enables trust-minimized, atomic, and ordered cross-chain message passing for secure coin minting, burning, transfers, and state synchronization. Light Client and Validator Diversity utilizes diverse decentralized validator networks for secure cross-chain event verification. Token Lifecycle Management supports burn/mint and lock/mint mechanisms leveraging Bitcoin-native anchoring through ICP Chain Fusion and threshold signature schemes. Performance targets: 1,000-10,000+ TPS, sub-cent transaction costs, 10-30 second cross-chain finality.`,
-    section: 'Cross-Chain Technology',
-    category: 'technical',
-    keywords: ['LayerZero', 'cross-chain', 'interoperability', 'light clients', 'validators', 'threshold signatures', 'atomic transactions'],
-    timestamp: new Date().toISOString(),
-    source: 'COYN Protocol Tech Specs'
-  },
-  {
-    id: 'rollup-integration-performance',
-    title: 'Rollup Integration & Performance',
-    content: `Implementation of zk-Rollups and Optimistic Rollups for batching high-frequency microtransactions off-chain with succinct proofs posted on-chain. Bitcoin Layer 1 Rollups aggregate off-chain transactions with proofs submitted to Bitcoin mainnet for final settlement. Privacy Guarantees leverage zero-knowledge proofs for transaction confidentiality. Performance targets: Minimum 1,000 TPS scalable to 10,000+ TPS, sub-cent transaction costs, 10-30 second cross-chain finality, minimal encryption overhead via off-chain processing.`,
-    section: 'Scaling Solutions',
-    category: 'technical',
-    keywords: ['zk-Rollups', 'Optimistic Rollups', 'Layer 2', 'microtransactions', 'performance', 'scalability', 'privacy'],
-    timestamp: new Date().toISOString(),
-    source: 'COYN Protocol Tech Specs'
-  },
-  {
-    id: 'security-trust-minimization',
-    title: 'Security & Trust Minimization',
-    content: `Non-Custodial Architecture eliminates third-party custody through Bitcoin UTXOs managed by ICP canisters using threshold signatures and chain-key cryptography. Decentralized Verifier Network (DVN) provides censorship-resistant, multi-actor validation via LayerZero DVNs. Light Client Verification uses cryptographic proofs and fraud/pre-crime invariants for safety and liveness. Smart Contract-Mandated Encryption dynamically enforces encryption levels based on risk assessment for regulatory compliance and data confidentiality.`,
+    id: 'iqube-security-model',
+    title: 'iQube Security Model',
+    content: `The iQube Protocol's security model is built on a foundation of Bitcoin-grade data integrity and advanced cryptographic entanglement.
+
+**Satoshi Entanglement:** Each iQube's metaQube includes cryptographic hashes that are periodically committed to the Bitcoin blockchain, establishing a tamper-proof record of data provenance, quality, and usage rights. This process ensures that any attempt to alter the data or its associated metadata will be immediately detectable.
+
+**Bitcoin-Grade Data Integrity:** By leveraging the Bitcoin blockchain's immutability, the protocol ensures that all data interactions—including risk assessments, state transitions, and identity management—are anchored in a globally recognized, secure, and decentralized ledger.
+
+**Dynamic Encryption and Threshold Cryptography:** The protocol employs dynamic encryption algorithms and threshold cryptography to enforce granular access control. Risk-based encryption tiers adjust encryption strength in real-time based on data sensitivity, identity state, and threat environment.
+
+**Zero-Knowledge Proofs and Secure Multi-Party Computation:** The protocol integrates zero-knowledge proofs to allow AI agents and data consumers to verify data provenance, risk scores, and usage rights without revealing underlying private data. Secure multi-party computation enables distributed AI processing while maintaining data privacy and security.
+
+Through this multi-layered security model—anchored in Bitcoin's proof-of-work, enhanced by cryptographic entanglement, and dynamically enforced through advanced encryption—the iQube Protocol ensures that data remains secure, private, and verifiable across decentralized AI ecosystems.`,
     section: 'Security Framework',
     category: 'technical',
-    keywords: ['non-custodial', 'threshold signatures', 'DVN', 'light clients', 'smart contract encryption', 'risk assessment'],
+    keywords: ['Satoshi entanglement', 'Bitcoin-grade security', 'dynamic encryption', 'zero-knowledge proofs', 'threshold cryptography', 'secure multi-party computation'],
     timestamp: new Date().toISOString(),
-    source: 'COYN Protocol Tech Specs'
+    source: 'iQube Whitepaper v0.1'
   },
   {
-    id: 'agentic-ai-microtransaction-ecosystem',
-    title: 'Agentic AI Microtransaction Ecosystem',
-    content: `Autonomous Cross-Chain Workflow Orchestration enables AI agents to manage token transactions, encryption protocols, and cross-chain state transitions via MCPs, APIs and smart contract hooks. Low-Cost, High-Frequency Microtransactions facilitated by rollup and Layer 2 technologies enable seamless cost-effective microtransactions between AI agents for automated economic coordination. Programmable Encryption allows AI agents to dynamically control and adapt encryption policies on iQubes to meet evolving privacy requirements and risk levels.`,
-    section: 'AI Integration',
+    id: 'iqube-standards-interoperability',
+    title: 'iQube Standards & Interoperability',
+    content: `The iQube Protocol is designed for seamless integration into existing technology stacks and emerging decentralized ecosystems by adhering to open standards and ensuring broad interoperability.
+
+**W3C DID/VC Compliance:** The protocol uses Decentralized Identifiers (DIDs) and Verifiable Credentials (VCs) as defined by the W3C standards. These frameworks enable dynamic identity management, credential exchange, and proof-of-ownership in a verifiable and privacy-preserving manner.
+
+**LayerZero Omnichain Relays:** To facilitate cross-chain interoperability, the protocol integrates LayerZero's omnichain communication infrastructure. This allows iQubes to interact with other blockchains and decentralized systems, enabling AI agents and data assets to flow seamlessly across Layer1 and Layer2 networks.
+
+**EVM Compatibility:** The protocol is fully EVM-compatible, allowing smart contracts written for Ethereum and other EVM chains to execute iQube functions without modification. This ensures that AI agents, dApps, and DeFi protocols can leverage iQube's risk-aware data management and dynamic identity features.
+
+**Data Portability and API Integration:** The protocol's open API layer enables integration with traditional Web2 systems, facilitating data migration and hybrid deployments. AI agents from Web2 ecosystems can leverage iQubes through tokenQube-controlled access and risk-based encryption.
+
+By adhering to these standards and interoperability frameworks, the iQube Protocol ensures that data assets remain portable, secure, and usable across diverse technology stacks, fostering a more connected and agentic AI ecosystem.`,
+    section: 'Standards Compliance',
     category: 'technical',
-    keywords: ['agentic AI', 'autonomous workflows', 'microtransactions', 'AI agents', 'programmable encryption', 'economic coordination'],
+    keywords: ['W3C DID/VC', 'LayerZero', 'EVM compatibility', 'interoperability', 'API integration', 'data portability'],
     timestamp: new Date().toISOString(),
-    source: 'COYN Protocol Tech Specs'
+    source: 'iQube Whitepaper v0.1'
   },
   {
-    id: 'bitcoin-satoshi-anchoring-framework',
-    title: 'Bitcoin Satoshi Anchoring Framework',
-    content: `Every VFT maintains a 1:1 cryptographic anchor to a Bitcoin Satoshi using ICP Chain Fusion and threshold signatures, ensuring Bitcoin-level data security and integrity while remaining economically independent of BTC price fluctuations. Closed-Loop Token Lifecycle enables token burn events to trigger recycling of underlying Satoshis into newly minted iQubes, establishing a synchronized, Bitcoin-secured, and auditable system for data asset creation optimized for AI and cross-chain operations.`,
-    section: 'Bitcoin Integration',
-    category: 'technical',
-    keywords: ['Bitcoin anchoring', 'Satoshi binding', 'cryptographic security', 'token lifecycle', 'economic independence', 'data assets'],
-    timestamp: new Date().toISOString(),
-    source: 'COYN Protocol Tech Specs'
-  },
-  {
-    id: 'tokenqube-encrypted-nft-framework',
-    title: 'TokenQube Encrypted NFT Framework',
-    content: `Low fungibility iQubes are represented as secure NFTs (tokenQubes) conforming to ERC721 standards, embodying encrypted and verifiable information assets. Multi-Level Encryption and Access Control secures secret data using tiered encryption from AES-256 to Full Homomorphic Encryption (FHE), accessed via Trusted Execution Environments (TEEs). Encryption levels are dynamically mandated and enforced by smart contracts based on assessed risk profiles, supporting AES256, FIPS 23, FHE, MPC and TEE standards.`,
-    section: 'NFT Security',
-    category: 'technical',
-    keywords: ['tokenQubes', 'encrypted NFTs', 'ERC721', 'multi-level encryption', 'FHE', 'TEEs', 'smart contract enforcement'],
-    timestamp: new Date().toISOString(),
-    source: 'COYN Protocol Tech Specs'
-  },
-  {
-    id: 'seed-investment-structure',
-    title: 'Seed Investment Structure & Tokenomics',
-    content: `$2M pre-TGE seed funding across 3 tranches: Tranche 1 ($20M FDV, $0.20 price, 750K tokens, $150K), Tranche 2 ($30M FDV, $0.30 price, 1.17M tokens, $350K), Tranche 3 ($50M FDV, $0.50 price, 3M tokens, $1.5M). Total 4.9M tokens with 24-month lockup and 12-month cliff. Tokenomics: 100M fixed supply, 10M/year fixed emissions + 0-18M/year variable emissions. Deflationary safeguards include burns (30-70% of fees), staking (15-30% APY), and Satoshi reserves.`,
-    section: 'Investment Terms',
-    category: 'tokenomics',
-    keywords: ['seed investment', 'tranched pricing', 'FDV targets', 'lockup terms', 'deflationary mechanics', 'emission schedule'],
-    timestamp: new Date().toISOString(),
-    source: 'Seed Investment Terms'
-  },
-  {
-    id: 'financial-projections-roi',
-    title: 'Financial Projections & ROI Timeline',
-    content: `FDV progression: $50M (TGE 2025) → $150M (EOY 2025) → $1B (EOY 2027). Target price evolution: $0.50 (TGE) → $1.50 (EOY 2025) → $10.00 (EOY 2027). Key drivers include iQube MVP launch, 50K iQubes minted with enterprise partnerships, scaling to 1M+ iQubes with DeFi integration and 70% burns. Investor ROI ranges from 20x (Tranche 3) to 50x (Tranche 1) by EOY 2027.`,
-    section: 'Financial Projections',
-    category: 'tokenomics',
-    keywords: ['FDV targets', 'price projections', 'ROI timeline', 'growth drivers', 'iQube adoption', 'DeFi integration'],
-    timestamp: new Date().toISOString(),
-    source: 'Seed Investment Terms'
-  },
-  {
-    id: 'risk-mitigation-investment',
-    title: 'Investment Risk Mitigation Strategies',
-    content: `Risk mitigation includes: Low iQube Adoption addressed through subsidized fees for early users and 70% burns; Token Volatility managed via algorithmic stablecoin ($qUSD) liquidity pools; Regulatory Scrutiny mitigated through legal classification as utility token for iQube gas. Communication schedule includes quarterly financial reports (emissions, burns, FDV growth, Satoshi reserves), monthly progress updates (iQube adoption, partnerships, tech milestones), and biannual governance votes (variable emission caps, burn/staking splits).`,
-    section: 'Risk Management',
-    category: 'tokenomics',
-    keywords: ['risk mitigation', 'adoption incentives', 'volatility management', 'regulatory compliance', 'investor communication'],
-    timestamp: new Date().toISOString(),
-    source: 'Seed Investment Terms'
-  },
-  {
-    id: 'deployment-maintenance-framework',
-    title: 'Deployment & Maintenance Framework',
-    content: `Deployment Plan includes deployment on ICP blockchain according to specific timeline targeting TGE in September 2025. Maintenance & Updates ensure regular security and functionality maintenance with update mechanisms for new features and fixes. Testing and Verification includes Unit Testing (thorough component testing), Integration Testing (ecosystem component interaction verification), and Security Auditing (security firm vulnerability review). Technical requirements include ICP Chain Fusion, LayerZero integration, and support for Rust or Motoko programming languages.`,
-    section: 'Implementation',
+    id: 'iqube-comparative-edge-use-cases',
+    title: 'iQube Comparative Edge & Use Cases',
+    content: `The iQube Protocol stands out in the decentralized AI and data ecosystem by offering advanced risk quantification, dynamic encryption, composable identity management, and Bitcoin-native information primitives with satoshi-backed token-gated access.
+
+**Comparative Edge:** Unlike traditional data tokens that focus solely on static asset ownership or provenance, iQubes integrate dynamic risk scoring, Proof-of-Risk, and Proof-of-Price frameworks, ensuring that data quality, usage context, and risk factors are continuously evaluated. iQubes also incorporate Bitcoin-native information primitives entangled with satoshi-backed tokenQubes.
+
+**Compliance and Standards:** The iQube Protocol is compatible with key decentralized frameworks including the Model Context Protocol (MCP), Agent Context Protocol (ACP), and Agent-to-Agent (A2A) frameworks. It also supports FIPS 203 quantum resistance standards, ensuring future-proof encryption and secure data sharing.
+
+**Healthcare AI:** In healthcare, iQubes containerize medical records with dynamic risk scoring and token-gated access using satoshi-backed tokenQubes. This ensures that sensitive health data is protected by Bitcoin-grade security and regulatory compliance, enabling AI agents to analyze patient data while preserving privacy.
+
+**DeFi Risk Oracles:** DeFi protocols leverage iQubes to provide real-time, risk-adjusted, and cryptographically verifiable data feeds. Satoshi entanglement ensures tamper-resistance, while tokenQubes manage access to sensitive financial data based on dynamic risk scoring.
+
+**Spatial Agents:** In spatial computing, iQubes manage user-generated content and digital twins with Bitcoin-native security primitives. AI agents can retrieve data with verified provenance and dynamic risk profiles, ensuring secure and auditable spatial experiences.
+
+By supporting Bitcoin-native primitives, satoshi-backed token gating, and full regulatory compliance, the iQube Protocol empowers the next generation of agentic AI applications.`,
+    section: 'Use Cases',
     category: 'implementation',
-    keywords: ['deployment plan', 'maintenance schedule', 'testing framework', 'security auditing', 'TGE timeline', 'technical requirements'],
+    keywords: ['competitive advantage', 'healthcare AI', 'DeFi oracles', 'spatial agents', 'MCP compatibility', 'FIPS 203', 'regulatory compliance'],
     timestamp: new Date().toISOString(),
-    source: '$QOYN TCM Requirements'
+    source: 'iQube Whitepaper v0.1'
+  },
+  {
+    id: 'iqube-roadmap-governance',
+    title: 'iQube Roadmap & Governance Framework',
+    content: `The iQube Protocol's development roadmap is structured to ensure iterative growth, community participation, and compliance with regulatory frameworks, while maintaining the protocol's decentralized ethos.
+
+**Development Milestones:**
+- **Phase 1 (Completed):** Core protocol design, cryptographic primitives implementation (metaQubes, blakQubes, tokenQubes), dual-network architecture, and risk quantification pipeline.
+- **Phase 2 (In Progress):** Integration of Proof-of-Risk, Proof-of-Price, and Proof-of-State consensus mechanisms, and COYN economic layer including QryptoCOYN and QryptoCENT micro-stable coin systems.
+- **Phase 3:** MCP, ACP, and A2A framework integration, enhanced regulatory compliance, and support for quantum-resistant encryption standards.
+- **Phase 4:** Full AI agent orchestration with Aigent Protocol stack, developer SDKs, and expanded EVM compatibility.
+
+**Open-Source Cadence:** The protocol follows a transparent, open-source development approach. Key updates, smart contract libraries, and tooling are released on public repositories, ensuring that the community can audit, contribute, and innovate on top of the protocol.
+
+**Treasury Allocation and Governance:** A decentralized governance structure oversees the allocation of funds from the COYN and QryptoCENT reserves. The treasury funds protocol upgrades, risk audits, regulatory compliance initiatives, and community-driven improvements.
+
+**Compliance Roadmap:** Ongoing updates to align with global regulatory standards (GDPR, HIPAA, CCPA, ISO, IEEE) and support for future compliance frameworks. Regular third-party audits verify adherence to security, privacy, and risk management best practices.`,
+    section: 'Development Timeline',
+    category: 'implementation',
+    keywords: ['development roadmap', 'governance framework', 'open-source', 'treasury allocation', 'regulatory compliance', 'third-party audits'],
+    timestamp: new Date().toISOString(),
+    source: 'iQube Whitepaper v0.1'
   }
 ];
