@@ -42,25 +42,8 @@ const AgentInputBar = ({
     });
   };
 
-  const defaultHandleKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      if (inputValue.trim()) {
-        const form = e.currentTarget.closest('form');
-        if (form) {
-          handleSubmit(new Event('submit', { bubbles: true, cancelable: true }) as unknown as React.FormEvent);
-        }
-      }
-    }
-  };
-
-  // Create custom placeholder text based on the agent type
-  const getPlaceholderText = () => {
-    if (window.location.pathname === '/mondai') {
-      return 'Ask MonDAI...';
-    }
-    return `Ask your ${agentType} agent...`;
-  };
+  // Remove the default key handler to avoid double submissions
+  // The handleKeyDown prop from useMessageInput will be used instead
 
   // Custom input change handler to adjust textarea height
   const customHandleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
@@ -78,7 +61,6 @@ const AgentInputBar = ({
   return (
     <form onSubmit={handleSubmit} className="border-t p-4">
       <div className="flex items-center space-x-2">
-        {/* Unified design for both mobile and desktop with icons inside the textarea container */}
         <div className="relative flex-1 flex items-center">
           <div className="absolute left-3 flex items-center space-x-2">
             <ScoreTooltip type="voice">
@@ -110,8 +92,8 @@ const AgentInputBar = ({
             ref={textareaRef}
             value={inputValue}
             onChange={customHandleInputChange}
-            onKeyDown={handleKeyDown || defaultHandleKeyDown}
-            placeholder={getPlaceholderText()}
+            onKeyDown={handleKeyDown} 
+            placeholder={window.location.pathname === '/mondai' ? 'Ask MonDAI...' : `Ask your ${agentType} agent...`}
             className="pl-24 min-h-[40px] max-h-32 flex-1 pr-3 py-2 flex items-center"
             style={{
               resize: 'none',

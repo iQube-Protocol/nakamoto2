@@ -17,13 +17,13 @@ export const useMessageInput = () => {
     if (e.key === 'Enter' && !e.shiftKey) {
       e.preventDefault();
       if (inputValue.trim()) {
-        // Find the form element and trigger submit event
+        // Create and dispatch a form submit event only once
         const form = e.currentTarget.form;
         if (form) {
-          // Create and dispatch a proper form submit event
-          const submitEvent = new SubmitEvent('submit', { bubbles: true, cancelable: true });
-          form.dispatchEvent(submitEvent);
-          handleSubmit(submitEvent as unknown as React.FormEvent);
+          handleSubmit({
+            preventDefault: () => {},
+            target: form
+          } as React.FormEvent);
         }
       }
     }

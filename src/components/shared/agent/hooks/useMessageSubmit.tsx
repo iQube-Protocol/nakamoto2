@@ -30,6 +30,9 @@ export const useMessageSubmit = (
     
     const message = textArea.value.trim();
     if (!message || setIsProcessing === undefined) return;
+    
+    // Prevent duplicate submissions by checking if already processing
+    if (textArea.disabled) return;
 
     const userMessage: AgentMessage = {
       id: Date.now().toString(),
