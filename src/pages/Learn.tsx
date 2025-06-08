@@ -31,7 +31,14 @@ const blakQubeData: BlakQube = {
   "BTC-Public-Key": "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq",
   "Tokens-of-Interest": ["ETH", "SOL", "DOT", "LINK"],
   "Chain-IDs": ["1", "137", "1284"],
-  "Wallets-of-Interest": ["MetaMask", "Phantom", "Trust"]
+  "Wallets-of-Interest": ["MetaMask", "Phantom", "Trust"],
+  "LinkedIn-ID": "",
+  "LinkedIn-Profile-URL": "",
+  "Twitter-Handle": "",
+  "Telegram-Handle": "",
+  "Discord-Handle": "",
+  "Instagram-Handle": "",
+  "GitHub-Handle": ""
 };
 
 const Learn = () => {

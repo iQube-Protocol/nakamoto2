@@ -30,7 +30,14 @@ const blakQubeData: BlakQube = {
   "BTC-Public-Key": "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq",
   "Tokens-of-Interest": ["USDC", "ETH", "PEOPLE", "ENS"],
   "Chain-IDs": ["1", "137", "10"],
-  "Wallets-of-Interest": ["MetaMask", "Rainbow", "Frame"]
+  "Wallets-of-Interest": ["MetaMask", "Rainbow", "Frame"],
+  "LinkedIn-ID": "",
+  "LinkedIn-Profile-URL": "",
+  "Twitter-Handle": "",
+  "Telegram-Handle": "",
+  "Discord-Handle": "",
+  "Instagram-Handle": "",
+  "GitHub-Handle": ""
 };
 
 // Sample community metrics

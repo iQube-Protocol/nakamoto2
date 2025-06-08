@@ -41,7 +41,14 @@ const blakQubeData: BlakQube = {
   "BTC-Public-Key": "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq",
   "Tokens-of-Interest": ["USDC", "ETH", "AVAX", "MATIC"],
   "Chain-IDs": ["1", "137", "43114"],
-  "Wallets-of-Interest": ["MetaMask", "Phantom", "Ledger"]
+  "Wallets-of-Interest": ["MetaMask", "Phantom", "Ledger"],
+  "LinkedIn-ID": "",
+  "LinkedIn-Profile-URL": "",
+  "Twitter-Handle": "",
+  "Telegram-Handle": "",
+  "Discord-Handle": "",
+  "Instagram-Handle": "",
+  "GitHub-Handle": ""
 };
 
 const Earn = () => {
