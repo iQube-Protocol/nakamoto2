@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Shield, Linkedin, MessageCircle, Twitter, Users, Wallet, Globe, AlertCircle } from 'lucide-react';
@@ -15,15 +16,12 @@ interface ConnectionsTabProps {
 }
 
 const ConnectionsTab = ({ settings, onConnectService }: ConnectionsTabProps) => {
-  const { connections, loading, error, toggleConnection } = useServiceConnections();
+  const { connections, loading, error } = useServiceConnections();
   
   const handleServiceToggle = async (service: keyof UserSettings['connected']) => {
     try {
-      // Maintain backward compatibility with existing code
+      // Use the established connection flow from SettingsInterface
       onConnectService(service);
-      
-      // Use our connection service
-      await toggleConnection(service as any);
     } catch (error) {
       console.error(`Error toggling ${service} connection:`, error);
       toast.error(`Failed to ${connections[service as any] ? 'disconnect' : 'connect'} ${service}`);
