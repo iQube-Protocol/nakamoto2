@@ -112,17 +112,13 @@ export function useServiceConnections() {
     if (service === 'wallet') {
       const success = await connectionService.connectWallet();
       if (success) {
-        setConnections(prev => ({ ...prev, [service]: true }));
         // Update BlakQube data after wallet connection
         await blakQubeService.updateBlakQubeFromConnections();
-        // Refresh connections to get the latest data
+        // Refresh connections to get the latest data without page reload
         await fetchConnections();
-        // Trigger a refresh of the page data
-        setTimeout(() => {
-          window.location.reload();
-        }, 1000);
+        return true;
       }
-      return success;
+      return false;
     } else {
       try {
         return await connectionService.startOAuthFlow(service);
@@ -141,10 +137,8 @@ export function useServiceConnections() {
       if (success) {
         setConnections(prev => ({ ...prev, [service]: false }));
         setConnectionData(prev => ({ ...prev, [service]: null }));
-        // Refresh data after disconnection
-        setTimeout(() => {
-          window.location.reload();
-        }, 1000);
+        // Refresh data after disconnection without page reload
+        await fetchConnections();
       }
       return success;
     } catch (error) {

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
@@ -8,6 +7,7 @@ import ConnectionsTab from './ConnectionsTab';
 import IQubeManagementTab from './IQubeManagementTab';
 import PreferencesTab from './PreferencesTab';
 import { useTheme } from '@/contexts/ThemeContext';
+import { useServiceConnections } from '@/hooks/useServiceConnections';
 
 interface PrivateData {
   [key: string]: string | string[];
@@ -31,15 +31,63 @@ const SettingsInterface = ({
   onUpdatePrivateData 
 }: SettingsInterfaceProps) => {
   const { theme } = useTheme();
+  const { connections, connectService } = useServiceConnections();
+  
+  // Sync settings with actual connection state
   const [settings, setSettings] = useState<UserSettings>({
     ...userSettings,
-    theme: theme as 'dark' | 'light'
+    theme: theme as 'dark' | 'light',
+    connected: {
+      ...userSettings.connected,
+      // Override with actual connection states
+      wallet: connections.wallet,
+      linkedin: connections.linkedin,
+      twitter: connections.twitter,
+      telegram: connections.telegram,
+      discord: connections.discord,
+      luma: connections.luma
+    }
   });
   
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<string>("connections");
 
-  const handleConnectService = (service: keyof UserSettings['connected']) => {
+  // Update settings when connections change
+  useEffect(() => {
+    setSettings(prev => ({
+      ...prev,
+      connected: {
+        ...prev.connected,
+        wallet: connections.wallet,
+        linkedin: connections.linkedin,
+        twitter: connections.twitter,
+        telegram: connections.telegram,
+        discord: connections.discord,
+        luma: connections.luma
+      }
+    }));
+  }, [connections]);
+
+  const handleConnectService = async (service: keyof UserSettings['connected']) => {
+    // For wallet connections, use the service connection directly
+    if (service === 'wallet') {
+      console.log('Starting wallet connection...');
+      const success = await connectService('wallet');
+      if (success) {
+        toast({
+          title: "Wallet connected",
+          description: "Your wallet has been successfully connected and verified",
+        });
+      } else {
+        toast({
+          title: "Connection failed",
+          description: "Failed to connect wallet. Please try again.",
+        });
+      }
+      return;
+    }
+
+    // For other services, toggle the local state and show toast
     setSettings(prev => ({
       ...prev,
       connected: {
