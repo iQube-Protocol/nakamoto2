@@ -8,21 +8,6 @@ const LINKEDIN_CLIENT_SECRET = Deno.env.get("LINKEDIN_CLIENT_SECRET") || "";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 
-// Validate environment variables at startup
-function validateEnvironmentVariables() {
-  const missing = [];
-  if (!LINKEDIN_CLIENT_ID) missing.push("LINKEDIN_CLIENT_ID");
-  if (!LINKEDIN_CLIENT_SECRET) missing.push("LINKEDIN_CLIENT_SECRET");
-  if (!SUPABASE_URL) missing.push("SUPABASE_URL");
-  if (!SUPABASE_SERVICE_ROLE_KEY) missing.push("SUPABASE_SERVICE_ROLE_KEY");
-  
-  if (missing.length > 0) {
-    console.error("Missing required environment variables:", missing);
-    return false;
-  }
-  return true;
-}
-
 // Helper function to create error response
 function createErrorResponse(error: string, status: number = 500) {
   console.error("Error response:", error);
@@ -35,18 +20,8 @@ function createErrorResponse(error: string, status: number = 500) {
   );
 }
 
-// Helper function to create timeout wrapper
-function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
-  return Promise.race([
-    promise,
-    new Promise<T>((_, reject) => 
-      setTimeout(() => reject(new Error(`Operation timed out after ${timeoutMs}ms`)), timeoutMs)
-    )
-  ]);
-}
-
 serve(async (req) => {
-  console.log("OAuth callback function started");
+  console.log("=== OAuth Callback Function Started ===");
   console.log("Request method:", req.method);
   console.log("Request URL:", req.url);
 
@@ -58,10 +33,18 @@ serve(async (req) => {
 
   try {
     // Validate environment variables
-    if (!validateEnvironmentVariables()) {
+    console.log("Validating environment variables...");
+    const missing = [];
+    if (!LINKEDIN_CLIENT_ID) missing.push("LINKEDIN_CLIENT_ID");
+    if (!LINKEDIN_CLIENT_SECRET) missing.push("LINKEDIN_CLIENT_SECRET");
+    if (!SUPABASE_URL) missing.push("SUPABASE_URL");
+    if (!SUPABASE_SERVICE_ROLE_KEY) missing.push("SUPABASE_SERVICE_ROLE_KEY");
+    
+    if (missing.length > 0) {
+      console.error("Missing environment variables:", missing);
       return createErrorResponse("Server configuration error", 500);
     }
-
+    
     console.log("Environment variables validated successfully");
 
     // Validate authorization header
@@ -79,27 +62,19 @@ serve(async (req) => {
 
     console.log("Token extracted successfully");
 
-    // Initialize Supabase client with timeout configuration
+    // Initialize Supabase client
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
       auth: {
         persistSession: false,
         autoRefreshToken: false,
-      },
-      global: {
-        headers: {
-          'x-application-name': 'oauth-callback-linkedin'
-        }
       }
     });
 
     console.log("Supabase client initialized");
 
-    // Verify user with timeout
+    // Verify user
     console.log("Verifying user authentication...");
-    const userResult = await withTimeout(
-      supabase.auth.getUser(token),
-      10000 // 10 second timeout
-    );
+    const userResult = await supabase.auth.getUser(token);
 
     if (userResult.error || !userResult.data.user) {
       console.error("User verification failed:", userResult.error);
@@ -109,7 +84,8 @@ serve(async (req) => {
     const user = userResult.data.user;
     console.log("User verified successfully:", user.id);
 
-    // Parse and validate request body
+    // Parse request body
+    console.log("Parsing request body...");
     let requestBody;
     try {
       const bodyText = await req.text();
@@ -141,7 +117,7 @@ serve(async (req) => {
       return createErrorResponse("Missing redirect URI", 400);
     }
 
-    // Exchange code for access token with timeout
+    // Exchange code for access token
     console.log("Exchanging authorization code for access token...");
     const tokenParams = new URLSearchParams({
       grant_type: "authorization_code",
@@ -151,17 +127,14 @@ serve(async (req) => {
       client_secret: LINKEDIN_CLIENT_SECRET,
     });
     
-    const tokenResponse = await withTimeout(
-      fetch("https://www.linkedin.com/oauth/v2/accessToken", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/x-www-form-urlencoded",
-          "Accept": "application/json",
-        },
-        body: tokenParams,
-      }),
-      15000 // 15 second timeout for external API
-    );
+    const tokenResponse = await fetch("https://www.linkedin.com/oauth/v2/accessToken", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/x-www-form-urlencoded",
+        "Accept": "application/json",
+      },
+      body: tokenParams,
+    });
     
     console.log("LinkedIn token response status:", tokenResponse.status);
     
@@ -178,19 +151,16 @@ serve(async (req) => {
     const tokenData = await tokenResponse.json();
     console.log("LinkedIn token exchange successful");
     
-    // Save connection to database with timeout
+    // Save connection to database
     console.log("Saving connection to database...");
-    const { error: insertError } = await withTimeout(
-      supabase
-        .from("user_connections")
-        .upsert({
-          user_id: user.id,
-          service: "linkedin",
-          connected_at: new Date().toISOString(),
-          connection_data: { connected: true },
-        }),
-      10000 // 10 second timeout for database operation
-    );
+    const { error: insertError } = await supabase
+      .from("user_connections")
+      .upsert({
+        user_id: user.id,
+        service: "linkedin",
+        connected_at: new Date().toISOString(),
+        connection_data: { connected: true },
+      });
     
     if (insertError) {
       console.error("Database insert error:", insertError);
@@ -207,7 +177,7 @@ serve(async (req) => {
       }
     );
 
-    console.log("OAuth callback completed successfully");
+    console.log("=== OAuth callback completed successfully ===");
     return successResponse;
     
   } catch (error) {
@@ -216,15 +186,6 @@ serve(async (req) => {
       stack: error.stack,
       name: error.name
     });
-    
-    // Handle specific error types
-    if (error.message.includes("timed out")) {
-      return createErrorResponse("Request timed out", 504);
-    }
-    
-    if (error.message.includes("network") || error.message.includes("fetch")) {
-      return createErrorResponse("Network error", 502);
-    }
     
     return createErrorResponse("Server error", 500);
   }
