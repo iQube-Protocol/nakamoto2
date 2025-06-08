@@ -73,7 +73,19 @@ export const connectionService = {
           const walletAddress = accounts[0];
           console.log('Wallet connected:', walletAddress);
           
+          // Create a message for the user to sign
+          const message = `Please sign this message to verify your wallet ownership.\n\nWallet: ${walletAddress}\nTimestamp: ${new Date().toISOString()}`;
+          
           try {
+            // Request signature from user
+            console.log('Requesting signature...');
+            const signature = await window.ethereum.request({
+              method: 'personal_sign',
+              params: [message, walletAddress],
+            });
+            
+            console.log('Signature received:', signature);
+            
             // Get user
             const { data: { user } } = await supabase.auth.getUser();
             if (!user) {
@@ -81,14 +93,19 @@ export const connectionService = {
               return false;
             }
 
-            // Save wallet connection to database
+            // Save wallet connection to database with signature
             const { error: connectionError } = await supabase
               .from('user_connections')
               .upsert({
                 user_id: user.id,
                 service: 'wallet',
                 connected_at: new Date().toISOString(),
-                connection_data: { address: walletAddress }
+                connection_data: { 
+                  address: walletAddress,
+                  signature: signature,
+                  message: message,
+                  signedAt: new Date().toISOString()
+                }
               });
             
             if (connectionError) {
@@ -112,11 +129,11 @@ export const connectionService = {
               console.log('Wallet connected but BlakQube update failed');
             }
             
-            toast.success('Wallet connected successfully!');
+            toast.success('Wallet connected and signature verified successfully!');
             return true;
-          } catch (error) {
-            console.error('Error saving wallet connection:', error);
-            toast.error('Failed to save wallet connection to database.');
+          } catch (signError) {
+            console.error('Error during signing process:', signError);
+            toast.error('Failed to sign message. Wallet connection cancelled.');
             return false;
           }
         }

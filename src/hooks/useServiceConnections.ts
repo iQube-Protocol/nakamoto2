@@ -22,6 +22,14 @@ export function useServiceConnections() {
     luma: false,
     wallet: false
   });
+  const [connectionData, setConnectionData] = useState<Record<ServiceType, any>>({
+    linkedin: null,
+    twitter: null,
+    telegram: null,
+    discord: null,
+    luma: null,
+    wallet: null
+  });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
@@ -59,6 +67,15 @@ export function useServiceConnections() {
         luma: false,
         wallet: false
       };
+
+      const newConnectionData = {
+        linkedin: null,
+        twitter: null,
+        telegram: null,
+        discord: null,
+        luma: null,
+        wallet: null
+      };
       
       // Update connections based on database results
       if (data) {
@@ -66,19 +83,26 @@ export function useServiceConnections() {
           const serviceType = connection.service as ServiceType;
           if (Object.keys(newConnections).includes(serviceType)) {
             newConnections[serviceType] = true;
-            console.log(`${serviceType} is connected`);
+            newConnectionData[serviceType] = connection.connection_data;
+            console.log(`${serviceType} is connected with data:`, connection.connection_data);
           }
         });
       }
       
       console.log('Final connections state:', newConnections);
       setConnections(newConnections);
+      setConnectionData(newConnectionData);
     } catch (error) {
       console.error('Error in fetchConnections:', error);
       setError('An unexpected error occurred while loading your connections.');
     } finally {
       setLoading(false);
     }
+  };
+  
+  // Get wallet address from connection data
+  const getWalletAddress = (): string | null => {
+    return connectionData.wallet?.address || null;
   };
   
   // Connect a service
@@ -91,6 +115,8 @@ export function useServiceConnections() {
         setConnections(prev => ({ ...prev, [service]: true }));
         // Update BlakQube data after wallet connection
         await blakQubeService.updateBlakQubeFromConnections();
+        // Refresh connections to get the latest data
+        await fetchConnections();
         // Trigger a refresh of the page data
         setTimeout(() => {
           window.location.reload();
@@ -114,6 +140,7 @@ export function useServiceConnections() {
       const success = await connectionService.disconnectService(service);
       if (success) {
         setConnections(prev => ({ ...prev, [service]: false }));
+        setConnectionData(prev => ({ ...prev, [service]: null }));
         // Refresh data after disconnection
         setTimeout(() => {
           window.location.reload();
@@ -152,11 +179,13 @@ export function useServiceConnections() {
   
   return {
     connections,
+    connectionData,
     loading,
     error,
     connectService,
     disconnectService,
     toggleConnection,
-    refreshConnections: fetchConnections
+    refreshConnections: fetchConnections,
+    getWalletAddress
   };
 }
