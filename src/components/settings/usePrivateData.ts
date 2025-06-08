@@ -14,67 +14,81 @@ export const usePrivateData = (selectedIQube: MetaQube) => {
   const [loading, setLoading] = useState(true);
 
   // Load real BlakQube data from database
-  useEffect(() => {
-    const loadBlakQubeData = async () => {
-      if (!user) {
-        setLoading(false);
-        return;
-      }
+  const loadBlakQubeData = async () => {
+    if (!user) {
+      setLoading(false);
+      return;
+    }
 
-      try {
-        console.log('Loading BlakQube data...');
-        const blakQubeData = await blakQubeService.getBlakQubeData();
-        
-        if (blakQubeData) {
-          console.log('BlakQube data loaded:', blakQubeData);
-          // Convert BlakQube data to privateData format
-          const formattedData: PrivateData = {
-            "Profession": blakQubeData["Profession"] || "",
-            "Web3-Interests": blakQubeData["Web3-Interests"] || [],
-            "Local-City": blakQubeData["Local-City"] || "",
-            "Email": blakQubeData["Email"] || "",
-            "EVM-Public-Key": blakQubeData["EVM-Public-Key"] || "",
-            "BTC-Public-Key": blakQubeData["BTC-Public-Key"] || "",
-            "Tokens-of-Interest": blakQubeData["Tokens-of-Interest"] || [],
-            "Chain-IDs": blakQubeData["Chain-IDs"] || [],
-            "Wallets-of-Interest": blakQubeData["Wallets-of-Interest"] || []
-          };
-          setPrivateData(formattedData);
-        } else {
-          console.log('No BlakQube data found, using defaults');
-          // Set default empty data if no BlakQube exists
-          setPrivateData({
-            "Profession": "",
-            "Web3-Interests": [],
-            "Local-City": "",
-            "Email": user.email || "",
-            "EVM-Public-Key": "",
-            "BTC-Public-Key": "",
-            "Tokens-of-Interest": [],
-            "Chain-IDs": [],
-            "Wallets-of-Interest": []
-          });
-        }
-      } catch (error) {
-        console.error('Error loading BlakQube data:', error);
-        // Fallback to empty data
+    try {
+      console.log('Loading BlakQube data...');
+      const blakQubeData = await blakQubeService.getBlakQubeData();
+      
+      if (blakQubeData) {
+        console.log('BlakQube data loaded:', blakQubeData);
+        // Convert BlakQube data to privateData format
+        const formattedData: PrivateData = {
+          "Profession": blakQubeData["Profession"] || "",
+          "Web3-Interests": blakQubeData["Web3-Interests"] || [],
+          "Local-City": blakQubeData["Local-City"] || "",
+          "Email": blakQubeData["Email"] || "",
+          "EVM-Public-Key": blakQubeData["EVM-Public-Key"] || "",
+          "BTC-Public-Key": blakQubeData["BTC-Public-Key"] || "",
+          "Tokens-of-Interest": blakQubeData["Tokens-of-Interest"] || [],
+          "Chain-IDs": blakQubeData["Chain-IDs"] || [],
+          "Wallets-of-Interest": blakQubeData["Wallets-of-Interest"] || []
+        };
+        setPrivateData(formattedData);
+      } else {
+        console.log('No BlakQube data found, using defaults');
+        // Set default empty data if no BlakQube exists
         setPrivateData({
           "Profession": "",
           "Web3-Interests": [],
           "Local-City": "",
-          "Email": user?.email || "",
+          "Email": user.email || "",
           "EVM-Public-Key": "",
           "BTC-Public-Key": "",
           "Tokens-of-Interest": [],
           "Chain-IDs": [],
           "Wallets-of-Interest": []
         });
-      } finally {
-        setLoading(false);
       }
+    } catch (error) {
+      console.error('Error loading BlakQube data:', error);
+      // Fallback to empty data
+      setPrivateData({
+        "Profession": "",
+        "Web3-Interests": [],
+        "Local-City": "",
+        "Email": user?.email || "",
+        "EVM-Public-Key": "",
+        "BTC-Public-Key": "",
+        "Tokens-of-Interest": [],
+        "Chain-IDs": [],
+        "Wallets-of-Interest": []
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    loadBlakQubeData();
+  }, [user]);
+
+  // Listen for private data updates from wallet connections
+  useEffect(() => {
+    const handlePrivateDataUpdate = () => {
+      console.log('Private data update event received, reloading BlakQube data...');
+      loadBlakQubeData();
     };
 
-    loadBlakQubeData();
+    window.addEventListener('privateDataUpdated', handlePrivateDataUpdate);
+    
+    return () => {
+      window.removeEventListener('privateDataUpdated', handlePrivateDataUpdate);
+    };
   }, [user]);
 
   const handleUpdatePrivateData = async (newData: PrivateData) => {

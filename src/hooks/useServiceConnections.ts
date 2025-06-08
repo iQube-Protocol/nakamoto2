@@ -116,6 +116,11 @@ export function useServiceConnections() {
         await blakQubeService.updateBlakQubeFromConnections();
         // Refresh connections to get the latest data without page reload
         await fetchConnections();
+        
+        // Dispatch custom event to notify other components that private data has been updated
+        const event = new CustomEvent('privateDataUpdated');
+        window.dispatchEvent(event);
+        
         return true;
       }
       return false;
@@ -139,6 +144,10 @@ export function useServiceConnections() {
         setConnectionData(prev => ({ ...prev, [service]: null }));
         // Refresh data after disconnection without page reload
         await fetchConnections();
+        
+        // Dispatch custom event to notify other components that private data has been updated
+        const event = new CustomEvent('privateDataUpdated');
+        window.dispatchEvent(event);
       }
       return success;
     } catch (error) {

@@ -133,7 +133,12 @@ export const connectionService = {
             return true;
           } catch (signError) {
             console.error('Error during signing process:', signError);
-            toast.error('Failed to sign message. Wallet connection cancelled.');
+            if (signError.code === 4001) {
+              // User rejected the request
+              toast.error('Wallet connection cancelled by user.');
+            } else {
+              toast.error('Failed to sign message. Wallet connection cancelled.');
+            }
             return false;
           }
         }
@@ -145,13 +150,18 @@ export const connectionService = {
       return false;
     } catch (error) {
       console.error('Error connecting wallet:', error);
-      toast.error('Failed to connect wallet. Please try again.');
+      if (error.code === 4001) {
+        // User rejected the request
+        toast.error('Wallet connection cancelled by user.');
+      } else {
+        toast.error('Failed to connect wallet. Please try again.');
+      }
       return false;
     }
   },
   
   /**
-   * Disconnect a service
+   * Disconnect a service (database operation only, no wallet interaction)
    */
   disconnectService: async (service: ServiceType): Promise<boolean> => {
     try {
@@ -165,6 +175,7 @@ export const connectionService = {
         return false;
       }
       
+      // For wallet disconnection, just delete from database - no MetaMask interaction
       const { error } = await supabase
         .from('user_connections')
         .delete()
