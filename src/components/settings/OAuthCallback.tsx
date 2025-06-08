@@ -6,55 +6,52 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Loader2, Check, X } from 'lucide-react';
 import { toast } from 'sonner';
 
-// Demo mode flag - set to false since we now have actual database integration
-const DEMO_MODE = false;
-
 const OAuthCallback = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [status, setStatus] = useState<'processing' | 'success' | 'error'>('processing');
+  const [errorMessage, setErrorMessage] = useState<string>('');
   
   // Extract parameters from URL
   const service = searchParams.get('service');
   const code = searchParams.get('code');
   const error = searchParams.get('error');
+  const errorDescription = searchParams.get('error_description');
   const state = searchParams.get('state');
-  const isDemo = searchParams.get('demo') === 'true' || DEMO_MODE;
   
   useEffect(() => {
     const completeOAuth = async () => {
+      console.log('OAuth callback received:', { service, code: !!code, error, errorDescription });
+      
       // Handle errors from OAuth provider
       if (error) {
-        console.error('OAuth error:', error);
+        console.error('OAuth error:', error, errorDescription);
         setStatus('error');
-        toast.error(`Authentication failed: ${error}`);
+        const message = errorDescription || error;
+        setErrorMessage(message);
+        toast.error(`Authentication failed: ${message}`);
         setTimeout(() => navigate('/settings?tab=connections'), 3000);
-        return;
-      }
-      
-      // Special handling for demo mode
-      if (isDemo) {
-        console.log(`[DEMO MODE] Processing OAuth callback for ${service}`);
-        setStatus('success');
-        toast.success(`Successfully connected to ${service} (Demo Mode)`);
-        setTimeout(() => navigate('/settings?tab=connections'), 1500);
         return;
       }
       
       // Check if we have the necessary parameters
       if (!service || !code) {
+        console.error('Missing required parameters:', { service, code: !!code });
         setStatus('error');
+        setErrorMessage('Invalid callback parameters');
         toast.error('Invalid callback parameters');
         setTimeout(() => navigate('/settings?tab=connections'), 3000);
         return;
       }
       
       try {
+        console.log(`Exchanging code for token with ${service} service...`);
+        
         // Call Supabase Edge Function to exchange code for token
         const { data, error: exchangeError } = await supabase.functions.invoke(`oauth-callback-${service}`, {
           body: { 
             code, 
-            redirectUri: window.location.origin + window.location.pathname,
+            redirectUri: window.location.origin + window.location.pathname + '?service=' + service,
             state 
           }
         });
@@ -62,11 +59,13 @@ const OAuthCallback = () => {
         if (exchangeError) {
           console.error('Token exchange error:', exchangeError);
           setStatus('error');
+          setErrorMessage(exchangeError.message || 'Token exchange failed');
           toast.error(`Failed to complete authentication: ${exchangeError.message}`);
           setTimeout(() => navigate('/settings?tab=connections'), 3000);
           return;
         }
         
+        console.log('OAuth completion successful:', data);
         setStatus('success');
         toast.success(`Successfully connected to ${service}!`);
         
@@ -75,13 +74,14 @@ const OAuthCallback = () => {
       } catch (err) {
         console.error('Error completing OAuth flow:', err);
         setStatus('error');
+        setErrorMessage('An unexpected error occurred');
         toast.error('An unexpected error occurred');
         setTimeout(() => navigate('/settings?tab=connections'), 3000);
       }
     };
     
     completeOAuth();
-  }, [code, error, navigate, service, state, isDemo]);
+  }, [code, error, navigate, service, state, errorDescription]);
   
   const getServiceName = (serviceCode: string | null) => {
     if (!serviceCode) return 'this service';
@@ -118,10 +118,16 @@ const OAuthCallback = () => {
           {status === 'error' && (
             <X className="h-16 w-16 text-red-500" />
           )}
-          <p className="mt-4 text-muted-foreground">
+          <p className="mt-4 text-muted-foreground text-center">
             {status === 'processing' && 'Please wait while we complete your authentication...'}
-            {status === 'success' && `Successfully connected to ${getServiceName(service)}${isDemo ? ' (Demo Mode)' : ''}! Redirecting...`}
-            {status === 'error' && 'There was a problem connecting your account. Redirecting...'}
+            {status === 'success' && `Successfully connected to ${getServiceName(service)}! Redirecting...`}
+            {status === 'error' && (
+              <>
+                There was a problem connecting your account: {errorMessage}
+                <br />
+                Redirecting...
+              </>
+            )}
           </p>
         </CardContent>
       </Card>

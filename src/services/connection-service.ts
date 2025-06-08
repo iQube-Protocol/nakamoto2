@@ -4,9 +4,6 @@ import { toast } from 'sonner';
 
 export type ServiceType = 'linkedin' | 'twitter' | 'telegram' | 'discord' | 'luma' | 'wallet';
 
-// Demo mode flag - set to false since we now have actual database integration
-const DEMO_MODE = false;
-
 /**
  * Service for managing external service connections
  */
@@ -16,35 +13,32 @@ export const connectionService = {
    */
   startOAuthFlow: async (service: ServiceType): Promise<boolean> => {
     try {
-      if (DEMO_MODE) {
-        console.log(`[DEMO MODE] Starting OAuth flow for ${service}`);
-        // In demo mode, simulate a successful connection
-        const demoData = { authUrl: `${window.location.origin}/oauth-callback?service=${service}&demo=true` };
-        
-        // Simulate redirect to OAuth provider (in demo mode, redirect to our callback)
-        setTimeout(() => {
-          window.location.href = demoData.authUrl;
-        }, 500); // Short delay to simulate API call
-        
-        return true;
-      }
+      console.log(`Starting OAuth flow for ${service}...`);
+      
+      // Get current URL for proper redirect
+      const redirectUrl = `${window.location.origin}/oauth-callback?service=${service}`;
+      console.log(`Redirect URL: ${redirectUrl}`);
       
       // Call a Supabase Edge Function to get an OAuth URL
       const { data, error } = await supabase.functions.invoke(`connect-${service}`, {
-        body: { redirectUrl: `${window.location.origin}/oauth-callback?service=${service}` }
+        body: { redirectUrl }
       });
       
       if (error) {
         console.error(`Error starting ${service} OAuth flow:`, error);
-        toast.error(`Failed to connect to ${service}. Please check Edge Function configuration.`);
+        toast.error(`Failed to connect to ${service}: ${error.message}`);
         return false;
       }
       
+      console.log(`OAuth response for ${service}:`, data);
+      
       // Redirect to OAuth provider
       if (data?.authUrl) {
+        console.log(`Redirecting to: ${data.authUrl}`);
         window.location.href = data.authUrl;
         return true;
       } else {
+        console.error(`No authUrl received from ${service} service`);
         toast.error(`Invalid response from ${service} connection service.`);
         return false;
       }
@@ -60,28 +54,7 @@ export const connectionService = {
    */
   connectWallet: async (): Promise<boolean> => {
     try {
-      if (DEMO_MODE) {
-        console.log('[DEMO MODE] Connecting wallet');
-        
-        // In demo mode, simulate a successful wallet connection
-        const demoWalletAddress = '0x71C7656EC7ab88b098defB751B7401B5f6d8976F';
-        
-        // Save wallet connection to database in demo mode
-        try {
-          await (supabase as any).from('user_connections')
-            .upsert({
-              user_id: (await supabase.auth.getUser()).data.user?.id,
-              service: 'wallet',
-              connected_at: new Date().toISOString(),
-              connection_data: { address: demoWalletAddress }
-            });
-        } catch (err) {
-          console.log('Expected demo mode error:', err);
-        }
-        
-        toast.success('Demo wallet connected successfully!');
-        return true;
-      }
+      console.log('Connecting wallet...');
       
       // Check if Web3 provider exists
       if (typeof window.ethereum !== 'undefined') {
@@ -90,10 +63,11 @@ export const connectionService = {
         
         if (accounts && accounts.length > 0) {
           const walletAddress = accounts[0];
+          console.log('Wallet connected:', walletAddress);
           
           try {
             // Save wallet connection to database
-            const { error } = await (supabase as any)
+            const { error } = await supabase
               .from('user_connections')
               .upsert({
                 user_id: (await supabase.auth.getUser()).data.user?.id,
@@ -134,12 +108,7 @@ export const connectionService = {
    */
   disconnectService: async (service: ServiceType): Promise<boolean> => {
     try {
-      if (DEMO_MODE) {
-        console.log(`[DEMO MODE] Disconnecting ${service}`);
-        // In demo mode, simulate a successful disconnection
-        toast.success(`${service.charAt(0).toUpperCase() + service.slice(1)} disconnected successfully.`);
-        return true;
-      }
+      console.log(`Disconnecting ${service}...`);
       
       const userResult = await supabase.auth.getUser();
       const userId = userResult.data.user?.id;
@@ -149,26 +118,20 @@ export const connectionService = {
         return false;
       }
       
-      try {
-        const { error } = await (supabase as any)
-          .from('user_connections')
-          .delete()
-          .eq('user_id', userId)
-          .eq('service', service);
-        
-        if (error) {
-          console.error(`Error disconnecting ${service}:`, error);
-          toast.error(`Failed to disconnect ${service}.`);
-          return false;
-        }
-        
-        toast.success(`${service.charAt(0).toUpperCase() + service.slice(1)} disconnected successfully.`);
-        return true;
-      } catch (error) {
-        console.error(`Error in disconnectService for ${service}:`, error);
-        toast.error(`Failed to disconnect ${service}. Database error.`);
+      const { error } = await supabase
+        .from('user_connections')
+        .delete()
+        .eq('user_id', userId)
+        .eq('service', service);
+      
+      if (error) {
+        console.error(`Error disconnecting ${service}:`, error);
+        toast.error(`Failed to disconnect ${service}.`);
         return false;
       }
+      
+      toast.success(`${service.charAt(0).toUpperCase() + service.slice(1)} disconnected successfully.`);
+      return true;
     } catch (error) {
       console.error(`Error disconnecting ${service}:`, error);
       toast.error(`Failed to disconnect ${service}.`);

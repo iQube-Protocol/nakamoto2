@@ -12,9 +12,6 @@ export interface ServiceConnection {
   connectionData?: any;
 }
 
-// Demo mode flag - set to false since we now have actual database integration
-const DEMO_MODE = false;
-
 export function useServiceConnections() {
   const [connections, setConnections] = useState<Record<ServiceType, boolean>>({
     linkedin: false,
@@ -35,14 +32,10 @@ export function useServiceConnections() {
     setLoading(true);
     setError(null);
     try {
-      if (DEMO_MODE) {
-        // In demo mode, just return the current state
-        setLoading(false);
-        return;
-      }
+      console.log('Fetching user connections...');
       
-      // Query user_connections table with type assertion
-      const { data, error: queryError } = await (supabase as any)
+      // Query user_connections table
+      const { data, error: queryError } = await supabase
         .from('user_connections')
         .select('service, connected_at, connection_data')
         .eq('user_id', user.id);
@@ -53,6 +46,8 @@ export function useServiceConnections() {
         setLoading(false);
         return;
       }
+      
+      console.log('Raw connection data:', data);
       
       // Reset all connections to false first
       const newConnections = {
@@ -70,10 +65,12 @@ export function useServiceConnections() {
           const serviceType = connection.service as ServiceType;
           if (Object.keys(newConnections).includes(serviceType)) {
             newConnections[serviceType] = true;
+            console.log(`${serviceType} is connected`);
           }
         });
       }
       
+      console.log('Final connections state:', newConnections);
       setConnections(newConnections);
     } catch (error) {
       console.error('Error in fetchConnections:', error);
@@ -85,12 +82,7 @@ export function useServiceConnections() {
   
   // Connect a service
   const connectService = async (service: ServiceType): Promise<boolean> => {
-    if (DEMO_MODE) {
-      // Demo mode handling
-      setConnections(prev => ({ ...prev, [service]: true }));
-      toast.success(`${service.charAt(0).toUpperCase() + service.slice(1)} connected in demo mode`);
-      return true;
-    }
+    console.log(`Attempting to connect ${service}...`);
     
     if (service === 'wallet') {
       const success = await connectionService.connectWallet();
@@ -112,13 +104,6 @@ export function useServiceConnections() {
   
   // Disconnect a service
   const disconnectService = async (service: ServiceType): Promise<boolean> => {
-    if (DEMO_MODE) {
-      // Demo mode handling
-      setConnections(prev => ({ ...prev, [service]: false }));
-      toast.success(`${service.charAt(0).toUpperCase() + service.slice(1)} disconnected in demo mode`);
-      return true;
-    }
-    
     try {
       const success = await connectionService.disconnectService(service);
       if (success) {
