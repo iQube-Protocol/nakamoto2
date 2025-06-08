@@ -9,7 +9,9 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 
 serve(async (req) => {
-  console.log("OAuth callback started");
+  console.log("=== LinkedIn OAuth Callback Started ===");
+  console.log("Request method:", req.method);
+  console.log("Request URL:", req.url);
   
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
@@ -19,7 +21,12 @@ serve(async (req) => {
   try {
     // Validate environment variables first
     if (!LINKEDIN_CLIENT_ID || !LINKEDIN_CLIENT_SECRET || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-      console.error("Missing environment variables");
+      console.error("Missing environment variables:", {
+        hasClientId: !!LINKEDIN_CLIENT_ID,
+        hasClientSecret: !!LINKEDIN_CLIENT_SECRET,
+        hasSupabaseUrl: !!SUPABASE_URL,
+        hasServiceKey: !!SUPABASE_SERVICE_ROLE_KEY
+      });
       return new Response(
         JSON.stringify({ success: false, error: "Server configuration error" }),
         { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
@@ -59,6 +66,8 @@ serve(async (req) => {
     const requestBody = await req.json();
     const { code, redirectUri } = requestBody;
     
+    console.log("Request body parsed:", { hasCode: !!code, redirectUri });
+    
     if (!code || !redirectUri) {
       console.error("Missing required parameters:", { hasCode: !!code, redirectUri });
       return new Response(
@@ -67,7 +76,7 @@ serve(async (req) => {
       );
     }
 
-    console.log("Exchanging code for token...");
+    console.log("=== Exchanging code for token ===");
 
     // Exchange authorization code for access token
     const tokenParams = new URLSearchParams({
@@ -76,6 +85,14 @@ serve(async (req) => {
       redirect_uri: redirectUri,
       client_id: LINKEDIN_CLIENT_ID,
       client_secret: LINKEDIN_CLIENT_SECRET,
+    });
+
+    console.log("Token exchange parameters:", {
+      grant_type: "authorization_code",
+      hasCode: !!code,
+      redirect_uri: redirectUri,
+      client_id: LINKEDIN_CLIENT_ID,
+      hasClientSecret: !!LINKEDIN_CLIENT_SECRET
     });
 
     const tokenResponse = await fetch("https://www.linkedin.com/oauth/v2/accessToken", {
@@ -87,18 +104,26 @@ serve(async (req) => {
       body: tokenParams,
     });
 
+    console.log("Token response status:", tokenResponse.status);
+
     if (!tokenResponse.ok) {
       const errorText = await tokenResponse.text();
-      console.error("LinkedIn token exchange failed:", tokenResponse.status, errorText);
+      console.error("LinkedIn token exchange failed:", {
+        status: tokenResponse.status,
+        statusText: tokenResponse.statusText,
+        error: errorText
+      });
       return new Response(
-        JSON.stringify({ success: false, error: "LinkedIn authorization failed" }),
+        JSON.stringify({ success: false, error: `LinkedIn authorization failed: ${errorText}` }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
 
     const tokenData = await tokenResponse.json();
     const accessToken = tokenData.access_token;
-    console.log("Token exchange successful, fetching profile...");
+    console.log("Token exchange successful, access token received");
+
+    console.log("=== Fetching LinkedIn profile data ===");
 
     // Fetch LinkedIn profile data using the correct API endpoint
     const profileResponse = await fetch("https://api.linkedin.com/v2/people/~:(id,localizedFirstName,localizedLastName,profilePicture(displayImage~:playableStreams))", {
@@ -108,15 +133,26 @@ serve(async (req) => {
       },
     });
 
+    console.log("Profile response status:", profileResponse.status);
+
     let profileData = null;
     if (profileResponse.ok) {
       profileData = await profileResponse.json();
-      console.log("Profile data fetched successfully");
+      console.log("Profile data fetched successfully:", {
+        id: profileData?.id,
+        firstName: profileData?.localizedFirstName,
+        lastName: profileData?.localizedLastName
+      });
     } else {
-      console.warn("Failed to fetch profile data:", profileResponse.status);
       const errorText = await profileResponse.text();
-      console.warn("Profile error details:", errorText);
+      console.warn("Failed to fetch profile data:", {
+        status: profileResponse.status,
+        statusText: profileResponse.statusText,
+        error: errorText
+      });
     }
+
+    console.log("=== Fetching LinkedIn email data ===");
 
     // Fetch email address
     const emailResponse = await fetch("https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))", {
@@ -126,14 +162,19 @@ serve(async (req) => {
       },
     });
 
+    console.log("Email response status:", emailResponse.status);
+
     let emailData = null;
     if (emailResponse.ok) {
       emailData = await emailResponse.json();
       console.log("Email data fetched successfully");
     } else {
-      console.warn("Failed to fetch email data:", emailResponse.status);
       const errorText = await emailResponse.text();
-      console.warn("Email error details:", errorText);
+      console.warn("Failed to fetch email data:", {
+        status: emailResponse.status,
+        statusText: emailResponse.statusText,
+        error: errorText
+      });
     }
 
     // Prepare connection data with profile information
@@ -151,7 +192,13 @@ serve(async (req) => {
       fetchedAt: new Date().toISOString()
     };
 
-    console.log("Saving connection data:", connectionData);
+    console.log("=== Saving connection data ===");
+    console.log("Connection data prepared:", {
+      connected: connectionData.connected,
+      hasProfile: !!connectionData.profile,
+      hasEmail: !!connectionData.email,
+      profileId: connectionData.profile?.id
+    });
 
     // Save connection to database
     const { error: insertError } = await supabase
@@ -171,7 +218,7 @@ serve(async (req) => {
       );
     }
 
-    console.log("Connection saved successfully");
+    console.log("=== Connection saved successfully ===");
 
     return new Response(
       JSON.stringify({ 
@@ -183,7 +230,7 @@ serve(async (req) => {
     );
 
   } catch (error) {
-    console.error("Unexpected error:", error);
+    console.error("=== Unexpected error ===", error);
     return new Response(
       JSON.stringify({ success: false, error: "Server error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }

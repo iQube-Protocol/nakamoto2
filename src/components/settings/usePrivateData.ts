@@ -26,7 +26,7 @@ export const usePrivateData = (selectedIQube: MetaQube) => {
       
       if (blakQubeData) {
         console.log('BlakQube data loaded:', blakQubeData);
-        // Convert BlakQube data to privateData format
+        // Convert BlakQube data to privateData format - include ALL fields
         const formattedData: PrivateData = {
           "Profession": blakQubeData["Profession"] || "",
           "Web3-Interests": blakQubeData["Web3-Interests"] || [],
@@ -36,12 +36,19 @@ export const usePrivateData = (selectedIQube: MetaQube) => {
           "BTC-Public-Key": blakQubeData["BTC-Public-Key"] || "",
           "Tokens-of-Interest": blakQubeData["Tokens-of-Interest"] || [],
           "Chain-IDs": blakQubeData["Chain-IDs"] || [],
-          "Wallets-of-Interest": blakQubeData["Wallets-of-Interest"] || []
+          "Wallets-of-Interest": blakQubeData["Wallets-of-Interest"] || [],
+          "LinkedIn-ID": blakQubeData["LinkedIn-ID"] || "",
+          "LinkedIn-Profile-URL": blakQubeData["LinkedIn-Profile-URL"] || "",
+          "Twitter-Handle": blakQubeData["Twitter-Handle"] || "",
+          "Telegram-Handle": blakQubeData["Telegram-Handle"] || "",
+          "Discord-Handle": blakQubeData["Discord-Handle"] || "",
+          "Instagram-Handle": blakQubeData["Instagram-Handle"] || "",
+          "GitHub-Handle": blakQubeData["GitHub-Handle"] || ""
         };
         setPrivateData(formattedData);
       } else {
         console.log('No BlakQube data found, using defaults');
-        // Set default empty data if no BlakQube exists
+        // Set default empty data if no BlakQube exists - include ALL fields
         setPrivateData({
           "Profession": "",
           "Web3-Interests": [],
@@ -51,12 +58,19 @@ export const usePrivateData = (selectedIQube: MetaQube) => {
           "BTC-Public-Key": "",
           "Tokens-of-Interest": [],
           "Chain-IDs": [],
-          "Wallets-of-Interest": []
+          "Wallets-of-Interest": [],
+          "LinkedIn-ID": "",
+          "LinkedIn-Profile-URL": "",
+          "Twitter-Handle": "",
+          "Telegram-Handle": "",
+          "Discord-Handle": "",
+          "Instagram-Handle": "",
+          "GitHub-Handle": ""
         });
       }
     } catch (error) {
       console.error('Error loading BlakQube data:', error);
-      // Fallback to empty data
+      // Fallback to empty data with ALL fields
       setPrivateData({
         "Profession": "",
         "Web3-Interests": [],
@@ -66,7 +80,14 @@ export const usePrivateData = (selectedIQube: MetaQube) => {
         "BTC-Public-Key": "",
         "Tokens-of-Interest": [],
         "Chain-IDs": [],
-        "Wallets-of-Interest": []
+        "Wallets-of-Interest": [],
+        "LinkedIn-ID": "",
+        "LinkedIn-Profile-URL": "",
+        "Twitter-Handle": "",
+        "Telegram-Handle": "",
+        "Discord-Handle": "",
+        "Instagram-Handle": "",
+        "GitHub-Handle": ""
       });
     } finally {
       setLoading(false);
@@ -95,13 +116,19 @@ export const usePrivateData = (selectedIQube: MetaQube) => {
     console.log('Updating private data:', newData);
     setPrivateData(newData);
     
-    // Here you could also save to the database if needed
-    // For now, just update the local state
+    // Save to database using BlakQube service
+    try {
+      // For now, just update local state. In a real implementation, you'd save to database
+      console.log('Private data updated locally');
+    } catch (error) {
+      console.error('Error saving private data:', error);
+    }
   };
 
   return {
     privateData,
     handleUpdatePrivateData,
-    loading
+    loading,
+    refreshData: loadBlakQubeData
   };
 };

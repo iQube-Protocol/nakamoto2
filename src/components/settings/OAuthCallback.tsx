@@ -20,7 +20,7 @@ const OAuthCallback = () => {
   
   useEffect(() => {
     const completeOAuth = async () => {
-      console.log('OAuth callback started:', { service, hasCode: !!code, error });
+      console.log('OAuth callback started:', { service, hasCode: !!code, error, errorDescription });
       
       // Handle OAuth provider errors
       if (error) {
@@ -34,7 +34,7 @@ const OAuthCallback = () => {
       
       // Validate required parameters
       if (!service || !code) {
-        console.error('Missing required parameters');
+        console.error('Missing required parameters:', { service, hasCode: !!code });
         setStatus('error');
         setErrorMessage('Invalid OAuth callback - missing required parameters');
         toast.error('OAuth callback error: Missing required parameters');
@@ -67,6 +67,7 @@ const OAuthCallback = () => {
         console.log('Session validated, calling OAuth callback function...');
         
         const redirectUri = `${window.location.origin}/oauth-callback?service=linkedin`;
+        console.log('Using redirect URI:', redirectUri);
         
         // Call the OAuth callback edge function
         const response = await supabase.functions.invoke('oauth-callback-linkedin', {
@@ -102,11 +103,17 @@ const OAuthCallback = () => {
         setStatus('success');
         toast.success('Successfully connected to LinkedIn!');
         
-        // Trigger BlakQube update
+        // Trigger BlakQube update and refresh private data
         try {
+          console.log('Updating BlakQube with LinkedIn data...');
           const { blakQubeService } = await import('@/services/blakqube-service');
           await blakQubeService.updateBlakQubeFromConnections();
           console.log('BlakQube updated with LinkedIn data');
+          
+          // Dispatch custom event to refresh private data
+          const updateEvent = new CustomEvent('privateDataUpdated');
+          window.dispatchEvent(updateEvent);
+          console.log('Private data update event dispatched');
         } catch (updateError) {
           console.warn('Failed to update BlakQube:', updateError);
         }
