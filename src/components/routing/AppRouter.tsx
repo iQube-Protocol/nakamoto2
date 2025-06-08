@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Route, Routes, BrowserRouter as Router, useLocation, Navigate } from 'react-router-dom';
 import { AnimatePresence } from 'framer-motion';
@@ -23,6 +22,7 @@ import LegacyDashboard from '../../pages/LegacyDashboard';
 import { AuthProvider } from '@/hooks/use-auth';
 import OAuthCallback from '@/components/settings/OAuthCallback';
 import EmailConfirmation from '@/components/auth/EmailConfirmation';
+import PrivacyPolicy from '@/pages/PrivacyPolicy';
 
 const ProtectedLayoutRoute = ({ element }) => {
   return (
@@ -60,6 +60,7 @@ const AppRoutes = () => {
         <Route path="/qubes/agent" element={<ProtectedLayoutRoute element={<AgentQube />} />} />
         <Route path="/qubes/tool" element={<ProtectedLayoutRoute element={<ToolQube />} />} />
         <Route path="/qubes/data" element={<ProtectedLayoutRoute element={<DataQube />} />} />
+        <Route path="/privacy" element={<PrivacyPolicy />} />
         <Route path="*" element={<NotFound />} />
       </Routes>
     </AnimatePresence>

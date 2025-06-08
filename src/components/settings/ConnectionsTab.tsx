@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Shield, Linkedin, MessageCircle, Twitter, Users, Wallet, Globe, AlertCircle } from 'lucide-react';
@@ -8,6 +7,7 @@ import { UserSettings } from '@/lib/types';
 import { Loader2 } from 'lucide-react';
 import { toast } from 'sonner';
 import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
+import { Link } from 'react-router-dom';
 
 interface ConnectionsTabProps {
   settings: UserSettings;
@@ -98,10 +98,16 @@ const ConnectionsTab = ({ settings, onConnectService }: ConnectionsTabProps) => 
           <h4 className="font-medium mb-1 flex items-center">
             <Shield className="h-4 w-4 mr-2 text-amber-500" /> Data Privacy Notice
           </h4>
-          <p className="text-muted-foreground">
+          <p className="text-muted-foreground mb-2">
             Connecting these services will import data into your iQube. All data is encrypted and stored
             in your private blakQube layer. You control what information is shared with the community.
           </p>
+          <Link 
+            to="/privacy" 
+            className="text-blue-400 hover:text-blue-300 underline text-sm"
+          >
+            Read our full Privacy Policy →
+          </Link>
         </div>
       </CardContent>
     </Card>
