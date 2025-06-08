@@ -62,8 +62,29 @@ serve(async (req) => {
 
     console.log("User verified:", userData.user.id);
 
-    // Parse request body
-    const requestBody = await req.json();
+    // Parse request body with proper error handling
+    let requestBody;
+    try {
+      const bodyText = await req.text();
+      console.log("Raw request body:", bodyText);
+      
+      if (!bodyText || bodyText.trim() === '') {
+        console.error("Empty request body received");
+        return new Response(
+          JSON.stringify({ success: false, error: "Empty request body" }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
+      
+      requestBody = JSON.parse(bodyText);
+    } catch (parseError) {
+      console.error("Failed to parse request body:", parseError);
+      return new Response(
+        JSON.stringify({ success: false, error: "Invalid JSON in request body" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+    
     const { code, redirectUri } = requestBody;
     
     console.log("Request body parsed:", { hasCode: !!code, redirectUri });
