@@ -72,19 +72,46 @@ serve(async (req) => {
     console.log("Full URL:", url.toString());
     console.log("URL search params:", Object.fromEntries(url.searchParams.entries()));
 
-    // Get parameters from URL (LinkedIn OAuth callback always uses GET)
-    const code = url.searchParams.get("code");
-    const error = url.searchParams.get("error");
-    const errorDescription = url.searchParams.get("error_description");
-    const state = url.searchParams.get("state");
-    
-    console.log("OAuth parameters:", { 
+    // Try to get parameters from URL first (for GET requests from LinkedIn OAuth)
+    let code = url.searchParams.get("code");
+    let error = url.searchParams.get("error");
+    let errorDescription = url.searchParams.get("error_description");
+    let state = url.searchParams.get("state");
+    let service = url.searchParams.get("service");
+
+    console.log("Parameters from URL:", { 
       hasCode: !!code, 
       codeLength: code?.length || 0,
       error, 
       errorDescription,
-      state 
+      state,
+      service 
     });
+
+    // If no parameters in URL, try to get them from request body (for POST requests from client)
+    if (!code && !error && req.method === "POST") {
+      try {
+        const body = await req.json();
+        console.log("Request body:", body);
+        
+        code = body.code;
+        error = body.error;
+        errorDescription = body.error_description;
+        state = body.state;
+        service = body.service;
+        
+        console.log("Parameters from body:", { 
+          hasCode: !!code, 
+          codeLength: code?.length || 0,
+          error, 
+          errorDescription,
+          state,
+          service 
+        });
+      } catch (bodyError) {
+        console.error("Failed to parse request body:", bodyError);
+      }
+    }
     
     // Handle LinkedIn OAuth errors
     if (error) {
@@ -96,7 +123,7 @@ serve(async (req) => {
     }
     
     if (!code) {
-      console.error("Missing authorization code in URL parameters");
+      console.error("Missing authorization code in both URL parameters and request body");
       return new Response(
         JSON.stringify({ success: false, error: "Missing authorization code" }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
