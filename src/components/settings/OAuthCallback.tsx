@@ -1,4 +1,3 @@
-
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -75,7 +74,7 @@ const OAuthCallback = () => {
           headers: {
             'Authorization': `Bearer ${session.access_token}`,
             'Content-Type': 'application/json',
-            'apikey': supabase.supabaseKey
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlzeWt2Y2t2Z2dhcXlraGhudHlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYzMTgxNDUsImV4cCI6MjA2MTg5NDE0NX0._divkcEGq0WFNt4yvokbTrtGGyf_fA39L3udLJapr9A'
           }
         });
         
