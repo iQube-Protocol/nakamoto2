@@ -38,7 +38,7 @@ const KnowledgeItem = ({
       </CardHeader>
       <CardContent>
         <p className="text-sm mb-3 text-zinc-300">{truncatedContent}</p>
-        <div className="flex flex-wrap gap-1 mb-3">
+        <div className="flex flex-wrap gap-1 mb-3 bg-gray-700">
           {visibleKeywords.map((keyword: string) => <Badge key={keyword} variant="secondary" className="text-xs rounded-md px-2 py-1 transition-colors bg-gray-500 text-white border-gray-300/70 hover:bg-amber-600">
               {keyword}
             </Badge>)}
