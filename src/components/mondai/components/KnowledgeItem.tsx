@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -42,7 +43,7 @@ const KnowledgeItem = ({
           {visibleKeywords.map((keyword: string) => <Badge key={keyword} variant="secondary" className="text-xs rounded-md px-2 py-1 transition-colors bg-gray-500 text-white border-gray-300/70 hover:bg-amber-600">
               {keyword}
             </Badge>)}
-          {remainingKeywords > 0 && <Badge variant="outline" className="text-xs rounded-md px-2 py-1 bg-gray-500 text-white border-gray-300/70">
+          {remainingKeywords > 0 && <Badge variant="secondary" className="text-xs rounded-md px-2 py-1 transition-colors bg-gray-500 text-white border-gray-300/70 hover:bg-amber-600">
               +{remainingKeywords}
             </Badge>}
         </div>
