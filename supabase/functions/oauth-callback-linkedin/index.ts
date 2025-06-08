@@ -62,32 +62,58 @@ serve(async (req) => {
 
     console.log("User verified:", userData.user.id);
 
-    // Parse request body with proper error handling
-    let requestBody;
-    try {
-      const bodyText = await req.text();
-      console.log("Raw request body:", bodyText);
-      
-      if (!bodyText || bodyText.trim() === '') {
-        console.error("Empty request body received");
+    // Parse code and redirectUri from request body OR URL parameters
+    let code, redirectUri;
+    
+    if (req.method === "POST") {
+      // Handle POST request with JSON body
+      try {
+        const bodyText = await req.text();
+        console.log("Raw request body:", bodyText);
+        
+        if (!bodyText || bodyText.trim() === '') {
+          console.error("Empty request body received");
+          return new Response(
+            JSON.stringify({ success: false, error: "Empty request body" }),
+            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+          );
+        }
+        
+        const requestBody = JSON.parse(bodyText);
+        code = requestBody.code;
+        redirectUri = requestBody.redirectUri;
+      } catch (parseError) {
+        console.error("Failed to parse request body:", parseError);
         return new Response(
-          JSON.stringify({ success: false, error: "Empty request body" }),
+          JSON.stringify({ success: false, error: "Invalid JSON in request body" }),
           { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
         );
       }
+    } else {
+      // Handle GET request with URL parameters (typical OAuth callback)
+      const url = new URL(req.url);
+      code = url.searchParams.get("code");
+      const error = url.searchParams.get("error");
+      const errorDescription = url.searchParams.get("error_description");
+      redirectUri = `${url.origin}/oauth-callback?service=linkedin`;
       
-      requestBody = JSON.parse(bodyText);
-    } catch (parseError) {
-      console.error("Failed to parse request body:", parseError);
-      return new Response(
-        JSON.stringify({ success: false, error: "Invalid JSON in request body" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
+      console.log("URL parameters:", { 
+        hasCode: !!code, 
+        error, 
+        errorDescription,
+        redirectUri 
+      });
+      
+      if (error) {
+        console.error("LinkedIn OAuth error:", { error, errorDescription });
+        return new Response(
+          JSON.stringify({ success: false, error: `LinkedIn OAuth error: ${errorDescription || error}` }),
+          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        );
+      }
     }
     
-    const { code, redirectUri } = requestBody;
-    
-    console.log("Request body parsed:", { hasCode: !!code, redirectUri });
+    console.log("Request parsed:", { hasCode: !!code, redirectUri });
     
     if (!code || !redirectUri) {
       console.error("Missing required parameters:", { hasCode: !!code, redirectUri });
