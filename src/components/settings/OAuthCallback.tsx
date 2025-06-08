@@ -6,6 +6,13 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Loader2, Check, X } from 'lucide-react';
 import { toast } from 'sonner';
 
+// Type for the edge function response
+interface OAuthCallbackResponse {
+  success: boolean;
+  error?: string;
+  message?: string;
+}
+
 const OAuthCallback = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
@@ -95,8 +102,8 @@ const OAuthCallback = () => {
         };
         console.log('Request body prepared:', { hasCode: !!code, redirectUri, hasState: !!state });
         
-        // Call the OAuth callback edge function with timeout
-        const timeoutPromise = new Promise((_, reject) => 
+        // Call the OAuth callback edge function with timeout and proper typing
+        const timeoutPromise = new Promise<never>((_, reject) => 
           setTimeout(() => reject(new Error('Request timeout')), 30000)
         );
         
@@ -108,7 +115,13 @@ const OAuthCallback = () => {
           }
         });
         
-        const { data, error: callbackError } = await Promise.race([apiCall, timeoutPromise]);
+        const response = await Promise.race([apiCall, timeoutPromise]);
+        
+        // Properly destructure with type assertion
+        const { data, error: callbackError } = response as { 
+          data: OAuthCallbackResponse | null; 
+          error: any 
+        };
         
         console.log('OAuth callback response:', { data, error: callbackError });
         
