@@ -100,7 +100,7 @@ serve(async (req) => {
     const accessToken = tokenData.access_token;
     console.log("Token exchange successful, fetching profile...");
 
-    // Fetch LinkedIn profile data
+    // Fetch LinkedIn profile data using the correct API endpoint
     const profileResponse = await fetch("https://api.linkedin.com/v2/people/~:(id,localizedFirstName,localizedLastName,profilePicture(displayImage~:playableStreams))", {
       headers: {
         "Authorization": `Bearer ${accessToken}`,
@@ -111,9 +111,11 @@ serve(async (req) => {
     let profileData = null;
     if (profileResponse.ok) {
       profileData = await profileResponse.json();
-      console.log("Profile data fetched:", profileData);
+      console.log("Profile data fetched successfully");
     } else {
       console.warn("Failed to fetch profile data:", profileResponse.status);
+      const errorText = await profileResponse.text();
+      console.warn("Profile error details:", errorText);
     }
 
     // Fetch email address
@@ -127,9 +129,11 @@ serve(async (req) => {
     let emailData = null;
     if (emailResponse.ok) {
       emailData = await emailResponse.json();
-      console.log("Email data fetched:", emailData);
+      console.log("Email data fetched successfully");
     } else {
       console.warn("Failed to fetch email data:", emailResponse.status);
+      const errorText = await emailResponse.text();
+      console.warn("Email error details:", errorText);
     }
 
     // Prepare connection data with profile information
@@ -146,6 +150,8 @@ serve(async (req) => {
       email: emailData?.elements?.[0]?.['handle~']?.emailAddress,
       fetchedAt: new Date().toISOString()
     };
+
+    console.log("Saving connection data:", connectionData);
 
     // Save connection to database
     const { error: insertError } = await supabase

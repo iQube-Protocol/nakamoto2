@@ -102,6 +102,15 @@ const OAuthCallback = () => {
         setStatus('success');
         toast.success('Successfully connected to LinkedIn!');
         
+        // Trigger BlakQube update
+        try {
+          const { blakQubeService } = await import('@/services/blakqube-service');
+          await blakQubeService.updateBlakQubeFromConnections();
+          console.log('BlakQube updated with LinkedIn data');
+        } catch (updateError) {
+          console.warn('Failed to update BlakQube:', updateError);
+        }
+        
         setTimeout(() => navigate('/settings?tab=connections'), 1500);
         
       } catch (err) {
