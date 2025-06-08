@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
 import { ServiceType, connectionService } from '@/services/connection-service';
+import { blakQubeService } from '@/services/blakqube-service';
 import { toast } from 'sonner';
 
 export interface ServiceConnection {
@@ -88,7 +89,12 @@ export function useServiceConnections() {
       const success = await connectionService.connectWallet();
       if (success) {
         setConnections(prev => ({ ...prev, [service]: true }));
-        syncBlakQubeData(service);
+        // Update BlakQube data after wallet connection
+        await blakQubeService.updateBlakQubeFromConnections();
+        // Trigger a refresh of the page data
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
       }
       return success;
     } else {
@@ -108,6 +114,10 @@ export function useServiceConnections() {
       const success = await connectionService.disconnectService(service);
       if (success) {
         setConnections(prev => ({ ...prev, [service]: false }));
+        // Refresh data after disconnection
+        setTimeout(() => {
+          window.location.reload();
+        }, 1000);
       }
       return success;
     } catch (error) {
@@ -129,6 +139,7 @@ export function useServiceConnections() {
   // Sync BlakQube data from connected service
   const syncBlakQubeData = async (service: ServiceType) => {
     console.log(`Syncing BlakQube data from ${service}...`);
+    await blakQubeService.updateBlakQubeFromConnections();
     toast.success(`Data from ${service} synced to BlakQube`);
   };
   

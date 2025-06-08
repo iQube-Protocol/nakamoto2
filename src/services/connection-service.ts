@@ -74,20 +74,42 @@ export const connectionService = {
           console.log('Wallet connected:', walletAddress);
           
           try {
+            // Get user
+            const { data: { user } } = await supabase.auth.getUser();
+            if (!user) {
+              toast.error('You must be logged in to connect a wallet.');
+              return false;
+            }
+
             // Save wallet connection to database
-            const { error } = await supabase
+            const { error: connectionError } = await supabase
               .from('user_connections')
               .upsert({
-                user_id: (await supabase.auth.getUser()).data.user?.id,
+                user_id: user.id,
                 service: 'wallet',
                 connected_at: new Date().toISOString(),
                 connection_data: { address: walletAddress }
               });
             
-            if (error) {
-              console.error('Error saving wallet connection:', error);
+            if (connectionError) {
+              console.error('Error saving wallet connection:', connectionError);
               toast.error('Failed to save wallet connection.');
               return false;
+            }
+
+            // Update BlakQube with wallet address
+            const { error: blakQubeError } = await supabase
+              .from('blak_qubes')
+              .upsert({
+                user_id: user.id,
+                "EVM-Public-Key": walletAddress,
+                "Wallets-of-Interest": ["MetaMask"]
+              });
+
+            if (blakQubeError) {
+              console.error('Error updating BlakQube with wallet address:', blakQubeError);
+              // Don't fail the connection for this, just log it
+              console.log('Wallet connected but BlakQube update failed');
             }
             
             toast.success('Wallet connected successfully!');
@@ -136,6 +158,21 @@ export const connectionService = {
         console.error(`Error disconnecting ${service}:`, error);
         toast.error(`Failed to disconnect ${service}.`);
         return false;
+      }
+
+      // If disconnecting wallet, also clear EVM key from BlakQube
+      if (service === 'wallet') {
+        const { error: blakQubeError } = await supabase
+          .from('blak_qubes')
+          .update({
+            "EVM-Public-Key": "",
+            "Wallets-of-Interest": []
+          })
+          .eq('user_id', userId);
+
+        if (blakQubeError) {
+          console.error('Error clearing wallet from BlakQube:', blakQubeError);
+        }
       }
       
       toast.success(`${service.charAt(0).toUpperCase() + service.slice(1)} disconnected successfully.`);

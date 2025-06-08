@@ -15,6 +15,8 @@ export const blakQubeService = {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) return null;
       
+      console.log('Fetching BlakQube data for user:', user.user.id);
+      
       // Use type assertion to work around TypeScript issues
       const { data, error } = await (supabase as any)
         .from('blak_qubes')
@@ -27,6 +29,7 @@ export const blakQubeService = {
         return null;
       }
       
+      console.log('BlakQube data fetched:', data);
       return data as BlakQube;
     } catch (error) {
       console.error('Error in getBlakQubeData:', error);
@@ -41,6 +44,8 @@ export const blakQubeService = {
     try {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) return false;
+      
+      console.log('Updating BlakQube from connections for user:', user.user.id);
       
       // Get current BlakQube data
       const { data: blakQube, error: blakQubeError } = await (supabase as any)
@@ -65,6 +70,8 @@ export const blakQubeService = {
         return false;
       }
       
+      console.log('User connections:', connections);
+      
       // Start with existing BlakQube or create new one
       const newBlakQube: Partial<BlakQube> = blakQube ? { ...blakQube } : {
         "Profession": "",
@@ -81,6 +88,8 @@ export const blakQubeService = {
       // Update BlakQube based on connections
       if (connections) {
         for (const connection of connections) {
+          console.log('Processing connection:', connection.service, connection.connection_data);
+          
           if (connection.service === 'linkedin' && connection.connection_data?.profile) {
             // Extract profession from LinkedIn
             if (connection.connection_data.profile.headline) {
@@ -94,6 +103,7 @@ export const blakQubeService = {
           }
           
           if (connection.service === 'wallet' && connection.connection_data?.address) {
+            console.log('Setting EVM public key:', connection.connection_data.address);
             // Set EVM public key
             newBlakQube["EVM-Public-Key"] = connection.connection_data.address;
             
@@ -130,6 +140,8 @@ export const blakQubeService = {
         }
       }
       
+      console.log('Updated BlakQube data:', newBlakQube);
+      
       // Save updated BlakQube
       const { error: updateError } = await (supabase as any)
         .from('blak_qubes')
@@ -143,6 +155,7 @@ export const blakQubeService = {
         return false;
       }
       
+      console.log('BlakQube updated successfully');
       return true;
     } catch (error) {
       console.error('Error in updateBlakQubeFromConnections:', error);

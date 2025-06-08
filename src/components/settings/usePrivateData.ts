@@ -1,124 +1,93 @@
 
-import { useState } from 'react';
-import { toast } from 'sonner';
+import { useState, useEffect } from 'react';
 import { MetaQube } from '@/lib/types';
+import { blakQubeService } from '@/services/blakqube-service';
+import { useAuth } from '@/hooks/use-auth';
 
-// Define the initial private data for each iQube type
-const dataQubePrivateData = {
-  "Profession": "Software Developer",
-  "Web3-Interests": ["DeFi", "NFTs", "DAOs"],
-  "Local-City": "San Francisco",
-  "Email": "user@example.com",
-  "EVM-Public-Key": "0x71C7656EC7ab88b098defB751B7401B5f6d8976F",
-  "BTC-Public-Key": "bc1qxy2kgdygjrsqtzq2n0yrf2493p83kkfjhx0wlh",
-  "Tokens-of-Interest": ["ETH", "BTC", "MATIC"],
-  "Chain-IDs": ["1", "137"],
-  "Wallets-of-Interest": ["MetaMask", "Rainbow"],
-  "LinkedIn-ID": "user-linkedin-profile",
-  "Twitter-ID": "@usertwitter",
-  "Discord-ID": "user#1234",
-  "Telegram-ID": "@usertelegram",
-  "Luma-ID": "user-luma"
-};
+interface PrivateData {
+  [key: string]: string | string[];
+}
 
-const agentQubePrivateData = {
-  "AI-Capabilities": ["Data Analysis", "NLP", "Blockchain Insights"],
-  "Model Weights": "Transformer 12B",
-  "Training Data": ["Web3 Data", "Financial Markets", "Public Data"],
-  "Model-Version": "1.3.7",
-  "API Key": "••••••••••••••••",
-  "Access-Control": "Permissioned",
-  "Data-Sources": ["On-chain", "User Input", "External APIs"],
-  "Refresh-Interval": "24h",
-  "Trustworthiness": "Verified"
-};
+export const usePrivateData = (selectedIQube: MetaQube) => {
+  const { user } = useAuth();
+  const [privateData, setPrivateData] = useState<PrivateData>({});
+  const [loading, setLoading] = useState(true);
 
-const toolQubePrivateData = {
-  "Storage-Quota": "15GB",
-  "Connected-Email": "user@example.com",
-  "Auto-Sync": "Enabled",
-  "Sharing-Permissions": "Private",
-  "Cached-Files": ["Doc1.pdf", "Presentation.ppt"],
-  "API-Key": "••••••••••••••••",
-  "Last-Sync": "2023-05-01T12:00:00Z",
-  "Default-View": "List",
-  "File-Count": "128"
-};
+  // Load real BlakQube data from database
+  useEffect(() => {
+    const loadBlakQubeData = async () => {
+      if (!user) {
+        setLoading(false);
+        return;
+      }
 
-const contentQubePrivateData = {
-  "Content-Type": "Educational",
-  "Creation-Date": "2023-05-15T10:30:00Z",
-  "Author": "John Doe",
-  "Keywords": ["Web3", "Blockchain", "DeFi"],
-  "Version": "1.2.3",
-  "License": "Creative Commons",
-  "Distribution": "Public",
-  "Related-Content": ["Intro to NFTs", "DeFi Basics"],
-  "Analytics": "Enabled"
-};
+      try {
+        console.log('Loading BlakQube data...');
+        const blakQubeData = await blakQubeService.getBlakQubeData();
+        
+        if (blakQubeData) {
+          console.log('BlakQube data loaded:', blakQubeData);
+          // Convert BlakQube data to privateData format
+          const formattedData: PrivateData = {
+            "Profession": blakQubeData["Profession"] || "",
+            "Web3-Interests": blakQubeData["Web3-Interests"] || [],
+            "Local-City": blakQubeData["Local-City"] || "",
+            "Email": blakQubeData["Email"] || "",
+            "EVM-Public-Key": blakQubeData["EVM-Public-Key"] || "",
+            "BTC-Public-Key": blakQubeData["BTC-Public-Key"] || "",
+            "Tokens-of-Interest": blakQubeData["Tokens-of-Interest"] || [],
+            "Chain-IDs": blakQubeData["Chain-IDs"] || [],
+            "Wallets-of-Interest": blakQubeData["Wallets-of-Interest"] || []
+          };
+          setPrivateData(formattedData);
+        } else {
+          console.log('No BlakQube data found, using defaults');
+          // Set default empty data if no BlakQube exists
+          setPrivateData({
+            "Profession": "",
+            "Web3-Interests": [],
+            "Local-City": "",
+            "Email": user.email || "",
+            "EVM-Public-Key": "",
+            "BTC-Public-Key": "",
+            "Tokens-of-Interest": [],
+            "Chain-IDs": [],
+            "Wallets-of-Interest": []
+          });
+        }
+      } catch (error) {
+        console.error('Error loading BlakQube data:', error);
+        // Fallback to empty data
+        setPrivateData({
+          "Profession": "",
+          "Web3-Interests": [],
+          "Local-City": "",
+          "Email": user?.email || "",
+          "EVM-Public-Key": "",
+          "BTC-Public-Key": "",
+          "Tokens-of-Interest": [],
+          "Chain-IDs": [],
+          "Wallets-of-Interest": []
+        });
+      } finally {
+        setLoading(false);
+      }
+    };
 
-const modelQubePrivateData = {
-  "Model-Type": "Transformer",
-  "Parameters": "12B",
-  "Training-Dataset": ["Web3 Data", "Market Analysis"],
-  "Accuracy": "92.5%",
-  "Version": "2.1.0",
-  "Creator": "Aigent Research",
-  "Use-Cases": ["Prediction", "Analysis", "Recommendation"],
-  "Dependencies": ["TensorFlow", "PyTorch"],
-  "Limitations": "Limited financial history"
-};
+    loadBlakQubeData();
+  }, [user]);
 
-export function usePrivateData(selectedIQube: MetaQube) {
-  // State for private data of each iQube type
-  const [qryptoPersonaPrivateData, setQryptoPersonaPrivateData] = useState(dataQubePrivateData);
-  const [metisPrivateData, setMetisPrivateData] = useState(agentQubePrivateData);
-  const [gdrivePrivateData, setGdrivePrivateData] = useState(toolQubePrivateData);
-  const [contentPrivateData, setContentPrivateData] = useState(contentQubePrivateData);
-  const [modelPrivateData, setModelPrivateData] = useState(modelQubePrivateData);
-  
-  // Function to get the appropriate private data based on selected iQube
-  const getPrivateData = () => {
-    if (selectedIQube["iQube-Identifier"] === "Metis iQube") {
-      return metisPrivateData;
-    } else if (selectedIQube["iQube-Identifier"] === "GDrive iQube") {
-      return gdrivePrivateData;
-    } else if (selectedIQube["iQube-Identifier"] === "Content iQube") {
-      return contentPrivateData;
-    } else if (selectedIQube["iQube-Identifier"] === "Model iQube") {
-      return modelPrivateData;
-    } else {
-      return qryptoPersonaPrivateData;
-    }
-  };
-
-  // Function to update the appropriate private data based on selected iQube
-  const handleUpdatePrivateData = (newData: any) => {
-    if (selectedIQube["iQube-Identifier"] === "Metis iQube") {
-      setMetisPrivateData(newData);
-    } else if (selectedIQube["iQube-Identifier"] === "GDrive iQube") {
-      setGdrivePrivateData(newData);
-    } else if (selectedIQube["iQube-Identifier"] === "Content iQube") {
-      setContentPrivateData(newData);
-    } else if (selectedIQube["iQube-Identifier"] === "Model iQube") {
-      setModelPrivateData(newData);
-    } else {
-      setQryptoPersonaPrivateData(newData);
-    }
-
-    toast.success(`${selectedIQube["iQube-Identifier"]} Data Updated`);
+  const handleUpdatePrivateData = async (newData: PrivateData) => {
+    console.log('Updating private data:', newData);
+    setPrivateData(newData);
+    
+    // Here you could also save to the database if needed
+    // For now, just update the local state
   };
 
   return {
-    privateData: getPrivateData(),
-    handleUpdatePrivateData
+    privateData,
+    handleUpdatePrivateData,
+    loading
   };
-}
-
-export const initialQubeData = {
-  dataQubePrivateData,
-  agentQubePrivateData,
-  toolQubePrivateData,
-  contentQubePrivateData,
-  modelQubePrivateData
 };
