@@ -87,26 +87,45 @@ const OAuthCallback = () => {
         const redirectUri = `${window.location.origin}/oauth-callback?service=linkedin`;
         console.log('Using redirect URI:', redirectUri);
         
-        // Call the OAuth callback edge function
-        const { data, error: callbackError } = await supabase.functions.invoke('oauth-callback-linkedin', {
-          body: { 
-            code, 
-            redirectUri,
-            state 
-          },
+        // Create request body
+        const requestBody = { 
+          code, 
+          redirectUri,
+          state 
+        };
+        console.log('Request body prepared:', { hasCode: !!code, redirectUri, hasState: !!state });
+        
+        // Call the OAuth callback edge function with timeout
+        const timeoutPromise = new Promise((_, reject) => 
+          setTimeout(() => reject(new Error('Request timeout')), 30000)
+        );
+        
+        const apiCall = supabase.functions.invoke('oauth-callback-linkedin', {
+          body: requestBody,
           headers: {
             Authorization: `Bearer ${session.access_token}`,
             'Content-Type': 'application/json'
           }
         });
         
+        const { data, error: callbackError } = await Promise.race([apiCall, timeoutPromise]);
+        
         console.log('OAuth callback response:', { data, error: callbackError });
         
         if (callbackError) {
           console.error('OAuth callback function error:', callbackError);
           setStatus('error');
-          setErrorMessage(callbackError.message || 'OAuth callback failed');
-          toast.error(`Failed to complete LinkedIn connection: ${callbackError.message}`);
+          
+          // Handle specific error types
+          let errorMsg = callbackError.message || 'OAuth callback failed';
+          if (errorMsg.includes('timeout')) {
+            errorMsg = 'Request timed out - please try again';
+          } else if (errorMsg.includes('network')) {
+            errorMsg = 'Network error - please check your connection';
+          }
+          
+          setErrorMessage(errorMsg);
+          toast.error(`Failed to complete LinkedIn connection: ${errorMsg}`);
           setTimeout(() => navigate('/settings?tab=connections'), 3000);
           return;
         }
@@ -114,8 +133,9 @@ const OAuthCallback = () => {
         if (!data?.success) {
           console.error('OAuth callback returned error:', data);
           setStatus('error');
-          setErrorMessage(data?.error || 'OAuth callback failed');
-          toast.error(`LinkedIn connection failed: ${data?.error || 'Unknown error'}`);
+          const errorMsg = data?.error || 'OAuth callback failed';
+          setErrorMessage(errorMsg);
+          toast.error(`LinkedIn connection failed: ${errorMsg}`);
           setTimeout(() => navigate('/settings?tab=connections'), 3000);
           return;
         }
@@ -130,8 +150,18 @@ const OAuthCallback = () => {
       } catch (err) {
         console.error('Unexpected error in OAuth callback:', err);
         setStatus('error');
-        setErrorMessage('An unexpected error occurred');
-        toast.error('An unexpected error occurred during LinkedIn connection');
+        
+        let errorMsg = 'An unexpected error occurred';
+        if (err instanceof Error) {
+          if (err.message.includes('timeout')) {
+            errorMsg = 'Request timed out - please try again';
+          } else if (err.message.includes('network')) {
+            errorMsg = 'Network error - please check your connection';
+          }
+        }
+        
+        setErrorMessage(errorMsg);
+        toast.error(`An error occurred during LinkedIn connection: ${errorMsg}`);
         setTimeout(() => navigate('/settings?tab=connections'), 3000);
       }
     };
