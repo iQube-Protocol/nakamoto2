@@ -102,6 +102,9 @@
 
   body {
     @apply bg-background text-foreground;
+    /* Fix webkit text size adjust property */
+    -webkit-text-size-adjust: 100%;
+    text-size-adjust: 100%;
   }
 }
 
