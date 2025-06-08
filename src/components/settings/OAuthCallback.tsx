@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -65,32 +66,25 @@ const OAuthCallback = () => {
         
         console.log('Session validated, calling OAuth callback function...');
         
-        // Call the OAuth callback edge function using GET with URL parameters
-        const callbackUrl = `${window.location.origin.replace('preview--', '')}/functions/v1/oauth-callback-linkedin?code=${encodeURIComponent(code)}&state=${encodeURIComponent(state || '')}&service=${encodeURIComponent(service)}`;
-        console.log('Calling callback URL:', callbackUrl);
-        
-        const response = await fetch(callbackUrl, {
-          method: 'GET',
-          headers: {
-            'Authorization': `Bearer ${session.access_token}`,
-            'Content-Type': 'application/json',
-            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlzeWt2Y2t2Z2dhcXlraGhudHlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYzMTgxNDUsImV4cCI6MjA2MTg5NDE0NX0._divkcEGq0WFNt4yvokbTrtGGyf_fA39L3udLJapr9A'
+        // Call the OAuth callback edge function using Supabase client
+        const { data: responseData, error: functionError } = await supabase.functions.invoke('oauth-callback-linkedin', {
+          body: {
+            code,
+            state: state || '',
+            service
           }
         });
         
-        console.log('OAuth callback response status:', response.status);
+        console.log('OAuth callback response:', { responseData, functionError });
         
-        if (!response.ok) {
-          console.error('OAuth callback request failed:', response.status, response.statusText);
+        if (functionError) {
+          console.error('Function invocation error:', functionError);
           setStatus('error');
-          setErrorMessage(`OAuth callback failed: ${response.status} ${response.statusText}`);
-          toast.error(`Failed to complete LinkedIn connection: ${response.status} ${response.statusText}`);
+          setErrorMessage(`OAuth callback failed: ${functionError.message}`);
+          toast.error(`Failed to complete LinkedIn connection: ${functionError.message}`);
           setTimeout(() => navigate('/settings?tab=connections'), 3000);
           return;
         }
-        
-        const responseData = await response.json();
-        console.log('OAuth callback response data:', responseData);
         
         if (!responseData?.success) {
           console.error('OAuth callback returned error:', responseData);
