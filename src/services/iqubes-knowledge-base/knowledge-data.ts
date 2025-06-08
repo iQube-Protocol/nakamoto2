@@ -219,22 +219,54 @@ Through this multi-layered security model—anchored in Bitcoin's proof-of-work,
     source: 'iQube Whitepaper v0.1'
   },
   {
+    id: 'iqube-vft-technical-specifications',
+    title: 'iQube VFT Technical Specifications',
+    content: `VFTs (Variant Fungibility Tokens) underpin iQubes, containers for data, content, AI models, agents and value enabling a decentralized information economy. iQubes dynamically shift fungibility states to optimize value, liquidity, and uniqueness of assets.
+
+**Fungibility Framework:**
+- **High Fungibility (QryptoCOYN/QryptoCENT):** Assets optimized for value capture, quantification and exchange
+- **Medium Fungibility (iQubeTemplates):** Assets for specification and general semi-fungible value quantification  
+- **Low Fungibility (iQubes):** Unique, individually addressable information primitives crucial for verifiable inference and sovereignty
+
+**Bitcoin Satoshi Anchoring:** Every VFT maintains a 1:1 cryptographic anchor to a Bitcoin Satoshi, ensuring Bitcoin-level data security and integrity while remaining economically independent of BTC price fluctuations.
+
+**Closed-Loop Token Lifecycle:** Token burn events trigger the recycling of underlying Satoshis into newly minted iQubes, establishing a synchronized, Bitcoin-secured, and auditable system for data asset creation, optimized for AI and cross-chain operations.
+
+**Core Operations:** Curating, Quantifying, Containing (data), Anonymizing (ID), Verifying (payloads), and Controlling Access (encryption/decryption).
+
+**Cross-Chain Interoperability:** Achieved through ICP/LayerZero integration, light clients, validator diversity, and burn/mint token management.
+
+**Performance Targets:**
+- Minimum 1,000 TPS, scalable to 10,000+ TPS
+- Sub-cent ($<0.01) per microtransaction
+- 10 to 30 seconds cross-chain finality latency`,
+    section: 'Technical Architecture',
+    category: 'technical',
+    keywords: ['VFT', 'Variant Fungibility Tokens', 'Bitcoin anchoring', 'Satoshi recycling', 'cross-chain', 'performance targets'],
+    timestamp: new Date().toISOString(),
+    source: 'iQube Whitepaper v0.1'
+  },
+  {
     id: 'iqube-standards-interoperability',
     title: 'iQube Standards & Interoperability',
     content: `The iQube Protocol is designed for seamless integration into existing technology stacks and emerging decentralized ecosystems by adhering to open standards and ensuring broad interoperability.
 
 **W3C DID/VC Compliance:** The protocol uses Decentralized Identifiers (DIDs) and Verifiable Credentials (VCs) as defined by the W3C standards. These frameworks enable dynamic identity management, credential exchange, and proof-of-ownership in a verifiable and privacy-preserving manner.
 
-**LayerZero Omnichain Relays:** To facilitate cross-chain interoperability, the protocol integrates LayerZero's omnichain communication infrastructure. This allows iQubes to interact with other blockchains and decentralized systems, enabling AI agents and data assets to flow seamlessly across Layer1 and Layer2 networks.
+**ICP Chain Fusion Technology:** Enables trust-minimized, decentralized interaction with Bitcoin, allowing ICP smart contracts (canisters) to natively manage Bitcoin UTXOs via threshold signatures and chain-key cryptography.
 
-**EVM Compatibility:** The protocol is fully EVM-compatible, allowing smart contracts written for Ethereum and other EVM chains to execute iQube functions without modification. This ensures that AI agents, dApps, and DeFi protocols can leverage iQube's risk-aware data management and dynamic identity features.
+**LayerZero Decentralized Verifier Network (DVN):** A decentralized oracle network responsible for secure and reliable cross-chain message routing between ICP, Bitcoin, and EVM blockchains, ensuring atomicity, ordered delivery, and verifiable finality.
 
-**Data Portability and API Integration:** The protocol's open API layer enables integration with traditional Web2 systems, facilitating data migration and hybrid deployments. AI agents from Web2 ecosystems can leverage iQubes through tokenQube-controlled access and risk-based encryption.
+**EVM RPC Canister on ICP:** Provides an on-chain interface enabling ICP canisters to interact with any EVM-compatible blockchain, allowing the initiation and signing of EVM transactions from ICP-based smart contracts.
+
+**Layer 2 Rollup Solutions:** Implementation of both zk-Rollups and Optimistic Rollups on ICP and EVM chains for off-chain transaction batching, significantly enhancing throughput and reducing transaction costs.
+
+**Data Portability and API Integration:** The protocol's open API layer enables integration with traditional Web2 systems, facilitating data migration and hybrid deployments.
 
 By adhering to these standards and interoperability frameworks, the iQube Protocol ensures that data assets remain portable, secure, and usable across diverse technology stacks, fostering a more connected and agentic AI ecosystem.`,
     section: 'Standards Compliance',
     category: 'technical',
-    keywords: ['W3C DID/VC', 'LayerZero', 'EVM compatibility', 'interoperability', 'API integration', 'data portability'],
+    keywords: ['W3C DID/VC', 'ICP Chain Fusion', 'LayerZero', 'EVM compatibility', 'rollups', 'interoperability', 'API integration'],
     timestamp: new Date().toISOString(),
     source: 'iQube Whitepaper v0.1'
   },

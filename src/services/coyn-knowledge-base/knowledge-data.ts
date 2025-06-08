@@ -158,5 +158,103 @@ As more data providers and AI agents join the network, the value of COYN tokens 
     keywords: ['value proposition', 'monetization', 'competitive advantage', 'stakeholder benefits', 'ecosystem growth'],
     timestamp: new Date().toISOString(),
     source: 'COYN Value Framework'
+  },
+  {
+    id: 'coyn-micro-stable-coin-framework',
+    title: 'COYN Micro-Stable Coin Framework',
+    content: `The COYN economy introduces QryptoCENT as a micro-stable coin designed to enable efficient pricing of agent transactions and bridge traditional financial systems with the crypto-agentic economy.
+
+**QryptoCENT Design:** QryptoCENT is pegged to ₵0.01 (one US cent), making it ideal for microtransactions between AI agents and data providers. This micro-stable coin enables precise pricing of data assets and AI services while maintaining price stability.
+
+**Collateral Backing:** QryptoCENT is minted algorithmically and backed by collateral reserves consisting of tokenized data assets and real-world assets. This ensures that its value remains stable and risk-adjusted while providing confidence in its economic foundation.
+
+**Bridge to Traditional Systems:** QryptoCENT serves as a seamless on-ramp for traditional AI services to participate in decentralized ecosystems. Web2 AI agents can easily adopt QryptoCENT for transactions without complex crypto onboarding processes.
+
+**Universal Interoperability:** All COYN protocol tokens are priced in QryptoCENT and can be exchanged for QryptoCENT via in-ecosystem DEXs. This enables universally interoperable Proof-of-pricing across web3 and legacy fiat payment systems.
+
+**Agent-to-Agent Transactions:** QryptoCENT facilitates seamless agent-to-agent transactions and value creation across different blockchain and legacy networks, enabling agents to traverse crypto and fiat payment systems as makes sense for their context and use cases.
+
+**Proof-of-Price Integration:** The micro-stable coin integrates with the Proof-of-Price consensus mechanism to ensure that data assets are fairly priced based on their risk profiles, quality metrics, and usage context.`,
+    section: 'Financial Infrastructure',
+    category: 'tokenomics',
+    keywords: ['QryptoCENT', 'micro-stable coin', 'microtransactions', 'collateral backing', 'interoperability', 'Proof-of-Price'],
+    timestamp: new Date().toISOString(),
+    source: 'iQube Whitepaper v0.1'
+  },
+  {
+    id: 'coyn-techno-capital-machine',
+    title: 'COYN Techno Capital Machine Model',
+    content: `The COYN economy operates through the Techno Capital Machine Model, a sophisticated system designed to curate and value information assets while incentivizing key contributions across Capital, Compute, and Content pillars.
+
+**Three Pillar Structure:** The model rewards contributions across three fundamental areas:
+- **Capital Pillar (30%):** Staking of Ethereum, Bitcoin, and other valuable assets to secure the network
+- **Compute Pillar (30%):** Provision of software and hardware computational resources
+- **Content Pillar (30%):** Contribution of data, media, and intellectual property assets
+- **Treasury (10%):** Reserved for development, stability, and strategic initiatives
+
+**Daily Distribution:** A fixed number of QryptoCOYN tokens are minted over a 10-year period, with 30% allocated daily to each pillar, recognizing and rewarding contributors in each area.
+
+**Value Correlation:** The value of QryptoCOYN reflects the quality and quantity of iQubes within the ecosystem. As the quantity, quality, and demand for iQubes grows substantially over time, this growth correlates directly with increased staking rewards and value creation.
+
+**Deflationary Mechanics:** The system includes several deflationary mechanisms:
+- Token burns tied to high-value transactions
+- High APY staking opportunities to incentivize holding
+- Penalties for non-compliance with protocol standards
+- Mandatory utilization of QryptoCOYN or QryptoCENT for ecosystem transactions
+
+**Circular Economy:** When COYN tokens are burned, the underlying Satoshis are recycled into new iQubes, creating a circular ecosystem where value is continuously regenerated and optimized for AI and data market applications.`,
+    section: 'Economic Model',
+    category: 'tokenomics',
+    keywords: ['Techno Capital Machine', 'three pillars', 'capital', 'compute', 'content', 'deflationary mechanics', 'circular economy'],
+    timestamp: new Date().toISOString(),
+    source: 'iQube Whitepaper v0.1'
+  },
+  {
+    id: 'coyn-proof-of-price-framework',
+    title: 'COYN Proof-of-Price Framework',
+    content: `The Proof-of-Price framework is a core consensus mechanism in the COYN economy that ensures fair and transparent pricing of data assets based on verifiable risk profiles, quality metrics, and market dynamics.
+
+**Dynamic Pricing Mechanism:** Smart contracts compute dynamic prices for each iQube by evaluating multiple factors including risk assessment scores, data quality metrics, usage rights, and real-time market demand. This ensures that data owners are fairly compensated based on the true value of their assets.
+
+**Risk-Based Valuation:** Higher-risk data is appropriately priced based on its sensitivity and usage context. The Proof-of-Price mechanism integrates with the Proof-of-Risk framework to ensure that sensitive data commands premium pricing while maintaining appropriate access controls.
+
+**Vickery Auction Integration:** The framework includes a Vickery auction mechanism for transparent valuation, where bidders submit sealed bids and the winner pays the second-highest bid price. This promotes truthful bidding and ensures fair market discovery.
+
+**Quality-Based Premiums:** Data assets with higher quality scores, better provenance, and enhanced metadata receive premium pricing. This incentivizes data providers to maintain high standards and contribute valuable, well-documented datasets.
+
+**Universal Price Discovery:** All COYN protocol tokens are priced in QryptoCENT, enabling universal price discovery across the ecosystem. This standardization facilitates seamless value exchange between different types of data assets and services.
+
+**Market Transparency:** The Proof-of-Price framework ensures that all pricing decisions are cryptographically verifiable and auditable, providing transparency and building trust in the data marketplace.
+
+**Cross-Network Compatibility:** The pricing framework operates across multiple blockchain networks and legacy systems, enabling consistent valuation regardless of the underlying infrastructure.`,
+    section: 'Consensus Mechanism',
+    category: 'consensus',
+    keywords: ['Proof-of-Price', 'dynamic pricing', 'Vickery auction', 'risk-based valuation', 'quality premiums', 'price discovery', 'market transparency'],
+    timestamp: new Date().toISOString(),
+    source: 'iQube Whitepaper v0.1'
+  },
+  {
+    id: 'coyn-currency-of-your-network',
+    title: 'COYN: Currency Of Your Network',
+    content: `COYN fundamentally represents the 'Currency of Your Network' - a protocol specifically designed for pricing data-as-an-asset rather than serving as a speculative token. This focus on utility and real-world application distinguishes COYN from traditional cryptocurrencies.
+
+**Data-as-Asset Pricing:** COYN tokens are backed by verifiable data assets with quantifiable risk profiles, quality metrics, and usage rights. Unlike speculative tokens, COYN's value is anchored in tangible information assets that provide utility to AI agents and data consumers.
+
+**Network Value Capture:** The value of COYN reflects the aggregate value of data networks, community contributions, and ecosystem growth. As networks expand and data quality improves, COYN's value increases proportionally, creating sustainable value creation.
+
+**Utility-First Design:** Every COYN transaction serves a functional purpose - whether accessing data, compensating providers, or facilitating AI agent interactions. This utility-first approach ensures that COYN maintains practical value beyond speculative trading.
+
+**Real-World Fundamentals:** Proof-of-Price consensus anchors COYN's valuation in verifiable, real-world fundamentals such as data quality, risk assessment, usage context, and market demand. This provides stability and predictability for ecosystem participants.
+
+**Network Effect Monetization:** COYN enables the monetization of network effects by quantifying the value created through data sharing, curation, and enhancement. Contributors are rewarded based on their actual value creation within the network.
+
+**Transparent Valuation:** All COYN pricing is cryptographically verifiable and based on transparent algorithms that assess data risk, quality, and market dynamics. This transparency builds trust and enables informed decision-making.
+
+**Cross-Network Interoperability:** COYN operates seamlessly across crypto and fiat payment systems, enabling agents to traverse different financial networks as appropriate for their use cases and contexts.`,
+    section: 'Core Philosophy',
+    category: 'philosophy',
+    keywords: ['Currency Of Your Network', 'data-as-asset', 'utility-first', 'network value', 'real-world fundamentals', 'transparent valuation', 'interoperability'],
+    timestamp: new Date().toISOString(),
+    source: 'iQube Whitepaper v0.1'
   }
 ];
