@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
 import { Shield, Linkedin, MessageCircle, Twitter, Users, Wallet, Globe, AlertCircle } from 'lucide-react';
