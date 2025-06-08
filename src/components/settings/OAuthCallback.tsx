@@ -47,12 +47,26 @@ const OAuthCallback = () => {
       try {
         console.log(`Exchanging code for token with ${service} service...`);
         
+        // Get current session to include auth header
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        if (sessionError || !session) {
+          console.error('No valid session:', sessionError);
+          setStatus('error');
+          setErrorMessage('Authentication required');
+          toast.error('Please sign in and try again');
+          setTimeout(() => navigate('/signin'), 3000);
+          return;
+        }
+        
         // Call Supabase Edge Function to exchange code for token
         const { data, error: exchangeError } = await supabase.functions.invoke(`oauth-callback-${service}`, {
           body: { 
             code, 
             redirectUri: window.location.origin + window.location.pathname + '?service=' + service,
             state 
+          },
+          headers: {
+            Authorization: `Bearer ${session.access_token}`
           }
         });
         

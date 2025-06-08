@@ -15,6 +15,14 @@ export const connectionService = {
     try {
       console.log(`Starting OAuth flow for ${service}...`);
       
+      // Check if user is authenticated
+      const { data: { user }, error: authError } = await supabase.auth.getUser();
+      if (authError || !user) {
+        console.error('User not authenticated:', authError);
+        toast.error('You must be logged in to connect services.');
+        return false;
+      }
+      
       // Get current URL for proper redirect
       const redirectUrl = `${window.location.origin}/oauth-callback?service=${service}`;
       console.log(`Redirect URL: ${redirectUrl}`);
