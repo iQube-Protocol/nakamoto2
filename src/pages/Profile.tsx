@@ -1,3 +1,4 @@
+
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,24 +7,36 @@ import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { useUserInteractions } from '@/hooks/use-user-interactions';
 import { getRelativeTime } from '@/lib/utils';
+import ResponseDialog from '@/components/profile/ResponseDialog';
+
 const Profile = () => {
-  const {
-    user
-  } = useAuth();
+  const { user } = useAuth();
   const [activeTab, setActiveTab] = useState<'learn' | 'earn' | 'connect'>('learn');
+  const [selectedResponse, setSelectedResponse] = useState<any>(null);
+  const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   // Get user interactions for the active tab
-  const {
-    interactions,
-    refreshInteractions
-  } = useUserInteractions(activeTab);
+  const { interactions, refreshInteractions } = useUserInteractions(activeTab);
 
   // Ensure we refresh the data when the tab changes
   useEffect(() => {
     refreshInteractions();
   }, [activeTab, refreshInteractions]);
+
+  const handleResponseClick = (interaction: any) => {
+    setSelectedResponse(interaction);
+    setIsDialogOpen(true);
+  };
+
+  const handleDialogClose = () => {
+    setIsDialogOpen(false);
+    setSelectedResponse(null);
+  };
+
   if (!user) return null;
-  return <div className="container py-6">
+
+  return (
+    <div className="container py-6">
       <div className="grid gap-6">
         {/* Compressed user info section */}
         <Card>
@@ -78,38 +91,60 @@ const Profile = () => {
           <CardContent>
             <ScrollArea className="h-[400px] pr-4">
               <div className="space-y-4">
-                {interactions && interactions.length > 0 ? interactions.map(interaction => <div key={interaction.id} className="space-y-3 p-4 border rounded-lg">
-                      {/* User Query */}
-                      {interaction.query && <div className="p-3 rounded-lg bg-[#2d1f17]/45">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Badge variant="outline">You asked</Badge>
-                            <span className="text-xs text-muted-foreground">
-                              {new Date(interaction.created_at).toLocaleString()}
-                            </span>
-                          </div>
-                          <p className="text-sm text-zinc-100">{interaction.query}</p>
-                        </div>}
-                      
-                      {/* Agent Response */}
-                      {interaction.response && <div className="p-3 rounded-lg bg-[#23223f]/[0.32]">
-                          <div className="flex items-center gap-2 mb-2">
-                            <Badge variant="secondary" className="bg-qrypto-primary">{interaction.interaction_type} agent responded</Badge>
-                          </div>
-                          <p className="text-sm">
-                            {interaction.response.length > 200 ? `${interaction.response.substring(0, 200)}...` : interaction.response}
-                          </p>
-                        </div>}
-                    </div>) : <div className="text-center p-6">
+                {interactions && interactions.length > 0 ? interactions.map(interaction => (
+                  <div key={interaction.id} className="space-y-3 p-4 border rounded-lg">
+                    {/* User Query */}
+                    {interaction.query && (
+                      <div className="p-3 rounded-lg bg-[#2d1f17]/45">
+                        <div className="flex items-center gap-2 mb-2">
+                          <Badge variant="outline">You asked</Badge>
+                          <span className="text-xs text-muted-foreground">
+                            {new Date(interaction.created_at).toLocaleString()}
+                          </span>
+                        </div>
+                        <p className="text-sm text-zinc-100">{interaction.query}</p>
+                      </div>
+                    )}
+                    
+                    {/* Agent Response */}
+                    {interaction.response && (
+                      <div 
+                        className="p-3 rounded-lg bg-[#23223f]/[0.32] cursor-pointer hover:bg-[#23223f]/[0.45] transition-colors"
+                        onClick={() => handleResponseClick(interaction)}
+                      >
+                        <div className="flex items-center gap-2 mb-2">
+                          <Badge variant="secondary" className="bg-qrypto-primary">{interaction.interaction_type} agent responded</Badge>
+                        </div>
+                        <p className="text-sm">
+                          {interaction.response.length > 200 ? `${interaction.response.substring(0, 200)}...` : interaction.response}
+                        </p>
+                        {interaction.response.length > 200 && (
+                          <p className="text-xs text-muted-foreground mt-2">Click to view full response</p>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                )) : (
+                  <div className="text-center p-6">
                     <p>No {activeTab === 'learn' ? 'Learn/MonDAI' : activeTab} conversations found.</p>
                     <p className="text-sm text-muted-foreground mt-2">
                       Start a conversation with the {activeTab === 'learn' ? 'Learn or MonDAI' : activeTab} agent to see your history here.
                     </p>
-                  </div>}
+                  </div>
+                )}
               </div>
             </ScrollArea>
           </CardContent>
         </Card>
       </div>
-    </div>;
+
+      <ResponseDialog 
+        selectedResponse={selectedResponse}
+        isOpen={isDialogOpen}
+        onClose={handleDialogClose}
+      />
+    </div>
+  );
 };
+
 export default Profile;
