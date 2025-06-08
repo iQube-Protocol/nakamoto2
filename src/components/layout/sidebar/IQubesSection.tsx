@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import CubeIcon from './CubeIcon';
 import { QubeItem } from './sidebarData';
 import { useIsMobile } from '@/hooks/use-mobile';
+import ScoreTooltip from '@/components/shared/ScoreTooltips';
 
 interface IQubesSectionProps {
   iQubeItems: QubeItem[];
@@ -57,6 +58,12 @@ const IQubesSection: React.FC<IQubesSectionProps> = ({
     if (isMobile && toggleMobileSidebar) {
       toggleMobileSidebar();
     }
+  };
+
+  // Function to get tooltip type based on qube name
+  const getTooltipType = (qubeName: string) => {
+    if (qubeName === "Nakamoto") return 'qryptoPersona';
+    return 'dataQube';
   };
 
   if (collapsed) {
@@ -110,18 +117,11 @@ const IQubesSection: React.FC<IQubesSectionProps> = ({
               onClick={() => handleIQubeItemClick(qube.name)}
             >
               <div className="flex items-center flex-1">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <span className="mr-2">
-                        {renderIQubeTypeIcon(qube.type)}
-                      </span>
-                    </TooltipTrigger>
-                    <TooltipContent side="top">
-                      {qube.type}
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
+                <ScoreTooltip type={getTooltipType(qube.name)}>
+                  <span className="mr-2">
+                    {renderIQubeTypeIcon(qube.type)}
+                  </span>
+                </ScoreTooltip>
                 <span className="mr-2">{qube.name}</span>
               </div>
               <div 

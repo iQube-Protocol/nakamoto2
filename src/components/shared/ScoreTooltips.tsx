@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { 
   ShieldCheck, 
@@ -11,14 +12,15 @@ import {
   Paperclip,
   Image,
   Cpu,
-  Brain
+  Brain,
+  User
 } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ScoreTooltipProps {
   children: React.ReactNode;
   score?: number;
-  type: 'reliability' | 'trust' | 'risk' | 'sensitivity' | 'accuracy' | 'verifiability' | 'dataQube' | 'voice' | 'attachment' | 'image' | 'mlModel' | 'agentQube';
+  type: 'reliability' | 'trust' | 'risk' | 'sensitivity' | 'accuracy' | 'verifiability' | 'dataQube' | 'voice' | 'attachment' | 'image' | 'mlModel' | 'agentQube' | 'qryptoPersona';
   customDescription?: string;
 }
 
@@ -118,6 +120,18 @@ const ScoreTooltip: React.FC<ScoreTooltipProps> = ({ children, score, type, cust
             </div>
             <div className="text-xs">
               {customDescription || "Advanced AI agent with specialized capabilities and configurable permissions."}
+            </div>
+          </div>
+        );
+      case 'qryptoPersona':
+        return (
+          <div className="space-y-1">
+            <div className="font-semibold flex items-center">
+              <User className="h-4 w-4 mr-2 text-blue-500" />
+              Qrypto Persona
+            </div>
+            <div className="text-xs">
+              Profile information about the user that when activated will be injected into the context window of the Agent, enabling it to give personalized responses.
             </div>
           </div>
         );
