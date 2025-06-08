@@ -20,7 +20,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/comp
 interface ScoreTooltipProps {
   children: React.ReactNode;
   score?: number;
-  type: 'reliability' | 'trust' | 'risk' | 'sensitivity' | 'accuracy' | 'verifiability' | 'dataQube' | 'voice' | 'attachment' | 'image' | 'mlModel' | 'agentQube' | 'qryptoPersona';
+  type: 'reliability' | 'trust' | 'risk' | 'sensitivity' | 'accuracy' | 'verifiability' | 'dataQube' | 'voice' | 'attachment' | 'image' | 'mlModel' | 'agentQube' | 'qryptoPersona' | 'metisAgent';
   customDescription?: string;
 }
 
@@ -132,6 +132,18 @@ const ScoreTooltip: React.FC<ScoreTooltipProps> = ({ children, score, type, cust
             </div>
             <div className="text-xs">
               Profile information about the user that when activated will be injected into the context window of the Agent, enabling it to give personalized responses.
+            </div>
+          </div>
+        );
+      case 'metisAgent':
+        return (
+          <div className="space-y-1">
+            <div className="font-semibold flex items-center">
+              <Brain className="h-4 w-4 mr-2 text-purple-500" />
+              Metis Agent
+            </div>
+            <div className="text-xs">
+              An algorithm that evaluates risks associated with wallets and tokens.
             </div>
           </div>
         );

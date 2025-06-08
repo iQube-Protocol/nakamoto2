@@ -63,6 +63,7 @@ const IQubesSection: React.FC<IQubesSectionProps> = ({
   // Function to get tooltip type based on qube name
   const getTooltipType = (qubeName: string) => {
     if (qubeName === "Nakamoto") return 'qryptoPersona';
+    if (qubeName === "Metis") return 'metisAgent';
     return 'dataQube';
   };
 
@@ -117,11 +118,41 @@ const IQubesSection: React.FC<IQubesSectionProps> = ({
               onClick={() => handleIQubeItemClick(qube.name)}
             >
               <div className="flex items-center flex-1">
-                <ScoreTooltip type={getTooltipType(qube.name)}>
-                  <span className="mr-2">
-                    {renderIQubeTypeIcon(qube.type)}
-                  </span>
-                </ScoreTooltip>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <span className="mr-2">
+                        {renderIQubeTypeIcon(qube.type)}
+                      </span>
+                    </TooltipTrigger>
+                    <TooltipContent side="top" align="center">
+                      {qube.name === "Nakamoto" && (
+                        <div className="space-y-1">
+                          <div className="font-semibold">Qrypto Persona</div>
+                          <div className="text-xs">
+                            Profile information about the user that when activated will be injected into the context window of the Agent, enabling it to give personalized responses.
+                          </div>
+                        </div>
+                      )}
+                      {qube.name === "Metis" && (
+                        <div className="space-y-1">
+                          <div className="font-semibold">Metis Agent</div>
+                          <div className="text-xs">
+                            An algorithm that evaluates risks associated with wallets and tokens.
+                          </div>
+                        </div>
+                      )}
+                      {qube.name === "GDrive" && (
+                        <div className="space-y-1">
+                          <div className="font-semibold">DataQube</div>
+                          <div className="text-xs">
+                            Access your personal data store with permissions and metadata tracking.
+                          </div>
+                        </div>
+                      )}
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
                 <span className="mr-2">{qube.name}</span>
               </div>
               <div 
