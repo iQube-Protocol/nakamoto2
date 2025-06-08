@@ -12,7 +12,6 @@ serve(async (req) => {
   console.log("=== LinkedIn OAuth Callback Started ===");
   console.log("Request method:", req.method);
   console.log("Request URL:", req.url);
-  console.log("Request headers:", Object.fromEntries(req.headers.entries()));
   
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
@@ -30,108 +29,50 @@ serve(async (req) => {
         hasServiceKey: !!SUPABASE_SERVICE_ROLE_KEY
       });
       return new Response(
-        JSON.stringify({ success: false, error: "Server configuration error" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        `<html><body><h1>Configuration Error</h1><p>Server not properly configured. Please try again later.</p><script>setTimeout(() => window.location.href = '${new URL(req.url).origin}/settings?tab=connections&error=config', 3000)</script></body></html>`,
+        { status: 500, headers: { "Content-Type": "text/html" } }
       );
     }
 
-    // Get authorization header
-    const authHeader = req.headers.get("authorization");
-    console.log("Authorization header present:", !!authHeader);
-    if (!authHeader || !authHeader.startsWith("Bearer ")) {
-      console.error("Missing or invalid authorization header");
-      return new Response(
-        JSON.stringify({ success: false, error: "Authorization required" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    const token = authHeader.replace("Bearer ", "");
-    console.log("Extracted token length:", token.length);
-
-    // Initialize Supabase client
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-      auth: { persistSession: false, autoRefreshToken: false }
-    });
-
-    // Verify user
-    console.log("Verifying user token...");
-    const { data: userData, error: userError } = await supabase.auth.getUser(token);
-    if (userError || !userData.user) {
-      console.error("User verification failed:", userError);
-      return new Response(
-        JSON.stringify({ success: false, error: "Authentication failed" }),
-        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    console.log("User verified:", userData.user.id);
-
-    // Parse request URL to get parameters
+    // Parse request URL to get parameters (LinkedIn OAuth uses GET with query params)
     const url = new URL(req.url);
     console.log("Full URL:", url.toString());
     console.log("URL search params:", Object.fromEntries(url.searchParams.entries()));
 
-    // Try to get parameters from URL first (for GET requests from LinkedIn OAuth)
-    let code = url.searchParams.get("code");
-    let error = url.searchParams.get("error");
-    let errorDescription = url.searchParams.get("error_description");
-    let state = url.searchParams.get("state");
-    let service = url.searchParams.get("service");
-
-    console.log("Parameters from URL:", { 
+    const code = url.searchParams.get("code");
+    const error = url.searchParams.get("error");
+    const errorDescription = url.searchParams.get("error_description");
+    const state = url.searchParams.get("state");
+    
+    console.log("OAuth parameters:", { 
       hasCode: !!code, 
       codeLength: code?.length || 0,
       error, 
       errorDescription,
-      state,
-      service 
+      state 
     });
-
-    // If no parameters in URL, try to get them from request body (for POST requests from client)
-    if (!code && !error && req.method === "POST") {
-      try {
-        const body = await req.json();
-        console.log("Request body:", body);
-        
-        code = body.code;
-        error = body.error;
-        errorDescription = body.error_description;
-        state = body.state;
-        service = body.service;
-        
-        console.log("Parameters from body:", { 
-          hasCode: !!code, 
-          codeLength: code?.length || 0,
-          error, 
-          errorDescription,
-          state,
-          service 
-        });
-      } catch (bodyError) {
-        console.error("Failed to parse request body:", bodyError);
-      }
-    }
     
     // Handle LinkedIn OAuth errors
     if (error) {
       console.error("LinkedIn OAuth error:", { error, errorDescription });
+      const clientOrigin = url.origin.replace('supabase.co', 'lovable.app');
       return new Response(
-        JSON.stringify({ success: false, error: `LinkedIn OAuth error: ${errorDescription || error}` }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        `<html><body><h1>LinkedIn Authorization Failed</h1><p>${errorDescription || error}</p><script>setTimeout(() => window.location.href = '${clientOrigin}/settings?tab=connections&error=${encodeURIComponent(errorDescription || error)}', 3000)</script></body></html>`,
+        { status: 400, headers: { "Content-Type": "text/html" } }
       );
     }
     
     if (!code) {
-      console.error("Missing authorization code in both URL parameters and request body");
+      console.error("Missing authorization code in URL parameters");
+      const clientOrigin = url.origin.replace('supabase.co', 'lovable.app');
       return new Response(
-        JSON.stringify({ success: false, error: "Missing authorization code" }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        `<html><body><h1>Authorization Error</h1><p>Missing authorization code. Please try connecting again.</p><script>setTimeout(() => window.location.href = '${clientOrigin}/settings?tab=connections&error=missing_code', 3000)</script></body></html>`,
+        { status: 400, headers: { "Content-Type": "text/html" } }
       );
     }
 
-    // Construct redirect URI based on the request origin
-    const redirectUri = `${url.origin}/oauth-callback?service=linkedin`;
+    // Construct redirect URI (same as what we sent to LinkedIn)
+    const redirectUri = `${url.origin}/functions/v1/oauth-callback-linkedin`;
     console.log("Using redirect URI:", redirectUri);
 
     console.log("=== Exchanging code for token ===");
@@ -163,7 +104,6 @@ serve(async (req) => {
     });
 
     console.log("Token response status:", tokenResponse.status);
-    console.log("Token response headers:", Object.fromEntries(tokenResponse.headers.entries()));
 
     if (!tokenResponse.ok) {
       const errorText = await tokenResponse.text();
@@ -172,9 +112,10 @@ serve(async (req) => {
         statusText: tokenResponse.statusText,
         error: errorText
       });
+      const clientOrigin = url.origin.replace('supabase.co', 'lovable.app');
       return new Response(
-        JSON.stringify({ success: false, error: `LinkedIn authorization failed: ${errorText}` }),
-        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+        `<html><body><h1>LinkedIn Connection Failed</h1><p>Token exchange failed. Please try again.</p><script>setTimeout(() => window.location.href = '${clientOrigin}/settings?tab=connections&error=token_exchange', 3000)</script></body></html>`,
+        { status: 400, headers: { "Content-Type": "text/html" } }
       );
     }
 
@@ -212,7 +153,8 @@ serve(async (req) => {
       });
     }
 
-    // Prepare connection data with profile information
+    // For this callback, we don't have the user's session, so we'll store the connection temporarily
+    // and let the client app handle associating it with the user
     const connectionData = {
       connected: true,
       access_token: accessToken,
@@ -225,52 +167,36 @@ serve(async (req) => {
         profilePicture: profileData.picture
       } : null,
       email: profileData?.email,
-      fetchedAt: new Date().toISOString()
+      fetchedAt: new Date().toISOString(),
+      state: state // Include state for verification
     };
 
-    console.log("=== Saving connection data ===");
-    console.log("Connection data prepared:", {
-      connected: connectionData.connected,
-      hasProfile: !!connectionData.profile,
-      hasEmail: !!connectionData.email,
-      profileId: connectionData.profile?.id
+    console.log("=== Redirecting back to client app ===");
+    
+    // Redirect back to client app with success and connection data
+    const clientOrigin = url.origin.replace('supabase.co', 'lovable.app');
+    const redirectUrl = new URL('/oauth-callback', clientOrigin);
+    redirectUrl.searchParams.set('service', 'linkedin');
+    redirectUrl.searchParams.set('success', 'true');
+    redirectUrl.searchParams.set('state', state || '');
+    redirectUrl.searchParams.set('connection_data', encodeURIComponent(JSON.stringify(connectionData)));
+    
+    console.log("Redirecting to:", redirectUrl.toString());
+    
+    return new Response(null, {
+      status: 302,
+      headers: {
+        "Location": redirectUrl.toString(),
+      },
     });
-
-    // Save connection to database
-    const { error: insertError } = await supabase
-      .from("user_connections")
-      .upsert({
-        user_id: userData.user.id,
-        service: "linkedin",
-        connected_at: new Date().toISOString(),
-        connection_data: connectionData,
-      });
-
-    if (insertError) {
-      console.error("Database insert error:", insertError);
-      return new Response(
-        JSON.stringify({ success: false, error: "Failed to save connection" }),
-        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-      );
-    }
-
-    console.log("=== Connection saved successfully ===");
-
-    return new Response(
-      JSON.stringify({ 
-        success: true, 
-        message: "LinkedIn connected successfully",
-        profile: connectionData.profile
-      }),
-      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-    );
 
   } catch (error) {
     console.error("=== Unexpected error ===", error);
     console.error("Error stack:", error.stack);
+    const clientOrigin = new URL(req.url).origin.replace('supabase.co', 'lovable.app');
     return new Response(
-      JSON.stringify({ success: false, error: "Server error" }),
-      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      `<html><body><h1>Server Error</h1><p>An unexpected error occurred. Please try again.</p><script>setTimeout(() => window.location.href = '${clientOrigin}/settings?tab=connections&error=server_error', 3000)</script></body></html>`,
+      { status: 500, headers: { "Content-Type": "text/html" } }
     );
   }
 });

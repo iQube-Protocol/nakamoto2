@@ -13,40 +13,40 @@ const OAuthCallback = () => {
   const [errorMessage, setErrorMessage] = useState<string>('');
   
   const service = searchParams.get('service');
-  const code = searchParams.get('code');
+  const success = searchParams.get('success');
   const error = searchParams.get('error');
-  const errorDescription = searchParams.get('error_description');
   const state = searchParams.get('state');
+  const connectionDataParam = searchParams.get('connection_data');
   
   useEffect(() => {
     const completeOAuth = async () => {
-      console.log('OAuth callback started:', { service, hasCode: !!code, error, errorDescription });
+      console.log('OAuth callback started:', { service, success, error, hasConnectionData: !!connectionDataParam });
       
-      // Handle OAuth provider errors
+      // Handle errors passed from the edge function
       if (error) {
-        console.error('OAuth provider error:', { error, errorDescription });
+        console.error('OAuth error from edge function:', error);
         setStatus('error');
-        setErrorMessage(errorDescription || error);
-        toast.error(`LinkedIn authorization failed: ${errorDescription || error}`);
+        setErrorMessage(decodeURIComponent(error));
+        toast.error(`LinkedIn authorization failed: ${decodeURIComponent(error)}`);
         setTimeout(() => navigate('/settings?tab=connections'), 3000);
         return;
       }
       
       // Validate required parameters
-      if (!service || !code) {
-        console.error('Missing required parameters:', { service, hasCode: !!code });
+      if (!service || service !== 'linkedin') {
+        console.error('Invalid or missing service:', service);
         setStatus('error');
-        setErrorMessage('Invalid OAuth callback - missing required parameters');
-        toast.error('OAuth callback error: Missing required parameters');
+        setErrorMessage('Invalid OAuth callback - unsupported service');
+        toast.error('OAuth callback error: Unsupported service');
         setTimeout(() => navigate('/settings?tab=connections'), 3000);
         return;
       }
-      
-      if (service !== 'linkedin') {
-        console.error('Unsupported service:', service);
+
+      if (!success || !connectionDataParam) {
+        console.error('Missing success indicator or connection data');
         setStatus('error');
-        setErrorMessage(`Unsupported service: ${service}`);
-        toast.error(`Unsupported OAuth service: ${service}`);
+        setErrorMessage('OAuth callback incomplete - missing data');
+        toast.error('OAuth callback error: Incomplete data');
         setTimeout(() => navigate('/settings?tab=connections'), 3000);
         return;
       }
@@ -55,7 +55,7 @@ const OAuthCallback = () => {
         console.log('Getting current session...');
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
-        if (sessionError || !session?.access_token) {
+        if (sessionError || !session?.user) {
           console.error('Session error:', sessionError);
           setStatus('error');
           setErrorMessage('Authentication session error');
@@ -64,39 +64,48 @@ const OAuthCallback = () => {
           return;
         }
         
-        console.log('Session validated, calling OAuth callback function...');
+        console.log('Session validated, saving connection data...');
         
-        // Call the OAuth callback edge function using Supabase client
-        const { data: responseData, error: functionError } = await supabase.functions.invoke('oauth-callback-linkedin', {
-          body: {
-            code,
-            state: state || '',
-            service
-          }
+        // Parse the connection data
+        let connectionData;
+        try {
+          connectionData = JSON.parse(decodeURIComponent(connectionDataParam));
+        } catch (parseError) {
+          console.error('Failed to parse connection data:', parseError);
+          setStatus('error');
+          setErrorMessage('Invalid connection data received');
+          toast.error('Failed to process LinkedIn connection data');
+          setTimeout(() => navigate('/settings?tab=connections'), 3000);
+          return;
+        }
+        
+        console.log('Connection data parsed:', {
+          connected: connectionData.connected,
+          hasProfile: !!connectionData.profile,
+          hasEmail: !!connectionData.email,
+          profileId: connectionData.profile?.id
         });
-        
-        console.log('OAuth callback response:', { responseData, functionError });
-        
-        if (functionError) {
-          console.error('Function invocation error:', functionError);
+
+        // Save connection to database
+        const { error: insertError } = await supabase
+          .from("user_connections")
+          .upsert({
+            user_id: session.user.id,
+            service: "linkedin",
+            connected_at: new Date().toISOString(),
+            connection_data: connectionData,
+          });
+
+        if (insertError) {
+          console.error("Database insert error:", insertError);
           setStatus('error');
-          setErrorMessage(`OAuth callback failed: ${functionError.message}`);
-          toast.error(`Failed to complete LinkedIn connection: ${functionError.message}`);
+          setErrorMessage('Failed to save connection to database');
+          toast.error('Failed to save LinkedIn connection');
           setTimeout(() => navigate('/settings?tab=connections'), 3000);
           return;
         }
-        
-        if (!responseData?.success) {
-          console.error('OAuth callback returned error:', responseData);
-          setStatus('error');
-          const errorMsg = responseData?.error || 'OAuth callback failed';
-          setErrorMessage(errorMsg);
-          toast.error(`LinkedIn connection failed: ${errorMsg}`);
-          setTimeout(() => navigate('/settings?tab=connections'), 3000);
-          return;
-        }
-        
-        console.log('OAuth callback completed successfully');
+
+        console.log('LinkedIn connection saved successfully');
         setStatus('success');
         toast.success('Successfully connected to LinkedIn!');
         
@@ -129,7 +138,7 @@ const OAuthCallback = () => {
     };
     
     completeOAuth();
-  }, [code, error, navigate, service, state, errorDescription]);
+  }, [success, error, navigate, service, state, connectionDataParam]);
   
   return (
     <div className="flex items-center justify-center h-[80vh]">

@@ -4,7 +4,6 @@ import { corsHeaders } from "../_shared/cors.ts";
 
 // This would be stored in Supabase secrets in production
 const LINKEDIN_CLIENT_ID = Deno.env.get("LINKEDIN_CLIENT_ID") || "";
-const LINKEDIN_CLIENT_SECRET = Deno.env.get("LINKEDIN_CLIENT_SECRET") || "";
 
 serve(async (req) => {
   // Handle CORS
@@ -13,8 +12,6 @@ serve(async (req) => {
   }
 
   try {
-    const { redirectUrl } = await req.json();
-    
     if (!LINKEDIN_CLIENT_ID) {
       return new Response(
         JSON.stringify({ error: "LinkedIn client ID not configured" }),
@@ -22,13 +19,17 @@ serve(async (req) => {
       );
     }
     
+    // Parse the request URL to get the origin
+    const url = new URL(req.url);
+    
     // Create LinkedIn OAuth URL with modern scopes
     const scope = encodeURIComponent("openid profile email");
     const state = crypto.randomUUID();
     
-    // Store state in Supabase for verification (in a real implementation)
+    // The redirect URI should point directly to the oauth-callback-linkedin edge function
+    const redirectUri = `${url.origin}/functions/v1/oauth-callback-linkedin`;
     
-    const authUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${LINKEDIN_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUrl)}&state=${state}&scope=${scope}`;
+    const authUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${LINKEDIN_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}&scope=${scope}`;
     
     return new Response(
       JSON.stringify({ authUrl }),
