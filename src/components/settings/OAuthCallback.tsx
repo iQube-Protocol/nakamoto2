@@ -1,3 +1,4 @@
+
 import { useEffect, useState } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
@@ -5,20 +6,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Loader2, Check, X } from 'lucide-react';
 import { toast } from 'sonner';
 
-// Type for the edge function response
-interface OAuthCallbackResponse {
-  success: boolean;
-  error?: string;
-  message?: string;
-}
-
 const OAuthCallback = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
   const [status, setStatus] = useState<'processing' | 'success' | 'error'>('processing');
   const [errorMessage, setErrorMessage] = useState<string>('');
   
-  // Extract parameters from URL
   const service = searchParams.get('service');
   const code = searchParams.get('code');
   const error = searchParams.get('error');
@@ -27,28 +20,21 @@ const OAuthCallback = () => {
   
   useEffect(() => {
     const completeOAuth = async () => {
-      console.log('OAuth callback started:', { 
-        service, 
-        hasCode: !!code, 
-        error, 
-        errorDescription,
-        state
-      });
+      console.log('OAuth callback started:', { service, hasCode: !!code, error });
       
       // Handle OAuth provider errors
       if (error) {
         console.error('OAuth provider error:', { error, errorDescription });
         setStatus('error');
-        const message = errorDescription || error;
-        setErrorMessage(message);
-        toast.error(`LinkedIn authorization failed: ${message}`);
+        setErrorMessage(errorDescription || error);
+        toast.error(`LinkedIn authorization failed: ${errorDescription || error}`);
         setTimeout(() => navigate('/settings?tab=connections'), 3000);
         return;
       }
       
       // Validate required parameters
       if (!service || !code) {
-        console.error('Missing required OAuth parameters:', { service, hasCode: !!code });
+        console.error('Missing required parameters');
         setStatus('error');
         setErrorMessage('Invalid OAuth callback - missing required parameters');
         toast.error('OAuth callback error: Missing required parameters');
@@ -69,19 +55,10 @@ const OAuthCallback = () => {
         console.log('Getting current session...');
         const { data: { session }, error: sessionError } = await supabase.auth.getSession();
         
-        if (sessionError) {
+        if (sessionError || !session?.access_token) {
           console.error('Session error:', sessionError);
           setStatus('error');
-          setErrorMessage('Session error occurred');
-          toast.error('Authentication session error');
-          setTimeout(() => navigate('/signin'), 3000);
-          return;
-        }
-        
-        if (!session?.access_token) {
-          console.error('No valid session found');
-          setStatus('error');
-          setErrorMessage('No valid session - please sign in');
+          setErrorMessage('Authentication session error');
           toast.error('Please sign in and try connecting again');
           setTimeout(() => navigate('/signin'), 3000);
           return;
@@ -89,29 +66,18 @@ const OAuthCallback = () => {
         
         console.log('Session validated, calling OAuth callback function...');
         
-        // Build redirect URI that matches what was sent to LinkedIn
         const redirectUri = `${window.location.origin}/oauth-callback?service=linkedin`;
-        console.log('Using redirect URI:', redirectUri);
         
-        // Create request body
-        const requestBody = { 
-          code, 
-          redirectUri,
-          state 
-        };
-        console.log('Request body prepared:', { hasCode: !!code, redirectUri, hasState: !!state });
-        
-        // Call the OAuth callback edge function - simplified without timeout
-        console.log('Calling OAuth callback function...');
+        // Call the OAuth callback edge function
         const response = await supabase.functions.invoke('oauth-callback-linkedin', {
-          body: requestBody,
+          body: { code, redirectUri, state },
           headers: {
             Authorization: `Bearer ${session.access_token}`,
             'Content-Type': 'application/json'
           }
         });
         
-        console.log('OAuth callback response received:', response);
+        console.log('OAuth callback response:', response);
         
         if (response.error) {
           console.error('OAuth callback function error:', response.error);
@@ -122,12 +88,10 @@ const OAuthCallback = () => {
           return;
         }
         
-        const data = response.data as OAuthCallbackResponse;
-        
-        if (!data?.success) {
-          console.error('OAuth callback returned error:', data);
+        if (!response.data?.success) {
+          console.error('OAuth callback returned error:', response.data);
           setStatus('error');
-          const errorMsg = data?.error || 'OAuth callback failed';
+          const errorMsg = response.data?.error || 'OAuth callback failed';
           setErrorMessage(errorMsg);
           toast.error(`LinkedIn connection failed: ${errorMsg}`);
           setTimeout(() => navigate('/settings?tab=connections'), 3000);
@@ -138,18 +102,13 @@ const OAuthCallback = () => {
         setStatus('success');
         toast.success('Successfully connected to LinkedIn!');
         
-        // Redirect back to settings after a short delay
         setTimeout(() => navigate('/settings?tab=connections'), 1500);
         
       } catch (err) {
         console.error('Unexpected error in OAuth callback:', err);
         setStatus('error');
         
-        let errorMsg = 'An unexpected error occurred';
-        if (err instanceof Error) {
-          errorMsg = err.message;
-        }
-        
+        const errorMsg = err instanceof Error ? err.message : 'An unexpected error occurred';
         setErrorMessage(errorMsg);
         toast.error(`An error occurred during LinkedIn connection: ${errorMsg}`);
         setTimeout(() => navigate('/settings?tab=connections'), 3000);
@@ -158,11 +117,6 @@ const OAuthCallback = () => {
     
     completeOAuth();
   }, [code, error, navigate, service, state, errorDescription]);
-  
-  const getServiceName = (serviceCode: string | null) => {
-    if (!serviceCode) return 'service';
-    return serviceCode === 'linkedin' ? 'LinkedIn' : serviceCode;
-  };
   
   return (
     <div className="flex items-center justify-center h-[80vh]">
@@ -177,7 +131,7 @@ const OAuthCallback = () => {
         </CardHeader>
         <CardContent className="flex flex-col items-center justify-center p-6">
           {status === 'processing' && (
-            <Loader2 className="h-16 w-16 text-iqube-primary animate-spin" />
+            <Loader2 className="h-16 w-16 text-qrypto-primary animate-spin" />
           )}
           {status === 'success' && (
             <Check className="h-16 w-16 text-green-500" />
@@ -187,7 +141,7 @@ const OAuthCallback = () => {
           )}
           <p className="mt-4 text-muted-foreground text-center">
             {status === 'processing' && 'Please wait while we complete your LinkedIn authorization...'}
-            {status === 'success' && `Successfully connected to ${getServiceName(service)}! Redirecting to settings...`}
+            {status === 'success' && 'Successfully connected to LinkedIn! Redirecting to settings...'}
             {status === 'error' && (
               <>
                 Connection failed: {errorMessage}

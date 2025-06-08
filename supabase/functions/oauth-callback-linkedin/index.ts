@@ -8,117 +8,68 @@ const LINKEDIN_CLIENT_SECRET = Deno.env.get("LINKEDIN_CLIENT_SECRET") || "";
 const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 
-// Helper function to create error response
-function createErrorResponse(error: string, status: number = 500) {
-  console.error("Error response:", error);
-  return new Response(
-    JSON.stringify({ error, success: false }),
-    { 
-      status, 
-      headers: { ...corsHeaders, "Content-Type": "application/json" } 
-    }
-  );
-}
-
 serve(async (req) => {
-  console.log("=== OAuth Callback Function Started ===");
-  console.log("Request method:", req.method);
-  console.log("Request URL:", req.url);
-
+  console.log("OAuth callback started");
+  
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
-    console.log("Handling CORS preflight request");
     return new Response("ok", { headers: corsHeaders });
   }
 
   try {
-    // Validate environment variables
-    console.log("Validating environment variables...");
-    const missing = [];
-    if (!LINKEDIN_CLIENT_ID) missing.push("LINKEDIN_CLIENT_ID");
-    if (!LINKEDIN_CLIENT_SECRET) missing.push("LINKEDIN_CLIENT_SECRET");
-    if (!SUPABASE_URL) missing.push("SUPABASE_URL");
-    if (!SUPABASE_SERVICE_ROLE_KEY) missing.push("SUPABASE_SERVICE_ROLE_KEY");
-    
-    if (missing.length > 0) {
-      console.error("Missing environment variables:", missing);
-      return createErrorResponse("Server configuration error", 500);
+    // Validate environment variables first
+    if (!LINKEDIN_CLIENT_ID || !LINKEDIN_CLIENT_SECRET || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+      console.error("Missing environment variables");
+      return new Response(
+        JSON.stringify({ success: false, error: "Server configuration error" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
-    
-    console.log("Environment variables validated successfully");
 
-    // Validate authorization header
+    // Get authorization header
     const authHeader = req.headers.get("authorization");
-    console.log("Authorization header present:", !!authHeader);
-    
-    if (!authHeader) {
-      return createErrorResponse("Authorization required", 401);
-    }
-    
-    const token = authHeader.split(" ")[1];
-    if (!token) {
-      return createErrorResponse("Invalid authorization format", 401);
+    if (!authHeader || !authHeader.startsWith("Bearer ")) {
+      console.error("Missing or invalid authorization header");
+      return new Response(
+        JSON.stringify({ success: false, error: "Authorization required" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
-    console.log("Token extracted successfully");
+    const token = authHeader.replace("Bearer ", "");
 
     // Initialize Supabase client
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
-      auth: {
-        persistSession: false,
-        autoRefreshToken: false,
-      }
+      auth: { persistSession: false, autoRefreshToken: false }
     });
-
-    console.log("Supabase client initialized");
 
     // Verify user
-    console.log("Verifying user authentication...");
-    const userResult = await supabase.auth.getUser(token);
-
-    if (userResult.error || !userResult.data.user) {
-      console.error("User verification failed:", userResult.error);
-      return createErrorResponse("Authentication failed", 401);
+    const { data: userData, error: userError } = await supabase.auth.getUser(token);
+    if (userError || !userData.user) {
+      console.error("User verification failed:", userError);
+      return new Response(
+        JSON.stringify({ success: false, error: "Authentication failed" }),
+        { status: 401, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
-    const user = userResult.data.user;
-    console.log("User verified successfully:", user.id);
+    console.log("User verified:", userData.user.id);
 
     // Parse request body
-    console.log("Parsing request body...");
-    let requestBody;
-    try {
-      const bodyText = await req.text();
-      console.log("Request body received, length:", bodyText.length);
-      
-      if (!bodyText.trim()) {
-        return createErrorResponse("Empty request body", 400);
-      }
-
-      requestBody = JSON.parse(bodyText);
-      console.log("Request body parsed successfully");
-    } catch (parseError) {
-      console.error("Failed to parse request body:", parseError);
-      return createErrorResponse("Invalid JSON in request body", 400);
-    }
-
-    const { code, redirectUri, state } = requestBody;
-    console.log("Request parameters:", { 
-      hasCode: !!code, 
-      redirectUri, 
-      hasState: !!state 
-    });
+    const requestBody = await req.json();
+    const { code, redirectUri } = requestBody;
     
-    if (!code) {
-      return createErrorResponse("Missing authorization code", 400);
+    if (!code || !redirectUri) {
+      console.error("Missing required parameters:", { hasCode: !!code, redirectUri });
+      return new Response(
+        JSON.stringify({ success: false, error: "Missing required parameters" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
 
-    if (!redirectUri) {
-      return createErrorResponse("Missing redirect URI", 400);
-    }
+    console.log("Exchanging code for token...");
 
-    // Exchange code for access token
-    console.log("Exchanging authorization code for access token...");
+    // Exchange authorization code for access token
     const tokenParams = new URLSearchParams({
       grant_type: "authorization_code",
       code,
@@ -126,7 +77,7 @@ serve(async (req) => {
       client_id: LINKEDIN_CLIENT_ID,
       client_secret: LINKEDIN_CLIENT_SECRET,
     });
-    
+
     const tokenResponse = await fetch("https://www.linkedin.com/oauth/v2/accessToken", {
       method: "POST",
       headers: {
@@ -135,58 +86,48 @@ serve(async (req) => {
       },
       body: tokenParams,
     });
-    
-    console.log("LinkedIn token response status:", tokenResponse.status);
-    
+
     if (!tokenResponse.ok) {
       const errorText = await tokenResponse.text();
-      console.error("LinkedIn token exchange failed:", {
-        status: tokenResponse.status,
-        statusText: tokenResponse.statusText,
-        body: errorText
-      });
-      return createErrorResponse("Token exchange failed", 400);
+      console.error("LinkedIn token exchange failed:", tokenResponse.status, errorText);
+      return new Response(
+        JSON.stringify({ success: false, error: "LinkedIn authorization failed" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
-    
-    const tokenData = await tokenResponse.json();
-    console.log("LinkedIn token exchange successful");
-    
+
+    console.log("Token exchange successful");
+
     // Save connection to database
-    console.log("Saving connection to database...");
     const { error: insertError } = await supabase
       .from("user_connections")
       .upsert({
-        user_id: user.id,
+        user_id: userData.user.id,
         service: "linkedin",
         connected_at: new Date().toISOString(),
         connection_data: { connected: true },
       });
-    
+
     if (insertError) {
       console.error("Database insert error:", insertError);
-      return createErrorResponse("Failed to save connection", 500);
+      return new Response(
+        JSON.stringify({ success: false, error: "Failed to save connection" }),
+        { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
     }
-    
+
     console.log("Connection saved successfully");
-    
-    const successResponse = new Response(
-      JSON.stringify({ success: true, message: "LinkedIn connected" }),
-      { 
-        status: 200, 
-        headers: { ...corsHeaders, "Content-Type": "application/json" } 
-      }
+
+    return new Response(
+      JSON.stringify({ success: true, message: "LinkedIn connected successfully" }),
+      { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 
-    console.log("=== OAuth callback completed successfully ===");
-    return successResponse;
-    
   } catch (error) {
-    console.error("Unexpected error in OAuth callback:", {
-      message: error.message,
-      stack: error.stack,
-      name: error.name
-    });
-    
-    return createErrorResponse("Server error", 500);
+    console.error("Unexpected error:", error);
+    return new Response(
+      JSON.stringify({ success: false, error: "Server error" }),
+      { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+    );
   }
 });
