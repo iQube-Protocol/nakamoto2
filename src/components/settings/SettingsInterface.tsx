@@ -31,7 +31,7 @@ const SettingsInterface = ({
   onUpdatePrivateData 
 }: SettingsInterfaceProps) => {
   const { theme } = useTheme();
-  const { connections, connectService } = useServiceConnections();
+  const { connections, connectService, disconnectService } = useServiceConnections();
   
   // Sync settings with actual connection state
   const [settings, setSettings] = useState<UserSettings>({
@@ -69,20 +69,40 @@ const SettingsInterface = ({
   }, [connections]);
 
   const handleConnectService = async (service: keyof UserSettings['connected']) => {
-    // For wallet connections, use the service connection directly
+    // For wallet connections, check if already connected and decide whether to connect or disconnect
     if (service === 'wallet') {
-      console.log('Starting wallet connection...');
-      const success = await connectService('wallet');
-      if (success) {
-        toast({
-          title: "Wallet connected",
-          description: "Your wallet has been successfully connected and verified",
-        });
+      console.log('Wallet connection state:', connections.wallet);
+      
+      if (connections.wallet) {
+        // Wallet is connected, so disconnect it
+        console.log('Disconnecting wallet...');
+        const success = await disconnectService('wallet');
+        if (success) {
+          toast({
+            title: "Wallet disconnected",
+            description: "Your wallet has been successfully disconnected",
+          });
+        } else {
+          toast({
+            title: "Disconnection failed",
+            description: "Failed to disconnect wallet. Please try again.",
+          });
+        }
       } else {
-        toast({
-          title: "Connection failed",
-          description: "Failed to connect wallet. Please try again.",
-        });
+        // Wallet is not connected, so connect it
+        console.log('Connecting wallet...');
+        const success = await connectService('wallet');
+        if (success) {
+          toast({
+            title: "Wallet connected",
+            description: "Your wallet has been successfully connected and verified",
+          });
+        } else {
+          toast({
+            title: "Connection failed",
+            description: "Failed to connect wallet. Please try again.",
+          });
+        }
       }
       return;
     }
