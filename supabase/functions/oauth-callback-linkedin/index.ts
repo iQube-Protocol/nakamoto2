@@ -125,8 +125,8 @@ serve(async (req) => {
 
     console.log("=== Fetching LinkedIn profile data ===");
 
-    // Fetch LinkedIn profile data using the correct API endpoint
-    const profileResponse = await fetch("https://api.linkedin.com/v2/people/~:(id,localizedFirstName,localizedLastName,profilePicture(displayImage~:playableStreams))", {
+    // Fetch LinkedIn profile data using the modern userinfo endpoint
+    const profileResponse = await fetch("https://api.linkedin.com/v2/userinfo", {
       headers: {
         "Authorization": `Bearer ${accessToken}`,
         "Accept": "application/json",
@@ -139,9 +139,10 @@ serve(async (req) => {
     if (profileResponse.ok) {
       profileData = await profileResponse.json();
       console.log("Profile data fetched successfully:", {
-        id: profileData?.id,
-        firstName: profileData?.localizedFirstName,
-        lastName: profileData?.localizedLastName
+        sub: profileData?.sub,
+        given_name: profileData?.given_name,
+        family_name: profileData?.family_name,
+        email: profileData?.email
       });
     } else {
       const errorText = await profileResponse.text();
@@ -152,43 +153,19 @@ serve(async (req) => {
       });
     }
 
-    console.log("=== Fetching LinkedIn email data ===");
-
-    // Fetch email address
-    const emailResponse = await fetch("https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))", {
-      headers: {
-        "Authorization": `Bearer ${accessToken}`,
-        "Accept": "application/json",
-      },
-    });
-
-    console.log("Email response status:", emailResponse.status);
-
-    let emailData = null;
-    if (emailResponse.ok) {
-      emailData = await emailResponse.json();
-      console.log("Email data fetched successfully");
-    } else {
-      const errorText = await emailResponse.text();
-      console.warn("Failed to fetch email data:", {
-        status: emailResponse.status,
-        statusText: emailResponse.statusText,
-        error: errorText
-      });
-    }
-
     // Prepare connection data with profile information
     const connectionData = {
       connected: true,
       access_token: accessToken,
       profile: profileData ? {
-        id: profileData.id,
-        firstName: profileData.localizedFirstName,
-        lastName: profileData.localizedLastName,
-        profileUrl: `https://www.linkedin.com/in/${profileData.id}`,
-        profilePicture: profileData.profilePicture?.displayImage?.elements?.[0]?.identifiers?.[0]?.identifier
+        id: profileData.sub,
+        firstName: profileData.given_name,
+        lastName: profileData.family_name,
+        name: profileData.name,
+        profileUrl: `https://www.linkedin.com/in/${profileData.sub}`,
+        profilePicture: profileData.picture
       } : null,
-      email: emailData?.elements?.[0]?.['handle~']?.emailAddress,
+      email: profileData?.email,
       fetchedAt: new Date().toISOString()
     };
 
