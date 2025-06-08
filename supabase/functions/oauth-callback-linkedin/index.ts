@@ -12,9 +12,11 @@ serve(async (req) => {
   console.log("=== LinkedIn OAuth Callback Started ===");
   console.log("Request method:", req.method);
   console.log("Request URL:", req.url);
+  console.log("Request headers:", Object.fromEntries(req.headers.entries()));
   
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
+    console.log("Handling CORS preflight request");
     return new Response("ok", { headers: corsHeaders });
   }
 
@@ -35,6 +37,7 @@ serve(async (req) => {
 
     // Get authorization header
     const authHeader = req.headers.get("authorization");
+    console.log("Authorization header present:", !!authHeader);
     if (!authHeader || !authHeader.startsWith("Bearer ")) {
       console.error("Missing or invalid authorization header");
       return new Response(
@@ -44,6 +47,7 @@ serve(async (req) => {
     }
 
     const token = authHeader.replace("Bearer ", "");
+    console.log("Extracted token length:", token.length);
 
     // Initialize Supabase client
     const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
@@ -51,6 +55,7 @@ serve(async (req) => {
     });
 
     // Verify user
+    console.log("Verifying user token...");
     const { data: userData, error: userError } = await supabase.auth.getUser(token);
     if (userError || !userData.user) {
       console.error("User verification failed:", userError);
@@ -62,66 +67,45 @@ serve(async (req) => {
 
     console.log("User verified:", userData.user.id);
 
-    // Parse code and redirectUri from request body OR URL parameters
-    let code, redirectUri;
+    // Parse request URL to get parameters
+    const url = new URL(req.url);
+    console.log("Full URL:", url.toString());
+    console.log("URL search params:", Object.fromEntries(url.searchParams.entries()));
+
+    // Get parameters from URL (LinkedIn OAuth callback always uses GET)
+    const code = url.searchParams.get("code");
+    const error = url.searchParams.get("error");
+    const errorDescription = url.searchParams.get("error_description");
+    const state = url.searchParams.get("state");
     
-    if (req.method === "POST") {
-      // Handle POST request with JSON body
-      try {
-        const bodyText = await req.text();
-        console.log("Raw request body:", bodyText);
-        
-        if (!bodyText || bodyText.trim() === '') {
-          console.error("Empty request body received");
-          return new Response(
-            JSON.stringify({ success: false, error: "Empty request body" }),
-            { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-          );
-        }
-        
-        const requestBody = JSON.parse(bodyText);
-        code = requestBody.code;
-        redirectUri = requestBody.redirectUri;
-      } catch (parseError) {
-        console.error("Failed to parse request body:", parseError);
-        return new Response(
-          JSON.stringify({ success: false, error: "Invalid JSON in request body" }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-    } else {
-      // Handle GET request with URL parameters (typical OAuth callback)
-      const url = new URL(req.url);
-      code = url.searchParams.get("code");
-      const error = url.searchParams.get("error");
-      const errorDescription = url.searchParams.get("error_description");
-      redirectUri = `${url.origin}/oauth-callback?service=linkedin`;
-      
-      console.log("URL parameters:", { 
-        hasCode: !!code, 
-        error, 
-        errorDescription,
-        redirectUri 
-      });
-      
-      if (error) {
-        console.error("LinkedIn OAuth error:", { error, errorDescription });
-        return new Response(
-          JSON.stringify({ success: false, error: `LinkedIn OAuth error: ${errorDescription || error}` }),
-          { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
-        );
-      }
-    }
+    console.log("OAuth parameters:", { 
+      hasCode: !!code, 
+      codeLength: code?.length || 0,
+      error, 
+      errorDescription,
+      state 
+    });
     
-    console.log("Request parsed:", { hasCode: !!code, redirectUri });
-    
-    if (!code || !redirectUri) {
-      console.error("Missing required parameters:", { hasCode: !!code, redirectUri });
+    // Handle LinkedIn OAuth errors
+    if (error) {
+      console.error("LinkedIn OAuth error:", { error, errorDescription });
       return new Response(
-        JSON.stringify({ success: false, error: "Missing required parameters" }),
+        JSON.stringify({ success: false, error: `LinkedIn OAuth error: ${errorDescription || error}` }),
         { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
       );
     }
+    
+    if (!code) {
+      console.error("Missing authorization code in URL parameters");
+      return new Response(
+        JSON.stringify({ success: false, error: "Missing authorization code" }),
+        { status: 400, headers: { ...corsHeaders, "Content-Type": "application/json" } }
+      );
+    }
+
+    // Construct redirect URI based on the request origin
+    const redirectUri = `${url.origin}/oauth-callback?service=linkedin`;
+    console.log("Using redirect URI:", redirectUri);
 
     console.log("=== Exchanging code for token ===");
 
@@ -152,6 +136,7 @@ serve(async (req) => {
     });
 
     console.log("Token response status:", tokenResponse.status);
+    console.log("Token response headers:", Object.fromEntries(tokenResponse.headers.entries()));
 
     if (!tokenResponse.ok) {
       const errorText = await tokenResponse.text();
@@ -255,6 +240,7 @@ serve(async (req) => {
 
   } catch (error) {
     console.error("=== Unexpected error ===", error);
+    console.error("Error stack:", error.stack);
     return new Response(
       JSON.stringify({ success: false, error: "Server error" }),
       { status: 500, headers: { ...corsHeaders, "Content-Type": "application/json" } }
