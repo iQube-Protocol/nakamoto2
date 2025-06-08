@@ -18,84 +18,65 @@ serve(async (req) => {
   }
 
   try {
-    console.log("Processing OAuth callback request");
-    
-    // Validate environment variables
-    if (!LINKEDIN_CLIENT_ID || !LINKEDIN_CLIENT_SECRET) {
-      console.error("LinkedIn credentials missing:", { 
-        hasClientId: !!LINKEDIN_CLIENT_ID, 
-        hasClientSecret: !!LINKEDIN_CLIENT_SECRET 
-      });
-      throw new Error("LinkedIn credentials not configured");
-    }
-
-    if (!SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-      console.error("Supabase credentials missing");
-      throw new Error("Supabase credentials not configured");
+    // Validate environment variables early
+    if (!LINKEDIN_CLIENT_ID || !LINKEDIN_CLIENT_SECRET || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
+      console.error("Missing required environment variables");
+      return new Response(
+        JSON.stringify({ error: "Server configuration error", success: false }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
     }
 
     // Parse request body
-    let requestBody;
-    try {
-      requestBody = await req.json();
-      console.log("Request body parsed:", { 
-        hasCode: !!requestBody.code, 
-        hasRedirectUri: !!requestBody.redirectUri,
-        hasState: !!requestBody.state
-      });
-    } catch (error) {
-      console.error("Failed to parse request body:", error);
-      throw new Error("Invalid request body");
-    }
-
-    const { code, redirectUri, state } = requestBody;
+    const requestBody = await req.json();
+    const { code, redirectUri } = requestBody;
     
-    if (!code) {
-      console.error("Authorization code missing from request");
-      throw new Error("Authorization code is required");
+    if (!code || !redirectUri) {
+      console.error("Missing required parameters:", { hasCode: !!code, hasRedirectUri: !!redirectUri });
+      return new Response(
+        JSON.stringify({ error: "Missing required parameters", success: false }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
     }
 
-    if (!redirectUri) {
-      console.error("Redirect URI missing from request");
-      throw new Error("Redirect URI is required");
-    }
-
-    // Create Supabase client
-    console.log("Creating Supabase client");
-    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
-    
     // Get user from auth header
     const authHeader = req.headers.get("authorization");
-    console.log("Auth header present:", !!authHeader);
-    
     if (!authHeader) {
-      console.error("No authorization header provided");
-      throw new Error("Authorization header is required");
+      console.error("No authorization header");
+      return new Response(
+        JSON.stringify({ error: "Authorization required", success: false }),
+        { 
+          status: 401, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
     }
     
     const token = authHeader.split(" ")[1];
-    if (!token) {
-      console.error("No token found in authorization header");
-      throw new Error("Invalid authorization header format");
-    }
+    const supabase = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY);
     
-    console.log("Getting user from token...");
     const { data: { user }, error: userError } = await supabase.auth.getUser(token);
-    
-    if (userError) {
-      console.error("Error getting user:", userError);
-      throw new Error(`Authentication failed: ${userError.message}`);
+    if (userError || !user) {
+      console.error("User authentication failed:", userError);
+      return new Response(
+        JSON.stringify({ error: "Authentication failed", success: false }),
+        { 
+          status: 401, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
     }
     
-    if (!user) {
-      console.error("No user found for token");
-      throw new Error("User not found");
-    }
+    console.log("User authenticated:", user.id);
     
-    console.log("User authenticated successfully:", user.id);
-    
-    // Exchange authorization code for access token
-    console.log("Exchanging authorization code for access token...");
+    // Exchange code for access token
+    console.log("Exchanging code for token...");
     const tokenParams = new URLSearchParams({
       grant_type: "authorization_code",
       code,
@@ -104,7 +85,6 @@ serve(async (req) => {
       client_secret: LINKEDIN_CLIENT_SECRET,
     });
     
-    console.log("Making token exchange request to LinkedIn...");
     const tokenResponse = await fetch("https://www.linkedin.com/oauth/v2/accessToken", {
       method: "POST",
       headers: {
@@ -114,23 +94,22 @@ serve(async (req) => {
       body: tokenParams,
     });
     
-    console.log("Token response status:", tokenResponse.status);
-    
     if (!tokenResponse.ok) {
       const errorText = await tokenResponse.text();
-      console.error("LinkedIn token exchange failed:", {
-        status: tokenResponse.status,
-        statusText: tokenResponse.statusText,
-        error: errorText
-      });
-      throw new Error(`LinkedIn token exchange failed: ${tokenResponse.status} ${errorText}`);
+      console.error("Token exchange failed:", tokenResponse.status, errorText);
+      return new Response(
+        JSON.stringify({ error: "LinkedIn token exchange failed", success: false }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
     }
     
     const tokenData = await tokenResponse.json();
-    console.log("Token exchange successful, got access token");
+    console.log("Token exchange successful");
     
-    // Get LinkedIn profile information
-    console.log("Fetching LinkedIn profile...");
+    // Get LinkedIn profile
     const profileResponse = await fetch("https://api.linkedin.com/v2/me", {
       headers: {
         "Authorization": `Bearer ${tokenData.access_token}`,
@@ -138,103 +117,71 @@ serve(async (req) => {
       },
     });
     
-    console.log("Profile response status:", profileResponse.status);
-    
     if (!profileResponse.ok) {
-      const errorText = await profileResponse.text();
-      console.error("LinkedIn profile fetch failed:", {
-        status: profileResponse.status,
-        statusText: profileResponse.statusText,
-        error: errorText
-      });
-      throw new Error(`Failed to fetch LinkedIn profile: ${profileResponse.status} ${errorText}`);
+      console.error("Profile fetch failed:", profileResponse.status);
+      return new Response(
+        JSON.stringify({ error: "Failed to fetch LinkedIn profile", success: false }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
     }
     
     const profileData = await profileResponse.json();
     console.log("Profile data received for LinkedIn ID:", profileData.id);
     
-    // Attempt to get email (this may fail if permission not granted)
-    let emailData = null;
-    try {
-      console.log("Attempting to fetch email...");
-      const emailResponse = await fetch("https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))", {
-        headers: {
-          "Authorization": `Bearer ${tokenData.access_token}`,
-          "Accept": "application/json",
-        },
-      });
-      
-      if (emailResponse.ok) {
-        emailData = await emailResponse.json();
-        console.log("Email data received");
-      } else {
-        console.log("Email permission not granted or failed to fetch");
-      }
-    } catch (error) {
-      console.log("Email fetch failed (this is optional):", error.message);
-    }
-    
     // Save connection to database
-    console.log("Saving connection to database...");
     const connectionData = {
       user_id: user.id,
       service: "linkedin",
       connected_at: new Date().toISOString(),
       connection_data: {
         profile: profileData,
-        email: emailData,
         token_expires_in: tokenData.expires_in,
         profile_id: profileData.id,
       },
     };
     
-    console.log("Inserting connection data...");
     const { error: insertError } = await supabase
       .from("user_connections")
       .upsert(connectionData);
     
     if (insertError) {
       console.error("Database insert error:", insertError);
-      throw new Error(`Failed to save connection: ${insertError.message}`);
+      return new Response(
+        JSON.stringify({ error: "Failed to save connection", success: false }),
+        { 
+          status: 500, 
+          headers: { ...corsHeaders, "Content-Type": "application/json" } 
+        }
+      );
     }
     
     console.log("LinkedIn connection saved successfully");
     
-    // Return success response
-    const successResponse = {
-      success: true,
-      profile_id: profileData.id,
-      message: "LinkedIn connection successful"
-    };
-    
-    console.log("Sending success response");
     return new Response(
-      JSON.stringify(successResponse),
+      JSON.stringify({
+        success: true,
+        profile_id: profileData.id,
+        message: "LinkedIn connection successful"
+      }),
       { 
         status: 200, 
-        headers: { 
-          ...corsHeaders, 
-          "Content-Type": "application/json" 
-        } 
+        headers: { ...corsHeaders, "Content-Type": "application/json" } 
       }
     );
     
   } catch (error) {
-    console.error("OAuth callback error:", error);
-    
-    const errorResponse = {
-      error: error.message || "Unknown error occurred",
-      success: false
-    };
-    
+    console.error("Unexpected error:", error);
     return new Response(
-      JSON.stringify(errorResponse),
+      JSON.stringify({
+        error: error.message || "Unexpected error occurred",
+        success: false
+      }),
       { 
-        status: 400, 
-        headers: { 
-          ...corsHeaders, 
-          "Content-Type": "application/json" 
-        } 
+        status: 500, 
+        headers: { ...corsHeaders, "Content-Type": "application/json" } 
       }
     );
   }
