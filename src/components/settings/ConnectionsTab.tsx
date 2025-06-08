@@ -96,16 +96,16 @@ const ConnectionsTab = ({ settings, onConnectService }: ConnectionsTabProps) => 
           <h4 className="font-medium mb-1 flex items-center">
             <Shield className="h-4 w-4 mr-2 text-amber-500" /> Data Privacy Notice
           </h4>
-          <p className="text-muted-foreground mb-2">
+          <p className="text-muted-foreground">
             Connecting these services will import data into your iQube. All data is encrypted and stored
-            in your private blakQube layer. You control what information is shared with the community.
+            in your private blakQube layer. You control what information is shared with the community.{' '}
+            <Link 
+              to="/privacy" 
+              className="text-blue-400 hover:text-blue-300 underline"
+            >
+              Read our full Privacy Policy →
+            </Link>
           </p>
-          <Link 
-            to="/privacy" 
-            className="text-blue-400 hover:text-blue-300 underline text-sm"
-          >
-            Read our full Privacy Policy →
-          </Link>
         </div>
       </CardContent>
     </Card>
