@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Key } from 'lucide-react';
 import { AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
@@ -93,10 +92,12 @@ const PrivateDataSection = ({
           "Chain-IDs": "wallet",
           "Wallets-of-Interest": "wallet",
           "LinkedIn-ID": "linkedin",
-          "Twitter-ID": "twitter",
-          "Discord-ID": "discord",
-          "Telegram-ID": "telegram",
-          "Luma-ID": "luma"
+          "LinkedIn-Profile-URL": "linkedin",
+          "Twitter-Handle": "manual",
+          "Telegram-Handle": "manual",
+          "Discord-Handle": "manual",
+          "Instagram-Handle": "manual",
+          "GitHub-Handle": "manual"
         };
     }
   }

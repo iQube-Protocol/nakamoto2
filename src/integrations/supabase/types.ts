@@ -14,12 +14,19 @@ export type Database = {
           "BTC-Public-Key": string
           "Chain-IDs": string[]
           created_at: string
+          "Discord-Handle": string | null
           Email: string
           "EVM-Public-Key": string
+          "GitHub-Handle": string | null
           id: string
+          "Instagram-Handle": string | null
+          "LinkedIn-ID": string | null
+          "LinkedIn-Profile-URL": string | null
           "Local-City": string
           Profession: string
+          "Telegram-Handle": string | null
           "Tokens-of-Interest": string[]
+          "Twitter-Handle": string | null
           updated_at: string
           user_id: string
           "Wallets-of-Interest": string[]
@@ -29,12 +36,19 @@ export type Database = {
           "BTC-Public-Key"?: string
           "Chain-IDs"?: string[]
           created_at?: string
+          "Discord-Handle"?: string | null
           Email?: string
           "EVM-Public-Key"?: string
+          "GitHub-Handle"?: string | null
           id?: string
+          "Instagram-Handle"?: string | null
+          "LinkedIn-ID"?: string | null
+          "LinkedIn-Profile-URL"?: string | null
           "Local-City"?: string
           Profession?: string
+          "Telegram-Handle"?: string | null
           "Tokens-of-Interest"?: string[]
+          "Twitter-Handle"?: string | null
           updated_at?: string
           user_id: string
           "Wallets-of-Interest"?: string[]
@@ -44,12 +58,19 @@ export type Database = {
           "BTC-Public-Key"?: string
           "Chain-IDs"?: string[]
           created_at?: string
+          "Discord-Handle"?: string | null
           Email?: string
           "EVM-Public-Key"?: string
+          "GitHub-Handle"?: string | null
           id?: string
+          "Instagram-Handle"?: string | null
+          "LinkedIn-ID"?: string | null
+          "LinkedIn-Profile-URL"?: string | null
           "Local-City"?: string
           Profession?: string
+          "Telegram-Handle"?: string | null
           "Tokens-of-Interest"?: string[]
+          "Twitter-Handle"?: string | null
           updated_at?: string
           user_id?: string
           "Wallets-of-Interest"?: string[]

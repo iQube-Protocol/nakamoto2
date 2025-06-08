@@ -96,7 +96,56 @@ serve(async (req) => {
       );
     }
 
-    console.log("Token exchange successful");
+    const tokenData = await tokenResponse.json();
+    const accessToken = tokenData.access_token;
+    console.log("Token exchange successful, fetching profile...");
+
+    // Fetch LinkedIn profile data
+    const profileResponse = await fetch("https://api.linkedin.com/v2/people/~:(id,localizedFirstName,localizedLastName,profilePicture(displayImage~:playableStreams))", {
+      headers: {
+        "Authorization": `Bearer ${accessToken}`,
+        "Accept": "application/json",
+      },
+    });
+
+    let profileData = null;
+    if (profileResponse.ok) {
+      profileData = await profileResponse.json();
+      console.log("Profile data fetched:", profileData);
+    } else {
+      console.warn("Failed to fetch profile data:", profileResponse.status);
+    }
+
+    // Fetch email address
+    const emailResponse = await fetch("https://api.linkedin.com/v2/emailAddress?q=members&projection=(elements*(handle~))", {
+      headers: {
+        "Authorization": `Bearer ${accessToken}`,
+        "Accept": "application/json",
+      },
+    });
+
+    let emailData = null;
+    if (emailResponse.ok) {
+      emailData = await emailResponse.json();
+      console.log("Email data fetched:", emailData);
+    } else {
+      console.warn("Failed to fetch email data:", emailResponse.status);
+    }
+
+    // Prepare connection data with profile information
+    const connectionData = {
+      connected: true,
+      access_token: accessToken,
+      profile: profileData ? {
+        id: profileData.id,
+        firstName: profileData.localizedFirstName,
+        lastName: profileData.localizedLastName,
+        profileUrl: `https://www.linkedin.com/in/${profileData.id}`,
+        profilePicture: profileData.profilePicture?.displayImage?.elements?.[0]?.identifiers?.[0]?.identifier
+      } : null,
+      email: emailData?.elements?.[0]?.['handle~']?.emailAddress,
+      fetchedAt: new Date().toISOString()
+    };
 
     // Save connection to database
     const { error: insertError } = await supabase
@@ -105,7 +154,7 @@ serve(async (req) => {
         user_id: userData.user.id,
         service: "linkedin",
         connected_at: new Date().toISOString(),
-        connection_data: { connected: true },
+        connection_data: connectionData,
       });
 
     if (insertError) {
@@ -119,7 +168,11 @@ serve(async (req) => {
     console.log("Connection saved successfully");
 
     return new Response(
-      JSON.stringify({ success: true, message: "LinkedIn connected successfully" }),
+      JSON.stringify({ 
+        success: true, 
+        message: "LinkedIn connected successfully",
+        profile: connectionData.profile
+      }),
       { status: 200, headers: { ...corsHeaders, "Content-Type": "application/json" } }
     );
 

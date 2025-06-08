@@ -107,6 +107,50 @@ const SettingsInterface = ({
       return;
     }
 
+    // For LinkedIn, handle the OAuth flow and update BlakQube
+    if (service === 'linkedin') {
+      console.log('LinkedIn connection state:', connections.linkedin);
+      
+      if (connections.linkedin) {
+        // LinkedIn is connected, so disconnect it
+        console.log('Disconnecting LinkedIn...');
+        const success = await disconnectService('linkedin');
+        if (success) {
+          toast({
+            title: "LinkedIn disconnected",
+            description: "Your LinkedIn account has been successfully disconnected",
+          });
+        } else {
+          toast({
+            title: "Disconnection failed",
+            description: "Failed to disconnect LinkedIn. Please try again.",
+          });
+        }
+      } else {
+        // LinkedIn is not connected, so connect it
+        console.log('Connecting LinkedIn...');
+        const success = await connectService('linkedin');
+        if (success) {
+          // Import and trigger BlakQube update
+          const { blakQubeService } = await import('@/services/blakqube-service');
+          const updateSuccess = await blakQubeService.updateBlakQubeFromConnections();
+          
+          toast({
+            title: "LinkedIn connected",
+            description: updateSuccess 
+              ? "Your LinkedIn account has been connected and profile data imported to your BlakQube"
+              : "Your LinkedIn account has been connected",
+          });
+        } else {
+          toast({
+            title: "Connection failed",
+            description: "Failed to connect LinkedIn. Please try again.",
+          });
+        }
+      }
+      return;
+    }
+
     // For other services, toggle the local state and show toast
     setSettings(prev => ({
       ...prev,

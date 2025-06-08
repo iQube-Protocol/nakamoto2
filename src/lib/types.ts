@@ -26,6 +26,13 @@ export interface BlakQube {
   "Tokens-of-Interest": string[];
   "Chain-IDs": string[];
   "Wallets-of-Interest": string[];
+  "LinkedIn-ID": string;
+  "LinkedIn-Profile-URL": string;
+  "Twitter-Handle": string;
+  "Telegram-Handle": string;
+  "Discord-Handle": string;
+  "Instagram-Handle": string;
+  "GitHub-Handle": string;
   "Encryption-Key"?: string;
 }
 

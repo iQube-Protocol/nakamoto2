@@ -82,7 +82,14 @@ export const blakQubeService = {
         "BTC-Public-Key": "",
         "Tokens-of-Interest": [],
         "Chain-IDs": [],
-        "Wallets-of-Interest": []
+        "Wallets-of-Interest": [],
+        "LinkedIn-ID": "",
+        "LinkedIn-Profile-URL": "",
+        "Twitter-Handle": "",
+        "Telegram-Handle": "",
+        "Discord-Handle": "",
+        "Instagram-Handle": "",
+        "GitHub-Handle": ""
       };
       
       // Update BlakQube based on connections
@@ -91,14 +98,30 @@ export const blakQubeService = {
           console.log('Processing connection:', connection.service, connection.connection_data);
           
           if (connection.service === 'linkedin' && connection.connection_data?.profile) {
-            // Extract profession from LinkedIn
-            if (connection.connection_data.profile.headline) {
-              newBlakQube["Profession"] = connection.connection_data.profile.headline;
+            console.log('Processing LinkedIn connection data:', connection.connection_data.profile);
+            
+            // Extract LinkedIn profile data
+            const profile = connection.connection_data.profile;
+            if (profile.id) {
+              newBlakQube["LinkedIn-ID"] = profile.id;
+            }
+            if (profile.profileUrl) {
+              newBlakQube["LinkedIn-Profile-URL"] = profile.profileUrl;
             }
             
-            // Extract location from LinkedIn
-            if (connection.connection_data.profile.location?.preferredGeoPlace?.name) {
-              newBlakQube["Local-City"] = connection.connection_data.profile.location.preferredGeoPlace.name;
+            // Extract profession from LinkedIn (if available)
+            if (profile.headline) {
+              newBlakQube["Profession"] = profile.headline;
+            }
+            
+            // Extract location from LinkedIn (if available)
+            if (profile.location?.preferredGeoPlace?.name) {
+              newBlakQube["Local-City"] = profile.location.preferredGeoPlace.name;
+            }
+            
+            // Use LinkedIn email if available
+            if (connection.connection_data.email) {
+              newBlakQube["Email"] = connection.connection_data.email;
             }
           }
           
@@ -116,7 +139,12 @@ export const blakQubeService = {
             }
           }
           
-          if (connection.service === 'twitter' && connection.connection_data?.interests) {
+          if (connection.service === 'twitter' && connection.connection_data?.profile) {
+            // Extract Twitter handle
+            if (connection.connection_data.profile.username) {
+              newBlakQube["Twitter-Handle"] = `@${connection.connection_data.profile.username}`;
+            }
+            
             // Extract interests from Twitter
             const twitterInterests = connection.connection_data.interests || [];
             const web3Interests = twitterInterests
@@ -136,7 +164,19 @@ export const blakQubeService = {
             }
           }
           
-          // Similar logic for other services...
+          if (connection.service === 'telegram' && connection.connection_data?.profile) {
+            // Extract Telegram handle
+            if (connection.connection_data.profile.username) {
+              newBlakQube["Telegram-Handle"] = `@${connection.connection_data.profile.username}`;
+            }
+          }
+          
+          if (connection.service === 'discord' && connection.connection_data?.profile) {
+            // Extract Discord handle
+            if (connection.connection_data.profile.username) {
+              newBlakQube["Discord-Handle"] = connection.connection_data.profile.username;
+            }
+          }
         }
       }
       
