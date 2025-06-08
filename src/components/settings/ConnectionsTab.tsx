@@ -16,18 +16,15 @@ interface ConnectionsTabProps {
 }
 
 const ConnectionsTab = ({ settings, onConnectService }: ConnectionsTabProps) => {
-  const { connections, loading, error, refreshConnections } = useServiceConnections();
+  const { loading, error } = useServiceConnections();
   
   const handleServiceToggle = async (service: keyof UserSettings['connected']) => {
     try {
       // Use the established connection flow from SettingsInterface
       await onConnectService(service);
-      
-      // Force refresh the connections state to update the UI immediately
-      await refreshConnections();
     } catch (error) {
       console.error(`Error toggling ${service} connection:`, error);
-      toast.error(`Failed to ${connections[service as any] ? 'disconnect' : 'connect'} ${service}`);
+      toast.error(`Failed to ${settings.connected[service] ? 'disconnect' : 'connect'} ${service}`);
     }
   };
   
@@ -59,37 +56,37 @@ const ConnectionsTab = ({ settings, onConnectService }: ConnectionsTabProps) => 
             <ServiceConnection 
               name="LinkedIn"
               icon={<Linkedin className="h-5 w-5 text-iqube-primary" />}
-              connected={connections.linkedin}
+              connected={settings.connected.linkedin}
               onConnect={() => handleServiceToggle('linkedin')}
             />
             <ServiceConnection 
               name="Luma"
               icon={<Globe className="h-5 w-5 text-iqube-primary" />}
-              connected={connections.luma}
+              connected={settings.connected.luma}
               onConnect={() => handleServiceToggle('luma')}
             />
             <ServiceConnection 
               name="Telegram"
               icon={<MessageCircle className="h-5 w-5 text-iqube-primary" />}
-              connected={connections.telegram}
+              connected={settings.connected.telegram}
               onConnect={() => handleServiceToggle('telegram')}
             />
             <ServiceConnection 
               name="Twitter"
               icon={<Twitter className="h-5 w-5 text-iqube-primary" />}
-              connected={connections.twitter}
+              connected={settings.connected.twitter}
               onConnect={() => handleServiceToggle('twitter')}
             />
             <ServiceConnection 
               name="Discord"
               icon={<Users className="h-5 w-5 text-iqube-primary" />}
-              connected={connections.discord}
+              connected={settings.connected.discord}
               onConnect={() => handleServiceToggle('discord')}
             />
             <ServiceConnection 
               name="Wallet"
               icon={<Wallet className="h-5 w-5 text-iqube-primary" />}
-              connected={connections.wallet}
+              connected={settings.connected.wallet}
               onConnect={() => handleServiceToggle('wallet')}
             />
           </div>
