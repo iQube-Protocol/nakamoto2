@@ -227,8 +227,8 @@ As more data providers and AI agents join the network, the value of COYN tokens 
 **Market Transparency:** The Proof-of-Price framework ensures that all pricing decisions are cryptographically verifiable and auditable, providing transparency and building trust in the data marketplace.
 
 **Cross-Network Compatibility:** The pricing framework operates across multiple blockchain networks and legacy systems, enabling consistent valuation regardless of the underlying infrastructure.`,
-    section: 'Consensus Mechanism',
-    category: 'consensus',
+    section: 'Economic Framework',
+    category: 'economics',
     keywords: ['Proof-of-Price', 'dynamic pricing', 'Vickery auction', 'risk-based valuation', 'quality premiums', 'price discovery', 'market transparency'],
     timestamp: new Date().toISOString(),
     source: 'iQube Whitepaper v0.1'
