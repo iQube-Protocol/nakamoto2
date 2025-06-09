@@ -61,7 +61,7 @@ const IQubesSection: React.FC<IQubesSectionProps> = ({
 
   // Function to get tooltip content based on qube name
   const getTooltipContent = (qubeName: string) => {
-    if (qubeName === "Nakamoto") {
+    if (qubeName === "Qrypto Persona") {
       return (
         <div className="space-y-1">
           <div className="font-semibold">Qrypto Persona</div>
@@ -142,25 +142,25 @@ const IQubesSection: React.FC<IQubesSectionProps> = ({
                 "flex items-center justify-between px-2 py-2 text-sm rounded-md hover:bg-accent/30 cursor-pointer",
                 location.pathname === '/settings' && selectedIQube === qube.name && "bg-accent/20"
               )}
-              onClick={() => handleIQubeItemClick(qube.name)}
             >
-              <div className="flex items-center flex-1">
-                <TooltipProvider>
-                  <Tooltip>
-                    <TooltipTrigger asChild>
-                      <div className="flex items-center flex-1">
-                        <span className="mr-2">
-                          {renderIQubeTypeIcon(qube.type)}
-                        </span>
-                        <span className="mr-2">{qube.name}</span>
-                      </div>
-                    </TooltipTrigger>
-                    <TooltipContent side="top" align="center">
-                      {getTooltipContent(qube.name)}
-                    </TooltipContent>
-                  </Tooltip>
-                </TooltipProvider>
-              </div>
+              <TooltipProvider>
+                <Tooltip>
+                  <TooltipTrigger asChild>
+                    <div 
+                      className="flex items-center flex-1"
+                      onClick={() => handleIQubeItemClick(qube.name)}
+                    >
+                      <span className="mr-2">
+                        {renderIQubeTypeIcon(qube.type)}
+                      </span>
+                      <span className="mr-2">{qube.name}</span>
+                    </div>
+                  </TooltipTrigger>
+                  <TooltipContent side="top" align="center">
+                    {getTooltipContent(qube.name)}
+                  </TooltipContent>
+                </Tooltip>
+              </TooltipProvider>
               <div 
                 className="switch-container" 
                 onClick={(e) => {
