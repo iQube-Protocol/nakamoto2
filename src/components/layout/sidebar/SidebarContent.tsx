@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { cn } from '@/lib/utils';
 import SidebarHeader from './SidebarHeader';
@@ -6,7 +5,7 @@ import MainNavigation from './MainNavigation';
 import ActiveIQubesList from './ActiveIQubesList';
 import SignOutButton from './SignOutButton';
 import CollapseButton from './CollapseButton';
-import { navItems, iQubeItems, QubeItem } from './sidebarData';
+import { mainNavItems, iQubeItems, QubeItem } from './sidebarData';
 
 interface SidebarContentProps {
   collapsed: boolean;
@@ -49,7 +48,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
 
       {/* Main Navigation */}
       <MainNavigation 
-        navItems={navItems} 
+        navItems={mainNavItems} 
         activePath={location.pathname} 
         collapsed={collapsed} 
         iQubeItems={iQubeItems}
