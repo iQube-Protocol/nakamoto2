@@ -5,6 +5,7 @@ import { Menu } from 'lucide-react';
 import { toast } from 'sonner';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useMetisAgent } from '@/hooks/use-metis-agent';
+import { useQryptoPersona } from '@/hooks/use-qrypto-persona';
 import { useSidebarState } from '@/hooks/use-sidebar-state';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from "@/components/ui/button";
@@ -16,6 +17,7 @@ const Sidebar = () => {
   const navigate = useNavigate();
   const isMobile = useIsMobile();
   const { metisActivated, metisVisible, activateMetis, hideMetis } = useMetisAgent();
+  const { qryptoPersonaActivated, activateQryptoPersona, deactivateQryptoPersona } = useQryptoPersona();
   const { 
     collapsed, 
     iQubesOpen, 
@@ -28,15 +30,22 @@ const Sidebar = () => {
   } = useSidebarState();
   const { signOut } = useAuth();
   
-  const [activeIQubes, setActiveIQubes] = useState<{[key: string]: boolean}>({
-    "Nakamoto": true,
-    "Metis": metisActivated,
+  // Initialize activeIQubes with proper state from hooks
+  const [activeIQubes, setActiveIQubes] = useState<{[key: string]: boolean}>(() => {
+    return {
+      "Qrypto Persona": qryptoPersonaActivated,
+      "Metis": metisActivated,
+    };
   });
 
-  // Update Metis state whenever metisActivated changes
+  // Update active states when hook values change
   useEffect(() => {
-    setActiveIQubes(prev => ({...prev, "Metis": metisActivated}));
-  }, [metisActivated]);
+    setActiveIQubes(prev => ({
+      ...prev, 
+      "Qrypto Persona": qryptoPersonaActivated,
+      "Metis": metisActivated
+    }));
+  }, [qryptoPersonaActivated, metisActivated]);
 
   // Listen for iQube toggle events from Settings page
   useEffect(() => {
@@ -45,12 +54,18 @@ const Sidebar = () => {
       if (iqubeId) {
         setActiveIQubes(prev => ({...prev, [iqubeId]: active}));
         
-        // Special handling for Metis
+        // Special handling for each iQube type
         if (iqubeId === "Metis") {
           if (active && !metisActivated) {
             activateMetis();
           } else if (!active && metisVisible) {
             hideMetis();
+          }
+        } else if (iqubeId === "Qrypto Persona") {
+          if (active) {
+            activateQryptoPersona();
+          } else {
+            deactivateQryptoPersona();
           }
         }
       }
@@ -61,7 +76,7 @@ const Sidebar = () => {
     return () => {
       window.removeEventListener('iqubeToggle', handleIQubeToggle as EventListener);
     };
-  }, [metisActivated, metisVisible, activateMetis, hideMetis]);
+  }, [metisActivated, metisVisible, activateMetis, hideMetis, activateQryptoPersona, deactivateQryptoPersona]);
 
   const handleIQubeClick = (iqubeId: string) => {
     console.log("iQube clicked:", iqubeId);
@@ -104,12 +119,18 @@ const Sidebar = () => {
     const newActiveState = !activeIQubes[qubeName];
     setActiveIQubes(prev => ({...prev, [qubeName]: newActiveState}));
     
-    // Special handling for Metis
+    // Use the appropriate hook methods for each iQube type
     if (qubeName === "Metis") {
       if (newActiveState) {
         activateMetis();
       } else {
         hideMetis();
+      }
+    } else if (qubeName === "Qrypto Persona") {
+      if (newActiveState) {
+        activateQryptoPersona();
+      } else {
+        deactivateQryptoPersona();
       }
     }
     
