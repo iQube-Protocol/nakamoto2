@@ -1,79 +1,72 @@
 
-import { Home, GraduationCap, TrendingUp, Users, User, Mic, Settings, Wrench, Database, Bot, FolderGit2 } from 'lucide-react';
+import { LucideIcon, Database, Settings, FolderGit2, Bot, User } from 'lucide-react';
+import CubeIcon from '../sidebar/CubeIcon';
 
 export interface NavItem {
-  id: string;
-  label: string;
+  name: string;
   href: string;
-  icon: any;
-  disabled?: boolean;
+  icon: LucideIcon;
+  active?: boolean;
 }
+
+export const navItems: NavItem[] = [
+  {
+    name: 'Nakamoto',
+    href: '/mondai',
+    icon: Bot,
+  },
+  {
+    name: 'Profile',
+    href: '/profile',
+    icon: User,
+  },
+  {
+    name: 'Settings',
+    href: '/settings',
+    icon: Settings,
+  },
+];
 
 export interface QubeItem {
   id: string;
   name: string;
-  type: 'DataQube' | 'AgentQube' | 'ToolQube';
-  icon: any;
-  disabled?: boolean;
+  type: string; 
+  icon: LucideIcon;
+  href: string;
+  description: string;
+  active?: boolean;
 }
-
-export const mainNavItems: NavItem[] = [
-  {
-    id: 'dashboard',
-    label: 'Dashboard',
-    href: '/',
-    icon: Home,
-  },
-  {
-    id: 'learn',
-    label: 'Learn',
-    href: '/learn',
-    icon: GraduationCap,
-  },
-  {
-    id: 'earn',
-    label: 'Earn',
-    href: '/earn',
-    icon: TrendingUp,
-  },
-  {
-    id: 'connect',
-    label: 'Connect',
-    href: '/connect',
-    icon: Users,
-  },
-  {
-    id: 'mondai',
-    label: 'MonDAI',
-    href: '/mondai',
-    icon: Mic,
-  },
-];
 
 export const iQubeItems: QubeItem[] = [
   {
-    id: 'qrypto-persona',
+    id: 'dataqube',
     name: 'Qrypto Persona',
     type: 'DataQube',
     icon: Database,
+    href: '/settings',
+    description: 'Cryptocurrency AI agent',
   },
   {
-    id: 'metis',
+    id: 'agentqube',
     name: 'Metis',
     type: 'AgentQube',
     icon: Bot,
-  },
-  {
-    id: 'gdrive',
-    name: 'GDrive',
-    type: 'ToolQube',
-    icon: FolderGit2,
+    href: '/settings',
+    description: 'Your AI assistant for learning',
   },
 ];
 
-export const settingsNavItem: NavItem = {
-  id: 'settings',
-  label: 'Settings',
+export const nakamotoQubeData = {
+  id: 'nakamoto',
+  name: 'Qrypto Persona iQube',
+  type: 'Personal Data',
   href: '/settings',
-  icon: Settings,
+  active: true
+};
+
+export const metisQubeData = {
+  id: 'metis',
+  name: 'Metis AI',
+  type: 'Assistant',
+  href: '/settings',
 };

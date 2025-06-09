@@ -45,7 +45,7 @@ const MainNavigation: React.FC<MainNavigationProps> = ({
           collapsed={collapsed}
           toggleMobileSidebar={toggleMobileSidebar}
         >
-          {item.label}
+          {item.name}
         </NavItem>
       ))}
       
