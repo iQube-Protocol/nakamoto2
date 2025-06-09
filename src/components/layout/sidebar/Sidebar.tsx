@@ -8,8 +8,8 @@ import { useMetisAgent } from '@/hooks/use-metis-agent';
 import { useSidebarState } from '@/hooks/use-sidebar-state';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from "@/components/ui/button";
-import MobileSidebar from './sidebar/MobileSidebar';
-import SidebarContent from './sidebar/SidebarContent';
+import MobileSidebar from './MobileSidebar';
+import SidebarContent from './SidebarContent';
 
 const Sidebar = () => {
   const location = useLocation();

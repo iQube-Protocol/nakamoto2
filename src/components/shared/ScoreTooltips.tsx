@@ -3,7 +3,7 @@ import React from 'react';
 import { TooltipProvider, Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ScoreTooltipProps {
-  type: 'risk' | 'sensitivity' | 'trust' | 'accuracy' | 'verifiability' | 'dataQube' | 'agentQube';
+  type: 'risk' | 'sensitivity' | 'trust' | 'accuracy' | 'verifiability' | 'dataQube' | 'agentQube' | 'voice' | 'attachment' | 'reliability';
   score?: number;
   children: React.ReactNode;
 }
@@ -71,6 +71,33 @@ const ScoreTooltip = ({ type, score, children }: ScoreTooltipProps) => {
             <div className="font-semibold">AgentQube</div>
             <div className="text-xs">
               Contains AI agents or algorithms that can perform specific tasks, analysis, or provide specialized functionality. Examples include risk assessment tools and recommendation engines.
+            </div>
+          </div>
+        );
+      case 'voice':
+        return (
+          <div className="space-y-1">
+            <div className="font-semibold">Voice Input</div>
+            <div className="text-xs">
+              Click to activate voice recognition and speak your message instead of typing.
+            </div>
+          </div>
+        );
+      case 'attachment':
+        return (
+          <div className="space-y-1">
+            <div className="font-semibold">Attach Files</div>
+            <div className="text-xs">
+              Click to attach files or documents to your message for context and analysis.
+            </div>
+          </div>
+        );
+      case 'reliability':
+        return (
+          <div className="space-y-1">
+            <div className="font-semibold">Reliability Score: {score}/10</div>
+            <div className="text-xs">
+              Measures the overall reliability and consistency of the data or response. Higher scores indicate more reliable information.
             </div>
           </div>
         );
