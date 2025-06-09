@@ -52,6 +52,27 @@ const SettingsInterface = ({
     onToggleIQubeActive(iqubeName);
   };
 
+  // Mock functions for missing handlers
+  const handleConnectWallet = () => {
+    console.log('Connect wallet clicked');
+  };
+
+  const handleMintIQube = () => {
+    console.log('Mint iQube clicked');
+  };
+
+  const handleAddAccessGrant = () => {
+    console.log('Add access grant clicked');
+  };
+
+  const handleConnectService = (service: keyof typeof userSettings.connected) => {
+    console.log('Connect service clicked:', service);
+  };
+
+  const handleSaveSettings = () => {
+    console.log('Save settings clicked');
+  };
+
   console.log('SettingsInterface rendered with:', {
     metaQube: safeMetaQube["iQube-Identifier"],
     iqubeName,
@@ -78,20 +99,28 @@ const SettingsInterface = ({
 
         <TabsContent value="iqube-management" className="space-y-4">
           <IQubeManagementTab 
-            metaQube={safeMetaQube}
-            isActive={isActive}
-            onToggleActive={handleToggleActive}
+            settings={userSettings}
             privateData={privateData}
             onUpdatePrivateData={onUpdatePrivateData}
+            onConnectWallet={handleConnectWallet}
+            onMintIQube={handleMintIQube}
+            onAddAccessGrant={handleAddAccessGrant}
+            metaQube={safeMetaQube}
           />
         </TabsContent>
 
         <TabsContent value="preferences" className="space-y-4">
-          <PreferencesTab userSettings={userSettings} />
+          <PreferencesTab 
+            settings={userSettings}
+            onSaveSettings={handleSaveSettings}
+          />
         </TabsContent>
 
         <TabsContent value="connections" className="space-y-4">
-          <ConnectionsTab />
+          <ConnectionsTab 
+            settings={userSettings}
+            onConnectService={handleConnectService}
+          />
         </TabsContent>
       </Tabs>
     </div>
