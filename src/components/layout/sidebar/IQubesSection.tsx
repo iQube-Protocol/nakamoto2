@@ -61,7 +61,7 @@ const IQubesSection: React.FC<IQubesSectionProps> = ({
 
   // Function to get tooltip content based on qube name
   const getTooltipContent = (qubeName: string) => {
-    if (qubeName === "Nakamoto") {
+    if (qubeName === "Qrypto Persona") {
       return (
         <div className="space-y-1">
           <div className="font-semibold">Qrypto Persona</div>

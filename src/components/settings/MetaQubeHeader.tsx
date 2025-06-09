@@ -68,6 +68,22 @@ const DotScore = ({ value, label, type }: DotScoreProps) => {
 const MetaQubeHeader = ({ metaQube, isActive, onToggleActive }: MetaQubeHeaderProps) => {
   const trustScore = Math.round((metaQube["Accuracy-Score"] + metaQube["Verifiability-Score"]) / 2);
   
+  // Function to get the appropriate tooltip type based on iQube type and identifier
+  const getTooltipType = () => {
+    if (metaQube["iQube-Type"] === 'DataQube') {
+      if (metaQube["iQube-Identifier"] === "Qrypto Persona iQube") {
+        return 'qryptoPersona';
+      }
+      return 'dataQube';
+    } else if (metaQube["iQube-Type"] === 'AgentQube') {
+      if (metaQube["iQube-Identifier"] === "Metis iQube") {
+        return 'metisAgent';
+      }
+      return 'agentQube';
+    }
+    return 'dataQube';
+  };
+  
   return (
     <div className="p-2 bg-muted/30 border rounded-md overflow-x-auto">
       <div className="flex items-center justify-between mb-3">
@@ -81,13 +97,14 @@ const MetaQubeHeader = ({ metaQube, isActive, onToggleActive }: MetaQubeHeaderPr
           </div>
           <span className="text-sm font-medium">{metaQube["iQube-Identifier"]}</span>
         </div>
-        <ScoreTooltip type={metaQube["iQube-Type"] === 'AgentQube' ? 'agentQube' : 'dataQube'}>
-          <Badge variant="outline" className="flex items-center gap-1 bg-iqube-primary/10 text-iqube-primary border-iqube-primary/30">
+        <ScoreTooltip type={getTooltipType()}>
+          <Badge variant="outline" className="flex items-center gap-1 bg-iqube-primary/10 text-iqube-primary border-iqube-primary/30 cursor-help">
             {metaQube["iQube-Type"] === 'AgentQube' ? (
               <Brain size={14} />
             ) : (
               <Database size={14} />
             )}
+            {metaQube["iQube-Type"]}
           </Badge>
         </ScoreTooltip>
       </div>

@@ -87,9 +87,9 @@ export const modelQubeData: MetaQube = {
 };
 
 export const qubeData = {
-  monDai: monDaiQubeData,
-  metis: metisQubeData,
-  gdrive: gdriveQubeData,
+  "Qrypto Persona": monDaiQubeData,
+  "Metis": metisQubeData,
+  "GDrive": gdriveQubeData,
   content: contentQubeData,
   model: modelQubeData
 };
