@@ -116,7 +116,7 @@ const Sidebar = () => {
         hideMetis();
       }
     } else if (qubeName === "Qrypto Persona") {
-      // Save to localStorage immediately for Qrypto Persona
+      // Save to localStorage for Qrypto Persona
       localStorage.setItem('qrypto-persona-activated', JSON.stringify(newActiveState));
     }
     
@@ -154,7 +154,16 @@ const Sidebar = () => {
     handleIQubeClick,
     toggleIQubeActive,
     handleCloseMetisIQube,
-    handleSignOut,
+    handleSignOut: async () => {
+      try {
+        await signOut();
+        toast.success('Successfully signed out');
+        navigate('/signin');
+      } catch (error) {
+        toast.error('Failed to sign out');
+        console.error('Sign out error:', error);
+      }
+    },
     toggleMobileSidebar // Pass this down to child components
   };
 
