@@ -14,28 +14,24 @@ const IQubeActivationManager = ({
 }: IQubeActivationManagerProps) => {
   const { metisActivated, metisVisible, activateMetis, hideMetis } = useMetisAgent();
 
+  // Initialize from localStorage on component mount
+  useEffect(() => {
+    const savedQryptoPersona = localStorage.getItem('qrypto-persona-activated');
+    if (savedQryptoPersona !== null) {
+      const qryptoPersonaActive = JSON.parse(savedQryptoPersona);
+      setActiveQubes(prev => ({...prev, "Qrypto Persona": qryptoPersonaActive}));
+    }
+  }, [setActiveQubes]);
+
   // Update active state when metisActivated changes
   useEffect(() => {
     setActiveQubes(prev => ({...prev, "Metis": metisActivated}));
   }, [metisActivated, setActiveQubes]);
 
-  // Activate Qrypto Persona by default if it's not yet active
+  // Save Qrypto Persona state to localStorage whenever it changes
   useEffect(() => {
-    // Check if Qrypto Persona is not active yet
-    if (!activeQubes["Qrypto Persona"]) {
-      console.log("Activating Qrypto Persona iQube by default");
-      setActiveQubes(prev => ({...prev, "Qrypto Persona": true}));
-      
-      // Dispatch event to notify other components
-      const event = new CustomEvent('iqubeToggle', { 
-        detail: { 
-          iqubeId: "Qrypto Persona", 
-          active: true
-        } 
-      });
-      window.dispatchEvent(event);
-    }
-  }, [activeQubes, setActiveQubes]);
+    localStorage.setItem('qrypto-persona-activated', JSON.stringify(activeQubes["Qrypto Persona"]));
+  }, [activeQubes["Qrypto Persona"]]);
 
   // Listen for iQube activation/deactivation events from sidebar
   useEffect(() => {

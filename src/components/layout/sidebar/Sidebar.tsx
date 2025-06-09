@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Menu } from 'lucide-react';
@@ -28,10 +27,19 @@ const Sidebar = () => {
   } = useSidebarState();
   const { signOut } = useAuth();
   
-  const [activeIQubes, setActiveIQubes] = useState<{[key: string]: boolean}>({
-    "Qrypto Persona": true,
-    "Metis": metisActivated,
+  // Initialize activeIQubes with localStorage persistence for Qrypto Persona
+  const [activeIQubes, setActiveIQubes] = useState<{[key: string]: boolean}>(() => {
+    const savedQryptoPersona = localStorage.getItem('qrypto-persona-activated');
+    return {
+      "Qrypto Persona": savedQryptoPersona ? JSON.parse(savedQryptoPersona) : true,
+      "Metis": metisActivated,
+    };
   });
+
+  // Save Qrypto Persona state to localStorage whenever it changes
+  useEffect(() => {
+    localStorage.setItem('qrypto-persona-activated', JSON.stringify(activeIQubes["Qrypto Persona"]));
+  }, [activeIQubes["Qrypto Persona"]]);
 
   // Update Metis state whenever metisActivated changes
   useEffect(() => {
