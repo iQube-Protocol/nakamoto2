@@ -8,7 +8,6 @@ import { Switch } from "@/components/ui/switch";
 import CubeIcon from './CubeIcon';
 import { QubeItem } from './sidebarData';
 import { useIsMobile } from '@/hooks/use-mobile';
-import ScoreTooltip from '@/components/shared/ScoreTooltips';
 
 interface IQubesSectionProps {
   iQubeItems: QubeItem[];
@@ -60,11 +59,39 @@ const IQubesSection: React.FC<IQubesSectionProps> = ({
     }
   };
 
-  // Function to get tooltip type based on qube name
-  const getTooltipType = (qubeName: string) => {
-    if (qubeName === "Nakamoto") return 'qryptoPersona';
-    if (qubeName === "Metis") return 'metisAgent';
-    return 'dataQube';
+  // Function to get tooltip content based on qube name
+  const getTooltipContent = (qubeName: string) => {
+    if (qubeName === "Nakamoto") {
+      return (
+        <div className="space-y-1">
+          <div className="font-semibold">Qrypto Persona</div>
+          <div className="text-xs">
+            Profile information about the user that when activated will be injected into the context window of the Agent, enabling it to give personalized responses.
+          </div>
+        </div>
+      );
+    }
+    if (qubeName === "Metis") {
+      return (
+        <div className="space-y-1">
+          <div className="font-semibold">Metis Agent</div>
+          <div className="text-xs">
+            An algorithm that evaluates risks associated with wallets and tokens.
+          </div>
+        </div>
+      );
+    }
+    if (qubeName === "GDrive") {
+      return (
+        <div className="space-y-1">
+          <div className="font-semibold">DataQube</div>
+          <div className="text-xs">
+            Access your personal data store with permissions and metadata tracking.
+          </div>
+        </div>
+      );
+    }
+    return null;
   };
 
   if (collapsed) {
@@ -121,39 +148,18 @@ const IQubesSection: React.FC<IQubesSectionProps> = ({
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <span className="mr-2">
-                        {renderIQubeTypeIcon(qube.type)}
-                      </span>
+                      <div className="flex items-center flex-1">
+                        <span className="mr-2">
+                          {renderIQubeTypeIcon(qube.type)}
+                        </span>
+                        <span className="mr-2">{qube.name}</span>
+                      </div>
                     </TooltipTrigger>
                     <TooltipContent side="top" align="center">
-                      {qube.name === "Nakamoto" && (
-                        <div className="space-y-1">
-                          <div className="font-semibold">Qrypto Persona</div>
-                          <div className="text-xs">
-                            Profile information about the user that when activated will be injected into the context window of the Agent, enabling it to give personalized responses.
-                          </div>
-                        </div>
-                      )}
-                      {qube.name === "Metis" && (
-                        <div className="space-y-1">
-                          <div className="font-semibold">Metis Agent</div>
-                          <div className="text-xs">
-                            An algorithm that evaluates risks associated with wallets and tokens.
-                          </div>
-                        </div>
-                      )}
-                      {qube.name === "GDrive" && (
-                        <div className="space-y-1">
-                          <div className="font-semibold">DataQube</div>
-                          <div className="text-xs">
-                            Access your personal data store with permissions and metadata tracking.
-                          </div>
-                        </div>
-                      )}
+                      {getTooltipContent(qube.name)}
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
-                <span className="mr-2">{qube.name}</span>
               </div>
               <div 
                 className="switch-container" 
