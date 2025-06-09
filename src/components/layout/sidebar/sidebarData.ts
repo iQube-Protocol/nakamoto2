@@ -63,6 +63,12 @@ export const iQubeItems: QubeItem[] = [
     type: 'AgentQube',
     icon: Bot,
   },
+  {
+    id: 'gdrive',
+    name: 'GDrive',
+    type: 'ToolQube',
+    icon: FolderGit2,
+  },
 ];
 
 export const settingsNavItem: NavItem = {
