@@ -2,6 +2,7 @@
 import React, { useEffect } from 'react';
 import { toast } from 'sonner';
 import { useMetisAgent } from '@/hooks/use-metis-agent';
+import { useQryptoPersona } from '@/hooks/use-qrypto-persona';
 
 interface IQubeActivationManagerProps {
   activeQubes: { [key: string]: boolean };
@@ -13,11 +14,16 @@ const IQubeActivationManager = ({
   setActiveQubes 
 }: IQubeActivationManagerProps) => {
   const { metisActivated, metisVisible, activateMetis, hideMetis } = useMetisAgent();
+  const { qryptoPersonaActivated, activateQryptoPersona, deactivateQryptoPersona } = useQryptoPersona();
 
-  // Update active state when metisActivated changes
+  // Update active states when hook values change
   useEffect(() => {
-    setActiveQubes(prev => ({...prev, "Metis": metisActivated}));
-  }, [metisActivated, setActiveQubes]);
+    setActiveQubes(prev => ({
+      ...prev, 
+      "Metis": metisActivated,
+      "Qrypto Persona": qryptoPersonaActivated
+    }));
+  }, [metisActivated, qryptoPersonaActivated, setActiveQubes]);
 
   // Listen for iQube activation/deactivation events from sidebar
   useEffect(() => {
@@ -26,7 +32,7 @@ const IQubeActivationManager = ({
       if (iqubeId) {
         setActiveQubes(prev => ({...prev, [iqubeId]: active}));
         
-        // Special handling for Metis
+        // Special handling for each iQube type
         if (iqubeId === "Metis") {
           if (active && !metisActivated) {
             activateMetis();
@@ -34,6 +40,14 @@ const IQubeActivationManager = ({
           } else if (!active && metisVisible) {
             hideMetis();
             toast.info(`Metis deactivated`);
+          }
+        } else if (iqubeId === "Qrypto Persona") {
+          if (active && !qryptoPersonaActivated) {
+            activateQryptoPersona();
+            toast.info(`Qrypto Persona activated`);
+          } else if (!active && qryptoPersonaActivated) {
+            deactivateQryptoPersona();
+            toast.info(`Qrypto Persona deactivated`);
           }
         } else {
           toast.info(`${iqubeId} ${active ? 'activated' : 'deactivated'}`);
@@ -46,7 +60,7 @@ const IQubeActivationManager = ({
     return () => {
       window.removeEventListener('iqubeToggle', handleIQubeToggle as EventListener);
     };
-  }, [metisActivated, metisVisible, activateMetis, hideMetis, setActiveQubes]);
+  }, [metisActivated, metisVisible, activateMetis, hideMetis, qryptoPersonaActivated, activateQryptoPersona, deactivateQryptoPersona, setActiveQubes]);
 
   return null; // This is a logic-only component, no UI
 };

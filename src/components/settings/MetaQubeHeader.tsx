@@ -49,7 +49,7 @@ const DotScore = ({ value, label, type }: DotScoreProps) => {
     <div className="flex flex-col items-center">
       <span className="text-xs text-muted-foreground mb-1">{label}</span>
       <ScoreTooltip type={type} score={value}>
-        <div className="flex space-x-0.5">
+        <div className="flex space-x-0.5 cursor-help">
           {[...Array(maxDots)].map((_, i) => (
             <div
               key={i}
@@ -69,7 +69,7 @@ const MetaQubeHeader = ({ metaQube, isActive, onToggleActive }: MetaQubeHeaderPr
   const trustScore = Math.round((metaQube["Accuracy-Score"] + metaQube["Verifiability-Score"]) / 2);
   
   // Determine the correct tooltip type based on the iQube identifier
-  const getTooltipType = () => {
+  const getTooltipType = (): 'dataQube' | 'agentQube' => {
     if (metaQube["iQube-Identifier"] === "Metis iQube") {
       return "agentQube";
     } else {
@@ -82,7 +82,7 @@ const MetaQubeHeader = ({ metaQube, isActive, onToggleActive }: MetaQubeHeaderPr
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <ScoreTooltip type="dataQube">
-            <div className="h-5 w-5 text-green-500">
+            <div className="h-5 w-5 text-green-500 cursor-help">
               <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
                 <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
                 <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
@@ -93,14 +93,16 @@ const MetaQubeHeader = ({ metaQube, isActive, onToggleActive }: MetaQubeHeaderPr
           <span className="text-sm font-medium">{metaQube["iQube-Identifier"]}</span>
         </div>
         <ScoreTooltip type={getTooltipType()}>
-          <Badge variant="outline" className="flex items-center gap-1 bg-iqube-primary/10 text-iqube-primary border-iqube-primary/30">
-            {metaQube["iQube-Type"] === 'AgentQube' ? (
-              <Brain size={14} />
-            ) : (
-              <Database size={14} />
-            )}
-            <span>{metaQube["iQube-Type"]}</span>
-          </Badge>
+          <div className="cursor-help">
+            <Badge variant="outline" className="flex items-center gap-1 bg-iqube-primary/10 text-iqube-primary border-iqube-primary/30">
+              {metaQube["iQube-Type"] === 'AgentQube' ? (
+                <Brain size={14} />
+              ) : (
+                <Database size={14} />
+              )}
+              <span>{metaQube["iQube-Type"]}</span>
+            </Badge>
+          </div>
         </ScoreTooltip>
       </div>
       <div className="flex items-center justify-between">

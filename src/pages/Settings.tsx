@@ -7,12 +7,15 @@ import AgentRecommendationHandler from '@/components/settings/AgentRecommendatio
 import SettingsContainer from '@/components/settings/SettingsContainer';
 import { sonnerToast as toast } from '@/hooks/use-toast';
 import { useMetisAgent } from '@/hooks/use-metis-agent';
+import { useQryptoPersona } from '@/hooks/use-qrypto-persona';
 
 const Settings = () => {
   const [selectedIQube, setSelectedIQube] = useState(monDaiQubeData);
   const { metisActivated } = useMetisAgent();
+  const { qryptoPersonaActivated } = useQryptoPersona();
+  
   const [activeQubes, setActiveQubes] = useState<{[key: string]: boolean}>({
-    "Qrypto Persona": true, // Set to true by default
+    "Qrypto Persona": qryptoPersonaActivated,
     "Metis": metisActivated,
     "GDrive": false
   });
