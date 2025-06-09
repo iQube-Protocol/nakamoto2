@@ -117,8 +117,8 @@ const ConnectionsTab = ({ settings, onConnectService }: ConnectionsTabProps) => 
 
       {/* Privacy Policy Dialog */}
       <Dialog open={privacyPolicyOpen} onOpenChange={setPrivacyPolicyOpen}>
-        <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
-          <DialogHeader>
+        <DialogContent className="max-w-4xl h-[85vh] flex flex-col">
+          <DialogHeader className="flex-shrink-0">
             <DialogTitle className="text-2xl flex items-center gap-2">
               <Shield className="h-6 w-6 text-primary" />
               iQube Protocol Privacy Policy
@@ -128,8 +128,8 @@ const ConnectionsTab = ({ settings, onConnectService }: ConnectionsTabProps) => 
             </p>
           </DialogHeader>
           
-          <ScrollArea className="flex-1 max-h-[70vh]">
-            <div className="p-4 space-y-6">
+          <ScrollArea className="flex-1 pr-6">
+            <div className="space-y-6">
               <div className="prose prose-sm max-w-none">
                 <section>
                   <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
@@ -344,7 +344,7 @@ const ConnectionsTab = ({ settings, onConnectService }: ConnectionsTabProps) => 
             </div>
           </ScrollArea>
           
-          <div className="border-t pt-2 flex justify-end">
+          <div className="border-t pt-4 flex justify-end flex-shrink-0">
             <Button variant="outline" size="sm" onClick={() => setPrivacyPolicyOpen(false)}>
               Close
             </Button>
