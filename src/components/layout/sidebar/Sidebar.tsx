@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { Menu } from 'lucide-react';
@@ -7,8 +8,8 @@ import { useMetisAgent } from '@/hooks/use-metis-agent';
 import { useSidebarState } from '@/hooks/use-sidebar-state';
 import { useAuth } from '@/hooks/use-auth';
 import { Button } from "@/components/ui/button";
-import MobileSidebar from './MobileSidebar';
-import SidebarContent from './SidebarContent';
+import MobileSidebar from './sidebar/MobileSidebar';
+import SidebarContent from './sidebar/SidebarContent';
 
 const Sidebar = () => {
   const location = useLocation();
@@ -35,11 +36,6 @@ const Sidebar = () => {
       "Metis": metisActivated,
     };
   });
-
-  // Save Qrypto Persona state to localStorage whenever it changes
-  useEffect(() => {
-    localStorage.setItem('qrypto-persona-activated', JSON.stringify(activeIQubes["Qrypto Persona"]));
-  }, [activeIQubes["Qrypto Persona"]]);
 
   // Update Metis state whenever metisActivated changes
   useEffect(() => {
@@ -119,6 +115,9 @@ const Sidebar = () => {
       } else {
         hideMetis();
       }
+    } else if (qubeName === "Qrypto Persona") {
+      // Save to localStorage immediately for Qrypto Persona
+      localStorage.setItem('qrypto-persona-activated', JSON.stringify(newActiveState));
     }
     
     // Dispatch event to update Settings page

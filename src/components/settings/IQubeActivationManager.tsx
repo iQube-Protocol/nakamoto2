@@ -20,6 +20,10 @@ const IQubeActivationManager = ({
     if (savedQryptoPersona !== null) {
       const qryptoPersonaActive = JSON.parse(savedQryptoPersona);
       setActiveQubes(prev => ({...prev, "Qrypto Persona": qryptoPersonaActive}));
+    } else {
+      // Set default to true and save to localStorage if not found
+      setActiveQubes(prev => ({...prev, "Qrypto Persona": true}));
+      localStorage.setItem('qrypto-persona-activated', JSON.stringify(true));
     }
   }, [setActiveQubes]);
 
@@ -30,7 +34,9 @@ const IQubeActivationManager = ({
 
   // Save Qrypto Persona state to localStorage whenever it changes
   useEffect(() => {
-    localStorage.setItem('qrypto-persona-activated', JSON.stringify(activeQubes["Qrypto Persona"]));
+    if (activeQubes["Qrypto Persona"] !== undefined) {
+      localStorage.setItem('qrypto-persona-activated', JSON.stringify(activeQubes["Qrypto Persona"]));
+    }
   }, [activeQubes["Qrypto Persona"]]);
 
   // Listen for iQube activation/deactivation events from sidebar
@@ -49,6 +55,10 @@ const IQubeActivationManager = ({
             hideMetis();
             toast.info(`Metis deactivated`);
           }
+        } else if (iqubeId === "Qrypto Persona") {
+          // Save to localStorage immediately for Qrypto Persona
+          localStorage.setItem('qrypto-persona-activated', JSON.stringify(active));
+          toast.info(`${iqubeId} ${active ? 'activated' : 'deactivated'}`);
         } else {
           toast.info(`${iqubeId} ${active ? 'activated' : 'deactivated'}`);
         }
