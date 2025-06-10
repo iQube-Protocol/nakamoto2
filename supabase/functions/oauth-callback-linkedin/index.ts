@@ -23,7 +23,12 @@ serve(async (req) => {
         hasClientId: !!LINKEDIN_CLIENT_ID,
         hasClientSecret: !!LINKEDIN_CLIENT_SECRET
       });
-      const clientOrigin = new URL(req.url).origin.replace('supabase.co', 'lovable.app');
+      
+      // Generate the client origin URL more reliably
+      const url = new URL(req.url);
+      const supabaseUrl = Deno.env.get("SUPABASE_URL") || url.origin;
+      const clientOrigin = supabaseUrl.replace('.supabase.co', '.lovable.app');
+      
       return new Response(
         `<html><body><h1>Configuration Error</h1><p>LinkedIn service not properly configured. Please contact support.</p><script>setTimeout(() => window.location.href = '${clientOrigin}/settings?tab=connections&error=config', 3000)</script></body></html>`,
         { status: 500, headers: { "Content-Type": "text/html" } }
@@ -47,10 +52,14 @@ serve(async (req) => {
       state 
     });
     
+    // Generate client origin for redirects
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") || url.origin;
+    const clientOrigin = supabaseUrl.replace('.supabase.co', '.lovable.app');
+    console.log("Client origin for redirects:", clientOrigin);
+    
     // Handle LinkedIn OAuth errors
     if (error) {
       console.error("LinkedIn OAuth error:", { error, errorDescription });
-      const clientOrigin = url.origin.replace('supabase.co', 'lovable.app');
       return new Response(
         `<html><body><h1>LinkedIn Authorization Failed</h1><p>${errorDescription || error}</p><script>setTimeout(() => window.location.href = '${clientOrigin}/oauth-callback?service=linkedin&error=${encodeURIComponent(errorDescription || error)}', 3000)</script></body></html>`,
         { status: 400, headers: { "Content-Type": "text/html" } }
@@ -59,16 +68,15 @@ serve(async (req) => {
     
     if (!code) {
       console.error("Missing authorization code");
-      const clientOrigin = url.origin.replace('supabase.co', 'lovable.app');
       return new Response(
         `<html><body><h1>Authorization Error</h1><p>Missing authorization code. Please try connecting again.</p><script>setTimeout(() => window.location.href = '${clientOrigin}/oauth-callback?service=linkedin&error=missing_code', 3000)</script></body></html>`,
         { status: 400, headers: { "Content-Type": "text/html" } }
       );
     }
 
-    // Construct redirect URI
-    const redirectUri = `${url.origin}/functions/v1/oauth-callback-linkedin`;
-    console.log("Using redirect URI:", redirectUri);
+    // Construct the correct redirect URI that matches what was registered
+    const redirectUri = `${supabaseUrl}/functions/v1/oauth-callback-linkedin`;
+    console.log("Using redirect URI for token exchange:", redirectUri);
 
     console.log("=== Exchanging code for token ===");
 
@@ -99,7 +107,6 @@ serve(async (req) => {
     } catch (fetchError) {
       clearTimeout(timeoutId);
       console.error("Token exchange fetch error:", fetchError);
-      const clientOrigin = url.origin.replace('supabase.co', 'lovable.app');
       return new Response(
         `<html><body><h1>Connection Timeout</h1><p>LinkedIn connection timed out. Please try again.</p><script>setTimeout(() => window.location.href = '${clientOrigin}/oauth-callback?service=linkedin&error=timeout', 3000)</script></body></html>`,
         { status: 408, headers: { "Content-Type": "text/html" } }
@@ -115,7 +122,6 @@ serve(async (req) => {
         statusText: tokenResponse.statusText,
         error: errorText
       });
-      const clientOrigin = url.origin.replace('supabase.co', 'lovable.app');
       return new Response(
         `<html><body><h1>LinkedIn Connection Failed</h1><p>Authentication failed. Please try again.</p><script>setTimeout(() => window.location.href = '${clientOrigin}/oauth-callback?service=linkedin&error=token_exchange', 3000)</script></body></html>`,
         { status: 400, headers: { "Content-Type": "text/html" } }
@@ -127,7 +133,6 @@ serve(async (req) => {
     
     if (!accessToken) {
       console.error("No access token received");
-      const clientOrigin = url.origin.replace('supabase.co', 'lovable.app');
       return new Response(
         `<html><body><h1>LinkedIn Connection Failed</h1><p>Invalid token response. Please try again.</p><script>setTimeout(() => window.location.href = '${clientOrigin}/oauth-callback?service=linkedin&error=invalid_token', 3000)</script></body></html>`,
         { status: 400, headers: { "Content-Type": "text/html" } }
@@ -195,7 +200,6 @@ serve(async (req) => {
     console.log("=== Redirecting back to client app ===");
     
     // Redirect back to client app with success and connection data
-    const clientOrigin = url.origin.replace('supabase.co', 'lovable.app');
     const redirectUrl = new URL('/oauth-callback', clientOrigin);
     redirectUrl.searchParams.set('service', 'linkedin');
     redirectUrl.searchParams.set('success', 'true');
@@ -214,7 +218,12 @@ serve(async (req) => {
   } catch (error) {
     console.error("=== Unexpected error ===", error);
     console.error("Error stack:", error.stack);
-    const clientOrigin = new URL(req.url).origin.replace('supabase.co', 'lovable.app');
+    
+    // Generate client origin for error redirect
+    const url = new URL(req.url);
+    const supabaseUrl = Deno.env.get("SUPABASE_URL") || url.origin;
+    const clientOrigin = supabaseUrl.replace('.supabase.co', '.lovable.app');
+    
     return new Response(
       `<html><body><h1>Server Error</h1><p>An unexpected error occurred. Please try again.</p><script>setTimeout(() => window.location.href = '${clientOrigin}/oauth-callback?service=linkedin&error=server_error', 3000)</script></body></html>`,
       { status: 500, headers: { "Content-Type": "text/html" } }
