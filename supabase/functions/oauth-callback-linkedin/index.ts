@@ -1,9 +1,12 @@
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
+import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { corsHeaders } from "../_shared/cors.ts";
 
 const LINKEDIN_CLIENT_ID = Deno.env.get("LINKEDIN_CLIENT_ID") || "";
 const LINKEDIN_CLIENT_SECRET = Deno.env.get("LINKEDIN_CLIENT_SECRET") || "";
+const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
+const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 
 serve(async (req) => {
   console.log("=== LinkedIn OAuth Callback Started ===");
@@ -24,9 +27,8 @@ serve(async (req) => {
         hasClientSecret: !!LINKEDIN_CLIENT_SECRET
       });
       
-      // Generate the client origin URL more reliably
       const url = new URL(req.url);
-      const supabaseUrl = Deno.env.get("SUPABASE_URL") || url.origin;
+      const supabaseUrl = SUPABASE_URL || url.origin;
       const clientOrigin = supabaseUrl.replace('.supabase.co', '.lovable.app');
       
       return new Response(
@@ -53,7 +55,7 @@ serve(async (req) => {
     });
     
     // Generate client origin for redirects
-    const supabaseUrl = Deno.env.get("SUPABASE_URL") || url.origin;
+    const supabaseUrl = SUPABASE_URL || url.origin;
     const clientOrigin = supabaseUrl.replace('.supabase.co', '.lovable.app');
     console.log("Client origin for redirects:", clientOrigin);
     
@@ -90,7 +92,7 @@ serve(async (req) => {
     });
 
     const controller = new AbortController();
-    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
+    const timeoutId = setTimeout(() => controller.abort(), 15000);
 
     let tokenResponse;
     try {
@@ -219,9 +221,8 @@ serve(async (req) => {
     console.error("=== Unexpected error ===", error);
     console.error("Error stack:", error.stack);
     
-    // Generate client origin for error redirect
     const url = new URL(req.url);
-    const supabaseUrl = Deno.env.get("SUPABASE_URL") || url.origin;
+    const supabaseUrl = SUPABASE_URL || url.origin;
     const clientOrigin = supabaseUrl.replace('.supabase.co', '.lovable.app');
     
     return new Response(

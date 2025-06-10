@@ -29,7 +29,6 @@ const OAuthCallback = () => {
       setStatus('processing');
       setErrorMessage('');
       processingRef.current = false;
-      // Trigger the OAuth completion again
       completeOAuth();
     } else {
       toast.error('Maximum retry attempts reached. Please try connecting again.');
@@ -73,7 +72,6 @@ const OAuthCallback = () => {
       const decodedError = decodeURIComponent(error);
       setErrorMessage(decodedError);
       
-      // Provide more specific error handling
       if (decodedError.includes('config')) {
         toast.error('Service configuration error. Please contact support.');
       } else if (decodedError.includes('token_exchange')) {
@@ -118,10 +116,39 @@ const OAuthCallback = () => {
     
     try {
       console.log('Getting current session...');
-      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
       
-      if (sessionError || !session?.user) {
-        console.error('Session error:', sessionError);
+      // Wait for session to be properly established
+      let session = null;
+      let attempts = 0;
+      const maxSessionAttempts = 5;
+      
+      while (!session && attempts < maxSessionAttempts) {
+        const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) {
+          console.error('Session error:', sessionError);
+          attempts++;
+          if (attempts < maxSessionAttempts) {
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            continue;
+          }
+          break;
+        }
+        
+        if (currentSession?.user) {
+          session = currentSession;
+          break;
+        }
+        
+        attempts++;
+        if (attempts < maxSessionAttempts) {
+          console.log(`Session not ready, waiting... (attempt ${attempts})`);
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
+      }
+      
+      if (!session?.user) {
+        console.error('No valid session found after attempts');
         setStatus('error');
         setErrorMessage('Authentication session error - please sign in again');
         toast.error('Please sign in and try connecting again');
@@ -234,7 +261,7 @@ const OAuthCallback = () => {
     if (!processingRef.current) {
       completeOAuth();
     }
-  }, []); // Remove dependencies to prevent re-running
+  }, []);
   
   return (
     <div className="flex items-center justify-center h-[80vh]">
