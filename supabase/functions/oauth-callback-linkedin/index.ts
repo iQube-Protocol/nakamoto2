@@ -1,12 +1,9 @@
 
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
-import { createClient } from "https://esm.sh/@supabase/supabase-js@2";
 import { corsHeaders } from "../_shared/cors.ts";
 
 const LINKEDIN_CLIENT_ID = Deno.env.get("LINKEDIN_CLIENT_ID") || "";
 const LINKEDIN_CLIENT_SECRET = Deno.env.get("LINKEDIN_CLIENT_SECRET") || "";
-const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
-const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 
 serve(async (req) => {
   console.log("=== LinkedIn OAuth Callback Started ===");
@@ -21,23 +18,21 @@ serve(async (req) => {
 
   try {
     // Validate environment variables first
-    if (!LINKEDIN_CLIENT_ID || !LINKEDIN_CLIENT_SECRET || !SUPABASE_URL || !SUPABASE_SERVICE_ROLE_KEY) {
-      console.error("Missing environment variables:", {
+    if (!LINKEDIN_CLIENT_ID || !LINKEDIN_CLIENT_SECRET) {
+      console.error("Missing LinkedIn configuration:", {
         hasClientId: !!LINKEDIN_CLIENT_ID,
-        hasClientSecret: !!LINKEDIN_CLIENT_SECRET,
-        hasSupabaseUrl: !!SUPABASE_URL,
-        hasServiceKey: !!SUPABASE_SERVICE_ROLE_KEY
+        hasClientSecret: !!LINKEDIN_CLIENT_SECRET
       });
+      const clientOrigin = new URL(req.url).origin.replace('supabase.co', 'lovable.app');
       return new Response(
-        `<html><body><h1>Configuration Error</h1><p>Server not properly configured. Please try again later.</p><script>setTimeout(() => window.location.href = '${new URL(req.url).origin}/settings?tab=connections&error=config', 3000)</script></body></html>`,
+        `<html><body><h1>Configuration Error</h1><p>LinkedIn service not properly configured. Please contact support.</p><script>setTimeout(() => window.location.href = '${clientOrigin}/settings?tab=connections&error=config', 3000)</script></body></html>`,
         { status: 500, headers: { "Content-Type": "text/html" } }
       );
     }
 
-    // Parse request URL to get parameters (LinkedIn OAuth uses GET with query params)
+    // Parse request URL to get parameters
     const url = new URL(req.url);
     console.log("Full URL:", url.toString());
-    console.log("URL search params:", Object.fromEntries(url.searchParams.entries()));
 
     const code = url.searchParams.get("code");
     const error = url.searchParams.get("error");
@@ -57,27 +52,27 @@ serve(async (req) => {
       console.error("LinkedIn OAuth error:", { error, errorDescription });
       const clientOrigin = url.origin.replace('supabase.co', 'lovable.app');
       return new Response(
-        `<html><body><h1>LinkedIn Authorization Failed</h1><p>${errorDescription || error}</p><script>setTimeout(() => window.location.href = '${clientOrigin}/settings?tab=connections&error=${encodeURIComponent(errorDescription || error)}', 3000)</script></body></html>`,
+        `<html><body><h1>LinkedIn Authorization Failed</h1><p>${errorDescription || error}</p><script>setTimeout(() => window.location.href = '${clientOrigin}/oauth-callback?service=linkedin&error=${encodeURIComponent(errorDescription || error)}', 3000)</script></body></html>`,
         { status: 400, headers: { "Content-Type": "text/html" } }
       );
     }
     
     if (!code) {
-      console.error("Missing authorization code in URL parameters");
+      console.error("Missing authorization code");
       const clientOrigin = url.origin.replace('supabase.co', 'lovable.app');
       return new Response(
-        `<html><body><h1>Authorization Error</h1><p>Missing authorization code. Please try connecting again.</p><script>setTimeout(() => window.location.href = '${clientOrigin}/settings?tab=connections&error=missing_code', 3000)</script></body></html>`,
+        `<html><body><h1>Authorization Error</h1><p>Missing authorization code. Please try connecting again.</p><script>setTimeout(() => window.location.href = '${clientOrigin}/oauth-callback?service=linkedin&error=missing_code', 3000)</script></body></html>`,
         { status: 400, headers: { "Content-Type": "text/html" } }
       );
     }
 
-    // Construct redirect URI (same as what we sent to LinkedIn)
+    // Construct redirect URI
     const redirectUri = `${url.origin}/functions/v1/oauth-callback-linkedin`;
     console.log("Using redirect URI:", redirectUri);
 
     console.log("=== Exchanging code for token ===");
 
-    // Exchange authorization code for access token
+    // Exchange authorization code for access token with timeout
     const tokenParams = new URLSearchParams({
       grant_type: "authorization_code",
       code,
@@ -86,22 +81,30 @@ serve(async (req) => {
       client_secret: LINKEDIN_CLIENT_SECRET,
     });
 
-    console.log("Token exchange parameters:", {
-      grant_type: "authorization_code",
-      hasCode: !!code,
-      redirect_uri: redirectUri,
-      client_id: LINKEDIN_CLIENT_ID,
-      hasClientSecret: !!LINKEDIN_CLIENT_SECRET
-    });
+    const controller = new AbortController();
+    const timeoutId = setTimeout(() => controller.abort(), 15000); // 15 second timeout
 
-    const tokenResponse = await fetch("https://www.linkedin.com/oauth/v2/accessToken", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/x-www-form-urlencoded",
-        "Accept": "application/json",
-      },
-      body: tokenParams,
-    });
+    let tokenResponse;
+    try {
+      tokenResponse = await fetch("https://www.linkedin.com/oauth/v2/accessToken", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/x-www-form-urlencoded",
+          "Accept": "application/json",
+        },
+        body: tokenParams,
+        signal: controller.signal
+      });
+      clearTimeout(timeoutId);
+    } catch (fetchError) {
+      clearTimeout(timeoutId);
+      console.error("Token exchange fetch error:", fetchError);
+      const clientOrigin = url.origin.replace('supabase.co', 'lovable.app');
+      return new Response(
+        `<html><body><h1>Connection Timeout</h1><p>LinkedIn connection timed out. Please try again.</p><script>setTimeout(() => window.location.href = '${clientOrigin}/oauth-callback?service=linkedin&error=timeout', 3000)</script></body></html>`,
+        { status: 408, headers: { "Content-Type": "text/html" } }
+      );
+    }
 
     console.log("Token response status:", tokenResponse.status);
 
@@ -114,47 +117,64 @@ serve(async (req) => {
       });
       const clientOrigin = url.origin.replace('supabase.co', 'lovable.app');
       return new Response(
-        `<html><body><h1>LinkedIn Connection Failed</h1><p>Token exchange failed. Please try again.</p><script>setTimeout(() => window.location.href = '${clientOrigin}/settings?tab=connections&error=token_exchange', 3000)</script></body></html>`,
+        `<html><body><h1>LinkedIn Connection Failed</h1><p>Authentication failed. Please try again.</p><script>setTimeout(() => window.location.href = '${clientOrigin}/oauth-callback?service=linkedin&error=token_exchange', 3000)</script></body></html>`,
         { status: 400, headers: { "Content-Type": "text/html" } }
       );
     }
 
     const tokenData = await tokenResponse.json();
     const accessToken = tokenData.access_token;
-    console.log("Token exchange successful, access token received");
+    
+    if (!accessToken) {
+      console.error("No access token received");
+      const clientOrigin = url.origin.replace('supabase.co', 'lovable.app');
+      return new Response(
+        `<html><body><h1>LinkedIn Connection Failed</h1><p>Invalid token response. Please try again.</p><script>setTimeout(() => window.location.href = '${clientOrigin}/oauth-callback?service=linkedin&error=invalid_token', 3000)</script></body></html>`,
+        { status: 400, headers: { "Content-Type": "text/html" } }
+      );
+    }
+    
+    console.log("Token exchange successful");
 
     console.log("=== Fetching LinkedIn profile data ===");
 
-    // Fetch LinkedIn profile data using the modern userinfo endpoint
-    const profileResponse = await fetch("https://api.linkedin.com/v2/userinfo", {
-      headers: {
-        "Authorization": `Bearer ${accessToken}`,
-        "Accept": "application/json",
-      },
-    });
-
-    console.log("Profile response status:", profileResponse.status);
+    // Fetch LinkedIn profile data with timeout
+    const profileController = new AbortController();
+    const profileTimeoutId = setTimeout(() => profileController.abort(), 10000);
 
     let profileData = null;
-    if (profileResponse.ok) {
-      profileData = await profileResponse.json();
-      console.log("Profile data fetched successfully:", {
-        sub: profileData?.sub,
-        given_name: profileData?.given_name,
-        family_name: profileData?.family_name,
-        email: profileData?.email
+    try {
+      const profileResponse = await fetch("https://api.linkedin.com/v2/userinfo", {
+        headers: {
+          "Authorization": `Bearer ${accessToken}`,
+          "Accept": "application/json",
+        },
+        signal: profileController.signal
       });
-    } else {
-      const errorText = await profileResponse.text();
-      console.warn("Failed to fetch profile data:", {
-        status: profileResponse.status,
-        statusText: profileResponse.statusText,
-        error: errorText
-      });
+      clearTimeout(profileTimeoutId);
+
+      if (profileResponse.ok) {
+        profileData = await profileResponse.json();
+        console.log("Profile data fetched successfully:", {
+          sub: profileData?.sub,
+          given_name: profileData?.given_name,
+          family_name: profileData?.family_name,
+          email: profileData?.email
+        });
+      } else {
+        const errorText = await profileResponse.text();
+        console.warn("Failed to fetch profile data:", {
+          status: profileResponse.status,
+          statusText: profileResponse.statusText,
+          error: errorText
+        });
+      }
+    } catch (profileError) {
+      clearTimeout(profileTimeoutId);
+      console.warn("Profile fetch error:", profileError);
     }
 
-    // For this callback, we don't have the user's session, so we'll store the connection temporarily
-    // and let the client app handle associating it with the user
+    // Create connection data with better structure
     const connectionData = {
       connected: true,
       access_token: accessToken,
@@ -168,7 +188,8 @@ serve(async (req) => {
       } : null,
       email: profileData?.email,
       fetchedAt: new Date().toISOString(),
-      state: state // Include state for verification
+      state: state,
+      version: "2.0"
     };
 
     console.log("=== Redirecting back to client app ===");
@@ -195,7 +216,7 @@ serve(async (req) => {
     console.error("Error stack:", error.stack);
     const clientOrigin = new URL(req.url).origin.replace('supabase.co', 'lovable.app');
     return new Response(
-      `<html><body><h1>Server Error</h1><p>An unexpected error occurred. Please try again.</p><script>setTimeout(() => window.location.href = '${clientOrigin}/settings?tab=connections&error=server_error', 3000)</script></body></html>`,
+      `<html><body><h1>Server Error</h1><p>An unexpected error occurred. Please try again.</p><script>setTimeout(() => window.location.href = '${clientOrigin}/oauth-callback?service=linkedin&error=server_error', 3000)</script></body></html>`,
       { status: 500, headers: { "Content-Type": "text/html" } }
     );
   }

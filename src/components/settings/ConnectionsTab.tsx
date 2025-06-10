@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { Shield, Linkedin, MessageCircle, Twitter, Users, Wallet, Globe, AlertCircle, Eye, Database, Lock } from 'lucide-react';
+import { Shield, Linkedin, MessageCircle, Twitter, Users, Wallet, Globe, AlertCircle, Eye, Database, Lock, RefreshCw } from 'lucide-react';
 import ServiceConnection from './ServiceConnection';
 import { useServiceConnections } from '@/hooks/useServiceConnections';
 import { UserSettings } from '@/lib/types';
@@ -19,8 +19,9 @@ interface ConnectionsTabProps {
 }
 
 const ConnectionsTab = ({ settings, onConnectService }: ConnectionsTabProps) => {
-  const { loading, error } = useServiceConnections();
+  const { loading, error, refreshConnections, isServiceProcessing } = useServiceConnections();
   const [privacyPolicyOpen, setPrivacyPolicyOpen] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
   
   const handleServiceToggle = async (service: keyof UserSettings['connected']) => {
     try {
@@ -31,23 +32,53 @@ const ConnectionsTab = ({ settings, onConnectService }: ConnectionsTabProps) => 
       toast.error(`Failed to ${settings.connected[service] ? 'disconnect' : 'connect'} ${service}`);
     }
   };
+
+  const handleRefreshConnections = async () => {
+    setRefreshing(true);
+    try {
+      await refreshConnections();
+      toast.success('Connection status refreshed');
+    } catch (error) {
+      console.error('Error refreshing connections:', error);
+      toast.error('Failed to refresh connections');
+    } finally {
+      setRefreshing(false);
+    }
+  };
   
   return (
     <>
       <Card>
         <CardHeader className="pb-2">
-          <CardTitle className="text-base">External Connections</CardTitle>
-          <CardDescription>
-            Connect external services to enhance your iQube data
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div>
+              <CardTitle className="text-base">External Connections</CardTitle>
+              <CardDescription>
+                Connect external services to enhance your iQube data
+              </CardDescription>
+            </div>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={handleRefreshConnections}
+              disabled={refreshing || loading}
+              className="flex items-center gap-2"
+            >
+              <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
+              Refresh
+            </Button>
+          </div>
         </CardHeader>
         <CardContent className="space-y-4">
           {error && (
             <Alert variant="destructive" className="mb-4">
               <AlertCircle className="h-4 w-4" />
               <AlertTitle>Connection Error</AlertTitle>
-              <AlertDescription>
-                {error}
+              <AlertDescription className="flex items-center justify-between">
+                <span>{error}</span>
+                <Button variant="outline" size="sm" onClick={handleRefreshConnections}>
+                  Try Again
+                </Button>
               </AlertDescription>
             </Alert>
           )}
@@ -63,36 +94,50 @@ const ConnectionsTab = ({ settings, onConnectService }: ConnectionsTabProps) => 
                 icon={<Linkedin className="h-5 w-5 text-iqube-primary" />}
                 connected={settings.connected.linkedin}
                 onConnect={() => handleServiceToggle('linkedin')}
+                isProcessing={isServiceProcessing('linkedin')}
               />
               <ServiceConnection 
                 name="Luma"
                 icon={<Globe className="h-5 w-5 text-iqube-primary" />}
                 connected={settings.connected.luma}
                 onConnect={() => handleServiceToggle('luma')}
+                isProcessing={isServiceProcessing('luma')}
+                disabled={true}
+                comingSoon={true}
               />
               <ServiceConnection 
                 name="Telegram"
                 icon={<MessageCircle className="h-5 w-5 text-iqube-primary" />}
                 connected={settings.connected.telegram}
                 onConnect={() => handleServiceToggle('telegram')}
+                isProcessing={isServiceProcessing('telegram')}
+                disabled={true}
+                comingSoon={true}
               />
               <ServiceConnection 
                 name="Twitter"
                 icon={<Twitter className="h-5 w-5 text-iqube-primary" />}
                 connected={settings.connected.twitter}
                 onConnect={() => handleServiceToggle('twitter')}
+                isProcessing={isServiceProcessing('twitter')}
+                disabled={true}
+                comingSoon={true}
               />
               <ServiceConnection 
                 name="Discord"
                 icon={<Users className="h-5 w-5 text-iqube-primary" />}
                 connected={settings.connected.discord}
                 onConnect={() => handleServiceToggle('discord')}
+                isProcessing={isServiceProcessing('discord')}
+                disabled={true}
+                comingSoon={true}
               />
               <ServiceConnection 
                 name="Wallet"
                 icon={<Wallet className="h-5 w-5 text-iqube-primary" />}
                 connected={settings.connected.wallet}
                 onConnect={() => handleServiceToggle('wallet')}
+                isProcessing={isServiceProcessing('wallet')}
               />
             </div>
           )}

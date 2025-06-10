@@ -23,36 +23,73 @@ export const connectionService = {
         return false;
       }
       
-      // Get current URL for proper redirect
-      const redirectUrl = `${window.location.origin}/oauth-callback?service=${service}`;
-      console.log(`Redirect URL: ${redirectUrl}`);
+      // Validate service is supported
+      if (service !== 'linkedin') {
+        console.error(`Service ${service} OAuth not yet implemented`);
+        toast.error(`${service} connection is not yet available. Coming soon!`);
+        return false;
+      }
+      
+      console.log(`Calling connect-${service} edge function...`);
       
       // Call a Supabase Edge Function to get an OAuth URL
       const { data, error } = await supabase.functions.invoke(`connect-${service}`, {
-        body: { redirectUrl }
+        body: { 
+          redirectUrl: `${window.location.origin}/oauth-callback?service=${service}` 
+        }
       });
       
       if (error) {
         console.error(`Error starting ${service} OAuth flow:`, error);
-        toast.error(`Failed to connect to ${service}: ${error.message}`);
+        
+        // Provide specific error messages based on the error type
+        if (error.message?.includes('not configured')) {
+          toast.error(`${service} connection is not properly configured. Please contact support.`);
+        } else if (error.message?.includes('not found')) {
+          toast.error(`${service} connection service is currently unavailable. Please try again later.`);
+        } else {
+          toast.error(`Failed to connect to ${service}. Please try again in a few moments.`);
+        }
         return false;
       }
       
       console.log(`OAuth response for ${service}:`, data);
       
-      // Redirect to OAuth provider
-      if (data?.authUrl) {
+      // Validate response and redirect to OAuth provider
+      if (data?.authUrl && typeof data.authUrl === 'string') {
         console.log(`Redirecting to: ${data.authUrl}`);
+        
+        // Store connection attempt in localStorage for recovery
+        const connectionAttempt = {
+          service,
+          timestamp: Date.now(),
+          userId: user.id
+        };
+        localStorage.setItem('oauth_attempt', JSON.stringify(connectionAttempt));
+        
+        // Redirect to OAuth provider
         window.location.href = data.authUrl;
         return true;
       } else {
-        console.error(`No authUrl received from ${service} service`);
-        toast.error(`Invalid response from ${service} connection service.`);
+        console.error(`Invalid authUrl received from ${service} service:`, data);
+        toast.error(`Invalid response from ${service} connection service. Please try again.`);
         return false;
       }
     } catch (error) {
-      console.error(`Error in ${service} connection:`, error);
-      toast.error(`Failed to connect to ${service}. Please try again.`);
+      console.error(`Unexpected error in ${service} connection:`, error);
+      
+      // Clean up any stored connection attempt
+      localStorage.removeItem('oauth_attempt');
+      
+      if (error instanceof Error) {
+        if (error.message.includes('Failed to fetch')) {
+          toast.error(`Network error connecting to ${service}. Please check your connection and try again.`);
+        } else {
+          toast.error(`An unexpected error occurred: ${error.message}`);
+        }
+      } else {
+        toast.error(`Failed to connect to ${service}. Please try again.`);
+      }
       return false;
     }
   },
@@ -203,12 +240,48 @@ export const connectionService = {
         }
       }
       
+      // Clean up any stored connection attempts
+      const storedAttempt = localStorage.getItem('oauth_attempt');
+      if (storedAttempt) {
+        try {
+          const attempt = JSON.parse(storedAttempt);
+          if (attempt.service === service && attempt.userId === userId) {
+            localStorage.removeItem('oauth_attempt');
+          }
+        } catch (e) {
+          // Clean up invalid stored attempts
+          localStorage.removeItem('oauth_attempt');
+        }
+      }
+      
       toast.success(`${service.charAt(0).toUpperCase() + service.slice(1)} disconnected successfully.`);
       return true;
     } catch (error) {
       console.error(`Error disconnecting ${service}:`, error);
       toast.error(`Failed to disconnect ${service}.`);
       return false;
+    }
+  },
+
+  /**
+   * Check for incomplete OAuth attempts and clean them up
+   */
+  cleanupIncompleteOAuth: () => {
+    try {
+      const storedAttempt = localStorage.getItem('oauth_attempt');
+      if (storedAttempt) {
+        const attempt = JSON.parse(storedAttempt);
+        const timeDiff = Date.now() - attempt.timestamp;
+        
+        // Clean up attempts older than 10 minutes
+        if (timeDiff > 10 * 60 * 1000) {
+          localStorage.removeItem('oauth_attempt');
+          console.log('Cleaned up old OAuth attempt');
+        }
+      }
+    } catch (e) {
+      // Clean up invalid stored attempts
+      localStorage.removeItem('oauth_attempt');
     }
   }
 };

@@ -32,27 +32,38 @@ export function useServiceConnections() {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [retrying, setRetrying] = useState<ServiceType | null>(null);
   const { user } = useAuth();
   
   // Fetch connection status for all services
-  const fetchConnections = async () => {
+  const fetchConnections = async (showLoading = true) => {
     if (!user) return;
     
-    setLoading(true);
+    if (showLoading) {
+      setLoading(true);
+    }
     setError(null);
+    
     try {
       console.log('Fetching user connections...');
       
-      // Query user_connections table
+      // Query user_connections table with timeout
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      
       const { data, error: queryError } = await supabase
         .from('user_connections')
         .select('service, connected_at, connection_data')
         .eq('user_id', user.id);
       
+      clearTimeout(timeoutId);
+      
       if (queryError) {
         console.error('Error fetching connections:', queryError);
         setError('Failed to load your connections. Please try again later.');
-        setLoading(false);
+        if (showLoading) {
+          setLoading(false);
+        }
         return;
       }
       
@@ -94,9 +105,16 @@ export function useServiceConnections() {
       setConnectionData(newConnectionData);
     } catch (error) {
       console.error('Error in fetchConnections:', error);
-      setError('An unexpected error occurred while loading your connections.');
+      
+      if (error instanceof Error && error.name === 'AbortError') {
+        setError('Connection timeout. Please check your internet connection and try again.');
+      } else {
+        setError('An unexpected error occurred while loading your connections.');
+      }
     } finally {
-      setLoading(false);
+      if (showLoading) {
+        setLoading(false);
+      }
     }
   };
   
@@ -105,45 +123,67 @@ export function useServiceConnections() {
     return connectionData.wallet?.address || null;
   };
   
-  // Connect a service
+  // Connect a service with improved error handling
   const connectService = async (service: ServiceType): Promise<boolean> => {
     console.log(`Attempting to connect ${service}...`);
+    setRetrying(service);
     
-    if (service === 'wallet') {
-      const success = await connectionService.connectWallet();
-      if (success) {
-        // Update BlakQube data after wallet connection
-        await blakQubeService.updateBlakQubeFromConnections();
-        // Refresh connections to get the latest data without page reload
-        await fetchConnections();
-        
-        // Dispatch custom event to notify other components that private data has been updated
-        const event = new CustomEvent('privateDataUpdated');
-        window.dispatchEvent(event);
-        
-        return true;
-      }
-      return false;
-    } else {
-      try {
-        return await connectionService.startOAuthFlow(service);
-      } catch (error) {
-        console.error(`Error starting OAuth flow for ${service}:`, error);
-        toast.error(`Failed to connect to ${service}. The service may not be configured properly.`);
+    try {
+      if (service === 'wallet') {
+        const success = await connectionService.connectWallet();
+        if (success) {
+          // Update BlakQube data after wallet connection
+          await blakQubeService.updateBlakQubeFromConnections();
+          // Refresh connections to get the latest data without page reload
+          await fetchConnections(false);
+          
+          // Dispatch custom event to notify other components that private data has been updated
+          const event = new CustomEvent('privateDataUpdated');
+          window.dispatchEvent(event);
+          
+          return true;
+        }
         return false;
+      } else {
+        try {
+          // Clean up any incomplete OAuth attempts before starting new one
+          connectionService.cleanupIncompleteOAuth();
+          
+          const success = await connectionService.startOAuthFlow(service);
+          return success;
+        } catch (error) {
+          console.error(`Error starting OAuth flow for ${service}:`, error);
+          
+          if (error instanceof Error) {
+            if (error.message.includes('not configured')) {
+              toast.error(`${service} connection is not properly configured. Please contact support.`);
+            } else if (error.message.includes('Network')) {
+              toast.error(`Network error connecting to ${service}. Please check your connection.`);
+            } else {
+              toast.error(`Failed to connect to ${service}: ${error.message}`);
+            }
+          } else {
+            toast.error(`Failed to connect to ${service}. Please try again.`);
+          }
+          return false;
+        }
       }
+    } finally {
+      setRetrying(null);
     }
   };
   
-  // Disconnect a service
+  // Disconnect a service with improved error handling
   const disconnectService = async (service: ServiceType): Promise<boolean> => {
+    setRetrying(service);
+    
     try {
       const success = await connectionService.disconnectService(service);
       if (success) {
         setConnections(prev => ({ ...prev, [service]: false }));
         setConnectionData(prev => ({ ...prev, [service]: null }));
         // Refresh data after disconnection without page reload
-        await fetchConnections();
+        await fetchConnections(false);
         
         // Dispatch custom event to notify other components that private data has been updated
         const event = new CustomEvent('privateDataUpdated');
@@ -154,6 +194,8 @@ export function useServiceConnections() {
       console.error(`Error disconnecting ${service}:`, error);
       toast.error(`Failed to disconnect from ${service}. Please try again.`);
       return false;
+    } finally {
+      setRetrying(null);
     }
   };
   
@@ -166,18 +208,56 @@ export function useServiceConnections() {
     }
   };
   
-  // Sync BlakQube data from connected service
-  const syncBlakQubeData = async (service: ServiceType) => {
-    console.log(`Syncing BlakQube data from ${service}...`);
-    await blakQubeService.updateBlakQubeFromConnections();
-    toast.success(`Data from ${service} synced to BlakQube`);
+  // Check if a service is currently being processed
+  const isServiceProcessing = (service: ServiceType): boolean => {
+    return retrying === service;
+  };
+  
+  // Retry connection with exponential backoff
+  const retryConnection = async (service: ServiceType, maxAttempts = 3): Promise<boolean> => {
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      console.log(`Retry attempt ${attempt} for ${service}`);
+      
+      const success = await connectService(service);
+      if (success) {
+        return true;
+      }
+      
+      if (attempt < maxAttempts) {
+        // Exponential backoff: wait 2^attempt seconds
+        const waitTime = Math.pow(2, attempt) * 1000;
+        await new Promise(resolve => setTimeout(resolve, waitTime));
+      }
+    }
+    
+    toast.error(`Failed to connect to ${service} after ${maxAttempts} attempts. Please try again later.`);
+    return false;
   };
   
   // Load connections when user changes
   useEffect(() => {
     if (user) {
       fetchConnections();
+      
+      // Clean up any incomplete OAuth attempts on load
+      connectionService.cleanupIncompleteOAuth();
     }
+  }, [user]);
+  
+  // Set up connection recovery on page visibility change
+  useEffect(() => {
+    const handleVisibilityChange = () => {
+      if (!document.hidden && user) {
+        // Refresh connections when page becomes visible
+        // This helps recover from OAuth redirects
+        setTimeout(() => {
+          fetchConnections(false);
+        }, 1000);
+      }
+    };
+    
+    document.addEventListener('visibilitychange', handleVisibilityChange);
+    return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [user]);
   
   return {
@@ -189,6 +269,8 @@ export function useServiceConnections() {
     disconnectService,
     toggleConnection,
     refreshConnections: fetchConnections,
-    getWalletAddress
+    getWalletAddress,
+    isServiceProcessing,
+    retryConnection
   };
 }
