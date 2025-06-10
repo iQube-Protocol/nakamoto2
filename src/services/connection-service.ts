@@ -4,6 +4,9 @@ import { toast } from 'sonner';
 
 export type ServiceType = 'linkedin' | 'twitter' | 'telegram' | 'discord' | 'luma' | 'wallet';
 
+// Track active OAuth flows to prevent duplicates
+const activeOAuthFlows = new Set<ServiceType>();
+
 /**
  * Service for managing external service connections
  */
@@ -14,6 +17,13 @@ export const connectionService = {
   startOAuthFlow: async (service: ServiceType): Promise<boolean> => {
     try {
       console.log(`Starting OAuth flow for ${service}...`);
+      
+      // Prevent duplicate OAuth flows
+      if (activeOAuthFlows.has(service)) {
+        console.log(`OAuth flow for ${service} already in progress, skipping`);
+        toast.error(`${service} connection is already in progress. Please wait.`);
+        return false;
+      }
       
       // Check if user is authenticated
       const { data: { user }, error: authError } = await supabase.auth.getUser();
@@ -30,6 +40,9 @@ export const connectionService = {
         return false;
       }
       
+      // Mark OAuth flow as active
+      activeOAuthFlows.add(service);
+      
       console.log(`Calling connect-${service} edge function...`);
       
       // Call a Supabase Edge Function to get an OAuth URL
@@ -41,6 +54,9 @@ export const connectionService = {
       
       if (error) {
         console.error(`Error starting ${service} OAuth flow:`, error);
+        
+        // Clean up active flow tracking
+        activeOAuthFlows.delete(service);
         
         // Provide specific error messages based on the error type
         if (error.message?.includes('not configured')) {
@@ -72,13 +88,15 @@ export const connectionService = {
         return true;
       } else {
         console.error(`Invalid authUrl received from ${service} service:`, data);
+        activeOAuthFlows.delete(service);
         toast.error(`Invalid response from ${service} connection service. Please try again.`);
         return false;
       }
     } catch (error) {
       console.error(`Unexpected error in ${service} connection:`, error);
       
-      // Clean up any stored connection attempt
+      // Clean up any stored connection attempt and active flow tracking
+      activeOAuthFlows.delete(service);
       localStorage.removeItem('oauth_attempt');
       
       if (error instanceof Error) {
@@ -240,7 +258,8 @@ export const connectionService = {
         }
       }
       
-      // Clean up any stored connection attempts
+      // Clean up any stored connection attempts and active flow tracking
+      activeOAuthFlows.delete(service);
       const storedAttempt = localStorage.getItem('oauth_attempt');
       if (storedAttempt) {
         try {
@@ -273,15 +292,20 @@ export const connectionService = {
         const attempt = JSON.parse(storedAttempt);
         const timeDiff = Date.now() - attempt.timestamp;
         
-        // Clean up attempts older than 10 minutes
+        // Clean up attempts older than 10 minutes and clear active flows
         if (timeDiff > 10 * 60 * 1000) {
           localStorage.removeItem('oauth_attempt');
+          activeOAuthFlows.delete(attempt.service);
           console.log('Cleaned up old OAuth attempt');
         }
       }
+      
+      // Clear any stale active flows on app start
+      activeOAuthFlows.clear();
     } catch (e) {
       // Clean up invalid stored attempts
       localStorage.removeItem('oauth_attempt');
+      activeOAuthFlows.clear();
     }
   }
 };

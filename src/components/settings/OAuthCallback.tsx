@@ -1,5 +1,5 @@
 
-import { useEffect, useState } from 'react';
+import { useEffect, useState, useRef } from 'react';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
@@ -13,6 +13,7 @@ const OAuthCallback = () => {
   const [status, setStatus] = useState<'processing' | 'success' | 'error'>('processing');
   const [errorMessage, setErrorMessage] = useState<string>('');
   const [retryAttempts, setRetryAttempts] = useState(0);
+  const processingRef = useRef(false);
   
   const service = searchParams.get('service');
   const success = searchParams.get('success');
@@ -27,6 +28,7 @@ const OAuthCallback = () => {
       setRetryAttempts(prev => prev + 1);
       setStatus('processing');
       setErrorMessage('');
+      processingRef.current = false;
       // Trigger the OAuth completion again
       completeOAuth();
     } else {
@@ -36,6 +38,13 @@ const OAuthCallback = () => {
   };
   
   const completeOAuth = async () => {
+    // Prevent duplicate processing
+    if (processingRef.current) {
+      console.log('OAuth callback already processing, skipping duplicate');
+      return;
+    }
+    processingRef.current = true;
+    
     console.log('OAuth callback started:', { 
       service, 
       success, 
@@ -69,6 +78,8 @@ const OAuthCallback = () => {
         toast.error('Service configuration error. Please contact support.');
       } else if (decodedError.includes('token_exchange')) {
         toast.error('Authentication failed. Please try connecting again.');
+      } else if (decodedError.includes('authorization header')) {
+        toast.error('Authorization error. Please try connecting again.');
       } else {
         toast.error(`LinkedIn authorization failed: ${decodedError}`);
       }
@@ -165,6 +176,7 @@ const OAuthCallback = () => {
         
         if (retryAttempts < maxRetryAttempts) {
           console.log(`Retrying database insert (attempt ${retryAttempts + 1})`);
+          processingRef.current = false;
           setTimeout(() => handleRetry(), 2000);
           return;
         }
@@ -203,6 +215,7 @@ const OAuthCallback = () => {
       
       if (retryAttempts < maxRetryAttempts) {
         console.log(`Retrying OAuth completion (attempt ${retryAttempts + 1})`);
+        processingRef.current = false;
         setTimeout(() => handleRetry(), 2000);
         return;
       }
@@ -217,8 +230,11 @@ const OAuthCallback = () => {
   };
   
   useEffect(() => {
-    completeOAuth();
-  }, [success, error, service, state, connectionDataParam]);
+    // Only process once when component mounts
+    if (!processingRef.current) {
+      completeOAuth();
+    }
+  }, []); // Remove dependencies to prevent re-running
   
   return (
     <div className="flex items-center justify-center h-[80vh]">
