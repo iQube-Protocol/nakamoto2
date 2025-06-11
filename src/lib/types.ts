@@ -14,8 +14,6 @@ export interface MetaQube {
   "Verifiability-Score": number;
   "Accuracy-Score": number;
   "Risk-Score": number;
-  "Trust-Score": number; // Calculated as (Accuracy-Score + Verifiability-Score) / 2
-  "Reliability-Index": number; // Calculated as (Sensitivity-Score + (100 - Risk-Score)) / 2
 }
 
 export interface BlakQube {
