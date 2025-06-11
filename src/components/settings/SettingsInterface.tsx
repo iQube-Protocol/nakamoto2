@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
@@ -283,5 +284,3 @@ const SettingsInterface = ({
 };
 
 export default SettingsInterface;
-
-}
