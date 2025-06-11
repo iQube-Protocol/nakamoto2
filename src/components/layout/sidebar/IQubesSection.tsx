@@ -71,6 +71,16 @@ const IQubesSection: React.FC<IQubesSectionProps> = ({
         </div>
       );
     }
+    if (qubeName === "Venice") {
+      return (
+        <div className="space-y-1">
+          <div className="font-semibold">Venice Agent</div>
+          <div className="text-xs">
+            AI service that protects privacy and prevents censorship.
+          </div>
+        </div>
+      );
+    }
     if (qubeName === "Metis") {
       return (
         <div className="space-y-1">

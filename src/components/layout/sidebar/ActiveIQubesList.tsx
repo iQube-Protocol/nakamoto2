@@ -37,6 +37,16 @@ const ActiveIQubesList: React.FC<ActiveIQubesListProps> = ({
         </div>
       );
     }
+    if (qubeName === "Venice") {
+      return (
+        <div className="space-y-1">
+          <div className="font-semibold">Venice Agent</div>
+          <div className="text-xs">
+            AI service that protects privacy and prevents censorship.
+          </div>
+        </div>
+      );
+    }
     if (qubeName === "Metis") {
       return (
         <div className="space-y-1">
@@ -85,6 +95,33 @@ const ActiveIQubesList: React.FC<ActiveIQubesListProps> = ({
               </TooltipTrigger>
               <TooltipContent side={collapsed ? "right" : "top"} align="center">
                 {getTooltipContent("Qrypto Persona")}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
+
+        {activeQubes["Venice"] && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div
+                  className={cn(
+                    "flex items-center rounded-md p-2 text-sm hover:bg-accent/30 cursor-pointer",
+                    collapsed ? "justify-center" : ""
+                  )}
+                  onClick={() => {
+                    onIQubeClick("Venice");
+                    if (isMobile && toggleMobileSidebar) {
+                      toggleMobileSidebar();
+                    }
+                  }}
+                >
+                  <Bot className={cn("h-5 w-5 text-green-500", collapsed ? "" : "mr-2")} />
+                  {!collapsed && <span>Venice</span>}
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side={collapsed ? "right" : "top"} align="center">
+                {getTooltipContent("Venice")}
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
