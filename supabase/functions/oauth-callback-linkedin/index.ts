@@ -27,9 +27,8 @@ serve(async (req) => {
         hasClientSecret: !!LINKEDIN_CLIENT_SECRET
       });
       
-      const url = new URL(req.url);
-      const supabaseUrl = SUPABASE_URL || url.origin;
-      const clientOrigin = supabaseUrl.replace('.supabase.co', '.lovable.app');
+      // Use the preview domain for redirects
+      const clientOrigin = 'https://preview--nakamoto2.lovable.app';
       
       return new Response(
         `<html><body><h1>Configuration Error</h1><p>LinkedIn service not properly configured. Please contact support.</p><script>setTimeout(() => window.location.href = '${clientOrigin}/settings?tab=connections&error=config', 3000)</script></body></html>`,
@@ -54,9 +53,8 @@ serve(async (req) => {
       state 
     });
     
-    // Generate client origin for redirects
-    const supabaseUrl = SUPABASE_URL || url.origin;
-    const clientOrigin = supabaseUrl.replace('.supabase.co', '.lovable.app');
+    // Use the preview domain for redirects
+    const clientOrigin = 'https://preview--nakamoto2.lovable.app';
     console.log("Client origin for redirects:", clientOrigin);
     
     // Handle LinkedIn OAuth errors
@@ -77,6 +75,7 @@ serve(async (req) => {
     }
 
     // Construct the correct redirect URI that matches what was registered
+    const supabaseUrl = SUPABASE_URL || url.origin;
     const redirectUri = `${supabaseUrl}/functions/v1/oauth-callback-linkedin`;
     console.log("Using redirect URI for token exchange:", redirectUri);
 
@@ -221,9 +220,8 @@ serve(async (req) => {
     console.error("=== Unexpected error ===", error);
     console.error("Error stack:", error.stack);
     
-    const url = new URL(req.url);
-    const supabaseUrl = SUPABASE_URL || url.origin;
-    const clientOrigin = supabaseUrl.replace('.supabase.co', '.lovable.app');
+    // Use the preview domain for redirects
+    const clientOrigin = 'https://preview--nakamoto2.lovable.app';
     
     return new Response(
       `<html><body><h1>Server Error</h1><p>An unexpected error occurred. Please try again.</p><script>setTimeout(() => window.location.href = '${clientOrigin}/oauth-callback?service=linkedin&error=server_error', 3000)</script></body></html>`,
