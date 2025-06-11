@@ -4,6 +4,7 @@ import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useMetisAgent } from '@/hooks/use-metis-agent';
 import { useQryptoPersona } from '@/hooks/use-qrypto-persona';
+import { useVeniceAgent } from '@/hooks/use-venice-agent';
 import { useSidebarState } from '@/hooks/use-sidebar-state';
 import { useAuth } from '@/hooks/use-auth';
 
@@ -12,6 +13,7 @@ export const useSidebarLogic = () => {
   const navigate = useNavigate();
   const { metisActivated, metisVisible, activateMetis, hideMetis } = useMetisAgent();
   const { qryptoPersonaActivated, activateQryptoPersona, deactivateQryptoPersona } = useQryptoPersona();
+  const { veniceActivated, veniceVisible, activateVenice, deactivateVenice, hideVenice } = useVeniceAgent();
   const { 
     collapsed, 
     iQubesOpen, 
@@ -28,7 +30,7 @@ export const useSidebarLogic = () => {
   const [activeIQubes, setActiveIQubes] = useState<{[key: string]: boolean}>(() => {
     return {
       "Qrypto Persona": qryptoPersonaActivated,
-      "Venice": false,
+      "Venice": veniceActivated,
       "Metis": metisActivated,
     };
   });
@@ -38,9 +40,10 @@ export const useSidebarLogic = () => {
     setActiveIQubes(prev => ({
       ...prev, 
       "Qrypto Persona": qryptoPersonaActivated,
+      "Venice": veniceActivated,
       "Metis": metisActivated
     }));
-  }, [qryptoPersonaActivated, metisActivated]);
+  }, [qryptoPersonaActivated, veniceActivated, metisActivated]);
 
   // Listen for iQube toggle events from Settings page
   useEffect(() => {
@@ -62,8 +65,13 @@ export const useSidebarLogic = () => {
           } else {
             deactivateQryptoPersona();
           }
+        } else if (iqubeId === "Venice") {
+          if (active) {
+            activateVenice();
+          } else {
+            deactivateVenice();
+          }
         }
-        // Venice doesn't need special handling yet as it doesn't have activation hooks
       }
     };
     
@@ -72,7 +80,7 @@ export const useSidebarLogic = () => {
     return () => {
       window.removeEventListener('iqubeToggle', handleIQubeToggle as EventListener);
     };
-  }, [metisActivated, metisVisible, activateMetis, hideMetis, activateQryptoPersona, deactivateQryptoPersona]);
+  }, [metisActivated, metisVisible, activateMetis, hideMetis, activateQryptoPersona, deactivateQryptoPersona, veniceActivated, activateVenice, deactivateVenice]);
 
   const handleIQubeClick = (iqubeId: string) => {
     console.log("iQube clicked:", iqubeId);
@@ -128,8 +136,13 @@ export const useSidebarLogic = () => {
       } else {
         deactivateQryptoPersona();
       }
+    } else if (qubeName === "Venice") {
+      if (newActiveState) {
+        activateVenice();
+      } else {
+        deactivateVenice();
+      }
     }
-    // Venice doesn't need special handling yet
     
     // Dispatch event to update Settings page
     const event = new CustomEvent('iqubeToggle', { 

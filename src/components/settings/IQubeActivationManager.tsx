@@ -3,6 +3,7 @@ import React, { useEffect } from 'react';
 import { toast } from 'sonner';
 import { useMetisAgent } from '@/hooks/use-metis-agent';
 import { useQryptoPersona } from '@/hooks/use-qrypto-persona';
+import { useVeniceAgent } from '@/hooks/use-venice-agent';
 
 interface IQubeActivationManagerProps {
   activeQubes: { [key: string]: boolean };
@@ -15,15 +16,17 @@ const IQubeActivationManager = ({
 }: IQubeActivationManagerProps) => {
   const { metisActivated, metisVisible, activateMetis, hideMetis } = useMetisAgent();
   const { qryptoPersonaActivated, activateQryptoPersona, deactivateQryptoPersona } = useQryptoPersona();
+  const { veniceActivated, veniceVisible, activateVenice, deactivateVenice, hideVenice } = useVeniceAgent();
 
   // Update active states when hook values change
   useEffect(() => {
     setActiveQubes(prev => ({
       ...prev, 
       "Metis": metisActivated,
-      "Qrypto Persona": qryptoPersonaActivated
+      "Qrypto Persona": qryptoPersonaActivated,
+      "Venice": veniceActivated
     }));
-  }, [metisActivated, qryptoPersonaActivated, setActiveQubes]);
+  }, [metisActivated, qryptoPersonaActivated, veniceActivated, setActiveQubes]);
 
   // Listen for iQube activation/deactivation events from sidebar
   useEffect(() => {
@@ -49,6 +52,14 @@ const IQubeActivationManager = ({
             deactivateQryptoPersona();
             toast.info(`Qrypto Persona deactivated`);
           }
+        } else if (iqubeId === "Venice") {
+          if (active && !veniceActivated) {
+            activateVenice();
+            toast.info(`Venice activated`);
+          } else if (!active && veniceActivated) {
+            deactivateVenice();
+            toast.info(`Venice deactivated`);
+          }
         } else {
           toast.info(`${iqubeId} ${active ? 'activated' : 'deactivated'}`);
         }
@@ -60,7 +71,7 @@ const IQubeActivationManager = ({
     return () => {
       window.removeEventListener('iqubeToggle', handleIQubeToggle as EventListener);
     };
-  }, [metisActivated, metisVisible, activateMetis, hideMetis, qryptoPersonaActivated, activateQryptoPersona, deactivateQryptoPersona, setActiveQubes]);
+  }, [metisActivated, metisVisible, activateMetis, hideMetis, qryptoPersonaActivated, activateQryptoPersona, deactivateQryptoPersona, veniceActivated, activateVenice, deactivateVenice, setActiveQubes]);
 
   return null; // This is a logic-only component, no UI
 };

@@ -8,15 +8,17 @@ import SettingsContainer from '@/components/settings/SettingsContainer';
 import { sonnerToast as toast } from '@/hooks/use-toast';
 import { useMetisAgent } from '@/hooks/use-metis-agent';
 import { useQryptoPersona } from '@/hooks/use-qrypto-persona';
+import { useVeniceAgent } from '@/hooks/use-venice-agent';
 
 const Settings = () => {
   const [selectedIQube, setSelectedIQube] = useState(monDaiQubeData);
   const { metisActivated } = useMetisAgent();
   const { qryptoPersonaActivated } = useQryptoPersona();
+  const { veniceActivated } = useVeniceAgent();
   
   const [activeQubes, setActiveQubes] = useState<{[key: string]: boolean}>({
     "Qrypto Persona": qryptoPersonaActivated,
-    "Venice": false,
+    "Venice": veniceActivated,
     "Metis": metisActivated,
     "GDrive": false
   });

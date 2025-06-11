@@ -26,6 +26,8 @@ const SettingsContainer = ({ activeQubes, toggleQubeActive, selectedIQube }: Set
       selectIQube("Qrypto Persona");
     } else if (selectedIQube["iQube-Identifier"] === "Metis iQube") {
       selectIQube("Metis");
+    } else if (selectedIQube["iQube-Identifier"] === "Venice iQube") {
+      selectIQube("Venice");
     } else if (selectedIQube["iQube-Identifier"] === "GDrive iQube") {
       selectIQube("GDrive");
     }
