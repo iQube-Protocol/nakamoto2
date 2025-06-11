@@ -1,139 +1,87 @@
 
 import React from 'react';
-import { User, Database, Brain, Linkedin, Wallet } from 'lucide-react';
-import { Twitter, MessageCircle, Globe, Users } from 'lucide-react';
-import { DropdownMenu, DropdownMenuContent, DropdownMenuItem, DropdownMenuTrigger } from '@/components/ui/dropdown-menu';
-import { Button } from '@/components/ui/button';
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 
 interface DataSourceSelectorProps {
   sourceKey: string;
   currentSource: string;
   iQubeType: string;
-  onSourceChange: (key: string, source: string) => void;
+  onSourceChange: (key: string, value: string) => void;
 }
 
-const DataSourceSelector = ({ 
-  sourceKey, 
-  currentSource, 
-  iQubeType, 
-  onSourceChange 
-}: DataSourceSelectorProps) => {
-  // Get the appropriate icon based on the source and iQube type
-  const getSourceIcon = () => {
-    switch (iQubeType) {
-      case 'AgentQube':
-        switch (currentSource) {
-          case 'api':
-            return <Database className="h-3 w-3 text-blue-500" />;
-          case 'system':
-            return <Brain className="h-3 w-3 text-purple-500" />;
-          case 'manual':
-          default:
-            return <User className="h-3 w-3 text-gray-500" />;
-        }
-      case 'ToolQube':
-        switch (currentSource) {
-          case 'api':
-            return <Database className="h-3 w-3 text-green-500" />;
-          case 'system':
-            return <Brain className="h-3 w-3 text-orange-500" />;
-          case 'manual':
-          default:
-            return <User className="h-3 w-3 text-gray-500" />;
-        }
-      case 'DataQube':
-      default:
-        switch (currentSource) {
-          case 'linkedin':
-            return <Linkedin className="h-3 w-3 text-blue-500" />;
-          case 'wallet':
-            return <Wallet className="h-3 w-3 text-orange-500" />;
-          case 'twitter':
-            return <Twitter className="h-3 w-3 text-blue-400" />;
-          case 'discord':
-            return <Users className="h-3 w-3 text-purple-500" />;
-          case 'telegram':
-            return <MessageCircle className="h-3 w-3 text-blue-500" />;
-          case 'luma':
-            return <Globe className="h-3 w-3 text-green-500" />;
-          case 'manual':
-          default:
-            return <User className="h-3 w-3 text-gray-500" />;
-        }
-    }
+const DataSourceSelector = ({ sourceKey, currentSource, iQubeType, onSourceChange }: DataSourceSelectorProps) => {
+  const getAvailableSourcesForField = (key: string, type: string) => {
+    // Base sources available for all fields
+    const baseSources = [
+      { value: 'manual', label: 'Manual Entry' }
+    ];
+
+    // Define which fields can be populated from which services
+    const serviceSourceMap: { [key: string]: string[] } = {
+      'First-Name': ['linkedin'],
+      'Last-Name': ['linkedin'],
+      'Profession': ['linkedin'],
+      'Local-City': ['linkedin'],
+      'Email': ['linkedin'],
+      'LinkedIn-ID': ['linkedin'],
+      'LinkedIn-Profile-URL': ['linkedin'],
+      'Twitter-Handle': ['twitter'],
+      'Telegram-Handle': ['telegram'],
+      'Discord-Handle': ['discord'],
+      'Instagram-Handle': ['manual'], // Only manual for now
+      'GitHub-Handle': ['manual'], // Only manual for now
+      'EVM-Public-Key': ['wallet'],
+      'BTC-Public-Key': ['wallet'],
+      'Chain-IDs': ['wallet'],
+      'Wallets-of-Interest': ['wallet'],
+      'Web3-Interests': ['linkedin', 'twitter'],
+      'Tokens-of-Interest': ['manual'], // Only manual for now
+    };
+
+    // Get service sources for this field
+    const serviceSources = serviceSourceMap[key] || [];
+    
+    // Add service sources to base sources
+    const allSources = [...baseSources];
+    
+    serviceSources.forEach(service => {
+      switch (service) {
+        case 'linkedin':
+          allSources.push({ value: 'linkedin', label: 'LinkedIn' });
+          break;
+        case 'twitter':
+          allSources.push({ value: 'twitter', label: 'Twitter' });
+          break;
+        case 'telegram':
+          allSources.push({ value: 'telegram', label: 'Telegram' });
+          break;
+        case 'discord':
+          allSources.push({ value: 'discord', label: 'Discord' });
+          break;
+        case 'wallet':
+          allSources.push({ value: 'wallet', label: 'Wallet' });
+          break;
+      }
+    });
+
+    return allSources;
   };
 
-  // Generate dropdown options based on iQube type and key
-  const getDropdownContent = () => {
-    switch (iQubeType) {
-      case 'AgentQube':
-      case 'ToolQube':
-        return (
-          <>
-            <DropdownMenuItem onClick={() => onSourceChange(sourceKey, 'manual')}>
-              <User className="h-3.5 w-3.5 mr-2" /> Manual Entry
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onSourceChange(sourceKey, 'api')}>
-              <Database className="h-3.5 w-3.5 mr-2" /> API Source
-            </DropdownMenuItem>
-            <DropdownMenuItem onClick={() => onSourceChange(sourceKey, 'system')}>
-              <Brain className="h-3.5 w-3.5 mr-2" /> System Generated
-            </DropdownMenuItem>
-          </>
-        );
-      case 'DataQube':
-      default:
-        return (
-          <>
-            <DropdownMenuItem onClick={() => onSourceChange(sourceKey, 'manual')}>
-              <User className="h-3.5 w-3.5 mr-2" /> Manual Entry
-            </DropdownMenuItem>
-            {(sourceKey.includes('LinkedIn') || ['Profession', 'Local-City', 'Email', 'LinkedIn-ID'].includes(sourceKey)) && (
-              <DropdownMenuItem onClick={() => onSourceChange(sourceKey, 'linkedin')}>
-                <Linkedin className="h-3.5 w-3.5 mr-2" /> LinkedIn
-              </DropdownMenuItem>
-            )}
-            {(sourceKey.includes('Twitter') || sourceKey === 'Twitter-ID') && (
-              <DropdownMenuItem onClick={() => onSourceChange(sourceKey, 'twitter')}>
-                <Twitter className="h-3.5 w-3.5 mr-2" /> Twitter
-              </DropdownMenuItem>
-            )}
-            {(sourceKey.includes('Discord') || sourceKey === 'Discord-ID') && (
-              <DropdownMenuItem onClick={() => onSourceChange(sourceKey, 'discord')}>
-                <Users className="h-3.5 w-3.5 mr-2" /> Discord
-              </DropdownMenuItem>
-            )}
-            {(sourceKey.includes('Telegram') || sourceKey === 'Telegram-ID') && (
-              <DropdownMenuItem onClick={() => onSourceChange(sourceKey, 'telegram')}>
-                <MessageCircle className="h-3.5 w-3.5 mr-2" /> Telegram
-              </DropdownMenuItem>
-            )}
-            {(sourceKey.includes('Luma') || sourceKey === 'Luma-ID') && (
-              <DropdownMenuItem onClick={() => onSourceChange(sourceKey, 'luma')}>
-                <Globe className="h-3.5 w-3.5 mr-2" /> Luma
-              </DropdownMenuItem>
-            )}
-            {(sourceKey.includes('Public-Key') || sourceKey.includes('Chain-IDs') || sourceKey.includes('Wallets-of-Interest')) && (
-              <DropdownMenuItem onClick={() => onSourceChange(sourceKey, 'wallet')}>
-                <Wallet className="h-3.5 w-3.5 mr-2" /> Wallet
-              </DropdownMenuItem>
-            )}
-          </>
-        );
-    }
-  };
+  const availableSources = getAvailableSourcesForField(sourceKey, iQubeType);
 
   return (
-    <DropdownMenu>
-      <DropdownMenuTrigger asChild>
-        <Button variant="ghost" size="sm" className="h-6 px-2">
-          {getSourceIcon()}
-        </Button>
-      </DropdownMenuTrigger>
-      <DropdownMenuContent align="end">
-        {getDropdownContent()}
-      </DropdownMenuContent>
-    </DropdownMenu>
+    <Select value={currentSource} onValueChange={(value) => onSourceChange(sourceKey, value)}>
+      <SelectTrigger className="h-6 w-20 text-xs">
+        <SelectValue />
+      </SelectTrigger>
+      <SelectContent>
+        {availableSources.map((source) => (
+          <SelectItem key={source.value} value={source.value} className="text-xs">
+            {source.label}
+          </SelectItem>
+        ))}
+      </SelectContent>
+    </Select>
   );
 };
 

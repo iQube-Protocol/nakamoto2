@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Key } from 'lucide-react';
 import { AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
@@ -82,22 +83,24 @@ const PrivateDataSection = ({
       case "DataQube":
       default:
         return {
+          "First-Name": "linkedin",
+          "Last-Name": "linkedin",
           "Profession": "linkedin",
-          "Web3-Interests": "manual",
           "Local-City": "linkedin",
           "Email": "linkedin",
-          "EVM-Public-Key": "wallet",
-          "BTC-Public-Key": "wallet",
-          "Tokens-of-Interest": "manual",
-          "Chain-IDs": "wallet",
-          "Wallets-of-Interest": "wallet",
           "LinkedIn-ID": "linkedin",
           "LinkedIn-Profile-URL": "linkedin",
           "Twitter-Handle": "manual",
           "Telegram-Handle": "manual",
           "Discord-Handle": "manual",
           "Instagram-Handle": "manual",
-          "GitHub-Handle": "manual"
+          "GitHub-Handle": "manual",
+          "Web3-Interests": "manual",
+          "EVM-Public-Key": "wallet",
+          "BTC-Public-Key": "wallet",
+          "Tokens-of-Interest": "manual",
+          "Chain-IDs": "wallet",
+          "Wallets-of-Interest": "wallet"
         };
     }
   }

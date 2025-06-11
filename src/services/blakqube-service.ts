@@ -72,8 +72,10 @@ export const blakQubeService = {
       
       console.log('User connections:', connections);
       
-      // Start with existing BlakQube or create new one
+      // Start with existing BlakQube or create new one with First-Name and Last-Name first
       const newBlakQube: Partial<BlakQube> = blakQube ? { ...blakQube } : {
+        "First-Name": "",
+        "Last-Name": "",
         "Profession": "",
         "Web3-Interests": [],
         "Local-City": "",
@@ -89,9 +91,7 @@ export const blakQubeService = {
         "Telegram-Handle": "",
         "Discord-Handle": "",
         "Instagram-Handle": "",
-        "GitHub-Handle": "",
-        "First-Name": "",
-        "Last-Name": ""
+        "GitHub-Handle": ""
       };
       
       // Update BlakQube based on connections
@@ -106,7 +106,7 @@ export const blakQubeService = {
             const profile = connection.connection_data.profile;
             const email = connection.connection_data.email;
             
-            // Set First Name and Last Name fields explicitly (new fields)
+            // CRITICAL FIX: Extract first name and last name properly
             if (profile.firstName) {
               newBlakQube["First-Name"] = profile.firstName;
               console.log('Set First-Name from LinkedIn:', profile.firstName);
@@ -117,19 +117,23 @@ export const blakQubeService = {
               console.log('Set Last-Name from LinkedIn:', profile.lastName);
             }
             
-            // Update LinkedIn-specific fields with proper profile data
+            // CRITICAL FIX: Extract LinkedIn ID properly (should be the actual LinkedIn user ID)
             if (profile.id) {
               newBlakQube["LinkedIn-ID"] = profile.id;
               console.log('Set LinkedIn ID:', profile.id);
             }
             
-            // Use the real profile URL (publicProfileUrl or constructed one)
+            // CRITICAL FIX: Extract the REAL LinkedIn profile URL
             if (profile.publicProfileUrl) {
               newBlakQube["LinkedIn-Profile-URL"] = profile.publicProfileUrl;
               console.log('Set LinkedIn Profile URL from publicProfileUrl:', profile.publicProfileUrl);
             } else if (profile.profileUrl) {
               newBlakQube["LinkedIn-Profile-URL"] = profile.profileUrl;
               console.log('Set LinkedIn Profile URL from profileUrl:', profile.profileUrl);
+            } else if (profile.vanityName) {
+              // Construct URL from vanity name
+              newBlakQube["LinkedIn-Profile-URL"] = `https://www.linkedin.com/in/${profile.vanityName}`;
+              console.log('Set LinkedIn Profile URL from vanityName:', profile.vanityName);
             }
             
             // Use email from LinkedIn if available and not already set
@@ -142,12 +146,6 @@ export const blakQubeService = {
             if (profile.headline && !newBlakQube["Profession"]) {
               newBlakQube["Profession"] = profile.headline;
               console.log('Set Profession from LinkedIn headline:', profile.headline);
-            } else if (!newBlakQube["Profession"] && (profile.firstName || profile.lastName)) {
-              const fullName = [profile.firstName, profile.lastName].filter(Boolean).join(' ');
-              if (fullName) {
-                newBlakQube["Profession"] = fullName;
-                console.log('Set Profession from LinkedIn name:', fullName);
-              }
             }
             
             // Extract location from detailed profile data

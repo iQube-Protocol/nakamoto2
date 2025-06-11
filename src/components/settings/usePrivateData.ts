@@ -26,17 +26,13 @@ export const usePrivateData = (selectedIQube: MetaQube) => {
       
       if (blakQubeData) {
         console.log('BlakQube data loaded:', blakQubeData);
-        // Convert BlakQube data to privateData format - include ALL fields
+        // Convert BlakQube data to privateData format - First-Name and Last-Name FIRST, then the rest
         const formattedData: PrivateData = {
+          "First-Name": blakQubeData["First-Name"] || "",
+          "Last-Name": blakQubeData["Last-Name"] || "",
           "Profession": blakQubeData["Profession"] || "",
-          "Web3-Interests": blakQubeData["Web3-Interests"] || [],
           "Local-City": blakQubeData["Local-City"] || "",
           "Email": blakQubeData["Email"] || "",
-          "EVM-Public-Key": blakQubeData["EVM-Public-Key"] || "",
-          "BTC-Public-Key": blakQubeData["BTC-Public-Key"] || "",
-          "Tokens-of-Interest": blakQubeData["Tokens-of-Interest"] || [],
-          "Chain-IDs": blakQubeData["Chain-IDs"] || [],
-          "Wallets-of-Interest": blakQubeData["Wallets-of-Interest"] || [],
           "LinkedIn-ID": blakQubeData["LinkedIn-ID"] || "",
           "LinkedIn-Profile-URL": blakQubeData["LinkedIn-Profile-URL"] || "",
           "Twitter-Handle": blakQubeData["Twitter-Handle"] || "",
@@ -44,23 +40,23 @@ export const usePrivateData = (selectedIQube: MetaQube) => {
           "Discord-Handle": blakQubeData["Discord-Handle"] || "",
           "Instagram-Handle": blakQubeData["Instagram-Handle"] || "",
           "GitHub-Handle": blakQubeData["GitHub-Handle"] || "",
-          "First-Name": blakQubeData["First-Name"] || "",
-          "Last-Name": blakQubeData["Last-Name"] || ""
+          "Web3-Interests": blakQubeData["Web3-Interests"] || [],
+          "EVM-Public-Key": blakQubeData["EVM-Public-Key"] || "",
+          "BTC-Public-Key": blakQubeData["BTC-Public-Key"] || "",
+          "Tokens-of-Interest": blakQubeData["Tokens-of-Interest"] || [],
+          "Chain-IDs": blakQubeData["Chain-IDs"] || [],
+          "Wallets-of-Interest": blakQubeData["Wallets-of-Interest"] || []
         };
         setPrivateData(formattedData);
       } else {
         console.log('No BlakQube data found, using defaults');
-        // Set default empty data if no BlakQube exists - include ALL fields
+        // Set default empty data if no BlakQube exists - First-Name and Last-Name FIRST
         setPrivateData({
+          "First-Name": "",
+          "Last-Name": "",
           "Profession": "",
-          "Web3-Interests": [],
           "Local-City": "",
           "Email": user.email || "",
-          "EVM-Public-Key": "",
-          "BTC-Public-Key": "",
-          "Tokens-of-Interest": [],
-          "Chain-IDs": [],
-          "Wallets-of-Interest": [],
           "LinkedIn-ID": "",
           "LinkedIn-Profile-URL": "",
           "Twitter-Handle": "",
@@ -68,23 +64,23 @@ export const usePrivateData = (selectedIQube: MetaQube) => {
           "Discord-Handle": "",
           "Instagram-Handle": "",
           "GitHub-Handle": "",
-          "First-Name": "",
-          "Last-Name": ""
+          "Web3-Interests": [],
+          "EVM-Public-Key": "",
+          "BTC-Public-Key": "",
+          "Tokens-of-Interest": [],
+          "Chain-IDs": [],
+          "Wallets-of-Interest": []
         });
       }
     } catch (error) {
       console.error('Error loading BlakQube data:', error);
-      // Fallback to empty data with ALL fields
+      // Fallback to empty data with First-Name and Last-Name FIRST
       setPrivateData({
+        "First-Name": "",
+        "Last-Name": "",
         "Profession": "",
-        "Web3-Interests": [],
         "Local-City": "",
         "Email": user?.email || "",
-        "EVM-Public-Key": "",
-        "BTC-Public-Key": "",
-        "Tokens-of-Interest": [],
-        "Chain-IDs": [],
-        "Wallets-of-Interest": [],
         "LinkedIn-ID": "",
         "LinkedIn-Profile-URL": "",
         "Twitter-Handle": "",
@@ -92,8 +88,12 @@ export const usePrivateData = (selectedIQube: MetaQube) => {
         "Discord-Handle": "",
         "Instagram-Handle": "",
         "GitHub-Handle": "",
-        "First-Name": "",
-        "Last-Name": ""
+        "Web3-Interests": [],
+        "EVM-Public-Key": "",
+        "BTC-Public-Key": "",
+        "Tokens-of-Interest": [],
+        "Chain-IDs": [],
+        "Wallets-of-Interest": []
       });
     } finally {
       setLoading(false);
