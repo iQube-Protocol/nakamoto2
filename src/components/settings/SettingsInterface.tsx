@@ -8,6 +8,7 @@ import IQubeManagementTab from './IQubeManagementTab';
 import PreferencesTab from './PreferencesTab';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useServiceConnections } from '@/hooks/useServiceConnections';
+import { blakQubeService } from '@/services/blakqube-service';
 
 interface PrivateData {
   [key: string]: string | string[];
@@ -51,6 +52,7 @@ const SettingsInterface = ({
   
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<string>("connections");
+  const [isConnecting, setIsConnecting] = useState<{[key: string]: boolean}>({});
 
   // Update settings when connections change
   useEffect(() => {
@@ -69,103 +71,127 @@ const SettingsInterface = ({
   }, [connections]);
 
   const handleConnectService = async (service: keyof UserSettings['connected']) => {
-    // For wallet connections, check if already connected and decide whether to connect or disconnect
-    if (service === 'wallet') {
-      console.log('Wallet connection state:', connections.wallet);
-      
-      if (connections.wallet) {
-        // Wallet is connected, so disconnect it
-        console.log('Disconnecting wallet...');
-        const success = await disconnectService('wallet');
-        if (success) {
-          toast({
-            title: "Wallet disconnected",
-            description: "Your wallet has been successfully disconnected",
-          });
-        } else {
-          toast({
-            title: "Disconnection failed",
-            description: "Failed to disconnect wallet. Please try again.",
-          });
-        }
-      } else {
-        // Wallet is not connected, so connect it
-        console.log('Connecting wallet...');
-        const success = await connectService('wallet');
-        if (success) {
-          toast({
-            title: "Wallet connected",
-            description: "Your wallet has been successfully connected and verified",
-          });
-        } else {
-          toast({
-            title: "Connection failed",
-            description: "Failed to connect wallet. Please try again.",
-          });
-        }
-      }
+    // Prevent multiple simultaneous connections for the same service
+    if (isConnecting[service]) {
+      console.log(`${service} connection already in progress`);
       return;
     }
 
-    // For LinkedIn, handle the OAuth flow and update BlakQube
-    if (service === 'linkedin') {
-      console.log('LinkedIn connection state:', connections.linkedin);
-      
-      if (connections.linkedin) {
-        // LinkedIn is connected, so disconnect it
-        console.log('Disconnecting LinkedIn...');
-        const success = await disconnectService('linkedin');
-        if (success) {
-          toast({
-            title: "LinkedIn disconnected",
-            description: "Your LinkedIn account has been successfully disconnected",
-          });
+    setIsConnecting(prev => ({ ...prev, [service]: true }));
+
+    try {
+      // For wallet connections, check if already connected and decide whether to connect or disconnect
+      if (service === 'wallet') {
+        console.log('Wallet connection state:', connections.wallet);
+        
+        if (connections.wallet) {
+          // Wallet is connected, so disconnect it
+          console.log('Disconnecting wallet...');
+          const success = await disconnectService('wallet');
+          if (success) {
+            toast({
+              title: "Wallet disconnected",
+              description: "Your wallet has been successfully disconnected",
+            });
+            
+            // Trigger private data update event
+            const event = new CustomEvent('privateDataUpdated');
+            window.dispatchEvent(event);
+          } else {
+            toast({
+              title: "Disconnection failed",
+              description: "Failed to disconnect wallet. Please try again.",
+            });
+          }
         } else {
-          toast({
-            title: "Disconnection failed",
-            description: "Failed to disconnect LinkedIn. Please try again.",
-          });
+          // Wallet is not connected, so connect it
+          console.log('Connecting wallet...');
+          const success = await connectService('wallet');
+          if (success) {
+            console.log('Wallet connected successfully, updating BlakQube...');
+            
+            // Update BlakQube data after wallet connection
+            const updateSuccess = await blakQubeService.updateBlakQubeFromConnections();
+            
+            toast({
+              title: "Wallet connected",
+              description: updateSuccess 
+                ? "Your wallet has been connected and address imported to your BlakQube"
+                : "Your wallet has been connected",
+            });
+            
+            // Trigger private data update event
+            const event = new CustomEvent('privateDataUpdated');
+            window.dispatchEvent(event);
+          } else {
+            toast({
+              title: "Connection failed",
+              description: "Failed to connect wallet. Please try again.",
+            });
+          }
         }
-      } else {
-        // LinkedIn is not connected, so connect it
-        console.log('Connecting LinkedIn...');
-        const success = await connectService('linkedin');
-        if (success) {
-          // Import and trigger BlakQube update
-          const { blakQubeService } = await import('@/services/blakqube-service');
-          const updateSuccess = await blakQubeService.updateBlakQubeFromConnections();
-          
-          toast({
-            title: "LinkedIn connected",
-            description: updateSuccess 
-              ? "Your LinkedIn account has been connected and profile data imported to your BlakQube"
-              : "Your LinkedIn account has been connected",
-          });
-        } else {
-          toast({
-            title: "Connection failed",
-            description: "Failed to connect LinkedIn. Please try again.",
-          });
-        }
+        return;
       }
-      return;
+
+      // For LinkedIn, handle the OAuth flow and update BlakQube
+      if (service === 'linkedin') {
+        console.log('LinkedIn connection state:', connections.linkedin);
+        
+        if (connections.linkedin) {
+          // LinkedIn is connected, so disconnect it
+          console.log('Disconnecting LinkedIn...');
+          const success = await disconnectService('linkedin');
+          if (success) {
+            toast({
+              title: "LinkedIn disconnected",
+              description: "Your LinkedIn account has been successfully disconnected",
+            });
+            
+            // Trigger private data update event
+            const event = new CustomEvent('privateDataUpdated');
+            window.dispatchEvent(event);
+          } else {
+            toast({
+              title: "Disconnection failed",
+              description: "Failed to disconnect LinkedIn. Please try again.",
+            });
+          }
+        } else {
+          // LinkedIn is not connected, so connect it
+          console.log('Connecting LinkedIn...');
+          const success = await connectService('linkedin');
+          if (success) {
+            console.log('LinkedIn OAuth flow started...');
+            // Note: The actual BlakQube update will happen in the OAuth callback
+            // We don't show a toast here because the user is being redirected
+          } else {
+            toast({
+              title: "Connection failed",
+              description: "Failed to connect LinkedIn. Please try again.",
+            });
+          }
+        }
+        return;
+      }
+
+      // For other services, toggle the local state and show toast
+      setSettings(prev => ({
+        ...prev,
+        connected: {
+          ...prev.connected,
+          [service]: !prev.connected[service]
+        }
+      }));
+
+      toast({
+        title: settings.connected[service] ? `${service} disconnected` : `${service} connected`,
+        description: settings.connected[service] 
+          ? `Your ${service} account has been disconnected` 
+          : `Your ${service} account has been successfully connected`,
+      });
+    } finally {
+      setIsConnecting(prev => ({ ...prev, [service]: false }));
     }
-
-    // For other services, toggle the local state and show toast
-    setSettings(prev => ({
-      ...prev,
-      connected: {
-        ...prev.connected,
-        [service]: !prev.connected[service]
-      }
-    }));
-
-    toast({
-      title: settings.connected[service] ? `${service} disconnected` : `${service} connected`,
-      description: settings.connected[service] 
-        ? `Your ${service} account has been disconnected` 
-        : `Your ${service} account has been successfully connected`,
-    });
   };
 
   const handleSaveSettings = () => {
@@ -257,3 +283,5 @@ const SettingsInterface = ({
 };
 
 export default SettingsInterface;
+
+}

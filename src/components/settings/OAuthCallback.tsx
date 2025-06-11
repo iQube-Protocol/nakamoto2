@@ -1,338 +1,170 @@
 
-import { useEffect, useState, useRef } from 'react';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import React, { useEffect, useState } from 'react';
+import { useSearchParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
-import { Loader2, Check, X, AlertCircle } from 'lucide-react';
-import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { blakQubeService } from '@/services/blakqube-service';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
+import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
 
 const OAuthCallback = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
+  const [processing, setProcessing] = useState(true);
   const [status, setStatus] = useState<'processing' | 'success' | 'error'>('processing');
-  const [errorMessage, setErrorMessage] = useState<string>('');
-  const [retryAttempts, setRetryAttempts] = useState(0);
-  const processingRef = useRef(false);
+  const [message, setMessage] = useState('Processing your connection...');
   
-  const service = searchParams.get('service');
-  const success = searchParams.get('success');
-  const error = searchParams.get('error');
-  const state = searchParams.get('state');
-  const connectionDataParam = searchParams.get('connection_data');
-  
-  const maxRetryAttempts = 2;
-  
-  const handleRetry = () => {
-    if (retryAttempts < maxRetryAttempts) {
-      setRetryAttempts(prev => prev + 1);
-      setStatus('processing');
-      setErrorMessage('');
-      processingRef.current = false;
-      completeOAuth();
-    } else {
-      toast.error('Maximum retry attempts reached. Please try connecting again.');
-      navigate('/settings?tab=connections');
-    }
-  };
-  
-  const completeOAuth = async () => {
-    // Prevent duplicate processing
-    if (processingRef.current) {
-      console.log('OAuth callback already processing, skipping duplicate');
-      return;
-    }
-    processingRef.current = true;
-    
-    console.log('OAuth callback started:', { 
-      service, 
-      success, 
-      error, 
-      hasConnectionData: !!connectionDataParam,
-      retryAttempt: retryAttempts 
-    });
-    
-    // Clean up any stored OAuth attempts
-    try {
-      const storedAttempt = localStorage.getItem('oauth_attempt');
-      if (storedAttempt) {
-        const attempt = JSON.parse(storedAttempt);
-        console.log('Found stored OAuth attempt:', attempt);
-        localStorage.removeItem('oauth_attempt');
-      }
-    } catch (e) {
-      console.warn('Failed to parse stored OAuth attempt:', e);
-      localStorage.removeItem('oauth_attempt');
-    }
-    
-    // Handle errors passed from the edge function
-    if (error) {
-      console.error('OAuth error from edge function:', error);
-      setStatus('error');
-      const decodedError = decodeURIComponent(error);
-      setErrorMessage(decodedError);
-      
-      if (decodedError.includes('config')) {
-        toast.error('Service configuration error. Please contact support.');
-      } else if (decodedError.includes('token_exchange')) {
-        toast.error('Authentication failed. Please try connecting again.');
-      } else if (decodedError.includes('authorization header')) {
-        toast.error('Authorization error. Please try connecting again.');
-      } else {
-        toast.error(`LinkedIn authorization failed: ${decodedError}`);
-      }
-      
-      setTimeout(() => navigate('/settings?tab=connections'), 5000);
-      return;
-    }
-    
-    // Validate required parameters
-    if (!service) {
-      console.error('Missing service parameter');
-      setStatus('error');
-      setErrorMessage('Invalid OAuth callback - missing service parameter');
-      toast.error('OAuth callback error: Missing service information');
-      setTimeout(() => navigate('/settings?tab=connections'), 3000);
-      return;
-    }
-    
-    if (service !== 'linkedin') {
-      console.error('Unsupported service:', service);
-      setStatus('error');
-      setErrorMessage(`Unsupported service: ${service}`);
-      toast.error(`OAuth callback error: ${service} is not yet supported`);
-      setTimeout(() => navigate('/settings?tab=connections'), 3000);
-      return;
-    }
-
-    if (!success || !connectionDataParam) {
-      console.error('Missing success indicator or connection data');
-      setStatus('error');
-      setErrorMessage('OAuth callback incomplete - missing data');
-      toast.error('OAuth callback error: Incomplete authorization data');
-      setTimeout(() => navigate('/settings?tab=connections'), 3000);
-      return;
-    }
-    
-    try {
-      console.log('Getting current session...');
-      
-      // Wait for session to be properly established
-      let session = null;
-      let attempts = 0;
-      const maxSessionAttempts = 5;
-      
-      while (!session && attempts < maxSessionAttempts) {
-        const { data: { session: currentSession }, error: sessionError } = await supabase.auth.getSession();
-        
-        if (sessionError) {
-          console.error('Session error:', sessionError);
-          attempts++;
-          if (attempts < maxSessionAttempts) {
-            await new Promise(resolve => setTimeout(resolve, 1000));
-            continue;
-          }
-          break;
-        }
-        
-        if (currentSession?.user) {
-          session = currentSession;
-          break;
-        }
-        
-        attempts++;
-        if (attempts < maxSessionAttempts) {
-          console.log(`Session not ready, waiting... (attempt ${attempts})`);
-          await new Promise(resolve => setTimeout(resolve, 1000));
-        }
-      }
-      
-      if (!session?.user) {
-        console.error('No valid session found after attempts');
-        setStatus('error');
-        setErrorMessage('Authentication session error - please sign in again');
-        toast.error('Please sign in and try connecting again');
-        setTimeout(() => navigate('/signin'), 3000);
-        return;
-      }
-      
-      console.log('Session validated, saving connection data...');
-      
-      // Parse the connection data with error handling
-      let connectionData;
+  useEffect(() => {
+    const handleOAuthCallback = async () => {
       try {
-        connectionData = JSON.parse(decodeURIComponent(connectionDataParam));
-      } catch (parseError) {
-        console.error('Failed to parse connection data:', parseError);
-        setStatus('error');
-        setErrorMessage('Invalid connection data received from LinkedIn');
-        toast.error('Failed to process LinkedIn connection data');
-        setTimeout(() => navigate('/settings?tab=connections'), 3000);
-        return;
-      }
-      
-      // Validate connection data structure
-      if (!connectionData || typeof connectionData !== 'object') {
-        console.error('Invalid connection data structure:', connectionData);
-        setStatus('error');
-        setErrorMessage('Invalid connection data structure');
-        toast.error('Received invalid data from LinkedIn');
-        setTimeout(() => navigate('/settings?tab=connections'), 3000);
-        return;
-      }
-      
-      console.log('Connection data parsed:', {
-        connected: connectionData.connected,
-        hasProfile: !!connectionData.profile,
-        hasEmail: !!connectionData.email,
-        profileId: connectionData.profile?.id
-      });
-
-      // Save connection to database with retry logic
-      const { error: insertError } = await supabase
-        .from("user_connections")
-        .upsert({
-          user_id: session.user.id,
-          service: "linkedin",
-          connected_at: new Date().toISOString(),
-          connection_data: connectionData,
-        });
-
-      if (insertError) {
-        console.error("Database insert error:", insertError);
+        const service = searchParams.get('service');
+        const success = searchParams.get('success');
+        const error = searchParams.get('error');
+        const connectionDataParam = searchParams.get('connection_data');
         
-        if (retryAttempts < maxRetryAttempts) {
-          console.log(`Retrying database insert (attempt ${retryAttempts + 1})`);
-          processingRef.current = false;
-          setTimeout(() => handleRetry(), 2000);
+        console.log('OAuth callback received:', { service, success, error, hasConnectionData: !!connectionDataParam });
+        
+        if (error) {
+          console.error('OAuth error:', error);
+          setStatus('error');
+          setMessage(`Connection failed: ${error}`);
+          toast.error(`Failed to connect to ${service}: ${error}`);
+          setTimeout(() => navigate('/settings?tab=connections'), 3000);
           return;
         }
         
+        if (success === 'true' && service && connectionDataParam) {
+          try {
+            const connectionData = JSON.parse(decodeURIComponent(connectionDataParam));
+            console.log('Parsed connection data:', connectionData);
+            
+            // Get the current user
+            const { data: { user }, error: authError } = await supabase.auth.getUser();
+            if (authError || !user) {
+              console.error('User not authenticated:', authError);
+              setStatus('error');
+              setMessage('Authentication required. Please log in.');
+              toast.error('You must be logged in to connect services.');
+              setTimeout(() => navigate('/'), 3000);
+              return;
+            }
+            
+            // Save the connection to the database
+            console.log('Saving connection to database...');
+            const { error: saveError } = await supabase
+              .from('user_connections')
+              .upsert({
+                user_id: user.id,
+                service: service,
+                connected_at: new Date().toISOString(),
+                connection_data: connectionData
+              });
+            
+            if (saveError) {
+              console.error('Error saving connection:', saveError);
+              setStatus('error');
+              setMessage('Failed to save connection data.');
+              toast.error(`Failed to save ${service} connection.`);
+              setTimeout(() => navigate('/settings?tab=connections'), 3000);
+              return;
+            }
+            
+            console.log(`${service} connection saved successfully`);
+            
+            // For LinkedIn connections, update BlakQube with profile data
+            if (service === 'linkedin') {
+              console.log('Updating BlakQube with LinkedIn data...');
+              setMessage('Importing your LinkedIn profile data...');
+              
+              const updateSuccess = await blakQubeService.updateBlakQubeFromConnections();
+              
+              if (updateSuccess) {
+                console.log('BlakQube updated successfully with LinkedIn data');
+                setStatus('success');
+                setMessage('LinkedIn connected and profile data imported successfully!');
+                toast.success('LinkedIn connected and profile data imported to your BlakQube');
+                
+                // Trigger private data update event for immediate UI refresh
+                const event = new CustomEvent('privateDataUpdated');
+                window.dispatchEvent(event);
+              } else {
+                console.warn('BlakQube update failed, but connection was successful');
+                setStatus('success');
+                setMessage('LinkedIn connected successfully, but profile import failed.');
+                toast.success('LinkedIn connected successfully');
+              }
+            } else {
+              setStatus('success');
+              setMessage(`${service} connected successfully!`);
+              toast.success(`${service} connected successfully`);
+            }
+            
+            // Redirect back to settings after a short delay
+            setTimeout(() => {
+              navigate('/settings?tab=connections');
+            }, 2000);
+            
+          } catch (parseError) {
+            console.error('Error parsing connection data:', parseError);
+            setStatus('error');
+            setMessage('Invalid connection data received.');
+            toast.error('Invalid connection data received.');
+            setTimeout(() => navigate('/settings?tab=connections'), 3000);
+          }
+        } else {
+          console.error('Missing required parameters:', { service, success, connectionDataParam });
+          setStatus('error');
+          setMessage('Invalid callback parameters.');
+          toast.error('Invalid callback parameters.');
+          setTimeout(() => navigate('/settings?tab=connections'), 3000);
+        }
+      } catch (error) {
+        console.error('Unexpected error in OAuth callback:', error);
         setStatus('error');
-        setErrorMessage('Failed to save connection to database');
-        toast.error('Failed to save LinkedIn connection. Please try again.');
+        setMessage('An unexpected error occurred.');
+        toast.error('An unexpected error occurred during connection.');
         setTimeout(() => navigate('/settings?tab=connections'), 3000);
-        return;
+      } finally {
+        setProcessing(false);
       }
-
-      console.log('LinkedIn connection saved successfully');
-      setStatus('success');
-      toast.success('Successfully connected to LinkedIn!');
-      
-      // Trigger BlakQube update and refresh private data
-      try {
-        console.log('Updating BlakQube with LinkedIn data...');
-        const { blakQubeService } = await import('@/services/blakqube-service');
-        await blakQubeService.updateBlakQubeFromConnections();
-        console.log('BlakQube updated with LinkedIn data');
-        
-        // Dispatch custom event to refresh private data
-        const updateEvent = new CustomEvent('privateDataUpdated');
-        window.dispatchEvent(updateEvent);
-        console.log('Private data update event dispatched');
-      } catch (updateError) {
-        console.warn('Failed to update BlakQube:', updateError);
-        // Don't fail the connection for this
-      }
-      
-      setTimeout(() => navigate('/settings?tab=connections'), 2000);
-      
-    } catch (err) {
-      console.error('Unexpected error in OAuth callback:', err);
-      
-      if (retryAttempts < maxRetryAttempts) {
-        console.log(`Retrying OAuth completion (attempt ${retryAttempts + 1})`);
-        processingRef.current = false;
-        setTimeout(() => handleRetry(), 2000);
-        return;
-      }
-      
-      setStatus('error');
-      
-      const errorMsg = err instanceof Error ? err.message : 'An unexpected error occurred';
-      setErrorMessage(errorMsg);
-      toast.error(`An error occurred during LinkedIn connection: ${errorMsg}`);
-      setTimeout(() => navigate('/settings?tab=connections'), 3000);
+    };
+    
+    handleOAuthCallback();
+  }, [searchParams, navigate]);
+  
+  const getIcon = () => {
+    switch (status) {
+      case 'success':
+        return <CheckCircle className="h-12 w-12 text-green-500" />;
+      case 'error':
+        return <XCircle className="h-12 w-12 text-red-500" />;
+      default:
+        return <Loader2 className="h-12 w-12 text-blue-500 animate-spin" />;
     }
   };
   
-  useEffect(() => {
-    // Only process once when component mounts
-    if (!processingRef.current) {
-      completeOAuth();
-    }
-  }, []);
-  
   return (
-    <div className="flex items-center justify-center h-[80vh]">
-      <Card className="w-[500px]">
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            {status === 'processing' && <Loader2 className="h-5 w-5 animate-spin" />}
-            {status === 'success' && <Check className="h-5 w-5 text-green-500" />}
-            {status === 'error' && <X className="h-5 w-5 text-red-500" />}
-            LinkedIn Connection
+    <div className="min-h-screen flex items-center justify-center bg-background p-4">
+      <Card className="w-full max-w-md">
+        <CardHeader className="text-center">
+          <div className="flex justify-center mb-4">
+            {getIcon()}
+          </div>
+          <CardTitle>
+            {status === 'processing' && 'Connecting...'}
+            {status === 'success' && 'Connection Successful!'}
+            {status === 'error' && 'Connection Failed'}
           </CardTitle>
           <CardDescription>
-            {status === 'processing' && 'Completing LinkedIn authorization...'}
-            {status === 'success' && 'LinkedIn connected successfully!'}
-            {status === 'error' && 'LinkedIn connection failed'}
+            {message}
           </CardDescription>
         </CardHeader>
-        <CardContent className="flex flex-col items-center justify-center p-6 space-y-4">
-          {status === 'processing' && (
-            <div className="text-center">
-              <Loader2 className="h-16 w-16 text-iqube-primary animate-spin mx-auto mb-4" />
-              <p className="text-muted-foreground">
-                Please wait while we complete your LinkedIn authorization...
-                {retryAttempts > 0 && ` (Retry attempt ${retryAttempts})`}
-              </p>
-            </div>
-          )}
-          
-          {status === 'success' && (
-            <div className="text-center">
-              <Check className="h-16 w-16 text-green-500 mx-auto mb-4" />
-              <p className="text-muted-foreground">
-                Successfully connected to LinkedIn! Redirecting to settings...
-              </p>
-            </div>
-          )}
-          
-          {status === 'error' && (
-            <div className="text-center space-y-4">
-              <AlertCircle className="h-16 w-16 text-red-500 mx-auto" />
-              <div>
-                <p className="text-muted-foreground mb-2">
-                  Connection failed: {errorMessage}
-                </p>
-                {retryAttempts < maxRetryAttempts ? (
-                  <div className="space-y-2">
-                    <p className="text-sm text-muted-foreground">
-                      You can try again or return to settings
-                    </p>
-                    <div className="flex gap-2 justify-center">
-                      <Button variant="outline" size="sm" onClick={handleRetry}>
-                        Try Again ({maxRetryAttempts - retryAttempts} attempts left)
-                      </Button>
-                      <Button variant="outline" size="sm" onClick={() => navigate('/settings?tab=connections')}>
-                        Back to Settings
-                      </Button>
-                    </div>
-                  </div>
-                ) : (
-                  <div className="space-y-2">
-                    <p className="text-sm text-muted-foreground">
-                      Maximum retry attempts reached. Redirecting to settings...
-                    </p>
-                    <Button variant="outline" size="sm" onClick={() => navigate('/settings?tab=connections')}>
-                      Back to Settings Now
-                    </Button>
-                  </div>
-                )}
-              </div>
-            </div>
-          )}
+        <CardContent className="text-center">
+          <p className="text-sm text-muted-foreground">
+            {status === 'processing' && 'Please wait while we process your connection...'}
+            {status === 'success' && 'Redirecting you back to settings...'}
+            {status === 'error' && 'Redirecting you back to settings...'}
+          </p>
         </CardContent>
       </Card>
     </div>

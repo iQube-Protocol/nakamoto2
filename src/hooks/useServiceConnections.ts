@@ -33,6 +33,7 @@ export function useServiceConnections() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [retrying, setRetrying] = useState<ServiceType | null>(null);
+  const [connecting, setConnecting] = useState<Set<ServiceType>>(new Set());
   const { user } = useAuth();
   
   // Fetch connection status for all services
@@ -123,9 +124,17 @@ export function useServiceConnections() {
     return connectionData.wallet?.address || null;
   };
   
-  // Connect a service with improved error handling
+  // Connect a service with improved error handling and duplicate prevention
   const connectService = async (service: ServiceType): Promise<boolean> => {
+    // Prevent duplicate connections
+    if (connecting.has(service)) {
+      console.log(`${service} connection already in progress`);
+      toast.error(`${service} connection is already in progress. Please wait.`);
+      return false;
+    }
+
     console.log(`Attempting to connect ${service}...`);
+    setConnecting(prev => new Set([...prev, service]));
     setRetrying(service);
     
     try {
@@ -169,12 +178,23 @@ export function useServiceConnections() {
         }
       }
     } finally {
+      setConnecting(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(service);
+        return newSet;
+      });
       setRetrying(null);
     }
   };
   
   // Disconnect a service with improved error handling
   const disconnectService = async (service: ServiceType): Promise<boolean> => {
+    if (connecting.has(service)) {
+      console.log(`${service} disconnection blocked - connection in progress`);
+      return false;
+    }
+
+    setConnecting(prev => new Set([...prev, service]));
     setRetrying(service);
     
     try {
@@ -195,6 +215,11 @@ export function useServiceConnections() {
       toast.error(`Failed to disconnect from ${service}. Please try again.`);
       return false;
     } finally {
+      setConnecting(prev => {
+        const newSet = new Set(prev);
+        newSet.delete(service);
+        return newSet;
+      });
       setRetrying(null);
     }
   };
@@ -210,7 +235,7 @@ export function useServiceConnections() {
   
   // Check if a service is currently being processed
   const isServiceProcessing = (service: ServiceType): boolean => {
-    return retrying === service;
+    return connecting.has(service) || retrying === service;
   };
   
   // Retry connection with exponential backoff
