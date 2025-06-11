@@ -1,105 +1,136 @@
-import { MetaQube } from "@/lib/types";
 
-// Sample metaQube data for Qrypto Persona (DataQube)
+import { MetaQube } from '@/lib/types';
+
 export const monDaiQubeData: MetaQube = {
   "iQube-Identifier": "Qrypto Persona iQube",
-  "iQube-Type": "DataQube",
-  "iQube-Designer": "Aigent Qrypto Persona",
-  "iQube-Use": "For learning, earning and networking in web3 communities",
-  "Owner-Type": "Person",
-  "Owner-Identifiability": "Semi-Identifiable",
-  "Date-Minted": new Date().toISOString(),
-  "Related-iQubes": ["ContentQube1", "AgentQube1"],
-  "X-of-Y": "5 of 20",
-  "Sensitivity-Score": 4,
-  "Verifiability-Score": 5,
-  "Accuracy-Score": 5,
-  "Risk-Score": 4
+  "Type": "DataQube",
+  "Description": "Personal cryptocurrency profile and preferences data",
+  "Access-Control": "Private",
+  "Encryption-Level": "AES-256",
+  "Created": "2024-01-15",
+  "Last-Updated": "2024-03-10",
+  "Version": "1.2.0",
+  "Size": "2.3 MB",
+  "Status": "Active",
+  "Network": "Ethereum",
+  "Smart-Contract": "0x742d35Cc6532C4532F37cC",
+  "IPFS-Hash": "QmXoypizjW3WknFiJnKLwHCnL72vedxjQkDDP1mXWo6uco",
+  "Trust-Score": 95,
+  "Sensitivity-Score": 88,
+  "Risk-Score": 15,
+  "Accuracy-Score": 92,
+  "Verifiability-Score": 87,
+  "Reliability-Index": 91
 };
 
-// Sample metaQube data for Metis (AgentQube)
-export const metisQubeData: MetaQube = {
-  "iQube-Identifier": "Metis iQube",
-  "iQube-Type": "AgentQube",
-  "iQube-Designer": "Aigent Metis",
-  "iQube-Use": "Advanced agent for data analysis and insights",
-  "Owner-Type": "Organization",
-  "Owner-Identifiability": "Identifiable",
-  "Date-Minted": new Date().toISOString(),
-  "Related-iQubes": ["DataQube1", "ContentQube2"],
-  "X-of-Y": "3 of 15",
-  "Sensitivity-Score": 3,
-  "Verifiability-Score": 8,
-  "Accuracy-Score": 7,
-  "Risk-Score": 3
-};
-
-// Sample metaQube data for Venice (AgentQube)
 export const veniceQubeData: MetaQube = {
   "iQube-Identifier": "Venice iQube",
-  "iQube-Type": "AgentQube",
-  "iQube-Designer": "Aigent Venice",
-  "iQube-Use": "AI service that protects privacy and prevents censorship",
-  "Owner-Type": "Organization",
-  "Owner-Identifiability": "Semi-Identifiable",
-  "Date-Minted": new Date().toISOString(),
-  "Related-iQubes": ["DataQube1", "AgentQube1"],
-  "X-of-Y": "2 of 12",
-  "Sensitivity-Score": 2,
-  "Verifiability-Score": 8,
-  "Accuracy-Score": 5,
-  "Risk-Score": 2
+  "Type": "AgentQube",
+  "Description": "AI service that protects privacy and prevents censorship",
+  "Access-Control": "Private",
+  "Encryption-Level": "AES-256",
+  "Created": "2024-02-01",
+  "Last-Updated": "2024-03-15",
+  "Version": "1.1.0",
+  "Size": "1.8 MB",
+  "Status": "Active",
+  "Network": "Ethereum",
+  "Smart-Contract": "0x853d46Ee7643B5532F48dD",
+  "IPFS-Hash": "QmYpqzjW4WknFiJnKLwHCnL73vedxjQkDDP1mXWo7vdp",
+  "Trust-Score": 98,
+  "Sensitivity-Score": 85,
+  "Risk-Score": 12,
+  "Accuracy-Score": 95,
+  "Verifiability-Score": 90,
+  "Reliability-Index": 94
 };
 
-// Sample metaQube data for GDrive (ToolQube)
+export const metisQubeData: MetaQube = {
+  "iQube-Identifier": "Metis iQube",
+  "Type": "AgentQube", 
+  "Description": "An algorithm that evaluates risks associated with wallets and tokens",
+  "Access-Control": "Private",
+  "Encryption-Level": "AES-256",
+  "Created": "2024-01-20",
+  "Last-Updated": "2024-03-12",
+  "Version": "1.3.0",
+  "Size": "3.1 MB",
+  "Status": "Active",
+  "Network": "Ethereum",
+  "Smart-Contract": "0x964e57Ff8754C6643G59eE",
+  "IPFS-Hash": "QmZqrzkW5WknFiJnKLwHCnL74vedxjQkDDP1mXWo8wfq",
+  "Trust-Score": 87,
+  "Sensitivity-Score": 82,
+  "Risk-Score": 25,
+  "Accuracy-Score": 89,
+  "Verifiability-Score": 85,
+  "Reliability-Index": 86
+};
+
 export const gdriveQubeData: MetaQube = {
   "iQube-Identifier": "GDrive iQube",
-  "iQube-Type": "ToolQube",
-  "iQube-Designer": "Aigent Connect",
-  "iQube-Use": "Connect to Google Drive for document management",
-  "Owner-Type": "Person",
-  "Owner-Identifiability": "Identifiable",
-  "Date-Minted": new Date().toISOString(),
-  "Related-iQubes": ["DataQube1"],
-  "X-of-Y": "1 of 10",
-  "Sensitivity-Score": 5,
-  "Verifiability-Score": 9,
-  "Accuracy-Score": 8,
-  "Risk-Score": 4
+  "Type": "DataQube",
+  "Description": "Google Drive document and file storage integration",
+  "Access-Control": "Private",
+  "Encryption-Level": "AES-256",
+  "Created": "2024-02-10",
+  "Last-Updated": "2024-03-08",
+  "Version": "1.0.5",
+  "Size": "4.7 MB",
+  "Status": "Inactive",
+  "Network": "Ethereum",
+  "Smart-Contract": "0xa75f48Gg9865D7754H60fF",
+  "IPFS-Hash": "QmArszlW6WknFiJnKLwHCnL75vedxjQkDDP1mXWo9xgr",
+  "Trust-Score": 82,
+  "Sensitivity-Score": 90,
+  "Risk-Score": 18,
+  "Accuracy-Score": 86,
+  "Verifiability-Score": 88,
+  "Reliability-Index": 87
 };
 
-// Sample metaQube data for Content (ContentQube)
 export const contentQubeData: MetaQube = {
   "iQube-Identifier": "Content iQube",
-  "iQube-Type": "ContentQube",
-  "iQube-Designer": "Aigent Content",
-  "iQube-Use": "Manage and share web3 educational content",
-  "Owner-Type": "Person",
-  "Owner-Identifiability": "Semi-Identifiable",
-  "Date-Minted": new Date().toISOString(),
-  "Related-iQubes": ["DataQube1"],
-  "X-of-Y": "2 of 8",
-  "Sensitivity-Score": 2,
-  "Verifiability-Score": 7,
-  "Accuracy-Score": 6,
-  "Risk-Score": 3
+  "Type": "DataQube",
+  "Description": "User-generated content and media storage",
+  "Access-Control": "Private",
+  "Encryption-Level": "AES-256",
+  "Created": "2024-01-25",
+  "Last-Updated": "2024-03-05",
+  "Version": "1.1.2",
+  "Size": "6.2 MB",
+  "Status": "Active",
+  "Network": "Ethereum",
+  "Smart-Contract": "0xb86g59Hh0976E8865I71gG",
+  "IPFS-Hash": "QmBstzmW7WknFiJnKLwHCnL76vedxjQkDDP1mXWo0yhs",
+  "Trust-Score": 79,
+  "Sensitivity-Score": 75,
+  "Risk-Score": 22,
+  "Accuracy-Score": 83,
+  "Verifiability-Score": 81,
+  "Reliability-Index": 80
 };
 
-// Sample metaQube data for Model (ModelQube)
 export const modelQubeData: MetaQube = {
   "iQube-Identifier": "Model iQube",
-  "iQube-Type": "ModelQube",
-  "iQube-Designer": "Aigent Model",
-  "iQube-Use": "AI model for data analysis and predictions",
-  "Owner-Type": "Organization",
-  "Owner-Identifiability": "Identifiable",
-  "Date-Minted": new Date().toISOString(),
-  "Related-iQubes": ["AgentQube1", "DataQube1"],
-  "X-of-Y": "1 of 5",
-  "Sensitivity-Score": 5,
-  "Verifiability-Score": 6,
-  "Accuracy-Score": 7,
-  "Risk-Score": 4
+  "Type": "AgentQube",
+  "Description": "AI model configurations and training data",
+  "Access-Control": "Private",
+  "Encryption-Level": "AES-256",
+  "Created": "2024-02-15",
+  "Last-Updated": "2024-03-20",
+  "Version": "1.4.0",
+  "Size": "8.9 MB",
+  "Status": "Active",
+  "Network": "Ethereum",
+  "Smart-Contract": "0xc97h60Ii1087F9976J82hH",
+  "IPFS-Hash": "QmCtuzlW8WknFiJnKLwHCnL77vedxjQkDDP1mXWo1zit",
+  "Trust-Score": 91,
+  "Sensitivity-Score": 78,
+  "Risk-Score": 19,
+  "Accuracy-Score": 94,
+  "Verifiability-Score": 89,
+  "Reliability-Index": 90
 };
 
 export const qubeData = {

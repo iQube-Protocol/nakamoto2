@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
@@ -222,6 +221,7 @@ const SettingsInterface = ({
 
   const isActive = (qubeName: string) => {
     if (qubeName === "Qrypto Persona iQube") return activeQubes["Qrypto Persona"];
+    if (qubeName === "Venice iQube") return activeQubes["Venice"];
     if (qubeName === "Metis iQube") return activeQubes["Metis"];
     if (qubeName === "GDrive iQube") return activeQubes["GDrive"];
     return false;
@@ -230,6 +230,7 @@ const SettingsInterface = ({
   const toggleActive = () => {
     let qubeName = "";
     if (metaQube["iQube-Identifier"] === "Qrypto Persona iQube") qubeName = "Qrypto Persona";
+    else if (metaQube["iQube-Identifier"] === "Venice iQube") qubeName = "Venice";
     else if (metaQube["iQube-Identifier"] === "Metis iQube") qubeName = "Metis";
     else if (metaQube["iQube-Identifier"] === "GDrive iQube") qubeName = "GDrive";
     
