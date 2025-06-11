@@ -22,6 +22,10 @@ const metaQubeData: MetaQube = {
 
 // Sample blakQube data
 const blakQubeData: BlakQube = {
+  id: "sample-id",
+  user_id: "sample-user-id",
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
   "Profession": "Community Manager",
   "Web3-Interests": ["DAOs", "Social Tokens", "NFT Communities"],
   "Local-City": "Berlin",
@@ -37,7 +41,9 @@ const blakQubeData: BlakQube = {
   "Telegram-Handle": "",
   "Discord-Handle": "",
   "Instagram-Handle": "",
-  "GitHub-Handle": ""
+  "GitHub-Handle": "",
+  "First-Name": "",
+  "Last-Name": ""
 };
 
 // Sample community metrics

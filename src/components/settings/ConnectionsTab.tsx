@@ -1,17 +1,9 @@
 
-import React, { useState } from 'react';
-import { Card, CardHeader, CardTitle, CardDescription, CardContent } from '@/components/ui/card';
-import { Shield, Linkedin, MessageCircle, Twitter, Users, Wallet, Globe, AlertCircle, Eye, Database, Lock, RefreshCw } from 'lucide-react';
-import ServiceConnection from './ServiceConnection';
-import { useServiceConnections } from '@/hooks/useServiceConnections';
+import React from 'react';
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { UserSettings } from '@/lib/types';
-import { Loader2 } from 'lucide-react';
-import { toast } from 'sonner';
-import { Alert, AlertDescription, AlertTitle } from '@/components/ui/alert';
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Button } from '@/components/ui/button';
-import { Separator } from '@/components/ui/separator';
-import { ScrollArea } from '@/components/ui/scroll-area';
+import ServiceConnection from './ServiceConnection';
+import BlakQubeRefreshButton from './BlakQubeRefreshButton';
 
 interface ConnectionsTabProps {
   settings: UserSettings;
@@ -19,384 +11,69 @@ interface ConnectionsTabProps {
 }
 
 const ConnectionsTab = ({ settings, onConnectService }: ConnectionsTabProps) => {
-  const { loading, error, refreshConnections, isServiceProcessing } = useServiceConnections();
-  const [privacyPolicyOpen, setPrivacyPolicyOpen] = useState(false);
-  const [refreshing, setRefreshing] = useState(false);
-  
-  const handleServiceToggle = async (service: keyof UserSettings['connected']) => {
-    try {
-      // Use the established connection flow from SettingsInterface
-      await onConnectService(service);
-    } catch (error) {
-      console.error(`Error toggling ${service} connection:`, error);
-      toast.error(`Failed to ${settings.connected[service] ? 'disconnect' : 'connect'} ${service}`);
-    }
-  };
-
-  const handleRefreshConnections = async () => {
-    setRefreshing(true);
-    try {
-      await refreshConnections();
-      toast.success('Connection status refreshed');
-    } catch (error) {
-      console.error('Error refreshing connections:', error);
-      toast.error('Failed to refresh connections');
-    } finally {
-      setRefreshing(false);
-    }
-  };
-  
   return (
-    <>
-      <Card>
-        <CardHeader className="pb-2">
-          <div className="flex items-center justify-between">
-            <div>
-              <CardTitle className="text-base">External Connections</CardTitle>
-              <CardDescription>
-                Connect external services to enhance your iQube data
-              </CardDescription>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handleRefreshConnections}
-              disabled={refreshing || loading}
-              className="flex items-center gap-2"
-            >
-              <RefreshCw className={`h-4 w-4 ${refreshing ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
+    <Card>
+      <CardHeader>
+        <div className="flex justify-between items-center">
+          <div>
+            <CardTitle>Service Connections</CardTitle>
+            <CardDescription>
+              Connect external services to populate your iQube data automatically
+            </CardDescription>
           </div>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {error && (
-            <Alert variant="destructive" className="mb-4">
-              <AlertCircle className="h-4 w-4" />
-              <AlertTitle>Connection Error</AlertTitle>
-              <AlertDescription className="flex items-center justify-between">
-                <span>{error}</span>
-                <Button variant="outline" size="sm" onClick={handleRefreshConnections}>
-                  Try Again
-                </Button>
-              </AlertDescription>
-            </Alert>
-          )}
-          
-          {loading ? (
-            <div className="flex justify-center p-6">
-              <Loader2 className="h-6 w-6 animate-spin text-iqube-primary" />
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <ServiceConnection 
-                name="LinkedIn"
-                icon={<Linkedin className="h-5 w-5 text-iqube-primary" />}
-                connected={settings.connected.linkedin}
-                onConnect={() => handleServiceToggle('linkedin')}
-                isProcessing={isServiceProcessing('linkedin')}
-              />
-              <ServiceConnection 
-                name="Luma"
-                icon={<Globe className="h-5 w-5 text-iqube-primary" />}
-                connected={settings.connected.luma}
-                onConnect={() => handleServiceToggle('luma')}
-                isProcessing={isServiceProcessing('luma')}
-                disabled={true}
-                comingSoon={true}
-              />
-              <ServiceConnection 
-                name="Telegram"
-                icon={<MessageCircle className="h-5 w-5 text-iqube-primary" />}
-                connected={settings.connected.telegram}
-                onConnect={() => handleServiceToggle('telegram')}
-                isProcessing={isServiceProcessing('telegram')}
-                disabled={true}
-                comingSoon={true}
-              />
-              <ServiceConnection 
-                name="Twitter"
-                icon={<Twitter className="h-5 w-5 text-iqube-primary" />}
-                connected={settings.connected.twitter}
-                onConnect={() => handleServiceToggle('twitter')}
-                isProcessing={isServiceProcessing('twitter')}
-                disabled={true}
-                comingSoon={true}
-              />
-              <ServiceConnection 
-                name="Discord"
-                icon={<Users className="h-5 w-5 text-iqube-primary" />}
-                connected={settings.connected.discord}
-                onConnect={() => handleServiceToggle('discord')}
-                isProcessing={isServiceProcessing('discord')}
-                disabled={true}
-                comingSoon={true}
-              />
-              <ServiceConnection 
-                name="Wallet"
-                icon={<Wallet className="h-5 w-5 text-iqube-primary" />}
-                connected={settings.connected.wallet}
-                onConnect={() => handleServiceToggle('wallet')}
-                isProcessing={isServiceProcessing('wallet')}
-              />
-            </div>
-          )}
-          
-          <div className="bg-amber-500/10 border border-amber-500/30 rounded-md p-4 text-sm">
-            <h4 className="font-medium mb-1 flex items-center">
-              <Shield className="h-4 w-4 mr-2 text-amber-500" /> Data Privacy Notice
-            </h4>
-            <p className="text-muted-foreground">
-              Connecting these services will import data into your iQube. All data is encrypted and stored
-              in your private blakQube layer. You control what information is shared with the community.{' '}
-              <button 
-                onClick={() => setPrivacyPolicyOpen(true)}
-                className="text-blue-400 hover:text-blue-300 underline cursor-pointer"
-              >
-                Read our full Privacy Policy →
-              </button>
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* Privacy Policy Dialog */}
-      <Dialog open={privacyPolicyOpen} onOpenChange={setPrivacyPolicyOpen}>
-        <DialogContent className="max-w-4xl h-[85vh] flex flex-col">
-          <DialogHeader className="flex-shrink-0">
-            <DialogTitle className="text-2xl flex items-center gap-2">
-              <Shield className="h-6 w-6 text-primary" />
-              iQube Protocol Privacy Policy
-            </DialogTitle>
-            <p className="text-muted-foreground text-sm">
-              Last updated: {new Date().toLocaleDateString()}
-            </p>
-          </DialogHeader>
-          
-          <ScrollArea className="flex-1 pr-6">
-            <div className="space-y-6">
-              <div className="prose prose-sm max-w-none">
-                <section>
-                  <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                    <Eye className="h-5 w-5" />
-                    Overview
-                  </h2>
-                  <p className="text-muted-foreground mb-4">
-                    The iQube Protocol is built on the foundation of user privacy and data sovereignty. 
-                    This privacy policy explains how we collect, use, and protect your information within 
-                    the iQube ecosystem, emphasizing our commitment to your data privacy and control.
-                  </p>
-                </section>
-
-                <Separator />
-
-                <section>
-                  <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                    <Database className="h-5 w-5" />
-                    Data Collection and iQube Structure
-                  </h2>
-                  <div className="space-y-4 text-muted-foreground">
-                    <div>
-                      <h3 className="font-medium text-foreground mb-2">MetaQube (Public Layer)</h3>
-                      <p>Contains non-sensitive metadata about your iQube including:</p>
-                      <ul className="list-disc list-inside ml-4 space-y-1">
-                        <li>iQube identifier and type</li>
-                        <li>Designer information</li>
-                        <li>Date minted</li>
-                        <li>Related iQubes</li>
-                        <li>Verifiability, accuracy, and risk scores</li>
-                      </ul>
-                    </div>
-                    
-                    <div>
-                      <h3 className="font-medium text-foreground mb-2">BlakQube (Private Layer)</h3>
-                      <p>Contains your private, encrypted data including:</p>
-                      <ul className="list-disc list-inside ml-4 space-y-1">
-                        <li>Professional information</li>
-                        <li>Web3 interests and preferences</li>
-                        <li>Location data (city level only)</li>
-                        <li>Wallet addresses and blockchain interactions</li>
-                        <li>Tokens and chains of interest</li>
-                      </ul>
-                      <p className="mt-2 font-medium">
-                        This data is encrypted using advanced cryptographic methods and stored in your 
-                        private BlakQube layer, accessible only to you.
-                      </p>
-                    </div>
-
-                    <div>
-                      <h3 className="font-medium text-foreground mb-2">TokenQube (Ownership Layer)</h3>
-                      <p>Contains blockchain-based ownership and access control data:</p>
-                      <ul className="list-disc list-inside ml-4 space-y-1">
-                        <li>Token ID and ownership records</li>
-                        <li>Access grants and permissions</li>
-                        <li>Smart contract addresses</li>
-                        <li>Network information</li>
-                      </ul>
-                    </div>
-                  </div>
-                </section>
-
-                <Separator />
-
-                <section>
-                  <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                    <Lock className="h-5 w-5" />
-                    Data Encryption and Security
-                  </h2>
-                  <div className="space-y-3 text-muted-foreground">
-                    <p>
-                      Your BlakQube data is protected using industry-standard encryption protocols:
-                    </p>
-                    <ul className="list-disc list-inside ml-4 space-y-1">
-                      <li>AES-256 encryption for data at rest</li>
-                      <li>End-to-end encryption for data in transit</li>
-                      <li>Individual encryption keys per user</li>
-                      <li>Zero-knowledge architecture - we cannot access your private data</li>
-                      <li>Decentralized storage options available</li>
-                    </ul>
-                  </div>
-                </section>
-
-                <Separator />
-
-                <section>
-                  <h2 className="text-lg font-semibold mb-3">Data Usage and AI Interactions</h2>
-                  <div className="space-y-3 text-muted-foreground">
-                    <p>When you interact with our AI agents (Learn, Earn, Connect, MonDAI):</p>
-                    <ul className="list-disc list-inside ml-4 space-y-1">
-                      <li>Conversation data is stored locally and encrypted</li>
-                      <li>AI responses are generated based on your explicit queries</li>
-                      <li>Context from your iQube is used only to enhance response relevance</li>
-                      <li>No conversation data is shared with third parties</li>
-                      <li>You can delete conversation history at any time</li>
-                    </ul>
-                  </div>
-                </section>
-
-                <Separator />
-
-                <section>
-                  <h2 className="text-lg font-semibold mb-3">External Connections</h2>
-                  <div className="space-y-3 text-muted-foreground">
-                    <p>When you connect external services (LinkedIn, Twitter, Discord, etc.):</p>
-                    <ul className="list-disc list-inside ml-4 space-y-1">
-                      <li>Data import is entirely optional and user-controlled</li>
-                      <li>Only explicitly requested data is imported</li>
-                      <li>All imported data is encrypted in your BlakQube</li>
-                      <li>You can disconnect services and delete imported data at any time</li>
-                      <li>We use OAuth protocols and never store your passwords</li>
-                    </ul>
-                  </div>
-                </section>
-
-                <Separator />
-
-                <section>
-                  <h2 className="text-lg font-semibold mb-3 flex items-center gap-2">
-                    <Users className="h-5 w-5" />
-                    Data Sharing and Community
-                  </h2>
-                  <div className="space-y-3 text-muted-foreground">
-                    <p>
-                      You have complete control over what data is shared with the community:
-                    </p>
-                    <ul className="list-disc list-inside ml-4 space-y-1">
-                      <li>Only MetaQube (public) data is visible to others by default</li>
-                      <li>BlakQube data remains private unless you explicitly grant access</li>
-                      <li>Granular permissions allow selective data sharing</li>
-                      <li>All sharing is consensual and revocable</li>
-                      <li>Community interactions are logged for transparency</li>
-                    </ul>
-                  </div>
-                </section>
-
-                <Separator />
-
-                <section>
-                  <h2 className="text-lg font-semibold mb-3">Your Rights and Controls</h2>
-                  <div className="space-y-3 text-muted-foreground">
-                    <p>As an iQube owner, you have the right to:</p>
-                    <ul className="list-disc list-inside ml-4 space-y-1">
-                      <li>Access all your data stored in your iQube</li>
-                      <li>Modify or delete any data in your BlakQube</li>
-                      <li>Export your data in standard formats</li>
-                      <li>Revoke access permissions at any time</li>
-                      <li>Delete your iQube and all associated data</li>
-                      <li>Opt out of any data collection or processing</li>
-                    </ul>
-                  </div>
-                </section>
-
-                <Separator />
-
-                <section>
-                  <h2 className="text-lg font-semibold mb-3">Blockchain and Decentralization</h2>
-                  <div className="space-y-3 text-muted-foreground">
-                    <p>
-                      The iQube Protocol leverages blockchain technology for:
-                    </p>
-                    <ul className="list-disc list-inside ml-4 space-y-1">
-                      <li>Immutable ownership records</li>
-                      <li>Decentralized access control</li>
-                      <li>Transparent permission management</li>
-                      <li>User-controlled data sovereignty</li>
-                    </ul>
-                    <p className="mt-2">
-                      Blockchain transactions are public by nature, but only contain metadata 
-                      and access control information, never your private data.
-                    </p>
-                  </div>
-                </section>
-
-                <Separator />
-
-                <section>
-                  <h2 className="text-lg font-semibold mb-3">Compliance and Legal</h2>
-                  <div className="space-y-3 text-muted-foreground">
-                    <p>
-                      The iQube Protocol is designed to comply with major privacy regulations:
-                    </p>
-                    <ul className="list-disc list-inside ml-4 space-y-1">
-                      <li>GDPR (General Data Protection Regulation)</li>
-                      <li>CCPA (California Consumer Privacy Act)</li>
-                      <li>SOX (Sarbanes-Oxley Act) compliance for applicable data</li>
-                      <li>Industry-standard security frameworks</li>
-                    </ul>
-                  </div>
-                </section>
-
-                <Separator />
-
-                <section>
-                  <h2 className="text-lg font-semibold mb-3">Contact and Updates</h2>
-                  <div className="space-y-3 text-muted-foreground">
-                    <p>
-                      For privacy-related questions or concerns:
-                    </p>
-                    <ul className="list-disc list-inside ml-4 space-y-1">
-                      <li>Email: privacy@iqube.protocol</li>
-                      <li>Discord: Official iQube Community</li>
-                      <li>Telegram: @iQubeProtocol</li>
-                    </ul>
-                    <p className="mt-4">
-                      This privacy policy may be updated to reflect changes in our practices or 
-                      applicable laws. We will notify users of significant changes through the platform.
-                    </p>
-                  </div>
-                </section>
-              </div>
-            </div>
-          </ScrollArea>
-          
-          <div className="border-t pt-4 flex justify-end flex-shrink-0">
-            <Button variant="outline" size="sm" onClick={() => setPrivacyPolicyOpen(false)}>
-              Close
-            </Button>
-          </div>
-        </DialogContent>
-      </Dialog>
-    </>
+          <BlakQubeRefreshButton />
+        </div>
+      </CardHeader>
+      <CardContent className="space-y-4">
+        <ServiceConnection
+          serviceName="LinkedIn"
+          isConnected={settings.connected.linkedin}
+          onToggle={() => onConnectService('linkedin')}
+          description="Import professional profile data"
+          icon="linkedin"
+        />
+        
+        <ServiceConnection
+          serviceName="MetaMask Wallet"
+          isConnected={settings.connected.wallet}
+          onToggle={() => onConnectService('wallet')}
+          description="Connect your crypto wallet"
+          icon="wallet"
+        />
+        
+        <ServiceConnection
+          serviceName="Twitter"
+          isConnected={settings.connected.twitter}
+          onToggle={() => onConnectService('twitter')}
+          description="Connect your social media profile"
+          icon="twitter"
+        />
+        
+        <ServiceConnection
+          serviceName="Telegram"
+          isConnected={settings.connected.telegram}
+          onToggle={() => onConnectService('telegram')}
+          description="Connect your messaging account"
+          icon="telegram"
+        />
+        
+        <ServiceConnection
+          serviceName="Discord"
+          isConnected={settings.connected.discord}
+          onToggle={() => onConnectService('discord')}
+          description="Connect your Discord account"
+          icon="discord"
+        />
+        
+        <ServiceConnection
+          serviceName="Luma"
+          isConnected={settings.connected.luma}
+          onToggle={() => onConnectService('luma')}
+          description="Connect event management platform"
+          icon="calendar"
+        />
+      </CardContent>
+    </Card>
   );
 };
 

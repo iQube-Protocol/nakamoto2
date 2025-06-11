@@ -33,6 +33,10 @@ const metaQubeData: MetaQube = {
 };
 
 const blakQubeData: BlakQube = {
+  id: "sample-id",
+  user_id: "sample-user-id",
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
   "Profession": "Financial Analyst",
   "Web3-Interests": ["DeFi", "Tokenomics", "DAOs"],
   "Local-City": "Singapore",
@@ -48,7 +52,9 @@ const blakQubeData: BlakQube = {
   "Telegram-Handle": "",
   "Discord-Handle": "",
   "Instagram-Handle": "",
-  "GitHub-Handle": ""
+  "GitHub-Handle": "",
+  "First-Name": "",
+  "Last-Name": ""
 };
 
 const Earn = () => {

@@ -23,6 +23,10 @@ const metaQubeData: MetaQube = {
 
 // Sample blakQube data
 const blakQubeData: BlakQube = {
+  id: "sample-id",
+  user_id: "sample-user-id",
+  created_at: new Date().toISOString(),
+  updated_at: new Date().toISOString(),
   "Profession": "Web Developer",
   "Web3-Interests": ["Smart Contracts", "Blockchain Fundamentals", "DApps"],
   "Local-City": "Austin",
@@ -38,7 +42,9 @@ const blakQubeData: BlakQube = {
   "Telegram-Handle": "",
   "Discord-Handle": "",
   "Instagram-Handle": "",
-  "GitHub-Handle": ""
+  "GitHub-Handle": "",
+  "First-Name": "",
+  "Last-Name": ""
 };
 
 const Learn = () => {
