@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { UserSettings } from '@/lib/types';
 import ServiceConnection from './ServiceConnection';
 import BlakQubeRefreshButton from './BlakQubeRefreshButton';
+import { Linkedin, Wallet, Twitter, MessageCircle, MessageSquare, Calendar } from 'lucide-react';
 
 interface ConnectionsTabProps {
   settings: UserSettings;
@@ -26,51 +27,45 @@ const ConnectionsTab = ({ settings, onConnectService }: ConnectionsTabProps) => 
       </CardHeader>
       <CardContent className="space-y-4">
         <ServiceConnection
-          serviceName="LinkedIn"
-          isConnected={settings.connected.linkedin}
-          onToggle={() => onConnectService('linkedin')}
-          description="Import professional profile data"
-          icon="linkedin"
+          name="LinkedIn"
+          icon={<Linkedin className="h-4 w-4" />}
+          connected={settings.connected.linkedin}
+          onConnect={() => onConnectService('linkedin')}
         />
         
         <ServiceConnection
-          serviceName="MetaMask Wallet"
-          isConnected={settings.connected.wallet}
-          onToggle={() => onConnectService('wallet')}
-          description="Connect your crypto wallet"
-          icon="wallet"
+          name="MetaMask Wallet"
+          icon={<Wallet className="h-4 w-4" />}
+          connected={settings.connected.wallet}
+          onConnect={() => onConnectService('wallet')}
         />
         
         <ServiceConnection
-          serviceName="Twitter"
-          isConnected={settings.connected.twitter}
-          onToggle={() => onConnectService('twitter')}
-          description="Connect your social media profile"
-          icon="twitter"
+          name="Twitter"
+          icon={<Twitter className="h-4 w-4" />}
+          connected={settings.connected.twitter}
+          onConnect={() => onConnectService('twitter')}
         />
         
         <ServiceConnection
-          serviceName="Telegram"
-          isConnected={settings.connected.telegram}
-          onToggle={() => onConnectService('telegram')}
-          description="Connect your messaging account"
-          icon="telegram"
+          name="Telegram"
+          icon={<MessageCircle className="h-4 w-4" />}
+          connected={settings.connected.telegram}
+          onConnect={() => onConnectService('telegram')}
         />
         
         <ServiceConnection
-          serviceName="Discord"
-          isConnected={settings.connected.discord}
-          onToggle={() => onConnectService('discord')}
-          description="Connect your Discord account"
-          icon="discord"
+          name="Discord"
+          icon={<MessageSquare className="h-4 w-4" />}
+          connected={settings.connected.discord}
+          onConnect={() => onConnectService('discord')}
         />
         
         <ServiceConnection
-          serviceName="Luma"
-          isConnected={settings.connected.luma}
-          onToggle={() => onConnectService('luma')}
-          description="Connect event management platform"
-          icon="calendar"
+          name="Luma"
+          icon={<Calendar className="h-4 w-4" />}
+          connected={settings.connected.luma}
+          onConnect={() => onConnectService('luma')}
         />
       </CardContent>
     </Card>
