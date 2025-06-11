@@ -43,7 +43,9 @@ export const usePrivateData = (selectedIQube: MetaQube) => {
           "Telegram-Handle": blakQubeData["Telegram-Handle"] || "",
           "Discord-Handle": blakQubeData["Discord-Handle"] || "",
           "Instagram-Handle": blakQubeData["Instagram-Handle"] || "",
-          "GitHub-Handle": blakQubeData["GitHub-Handle"] || ""
+          "GitHub-Handle": blakQubeData["GitHub-Handle"] || "",
+          "First-Name": blakQubeData["First-Name"] || "",
+          "Last-Name": blakQubeData["Last-Name"] || ""
         };
         setPrivateData(formattedData);
       } else {
@@ -65,7 +67,9 @@ export const usePrivateData = (selectedIQube: MetaQube) => {
           "Telegram-Handle": "",
           "Discord-Handle": "",
           "Instagram-Handle": "",
-          "GitHub-Handle": ""
+          "GitHub-Handle": "",
+          "First-Name": "",
+          "Last-Name": ""
         });
       }
     } catch (error) {
@@ -87,7 +91,9 @@ export const usePrivateData = (selectedIQube: MetaQube) => {
         "Telegram-Handle": "",
         "Discord-Handle": "",
         "Instagram-Handle": "",
-        "GitHub-Handle": ""
+        "GitHub-Handle": "",
+        "First-Name": "",
+        "Last-Name": ""
       });
     } finally {
       setLoading(false);

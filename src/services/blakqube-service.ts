@@ -89,7 +89,9 @@ export const blakQubeService = {
         "Telegram-Handle": "",
         "Discord-Handle": "",
         "Instagram-Handle": "",
-        "GitHub-Handle": ""
+        "GitHub-Handle": "",
+        "First-Name": "",
+        "Last-Name": ""
       };
       
       // Update BlakQube based on connections
@@ -103,6 +105,17 @@ export const blakQubeService = {
             // Extract LinkedIn profile data
             const profile = connection.connection_data.profile;
             const email = connection.connection_data.email;
+            
+            // Set First Name and Last Name fields explicitly (new fields)
+            if (profile.firstName) {
+              newBlakQube["First-Name"] = profile.firstName;
+              console.log('Set First-Name from LinkedIn:', profile.firstName);
+            }
+            
+            if (profile.lastName) {
+              newBlakQube["Last-Name"] = profile.lastName;
+              console.log('Set Last-Name from LinkedIn:', profile.lastName);
+            }
             
             // Update LinkedIn-specific fields with proper profile data
             if (profile.id) {

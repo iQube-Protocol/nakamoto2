@@ -17,6 +17,8 @@ export interface MetaQube {
 }
 
 export interface BlakQube {
+  id: string;
+  user_id: string;
   "Profession": string;
   "Web3-Interests": string[];
   "Local-City": string;
@@ -33,7 +35,10 @@ export interface BlakQube {
   "Discord-Handle": string;
   "Instagram-Handle": string;
   "GitHub-Handle": string;
-  "Encryption-Key"?: string;
+  "First-Name": string;
+  "Last-Name": string;
+  created_at: string;
+  updated_at: string;
 }
 
 export interface TokenQube {

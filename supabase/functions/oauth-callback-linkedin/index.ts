@@ -183,22 +183,28 @@ serve(async (req) => {
       const detailedTimeoutId = setTimeout(() => detailedController.abort(), 10000);
 
       try {
-        const detailedResponse = await fetch("https://api.linkedin.com/v2/people/(id:~)?projection=(id,firstName,lastName,headline,industryName,locationName,publicProfileUrl,profilePicture(displayImage~:playableStreams))", {
-          headers: {
-            "Authorization": `Bearer ${accessToken}`,
-            "Accept": "application/json",
-          },
-          signal: detailedController.signal
-        });
+        // Enhanced API call to get more detailed profile information with proper fields
+        const detailedResponse = await fetch(
+          "https://api.linkedin.com/v2/me?projection=(id,firstName,lastName,headline,industryName,localizedFirstName,localizedLastName,profilePicture,publicProfileUrl,vanityName,emailAddress,location)",
+          {
+            headers: {
+              "Authorization": `Bearer ${accessToken}`,
+              "Accept": "application/json",
+              "X-Restli-Protocol-Version": "2.0.0"
+            },
+            signal: detailedController.signal
+          }
+        );
         clearTimeout(detailedTimeoutId);
 
         if (detailedResponse.ok) {
           detailedProfileData = await detailedResponse.json();
           console.log("Detailed profile data fetched successfully:", {
             id: detailedProfileData?.id,
+            vanityName: detailedProfileData?.vanityName,
+            firstName: detailedProfileData?.localizedFirstName || detailedProfileData?.firstName?.localized?.en_US,
+            lastName: detailedProfileData?.localizedLastName || detailedProfileData?.lastName?.localized?.en_US,
             headline: detailedProfileData?.headline,
-            industryName: detailedProfileData?.industryName,
-            locationName: detailedProfileData?.locationName,
             publicProfileUrl: detailedProfileData?.publicProfileUrl
           });
         } else {
@@ -208,6 +214,26 @@ serve(async (req) => {
             statusText: detailedResponse.statusText,
             error: errorText
           });
+          
+          // If first try fails, try alternative endpoint format
+          console.log("Trying alternative detailed profile endpoint...");
+          const alternativeResponse = await fetch(
+            "https://api.linkedin.com/v2/people/(id:~)?projection=(id,firstName,lastName,headline,industryName,location,publicProfileUrl,profilePicture)",
+            {
+              headers: {
+                "Authorization": `Bearer ${accessToken}`,
+                "Accept": "application/json"
+              }
+            }
+          );
+          
+          if (alternativeResponse.ok) {
+            detailedProfileData = await alternativeResponse.json();
+            console.log("Alternative detailed profile data fetched successfully");
+          } else {
+            const altErrorText = await alternativeResponse.text();
+            console.warn("Failed to fetch alternative detailed profile data:", altErrorText);
+          }
         }
       } catch (detailedError) {
         clearTimeout(detailedTimeoutId);
@@ -220,27 +246,49 @@ serve(async (req) => {
     }
 
     // Create comprehensive connection data combining both sources
+    const firstName = detailedProfileData?.localizedFirstName || 
+                     detailedProfileData?.firstName?.localized?.en_US || 
+                     basicProfileData?.given_name || '';
+                     
+    const lastName = detailedProfileData?.localizedLastName || 
+                    detailedProfileData?.lastName?.localized?.en_US || 
+                    basicProfileData?.family_name || '';
+                    
+    // Get real vanity URL or profile URL, ensuring we get the actual LinkedIn profile URL
+    let profileUrl = detailedProfileData?.publicProfileUrl;
+    if (!profileUrl) {
+      const vanityName = detailedProfileData?.vanityName;
+      if (vanityName) {
+        profileUrl = `https://www.linkedin.com/in/${vanityName}`;
+      } else if (detailedProfileData?.id) {
+        profileUrl = `https://www.linkedin.com/in/${detailedProfileData.id}`;
+      } else if (basicProfileData?.sub) {
+        profileUrl = `https://www.linkedin.com/in/${basicProfileData.sub}`;
+      }
+    }
+    
     const connectionData = {
       connected: true,
       access_token: accessToken,
       profile: {
         // Basic info from userinfo
         id: basicProfileData?.sub || detailedProfileData?.id,
-        firstName: basicProfileData?.given_name || detailedProfileData?.firstName?.localized?.en_US,
-        lastName: basicProfileData?.family_name || detailedProfileData?.lastName?.localized?.en_US,
-        name: basicProfileData?.name,
+        firstName: firstName,
+        lastName: lastName,
+        name: [firstName, lastName].filter(Boolean).join(' '),
         profilePicture: basicProfileData?.picture,
         
         // Enhanced info from detailed profile
-        headline: detailedProfileData?.headline?.localized?.en_US,
-        industryName: detailedProfileData?.industryName?.localized?.en_US,
-        locationName: detailedProfileData?.locationName?.localized?.en_US,
-        publicProfileUrl: detailedProfileData?.publicProfileUrl,
+        headline: detailedProfileData?.headline?.localized?.en_US || detailedProfileData?.headline,
+        industryName: detailedProfileData?.industryName?.localized?.en_US || detailedProfileData?.industryName,
+        locationName: detailedProfileData?.location?.preferredGeoPlace?.name || 
+                    detailedProfileData?.locationName?.localized?.en_US || 
+                    detailedProfileData?.locationName,
+        publicProfileUrl: profileUrl,
+        vanityName: detailedProfileData?.vanityName,
         
-        // Constructed profile URL (fallback if publicProfileUrl not available)
-        profileUrl: detailedProfileData?.publicProfileUrl || 
-                   (detailedProfileData?.id ? `https://www.linkedin.com/in/${detailedProfileData.id}` : 
-                   (basicProfileData?.sub ? `https://www.linkedin.com/in/${basicProfileData.sub}` : null))
+        // Constructed profile URL (use from existing data or construct as fallback)
+        profileUrl: profileUrl
       },
       email: basicProfileData?.email,
       fetchedAt: new Date().toISOString(),

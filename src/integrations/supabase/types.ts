@@ -17,9 +17,11 @@ export type Database = {
           "Discord-Handle": string | null
           Email: string
           "EVM-Public-Key": string
+          "First-Name": string | null
           "GitHub-Handle": string | null
           id: string
           "Instagram-Handle": string | null
+          "Last-Name": string | null
           "LinkedIn-ID": string | null
           "LinkedIn-Profile-URL": string | null
           "Local-City": string
@@ -39,9 +41,11 @@ export type Database = {
           "Discord-Handle"?: string | null
           Email?: string
           "EVM-Public-Key"?: string
+          "First-Name"?: string | null
           "GitHub-Handle"?: string | null
           id?: string
           "Instagram-Handle"?: string | null
+          "Last-Name"?: string | null
           "LinkedIn-ID"?: string | null
           "LinkedIn-Profile-URL"?: string | null
           "Local-City"?: string
@@ -61,9 +65,11 @@ export type Database = {
           "Discord-Handle"?: string | null
           Email?: string
           "EVM-Public-Key"?: string
+          "First-Name"?: string | null
           "GitHub-Handle"?: string | null
           id?: string
           "Instagram-Handle"?: string | null
+          "Last-Name"?: string | null
           "LinkedIn-ID"?: string | null
           "LinkedIn-Profile-URL"?: string | null
           "Local-City"?: string
