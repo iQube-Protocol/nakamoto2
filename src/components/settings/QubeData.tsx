@@ -1,6 +1,16 @@
 
 import { MetaQube } from '@/lib/types';
 
+// Helper function to calculate Trust Score
+const calculateTrustScore = (accuracyScore: number, verifiabilityScore: number): number => {
+  return Math.round((accuracyScore + verifiabilityScore) / 2);
+};
+
+// Helper function to calculate Reliability Index
+const calculateReliabilityIndex = (sensitivityScore: number, riskScore: number): number => {
+  return Math.round((sensitivityScore + (100 - riskScore)) / 2);
+};
+
 export const monDaiQubeData: MetaQube = {
   "iQube-Identifier": "Qrypto Persona iQube",
   "iQube-Type": "DataQube",
@@ -14,7 +24,9 @@ export const monDaiQubeData: MetaQube = {
   "Sensitivity-Score": 88,
   "Verifiability-Score": 87,
   "Accuracy-Score": 92,
-  "Risk-Score": 15
+  "Risk-Score": 15,
+  get "Trust-Score"() { return calculateTrustScore(this["Accuracy-Score"], this["Verifiability-Score"]); },
+  get "Reliability-Index"() { return calculateReliabilityIndex(this["Sensitivity-Score"], this["Risk-Score"]); }
 };
 
 export const veniceQubeData: MetaQube = {
@@ -30,7 +42,9 @@ export const veniceQubeData: MetaQube = {
   "Sensitivity-Score": 85,
   "Verifiability-Score": 90,
   "Accuracy-Score": 95,
-  "Risk-Score": 12
+  "Risk-Score": 12,
+  get "Trust-Score"() { return calculateTrustScore(this["Accuracy-Score"], this["Verifiability-Score"]); },
+  get "Reliability-Index"() { return calculateReliabilityIndex(this["Sensitivity-Score"], this["Risk-Score"]); }
 };
 
 export const metisQubeData: MetaQube = {
@@ -46,7 +60,9 @@ export const metisQubeData: MetaQube = {
   "Sensitivity-Score": 82,
   "Verifiability-Score": 85,
   "Accuracy-Score": 89,
-  "Risk-Score": 25
+  "Risk-Score": 25,
+  get "Trust-Score"() { return calculateTrustScore(this["Accuracy-Score"], this["Verifiability-Score"]); },
+  get "Reliability-Index"() { return calculateReliabilityIndex(this["Sensitivity-Score"], this["Risk-Score"]); }
 };
 
 export const gdriveQubeData: MetaQube = {
@@ -62,7 +78,9 @@ export const gdriveQubeData: MetaQube = {
   "Sensitivity-Score": 90,
   "Verifiability-Score": 88,
   "Accuracy-Score": 86,
-  "Risk-Score": 18
+  "Risk-Score": 18,
+  get "Trust-Score"() { return calculateTrustScore(this["Accuracy-Score"], this["Verifiability-Score"]); },
+  get "Reliability-Index"() { return calculateReliabilityIndex(this["Sensitivity-Score"], this["Risk-Score"]); }
 };
 
 export const contentQubeData: MetaQube = {
@@ -78,7 +96,9 @@ export const contentQubeData: MetaQube = {
   "Sensitivity-Score": 75,
   "Verifiability-Score": 81,
   "Accuracy-Score": 83,
-  "Risk-Score": 22
+  "Risk-Score": 22,
+  get "Trust-Score"() { return calculateTrustScore(this["Accuracy-Score"], this["Verifiability-Score"]); },
+  get "Reliability-Index"() { return calculateReliabilityIndex(this["Sensitivity-Score"], this["Risk-Score"]); }
 };
 
 export const modelQubeData: MetaQube = {
@@ -94,7 +114,9 @@ export const modelQubeData: MetaQube = {
   "Sensitivity-Score": 78,
   "Verifiability-Score": 89,
   "Accuracy-Score": 94,
-  "Risk-Score": 19
+  "Risk-Score": 19,
+  get "Trust-Score"() { return calculateTrustScore(this["Accuracy-Score"], this["Verifiability-Score"]); },
+  get "Reliability-Index"() { return calculateReliabilityIndex(this["Sensitivity-Score"], this["Risk-Score"]); }
 };
 
 export const qubeData = {
