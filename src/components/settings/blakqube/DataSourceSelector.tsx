@@ -97,11 +97,12 @@ const DataSourceSelector = ({ sourceKey, currentSource, iQubeType, onSourceChang
 
   return (
     <Select value={currentSource} onValueChange={(value) => onSourceChange(sourceKey, value)}>
-      <SelectTrigger className="h-6 w-8 text-xs p-1">
+      <SelectTrigger className="h-6 w-20 text-xs">
         <SelectValue>
           {currentSourceData && (
-            <div className="flex items-center justify-center">
+            <div className="flex items-center gap-1">
               {currentSourceData.icon}
+              <span className="hidden sm:inline">{currentSourceData.label.split(' ')[0]}</span>
             </div>
           )}
         </SelectValue>
