@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
-import { User, Linkedin, Wallet, Twitter, MessageCircle, MessageSquare, Users, Globe } from 'lucide-react';
+import { User, Linkedin, Wallet, Twitter, MessageCircle, MessageSquare, Users, Globe, Database, Brain } from 'lucide-react';
 
 interface DataSourceSelectorProps {
   sourceKey: string;
@@ -17,7 +17,7 @@ const DataSourceSelector = ({ sourceKey, currentSource, iQubeType, onSourceChang
       { 
         value: 'manual', 
         label: 'Manual Entry',
-        icon: <User className="h-3 w-3" />
+        icon: <User className="h-3 w-3 text-gray-500" />
       }
     ];
 
@@ -55,35 +55,35 @@ const DataSourceSelector = ({ sourceKey, currentSource, iQubeType, onSourceChang
           allSources.push({ 
             value: 'linkedin', 
             label: 'LinkedIn',
-            icon: <Linkedin className="h-3 w-3" />
+            icon: <Linkedin className="h-3 w-3 text-blue-500" />
           });
           break;
         case 'twitter':
           allSources.push({ 
             value: 'twitter', 
             label: 'Twitter',
-            icon: <Twitter className="h-3 w-3" />
+            icon: <Twitter className="h-3 w-3 text-blue-400" />
           });
           break;
         case 'telegram':
           allSources.push({ 
             value: 'telegram', 
             label: 'Telegram',
-            icon: <MessageCircle className="h-3 w-3" />
+            icon: <MessageCircle className="h-3 w-3 text-blue-500" />
           });
           break;
         case 'discord':
           allSources.push({ 
             value: 'discord', 
             label: 'Discord',
-            icon: <Users className="h-3 w-3" />
+            icon: <Users className="h-3 w-3 text-purple-500" />
           });
           break;
         case 'wallet':
           allSources.push({ 
             value: 'wallet', 
             label: 'Wallet',
-            icon: <Wallet className="h-3 w-3" />
+            icon: <Wallet className="h-3 w-3 text-orange-500" />
           });
           break;
       }
@@ -97,14 +97,9 @@ const DataSourceSelector = ({ sourceKey, currentSource, iQubeType, onSourceChang
 
   return (
     <Select value={currentSource} onValueChange={(value) => onSourceChange(sourceKey, value)}>
-      <SelectTrigger className="h-6 w-20 text-xs">
+      <SelectTrigger className="h-6 w-8 text-xs p-1">
         <SelectValue>
-          {currentSourceData && (
-            <div className="flex items-center gap-1">
-              {currentSourceData.icon}
-              <span className="hidden sm:inline">{currentSourceData.label.split(' ')[0]}</span>
-            </div>
-          )}
+          {currentSourceData && currentSourceData.icon}
         </SelectValue>
       </SelectTrigger>
       <SelectContent>

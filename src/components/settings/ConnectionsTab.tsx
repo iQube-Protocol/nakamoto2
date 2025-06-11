@@ -25,48 +25,50 @@ const ConnectionsTab = ({ settings, onConnectService }: ConnectionsTabProps) => 
           <BlakQubeRefreshButton />
         </div>
       </CardHeader>
-      <CardContent className="space-y-4">
-        <ServiceConnection
-          name="LinkedIn"
-          icon={<Linkedin className="h-4 w-4" />}
-          connected={settings.connected.linkedin}
-          onConnect={() => onConnectService('linkedin')}
-        />
-        
-        <ServiceConnection
-          name="MetaMask Wallet"
-          icon={<Wallet className="h-4 w-4" />}
-          connected={settings.connected.wallet}
-          onConnect={() => onConnectService('wallet')}
-        />
-        
-        <ServiceConnection
-          name="Twitter"
-          icon={<Twitter className="h-4 w-4" />}
-          connected={settings.connected.twitter}
-          onConnect={() => onConnectService('twitter')}
-        />
-        
-        <ServiceConnection
-          name="Telegram"
-          icon={<MessageCircle className="h-4 w-4" />}
-          connected={settings.connected.telegram}
-          onConnect={() => onConnectService('telegram')}
-        />
-        
-        <ServiceConnection
-          name="Discord"
-          icon={<MessageSquare className="h-4 w-4" />}
-          connected={settings.connected.discord}
-          onConnect={() => onConnectService('discord')}
-        />
-        
-        <ServiceConnection
-          name="Luma"
-          icon={<Calendar className="h-4 w-4" />}
-          connected={settings.connected.luma}
-          onConnect={() => onConnectService('luma')}
-        />
+      <CardContent>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <ServiceConnection
+            name="LinkedIn"
+            icon={<Linkedin className="h-4 w-4" />}
+            connected={settings.connected.linkedin}
+            onConnect={() => onConnectService('linkedin')}
+          />
+          
+          <ServiceConnection
+            name="MetaMask Wallet"
+            icon={<Wallet className="h-4 w-4" />}
+            connected={settings.connected.wallet}
+            onConnect={() => onConnectService('wallet')}
+          />
+          
+          <ServiceConnection
+            name="Twitter"
+            icon={<Twitter className="h-4 w-4" />}
+            connected={settings.connected.twitter}
+            onConnect={() => onConnectService('twitter')}
+          />
+          
+          <ServiceConnection
+            name="Telegram"
+            icon={<MessageCircle className="h-4 w-4" />}
+            connected={settings.connected.telegram}
+            onConnect={() => onConnectService('telegram')}
+          />
+          
+          <ServiceConnection
+            name="Discord"
+            icon={<MessageSquare className="h-4 w-4" />}
+            connected={settings.connected.discord}
+            onConnect={() => onConnectService('discord')}
+          />
+          
+          <ServiceConnection
+            name="Luma"
+            icon={<Calendar className="h-4 w-4" />}
+            connected={settings.connected.luma}
+            onConnect={() => onConnectService('luma')}
+          />
+        </div>
       </CardContent>
     </Card>
   );
