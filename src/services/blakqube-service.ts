@@ -104,15 +104,19 @@ export const blakQubeService = {
             const profile = connection.connection_data.profile;
             const email = connection.connection_data.email;
             
-            // Update LinkedIn-specific fields
+            // Update LinkedIn-specific fields with proper profile data
             if (profile.id) {
               newBlakQube["LinkedIn-ID"] = profile.id;
               console.log('Set LinkedIn ID:', profile.id);
             }
             
-            if (profile.profileUrl) {
+            // Use the real profile URL (publicProfileUrl or constructed one)
+            if (profile.publicProfileUrl) {
+              newBlakQube["LinkedIn-Profile-URL"] = profile.publicProfileUrl;
+              console.log('Set LinkedIn Profile URL from publicProfileUrl:', profile.publicProfileUrl);
+            } else if (profile.profileUrl) {
               newBlakQube["LinkedIn-Profile-URL"] = profile.profileUrl;
-              console.log('Set LinkedIn Profile URL:', profile.profileUrl);
+              console.log('Set LinkedIn Profile URL from profileUrl:', profile.profileUrl);
             }
             
             // Use email from LinkedIn if available and not already set
@@ -121,8 +125,11 @@ export const blakQubeService = {
               console.log('Set Email from LinkedIn:', email);
             }
             
-            // Construct profession from name if not already set
-            if (!newBlakQube["Profession"] && (profile.firstName || profile.lastName)) {
+            // Set profession from headline (primary) or constructed name (fallback)
+            if (profile.headline && !newBlakQube["Profession"]) {
+              newBlakQube["Profession"] = profile.headline;
+              console.log('Set Profession from LinkedIn headline:', profile.headline);
+            } else if (!newBlakQube["Profession"] && (profile.firstName || profile.lastName)) {
               const fullName = [profile.firstName, profile.lastName].filter(Boolean).join(' ');
               if (fullName) {
                 newBlakQube["Profession"] = fullName;
@@ -130,23 +137,34 @@ export const blakQubeService = {
               }
             }
             
-            // If we have more detailed profile data, extract additional fields
-            if (profile.headline && !newBlakQube["Profession"]) {
-              newBlakQube["Profession"] = profile.headline;
-              console.log('Set Profession from LinkedIn headline:', profile.headline);
-            }
-            
-            // Extract location if available
-            if (profile.location?.name && !newBlakQube["Local-City"]) {
+            // Extract location from detailed profile data
+            if (profile.locationName && !newBlakQube["Local-City"]) {
+              newBlakQube["Local-City"] = profile.locationName;
+              console.log('Set Local City from LinkedIn locationName:', profile.locationName);
+            } else if (profile.location?.name && !newBlakQube["Local-City"]) {
               newBlakQube["Local-City"] = profile.location.name;
-              console.log('Set Local City from LinkedIn:', profile.location.name);
+              console.log('Set Local City from LinkedIn location.name:', profile.location.name);
             } else if (profile.location?.preferredGeoPlace?.name && !newBlakQube["Local-City"]) {
               newBlakQube["Local-City"] = profile.location.preferredGeoPlace.name;
               console.log('Set Local City from LinkedIn geo place:', profile.location.preferredGeoPlace.name);
             }
             
             // Extract industry for Web3 interests if blockchain/crypto related
-            if (profile.industry) {
+            if (profile.industryName) {
+              const industry = profile.industryName.toLowerCase();
+              if (industry.includes('blockchain') || industry.includes('crypto') || 
+                  industry.includes('web3') || industry.includes('defi') || 
+                  industry.includes('nft') || industry.includes('bitcoin') || 
+                  industry.includes('ethereum') || industry.includes('fintech') ||
+                  industry.includes('financial technology')) {
+                const currentInterests = newBlakQube["Web3-Interests"] || [];
+                if (!currentInterests.includes(profile.industryName)) {
+                  newBlakQube["Web3-Interests"] = [...currentInterests, profile.industryName];
+                  console.log('Added Web3 interest from LinkedIn industry:', profile.industryName);
+                }
+              }
+            } else if (profile.industry) {
+              // Fallback to legacy industry field
               const industry = profile.industry.toLowerCase();
               if (industry.includes('blockchain') || industry.includes('crypto') || 
                   industry.includes('web3') || industry.includes('defi') || 
@@ -160,7 +178,7 @@ export const blakQubeService = {
               }
             }
             
-            // Extract skills if they're Web3 related
+            // Extract skills if they're Web3 related (if available in future API versions)
             if (profile.skills && Array.isArray(profile.skills)) {
               const web3Skills = profile.skills.filter((skill: string) => {
                 const skillLower = skill.toLowerCase();

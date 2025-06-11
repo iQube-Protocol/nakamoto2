@@ -27,7 +27,6 @@ serve(async (req) => {
         hasClientSecret: !!LINKEDIN_CLIENT_SECRET
       });
       
-      // Use the preview domain for redirects
       const clientOrigin = 'https://preview--nakamoto2.lovable.app';
       
       return new Response(
@@ -53,7 +52,6 @@ serve(async (req) => {
       state 
     });
     
-    // Use the preview domain for redirects
     const clientOrigin = 'https://preview--nakamoto2.lovable.app';
     console.log("Client origin for redirects:", clientOrigin);
     
@@ -144,12 +142,15 @@ serve(async (req) => {
 
     console.log("=== Fetching LinkedIn profile data ===");
 
-    // Fetch LinkedIn profile data with timeout
+    // Fetch basic profile data from userinfo endpoint
     const profileController = new AbortController();
     const profileTimeoutId = setTimeout(() => profileController.abort(), 10000);
 
-    let profileData = null;
+    let basicProfileData = null;
+    let detailedProfileData = null;
+
     try {
+      // Get basic profile info
       const profileResponse = await fetch("https://api.linkedin.com/v2/userinfo", {
         headers: {
           "Authorization": `Bearer ${accessToken}`,
@@ -160,42 +161,91 @@ serve(async (req) => {
       clearTimeout(profileTimeoutId);
 
       if (profileResponse.ok) {
-        profileData = await profileResponse.json();
-        console.log("Profile data fetched successfully:", {
-          sub: profileData?.sub,
-          given_name: profileData?.given_name,
-          family_name: profileData?.family_name,
-          email: profileData?.email
+        basicProfileData = await profileResponse.json();
+        console.log("Basic profile data fetched successfully:", {
+          sub: basicProfileData?.sub,
+          given_name: basicProfileData?.given_name,
+          family_name: basicProfileData?.family_name,
+          email: basicProfileData?.email
         });
       } else {
         const errorText = await profileResponse.text();
-        console.warn("Failed to fetch profile data:", {
+        console.warn("Failed to fetch basic profile data:", {
           status: profileResponse.status,
           statusText: profileResponse.statusText,
           error: errorText
         });
       }
+
+      // Try to get detailed profile information
+      console.log("=== Fetching detailed LinkedIn profile ===");
+      const detailedController = new AbortController();
+      const detailedTimeoutId = setTimeout(() => detailedController.abort(), 10000);
+
+      try {
+        const detailedResponse = await fetch("https://api.linkedin.com/v2/people/(id:~)?projection=(id,firstName,lastName,headline,industryName,locationName,publicProfileUrl,profilePicture(displayImage~:playableStreams))", {
+          headers: {
+            "Authorization": `Bearer ${accessToken}`,
+            "Accept": "application/json",
+          },
+          signal: detailedController.signal
+        });
+        clearTimeout(detailedTimeoutId);
+
+        if (detailedResponse.ok) {
+          detailedProfileData = await detailedResponse.json();
+          console.log("Detailed profile data fetched successfully:", {
+            id: detailedProfileData?.id,
+            headline: detailedProfileData?.headline,
+            industryName: detailedProfileData?.industryName,
+            locationName: detailedProfileData?.locationName,
+            publicProfileUrl: detailedProfileData?.publicProfileUrl
+          });
+        } else {
+          const errorText = await detailedResponse.text();
+          console.warn("Failed to fetch detailed profile data:", {
+            status: detailedResponse.status,
+            statusText: detailedResponse.statusText,
+            error: errorText
+          });
+        }
+      } catch (detailedError) {
+        clearTimeout(detailedTimeoutId);
+        console.warn("Detailed profile fetch error:", detailedError);
+      }
+
     } catch (profileError) {
       clearTimeout(profileTimeoutId);
       console.warn("Profile fetch error:", profileError);
     }
 
-    // Create connection data with better structure
+    // Create comprehensive connection data combining both sources
     const connectionData = {
       connected: true,
       access_token: accessToken,
-      profile: profileData ? {
-        id: profileData.sub,
-        firstName: profileData.given_name,
-        lastName: profileData.family_name,
-        name: profileData.name,
-        profileUrl: `https://www.linkedin.com/in/${profileData.sub}`,
-        profilePicture: profileData.picture
-      } : null,
-      email: profileData?.email,
+      profile: {
+        // Basic info from userinfo
+        id: basicProfileData?.sub || detailedProfileData?.id,
+        firstName: basicProfileData?.given_name || detailedProfileData?.firstName?.localized?.en_US,
+        lastName: basicProfileData?.family_name || detailedProfileData?.lastName?.localized?.en_US,
+        name: basicProfileData?.name,
+        profilePicture: basicProfileData?.picture,
+        
+        // Enhanced info from detailed profile
+        headline: detailedProfileData?.headline?.localized?.en_US,
+        industryName: detailedProfileData?.industryName?.localized?.en_US,
+        locationName: detailedProfileData?.locationName?.localized?.en_US,
+        publicProfileUrl: detailedProfileData?.publicProfileUrl,
+        
+        // Constructed profile URL (fallback if publicProfileUrl not available)
+        profileUrl: detailedProfileData?.publicProfileUrl || 
+                   (detailedProfileData?.id ? `https://www.linkedin.com/in/${detailedProfileData.id}` : 
+                   (basicProfileData?.sub ? `https://www.linkedin.com/in/${basicProfileData.sub}` : null))
+      },
+      email: basicProfileData?.email,
       fetchedAt: new Date().toISOString(),
       state: state,
-      version: "2.0"
+      version: "3.0"
     };
 
     console.log("=== Redirecting back to client app ===");
@@ -220,7 +270,6 @@ serve(async (req) => {
     console.error("=== Unexpected error ===", error);
     console.error("Error stack:", error.stack);
     
-    // Use the preview domain for redirects
     const clientOrigin = 'https://preview--nakamoto2.lovable.app';
     
     return new Response(

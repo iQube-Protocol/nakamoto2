@@ -48,21 +48,20 @@ serve(async (req) => {
       console.warn("Failed to parse request body:", e);
     }
     
-    // Create LinkedIn OAuth URL with modern scopes
-    const scope = encodeURIComponent("openid profile email");
+    // Create LinkedIn OAuth URL with expanded scopes for profile data
+    const scope = encodeURIComponent("openid profile email w_member_social");
     const state = crypto.randomUUID();
     
     console.log("Generated OAuth state:", state);
     
     // Generate the correct redirect URI for the Supabase edge function
-    // This should match exactly what you register in LinkedIn Developer Console
     const supabaseUrl = Deno.env.get("SUPABASE_URL") || url.origin;
     const redirectUri = `${supabaseUrl}/functions/v1/oauth-callback-linkedin`;
     
     console.log("Using redirect URI:", redirectUri);
     console.log("IMPORTANT: Register this exact URI in your LinkedIn app:", redirectUri);
     
-    // Construct the LinkedIn OAuth URL
+    // Construct the LinkedIn OAuth URL with expanded scopes
     const authUrl = `https://www.linkedin.com/oauth/v2/authorization?response_type=code&client_id=${LINKEDIN_CLIENT_ID}&redirect_uri=${encodeURIComponent(redirectUri)}&state=${state}&scope=${scope}`;
     
     console.log("Generated auth URL:", authUrl);
@@ -71,7 +70,7 @@ serve(async (req) => {
       authUrl,
       state,
       redirectUri,
-      correctRedirectUri: redirectUri, // Add this for reference
+      correctRedirectUri: redirectUri,
       timestamp: new Date().toISOString()
     };
     
