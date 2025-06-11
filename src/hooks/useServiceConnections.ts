@@ -32,8 +32,6 @@ export function useServiceConnections() {
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [retrying, setRetrying] = useState<ServiceType | null>(null);
-  const [connecting, setConnecting] = useState<Set<ServiceType>>(new Set());
   const { user } = useAuth();
   
   // Fetch connection status for all services
@@ -124,24 +122,25 @@ export function useServiceConnections() {
     return connectionData.wallet?.address || null;
   };
   
-  // Connect a service with improved error handling and duplicate prevention
+  // Connect a service with improved error handling
   const connectService = async (service: ServiceType): Promise<boolean> => {
-    // Prevent duplicate connections
-    if (connecting.has(service)) {
+    // Check if already connecting
+    if (connectionService.isServiceConnecting(service)) {
       console.log(`${service} connection already in progress`);
       toast.error(`${service} connection is already in progress. Please wait.`);
       return false;
     }
 
     console.log(`Attempting to connect ${service}...`);
-    setConnecting(prev => new Set([...prev, service]));
-    setRetrying(service);
     
     try {
+      let success = false;
+      
       if (service === 'wallet') {
-        const success = await connectionService.connectWallet();
+        success = await connectionService.connectWallet();
         if (success) {
           // Update BlakQube data after wallet connection
+          console.log('Wallet connected, updating BlakQube...');
           await blakQubeService.updateBlakQubeFromConnections();
           // Refresh connections to get the latest data without page reload
           await fetchConnections(false);
@@ -149,17 +148,13 @@ export function useServiceConnections() {
           // Dispatch custom event to notify other components that private data has been updated
           const event = new CustomEvent('privateDataUpdated');
           window.dispatchEvent(event);
-          
-          return true;
         }
-        return false;
       } else {
         try {
           // Clean up any incomplete OAuth attempts before starting new one
           connectionService.cleanupIncompleteOAuth();
           
-          const success = await connectionService.startOAuthFlow(service);
-          return success;
+          success = await connectionService.startOAuthFlow(service);
         } catch (error) {
           console.error(`Error starting OAuth flow for ${service}:`, error);
           
@@ -177,26 +172,17 @@ export function useServiceConnections() {
           return false;
         }
       }
-    } finally {
-      setConnecting(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(service);
-        return newSet;
-      });
-      setRetrying(null);
+      
+      return success;
+    } catch (error) {
+      console.error(`Error connecting ${service}:`, error);
+      toast.error(`Failed to connect to ${service}. Please try again.`);
+      return false;
     }
   };
   
   // Disconnect a service with improved error handling
   const disconnectService = async (service: ServiceType): Promise<boolean> => {
-    if (connecting.has(service)) {
-      console.log(`${service} disconnection blocked - connection in progress`);
-      return false;
-    }
-
-    setConnecting(prev => new Set([...prev, service]));
-    setRetrying(service);
-    
     try {
       const success = await connectionService.disconnectService(service);
       if (success) {
@@ -214,13 +200,6 @@ export function useServiceConnections() {
       console.error(`Error disconnecting ${service}:`, error);
       toast.error(`Failed to disconnect from ${service}. Please try again.`);
       return false;
-    } finally {
-      setConnecting(prev => {
-        const newSet = new Set(prev);
-        newSet.delete(service);
-        return newSet;
-      });
-      setRetrying(null);
     }
   };
   
@@ -235,28 +214,7 @@ export function useServiceConnections() {
   
   // Check if a service is currently being processed
   const isServiceProcessing = (service: ServiceType): boolean => {
-    return connecting.has(service) || retrying === service;
-  };
-  
-  // Retry connection with exponential backoff
-  const retryConnection = async (service: ServiceType, maxAttempts = 3): Promise<boolean> => {
-    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
-      console.log(`Retry attempt ${attempt} for ${service}`);
-      
-      const success = await connectService(service);
-      if (success) {
-        return true;
-      }
-      
-      if (attempt < maxAttempts) {
-        // Exponential backoff: wait 2^attempt seconds
-        const waitTime = Math.pow(2, attempt) * 1000;
-        await new Promise(resolve => setTimeout(resolve, waitTime));
-      }
-    }
-    
-    toast.error(`Failed to connect to ${service} after ${maxAttempts} attempts. Please try again later.`);
-    return false;
+    return connectionService.isServiceConnecting(service);
   };
   
   // Load connections when user changes
@@ -295,7 +253,6 @@ export function useServiceConnections() {
     toggleConnection,
     refreshConnections: fetchConnections,
     getWalletAddress,
-    isServiceProcessing,
-    retryConnection
+    isServiceProcessing
   };
 }

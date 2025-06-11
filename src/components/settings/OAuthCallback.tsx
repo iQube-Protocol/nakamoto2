@@ -71,31 +71,34 @@ const OAuthCallback = () => {
             
             console.log(`${service} connection saved successfully`);
             
-            // For LinkedIn connections, update BlakQube with profile data
-            if (service === 'linkedin') {
-              console.log('Updating BlakQube with LinkedIn data...');
-              setMessage('Importing your LinkedIn profile data...');
+            // CRITICAL FIX: Always update BlakQube after any successful connection
+            console.log('Updating BlakQube with connection data...');
+            setMessage(`Importing your ${service} profile data...`);
+            
+            // Add a small delay to ensure the database has been updated
+            await new Promise(resolve => setTimeout(resolve, 500));
+            
+            const updateSuccess = await blakQubeService.updateBlakQubeFromConnections();
+            
+            if (updateSuccess) {
+              console.log('BlakQube updated successfully with connection data');
+              setStatus('success');
               
-              const updateSuccess = await blakQubeService.updateBlakQubeFromConnections();
-              
-              if (updateSuccess) {
-                console.log('BlakQube updated successfully with LinkedIn data');
-                setStatus('success');
+              if (service === 'linkedin') {
                 setMessage('LinkedIn connected and profile data imported successfully!');
                 toast.success('LinkedIn connected and profile data imported to your BlakQube');
-                
-                // Trigger private data update event for immediate UI refresh
-                const event = new CustomEvent('privateDataUpdated');
-                window.dispatchEvent(event);
               } else {
-                console.warn('BlakQube update failed, but connection was successful');
-                setStatus('success');
-                setMessage('LinkedIn connected successfully, but profile import failed.');
-                toast.success('LinkedIn connected successfully');
+                setMessage(`${service} connected and data imported successfully!`);
+                toast.success(`${service} connected and data imported to your BlakQube`);
               }
+              
+              // Trigger private data update event for immediate UI refresh
+              const event = new CustomEvent('privateDataUpdated');
+              window.dispatchEvent(event);
             } else {
+              console.warn('BlakQube update failed, but connection was successful');
               setStatus('success');
-              setMessage(`${service} connected successfully!`);
+              setMessage(`${service} connected successfully, but profile import failed.`);
               toast.success(`${service} connected successfully`);
             }
             

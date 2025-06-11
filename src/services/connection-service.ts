@@ -1,6 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { walletConnectionService } from './wallet-connection-service';
 
 export type ServiceType = 'linkedin' | 'twitter' | 'telegram' | 'discord' | 'luma' | 'wallet';
 
@@ -113,104 +114,22 @@ export const connectionService = {
   },
   
   /**
-   * Connect wallet (direct connection, no OAuth)
+   * Connect wallet using the dedicated wallet service
    */
   connectWallet: async (): Promise<boolean> => {
     try {
-      console.log('Connecting wallet...');
+      console.log('Connecting wallet via wallet service...');
       
-      // Check if Web3 provider exists
-      if (typeof window.ethereum !== 'undefined') {
-        // Request account access
-        const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-        
-        if (accounts && accounts.length > 0) {
-          const walletAddress = accounts[0];
-          console.log('Wallet connected:', walletAddress);
-          
-          // Create a message for the user to sign
-          const message = `Please sign this message to verify your wallet ownership.\n\nWallet: ${walletAddress}\nTimestamp: ${new Date().toISOString()}`;
-          
-          try {
-            // Request signature from user
-            console.log('Requesting signature...');
-            const signature = await window.ethereum.request({
-              method: 'personal_sign',
-              params: [message, walletAddress],
-            });
-            
-            console.log('Signature received:', signature);
-            
-            // Get user
-            const { data: { user } } = await supabase.auth.getUser();
-            if (!user) {
-              toast.error('You must be logged in to connect a wallet.');
-              return false;
-            }
-
-            // Save wallet connection to database with signature
-            const { error: connectionError } = await supabase
-              .from('user_connections')
-              .upsert({
-                user_id: user.id,
-                service: 'wallet',
-                connected_at: new Date().toISOString(),
-                connection_data: { 
-                  address: walletAddress,
-                  signature: signature,
-                  message: message,
-                  signedAt: new Date().toISOString()
-                }
-              });
-            
-            if (connectionError) {
-              console.error('Error saving wallet connection:', connectionError);
-              toast.error('Failed to save wallet connection.');
-              return false;
-            }
-
-            // Update BlakQube with wallet address
-            const { error: blakQubeError } = await supabase
-              .from('blak_qubes')
-              .upsert({
-                user_id: user.id,
-                "EVM-Public-Key": walletAddress,
-                "Wallets-of-Interest": ["MetaMask"]
-              });
-
-            if (blakQubeError) {
-              console.error('Error updating BlakQube with wallet address:', blakQubeError);
-              // Don't fail the connection for this, just log it
-              console.log('Wallet connected but BlakQube update failed');
-            }
-            
-            toast.success('Wallet connected and signature verified successfully!');
-            return true;
-          } catch (signError) {
-            console.error('Error during signing process:', signError);
-            if (signError.code === 4001) {
-              // User rejected the request
-              toast.error('Wallet connection cancelled by user.');
-            } else {
-              toast.error('Failed to sign message. Wallet connection cancelled.');
-            }
-            return false;
-          }
-        }
-      } else {
-        toast.error('No Web3 provider found. Please install MetaMask or another Web3 wallet.');
+      // Check if already connecting
+      if (walletConnectionService.isConnecting()) {
+        console.log('Wallet connection already in progress');
         return false;
       }
       
-      return false;
+      const success = await walletConnectionService.connectWallet();
+      return success;
     } catch (error) {
-      console.error('Error connecting wallet:', error);
-      if (error.code === 4001) {
-        // User rejected the request
-        toast.error('Wallet connection cancelled by user.');
-      } else {
-        toast.error('Failed to connect wallet. Please try again.');
-      }
+      console.error('Error in wallet connection service:', error);
       return false;
     }
   },
@@ -230,7 +149,12 @@ export const connectionService = {
         return false;
       }
       
-      // For wallet disconnection, just delete from database - no MetaMask interaction
+      // For wallet disconnection, cancel any ongoing connection first
+      if (service === 'wallet') {
+        walletConnectionService.cancelConnection();
+      }
+      
+      // Delete from database
       const { error } = await supabase
         .from('user_connections')
         .delete()
@@ -307,15 +231,15 @@ export const connectionService = {
       localStorage.removeItem('oauth_attempt');
       activeOAuthFlows.clear();
     }
+  },
+  
+  /**
+   * Check if a service is currently connecting
+   */
+  isServiceConnecting: (service: ServiceType): boolean => {
+    if (service === 'wallet') {
+      return walletConnectionService.isConnecting();
+    }
+    return activeOAuthFlows.has(service);
   }
 };
-
-// Add TypeScript support for window.ethereum
-declare global {
-  interface Window {
-    ethereum?: {
-      request: (options: { method: string; params?: any[] }) => Promise<any>;
-      on: (event: string, callback: (...args: any[]) => void) => void;
-    };
-  }
-}
