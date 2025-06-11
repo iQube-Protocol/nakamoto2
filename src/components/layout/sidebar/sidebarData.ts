@@ -47,6 +47,14 @@ export const iQubeItems: QubeItem[] = [
     description: 'Cryptocurrency AI agent',
   },
   {
+    id: 'venice',
+    name: 'Venice',
+    type: 'AgentQube',
+    icon: Bot,
+    href: '/settings',
+    description: 'AI service that protects privacy and prevents censorship',
+  },
+  {
     id: 'agentqube',
     name: 'Metis',
     type: 'AgentQube',
@@ -68,5 +76,12 @@ export const metisQubeData = {
   id: 'metis',
   name: 'Metis AI',
   type: 'Assistant',
+  href: '/settings',
+};
+
+export const veniceQubeData = {
+  id: 'venice',
+  name: 'Venice AI',
+  type: 'Privacy Agent',
   href: '/settings',
 };

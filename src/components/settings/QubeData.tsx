@@ -1,4 +1,3 @@
-
 import { MetaQube } from "@/lib/types";
 
 // Sample metaQube data for Qrypto Persona (DataQube)
@@ -33,6 +32,23 @@ export const metisQubeData: MetaQube = {
   "Verifiability-Score": 8,
   "Accuracy-Score": 7,
   "Risk-Score": 3
+};
+
+// Sample metaQube data for Venice (AgentQube)
+export const veniceQubeData: MetaQube = {
+  "iQube-Identifier": "Venice iQube",
+  "iQube-Type": "AgentQube",
+  "iQube-Designer": "Aigent Venice",
+  "iQube-Use": "AI service that protects privacy and prevents censorship",
+  "Owner-Type": "Organization",
+  "Owner-Identifiability": "Semi-Identifiable",
+  "Date-Minted": new Date().toISOString(),
+  "Related-iQubes": ["DataQube1", "AgentQube1"],
+  "X-of-Y": "2 of 12",
+  "Sensitivity-Score": 2,
+  "Verifiability-Score": 8,
+  "Accuracy-Score": 5,
+  "Risk-Score": 2
 };
 
 // Sample metaQube data for GDrive (ToolQube)
@@ -88,6 +104,7 @@ export const modelQubeData: MetaQube = {
 
 export const qubeData = {
   monDai: monDaiQubeData,
+  venice: veniceQubeData,
   metis: metisQubeData,
   gdrive: gdriveQubeData,
   content: contentQubeData,

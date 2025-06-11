@@ -29,6 +29,9 @@ const IQubeSelector = ({
       if (iQubeId === "Qrypto Persona" || iQubeId === "Qrypto Persona iQube") {
         setSelectedIQube(qubeData.monDai);
         selectIQube("Qrypto Persona");
+      } else if (iQubeId === "Venice" || iQubeId === "Venice iQube") {
+        setSelectedIQube(qubeData.venice);
+        selectIQube("Venice");
       } else if ((iQubeId === "Metis" || iQubeId === "Metis iQube")) {
         setSelectedIQube(qubeData.metis);
         selectIQube("Metis");

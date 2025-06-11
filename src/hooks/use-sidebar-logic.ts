@@ -28,6 +28,7 @@ export const useSidebarLogic = () => {
   const [activeIQubes, setActiveIQubes] = useState<{[key: string]: boolean}>(() => {
     return {
       "Qrypto Persona": qryptoPersonaActivated,
+      "Venice": false,
       "Metis": metisActivated,
     };
   });
@@ -62,6 +63,7 @@ export const useSidebarLogic = () => {
             deactivateQryptoPersona();
           }
         }
+        // Venice doesn't need special handling yet as it doesn't have activation hooks
       }
     };
     
@@ -127,6 +129,7 @@ export const useSidebarLogic = () => {
         deactivateQryptoPersona();
       }
     }
+    // Venice doesn't need special handling yet
     
     // Dispatch event to update Settings page
     const event = new CustomEvent('iqubeToggle', { 

@@ -16,6 +16,7 @@ const Settings = () => {
   
   const [activeQubes, setActiveQubes] = useState<{[key: string]: boolean}>({
     "Qrypto Persona": qryptoPersonaActivated,
+    "Venice": false,
     "Metis": metisActivated,
     "GDrive": false
   });
