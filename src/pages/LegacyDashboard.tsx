@@ -1,8 +1,17 @@
-
 import React from 'react';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import DashboardOverview from '@/components/dashboard/DashboardOverview';
 import { MetaQube, DashboardMetrics } from '@/lib/types';
+
+// Helper function to calculate Trust Score
+const calculateTrustScore = (accuracyScore: number, verifiabilityScore: number): number => {
+  return Math.round((accuracyScore + verifiabilityScore) / 2);
+};
+
+// Helper function to calculate Reliability Index
+const calculateReliabilityIndex = (sensitivityScore: number, riskScore: number): number => {
+  return Math.round((sensitivityScore + (100 - riskScore)) / 2);
+};
 
 // Sample metaQube data
 const metaQubeData: MetaQube = {
@@ -18,7 +27,9 @@ const metaQubeData: MetaQube = {
   "Sensitivity-Score": 4,
   "Verifiability-Score": 5,
   "Accuracy-Score": 5,
-  "Risk-Score": 4
+  "Risk-Score": 4,
+  get "Trust-Score"() { return calculateTrustScore(this["Accuracy-Score"], this["Verifiability-Score"]); },
+  get "Reliability-Index"() { return calculateReliabilityIndex(this["Sensitivity-Score"], this["Risk-Score"]); }
 };
 
 // Sample dashboard metrics
