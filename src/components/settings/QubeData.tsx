@@ -11,12 +11,10 @@ export const monDaiQubeData: MetaQube = {
   "Date-Minted": "2024-01-15",
   "Related-iQubes": [],
   "X-of-Y": "1/1",
-  "Trust-Score": 95,
   "Sensitivity-Score": 88,
-  "Risk-Score": 15,
-  "Accuracy-Score": 92,
   "Verifiability-Score": 87,
-  "Reliability-Index": 91
+  "Accuracy-Score": 92,
+  "Risk-Score": 15
 };
 
 export const veniceQubeData: MetaQube = {
@@ -29,12 +27,10 @@ export const veniceQubeData: MetaQube = {
   "Date-Minted": "2024-02-01",
   "Related-iQubes": [],
   "X-of-Y": "1/1",
-  "Trust-Score": 98,
   "Sensitivity-Score": 85,
-  "Risk-Score": 12,
-  "Accuracy-Score": 95,
   "Verifiability-Score": 90,
-  "Reliability-Index": 94
+  "Accuracy-Score": 95,
+  "Risk-Score": 12
 };
 
 export const metisQubeData: MetaQube = {
@@ -47,12 +43,10 @@ export const metisQubeData: MetaQube = {
   "Date-Minted": "2024-01-20",
   "Related-iQubes": [],
   "X-of-Y": "1/1",
-  "Trust-Score": 87,
   "Sensitivity-Score": 82,
-  "Risk-Score": 25,
-  "Accuracy-Score": 89,
   "Verifiability-Score": 85,
-  "Reliability-Index": 86
+  "Accuracy-Score": 89,
+  "Risk-Score": 25
 };
 
 export const gdriveQubeData: MetaQube = {
@@ -65,12 +59,10 @@ export const gdriveQubeData: MetaQube = {
   "Date-Minted": "2024-02-10",
   "Related-iQubes": [],
   "X-of-Y": "1/1",
-  "Trust-Score": 82,
   "Sensitivity-Score": 90,
-  "Risk-Score": 18,
-  "Accuracy-Score": 86,
   "Verifiability-Score": 88,
-  "Reliability-Index": 87
+  "Accuracy-Score": 86,
+  "Risk-Score": 18
 };
 
 export const contentQubeData: MetaQube = {
@@ -83,12 +75,10 @@ export const contentQubeData: MetaQube = {
   "Date-Minted": "2024-01-25",
   "Related-iQubes": [],
   "X-of-Y": "1/1",
-  "Trust-Score": 79,
   "Sensitivity-Score": 75,
-  "Risk-Score": 22,
-  "Accuracy-Score": 83,
   "Verifiability-Score": 81,
-  "Reliability-Index": 80
+  "Accuracy-Score": 83,
+  "Risk-Score": 22
 };
 
 export const modelQubeData: MetaQube = {
@@ -101,12 +91,10 @@ export const modelQubeData: MetaQube = {
   "Date-Minted": "2024-02-15",
   "Related-iQubes": [],
   "X-of-Y": "1/1",
-  "Trust-Score": 91,
   "Sensitivity-Score": 78,
-  "Risk-Score": 19,
-  "Accuracy-Score": 94,
   "Verifiability-Score": 89,
-  "Reliability-Index": 90
+  "Accuracy-Score": 94,
+  "Risk-Score": 19
 };
 
 export const qubeData = {
