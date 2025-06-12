@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
@@ -24,7 +23,7 @@ export function useServiceConnections() {
     facebook: false,
     youtube: false,
     tiktok: false,
-    thirdweb: false
+    instagram: false
   });
   const [connectionData, setConnectionData] = useState<Record<ServiceType, any>>({
     linkedin: null,
@@ -36,7 +35,7 @@ export function useServiceConnections() {
     facebook: null,
     youtube: null,
     tiktok: null,
-    thirdweb: null
+    instagram: null
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -87,7 +86,7 @@ export function useServiceConnections() {
         facebook: false,
         youtube: false,
         tiktok: false,
-        thirdweb: false
+        instagram: false
       };
 
       const newConnectionData = {
@@ -100,7 +99,7 @@ export function useServiceConnections() {
         facebook: null,
         youtube: null,
         tiktok: null,
-        thirdweb: null
+        instagram: null
       };
       
       // Update connections based on database results

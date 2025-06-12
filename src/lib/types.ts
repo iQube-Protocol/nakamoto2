@@ -135,6 +135,7 @@ export interface UserSettings {
     twitter: boolean;
     discord: boolean;
     wallet: boolean;
+    instagram: boolean;
   };
   dataSync: boolean;
   notifications: boolean;
