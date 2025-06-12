@@ -1,6 +1,7 @@
+
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { ChevronDown, Database, Brain, FolderGit2 } from 'lucide-react';
+import { ChevronDown, Database, Brain, Bot, FolderGit2 } from 'lucide-react';
 import { TooltipProvider, Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Switch } from "@/components/ui/switch";
@@ -35,13 +36,22 @@ const IQubesSection: React.FC<IQubesSectionProps> = ({
 }) => {
   const isMobile = useIsMobile();
   
-  // Function to render iQube type icon based on type
-  const renderIQubeTypeIcon = (type: string) => {
+  // Function to render iQube type icon based on specific qube name and type
+  const renderIQubeTypeIcon = (qubeName: string, type: string) => {
+    // Special cases for specific qubes
+    if (qubeName === "Venice") {
+      return <Brain className="h-4 w-4 text-purple-500" />;
+    }
+    if (qubeName === "Metis") {
+      return <Bot className="h-4 w-4 text-purple-500" />;
+    }
+    
+    // Default icons by type
     switch(type) {
       case 'DataQube':
         return <Database className="h-4 w-4 text-blue-500" />;
       case 'AgentQube':
-        return <Brain className="h-4 w-4 text-purple-500" />;
+        return <Bot className="h-4 w-4 text-purple-500" />;
       case 'ToolQube':
         return <FolderGit2 className="h-4 w-4 text-green-500" />;
       default:
@@ -160,7 +170,7 @@ const IQubesSection: React.FC<IQubesSectionProps> = ({
                       onClick={() => handleIQubeItemClick(qube.name)}
                     >
                       <span className="mr-2">
-                        {renderIQubeTypeIcon(qube.type)}
+                        {renderIQubeTypeIcon(qube.name, qube.type)}
                       </span>
                       <span className="mr-2">{qube.name}</span>
                     </div>
