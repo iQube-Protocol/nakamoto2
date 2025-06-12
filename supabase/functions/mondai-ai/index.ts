@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { OpenAI } from 'https://esm.sh/openai@4.0.0';
@@ -134,7 +135,7 @@ Your tone is conversational, upbeat, and encouraging - like a knowledgeable frie
 `;
 
 /**
- * Create OpenAI client with conditional endpoint
+ * Create AI client with proper Venice configuration
  */
 function createAIClient(useVenice: boolean = false) {
   const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
@@ -144,6 +145,8 @@ function createAIClient(useVenice: boolean = false) {
     if (!veniceApiKey) {
       throw new Error('Venice AI API key not configured');
     }
+    
+    console.log('🔧 Venice: Creating Venice AI client with uncensored configuration');
     
     return new OpenAI({
       apiKey: veniceApiKey,
@@ -161,7 +164,7 @@ function createAIClient(useVenice: boolean = false) {
 }
 
 /**
- * Process the user's query with enhanced context
+ * Process the user's query with enhanced context and proper Venice configuration
  */
 async function processWithOpenAI(
   message: string,
@@ -206,8 +209,24 @@ Type: ${item.type || 'General'}
     generalKnowledgeContext
   ].filter(Boolean).join('\n\n');
 
-  const response = await client.chat.completions.create({
+  // Configure model and parameters based on provider
+  const modelConfig = useVenice ? {
+    model: "llama-3.1-405b-instruct",  // Venice's most capable uncensored model
+    temperature: 0.8,
+    max_tokens: 2000,
+    top_p: 0.9,
+    frequency_penalty: 0.1,
+    presence_penalty: 0.1
+  } : {
     model: "gpt-4o-mini",
+    temperature: 0.7,
+    max_tokens: 1500
+  };
+
+  console.log(`🚀 ${useVenice ? 'Venice' : 'OpenAI'}: Making API call with model: ${modelConfig.model}`);
+
+  const response = await client.chat.completions.create({
+    ...modelConfig,
     messages: [
       { 
         role: "system", 
@@ -218,9 +237,9 @@ Type: ${item.type || 'General'}
         content: message 
       }
     ],
-    temperature: 0.7,
-    max_tokens: 1500,
   });
+
+  console.log(`✅ ${useVenice ? 'Venice' : 'OpenAI'}: Response received successfully`);
 
   return response.choices[0]?.message?.content || "I apologize, I wasn't able to process your request.";
 }
@@ -249,6 +268,8 @@ async function processMonDAIInteraction(
     conversationId = crypto.randomUUID();
   }
   
+  console.log(`🔄 MonDAI Edge Function: Processing with ${useVenice ? 'Venice AI (uncensored)' : 'OpenAI'}`);
+  
   // Process with the AI API (OpenAI or Venice)
   const aiResponse = await processWithOpenAI(
     message, 
@@ -266,20 +287,23 @@ async function processMonDAIInteraction(
   // Determine if response might benefit from visuals
   const visualsProvided = mermaidDiagramIncluded || message.toLowerCase().includes('diagram');
   
+  const modelUsed = useVenice ? "llama-3.1-405b-instruct" : "gpt-4o-mini";
+  const aiProvider = useVenice ? "Venice AI (Uncensored)" : "OpenAI";
+  
   return {
     conversationId,
     message: aiResponse,
     timestamp: new Date().toISOString(),
     metadata: {
       version: "1.0",
-      modelUsed: useVenice ? "venice-gpt-4o-mini" : "gpt-4o-mini",
+      modelUsed,
       knowledgeSource: qryptoKnowledgeContext ? "QryptoCOYN Knowledge Base + AI" : 
                       knowledgeItems.length > 0 ? "KBAI Knowledge Base" : "General Knowledge",
       itemsFound: knowledgeItems.length,
       visualsProvided,
       mermaidDiagramIncluded,
       isOffline: false,
-      aiProvider: useVenice ? "Venice AI" : "OpenAI"
+      aiProvider
     }
   };
 }
@@ -318,8 +342,6 @@ serve(async (req) => {
         }
       );
     }
-
-    console.log(`🌐 MonDAI Edge Function: Processing with ${useVenice ? 'Venice AI' : 'OpenAI'}`);
 
     // Process the message with enhanced context and AI provider selection
     const response = await processMonDAIInteraction(
