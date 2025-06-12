@@ -82,17 +82,33 @@ export const blakQubeService = {
       
       console.log('Converted BlakQube data for save:', blakQubeData);
       
-      // Save to database using upsert
-      const { error } = await (supabase as any)
+      // First try to update existing record
+      const { data: updateResult, error: updateError } = await (supabase as any)
         .from('blak_qubes')
-        .upsert({
-          user_id: user.user.id,
+        .update({
           ...blakQubeData,
           updated_at: new Date().toISOString()
-        });
+        })
+        .eq('user_id', user.user.id)
+        .select();
       
-      if (error) {
-        console.error('Error saving manual BlakQube data:', error);
+      // If no rows were updated (user doesn't have a BlakQube yet), insert a new one
+      if (updateResult && updateResult.length === 0) {
+        console.log('No existing BlakQube found, inserting new record');
+        const { error: insertError } = await (supabase as any)
+          .from('blak_qubes')
+          .insert({
+            user_id: user.user.id,
+            ...blakQubeData,
+            updated_at: new Date().toISOString()
+          });
+        
+        if (insertError) {
+          console.error('Error inserting new BlakQube data:', insertError);
+          return false;
+        }
+      } else if (updateError) {
+        console.error('Error updating BlakQube data:', updateError);
         return false;
       }
       
@@ -383,20 +399,37 @@ export const blakQubeService = {
       
       console.log('Updated BlakQube data:', newBlakQube);
       
-      // Save updated BlakQube
-      const { error: updateError } = await (supabase as any)
+      // Save updated BlakQube using the same logic as manual save
+      const { data: updateResult, error: updateError } = await (supabase as any)
         .from('blak_qubes')
-        .upsert({
-          user_id: user.user.id,
-          ...newBlakQube
-        });
+        .update({
+          ...newBlakQube,
+          updated_at: new Date().toISOString()
+        })
+        .eq('user_id', user.user.id)
+        .select();
       
-      if (updateError) {
-        console.error('Error updating BlakQube:', updateError);
+      // If no rows were updated (user doesn't have a BlakQube yet), insert a new one
+      if (updateResult && updateResult.length === 0) {
+        console.log('No existing BlakQube found, inserting new record for connections update');
+        const { error: insertError } = await (supabase as any)
+          .from('blak_qubes')
+          .insert({
+            user_id: user.user.id,
+            ...newBlakQube,
+            updated_at: new Date().toISOString()
+          });
+        
+        if (insertError) {
+          console.error('Error inserting BlakQube from connections:', insertError);
+          return false;
+        }
+      } else if (updateError) {
+        console.error('Error updating BlakQube from connections:', updateError);
         return false;
       }
       
-      console.log('BlakQube updated successfully');
+      console.log('BlakQube updated successfully from connections');
       return true;
     } catch (error) {
       console.error('Error in updateBlakQubeFromConnections:', error);

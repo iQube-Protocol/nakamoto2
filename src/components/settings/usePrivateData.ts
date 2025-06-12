@@ -148,7 +148,11 @@ export const usePrivateData = (selectedIQube: MetaQube) => {
         console.log('Private data saved successfully to database');
         toast.success('BlakQube data saved successfully');
         
-        // Trigger a refresh to ensure data consistency
+        // Also trigger connection updates to maintain consistency
+        console.log('Triggering connection updates after manual save...');
+        await blakQubeService.updateBlakQubeFromConnections();
+        
+        // Trigger a final refresh to ensure data consistency
         await loadBlakQubeData();
       } else {
         console.error('Failed to save private data to database');
