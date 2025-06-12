@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   AlertCircle, 
@@ -91,6 +90,12 @@ const AgentActivationModal = ({
               detail: { activated: true, visible: true } 
             }));
             console.log('Dispatched veniceStateChanged event');
+          } else if (agentName === 'Qrypto Persona') {
+            localStorage.setItem('qrypto-persona-activated', 'true');
+            window.dispatchEvent(new CustomEvent('qryptoPersonaStateChanged', { 
+              detail: { activated: true } 
+            }));
+            console.log('Dispatched qryptoPersonaStateChanged event');
           }
         }, 3500);
       } else {
