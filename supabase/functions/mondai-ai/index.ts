@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { OpenAI } from 'https://esm.sh/openai@4.0.0';
@@ -146,7 +145,7 @@ function createAIClient(useVenice: boolean = false) {
       throw new Error('Venice AI API key not configured');
     }
     
-    console.log('🔧 Venice: Creating Venice AI client with uncensored configuration');
+    console.log('🔧 Venice: Creating Venice AI client with proper configuration');
     
     return new OpenAI({
       apiKey: veniceApiKey,
@@ -161,6 +160,34 @@ function createAIClient(useVenice: boolean = false) {
       apiKey: openAIApiKey,
     });
   }
+}
+
+/**
+ * Select appropriate Venice model based on query type
+ */
+function selectVeniceModel(message: string): string {
+  const messageLower = message.toLowerCase();
+  
+  // For creative, roleplay, or unrestricted content
+  if (messageLower.includes('creative') || messageLower.includes('story') || 
+      messageLower.includes('roleplay') || messageLower.includes('uncensored')) {
+    return "venice-uncensored";
+  }
+  
+  // For complex reasoning, research, or analytical tasks
+  if (messageLower.includes('analyze') || messageLower.includes('research') || 
+      messageLower.includes('logic') || messageLower.includes('reasoning')) {
+    return "venice-reasoning";
+  }
+  
+  // For technical or complex tasks
+  if (messageLower.includes('technical') || messageLower.includes('code') || 
+      messageLower.includes('complex') || messageLower.includes('detailed')) {
+    return "venice-large";
+  }
+  
+  // Default to venice-uncensored for general use
+  return "venice-uncensored";
 }
 
 /**
@@ -210,38 +237,91 @@ Type: ${item.type || 'General'}
   ].filter(Boolean).join('\n\n');
 
   // Configure model and parameters based on provider
-  const modelConfig = useVenice ? {
-    model: "llama-3.1-8b-instruct",  // Use Venice's available 8B model which should be supported
-    temperature: 0.8,
-    max_tokens: 2000,
-    top_p: 0.9,
-    frequency_penalty: 0.1,
-    presence_penalty: 0.1
-  } : {
-    model: "gpt-4o-mini",
-    temperature: 0.7,
-    max_tokens: 1500
-  };
+  let modelConfig;
+  let veniceParameters = {};
+  
+  if (useVenice) {
+    const selectedModel = selectVeniceModel(message);
+    console.log(`🎯 Venice: Selected model "${selectedModel}" based on query type`);
+    
+    modelConfig = {
+      model: selectedModel,
+      temperature: 0.8,
+      max_tokens: 2000,
+      top_p: 0.9,
+      frequency_penalty: 0.1,
+      presence_penalty: 0.1
+    };
+    
+    // Add Venice-specific parameters
+    veniceParameters = {
+      venice_parameters: {
+        include_venice_system_prompt: false, // Use our custom system prompt
+        enable_web_search: "auto" // Enable web search when beneficial
+      }
+    };
+  } else {
+    modelConfig = {
+      model: "gpt-4o-mini",
+      temperature: 0.7,
+      max_tokens: 1500
+    };
+  }
 
   console.log(`🚀 ${useVenice ? 'Venice' : 'OpenAI'}: Making API call with model: ${modelConfig.model}`);
+  
+  try {
+    const requestBody = {
+      ...modelConfig,
+      ...veniceParameters,
+      messages: [
+        { 
+          role: "system", 
+          content: fullContext
+        },
+        { 
+          role: "user", 
+          content: message 
+        }
+      ],
+    };
+    
+    console.log(`🔧 ${useVenice ? 'Venice' : 'OpenAI'}: Request config:`, {
+      model: requestBody.model,
+      hasVeniceParams: !!requestBody.venice_parameters,
+      messageCount: requestBody.messages.length
+    });
 
-  const response = await client.chat.completions.create({
-    ...modelConfig,
-    messages: [
-      { 
-        role: "system", 
-        content: fullContext
-      },
-      { 
-        role: "user", 
-        content: message 
-      }
-    ],
-  });
+    const response = await client.chat.completions.create(requestBody);
 
-  console.log(`✅ ${useVenice ? 'Venice' : 'OpenAI'}: Response received successfully`);
+    console.log(`✅ ${useVenice ? 'Venice' : 'OpenAI'}: Response received successfully`);
 
-  return response.choices[0]?.message?.content || "I apologize, I wasn't able to process your request.";
+    return response.choices[0]?.message?.content || "I apologize, I wasn't able to process your request.";
+    
+  } catch (error) {
+    console.error(`❌ ${useVenice ? 'Venice' : 'OpenAI'}: API Error:`, {
+      message: error.message,
+      status: error.status,
+      code: error.code,
+      type: error.type
+    });
+    
+    if (useVenice) {
+      console.log('🔄 Venice: Attempting fallback to OpenAI due to Venice error');
+      // Fallback to OpenAI if Venice fails
+      return await processWithOpenAI(
+        message, 
+        knowledgeItems, 
+        conversationId, 
+        historicalContext,
+        systemPrompt,
+        qryptoKnowledgeContext,
+        false // Use OpenAI as fallback
+      );
+    }
+    
+    throw error;
+  }
 }
 
 /**
@@ -287,7 +367,7 @@ async function processMonDAIInteraction(
   // Determine if response might benefit from visuals
   const visualsProvided = mermaidDiagramIncluded || message.toLowerCase().includes('diagram');
   
-  const modelUsed = useVenice ? "llama-3.1-8b-instruct" : "gpt-4o-mini";
+  const modelUsed = useVenice ? selectVeniceModel(message) : "gpt-4o-mini";
   const aiProvider = useVenice ? "Venice AI (Uncensored)" : "OpenAI";
   
   return {
@@ -369,7 +449,11 @@ serve(async (req) => {
     return new Response(
       JSON.stringify({
         error: 'Error processing request',
-        message: error instanceof Error ? error.message : String(error)
+        message: error instanceof Error ? error.message : String(error),
+        details: error instanceof Error ? {
+          name: error.name,
+          stack: error.stack
+        } : undefined
       }),
       {
         status: 500,
