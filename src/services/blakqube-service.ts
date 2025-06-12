@@ -1,7 +1,10 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { BlakQube } from '@/lib/types';
 import { toast } from 'sonner';
+
+interface PrivateData {
+  [key: string]: string | string[];
+}
 
 /**
  * Service for managing BlakQube data
@@ -34,6 +37,70 @@ export const blakQubeService = {
     } catch (error) {
       console.error('Error in getBlakQubeData:', error);
       return null;
+    }
+  },
+  
+  /**
+   * Save manually edited BlakQube data to the database
+   */
+  saveManualBlakQubeData: async (data: PrivateData): Promise<boolean> => {
+    try {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user) {
+        console.error('User not authenticated');
+        return false;
+      }
+      
+      console.log('Saving manual BlakQube data for user:', user.user.id, data);
+      
+      // Convert PrivateData format to BlakQube format
+      const blakQubeData: Partial<BlakQube> = {
+        "First-Name": data["First-Name"] as string || "",
+        "Last-Name": data["Last-Name"] as string || "",
+        "Qrypto-ID": data["Qrypto-ID"] as string || "",
+        "Profession": data["Profession"] as string || "",
+        "Local-City": data["Local-City"] as string || "",
+        "Email": data["Email"] as string || "",
+        "LinkedIn-ID": data["LinkedIn-ID"] as string || "",
+        "LinkedIn-Profile-URL": data["LinkedIn-Profile-URL"] as string || "",
+        "Twitter-Handle": data["Twitter-Handle"] as string || "",
+        "Telegram-Handle": data["Telegram-Handle"] as string || "",
+        "Discord-Handle": data["Discord-Handle"] as string || "",
+        "Instagram-Handle": data["Instagram-Handle"] as string || "",
+        "GitHub-Handle": data["GitHub-Handle"] as string || "",
+        "YouTube-ID": data["YouTube-ID"] as string || "",
+        "Facebook-ID": data["Facebook-ID"] as string || "",
+        "TikTok-Handle": data["TikTok-Handle"] as string || "",
+        "Web3-Interests": Array.isArray(data["Web3-Interests"]) ? data["Web3-Interests"] as string[] : [],
+        "EVM-Public-Key": data["EVM-Public-Key"] as string || "",
+        "BTC-Public-Key": data["BTC-Public-Key"] as string || "",
+        "ThirdWeb-Public-Key": data["ThirdWeb-Public-Key"] as string || "",
+        "Tokens-of-Interest": Array.isArray(data["Tokens-of-Interest"]) ? data["Tokens-of-Interest"] as string[] : [],
+        "Chain-IDs": Array.isArray(data["Chain-IDs"]) ? data["Chain-IDs"] as string[] : [],
+        "Wallets-of-Interest": Array.isArray(data["Wallets-of-Interest"]) ? data["Wallets-of-Interest"] as string[] : []
+      };
+      
+      console.log('Converted BlakQube data for save:', blakQubeData);
+      
+      // Save to database using upsert
+      const { error } = await (supabase as any)
+        .from('blak_qubes')
+        .upsert({
+          user_id: user.user.id,
+          ...blakQubeData,
+          updated_at: new Date().toISOString()
+        });
+      
+      if (error) {
+        console.error('Error saving manual BlakQube data:', error);
+        return false;
+      }
+      
+      console.log('Manual BlakQube data saved successfully');
+      return true;
+    } catch (error) {
+      console.error('Error in saveManualBlakQubeData:', error);
+      return false;
     }
   },
   
@@ -177,15 +244,17 @@ export const blakQubeService = {
               console.log('Set Local City from LinkedIn:', locationName);
             }
             
-            // Extract industry for Web3 interests if blockchain/crypto related
+            // Enhanced Web3 interest detection from industry
             const industryName = profile.industryName || profile.industry;
             if (industryName) {
               const industry = industryName.toLowerCase();
-              if (industry.includes('blockchain') || industry.includes('crypto') || 
-                  industry.includes('web3') || industry.includes('defi') || 
-                  industry.includes('nft') || industry.includes('bitcoin') || 
-                  industry.includes('ethereum') || industry.includes('fintech') ||
-                  industry.includes('financial technology')) {
+              const web3Keywords = [
+                'blockchain', 'crypto', 'cryptocurrency', 'web3', 'defi', 'decentralized finance',
+                'nft', 'non-fungible token', 'bitcoin', 'ethereum', 'fintech', 'financial technology',
+                'digital assets', 'smart contracts', 'dapp', 'decentralized', 'tokenization'
+              ];
+              
+              if (web3Keywords.some(keyword => industry.includes(keyword))) {
                 const currentInterests = newBlakQube["Web3-Interests"] || [];
                 if (!currentInterests.includes(industryName)) {
                   newBlakQube["Web3-Interests"] = [...currentInterests, industryName];
@@ -225,6 +294,15 @@ export const blakQubeService = {
                 ...(newBlakQube["Wallets-of-Interest"] || []),
                 "MetaMask"
               ];
+            }
+            
+            // Add common tokens of interest for wallet connections
+            const commonTokens = ["ETH", "BTC", "USDC", "USDT"];
+            const currentTokens = newBlakQube["Tokens-of-Interest"] || [];
+            const newTokens = commonTokens.filter(token => !currentTokens.includes(token));
+            if (newTokens.length > 0) {
+              newBlakQube["Tokens-of-Interest"] = [...currentTokens, ...newTokens];
+              console.log('Added common tokens of interest:', newTokens);
             }
           }
           

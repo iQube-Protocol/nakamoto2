@@ -3,6 +3,7 @@ import { useState, useEffect } from 'react';
 import { MetaQube } from '@/lib/types';
 import { blakQubeService } from '@/services/blakqube-service';
 import { useAuth } from '@/hooks/use-auth';
+import { toast } from 'sonner';
 
 interface PrivateData {
   [key: string]: string | string[];
@@ -135,14 +136,33 @@ export const usePrivateData = (selectedIQube: MetaQube) => {
 
   const handleUpdatePrivateData = async (newData: PrivateData) => {
     console.log('Updating private data:', newData);
-    setPrivateData(newData);
     
-    // Save to database using BlakQube service
     try {
-      // For now, just update local state. In a real implementation, you'd save to database
-      console.log('Private data updated locally');
+      // Update local state immediately for UI responsiveness
+      setPrivateData(newData);
+      
+      // Save to database using BlakQube service
+      const success = await blakQubeService.saveManualBlakQubeData(newData);
+      
+      if (success) {
+        console.log('Private data saved successfully to database');
+        toast.success('BlakQube data saved successfully');
+        
+        // Trigger a refresh to ensure data consistency
+        await loadBlakQubeData();
+      } else {
+        console.error('Failed to save private data to database');
+        toast.error('Failed to save BlakQube data. Please try again.');
+        
+        // Revert local state on failure
+        await loadBlakQubeData();
+      }
     } catch (error) {
       console.error('Error saving private data:', error);
+      toast.error('Error saving BlakQube data. Please try again.');
+      
+      // Revert local state on error
+      await loadBlakQubeData();
     }
   };
 
