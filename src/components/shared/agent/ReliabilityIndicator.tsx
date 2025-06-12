@@ -9,14 +9,26 @@ interface ReliabilityIndicatorProps {
 }
 
 const ReliabilityIndicator = ({ isProcessing = false, metaQube }: ReliabilityIndicatorProps) => {
-  // Calculate trust from metaQube data if available, otherwise use default
+  // Calculate trust and reliability from metaQube data if available, otherwise use default
   const trust = metaQube 
     ? Math.round(((metaQube["Accuracy-Score"] + metaQube["Verifiability-Score"]) / 2) * 10) / 10
-    : 4;
+    : 5;
+
+  const reliability = metaQube
+    ? Math.round(((metaQube["Accuracy-Score"] + metaQube["Verifiability-Score"] + (10 - metaQube["Risk-Score"])) / 3) * 10) / 10
+    : 6;
 
   const getTrustColor = (score: number) => {
     return score >= 7 
       ? "bg-green-500/60" 
+      : score >= 4 
+        ? "bg-yellow-500/60" 
+        : "bg-red-500/60";
+  };
+
+  const getReliabilityColor = (score: number) => {
+    return score >= 7 
+      ? "bg-purple-500/60" 
       : score >= 4 
         ? "bg-yellow-500/60" 
         : "bg-red-500/60";
@@ -32,9 +44,30 @@ const ReliabilityIndicator = ({ isProcessing = false, metaQube }: ReliabilityInd
 
   // Convert 1-10 scores to 1-5 dots
   const trustDots = Math.ceil(trust / 2);
+  const reliabilityDots = Math.ceil(reliability / 2);
 
   return (
-    <div className="flex items-center gap-3 bg-muted/30 p-2 rounded-md">
+    <div className="flex items-center gap-6 bg-muted/30 p-2 rounded-md">
+      <div className="flex flex-col items-center">
+        <div className="text-xs text-muted-foreground mb-1">
+          {isProcessing ? "Thinking..." : "Reliability"}
+        </div>
+        <ScoreTooltip type="trust" score={reliability}>
+          <div className="flex items-center cursor-help">
+            {Array.from({ length: 5 }).map((_, i) => (
+              <div 
+                key={i}
+                className={`w-1.5 h-1.5 rounded-full mx-0.5 ${i < reliabilityDots ? getReliabilityColor(reliability) : 'bg-muted'} ${getAnimationClass(i)}`}
+                style={{ 
+                  animationDelay: isProcessing ? `${i * 0.15}s` : '0s',
+                  transition: 'all 300ms ease-in-out'
+                }}
+              />
+            ))}
+          </div>
+        </ScoreTooltip>
+      </div>
+      
       <div className="flex flex-col items-center">
         <div className="text-xs text-muted-foreground mb-1">
           {isProcessing ? "Thinking..." : "Trust"}

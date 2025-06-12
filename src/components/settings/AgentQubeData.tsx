@@ -24,7 +24,7 @@ export const nakamotoBaseQubeData: MetaQube = {
   "Smart-Contract": "0xd08f70Jj2198G0087K93iI",
   "IPFS-Hash": "QmEuv0lW9WknFiJnKLwHCnL78vedxjQkDDP1mXWo2ajt",
   "Sensitivity-Score": 4,
-  "Verifiability-Score": 6,
+  "Verifiability-Score": 5,
   "Accuracy-Score": 5,
   "Risk-Score": 5
 };
@@ -52,7 +52,7 @@ export const nakamotoWithVeniceQubeData: MetaQube = {
   "Smart-Contract": "0xd08f70Jj2198G0087K93iI",
   "IPFS-Hash": "QmEuv0lW9WknFiJnKLwHCnL78vedxjQkDDP1mXWo2ajt",
   "Sensitivity-Score": 2,
-  "Verifiability-Score": 8,
+  "Verifiability-Score": 9,
   "Accuracy-Score": 5,
   "Risk-Score": 2
 };
