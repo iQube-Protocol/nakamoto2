@@ -120,24 +120,41 @@ class ConnectionService {
         return false;
       }
 
-      // Handle LinkedIn OAuth using Supabase's built-in provider
+      // Handle LinkedIn OAuth using the custom edge function implementation
       if (service === 'linkedin') {
-        const { data, error } = await supabase.auth.signInWithOAuth({
-          provider: 'linkedin_oidc',
-          options: {
-            redirectTo: `${window.location.origin}/settings?tab=connections`,
-            scopes: 'openid profile email'
-          }
-        });
+        try {
+          console.log('LinkedIn OAuth flow started...');
+          
+          // Store OAuth state for security
+          const state = Math.random().toString(36).substring(2);
+          localStorage.setItem('oauth_state', state);
+          localStorage.setItem('oauth_service', service);
+          
+          // Call the LinkedIn connection edge function
+          const { data, error } = await supabase.functions.invoke('connect-linkedin', {
+            body: { state }
+          });
 
-        if (error) {
-          console.error('LinkedIn OAuth error:', error);
-          toast.error('Failed to connect to LinkedIn. Please try again.');
+          if (error) {
+            console.error('LinkedIn connection service error:', error);
+            toast.error('Failed to initialize LinkedIn connection. Please try again.');
+            return false;
+          }
+
+          if (data?.authUrl) {
+            // Redirect to LinkedIn OAuth
+            window.location.href = data.authUrl;
+            return true;
+          } else {
+            console.error('No auth URL received from LinkedIn service');
+            toast.error('Failed to get LinkedIn authorization URL. Please try again.');
+            return false;
+          }
+        } catch (error) {
+          console.error('Error calling LinkedIn connection service:', error);
+          toast.error('Failed to connect to LinkedIn service. Please try again.');
           return false;
         }
-
-        // The OAuth flow will handle the redirect
-        return true;
       }
 
       // For other services, show "coming soon" for now
