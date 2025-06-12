@@ -94,7 +94,7 @@ const MonDAIInterface: React.FC = () => {
           />
           
           <AgentInterface
-            title="MonDAI"
+            title="Aigent Nakamoto"
             description={getStatusDescription()}
             agentType="mondai" 
             onMessageSubmit={handleAIMessage}

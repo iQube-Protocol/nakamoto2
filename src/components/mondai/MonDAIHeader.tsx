@@ -1,7 +1,9 @@
 
 import React from 'react';
 import ConnectionStatus from './ConnectionStatus';
+import ReliabilityIndicator from '../shared/agent/ReliabilityIndicator';
 import { KBAIServerSettings } from '@/integrations/kbai/KBAIDirectService';
+import { useVeniceAgent } from '@/hooks/use-venice-agent';
 
 interface MonDAIHeaderProps {
   isRetrying: boolean;
@@ -18,18 +20,26 @@ const MonDAIHeader: React.FC<MonDAIHeaderProps> = ({
   onConfigUpdate,
   onRetryConnection
 }) => {
+  const { veniceActivated } = useVeniceAgent();
+  
   return (
     <div className="flex flex-row justify-between items-center mb-2">
       <div className="flex-1">
         {/* This is empty space for alignment */}
       </div>
-      <ConnectionStatus
-        isRetrying={isRetrying}
-        connectionStatus={connectionStatus}
-        serverConfig={serverConfig}
-        onConfigUpdate={onConfigUpdate}
-        onRetryConnection={onRetryConnection}
-      />
+      <div className="flex items-center gap-4">
+        <ReliabilityIndicator 
+          isProcessing={isRetrying} 
+          key={`mondai-reliability-${veniceActivated}-${Date.now()}`}
+        />
+        <ConnectionStatus
+          isRetrying={isRetrying}
+          connectionStatus={connectionStatus}
+          serverConfig={serverConfig}
+          onConfigUpdate={onConfigUpdate}
+          onRetryConnection={onRetryConnection}
+        />
+      </div>
     </div>
   );
 };
