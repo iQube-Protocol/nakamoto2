@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
@@ -44,6 +43,45 @@ export const useSidebarLogic = () => {
       "Metis": metisActivated
     }));
   }, [qryptoPersonaActivated, veniceActivated, metisActivated]);
+
+  // Listen for agent activation events from AgentActivationModal
+  useEffect(() => {
+    const handleQryptoPersonaStateChanged = (e: CustomEvent) => {
+      const { activated } = e.detail || {};
+      console.log('Qrypto Persona state changed event received:', activated);
+      
+      if (activated) {
+        activateQryptoPersona();
+        setActiveIQubes(prev => ({...prev, "Qrypto Persona": true}));
+      }
+    };
+
+    const handleVeniceStateChanged = (e: CustomEvent) => {
+      const { activated, visible } = e.detail || {};
+      console.log('Venice state changed event received:', activated, visible);
+      
+      if (activated && visible) {
+        activateVenice();
+        setActiveIQubes(prev => ({...prev, "Venice": true}));
+      }
+    };
+
+    const handleMetisActivated = (e: CustomEvent) => {
+      console.log('Metis activated event received');
+      activateMetis();
+      setActiveIQubes(prev => ({...prev, "Metis": true}));
+    };
+
+    window.addEventListener('qryptoPersonaStateChanged', handleQryptoPersonaStateChanged as EventListener);
+    window.addEventListener('veniceStateChanged', handleVeniceStateChanged as EventListener);
+    window.addEventListener('metisActivated', handleMetisActivated as EventListener);
+    
+    return () => {
+      window.removeEventListener('qryptoPersonaStateChanged', handleQryptoPersonaStateChanged as EventListener);
+      window.removeEventListener('veniceStateChanged', handleVeniceStateChanged as EventListener);
+      window.removeEventListener('metisActivated', handleMetisActivated as EventListener);
+    };
+  }, [activateQryptoPersona, activateVenice, activateMetis]);
 
   // Listen for iQube toggle events from Settings page
   useEffect(() => {
