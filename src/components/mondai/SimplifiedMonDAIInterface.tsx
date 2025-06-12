@@ -5,6 +5,7 @@ import { useMondAI } from '@/hooks/use-mondai';
 import { AgentMessage } from '@/lib/types';
 import { useUserInteractions } from '@/hooks/use-user-interactions';
 import { useAuth } from '@/hooks/use-auth';
+import { useVeniceAgent } from '@/hooks/use-venice-agent';
 
 const SimplifiedMonDAIInterface: React.FC = () => {
   const {
@@ -13,11 +14,17 @@ const SimplifiedMonDAIInterface: React.FC = () => {
   } = useMondAI();
   
   const { user } = useAuth();
+  const { veniceActivated } = useVeniceAgent();
   const [initialMessages, setInitialMessages] = useState<AgentMessage[]>([]);
   const [isHistoryLoaded, setIsHistoryLoaded] = useState(false);
   
   // Use the user interactions hook to load previous messages (using 'learn' type for mondai)
   const { interactions, refreshInteractions } = useUserInteractions('learn');
+  
+  // Add Venice state debugging
+  useEffect(() => {
+    console.log('📡 SimplifiedMonDAIInterface: Venice state changed to:', veniceActivated);
+  }, [veniceActivated]);
   
   // Load conversation history when component mounts or user changes
   useEffect(() => {
@@ -38,11 +45,12 @@ const SimplifiedMonDAIInterface: React.FC = () => {
           timestamp: new Date().toISOString(),
           metadata: {
             version: "1.0",
-            modelUsed: "gpt-4o-mini",
+            modelUsed: veniceActivated ? "venice-gpt-4o-mini" : "gpt-4o-mini",
             knowledgeSource: "Qrypto COYN + mẹtaKnyts Knowledge Bases",
             qryptoItemsFound: 0,
             metaKnytsItemsFound: 0,
-            citations: []
+            citations: [],
+            aiProvider: veniceActivated ? "Venice AI" : "OpenAI"
           }
         };
 
@@ -98,8 +106,9 @@ const SimplifiedMonDAIInterface: React.FC = () => {
           timestamp: new Date().toISOString(),
           metadata: {
             version: "1.0",
-            modelUsed: "gpt-4o-mini",
-            knowledgeSource: "Qrypto COYN + mẹtaKnyts Knowledge Bases"
+            modelUsed: veniceActivated ? "venice-gpt-4o-mini" : "gpt-4o-mini",
+            knowledgeSource: "Qrypto COYN + mẹtaKnyts Knowledge Bases",
+            aiProvider: veniceActivated ? "Venice AI" : "OpenAI"
           }
         }]);
         setIsHistoryLoaded(true);
@@ -107,11 +116,12 @@ const SimplifiedMonDAIInterface: React.FC = () => {
     };
 
     loadConversationHistory();
-  }, [user, interactions, refreshInteractions, isHistoryLoaded]);
+  }, [user, interactions, refreshInteractions, isHistoryLoaded, veniceActivated]);
 
   // Function to generate the initial welcome message
   const getInitialMessage = () => {
-    return `Hello! I'm Aigent Nakamoto, your crypto-agentic AI assistant with access to both the **Qrypto COYN technical knowledge base** and the **mẹtaKnyts narrative universe**.
+    const aiProvider = veniceActivated ? "Venice AI" : "OpenAI";
+    return `Hello! I'm Aigent Nakamoto, your crypto-agentic AI assistant powered by **${aiProvider}** with access to both the **Qrypto COYN technical knowledge base** and the **mẹtaKnyts narrative universe**.
 
 I can help you with:
 • **Technical concepts**: iQubes, VFTs, COYN Protocol, tokenomics, smart contracts
@@ -128,7 +138,7 @@ What would you like to explore today?`;
     <div className="h-screen flex flex-col">
       <SimplifiedAgentInterface
         title="Aigent Nakamoto"
-        description="Crypto-Agentic AI for Qrypto COYN + mẹtaKnyts"
+        description={`Crypto-Agentic AI for Qrypto COYN + mẹtaKnyts ${veniceActivated ? '(Venice AI)' : '(OpenAI)'}`}
         agentType="mondai" 
         onMessageSubmit={handleAIMessage}
         conversationId={conversationId}

@@ -304,6 +304,9 @@ serve(async (req) => {
       useVenice = false
     } = await req.json();
 
+    console.log(`🚀 MonDAI Edge Function: Received request with Venice: ${useVenice}`);
+    console.log(`🔧 MonDAI Edge Function: useVenice parameter type:`, typeof useVenice, 'value:', useVenice);
+
     if (!message) {
       return new Response(
         JSON.stringify({
@@ -316,6 +319,8 @@ serve(async (req) => {
       );
     }
 
+    console.log(`🌐 MonDAI Edge Function: Processing with ${useVenice ? 'Venice AI' : 'OpenAI'}`);
+
     // Process the message with enhanced context and AI provider selection
     const response = await processMonDAIInteraction(
       message, 
@@ -326,6 +331,8 @@ serve(async (req) => {
       qryptoKnowledgeContext,
       useVenice
     );
+
+    console.log(`✅ MonDAI Edge Function: Response generated using ${response.metadata.aiProvider}`);
 
     return new Response(
       JSON.stringify(response),

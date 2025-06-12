@@ -11,7 +11,8 @@ export const useMondAI = () => {
 
   const handleAIMessage = useCallback(async (message: string): Promise<AgentMessage> => {
     try {
-      console.log(`MonDAI: Processing message with Venice ${veniceActivated ? 'enabled' : 'disabled'}`);
+      console.log(`🔄 MonDAI: Processing message with Venice ${veniceActivated ? 'ENABLED' : 'DISABLED'}`);
+      console.log(`🔧 MonDAI: Venice state in useMondAI:`, veniceActivated);
       
       const response = await generateAigentNakamotoResponse(
         message, 
@@ -23,6 +24,8 @@ export const useMondAI = () => {
       if (!conversationId) {
         setConversationId(response.conversationId);
       }
+
+      console.log(`✅ MonDAI: Response received from ${response.metadata.aiProvider || (veniceActivated ? 'Venice AI' : 'OpenAI')}`);
 
       return {
         id: Date.now().toString(),

@@ -118,6 +118,9 @@ export async function generateAigentNakamotoResponse(
   conversationId: string | null,
   useVenice: boolean = false
 ): Promise<QryptoMonDAIResponse> {
+  console.log(`🚀 QryptoMondAI Service: Starting with Venice ${useVenice ? 'ENABLED' : 'DISABLED'}`);
+  console.log(`🔧 QryptoMondAI Service: useVenice parameter:`, useVenice);
+  
   // Get conversation context if we have a conversationId
   let contextResult;
   if (conversationId) {
@@ -172,6 +175,8 @@ Use this information to inform your responses and synthesize knowledge from both
   }
 
   try {
+    console.log(`🌐 QryptoMondAI Service: Calling mondai-ai function with Venice: ${useVenice}`);
+    
     // Call the mondai-ai function with enhanced dual knowledge context and Venice toggle
     const { data, error } = await supabase.functions.invoke('mondai-ai', {
       body: { 
@@ -190,6 +195,8 @@ Use this information to inform your responses and synthesize knowledge from both
       throw new Error(error.message);
     }
     
+    console.log(`🎯 QryptoMondAI Service: Response received from ${data.metadata?.aiProvider || (useVenice ? 'Venice AI' : 'OpenAI')}`);
+    
     // Enhance the response metadata
     return {
       ...data,
@@ -200,7 +207,8 @@ Use this information to inform your responses and synthesize knowledge from both
         citations: citations,
         knowledgeSource: qryptoItems.length > 0 || metaKnytsItems.length > 0 ? 
           "QryptoCOYN + metaKnyts Knowledge Bases + AI" : 
-          "General AI Knowledge"
+          "General AI Knowledge",
+        aiProvider: useVenice ? "Venice AI" : "OpenAI"
       }
     };
     
@@ -209,9 +217,10 @@ Use this information to inform your responses and synthesize knowledge from both
     
     // Fallback response with knowledge base context
     const totalItems = qryptoItems.length + metaKnytsItems.length;
+    const aiProvider = useVenice ? "Venice AI" : "OpenAI";
     const fallbackMessage = totalItems > 0 ? 
-      `I found ${qryptoItems.length} QryptoCOYN entries and ${metaKnytsItems.length} metaKnyts narrative entries related to your query, but I'm experiencing connection issues with my AI processing service. Please try your question again in a moment.` :
-      "I'm experiencing connection issues with my AI processing service. Please try your question again in a moment.";
+      `I found ${qryptoItems.length} QryptoCOYN entries and ${metaKnytsItems.length} metaKnyts narrative entries related to your query, but I'm experiencing connection issues with my ${aiProvider} processing service. Please try your question again in a moment.` :
+      `I'm experiencing connection issues with my ${aiProvider} processing service. Please try your question again in a moment.`;
     
     return {
       conversationId,
@@ -224,7 +233,8 @@ Use this information to inform your responses and synthesize knowledge from both
         qryptoItemsFound: qryptoItems.length,
         metaKnytsItemsFound: metaKnytsItems.length,
         citations: citations,
-        isOffline: true
+        isOffline: true,
+        aiProvider: aiProvider
       }
     };
   }
