@@ -1,6 +1,6 @@
 
 import React from 'react';
-import SimpleActiveQubeItem from './SimpleActiveQubeItem';
+import MetaQubeItem from './MetaQubeItem';
 import { qubeData } from '@/components/settings/QubeData';
 
 interface ActiveIQubesListProps {
@@ -19,7 +19,7 @@ const ActiveIQubesList = ({
   return (
     <div className="space-y-2">
       {/* Qrypto Persona - Always visible */}
-      <SimpleActiveQubeItem
+      <MetaQubeItem
         metaQube={qubeData.monDai}
         collapsed={collapsed}
         onIQubeClick={handleIQubeClick}
@@ -28,7 +28,7 @@ const ActiveIQubesList = ({
       
       {/* Venice - Show when active */}
       {activeIQubes["Venice"] && (
-        <SimpleActiveQubeItem
+        <MetaQubeItem
           metaQube={qubeData.venice}
           collapsed={collapsed}
           onIQubeClick={handleIQubeClick}
@@ -38,7 +38,7 @@ const ActiveIQubesList = ({
       
       {/* Metis - Show when active with close button */}
       {activeIQubes["Metis"] && (
-        <SimpleActiveQubeItem
+        <MetaQubeItem
           metaQube={qubeData.metis}
           collapsed={collapsed}
           onIQubeClick={handleIQubeClick}

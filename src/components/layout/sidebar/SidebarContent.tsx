@@ -66,10 +66,16 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
       {/* Active iQubes - Fixed at bottom */}
       <div className="mt-auto">
         <ActiveIQubesList 
-          activeIQubes={activeQubes}
+          activeQubes={activeQubes}
           collapsed={collapsed}
-          handleIQubeClick={handleIQubeClick}
-          handleCloseMetisIQube={handleCloseMetisIQube}
+          onIQubeClick={handleIQubeClick}
+          onCloseIQube={(e, qubeName) => {
+            e.stopPropagation();
+            if (qubeName === "Metis") {
+              handleCloseMetisIQube(e);
+            }
+          }}
+          toggleMobileSidebar={toggleMobileSidebar}
         />
 
         {/* Sign Out button */}
