@@ -17,6 +17,7 @@ export type Database = {
           "Discord-Handle": string | null
           Email: string
           "EVM-Public-Key": string
+          "Facebook-ID": string | null
           "First-Name": string | null
           "GitHub-Handle": string | null
           id: string
@@ -26,13 +27,17 @@ export type Database = {
           "LinkedIn-Profile-URL": string | null
           "Local-City": string
           Profession: string
+          "Qrypto-ID": string | null
           "Telegram-Handle": string | null
+          "ThirdWeb-Public-Key": string | null
+          "TikTok-Handle": string | null
           "Tokens-of-Interest": string[]
           "Twitter-Handle": string | null
           updated_at: string
           user_id: string
           "Wallets-of-Interest": string[]
           "Web3-Interests": string[]
+          "YouTube-ID": string | null
         }
         Insert: {
           "BTC-Public-Key"?: string
@@ -41,6 +46,7 @@ export type Database = {
           "Discord-Handle"?: string | null
           Email?: string
           "EVM-Public-Key"?: string
+          "Facebook-ID"?: string | null
           "First-Name"?: string | null
           "GitHub-Handle"?: string | null
           id?: string
@@ -50,13 +56,17 @@ export type Database = {
           "LinkedIn-Profile-URL"?: string | null
           "Local-City"?: string
           Profession?: string
+          "Qrypto-ID"?: string | null
           "Telegram-Handle"?: string | null
+          "ThirdWeb-Public-Key"?: string | null
+          "TikTok-Handle"?: string | null
           "Tokens-of-Interest"?: string[]
           "Twitter-Handle"?: string | null
           updated_at?: string
           user_id: string
           "Wallets-of-Interest"?: string[]
           "Web3-Interests"?: string[]
+          "YouTube-ID"?: string | null
         }
         Update: {
           "BTC-Public-Key"?: string
@@ -65,6 +75,7 @@ export type Database = {
           "Discord-Handle"?: string | null
           Email?: string
           "EVM-Public-Key"?: string
+          "Facebook-ID"?: string | null
           "First-Name"?: string | null
           "GitHub-Handle"?: string | null
           id?: string
@@ -74,13 +85,17 @@ export type Database = {
           "LinkedIn-Profile-URL"?: string | null
           "Local-City"?: string
           Profession?: string
+          "Qrypto-ID"?: string | null
           "Telegram-Handle"?: string | null
+          "ThirdWeb-Public-Key"?: string | null
+          "TikTok-Handle"?: string | null
           "Tokens-of-Interest"?: string[]
           "Twitter-Handle"?: string | null
           updated_at?: string
           user_id?: string
           "Wallets-of-Interest"?: string[]
           "Web3-Interests"?: string[]
+          "YouTube-ID"?: string | null
         }
         Relationships: []
       }

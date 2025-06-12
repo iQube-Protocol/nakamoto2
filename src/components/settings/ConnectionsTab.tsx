@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { UserSettings } from '@/lib/types';
 import ServiceConnection from './ServiceConnection';
 import BlakQubeRefreshButton from './BlakQubeRefreshButton';
-import { Linkedin, Wallet, Twitter, MessageCircle, MessageSquare, Calendar } from 'lucide-react';
+import { Linkedin, Wallet, Twitter, MessageCircle, MessageSquare, Calendar, Youtube, Facebook } from 'lucide-react';
 
 interface ConnectionsTabProps {
   settings: UserSettings;
@@ -46,6 +46,38 @@ const ConnectionsTab = ({ settings, onConnectService }: ConnectionsTabProps) => 
             icon={<Twitter className="h-4 w-4" />}
             connected={settings.connected.twitter}
             onConnect={() => onConnectService('twitter')}
+            comingSoon={true}
+          />
+          
+          <ServiceConnection
+            name="YouTube"
+            icon={<Youtube className="h-4 w-4" />}
+            connected={false}
+            onConnect={() => {}}
+            comingSoon={true}
+          />
+          
+          <ServiceConnection
+            name="Facebook"
+            icon={<Facebook className="h-4 w-4" />}
+            connected={false}
+            onConnect={() => {}}
+            comingSoon={true}
+          />
+          
+          <ServiceConnection
+            name="TikTok"
+            icon={<div className="h-4 w-4 bg-black rounded-sm" />}
+            connected={false}
+            onConnect={() => {}}
+            comingSoon={true}
+          />
+          
+          <ServiceConnection
+            name="ThirdWeb"
+            icon={<Wallet className="h-4 w-4 text-purple-600" />}
+            connected={false}
+            onConnect={() => {}}
             comingSoon={true}
           />
           

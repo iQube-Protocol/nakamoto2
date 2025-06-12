@@ -72,16 +72,18 @@ export const blakQubeService = {
       
       console.log('User connections:', connections);
       
-      // Start with existing BlakQube or create new one with First-Name and Last-Name first
+      // Start with existing BlakQube or create new one with all fields including new ones
       const newBlakQube: Partial<BlakQube> = blakQube ? { ...blakQube } : {
         "First-Name": "",
         "Last-Name": "",
+        "Qrypto-ID": "",
         "Profession": "",
         "Web3-Interests": [],
         "Local-City": "",
         "Email": user.user.email || "",
         "EVM-Public-Key": "",
         "BTC-Public-Key": "",
+        "ThirdWeb-Public-Key": "",
         "Tokens-of-Interest": [],
         "Chain-IDs": [],
         "Wallets-of-Interest": [],
@@ -91,7 +93,10 @@ export const blakQubeService = {
         "Telegram-Handle": "",
         "Discord-Handle": "",
         "Instagram-Handle": "",
-        "GitHub-Handle": ""
+        "GitHub-Handle": "",
+        "YouTube-ID": "",
+        "Facebook-ID": "",
+        "TikTok-Handle": ""
       };
       
       // Update BlakQube based on connections
@@ -223,6 +228,19 @@ export const blakQubeService = {
             }
           }
           
+          if (connection.service === 'thirdweb' && connection.connection_data?.address) {
+            console.log('Setting ThirdWeb public key:', connection.connection_data.address);
+            newBlakQube["ThirdWeb-Public-Key"] = connection.connection_data.address;
+            
+            // Add ThirdWeb to wallets of interest if not already there
+            if (!newBlakQube["Wallets-of-Interest"]?.includes("ThirdWeb")) {
+              newBlakQube["Wallets-of-Interest"] = [
+                ...(newBlakQube["Wallets-of-Interest"] || []),
+                "ThirdWeb"
+              ];
+            }
+          }
+          
           if (connection.service === 'twitter' && connection.connection_data?.profile) {
             // Extract Twitter handle
             if (connection.connection_data.profile.username) {
@@ -259,6 +277,27 @@ export const blakQubeService = {
             // Extract Discord handle
             if (connection.connection_data.profile.username) {
               newBlakQube["Discord-Handle"] = connection.connection_data.profile.username;
+            }
+          }
+          
+          if (connection.service === 'facebook' && connection.connection_data?.profile) {
+            // Extract Facebook ID
+            if (connection.connection_data.profile.id) {
+              newBlakQube["Facebook-ID"] = connection.connection_data.profile.id;
+            }
+          }
+          
+          if (connection.service === 'youtube' && connection.connection_data?.profile) {
+            // Extract YouTube ID
+            if (connection.connection_data.profile.id) {
+              newBlakQube["YouTube-ID"] = connection.connection_data.profile.id;
+            }
+          }
+          
+          if (connection.service === 'tiktok' && connection.connection_data?.profile) {
+            // Extract TikTok handle
+            if (connection.connection_data.profile.username) {
+              newBlakQube["TikTok-Handle"] = `@${connection.connection_data.profile.username}`;
             }
           }
         }

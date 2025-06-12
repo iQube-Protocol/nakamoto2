@@ -26,10 +26,11 @@ export const usePrivateData = (selectedIQube: MetaQube) => {
       
       if (blakQubeData) {
         console.log('BlakQube data loaded:', blakQubeData);
-        // Convert BlakQube data to privateData format - First-Name and Last-Name FIRST, then the rest
+        // Convert BlakQube data to privateData format with new fields in the specified order
         const formattedData: PrivateData = {
           "First-Name": blakQubeData["First-Name"] || "",
           "Last-Name": blakQubeData["Last-Name"] || "",
+          "Qrypto-ID": blakQubeData["Qrypto-ID"] || "",
           "Profession": blakQubeData["Profession"] || "",
           "Local-City": blakQubeData["Local-City"] || "",
           "Email": blakQubeData["Email"] || "",
@@ -40,9 +41,13 @@ export const usePrivateData = (selectedIQube: MetaQube) => {
           "Discord-Handle": blakQubeData["Discord-Handle"] || "",
           "Instagram-Handle": blakQubeData["Instagram-Handle"] || "",
           "GitHub-Handle": blakQubeData["GitHub-Handle"] || "",
+          "YouTube-ID": blakQubeData["YouTube-ID"] || "",
+          "Facebook-ID": blakQubeData["Facebook-ID"] || "",
+          "TikTok-Handle": blakQubeData["TikTok-Handle"] || "",
           "Web3-Interests": blakQubeData["Web3-Interests"] || [],
           "EVM-Public-Key": blakQubeData["EVM-Public-Key"] || "",
           "BTC-Public-Key": blakQubeData["BTC-Public-Key"] || "",
+          "ThirdWeb-Public-Key": blakQubeData["ThirdWeb-Public-Key"] || "",
           "Tokens-of-Interest": blakQubeData["Tokens-of-Interest"] || [],
           "Chain-IDs": blakQubeData["Chain-IDs"] || [],
           "Wallets-of-Interest": blakQubeData["Wallets-of-Interest"] || []
@@ -50,10 +55,11 @@ export const usePrivateData = (selectedIQube: MetaQube) => {
         setPrivateData(formattedData);
       } else {
         console.log('No BlakQube data found, using defaults');
-        // Set default empty data if no BlakQube exists - First-Name and Last-Name FIRST
+        // Set default empty data if no BlakQube exists with new fields in the specified order
         setPrivateData({
           "First-Name": "",
           "Last-Name": "",
+          "Qrypto-ID": "",
           "Profession": "",
           "Local-City": "",
           "Email": user.email || "",
@@ -64,9 +70,13 @@ export const usePrivateData = (selectedIQube: MetaQube) => {
           "Discord-Handle": "",
           "Instagram-Handle": "",
           "GitHub-Handle": "",
+          "YouTube-ID": "",
+          "Facebook-ID": "",
+          "TikTok-Handle": "",
           "Web3-Interests": [],
           "EVM-Public-Key": "",
           "BTC-Public-Key": "",
+          "ThirdWeb-Public-Key": "",
           "Tokens-of-Interest": [],
           "Chain-IDs": [],
           "Wallets-of-Interest": []
@@ -74,10 +84,11 @@ export const usePrivateData = (selectedIQube: MetaQube) => {
       }
     } catch (error) {
       console.error('Error loading BlakQube data:', error);
-      // Fallback to empty data with First-Name and Last-Name FIRST
+      // Fallback to empty data with new fields in the specified order
       setPrivateData({
         "First-Name": "",
         "Last-Name": "",
+        "Qrypto-ID": "",
         "Profession": "",
         "Local-City": "",
         "Email": user?.email || "",
@@ -88,9 +99,13 @@ export const usePrivateData = (selectedIQube: MetaQube) => {
         "Discord-Handle": "",
         "Instagram-Handle": "",
         "GitHub-Handle": "",
+        "YouTube-ID": "",
+        "Facebook-ID": "",
+        "TikTok-Handle": "",
         "Web3-Interests": [],
         "EVM-Public-Key": "",
         "BTC-Public-Key": "",
+        "ThirdWeb-Public-Key": "",
         "Tokens-of-Interest": [],
         "Chain-IDs": [],
         "Wallets-of-Interest": []

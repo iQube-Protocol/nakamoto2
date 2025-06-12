@@ -1,3 +1,4 @@
+
 // iQube types
 
 export interface MetaQube {
@@ -51,6 +52,11 @@ export interface BlakQube {
   "GitHub-Handle": string;
   "First-Name": string;
   "Last-Name": string;
+  "Qrypto-ID": string;
+  "ThirdWeb-Public-Key": string;
+  "YouTube-ID": string;
+  "Facebook-ID": string;
+  "TikTok-Handle": string;
   created_at: string;
   updated_at: string;
 }

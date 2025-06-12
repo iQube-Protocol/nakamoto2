@@ -1,8 +1,7 @@
-
 import React, { useState, useEffect } from 'react';
 import { Key } from 'lucide-react';
 import { AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
-import { User, Linkedin, Wallet, Database, Brain, Twitter, MessageCircle, Globe, Users } from 'lucide-react';
+import { User, Linkedin, Wallet, Database, Brain, Twitter, MessageCircle, Globe, Users, Youtube, Facebook } from 'lucide-react';
 import PrivateDataView from './PrivateDataView';
 import PrivateDataEditor from './PrivateDataEditor';
 import { ScrollArea } from '@/components/ui/scroll-area';
@@ -85,19 +84,24 @@ const PrivateDataSection = ({
         return {
           "First-Name": "linkedin",
           "Last-Name": "linkedin",
+          "Qrypto-ID": "manual",
           "Profession": "linkedin",
           "Local-City": "linkedin",
           "Email": "linkedin",
           "LinkedIn-ID": "linkedin",
           "LinkedIn-Profile-URL": "linkedin",
-          "Twitter-Handle": "manual",
-          "Telegram-Handle": "manual",
-          "Discord-Handle": "manual",
+          "Twitter-Handle": "twitter",
+          "Telegram-Handle": "telegram",
+          "Discord-Handle": "discord",
           "Instagram-Handle": "manual",
           "GitHub-Handle": "manual",
+          "YouTube-ID": "youtube",
+          "Facebook-ID": "facebook",
+          "TikTok-Handle": "tiktok",
           "Web3-Interests": "manual",
           "EVM-Public-Key": "wallet",
           "BTC-Public-Key": "wallet",
+          "ThirdWeb-Public-Key": "thirdweb",
           "Tokens-of-Interest": "manual",
           "Chain-IDs": "wallet",
           "Wallets-of-Interest": "wallet"
@@ -124,7 +128,7 @@ const PrivateDataSection = ({
           default:
             return <User className="h-3 w-3 text-gray-500" />;
         }
-      case 'ToolQube':
+      case '':
         switch (source) {
           case 'api':
             return <Database className="h-3 w-3 text-green-500" />;
@@ -149,6 +153,14 @@ const PrivateDataSection = ({
             return <MessageCircle className="h-3 w-3 text-blue-500" />;
           case 'luma':
             return <Globe className="h-3 w-3 text-green-500" />;
+          case 'youtube':
+            return <Youtube className="h-3 w-3 text-red-500" />;
+          case 'facebook':
+            return <Facebook className="h-3 w-3 text-blue-600" />;
+          case 'tiktok':
+            return <div className="h-3 w-3 bg-black rounded-sm" />;
+          case 'thirdweb':
+            return <Wallet className="h-3 w-3 text-purple-600" />;
           case 'manual':
           default:
             return <User className="h-3 w-3 text-gray-500" />;

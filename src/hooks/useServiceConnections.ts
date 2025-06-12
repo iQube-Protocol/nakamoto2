@@ -20,7 +20,11 @@ export function useServiceConnections() {
     telegram: false,
     discord: false,
     luma: false,
-    wallet: false
+    wallet: false,
+    facebook: false,
+    youtube: false,
+    tiktok: false,
+    thirdweb: false
   });
   const [connectionData, setConnectionData] = useState<Record<ServiceType, any>>({
     linkedin: null,
@@ -28,7 +32,11 @@ export function useServiceConnections() {
     telegram: null,
     discord: null,
     luma: null,
-    wallet: null
+    wallet: null,
+    facebook: null,
+    youtube: null,
+    tiktok: null,
+    thirdweb: null
   });
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -75,7 +83,11 @@ export function useServiceConnections() {
         telegram: false,
         discord: false,
         luma: false,
-        wallet: false
+        wallet: false,
+        facebook: false,
+        youtube: false,
+        tiktok: false,
+        thirdweb: false
       };
 
       const newConnectionData = {
@@ -84,7 +96,11 @@ export function useServiceConnections() {
         telegram: null,
         discord: null,
         luma: null,
-        wallet: null
+        wallet: null,
+        facebook: null,
+        youtube: null,
+        tiktok: null,
+        thirdweb: null
       };
       
       // Update connections based on database results
