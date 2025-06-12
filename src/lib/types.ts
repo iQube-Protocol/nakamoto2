@@ -10,23 +10,24 @@ export interface MetaQube {
   "Date-Minted": string;
   "Related-iQubes": string[];
   "X-of-Y": string;
-  "Description": string;
-  "Access-Control": string;
-  "Encryption-Level": string;
-  "Created": string;
-  "Last-Updated": string;
-  "Version": string;
-  "Size": string;
-  "Status": string;
-  "Network": string;
-  "Smart-Contract": string;
-  "IPFS-Hash": string;
   "Sensitivity-Score": number;
   "Verifiability-Score": number;
   "Accuracy-Score": number;
   "Risk-Score": number;
-  "Trust-Score": number;
-  "Reliability-Index": number;
+  // Optional extended properties for detailed QubeData
+  "Description"?: string;
+  "Access-Control"?: string;
+  "Encryption-Level"?: string;
+  "Created"?: string;
+  "Last-Updated"?: string;
+  "Version"?: string;
+  "Size"?: string;
+  "Status"?: string;
+  "Network"?: string;
+  "Smart-Contract"?: string;
+  "IPFS-Hash"?: string;
+  "Trust-Score"?: number;
+  "Reliability-Index"?: number;
 }
 
 export interface BlakQube {
