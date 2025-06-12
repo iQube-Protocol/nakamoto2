@@ -1,7 +1,7 @@
 
 import { MetaQube } from '@/lib/types';
 
-// Agent Nakamoto without Venice activated
+// Agent Nakamoto without Venice activated (GPT 4.0 Agent)
 export const nakamotoBaseQubeData: MetaQube = {
   "iQube-Identifier": "Nakamoto Agent iQube",
   "iQube-Type": "AgentQube",
@@ -23,10 +23,10 @@ export const nakamotoBaseQubeData: MetaQube = {
   "Network": "Ethereum",
   "Smart-Contract": "0xd08f70Jj2198G0087K93iI",
   "IPFS-Hash": "QmEuv0lW9WknFiJnKLwHCnL78vedxjQkDDP1mXWo2ajt",
-  "Sensitivity-Score": 4,
+  "Sensitivity-Score": 2,
   "Verifiability-Score": 5,
   "Accuracy-Score": 5,
-  "Risk-Score": 5
+  "Risk-Score": 4
 };
 
 // Agent Nakamoto with Venice activated
@@ -53,7 +53,7 @@ export const nakamotoWithVeniceQubeData: MetaQube = {
   "IPFS-Hash": "QmEuv0lW9WknFiJnKLwHCnL78vedxjQkDDP1mXWo2ajt",
   "Sensitivity-Score": 2,
   "Verifiability-Score": 9,
-  "Accuracy-Score": 5,
+  "Accuracy-Score": 8,
   "Risk-Score": 2
 };
 

@@ -1,4 +1,3 @@
-
 import { MetaQube } from '@/lib/types';
 
 export const monDaiQubeData: MetaQube = {
@@ -22,10 +21,10 @@ export const monDaiQubeData: MetaQube = {
   "Network": "Ethereum",
   "Smart-Contract": "0x742d35Cc6532C4532F37cC",
   "IPFS-Hash": "QmXoypizjW3WknFiJnKLwHCnL72vedxjQkDDP1mXWo6uco",
-  "Sensitivity-Score": 8.8,
-  "Verifiability-Score": 8.7,
-  "Accuracy-Score": 9.2,
-  "Risk-Score": 1.5
+  "Sensitivity-Score": 5,
+  "Verifiability-Score": 5,
+  "Accuracy-Score": 5,
+  "Risk-Score": 4
 };
 
 export const veniceQubeData: MetaQube = {
@@ -49,10 +48,10 @@ export const veniceQubeData: MetaQube = {
   "Network": "Ethereum",
   "Smart-Contract": "0x853d46Ee7643B5532F48dD",
   "IPFS-Hash": "QmYpqzjW4WknFiJnKLwHCnL73vedxjQkDDP1mXWo7vdp",
-  "Sensitivity-Score": 8.5,
-  "Verifiability-Score": 9.0,
-  "Accuracy-Score": 9.5,
-  "Risk-Score": 1.2
+  "Sensitivity-Score": 2,
+  "Verifiability-Score": 9,
+  "Accuracy-Score": 8,
+  "Risk-Score": 2
 };
 
 export const metisQubeData: MetaQube = {
@@ -76,10 +75,10 @@ export const metisQubeData: MetaQube = {
   "Network": "Ethereum",
   "Smart-Contract": "0x964e57Ff8754C6643G59eE",
   "IPFS-Hash": "QmZqrzkW5WknFiJnKLwHCnL74vedxjQkDDP1mXWo8wfq",
-  "Sensitivity-Score": 8.2,
-  "Verifiability-Score": 8.5,
-  "Accuracy-Score": 8.9,
-  "Risk-Score": 2.5
+  "Sensitivity-Score": 2,
+  "Verifiability-Score": 9,
+  "Accuracy-Score": 8,
+  "Risk-Score": 2
 };
 
 export const gdriveQubeData: MetaQube = {

@@ -2,6 +2,8 @@
 import React from 'react';
 import ScoreTooltip from '../ScoreTooltips';
 import { MetaQube } from '@/lib/types';
+import { useVeniceAgent } from '@/hooks/use-venice-agent';
+import { agentQubeData } from '@/components/settings/AgentQubeData';
 
 interface ReliabilityIndicatorProps {
   isProcessing?: boolean;
@@ -9,14 +11,14 @@ interface ReliabilityIndicatorProps {
 }
 
 const ReliabilityIndicator = ({ isProcessing = false, metaQube }: ReliabilityIndicatorProps) => {
-  // Calculate trust and reliability from metaQube data if available, otherwise use default
-  const trust = metaQube 
-    ? Math.round(((metaQube["Accuracy-Score"] + metaQube["Verifiability-Score"]) / 2) * 10) / 10
-    : 5;
-
-  const reliability = metaQube
-    ? Math.round(((metaQube["Accuracy-Score"] + metaQube["Verifiability-Score"] + (10 - metaQube["Risk-Score"])) / 3) * 10) / 10
-    : 6;
+  const { veniceActivated } = useVeniceAgent();
+  
+  // Use the appropriate agent data based on Venice activation status
+  const effectiveMetaQube = metaQube || (veniceActivated ? agentQubeData.nakamotoWithVenice : agentQubeData.nakamotoBase);
+  
+  // Calculate trust and reliability from metaQube data
+  const trust = Math.round(((effectiveMetaQube["Accuracy-Score"] + effectiveMetaQube["Verifiability-Score"]) / 2) * 10) / 10;
+  const reliability = Math.round(((effectiveMetaQube["Accuracy-Score"] + effectiveMetaQube["Verifiability-Score"] + (10 - effectiveMetaQube["Risk-Score"])) / 3) * 10) / 10;
 
   const getTrustColor = (score: number) => {
     return score >= 7 
