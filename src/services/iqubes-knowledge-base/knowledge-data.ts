@@ -1,7 +1,63 @@
-
 import { iQubesKnowledgeItem } from './types';
 
 export const IQUBES_KNOWLEDGE_DATA: iQubesKnowledgeItem[] = [
+  {
+    id: 'iqube-scoring-system',
+    title: 'iQube Scoring System & Logic',
+    content: `The iQube Protocol uses a comprehensive 1-10 scoring system to evaluate data quality, risk, and trustworthiness across all information containers. This scoring framework ensures consistent evaluation and risk assessment for AI agents and data consumers.
+
+**Core Score Categories (1-10 Scale):**
+
+**1. Sensitivity Score (1-10):** Measures the inherent sensitivity of the data asset based on content type, regulatory classification, and privacy implications.
+- 1-4 (Low Sensitivity): Public or anonymized data with minimal privacy concerns
+- 5-7 (Medium Sensitivity): Semi-private data requiring controlled access
+- 8-10 (High Sensitivity): Highly confidential data requiring maximum protection
+
+**2. Risk Score (1-10):** Evaluates potential negative impact from unauthorized access, misuse, or exposure.
+- 1-4 (Low Risk): Minimal impact if compromised, standard security measures sufficient
+- 5-7 (Medium Risk): Moderate impact requiring enhanced security protocols
+- 8-10 (High Risk): Severe impact requiring maximum security and restricted access
+
+**3. Accuracy Score (1-10):** Assesses data quality, completeness, and factual correctness.
+- 1-3 (Poor Accuracy): Incomplete, outdated, or potentially incorrect data
+- 4-6 (Moderate Accuracy): Generally reliable with some limitations or gaps
+- 7-10 (High Accuracy): Highly reliable, complete, and verified data
+
+**4. Verifiability Score (1-10):** Measures how easily the data's authenticity and provenance can be confirmed.
+- 1-3 (Low Verifiability): Difficult to verify sources or authenticity
+- 4-6 (Moderate Verifiability): Some verification possible with additional checks
+- 7-10 (High Verifiability): Easily verifiable with clear provenance chain
+
+**Calculated Composite Scores:**
+
+**Trust Score:** Calculated as (Accuracy Score + Verifiability Score) / 2
+- Represents overall data trustworthiness based on quality and verifiability
+- Higher trust scores indicate more reliable data for AI decision-making
+
+**Reliability Index:** Calculated as (Accuracy Score + Verifiability Score + (10 - Risk Score)) / 3
+- Combines data quality metrics with inverse risk assessment
+- Higher reliability indicates safer, more dependable data assets
+- Formula accounts for: data accuracy, verifiability, and safety (inverse of risk)
+
+**Visual Representation:**
+All scores are displayed using a 5-dot system where each dot represents 2 points on the 1-10 scale:
+- 1-2 points = 1 dot
+- 3-4 points = 2 dots
+- 5-6 points = 3 dots
+- 7-8 points = 4 dots
+- 9-10 points = 5 dots
+
+**Color Coding Logic:**
+- **Risk & Sensitivity:** Green (1-4), Yellow (5-7), Red (8-10) - Higher scores are more concerning
+- **Accuracy, Verifiability, Trust, Reliability:** Red (1-3), Yellow (4-6), Green (7-10) - Higher scores are better
+
+This scoring system enables AI agents to make informed decisions about data usage, ensuring appropriate risk management and quality assurance across the iQube ecosystem.`,
+    section: 'Scoring Framework',
+    category: 'technical',
+    keywords: ['scoring system', 'trust score', 'reliability index', 'sensitivity score', 'risk score', 'accuracy score', 'verifiability score', 'data quality', 'risk assessment'],
+    timestamp: new Date().toISOString(),
+    source: 'iQube Protocol Documentation'
+  },
   {
     id: 'iqube-whitepaper-executive-summary',
     title: 'iQube Protocol Executive Summary',

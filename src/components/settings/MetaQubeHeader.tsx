@@ -16,7 +16,7 @@ interface MetaQubeHeaderProps {
 interface DotScoreProps {
   value: number;
   label: string;
-  type: 'risk' | 'sensitivity' | 'trust' | 'accuracy' | 'verifiability';
+  type: 'risk' | 'sensitivity' | 'trust' | 'accuracy' | 'verifiability' | 'reliability';
 }
 
 const DotScore = ({ value, label, type }: DotScoreProps) => {
@@ -30,7 +30,7 @@ const DotScore = ({ value, label, type }: DotScoreProps) => {
         : value <= 7 
           ? "bg-yellow-500" 
           : "bg-red-500";
-    } else if (type === 'accuracy' || type === 'verifiability') {
+    } else if (type === 'accuracy' || type === 'verifiability' || type === 'trust' || type === 'reliability') {
       return value <= 3 
         ? "bg-red-500" 
         : value <= 6 
@@ -66,7 +66,11 @@ const DotScore = ({ value, label, type }: DotScoreProps) => {
 };
 
 const MetaQubeHeader = ({ metaQube, isActive, onToggleActive }: MetaQubeHeaderProps) => {
-  const trustScore = Math.round((metaQube["Accuracy-Score"] + metaQube["Verifiability-Score"]) / 2);
+  // Calculate Trust Score as average of Accuracy and Verifiability
+  const trustScore = Math.round(((metaQube["Accuracy-Score"] + metaQube["Verifiability-Score"]) / 2) * 10) / 10;
+  
+  // Calculate Reliability Index as (Accuracy + Verifiability + (10 - Risk)) / 3
+  const reliabilityIndex = Math.round(((metaQube["Accuracy-Score"] + metaQube["Verifiability-Score"] + (10 - metaQube["Risk-Score"])) / 3) * 10) / 10;
   
   // Determine the correct tooltip type based on the iQube identifier
   const getTooltipType = (): 'dataQube' | 'agentQube' => {
@@ -108,6 +112,7 @@ const MetaQubeHeader = ({ metaQube, isActive, onToggleActive }: MetaQubeHeaderPr
       <div className="flex items-center justify-between">
         <div className="flex items-center gap-4 overflow-x-auto pb-1">
           <DotScore value={trustScore} label="Trust" type="trust" />
+          <DotScore value={reliabilityIndex} label="Reliability" type="reliability" />
           <DotScore value={metaQube["Sensitivity-Score"]} label="Sensitivity" type="sensitivity" />
           <DotScore value={metaQube["Risk-Score"]} label="Risk" type="risk" />
           <DotScore value={metaQube["Accuracy-Score"]} label="Accuracy" type="accuracy" />
