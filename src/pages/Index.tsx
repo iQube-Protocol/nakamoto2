@@ -1,14 +1,16 @@
 
 import React, { useEffect } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { useAuth } from '@/hooks/use-auth';
 
 const Index = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { user, loading } = useAuth();
   
   useEffect(() => {
-    if (!loading) {
+    // Only perform redirects if we're actually on the root path
+    if (!loading && location.pathname === '/') {
       if (user) {
         // User is authenticated, redirect directly to MonDAI agent
         console.log("User authenticated, redirecting to MonDAI");
@@ -19,10 +21,10 @@ const Index = () => {
         navigate('/splash', { replace: true });
       }
     }
-  }, [user, loading, navigate]);
+  }, [user, loading, navigate, location.pathname]);
 
-  // Show loading state while checking authentication
-  if (loading) {
+  // Show loading state while checking authentication, but only on root path
+  if (loading && location.pathname === '/') {
     return (
       <div className="flex items-center justify-center min-h-screen bg-gradient-to-br from-qrypto-dark to-qrypto-primary">
         <div className="text-center">
