@@ -211,7 +211,7 @@ Type: ${item.type || 'General'}
 
   // Configure model and parameters based on provider
   const modelConfig = useVenice ? {
-    model: "llama-3-70b-instruct",  // Venice's available uncensored model
+    model: "llama-3.1-8b-instruct",  // Use Venice's available 8B model which should be supported
     temperature: 0.8,
     max_tokens: 2000,
     top_p: 0.9,
@@ -287,7 +287,7 @@ async function processMonDAIInteraction(
   // Determine if response might benefit from visuals
   const visualsProvided = mermaidDiagramIncluded || message.toLowerCase().includes('diagram');
   
-  const modelUsed = useVenice ? "llama-3-70b-instruct" : "gpt-4o-mini";
+  const modelUsed = useVenice ? "llama-3.1-8b-instruct" : "gpt-4o-mini";
   const aiProvider = useVenice ? "Venice AI (Uncensored)" : "OpenAI";
   
   return {
