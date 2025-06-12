@@ -4,6 +4,7 @@ import { Bot, Loader2 } from 'lucide-react';
 import ReliabilityIndicator from './ReliabilityIndicator';
 import ScoreTooltip from '../ScoreTooltips';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useVeniceAgent } from '@/hooks/use-venice-agent';
 
 interface AgentHeaderProps {
   title: string;
@@ -13,6 +14,7 @@ interface AgentHeaderProps {
 
 const AgentHeader = ({ title, description, isProcessing }: AgentHeaderProps) => {
   const isMobile = useIsMobile();
+  const { veniceActivated } = useVeniceAgent();
   
   // Use shortened name on mobile for Aigent Nakamoto
   const displayTitle = isMobile && title === "Aigent Nakamoto" ? "Nakamoto" : title;
@@ -33,7 +35,7 @@ const AgentHeader = ({ title, description, isProcessing }: AgentHeaderProps) => 
           </h2>
         </ScoreTooltip>
       </div>
-      <ReliabilityIndicator isProcessing={isProcessing} />
+      <ReliabilityIndicator isProcessing={isProcessing} key={`reliability-${veniceActivated}`} />
     </div>
   );
 };
