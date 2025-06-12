@@ -21,7 +21,9 @@ const AgentHeader = ({ title, description, isProcessing }: AgentHeaderProps) => 
     console.log('AgentHeader: Venice state changed, activated:', veniceActivated);
   }, [veniceActivated]);
   
-  console.log('AgentHeader: Rendering with Venice state:', veniceActivated, 'for title:', title);
+  useEffect(() => {
+    console.log('AgentHeader: Component re-rendered with Venice state:', veniceActivated);
+  });
   
   // Use shortened name on mobile for Aigent Nakamoto
   const displayTitle = isMobile && title === "Aigent Nakamoto" ? "Nakamoto" : title;
@@ -42,7 +44,10 @@ const AgentHeader = ({ title, description, isProcessing }: AgentHeaderProps) => 
           </h2>
         </ScoreTooltip>
       </div>
-      <ReliabilityIndicator isProcessing={isProcessing} />
+      <ReliabilityIndicator 
+        isProcessing={isProcessing} 
+        key={`reliability-${veniceActivated}-${Date.now()}`}
+      />
     </div>
   );
 };

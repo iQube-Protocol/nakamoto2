@@ -13,29 +13,14 @@ interface ReliabilityIndicatorProps {
 const ReliabilityIndicator = ({ isProcessing = false, metaQube }: ReliabilityIndicatorProps) => {
   const { veniceActivated } = useVeniceAgent();
   
-  // More detailed debugging for state changes
-  useEffect(() => {
-    console.log('ReliabilityIndicator: Venice state changed to:', veniceActivated);
-    console.log('ReliabilityIndicator: Current timestamp:', Date.now());
-  }, [veniceActivated]);
-  
-  // Log every render
-  console.log('ReliabilityIndicator: RENDER - Venice activated:', veniceActivated, 'Processing:', isProcessing);
-  
   // Use useMemo to ensure calculations update when Venice state changes
   const { effectiveMetaQube, trust, reliability } = useMemo(() => {
-    console.log('ReliabilityIndicator: RECALCULATING scores with Venice:', veniceActivated);
-    
     // Use the appropriate agent data based on Venice activation status
     const effective = metaQube || (veniceActivated ? agentQubeData.nakamotoWithVenice : agentQubeData.nakamotoBase);
-    
-    console.log('ReliabilityIndicator: Using metaQube:', effective["iQube-Identifier"], 'Venice activated:', veniceActivated);
     
     // Calculate trust and reliability from metaQube data
     const trustScore = Math.round(((effective["Accuracy-Score"] + effective["Verifiability-Score"]) / 2) * 10) / 10;
     const reliabilityScore = Math.round(((effective["Accuracy-Score"] + effective["Verifiability-Score"] + (10 - effective["Risk-Score"])) / 3) * 10) / 10;
-    
-    console.log('ReliabilityIndicator: NEW SCORES - Trust:', trustScore, 'Reliability:', reliabilityScore);
     
     return {
       effectiveMetaQube: effective,
@@ -43,6 +28,14 @@ const ReliabilityIndicator = ({ isProcessing = false, metaQube }: ReliabilityInd
       reliability: reliabilityScore
     };
   }, [veniceActivated, metaQube]);
+
+  // Debug logging to track state changes
+  useEffect(() => {
+    console.log('ReliabilityIndicator: Venice activated:', veniceActivated);
+    console.log('ReliabilityIndicator: Trust score:', trust);
+    console.log('ReliabilityIndicator: Reliability score:', reliability);
+    console.log('ReliabilityIndicator: Using agent data:', veniceActivated ? 'nakamotoWithVenice' : 'nakamotoBase');
+  }, [veniceActivated, trust, reliability]);
 
   const getTrustColor = (score: number) => {
     return score >= 7 
@@ -72,10 +65,11 @@ const ReliabilityIndicator = ({ isProcessing = false, metaQube }: ReliabilityInd
   const trustDots = Math.ceil(trust / 2);
   const reliabilityDots = Math.ceil(reliability / 2);
 
-  console.log('ReliabilityIndicator: FINAL RENDER - Trust dots:', trustDots, 'Reliability dots:', reliabilityDots, 'Venice:', veniceActivated);
-
   return (
-    <div className="flex items-center gap-6 bg-muted/30 p-2 rounded-md">
+    <div 
+      className="flex items-center gap-6 bg-muted/30 p-2 rounded-md"
+      key={`reliability-${veniceActivated ? 'venice' : 'base'}-${trust}-${reliability}`}
+    >
       <div className="flex flex-col items-center">
         <div className="text-xs text-muted-foreground mb-1">
           {isProcessing ? "Thinking..." : "Reliability"}
@@ -84,7 +78,7 @@ const ReliabilityIndicator = ({ isProcessing = false, metaQube }: ReliabilityInd
           <div className="flex items-center cursor-help">
             {Array.from({ length: 5 }).map((_, i) => (
               <div 
-                key={`rel-${i}`}
+                key={i}
                 className={`w-1.5 h-1.5 rounded-full mx-0.5 ${i < reliabilityDots ? getReliabilityColor(reliability) : 'bg-muted'} ${getAnimationClass(i)}`}
                 style={{ 
                   animationDelay: isProcessing ? `${i * 0.15}s` : '0s',
@@ -104,7 +98,7 @@ const ReliabilityIndicator = ({ isProcessing = false, metaQube }: ReliabilityInd
           <div className="flex items-center cursor-help">
             {Array.from({ length: 5 }).map((_, i) => (
               <div 
-                key={`trust-${i}`}
+                key={i}
                 className={`w-1.5 h-1.5 rounded-full mx-0.5 ${i < trustDots ? getTrustColor(trust) : 'bg-muted'} ${getAnimationClass(i)}`}
                 style={{ 
                   animationDelay: isProcessing ? `${i * 0.15}s` : '0s',

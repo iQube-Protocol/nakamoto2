@@ -6,7 +6,6 @@ const VENICE_STORAGE_KEY = 'venice_activated';
 export const useVeniceAgent = () => {
   const [veniceActivated, setVeniceActivated] = useState(() => {
     const stored = localStorage.getItem(VENICE_STORAGE_KEY);
-    console.log('Venice: Initial state from localStorage:', stored);
     return stored === 'true';
   });
 
@@ -16,30 +15,24 @@ export const useVeniceAgent = () => {
   });
 
   const activateVenice = () => {
-    console.log('Venice: ACTIVATING Venice agent');
+    console.log('Venice: Activating Venice agent');
     setVeniceActivated(true);
     setVeniceVisible(true);
     localStorage.setItem(VENICE_STORAGE_KEY, 'true');
-    // Trigger a custom event to notify all components
-    window.dispatchEvent(new CustomEvent('veniceStateChanged', { detail: { activated: true } }));
   };
 
   const deactivateVenice = () => {
-    console.log('Venice: DEACTIVATING Venice agent');
+    console.log('Venice: Deactivating Venice agent');
     setVeniceActivated(false);
     setVeniceVisible(false);
     localStorage.setItem(VENICE_STORAGE_KEY, 'false');
-    // Trigger a custom event to notify all components
-    window.dispatchEvent(new CustomEvent('veniceStateChanged', { detail: { activated: false } }));
   };
 
   const hideVenice = () => {
-    console.log('Venice: HIDING Venice agent');
+    console.log('Venice: Hiding Venice agent');
     setVeniceVisible(false);
     setVeniceActivated(false);
     localStorage.setItem(VENICE_STORAGE_KEY, 'false');
-    // Trigger a custom event to notify all components
-    window.dispatchEvent(new CustomEvent('veniceStateChanged', { detail: { activated: false } }));
   };
 
   // Listen for storage changes from other tabs
@@ -59,7 +52,7 @@ export const useVeniceAgent = () => {
 
   // Debug logging for state changes
   useEffect(() => {
-    console.log('Venice: STATE UPDATED - activated:', veniceActivated, 'visible:', veniceVisible);
+    console.log('Venice: State updated - activated:', veniceActivated, 'visible:', veniceVisible);
   }, [veniceActivated, veniceVisible]);
 
   return {

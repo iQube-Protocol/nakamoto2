@@ -22,16 +22,16 @@ const MonDAIHeader: React.FC<MonDAIHeaderProps> = ({
 }) => {
   const { veniceActivated } = useVeniceAgent();
   
-  // Debug logging for MonDAI header
-  console.log('MonDAIHeader: Rendering with Venice state:', veniceActivated);
-  
   return (
     <div className="flex flex-row justify-between items-center mb-2">
       <div className="flex-1">
         {/* This is empty space for alignment */}
       </div>
       <div className="flex items-center gap-4">
-        <ReliabilityIndicator isProcessing={isRetrying} />
+        <ReliabilityIndicator 
+          isProcessing={isRetrying} 
+          key={`mondai-reliability-${veniceActivated}-${Date.now()}`}
+        />
         <ConnectionStatus
           isRetrying={isRetrying}
           connectionStatus={connectionStatus}
