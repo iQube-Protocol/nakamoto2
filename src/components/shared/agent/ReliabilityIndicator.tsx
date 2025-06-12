@@ -13,8 +13,10 @@ interface ReliabilityIndicatorProps {
 const ReliabilityIndicator = ({ isProcessing = false, metaQube }: ReliabilityIndicatorProps) => {
   const { veniceActivated } = useVeniceAgent();
   
-  // Force component to recalculate when Venice state changes
-  const veniceStateKey = veniceActivated ? 'venice' : 'base';
+  // Debug logging for state changes
+  useEffect(() => {
+    console.log('ReliabilityIndicator: Venice state changed to:', veniceActivated);
+  }, [veniceActivated]);
   
   // Use useMemo to ensure calculations update when Venice state changes
   const { effectiveMetaQube, trust, reliability } = useMemo(() => {
@@ -34,13 +36,7 @@ const ReliabilityIndicator = ({ isProcessing = false, metaQube }: ReliabilityInd
       trust: trustScore,
       reliability: reliabilityScore
     };
-  }, [veniceActivated, metaQube, veniceStateKey]); // Added veniceStateKey as dependency
-
-  // Debug logging to track state changes
-  useEffect(() => {
-    console.log('ReliabilityIndicator: Component mounted/updated with Venice:', veniceActivated);
-    console.log('ReliabilityIndicator: Current scores - Trust:', trust, 'Reliability:', reliability);
-  }, [veniceActivated, trust, reliability]);
+  }, [veniceActivated, metaQube]);
 
   const getTrustColor = (score: number) => {
     return score >= 7 
@@ -70,13 +66,10 @@ const ReliabilityIndicator = ({ isProcessing = false, metaQube }: ReliabilityInd
   const trustDots = Math.ceil(trust / 2);
   const reliabilityDots = Math.ceil(reliability / 2);
 
-  console.log('ReliabilityIndicator: Rendering with dots - Trust:', trustDots, 'Reliability:', reliabilityDots);
+  console.log('ReliabilityIndicator: Rendering with dots - Trust:', trustDots, 'Reliability:', reliabilityDots, 'Venice:', veniceActivated);
 
   return (
-    <div 
-      className="flex items-center gap-6 bg-muted/30 p-2 rounded-md"
-      key={`reliability-display-${veniceStateKey}-${trust}-${reliability}`}
-    >
+    <div className="flex items-center gap-6 bg-muted/30 p-2 rounded-md">
       <div className="flex flex-col items-center">
         <div className="text-xs text-muted-foreground mb-1">
           {isProcessing ? "Thinking..." : "Reliability"}
@@ -85,7 +78,7 @@ const ReliabilityIndicator = ({ isProcessing = false, metaQube }: ReliabilityInd
           <div className="flex items-center cursor-help">
             {Array.from({ length: 5 }).map((_, i) => (
               <div 
-                key={`rel-${i}-${veniceStateKey}`}
+                key={`rel-${i}`}
                 className={`w-1.5 h-1.5 rounded-full mx-0.5 ${i < reliabilityDots ? getReliabilityColor(reliability) : 'bg-muted'} ${getAnimationClass(i)}`}
                 style={{ 
                   animationDelay: isProcessing ? `${i * 0.15}s` : '0s',
@@ -105,7 +98,7 @@ const ReliabilityIndicator = ({ isProcessing = false, metaQube }: ReliabilityInd
           <div className="flex items-center cursor-help">
             {Array.from({ length: 5 }).map((_, i) => (
               <div 
-                key={`trust-${i}-${veniceStateKey}`}
+                key={`trust-${i}`}
                 className={`w-1.5 h-1.5 rounded-full mx-0.5 ${i < trustDots ? getTrustColor(trust) : 'bg-muted'} ${getAnimationClass(i)}`}
                 style={{ 
                   animationDelay: isProcessing ? `${i * 0.15}s` : '0s',

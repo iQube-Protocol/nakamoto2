@@ -42,10 +42,7 @@ const AgentHeader = ({ title, description, isProcessing }: AgentHeaderProps) => 
           </h2>
         </ScoreTooltip>
       </div>
-      <ReliabilityIndicator 
-        isProcessing={isProcessing} 
-        key={`reliability-${veniceActivated ? 'venice' : 'base'}`}
-      />
+      <ReliabilityIndicator isProcessing={isProcessing} />
     </div>
   );
 };
