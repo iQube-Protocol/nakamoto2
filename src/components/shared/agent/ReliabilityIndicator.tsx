@@ -13,9 +13,11 @@ interface ReliabilityIndicatorProps {
 const ReliabilityIndicator = ({ isProcessing = false, metaQube }: ReliabilityIndicatorProps) => {
   const { veniceActivated } = useVeniceAgent();
   
+  console.log('🔄 ReliabilityIndicator: Component rendered with Venice state:', veniceActivated);
+  
   // Use useMemo to ensure calculations update when Venice state changes
   const { effectiveMetaQube, trust, reliability } = useMemo(() => {
-    console.log('ReliabilityIndicator: useMemo recalculating with Venice state:', veniceActivated);
+    console.log('⚡ ReliabilityIndicator: useMemo recalculating with Venice state:', veniceActivated);
     
     // Use the appropriate agent data based on Venice activation status
     const effective = metaQube || (veniceActivated ? agentQubeData.nakamotoWithVenice : agentQubeData.nakamotoBase);
@@ -24,24 +26,28 @@ const ReliabilityIndicator = ({ isProcessing = false, metaQube }: ReliabilityInd
     const trustScore = Math.round(((effective["Accuracy-Score"] + effective["Verifiability-Score"]) / 2) * 10) / 10;
     const reliabilityScore = Math.round(((effective["Accuracy-Score"] + effective["Verifiability-Score"] + (10 - effective["Risk-Score"])) / 3) * 10) / 10;
     
-    console.log('ReliabilityIndicator: Calculated scores - Trust:', trustScore, 'Reliability:', reliabilityScore);
-    console.log('ReliabilityIndicator: Using agent data:', veniceActivated ? 'nakamotoWithVenice' : 'nakamotoBase');
-    console.log('ReliabilityIndicator: Agent data values:', effective);
+    console.log('📊 ReliabilityIndicator: Calculated scores - Trust:', trustScore, 'Reliability:', reliabilityScore);
+    console.log('🔧 ReliabilityIndicator: Using agent data:', veniceActivated ? 'nakamotoWithVenice' : 'nakamotoBase');
+    console.log('📋 ReliabilityIndicator: Agent data values:', effective);
     
     return {
       effectiveMetaQube: effective,
       trust: trustScore,
       reliability: reliabilityScore
     };
-  }, [veniceActivated, metaQube]); // Only depend on the inputs, not the outputs
+  }, [veniceActivated, metaQube]);
 
   // Debug logging to track state changes
   useEffect(() => {
-    console.log('ReliabilityIndicator: Component effect triggered');
-    console.log('ReliabilityIndicator: Venice activated:', veniceActivated);
-    console.log('ReliabilityIndicator: Final Trust score:', trust);
-    console.log('ReliabilityIndicator: Final Reliability score:', reliability);
+    console.log('🎯 ReliabilityIndicator: useEffect triggered - Venice:', veniceActivated);
+    console.log('🎯 ReliabilityIndicator: Final Trust score:', trust);
+    console.log('🎯 ReliabilityIndicator: Final Reliability score:', reliability);
   }, [veniceActivated, trust, reliability]);
+
+  // Add a render counter to see if component is actually re-rendering
+  useEffect(() => {
+    console.log('🏁 ReliabilityIndicator: Component mounted/updated at', new Date().toLocaleTimeString());
+  });
 
   const getTrustColor = (score: number) => {
     return score >= 7 
@@ -71,7 +77,7 @@ const ReliabilityIndicator = ({ isProcessing = false, metaQube }: ReliabilityInd
   const trustDots = Math.ceil(trust / 2);
   const reliabilityDots = Math.ceil(reliability / 2);
 
-  console.log('ReliabilityIndicator: Rendering with trustDots:', trustDots, 'reliabilityDots:', reliabilityDots);
+  console.log('🎨 ReliabilityIndicator: Rendering with trustDots:', trustDots, 'reliabilityDots:', reliabilityDots, 'Venice:', veniceActivated);
 
   return (
     <div className="flex items-center gap-6 bg-muted/30 p-2 rounded-md">
