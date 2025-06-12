@@ -1,4 +1,3 @@
-
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -29,6 +28,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [session, setSession] = useState<Session | null>(null);
   const [isGuest, setIsGuest] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
+  const [isInitialLoad, setIsInitialLoad] = useState(true);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -41,6 +41,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     if (guestMode) {
       setIsGuest(true);
       setLoading(false);
+      setIsInitialLoad(false);
       return;
     }
     
@@ -54,11 +55,30 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setIsGuest(false);
           setLoading(false);
           
-          // Handle specific auth events
+          // Handle specific auth events with more selective redirect logic
           if (event === 'SIGNED_IN') {
-            console.log("User signed in, session established");
-            // Redirect to dashboard after sign in
-            navigate('/mondai');
+            console.log("User signed in, checking if redirect needed");
+            
+            // Only redirect if this is a fresh sign-in (not session restoration)
+            // and user is on an unprotected route
+            const protectedRoutes = ['/mondai', '/settings', '/learn', '/earn', '/connect', '/profile', '/qubes'];
+            const isOnProtectedRoute = protectedRoutes.some(route => location.pathname.startsWith(route));
+            
+            // Only redirect if:
+            // 1. Not initial load (session restoration)
+            // 2. User is on root path or sign-in related pages
+            // 3. Not already on a protected route
+            if (!isInitialLoad && 
+                (location.pathname === '/' || 
+                 location.pathname === '/signin' || 
+                 location.pathname === '/signup' ||
+                 location.pathname === '/splash') &&
+                !isOnProtectedRoute) {
+              console.log("Redirecting to MonDAI after fresh sign-in");
+              navigate('/mondai');
+            } else {
+              console.log("Skipping redirect - user already on valid route:", location.pathname);
+            }
           } else if (event === 'SIGNED_OUT') {
             console.log("User signed out, session cleared");
             localStorage.removeItem('guestMode');
@@ -68,6 +88,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             console.log("Token refreshed successfully");
           } else if (event === 'USER_UPDATED') {
             console.log("User updated");
+          }
+          
+          // Mark that initial load is complete
+          if (isInitialLoad) {
+            setIsInitialLoad(false);
           }
         }
       }
@@ -83,6 +108,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setSession(data.session);
           setUser(data.session?.user ?? null);
           setLoading(false);
+          
+          // Mark initial load as complete after session check
+          setTimeout(() => {
+            setIsInitialLoad(false);
+          }, 100);
         }
       }
     });
@@ -91,7 +121,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [navigate]);
+  }, [navigate, location.pathname]);
 
   const signIn = async (email: string, password: string) => {
     console.log("Attempting sign in for:", email);
