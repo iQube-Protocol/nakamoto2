@@ -1,7 +1,6 @@
-
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { ChevronDown, Database, Bot, FolderGit2 } from 'lucide-react';
+import { ChevronDown, Database, Brain, FolderGit2 } from 'lucide-react';
 import { TooltipProvider, Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { Switch } from "@/components/ui/switch";
@@ -42,7 +41,7 @@ const IQubesSection: React.FC<IQubesSectionProps> = ({
       case 'DataQube':
         return <Database className="h-4 w-4 text-blue-500" />;
       case 'AgentQube':
-        return <Bot className="h-4 w-4 text-purple-500" />;
+        return <Brain className="h-4 w-4 text-purple-500" />;
       case 'ToolQube':
         return <FolderGit2 className="h-4 w-4 text-green-500" />;
       default:
@@ -74,9 +73,9 @@ const IQubesSection: React.FC<IQubesSectionProps> = ({
     if (qubeName === "Venice") {
       return (
         <div className="space-y-1">
-          <div className="font-semibold">Venice Agent</div>
+          <div className="font-semibold">Venice Model</div>
           <div className="text-xs">
-            AI service that protects privacy and prevents censorship.
+            AI model service that protects privacy and prevents censorship.
           </div>
         </div>
       );
