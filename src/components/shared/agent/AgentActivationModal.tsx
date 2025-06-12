@@ -40,6 +40,10 @@ const AgentActivationModal = ({
   const [errorMessage, setErrorMessage] = useState('');
   const [processingMessage, setProcessingMessage] = useState('');
 
+  // Calculate USD equivalent (1 cent = 10 satoshi, so 500 satoshi = 50 cents = $0.50)
+  const satoshiFee = 500;
+  const usdEquivalent = (satoshiFee / 10 / 100).toFixed(2); // Convert to dollars
+
   const handleVerificationComplete = () => {
     setCurrentStep('fee');
   };
@@ -136,28 +140,38 @@ const AgentActivationModal = ({
                 <BadgeDollarSign className="h-5 w-5 text-amber-600" />
               </div>
               <div>
-                <h3 className="text-base font-medium">Micro Fee Required</h3>
+                <h3 className="text-base font-medium">Monthly Subscription Fee</h3>
                 <p className="text-sm text-muted-foreground">
-                  This agent requires a small fee to activate its services.
+                  This agent requires a monthly subscription fee to activate its services.
                 </p>
               </div>
             </div>
 
             <div className="border rounded-md p-4 mb-4">
-              <div className="flex justify-between mb-2">
-                <span className="text-sm text-muted-foreground">Service Fee</span>
-                <span className="font-medium">{fee} $QOYN</span>
+              <div className="flex justify-between items-center mb-2">
+                <span className="text-sm text-muted-foreground">Monthly Subscription</span>
+                <div className="text-right">
+                  <span className="font-medium">{satoshiFee} Satoshi</span>
+                  <span className="text-sm text-muted-foreground ml-2">(≈ ${usdEquivalent})</span>
+                </div>
               </div>
-              <div className="border-t pt-2 flex justify-between">
-                <span className="text-sm font-medium">Total</span>
-                <span className="font-semibold">{fee} $QOYN</span>
+              <div className="border-t pt-2 flex justify-between items-center">
+                <span className="text-sm font-medium">Total per month</span>
+                <div className="text-right">
+                  <span className="font-semibold">{satoshiFee} Satoshi</span>
+                  <span className="text-sm text-muted-foreground ml-2">(≈ ${usdEquivalent})</span>
+                </div>
               </div>
               
               <div className="mt-4 flex items-center gap-2">
                 <Wallet className="h-4 w-4 text-muted-foreground" />
                 <span className="text-xs text-muted-foreground">
-                  Payment will be made from your connected wallet
+                  Payment will be made from your connected wallet in Satoshi or US¢
                 </span>
+              </div>
+              
+              <div className="mt-2 text-xs text-muted-foreground text-center">
+                500 Satoshi ≈ 50¢ • Billed monthly
               </div>
             </div>
 
@@ -173,7 +187,7 @@ const AgentActivationModal = ({
                 onClick={handleConfirmPayment}
                 className="flex-1 bg-iqube-primary hover:bg-iqube-primary/90"
               >
-                Confirm Payment
+                Subscribe Now
               </Button>
             </div>
           </div>
@@ -195,7 +209,7 @@ const AgentActivationModal = ({
               <div className="bg-green-100 p-3 rounded-full mb-4">
                 <CheckCircle className="h-8 w-8 text-green-600" />
               </div>
-              <h3 className="text-lg font-medium">Payment Successful</h3>
+              <h3 className="text-lg font-medium">Subscription Activated</h3>
               <p className="text-center text-sm text-muted-foreground mt-2">
                 You now have access to the {agentName} agent capabilities.
               </p>
