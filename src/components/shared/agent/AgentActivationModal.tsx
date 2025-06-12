@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { 
   AlertCircle, 
@@ -166,12 +165,8 @@ const AgentActivationModal = ({
               <div className="mt-4 flex items-center gap-2">
                 <Wallet className="h-4 w-4 text-muted-foreground" />
                 <span className="text-xs text-muted-foreground">
-                  Payment will be made from your connected wallet in Satoshi or US¢
+                  Payment will be made from your connected wallet in Satoshi or US¢ • 500 Satoshi ≈ 50¢ • Billed monthly
                 </span>
-              </div>
-              
-              <div className="mt-2 text-xs text-muted-foreground text-center">
-                500 Satoshi ≈ 50¢ • Billed monthly
               </div>
             </div>
 
