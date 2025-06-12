@@ -26,19 +26,21 @@ const ReliabilityIndicator = ({ isProcessing = false, metaQube }: ReliabilityInd
     
     console.log('ReliabilityIndicator: Calculated scores - Trust:', trustScore, 'Reliability:', reliabilityScore);
     console.log('ReliabilityIndicator: Using agent data:', veniceActivated ? 'nakamotoWithVenice' : 'nakamotoBase');
+    console.log('ReliabilityIndicator: Agent data values:', effective);
     
     return {
       effectiveMetaQube: effective,
       trust: trustScore,
       reliability: reliabilityScore
     };
-  }, [veniceActivated, metaQube]);
+  }, [veniceActivated, metaQube]); // Only depend on the inputs, not the outputs
 
   // Debug logging to track state changes
   useEffect(() => {
+    console.log('ReliabilityIndicator: Component effect triggered');
     console.log('ReliabilityIndicator: Venice activated:', veniceActivated);
-    console.log('ReliabilityIndicator: Trust score:', trust);
-    console.log('ReliabilityIndicator: Reliability score:', reliability);
+    console.log('ReliabilityIndicator: Final Trust score:', trust);
+    console.log('ReliabilityIndicator: Final Reliability score:', reliability);
   }, [veniceActivated, trust, reliability]);
 
   const getTrustColor = (score: number) => {
@@ -69,13 +71,15 @@ const ReliabilityIndicator = ({ isProcessing = false, metaQube }: ReliabilityInd
   const trustDots = Math.ceil(trust / 2);
   const reliabilityDots = Math.ceil(reliability / 2);
 
+  console.log('ReliabilityIndicator: Rendering with trustDots:', trustDots, 'reliabilityDots:', reliabilityDots);
+
   return (
     <div className="flex items-center gap-6 bg-muted/30 p-2 rounded-md">
       <div className="flex flex-col items-center">
         <div className="text-xs text-muted-foreground mb-1">
           {isProcessing ? "Thinking..." : "Reliability"}
         </div>
-        <ScoreTooltip type="trust" score={reliability}>
+        <ScoreTooltip type="reliability" score={reliability}>
           <div className="flex items-center cursor-help">
             {Array.from({ length: 5 }).map((_, i) => (
               <div 
