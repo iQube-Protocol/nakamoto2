@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Bot, Loader2 } from 'lucide-react';
 import ReliabilityIndicator from './ReliabilityIndicator';
 import ScoreTooltip from '../ScoreTooltips';
@@ -15,6 +15,15 @@ interface AgentHeaderProps {
 const AgentHeader = ({ title, description, isProcessing }: AgentHeaderProps) => {
   const isMobile = useIsMobile();
   const { veniceActivated } = useVeniceAgent();
+  
+  // Debug logging to track Venice state changes and re-renders
+  useEffect(() => {
+    console.log('AgentHeader: Venice state changed, activated:', veniceActivated);
+  }, [veniceActivated]);
+  
+  useEffect(() => {
+    console.log('AgentHeader: Component re-rendered with Venice state:', veniceActivated);
+  });
   
   // Use shortened name on mobile for Aigent Nakamoto
   const displayTitle = isMobile && title === "Aigent Nakamoto" ? "Nakamoto" : title;
@@ -35,7 +44,10 @@ const AgentHeader = ({ title, description, isProcessing }: AgentHeaderProps) => 
           </h2>
         </ScoreTooltip>
       </div>
-      <ReliabilityIndicator isProcessing={isProcessing} key={`reliability-${veniceActivated}`} />
+      <ReliabilityIndicator 
+        isProcessing={isProcessing} 
+        key={`reliability-${veniceActivated}-${Date.now()}`}
+      />
     </div>
   );
 };
