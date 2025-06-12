@@ -78,11 +78,19 @@ const AgentActivationModal = ({
       if (result) {
         setTimeout(() => {
           setCurrentStep('complete');
+          
+          // Handle activation for different agents
           if (agentName === 'Metis') {
             localStorage.setItem('metisActive', 'true');
             const activationEvent = new Event('metisActivated');
             window.dispatchEvent(activationEvent);
             console.log('Dispatched metisActivated event');
+          } else if (agentName === 'Venice') {
+            localStorage.setItem('venice_activated', 'true');
+            window.dispatchEvent(new CustomEvent('veniceStateChanged', { 
+              detail: { activated: true, visible: true } 
+            }));
+            console.log('Dispatched veniceStateChanged event');
           }
         }, 3500);
       } else {
