@@ -1,112 +1,50 @@
 
-import React from 'react';
-import { useToast } from '@/components/ui/use-toast';
-import { useAuth } from '@/hooks/use-auth';
-import { getConversationContext } from '@/services/agent-service';
-import { AgentMessage } from '@/lib/types';
+import { useState, useCallback } from 'react';
 import { generateAigentNakamotoResponse } from '@/services/qrypto-mondai-service';
+import { AgentMessage } from '@/lib/types';
+import { useVeniceAgent } from '@/hooks/use-venice-agent';
 
-export function useMondAI() {
-  const { toast: uiToast } = useToast();
-  const { user } = useAuth();
-  const [conversationId, setConversationId] = React.useState<string | null>(null);
-  const [historicalContext, setHistoricalContext] = React.useState<string>('');
-  const [isLoading, setIsLoading] = React.useState<boolean>(false);
-  const [activeTab, setActiveTab] = React.useState<'chat' | 'knowledge' | 'documents'>('chat');
-  const [documentUpdates, setDocumentUpdates] = React.useState<number>(0);
+export const useMondAI = () => {
+  const [conversationId, setConversationId] = useState<string | null>(null);
+  const [documentUpdates, setDocumentUpdates] = useState(0);
+  const { veniceActivated } = useVeniceAgent();
 
-  // Load conversation context when component mounts
-  React.useEffect(() => {
-    const loadContext = async () => {
-      if (!conversationId) {
-        console.log('No conversationId provided, skipping context load');
-        return;
-      }
-      
-      setIsLoading(true);
-      try {
-        // Use 'learn' instead of 'mondai' to match the existing agent types
-        const context = await getConversationContext(conversationId, 'learn');
-        if (context.historicalContext) {
-          setHistoricalContext(context.historicalContext);
-          console.log('Loaded historical context for MonDAI agent');
-        }
-        
-        if (context.conversationId !== conversationId) {
-          setConversationId(context.conversationId);
-        }
-      } catch (error) {
-        console.error('Error loading conversation context:', error);
-      } finally {
-        setIsLoading(false);
-      }
-    };
-    
-    loadContext();
-  }, [conversationId]);
-
-  // Handle document context updates
-  const handleDocumentContextUpdated = () => {
-    setDocumentUpdates(prev => prev + 1);
-  };
-  
-  // Handle tab changes
-  const handleTabChange = (tab: 'chat' | 'knowledge' | 'documents') => {
-    setActiveTab(tab);
-  };
-
-  const handleAIMessage = async (message: string) => {
+  const handleAIMessage = useCallback(async (message: string): Promise<AgentMessage> => {
     try {
-      console.log('MonDAI: Sending message to enhanced Aigent Nakamoto service');
+      console.log(`MonDAI: Processing message with Venice ${veniceActivated ? 'enabled' : 'disabled'}`);
       
-      // Use the enhanced Qrypto COYN + metaKnyts service
-      const response = await generateAigentNakamotoResponse(message, conversationId);
+      const response = await generateAigentNakamotoResponse(
+        message, 
+        conversationId,
+        veniceActivated // Pass Venice toggle state
+      );
       
-      console.log('MonDAI: Received response with metadata:', {
-        qryptoItems: response.metadata.qryptoItemsFound,
-        metaKnytsItems: response.metadata.metaKnytsItemsFound,
-        citations: response.metadata.citations?.length || 0
-      });
-      
-      // Update conversation ID if it changed
-      if (response.conversationId !== conversationId) {
+      // Update conversation ID if it was generated
+      if (!conversationId) {
         setConversationId(response.conversationId);
-        console.log(`Setting new conversation ID: ${response.conversationId}`);
       }
-      
-      // Return a properly formatted agent message
+
       return {
         id: Date.now().toString(),
-        sender: 'agent' as const,
+        sender: 'agent',
         message: response.message,
         timestamp: response.timestamp,
         metadata: response.metadata
       };
     } catch (error) {
-      console.error('Failed to get AI response:', error);
-      uiToast({
-        title: "AI Service Error",
-        description: "Could not connect to the AI service. Please try again later.",
-        variant: "destructive"
-      });
-      
-      // Return error message if the service fails
-      return {
-        id: Date.now().toString(),
-        sender: 'agent' as const,
-        message: "I'm sorry, I couldn't process your request. Please try again later.",
-        timestamp: new Date().toISOString(),
-      };
+      console.error('Error in MonDAI handleAIMessage:', error);
+      throw error;
     }
-  };
+  }, [conversationId, veniceActivated]);
+
+  const handleDocumentContextUpdated = useCallback(() => {
+    setDocumentUpdates(prev => prev + 1);
+  }, []);
 
   return {
     conversationId,
-    isLoading,
-    activeTab,
     documentUpdates,
     handleAIMessage,
     handleDocumentContextUpdated,
-    handleTabChange,
   };
-}
+};

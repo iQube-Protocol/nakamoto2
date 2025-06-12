@@ -134,6 +134,33 @@ Your tone is conversational, upbeat, and encouraging - like a knowledgeable frie
 `;
 
 /**
+ * Create OpenAI client with conditional endpoint
+ */
+function createAIClient(useVenice: boolean = false) {
+  const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
+  const veniceApiKey = Deno.env.get('VENICE_API_KEY');
+  
+  if (useVenice) {
+    if (!veniceApiKey) {
+      throw new Error('Venice AI API key not configured');
+    }
+    
+    return new OpenAI({
+      apiKey: veniceApiKey,
+      baseURL: 'https://api.venice.ai/api/v1',
+    });
+  } else {
+    if (!openAIApiKey) {
+      throw new Error('OpenAI API key not configured');
+    }
+    
+    return new OpenAI({
+      apiKey: openAIApiKey,
+    });
+  }
+}
+
+/**
  * Process the user's query with enhanced context
  */
 async function processWithOpenAI(
@@ -142,11 +169,10 @@ async function processWithOpenAI(
   conversationId: string,
   historicalContext?: string,
   systemPrompt?: string,
-  qryptoKnowledgeContext?: string
+  qryptoKnowledgeContext?: string,
+  useVenice: boolean = false
 ): Promise<string> {
-  const openai = new OpenAI({
-    apiKey: Deno.env.get('OPENAI_API_KEY') || '',
-  });
+  const client = createAIClient(useVenice);
 
   // Use provided system prompt or default
   const finalSystemPrompt = systemPrompt || DEFAULT_AIGENT_NAKAMOTO_SYSTEM_PROMPT;
@@ -180,7 +206,7 @@ Type: ${item.type || 'General'}
     generalKnowledgeContext
   ].filter(Boolean).join('\n\n');
 
-  const response = await openai.chat.completions.create({
+  const response = await client.chat.completions.create({
     model: "gpt-4o-mini",
     messages: [
       { 
@@ -215,21 +241,23 @@ async function processMonDAIInteraction(
   knowledgeItems: KnowledgeItem[] = [],
   historicalContext?: string,
   systemPrompt?: string,
-  qryptoKnowledgeContext?: string
+  qryptoKnowledgeContext?: string,
+  useVenice: boolean = false
 ): Promise<MonDAIResponse> {
   // Generate a new conversation ID if none provided
   if (!conversationId) {
     conversationId = crypto.randomUUID();
   }
   
-  // Process with the OpenAI API
+  // Process with the AI API (OpenAI or Venice)
   const aiResponse = await processWithOpenAI(
     message, 
     knowledgeItems, 
     conversationId, 
     historicalContext,
     systemPrompt,
-    qryptoKnowledgeContext
+    qryptoKnowledgeContext,
+    useVenice
   );
   
   // Detect if response contains a mermaid diagram
@@ -244,13 +272,14 @@ async function processMonDAIInteraction(
     timestamp: new Date().toISOString(),
     metadata: {
       version: "1.0",
-      modelUsed: "gpt-4o-mini",
+      modelUsed: useVenice ? "venice-gpt-4o-mini" : "gpt-4o-mini",
       knowledgeSource: qryptoKnowledgeContext ? "QryptoCOYN Knowledge Base + AI" : 
                       knowledgeItems.length > 0 ? "KBAI Knowledge Base" : "General Knowledge",
       itemsFound: knowledgeItems.length,
       visualsProvided,
       mermaidDiagramIncluded,
-      isOffline: false
+      isOffline: false,
+      aiProvider: useVenice ? "Venice AI" : "OpenAI"
     }
   };
 }
@@ -271,7 +300,8 @@ serve(async (req) => {
       knowledgeItems, 
       historicalContext,
       systemPrompt,
-      qryptoKnowledgeContext
+      qryptoKnowledgeContext,
+      useVenice = false
     } = await req.json();
 
     if (!message) {
@@ -286,14 +316,15 @@ serve(async (req) => {
       );
     }
 
-    // Process the message with enhanced context
+    // Process the message with enhanced context and AI provider selection
     const response = await processMonDAIInteraction(
       message, 
       conversationId, 
       knowledgeItems || [],
       historicalContext,
       systemPrompt,
-      qryptoKnowledgeContext
+      qryptoKnowledgeContext,
+      useVenice
     );
 
     return new Response(

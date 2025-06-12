@@ -1,3 +1,4 @@
+
 import { qryptoKB, QryptoKnowledgeItem } from '@/services/qrypto-knowledge-base';
 import { metaKnytsKB, MetaKnytsKnowledgeItem } from '@/services/metaknyts-knowledge-base';
 import { supabase } from '@/integrations/supabase/client';
@@ -114,7 +115,8 @@ function formatCitations(qryptoItems: QryptoKnowledgeItem[], metaKnytsItems: Met
  */
 export async function generateAigentNakamotoResponse(
   message: string,
-  conversationId: string | null
+  conversationId: string | null,
+  useVenice: boolean = false
 ): Promise<QryptoMonDAIResponse> {
   // Get conversation context if we have a conversationId
   let contextResult;
@@ -170,7 +172,7 @@ Use this information to inform your responses and synthesize knowledge from both
   }
 
   try {
-    // Call the mondai-ai function with enhanced dual knowledge context
+    // Call the mondai-ai function with enhanced dual knowledge context and Venice toggle
     const { data, error } = await supabase.functions.invoke('mondai-ai', {
       body: { 
         message, 
@@ -178,7 +180,8 @@ Use this information to inform your responses and synthesize knowledge from both
         knowledgeItems: [...qryptoItems, ...metaKnytsItems],
         historicalContext: contextResult?.historicalContext,
         systemPrompt: AIGENT_NAKAMOTO_SYSTEM_PROMPT,
-        knowledgeContext
+        knowledgeContext,
+        useVenice
       }
     });
     
