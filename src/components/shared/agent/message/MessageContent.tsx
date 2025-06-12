@@ -12,13 +12,13 @@ const MessageContent = ({ content, sender }: MessageContentProps) => {
   // Process the content to make it more user-friendly
   const processUserFriendlyContent = (text: string) => {
     return text
-      // Convert technical headers to friendly emphasized text
-      .replace(/^### (.+)$/gm, '\n**$1**\n')
-      .replace(/^## (.+)$/gm, '\n**$1**\n')
-      .replace(/^# (.+)$/gm, '\n**$1**\n')
+      // Convert technical headers to friendly introductory phrases
+      .replace(/^### (.+)$/gm, '\nHere\'s what you need to know about $1:\n')
+      .replace(/^## (.+)$/gm, '\nLet me explain $1:\n')
+      .replace(/^# (.+)$/gm, '\nThe key thing about $1:\n')
       
-      // Add friendly spacing around key concepts
-      .replace(/\*\*([^*]+)\*\*/g, ' **$1** ')
+      // Convert **bold** to more natural emphasis patterns
+      .replace(/\*\*([^*]+)\*\*/g, '$1')
       
       // Convert technical bullet points to friendlier format
       .replace(/^\* /gm, '• ')
@@ -30,9 +30,10 @@ const MessageContent = ({ content, sender }: MessageContentProps) => {
       // Make numbered lists more friendly
       .replace(/^(\d+)\. /gm, '$1. ')
       
-      // Add friendly transitions
+      // Add friendly transitions and natural conversation starters
       .replace(/^(Here's|Here are|Let me)/gm, '\n$1')
       .replace(/^(To|For|When|If)/gm, '\n$1')
+      .replace(/^(The key|Important|Remember)/gm, '\n$1')
       
       // Clean up extra spaces
       .replace(/ {2,}/g, ' ')
@@ -89,27 +90,49 @@ const MessageContent = ({ content, sender }: MessageContentProps) => {
               return <div key={j} className="h-2" />;
             }
             
-            // Handle friendly bullet points
+            // Handle friendly bullet points with icons
             if (trimmedLine.startsWith('• ')) {
               return (
                 <div key={j} className="flex items-start mt-2 mb-1">
-                  <span className="text-iqube-accent mr-2 mt-0.5 flex-shrink-0">•</span>
-                  <span className="flex-1">{trimmedLine.substring(2)}</span>
+                  <span className="text-iqube-accent mr-3 mt-0.5 flex-shrink-0 text-lg">•</span>
+                  <span className="flex-1 text-foreground">{trimmedLine.substring(2)}</span>
                 </div>
               );
             }
             
-            // Handle numbered lists
+            // Handle numbered lists with friendly styling
             if (trimmedLine.match(/^\d+\. /)) {
               const match = trimmedLine.match(/^(\d+)\. (.+)$/);
               if (match) {
                 return (
                   <div key={j} className="flex items-start mt-2 mb-1">
-                    <span className="text-iqube-accent font-medium mr-2 mt-0.5 flex-shrink-0">{match[1]}.</span>
-                    <span className="flex-1">{match[2]}</span>
+                    <span className="text-iqube-accent font-medium mr-3 mt-0.5 flex-shrink-0 bg-iqube-accent/10 px-2 py-0.5 rounded-full text-sm">{match[1]}</span>
+                    <span className="flex-1 text-foreground">{match[2]}</span>
                   </div>
                 );
               }
+            }
+            
+            // Handle conversational intro phrases with friendly styling
+            if (trimmedLine.startsWith('Here\'s what you need to know') || 
+                trimmedLine.startsWith('Let me explain') || 
+                trimmedLine.startsWith('The key thing about')) {
+              return (
+                <div key={j} className="my-4 p-3 bg-iqube-primary/5 border-l-4 border-iqube-accent rounded-r-lg">
+                  <span className="text-iqube-accent font-medium text-base">{trimmedLine}</span>
+                </div>
+              );
+            }
+            
+            // Handle important callouts naturally
+            if (trimmedLine.startsWith('Important:') || 
+                trimmedLine.startsWith('Remember:') || 
+                trimmedLine.startsWith('Note:')) {
+              return (
+                <div key={j} className="my-3 p-3 bg-amber-50 border-l-4 border-amber-400 rounded-r-lg">
+                  <span className="text-amber-800 font-medium">{trimmedLine}</span>
+                </div>
+              );
             }
             
             // Handle blockquotes (keep these for important callouts)
@@ -121,25 +144,23 @@ const MessageContent = ({ content, sender }: MessageContentProps) => {
               );
             }
             
-            // Process inline formatting
+            // Process key terms and important words with subtle highlighting
             const processInlineFormatting = (text: string) => {
-              // Split by bold markers and process
-              const parts = text.split(/(\*\*[^*]+\*\*)/);
-              return parts.map((part, idx) => {
-                if (part.startsWith('**') && part.endsWith('**')) {
-                  return (
-                    <strong key={idx} className="font-semibold text-iqube-accent">
-                      {part.slice(2, -2)}
-                    </strong>
-                  );
-                }
-                return part;
+              // Look for key technical terms and add subtle emphasis
+              const keyTerms = ['iQube', 'COYN', 'blockchain', 'smart contract', 'token', 'wallet', 'DeFi', 'NFT', 'Web3', 'cryptocurrency'];
+              let processedText = text;
+              
+              keyTerms.forEach(term => {
+                const regex = new RegExp(`\\b${term}\\b`, 'gi');
+                processedText = processedText.replace(regex, `<span class="key-term">${term}</span>`);
               });
+              
+              return <span dangerouslySetInnerHTML={{ __html: processedText }} />;
             };
             
-            // Regular paragraph with better spacing
+            // Regular paragraph with conversational styling
             return (
-              <p key={j} className="mb-3 last:mb-0">
+              <p key={j} className="mb-3 last:mb-0 text-foreground leading-relaxed">
                 {processInlineFormatting(trimmedLine)}
               </p>
             );
@@ -153,7 +174,7 @@ const MessageContent = ({ content, sender }: MessageContentProps) => {
   });
 
   return (
-    <div className="prose prose-sm max-w-none user-friendly-content">
+    <div className="prose prose-sm max-w-none conversational-content">
       {elements}
     </div>
   );
