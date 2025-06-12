@@ -5,7 +5,7 @@ import ScoreTooltip from '../shared/ScoreTooltips';
 export interface ScoreBadgeProps {
   value: number;
   label: string;
-  type: 'sensitivity' | 'trust' | 'risk' | 'accuracy' | 'verifiability' | 'reliability';
+  type: 'sensitivity' | 'trust' | 'risk' | 'accuracy' | 'verifiability';
 }
 
 const ScoreBadge = ({ value, label, type }: ScoreBadgeProps) => {
@@ -19,7 +19,7 @@ const ScoreBadge = ({ value, label, type }: ScoreBadgeProps) => {
           ? "bg-yellow-500/60" 
           : "bg-red-500/60";
     } else {
-      // Trust, Accuracy, Verifiability, and Reliability: 1-3 red, 4-6 amber, 7-10 green
+      // Trust, Accuracy, and Verifiability: 1-3 red, 4-6 amber, 7-10 green
       return value <= 3 
         ? "bg-red-500/60" 
         : value <= 6 
