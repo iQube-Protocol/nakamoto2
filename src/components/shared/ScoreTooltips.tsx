@@ -3,7 +3,7 @@ import React from 'react';
 import { TooltipProvider, Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
 
 interface ScoreTooltipProps {
-  type: 'risk' | 'sensitivity' | 'trust' | 'accuracy' | 'verifiability' | 'dataQube' | 'agentQube' | 'voice' | 'attachment' | 'reliability';
+  type: 'risk' | 'sensitivity' | 'trust' | 'accuracy' | 'verifiability' | 'dataQube' | 'agentQube' | 'modelQube' | 'voice' | 'attachment' | 'reliability';
   score?: number;
   children: React.ReactNode;
 }
@@ -71,6 +71,15 @@ const ScoreTooltip = ({ type, score, children }: ScoreTooltipProps) => {
             <div className="font-semibold">AgentQube</div>
             <div className="text-xs">
               Contains AI agents or algorithms that can perform specific tasks, analysis, or provide specialized functionality. Examples include risk assessment tools and recommendation engines.
+            </div>
+          </div>
+        );
+      case 'modelQube':
+        return (
+          <div className="space-y-1">
+            <div className="font-semibold">ModelQube</div>
+            <div className="text-xs">
+              Contains AI models and machine learning algorithms that provide specialized capabilities like privacy protection, content moderation, or advanced analytics.
             </div>
           </div>
         );
