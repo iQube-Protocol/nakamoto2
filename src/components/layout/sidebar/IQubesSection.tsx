@@ -40,7 +40,7 @@ const IQubesSection: React.FC<IQubesSectionProps> = ({
   const renderIQubeTypeIcon = (qubeName: string, type: string) => {
     // Special cases for specific qubes
     if (qubeName === "Venice") {
-      return <Brain className="h-4 w-4 text-purple-500" />;
+      return <Brain className="h-4 w-4 text-green-500" />;
     }
     if (qubeName === "Metis") {
       return <Bot className="h-4 w-4 text-purple-500" />;
@@ -52,6 +52,8 @@ const IQubesSection: React.FC<IQubesSectionProps> = ({
         return <Database className="h-4 w-4 text-blue-500" />;
       case 'AgentQube':
         return <Bot className="h-4 w-4 text-purple-500" />;
+      case 'ModelQube':
+        return <Brain className="h-4 w-4 text-green-500" />;
       case 'ToolQube':
         return <FolderGit2 className="h-4 w-4 text-green-500" />;
       default:

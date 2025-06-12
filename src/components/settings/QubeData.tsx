@@ -1,3 +1,4 @@
+
 import { MetaQube } from '@/lib/types';
 
 export const monDaiQubeData: MetaQube = {
@@ -29,15 +30,15 @@ export const monDaiQubeData: MetaQube = {
 
 export const veniceQubeData: MetaQube = {
   "iQube-Identifier": "Venice iQube",
-  "iQube-Type": "AgentQube",
+  "iQube-Type": "ModelQube",
   "iQube-Designer": "Aigent Venice",
-  "iQube-Use": "AI service that protects privacy and prevents censorship",
+  "iQube-Use": "AI model service that protects privacy and prevents censorship",
   "Owner-Type": "Person",
   "Owner-Identifiability": "Semi-Identifiable",
   "Date-Minted": "2024-02-01",
   "Related-iQubes": ["MonDAIQube", "MetisQube"],
   "X-of-Y": "2 of 6",
-  "Description": "AI service that protects privacy and prevents censorship",
+  "Description": "AI model service that protects privacy and prevents censorship",
   "Access-Control": "Private",
   "Encryption-Level": "AES-256",
   "Created": "2024-02-01",

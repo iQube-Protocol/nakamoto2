@@ -13,7 +13,7 @@ interface MetaQubeItemProps {
   onIQubeClick: (iqubeId: string) => void;
   onClose?: (e: React.MouseEvent<HTMLButtonElement>) => void;
   className?: string;
-  tooltipType?: 'dataQube' | 'agentQube';
+  tooltipType?: 'dataQube' | 'agentQube' | 'modelQube';
 }
 
 const MetaQubeItem = ({
@@ -26,6 +26,16 @@ const MetaQubeItem = ({
 }: MetaQubeItemProps) => {
   const iqubeId = metaQube["iQube-Identifier"];
   const isPurple = tooltipType === 'agentQube';
+  const isGreen = tooltipType === 'modelQube';
+  
+  // Determine color scheme based on tooltip type
+  const getColorScheme = () => {
+    if (isPurple) return { bg: "purple-500/10", hover: "purple-500/20", text: "purple-500" };
+    if (isGreen) return { bg: "green-500/10", hover: "green-500/20", text: "green-500" };
+    return { bg: "iqube-primary/10", hover: "iqube-primary/20", text: "iqube-primary" };
+  };
+  
+  const colors = getColorScheme();
   
   if (collapsed) {
     return (
@@ -33,14 +43,10 @@ const MetaQubeItem = ({
         <ScoreTooltip type={tooltipType}>
           <Link 
             to="/settings" 
-            className={`flex items-center justify-center py-3 px-3 rounded-md transition-all ${
-              isPurple 
-                ? "hover:bg-purple-500/20 bg-purple-500/10" 
-                : "hover:bg-iqube-primary/20 bg-iqube-primary/10"
-            }`}
+            className={`flex items-center justify-center py-3 px-3 rounded-md transition-all hover:bg-${colors.hover} bg-${colors.bg}`}
             onClick={() => onIQubeClick(iqubeId)}
           >
-            <div className={`${isPurple ? "text-purple-500" : "text-iqube-primary"} h-6 w-6`}>
+            <div className={`text-${colors.text} h-6 w-6`}>
               <CubeIcon />
             </div>
           </Link>
@@ -58,12 +64,12 @@ const MetaQubeItem = ({
   }
   
   return (
-    <div className={`bg-${isPurple ? "purple-500/10" : "iqube-primary/10"} rounded-md relative ${className}`}>
+    <div className={`bg-${colors.bg} rounded-md relative ${className}`}>
       <MetaQubeDisplay 
         metaQube={metaQube} 
         compact={true}
         onClick={() => onIQubeClick(iqubeId)}
-        className={`cursor-pointer hover:bg-${isPurple ? "purple-500/20" : "iqube-primary/20"} transition-colors`}
+        className={`cursor-pointer hover:bg-${colors.hover} transition-colors`}
       />
       {onClose && (
         <button

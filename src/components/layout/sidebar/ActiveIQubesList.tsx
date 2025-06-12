@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { cn } from '@/lib/utils';
-import { Database, Bot, ChevronLeft } from 'lucide-react';
+import { Database, Bot, Brain, ChevronLeft } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 import { TooltipProvider, Tooltip, TooltipContent, TooltipTrigger } from "@/components/ui/tooltip";
@@ -40,9 +40,9 @@ const ActiveIQubesList: React.FC<ActiveIQubesListProps> = ({
     if (qubeName === "Venice") {
       return (
         <div className="space-y-1">
-          <div className="font-semibold">Venice Agent</div>
+          <div className="font-semibold">Venice Model</div>
           <div className="text-xs">
-            AI service that protects privacy and prevents censorship.
+            AI model service that protects privacy and prevents censorship.
           </div>
         </div>
       );
@@ -116,7 +116,7 @@ const ActiveIQubesList: React.FC<ActiveIQubesListProps> = ({
                     }
                   }}
                 >
-                  <Bot className={cn("h-5 w-5 text-green-500", collapsed ? "" : "mr-2")} />
+                  <Brain className={cn("h-5 w-5 text-green-500", collapsed ? "" : "mr-2")} />
                   {!collapsed && <span>Venice</span>}
                 </div>
               </TooltipTrigger>
