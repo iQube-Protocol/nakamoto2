@@ -13,8 +13,13 @@ interface ReliabilityIndicatorProps {
 const ReliabilityIndicator = ({ isProcessing = false, metaQube }: ReliabilityIndicatorProps) => {
   const { veniceActivated } = useVeniceAgent();
   
+  // Force component to recalculate when Venice state changes
+  const veniceStateKey = veniceActivated ? 'venice' : 'base';
+  
   // Use useMemo to ensure calculations update when Venice state changes
   const { effectiveMetaQube, trust, reliability } = useMemo(() => {
+    console.log('ReliabilityIndicator: Recalculating scores with Venice:', veniceActivated);
+    
     // Use the appropriate agent data based on Venice activation status
     const effective = metaQube || (veniceActivated ? agentQubeData.nakamotoWithVenice : agentQubeData.nakamotoBase);
     
@@ -22,19 +27,19 @@ const ReliabilityIndicator = ({ isProcessing = false, metaQube }: ReliabilityInd
     const trustScore = Math.round(((effective["Accuracy-Score"] + effective["Verifiability-Score"]) / 2) * 10) / 10;
     const reliabilityScore = Math.round(((effective["Accuracy-Score"] + effective["Verifiability-Score"] + (10 - effective["Risk-Score"])) / 3) * 10) / 10;
     
+    console.log('ReliabilityIndicator: Calculated scores - Trust:', trustScore, 'Reliability:', reliabilityScore);
+    
     return {
       effectiveMetaQube: effective,
       trust: trustScore,
       reliability: reliabilityScore
     };
-  }, [veniceActivated, metaQube]);
+  }, [veniceActivated, metaQube, veniceStateKey]); // Added veniceStateKey as dependency
 
   // Debug logging to track state changes
   useEffect(() => {
-    console.log('ReliabilityIndicator: Venice activated:', veniceActivated);
-    console.log('ReliabilityIndicator: Trust score:', trust);
-    console.log('ReliabilityIndicator: Reliability score:', reliability);
-    console.log('ReliabilityIndicator: Using agent data:', veniceActivated ? 'nakamotoWithVenice' : 'nakamotoBase');
+    console.log('ReliabilityIndicator: Component mounted/updated with Venice:', veniceActivated);
+    console.log('ReliabilityIndicator: Current scores - Trust:', trust, 'Reliability:', reliability);
   }, [veniceActivated, trust, reliability]);
 
   const getTrustColor = (score: number) => {
@@ -65,10 +70,12 @@ const ReliabilityIndicator = ({ isProcessing = false, metaQube }: ReliabilityInd
   const trustDots = Math.ceil(trust / 2);
   const reliabilityDots = Math.ceil(reliability / 2);
 
+  console.log('ReliabilityIndicator: Rendering with dots - Trust:', trustDots, 'Reliability:', reliabilityDots);
+
   return (
     <div 
       className="flex items-center gap-6 bg-muted/30 p-2 rounded-md"
-      key={`reliability-${veniceActivated ? 'venice' : 'base'}-${trust}-${reliability}`}
+      key={`reliability-display-${veniceStateKey}-${trust}-${reliability}`}
     >
       <div className="flex flex-col items-center">
         <div className="text-xs text-muted-foreground mb-1">
@@ -78,7 +85,7 @@ const ReliabilityIndicator = ({ isProcessing = false, metaQube }: ReliabilityInd
           <div className="flex items-center cursor-help">
             {Array.from({ length: 5 }).map((_, i) => (
               <div 
-                key={i}
+                key={`rel-${i}-${veniceStateKey}`}
                 className={`w-1.5 h-1.5 rounded-full mx-0.5 ${i < reliabilityDots ? getReliabilityColor(reliability) : 'bg-muted'} ${getAnimationClass(i)}`}
                 style={{ 
                   animationDelay: isProcessing ? `${i * 0.15}s` : '0s',
@@ -98,7 +105,7 @@ const ReliabilityIndicator = ({ isProcessing = false, metaQube }: ReliabilityInd
           <div className="flex items-center cursor-help">
             {Array.from({ length: 5 }).map((_, i) => (
               <div 
-                key={i}
+                key={`trust-${i}-${veniceStateKey}`}
                 className={`w-1.5 h-1.5 rounded-full mx-0.5 ${i < trustDots ? getTrustColor(trust) : 'bg-muted'} ${getAnimationClass(i)}`}
                 style={{ 
                   animationDelay: isProcessing ? `${i * 0.15}s` : '0s',
