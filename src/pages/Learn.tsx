@@ -27,15 +27,13 @@ const blakQubeData: BlakQube = {
   user_id: "sample-user-id",
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
+  "First-Name": "",
+  "Last-Name": "",
+  "Qrypto-ID": "",
   "Profession": "Web Developer",
   "Web3-Interests": ["Smart Contracts", "Blockchain Fundamentals", "DApps"],
   "Local-City": "Austin",
   "Email": "user@example.com",
-  "EVM-Public-Key": "0x71C7656EC7ab88b098defB751B7401B5f6d8976F",
-  "BTC-Public-Key": "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq",
-  "Tokens-of-Interest": ["ETH", "SOL", "DOT", "LINK"],
-  "Chain-IDs": ["1", "137", "1284"],
-  "Wallets-of-Interest": ["MetaMask", "Phantom", "Trust"],
   "LinkedIn-ID": "",
   "LinkedIn-Profile-URL": "",
   "Twitter-Handle": "",
@@ -43,8 +41,15 @@ const blakQubeData: BlakQube = {
   "Discord-Handle": "",
   "Instagram-Handle": "",
   "GitHub-Handle": "",
-  "First-Name": "",
-  "Last-Name": ""
+  "YouTube-ID": "",
+  "Facebook-ID": "",
+  "TikTok-Handle": "",
+  "EVM-Public-Key": "0x71C7656EC7ab88b098defB751B7401B5f6d8976F",
+  "BTC-Public-Key": "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq",
+  "ThirdWeb-Public-Key": "",
+  "Tokens-of-Interest": ["ETH", "SOL", "DOT", "LINK"],
+  "Chain-IDs": ["1", "137", "1284"],
+  "Wallets-of-Interest": ["MetaMask", "Phantom", "Trust"]
 };
 
 const Learn = () => {

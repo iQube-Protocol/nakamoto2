@@ -26,15 +26,13 @@ const blakQubeData: BlakQube = {
   user_id: "sample-user-id",
   created_at: new Date().toISOString(),
   updated_at: new Date().toISOString(),
+  "First-Name": "",
+  "Last-Name": "",
+  "Qrypto-ID": "",
   "Profession": "Community Manager",
   "Web3-Interests": ["DAOs", "Social Tokens", "NFT Communities"],
   "Local-City": "Berlin",
   "Email": "user@example.com",
-  "EVM-Public-Key": "0x71C7656EC7ab88b098defB751B7401B5f6d8976F",
-  "BTC-Public-Key": "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq",
-  "Tokens-of-Interest": ["USDC", "ETH", "PEOPLE", "ENS"],
-  "Chain-IDs": ["1", "137", "10"],
-  "Wallets-of-Interest": ["MetaMask", "Rainbow", "Frame"],
   "LinkedIn-ID": "",
   "LinkedIn-Profile-URL": "",
   "Twitter-Handle": "",
@@ -42,8 +40,15 @@ const blakQubeData: BlakQube = {
   "Discord-Handle": "",
   "Instagram-Handle": "",
   "GitHub-Handle": "",
-  "First-Name": "",
-  "Last-Name": ""
+  "YouTube-ID": "",
+  "Facebook-ID": "",
+  "TikTok-Handle": "",
+  "EVM-Public-Key": "0x71C7656EC7ab88b098defB751B7401B5f6d8976F",
+  "BTC-Public-Key": "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq",
+  "ThirdWeb-Public-Key": "",
+  "Tokens-of-Interest": ["USDC", "ETH", "PEOPLE", "ENS"],
+  "Chain-IDs": ["1", "137", "10"],
+  "Wallets-of-Interest": ["MetaMask", "Rainbow", "Frame"]
 };
 
 // Sample community metrics
