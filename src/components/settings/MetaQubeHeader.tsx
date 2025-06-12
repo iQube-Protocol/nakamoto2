@@ -69,12 +69,29 @@ const MetaQubeHeader = ({ metaQube, isActive, onToggleActive }: MetaQubeHeaderPr
   // Calculate Trust Score as average of Accuracy and Verifiability
   const trustScore = Math.round(((metaQube["Accuracy-Score"] + metaQube["Verifiability-Score"]) / 2) * 10) / 10;
   
-  // Determine the correct tooltip type based on the iQube identifier
-  const getTooltipType = (): 'dataQube' | 'agentQube' => {
-    if (metaQube["iQube-Identifier"] === "Metis iQube") {
+  // Determine the correct tooltip type based on the iQube identifier and type
+  const getTooltipType = (): 'dataQube' | 'agentQube' | 'modelQube' => {
+    if (metaQube["iQube-Identifier"] === "Venice iQube") {
+      return "modelQube";
+    } else if (metaQube["iQube-Identifier"] === "Metis iQube") {
       return "agentQube";
     } else {
       return "dataQube";
+    }
+  };
+
+  // Determine the correct icon based on the iQube identifier and type
+  const getQubeIcon = () => {
+    if (metaQube["iQube-Identifier"] === "Venice iQube") {
+      return <Brain className="h-5 w-5 text-green-500" />;
+    } else {
+      return (
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="h-5 w-5 text-green-500">
+          <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
+          <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
+          <line x1="12" y1="22.08" x2="12" y2="12"></line>
+        </svg>
+      );
     }
   };
   
@@ -82,13 +99,9 @@ const MetaQubeHeader = ({ metaQube, isActive, onToggleActive }: MetaQubeHeaderPr
     <div className="p-2 bg-muted/30 border rounded-md overflow-x-auto">
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
-          <ScoreTooltip type="dataQube">
-            <div className="h-5 w-5 text-green-500 cursor-help">
-              <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                <path d="M21 16V8a2 2 0 0 0-1-1.73l-7-4a2 2 0 0 0-2 0l-7 4A2 2 0 0 0 3 8v8a2 2 0 0 0 1 1.73l7 4a2 2 0 0 0 2 0l7-4A2 2 0 0 0 21 16z"></path>
-                <polyline points="3.27 6.96 12 12.01 20.73 6.96"></polyline>
-                <line x1="12" y1="22.08" x2="12" y2="12"></line>
-              </svg>
+          <ScoreTooltip type={getTooltipType()}>
+            <div className="cursor-help">
+              {getQubeIcon()}
             </div>
           </ScoreTooltip>
           <span className="text-sm font-medium">{metaQube["iQube-Identifier"]}</span>
@@ -97,6 +110,8 @@ const MetaQubeHeader = ({ metaQube, isActive, onToggleActive }: MetaQubeHeaderPr
           <div className="cursor-help">
             <Badge variant="outline" className="flex items-center gap-1 bg-iqube-primary/10 text-iqube-primary border-iqube-primary/30">
               {metaQube["iQube-Type"] === 'AgentQube' ? (
+                <Brain size={14} />
+              ) : metaQube["iQube-Identifier"] === "Venice iQube" ? (
                 <Brain size={14} />
               ) : (
                 <Database size={14} />
