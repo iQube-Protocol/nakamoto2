@@ -16,40 +16,71 @@ interface MessageItemProps {
 
 const MessageItem = ({ message, isPlaying, onPlayAudio }: MessageItemProps) => {
   const { toast } = useToast();
-  const [showRecommendation, setShowRecommendation] = useState(false);
+  const [showMetisRecommendation, setShowMetisRecommendation] = useState(false);
+  const [showVeniceRecommendation, setShowVeniceRecommendation] = useState(false);
+  const [showQryptoRecommendation, setShowQryptoRecommendation] = useState(false);
   const [showActivationModal, setShowActivationModal] = useState(false);
+  const [selectedAgent, setSelectedAgent] = useState<{name: string, fee: number, description: string} | null>(null);
   const [metisActive, setMetisActive] = useState(false);
 
-  // Check if the message contains crypto-risk related keywords
+  // Check for trigger words in user messages
   useEffect(() => {
     if (message.sender === 'user') {
       const lowerMessage = message.message.toLowerCase();
-      const hasCryptoKeyword = 
+      
+      // Metis trigger words: crypto-risk related
+      const hasMetisTrigger = 
         lowerMessage.includes('risk') && 
         (lowerMessage.includes('token') || 
          lowerMessage.includes('wallet') || 
          lowerMessage.includes('crypto') || 
          lowerMessage.includes('blockchain'));
       
-      if (hasCryptoKeyword) {
-        // Slight delay to ensure message is processed first
-        setTimeout(() => {
-          setShowRecommendation(true);
-        }, 1000);
+      // Venice trigger words: privacy/censorship
+      const hasVeniceTrigger = 
+        lowerMessage.includes('privacy') || 
+        lowerMessage.includes('censorship');
+      
+      // Qrypto Profile trigger words: personalize/customize
+      const hasQryptoTrigger = 
+        lowerMessage.includes('personalize') || 
+        lowerMessage.includes('personalise') || 
+        lowerMessage.includes('customize') || 
+        lowerMessage.includes('custom');
+      
+      // Show recommendations with delay
+      if (hasMetisTrigger) {
+        setTimeout(() => setShowMetisRecommendation(true), 1000);
+      }
+      
+      if (hasVeniceTrigger) {
+        setTimeout(() => setShowVeniceRecommendation(true), 1000);
+      }
+      
+      if (hasQryptoTrigger) {
+        setTimeout(() => setShowQryptoRecommendation(true), 1000);
       }
     }
   }, [message]);
 
-  const handleActivateAgent = () => {
-    setShowRecommendation(false);
+  const handleActivateAgent = (agentName: string, fee: number, description: string) => {
+    setSelectedAgent({ name: agentName, fee, description });
     setShowActivationModal(true);
+    
+    // Hide the relevant recommendation
+    if (agentName === 'Metis') setShowMetisRecommendation(false);
+    if (agentName === 'Venice') setShowVeniceRecommendation(false);
+    if (agentName === 'Qrypto Persona') setShowQryptoRecommendation(false);
   };
 
-  const handleDismissRecommendation = () => {
-    setShowRecommendation(false);
+  const handleDismissRecommendation = (agentName: string) => {
+    if (agentName === 'Metis') setShowMetisRecommendation(false);
+    if (agentName === 'Venice') setShowVeniceRecommendation(false);
+    if (agentName === 'Qrypto Persona') setShowQryptoRecommendation(false);
+    
     toast({
       title: "Recommendation dismissed",
-      description: "You can always activate Metis agent later by asking about crypto risks again.",
+      description: `You can always activate ${agentName} agent later by mentioning relevant keywords again.`,
       variant: "default",
     });
   };
@@ -64,15 +95,18 @@ const MessageItem = ({ message, isPlaying, onPlayAudio }: MessageItemProps) => {
   };
 
   const handleActivationComplete = () => {
-    setMetisActive(true);
+    if (selectedAgent?.name === 'Metis') {
+      setMetisActive(true);
+      window.dispatchEvent(new CustomEvent('metisActivated'));
+    }
+    
     toast({
-      title: "Metis Agent Activated",
-      description: "You now have access to advanced crypto risk analysis capabilities.",
+      title: `${selectedAgent?.name} Agent Activated`,
+      description: `You now have access to ${selectedAgent?.name} capabilities.`,
       variant: "default",
     });
     
-    // Dispatch custom event to inform parent components about Metis activation
-    window.dispatchEvent(new CustomEvent('metisActivated'));
+    setSelectedAgent(null);
   };
 
   // Add special styling for system messages
@@ -107,14 +141,41 @@ const MessageItem = ({ message, isPlaying, onPlayAudio }: MessageItemProps) => {
             <MessageContent content={message.message} sender={message.sender} />
           </div>
           
-          {showRecommendation && (
-            <AgentRecommendation
-              agentName="Metis"
-              description="Advanced crypto risk analysis agent powered by specialized AI models."
-              fee={5}
-              onActivate={handleActivateAgent}
-              onDismiss={handleDismissRecommendation}
-            />
+          {/* Agent Recommendations */}
+          {showMetisRecommendation && (
+            <div className="mt-4">
+              <AgentRecommendation
+                agentName="Metis"
+                description="Advanced crypto risk analysis agent powered by specialized AI models."
+                fee={500}
+                onActivate={() => handleActivateAgent('Metis', 500, 'Advanced crypto risk analysis agent powered by specialized AI models.')}
+                onDismiss={() => handleDismissRecommendation('Metis')}
+              />
+            </div>
+          )}
+          
+          {showVeniceRecommendation && (
+            <div className="mt-4">
+              <AgentRecommendation
+                agentName="Venice"
+                description="AI model optimization agent for enhanced performance and efficiency in machine learning tasks."
+                fee={800}
+                onActivate={() => handleActivateAgent('Venice', 800, 'AI model optimization agent for enhanced performance and efficiency in machine learning tasks.')}
+                onDismiss={() => handleDismissRecommendation('Venice')}
+              />
+            </div>
+          )}
+          
+          {showQryptoRecommendation && (
+            <div className="mt-4">
+              <AgentRecommendation
+                agentName="Qrypto Persona"
+                description="Personalized crypto trading assistant with portfolio management and DeFi integration capabilities."
+                fee={200}
+                onActivate={() => handleActivateAgent('Qrypto Persona', 200, 'Personalized crypto trading assistant with portfolio management and DeFi integration capabilities.')}
+                onDismiss={() => handleDismissRecommendation('Qrypto Persona')}
+              />
+            </div>
           )}
           
           <div className="flex items-center justify-between mt-2">
@@ -132,14 +193,19 @@ const MessageItem = ({ message, isPlaying, onPlayAudio }: MessageItemProps) => {
         </div>
       </div>
       
-      <AgentActivationModal
-        isOpen={showActivationModal}
-        onClose={() => setShowActivationModal(false)}
-        agentName="Metis"
-        fee={5}
-        onConfirmPayment={handleConfirmPayment}
-        onComplete={handleActivationComplete}
-      />
+      {selectedAgent && (
+        <AgentActivationModal
+          isOpen={showActivationModal}
+          onClose={() => {
+            setShowActivationModal(false);
+            setSelectedAgent(null);
+          }}
+          agentName={selectedAgent.name}
+          fee={selectedAgent.fee}
+          onConfirmPayment={handleConfirmPayment}
+          onComplete={handleActivationComplete}
+        />
+      )}
     </div>
   );
 };
