@@ -46,6 +46,7 @@ const ConnectionsTab = ({ settings, onConnectService }: ConnectionsTabProps) => 
             icon={<Twitter className="h-4 w-4" />}
             connected={settings.connected.twitter}
             onConnect={() => onConnectService('twitter')}
+            comingSoon={true}
           />
           
           <ServiceConnection
@@ -53,6 +54,7 @@ const ConnectionsTab = ({ settings, onConnectService }: ConnectionsTabProps) => 
             icon={<MessageCircle className="h-4 w-4" />}
             connected={settings.connected.telegram}
             onConnect={() => onConnectService('telegram')}
+            comingSoon={true}
           />
           
           <ServiceConnection
@@ -60,6 +62,7 @@ const ConnectionsTab = ({ settings, onConnectService }: ConnectionsTabProps) => 
             icon={<MessageSquare className="h-4 w-4" />}
             connected={settings.connected.discord}
             onConnect={() => onConnectService('discord')}
+            comingSoon={true}
           />
           
           <ServiceConnection
@@ -67,6 +70,7 @@ const ConnectionsTab = ({ settings, onConnectService }: ConnectionsTabProps) => 
             icon={<Calendar className="h-4 w-4" />}
             connected={settings.connected.luma}
             onConnect={() => onConnectService('luma')}
+            comingSoon={true}
           />
         </div>
       </CardContent>
