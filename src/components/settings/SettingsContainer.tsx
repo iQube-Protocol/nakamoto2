@@ -81,7 +81,7 @@ const SettingsContainer = ({ activeQubes, toggleQubeActive, selectedIQube }: Set
 
         <TabsContent value="connections">
           <ConnectionsTab 
-            settings={userSettings}
+            settings={{ connected: connections }}
             onConnectService={handleConnectService}
           />
         </TabsContent>
