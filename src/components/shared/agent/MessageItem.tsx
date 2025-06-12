@@ -146,9 +146,9 @@ const MessageItem = ({ message, isPlaying, onPlayAudio }: MessageItemProps) => {
             <div className="mt-4">
               <AgentRecommendation
                 agentName="Metis"
-                description="Advanced crypto risk analysis agent powered by specialized AI models."
+                description="An algorithm that evaluates risks associated with wallets and tokens for enhanced security analysis."
                 fee={500}
-                onActivate={() => handleActivateAgent('Metis', 500, 'Advanced crypto risk analysis agent powered by specialized AI models.')}
+                onActivate={() => handleActivateAgent('Metis', 500, 'An algorithm that evaluates risks associated with wallets and tokens for enhanced security analysis.')}
                 onDismiss={() => handleDismissRecommendation('Metis')}
               />
             </div>
@@ -158,9 +158,9 @@ const MessageItem = ({ message, isPlaying, onPlayAudio }: MessageItemProps) => {
             <div className="mt-4">
               <AgentRecommendation
                 agentName="Venice"
-                description="AI model optimization agent for enhanced performance and efficiency in machine learning tasks."
+                description="AI model service that protects privacy and prevents censorship for secure and unrestricted AI interactions."
                 fee={800}
-                onActivate={() => handleActivateAgent('Venice', 800, 'AI model optimization agent for enhanced performance and efficiency in machine learning tasks.')}
+                onActivate={() => handleActivateAgent('Venice', 800, 'AI model service that protects privacy and prevents censorship for secure and unrestricted AI interactions.')}
                 onDismiss={() => handleDismissRecommendation('Venice')}
               />
             </div>
@@ -170,9 +170,9 @@ const MessageItem = ({ message, isPlaying, onPlayAudio }: MessageItemProps) => {
             <div className="mt-4">
               <AgentRecommendation
                 agentName="Qrypto Persona"
-                description="Personalized crypto trading assistant with portfolio management and DeFi integration capabilities."
+                description="Profile information about the user that enables personalized responses and customized AI interactions."
                 fee={200}
-                onActivate={() => handleActivateAgent('Qrypto Persona', 200, 'Personalized crypto trading assistant with portfolio management and DeFi integration capabilities.')}
+                onActivate={() => handleActivateAgent('Qrypto Persona', 200, 'Profile information about the user that enables personalized responses and customized AI interactions.')}
                 onDismiss={() => handleDismissRecommendation('Qrypto Persona')}
               />
             </div>

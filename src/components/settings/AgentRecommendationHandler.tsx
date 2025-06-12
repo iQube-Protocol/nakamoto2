@@ -25,7 +25,7 @@ const AgentRecommendationHandler = ({
   const availableAgents = [
     {
       name: "Metis",
-      description: "Advanced analytics agent with crypto risk analysis capabilities and market insights",
+      description: "An algorithm that evaluates risks associated with wallets and tokens for enhanced security analysis.",
       fee: 500,
       activated: metisActivated,
       onActivate: () => {
@@ -44,8 +44,8 @@ const AgentRecommendationHandler = ({
     },
     {
       name: "Venice",
-      description: "AI model optimization agent for enhanced performance and efficiency in machine learning tasks",
-      fee: 500,
+      description: "AI model service that protects privacy and prevents censorship for secure and unrestricted AI interactions.",
+      fee: 800,
       activated: veniceActivated,
       onActivate: () => {
         activateVenice();
@@ -63,8 +63,8 @@ const AgentRecommendationHandler = ({
     },
     {
       name: "Qrypto Persona",
-      description: "Personalized crypto trading assistant with portfolio management and DeFi integration capabilities",
-      fee: 500,
+      description: "Profile information about the user that enables personalized responses and customized AI interactions.",
+      fee: 200,
       activated: qryptoPersonaActivated,
       onActivate: () => {
         activateQryptoPersona();

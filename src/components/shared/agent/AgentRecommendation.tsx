@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { CheckCircle2, AlertTriangle, Cpu, Wallet } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, Cpu, Wallet, Brain, Bot, Database } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import {
@@ -32,16 +32,43 @@ const AgentRecommendation = ({
   const isMonthly = fee >= 500; // Venice (800) and Metis (500) are monthly, Qrypto Profile (200) is one-time
   const feeText = isMonthly ? "Monthly fee" : "One-time cost";
 
+  // Get the appropriate icon and title based on agent name
+  const getAgentIcon = () => {
+    switch (agentName) {
+      case 'Venice':
+        return <Brain className="h-5 w-5 text-green-500" />;
+      case 'Metis':
+        return <Bot className="h-5 w-5 text-purple-500" />;
+      case 'Qrypto Persona':
+        return <Database className="h-4 w-4 text-blue-500" />;
+      default:
+        return <Cpu className="h-5 w-5 text-iqube-accent" />;
+    }
+  };
+
+  const getAgentTitle = () => {
+    switch (agentName) {
+      case 'Venice':
+        return 'Venice ModelQube';
+      case 'Metis':
+        return 'Metis Agent';
+      case 'Qrypto Persona':
+        return 'Qrypto Profile Qube';
+      default:
+        return `Advanced Agent: ${agentName}`;
+    }
+  };
+
   return (
     <Card className="p-4 border-iqube-primary/30 bg-iqube-primary/5 min-w-[280px] max-w-[320px] flex-shrink-0">
       <div className="flex items-start space-x-3">
         <div className="bg-iqube-accent/20 p-2 rounded-full">
-          <Cpu className="h-5 w-5 text-iqube-accent" />
+          {getAgentIcon()}
         </div>
         
         <div className="flex-1 min-w-0">
           <div className="flex items-center">
-            <h4 className="text-sm font-semibold truncate">Advanced Agent: {agentName}</h4>
+            <h4 className="text-sm font-semibold truncate">{getAgentTitle()}</h4>
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
