@@ -1,80 +1,85 @@
 
-import React, { useState } from 'react';
-import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import IQubeManagementTab from './IQubeManagementTab';
-import ConnectionsTab from './ConnectionsTab';
-import PreferencesTab from './PreferencesTab';
-import BlakQubeSection from './BlakQubeSection';
-import TokenQubeSection from './TokenQubeSection';  
+import React, { useState, useEffect } from 'react';
+import { TooltipProvider } from '@/components/ui/tooltip';
+import SettingsInterface from './SettingsInterface';
 import { MetaQube } from '@/lib/types';
-import { useSettingsData } from './SettingsUserData';
 import { usePrivateData } from './usePrivateData';
-import { useServiceConnections } from '@/hooks/useServiceConnections';
+import { qubeData } from './QubeData';
+import { useSettingsData } from './SettingsUserData';
+import { useSidebarState } from '@/hooks/use-sidebar-state';
+import { toast } from 'sonner';
 
 interface SettingsContainerProps {
-  activeQubes: {[key: string]: boolean};
+  activeQubes: { [key: string]: boolean };
   toggleQubeActive: (qubeName: string) => void;
   selectedIQube: MetaQube;
 }
 
 const SettingsContainer = ({ activeQubes, toggleQubeActive, selectedIQube }: SettingsContainerProps) => {
   const { userSettings } = useSettingsData();
-  const { privateData, handleUpdatePrivateData, loading, saving } = usePrivateData(selectedIQube);
-  const { connections, toggleConnection } = useServiceConnections();
+  const { privateData, handleUpdatePrivateData } = usePrivateData(selectedIQube);
+  const { selectIQube } = useSidebarState();
 
-  const handleConnectService = async (service: keyof typeof connections) => {
-    await toggleConnection(service);
+  // When the selected iQube changes, update the sidebar state
+  useEffect(() => {
+    if (selectedIQube["iQube-Identifier"] === "Qrypto Persona iQube") {
+      selectIQube("Qrypto Persona");
+    } else if (selectedIQube["iQube-Identifier"] === "Metis iQube") {
+      selectIQube("Metis");
+    } else if (selectedIQube["iQube-Identifier"] === "Venice iQube") {
+      selectIQube("Venice");
+    } else if (selectedIQube["iQube-Identifier"] === "GDrive iQube") {
+      selectIQube("GDrive");
+    }
+  }, [selectedIQube, selectIQube]);
+
+  // Handle iQube activation toggle
+  const handleToggleIQubeActive = (qubeName: string) => {
+    // Call the parent function to update active state
+    toggleQubeActive(qubeName);
+    
+    // Send toggle event to update sidebar
+    const event = new CustomEvent('iqubeToggle', { 
+      detail: { 
+        iqubeId: qubeName, 
+        active: !activeQubes[qubeName] 
+      } 
+    });
+    window.dispatchEvent(event);
   };
 
+  // Auto-select the iQube tab on settings page
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    if (params.has('tab')) {
+      const tabRef = document.querySelector(`[data-tab="${params.get('tab')}"]`);
+      if (tabRef) {
+        // @ts-ignore
+        tabRef.click();
+      }
+    }
+  }, []);
+
   return (
-    <div className="container mx-auto px-4 py-8 max-w-6xl">
-      <div className="mb-8">
-        <h1 className="text-3xl font-bold text-foreground mb-2">Settings</h1>
-        <p className="text-muted-foreground">
-          Manage your iQubes, connections, and preferences
-        </p>
-      </div>
+    <TooltipProvider>
+      <div className="container p-2">
+        <div className="flex flex-col md:flex-row justify-between items-center mb-3">
+          <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
+        </div>
 
-      <Tabs defaultValue="iqube-management" className="space-y-6">
-        <TabsList className="grid w-full grid-cols-3">
-          <TabsTrigger value="iqube-management">iQube Management</TabsTrigger>
-          <TabsTrigger value="connections">Connections</TabsTrigger>
-          <TabsTrigger value="preferences">Preferences</TabsTrigger>
-        </TabsList>
-
-        <TabsContent value="iqube-management" className="space-y-6">
-          <IQubeManagementTab 
+        {/* Main settings panel */}
+        <div className="flex-1">
+          <SettingsInterface 
+            userSettings={userSettings} 
+            metaQube={selectedIQube} 
             activeQubes={activeQubes}
-            toggleQubeActive={toggleQubeActive}
-            selectedIQube={selectedIQube}
+            onToggleIQubeActive={handleToggleIQubeActive}
+            privateData={privateData}
+            onUpdatePrivateData={handleUpdatePrivateData}
           />
-          
-          {!loading && (
-            <>
-              <BlakQubeSection
-                privateData={privateData}
-                onUpdatePrivateData={handleUpdatePrivateData}
-                metaQube={selectedIQube}
-                saving={saving}
-              />
-              
-              <TokenQubeSection selectedIQube={selectedIQube} />
-            </>
-          )}
-        </TabsContent>
-
-        <TabsContent value="connections">
-          <ConnectionsTab 
-            settings={{ connected: connections }}
-            onConnectService={handleConnectService}
-          />
-        </TabsContent>
-
-        <TabsContent value="preferences">
-          <PreferencesTab settings={userSettings} />
-        </TabsContent>
-      </Tabs>
-    </div>
+        </div>
+      </div>
+    </TooltipProvider>
   );
 };
 
