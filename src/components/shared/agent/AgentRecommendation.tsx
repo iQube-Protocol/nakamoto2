@@ -51,9 +51,9 @@ const AgentRecommendation = ({
       case 'Venice':
         return 'Venice ModelQube';
       case 'Metis':
-        return 'Metis Agent';
+        return 'Metis AgentQube';
       case 'Qrypto Persona':
-        return 'Qrypto Profile Qube';
+        return 'Qrypto Persona DataQube';
       default:
         return `Advanced Agent: ${agentName}`;
     }

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { AgentMessage } from '@/lib/types';
 import MessageContent from './message/MessageContent';

@@ -1,3 +1,4 @@
+
 import React, { useState } from 'react';
 import { 
   AlertCircle, 
@@ -47,6 +48,19 @@ const AgentActivationModal = ({
   const paymentType = isMonthly ? "Monthly Subscription" : "One-Time Payment";
   const billingText = isMonthly ? "Billed monthly" : "One-time purchase";
 
+  const getAgentTitle = () => {
+    switch (agentName) {
+      case 'Venice':
+        return 'Venice ModelQube';
+      case 'Metis':
+        return 'Metis AgentQube';
+      case 'Qrypto Persona':
+        return 'Qrypto Persona DataQube';
+      default:
+        return `${agentName} Agent`;
+    }
+  };
+
   const handleVerificationComplete = () => {
     setCurrentStep('fee');
   };
@@ -92,7 +106,7 @@ const AgentActivationModal = ({
         <DialogHeader>
           <DialogTitle className="flex items-center">
             <Cpu className="h-5 w-5 mr-2 text-iqube-accent" />
-            Activate {agentName} Agent
+            Activate {getAgentTitle()}
           </DialogTitle>
           <DialogDescription>
             Follow the steps below to activate this specialized AI capability.
@@ -121,7 +135,7 @@ const AgentActivationModal = ({
                 <div className="ml-3">
                   <h3 className="text-sm font-medium text-blue-800">Access token verified</h3>
                   <p className="text-sm text-blue-700 mt-1">
-                    You have the necessary tokens to access the {agentName} agent.
+                    You have the necessary tokens to access the {getAgentTitle()}.
                   </p>
                 </div>
               </div>
@@ -210,7 +224,7 @@ const AgentActivationModal = ({
               </div>
               <h3 className="text-lg font-medium">{isMonthly ? 'Subscription' : 'Purchase'} Complete</h3>
               <p className="text-center text-sm text-muted-foreground mt-2">
-                You now have access to the {agentName} agent capabilities.
+                You now have access to the {getAgentTitle()} capabilities.
               </p>
             </div>
 
@@ -218,7 +232,7 @@ const AgentActivationModal = ({
               onClick={handleComplete}
               className="w-full bg-iqube-primary hover:bg-iqube-primary/90"
             >
-              Start Using {agentName}
+              Start Using {getAgentTitle()}
             </Button>
           </div>
         )}

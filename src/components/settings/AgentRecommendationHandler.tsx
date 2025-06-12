@@ -31,7 +31,7 @@ const AgentRecommendationHandler = ({
       onActivate: () => {
         activateMetis();
         setActiveQubes(prev => ({...prev, "Metis": true}));
-        toast.success("Metis agent activated successfully");
+        toast.success("Metis AgentQube activated successfully");
         
         const event = new CustomEvent('iqubeToggle', { 
           detail: { 
@@ -50,7 +50,7 @@ const AgentRecommendationHandler = ({
       onActivate: () => {
         activateVenice();
         setActiveQubes(prev => ({...prev, "Venice": true}));
-        toast.success("Venice agent activated successfully");
+        toast.success("Venice ModelQube activated successfully");
         
         const event = new CustomEvent('iqubeToggle', { 
           detail: { 
@@ -69,7 +69,7 @@ const AgentRecommendationHandler = ({
       onActivate: () => {
         activateQryptoPersona();
         setActiveQubes(prev => ({...prev, "Qrypto Persona": true}));
-        toast.success("Qrypto Persona agent activated successfully");
+        toast.success("Qrypto Persona DataQube activated successfully");
         
         const event = new CustomEvent('iqubeToggle', { 
           detail: { 
@@ -84,7 +84,12 @@ const AgentRecommendationHandler = ({
 
   const handleDismissAgent = (agentName: string) => {
     setDismissedAgents(prev => [...prev, agentName]);
-    toast.info(`${agentName} agent recommendation dismissed`);
+    
+    // Update toast message to use correct iQube naming
+    const agentTitle = agentName === 'Metis' ? 'Metis AgentQube' : 
+                     agentName === 'Venice' ? 'Venice ModelQube' : 
+                     'Qrypto Persona DataQube';
+    toast.info(`${agentTitle} recommendation dismissed`);
   };
 
   const visibleAgents = availableAgents.filter(agent => 
