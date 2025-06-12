@@ -55,7 +55,6 @@ const PrivateDataEditor = ({
           <div className="flex items-center justify-between">
             <label className="text-sm font-medium text-foreground">{key}</label>
             <DataSourceSelector
-              sourceKey={key}
               iQubeType={iQubeType}
               currentSource={dataSources[key] || 'manual'}
               onSourceChange={(newSource) => onSourceChange(key, newSource)}

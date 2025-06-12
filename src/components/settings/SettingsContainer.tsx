@@ -10,7 +10,6 @@ import { MetaQube } from '@/lib/types';
 import { useSettingsData } from './SettingsUserData';
 import { usePrivateData } from './usePrivateData';
 import { useServiceConnections } from '@/hooks/useServiceConnections';
-import { toast } from 'sonner';
 
 interface SettingsContainerProps {
   activeQubes: {[key: string]: boolean};
@@ -25,22 +24,6 @@ const SettingsContainer = ({ activeQubes, toggleQubeActive, selectedIQube }: Set
 
   const handleConnectService = async (service: keyof typeof connections) => {
     await toggleConnection(service);
-  };
-
-  const handleConnectWallet = () => {
-    toast.info("Wallet connection feature coming soon!");
-  };
-
-  const handleMintIQube = () => {
-    toast.info("Mint iQube feature coming soon!");
-  };
-
-  const handleAddAccessGrant = () => {
-    toast.info("Access grant feature coming soon!");
-  };
-
-  const handleSaveSettings = () => {
-    toast.success("Settings saved successfully!");
   };
 
   return (
@@ -60,6 +43,12 @@ const SettingsContainer = ({ activeQubes, toggleQubeActive, selectedIQube }: Set
         </TabsList>
 
         <TabsContent value="iqube-management" className="space-y-6">
+          <IQubeManagementTab 
+            activeQubes={activeQubes}
+            toggleQubeActive={toggleQubeActive}
+            selectedIQube={selectedIQube}
+          />
+          
           {!loading && (
             <>
               <BlakQubeSection
@@ -69,12 +58,7 @@ const SettingsContainer = ({ activeQubes, toggleQubeActive, selectedIQube }: Set
                 saving={saving}
               />
               
-              <TokenQubeSection 
-                settings={userSettings}
-                onConnectWallet={handleConnectWallet}
-                onMintIQube={handleMintIQube}
-                onAddAccessGrant={handleAddAccessGrant}
-              />
+              <TokenQubeSection selectedIQube={selectedIQube} />
             </>
           )}
         </TabsContent>
@@ -87,10 +71,7 @@ const SettingsContainer = ({ activeQubes, toggleQubeActive, selectedIQube }: Set
         </TabsContent>
 
         <TabsContent value="preferences">
-          <PreferencesTab 
-            settings={userSettings} 
-            onSaveSettings={handleSaveSettings}
-          />
+          <PreferencesTab settings={userSettings} />
         </TabsContent>
       </Tabs>
     </div>
