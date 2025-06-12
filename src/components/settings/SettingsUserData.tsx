@@ -1,4 +1,5 @@
 
+
 import { UserSettings } from '@/lib/types';
 import { useTheme } from '@/contexts/ThemeContext';
 
@@ -13,7 +14,8 @@ export function useSettingsData() {
       telegram: true,
       twitter: false,
       discord: true,
-      wallet: false
+      wallet: false,
+      instagram: false
     },
     dataSync: true,
     notifications: true,
@@ -25,3 +27,4 @@ export function useSettingsData() {
     userSettings
   };
 }
+
