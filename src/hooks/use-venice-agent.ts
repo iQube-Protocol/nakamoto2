@@ -15,18 +15,21 @@ export const useVeniceAgent = () => {
   });
 
   const activateVenice = () => {
+    console.log('Venice: Activating Venice agent');
     setVeniceActivated(true);
     setVeniceVisible(true);
     localStorage.setItem(VENICE_STORAGE_KEY, 'true');
   };
 
   const deactivateVenice = () => {
+    console.log('Venice: Deactivating Venice agent');
     setVeniceActivated(false);
     setVeniceVisible(false);
     localStorage.setItem(VENICE_STORAGE_KEY, 'false');
   };
 
   const hideVenice = () => {
+    console.log('Venice: Hiding Venice agent');
     setVeniceVisible(false);
     setVeniceActivated(false);
     localStorage.setItem(VENICE_STORAGE_KEY, 'false');
@@ -37,6 +40,7 @@ export const useVeniceAgent = () => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === VENICE_STORAGE_KEY) {
         const newValue = e.newValue === 'true';
+        console.log('Venice: Storage change detected, new value:', newValue);
         setVeniceActivated(newValue);
         setVeniceVisible(newValue);
       }
@@ -45,6 +49,11 @@ export const useVeniceAgent = () => {
     window.addEventListener('storage', handleStorageChange);
     return () => window.removeEventListener('storage', handleStorageChange);
   }, []);
+
+  // Debug logging for state changes
+  useEffect(() => {
+    console.log('Venice: State updated - activated:', veniceActivated, 'visible:', veniceVisible);
+  }, [veniceActivated, veniceVisible]);
 
   return {
     veniceActivated,

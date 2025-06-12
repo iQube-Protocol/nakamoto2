@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect, useMemo } from 'react';
 import ScoreTooltip from '../ScoreTooltips';
 import { MetaQube } from '@/lib/types';
 import { useVeniceAgent } from '@/hooks/use-venice-agent';
@@ -13,12 +13,29 @@ interface ReliabilityIndicatorProps {
 const ReliabilityIndicator = ({ isProcessing = false, metaQube }: ReliabilityIndicatorProps) => {
   const { veniceActivated } = useVeniceAgent();
   
-  // Use the appropriate agent data based on Venice activation status
-  const effectiveMetaQube = metaQube || (veniceActivated ? agentQubeData.nakamotoWithVenice : agentQubeData.nakamotoBase);
-  
-  // Calculate trust and reliability from metaQube data
-  const trust = Math.round(((effectiveMetaQube["Accuracy-Score"] + effectiveMetaQube["Verifiability-Score"]) / 2) * 10) / 10;
-  const reliability = Math.round(((effectiveMetaQube["Accuracy-Score"] + effectiveMetaQube["Verifiability-Score"] + (10 - effectiveMetaQube["Risk-Score"])) / 3) * 10) / 10;
+  // Use useMemo to ensure calculations update when Venice state changes
+  const { effectiveMetaQube, trust, reliability } = useMemo(() => {
+    // Use the appropriate agent data based on Venice activation status
+    const effective = metaQube || (veniceActivated ? agentQubeData.nakamotoWithVenice : agentQubeData.nakamotoBase);
+    
+    // Calculate trust and reliability from metaQube data
+    const trustScore = Math.round(((effective["Accuracy-Score"] + effective["Verifiability-Score"]) / 2) * 10) / 10;
+    const reliabilityScore = Math.round(((effective["Accuracy-Score"] + effective["Verifiability-Score"] + (10 - effective["Risk-Score"])) / 3) * 10) / 10;
+    
+    return {
+      effectiveMetaQube: effective,
+      trust: trustScore,
+      reliability: reliabilityScore
+    };
+  }, [veniceActivated, metaQube]);
+
+  // Debug logging to track state changes
+  useEffect(() => {
+    console.log('ReliabilityIndicator: Venice activated:', veniceActivated);
+    console.log('ReliabilityIndicator: Trust score:', trust);
+    console.log('ReliabilityIndicator: Reliability score:', reliability);
+    console.log('ReliabilityIndicator: Using agent data:', veniceActivated ? 'nakamotoWithVenice' : 'nakamotoBase');
+  }, [veniceActivated, trust, reliability]);
 
   const getTrustColor = (score: number) => {
     return score >= 7 
@@ -49,7 +66,10 @@ const ReliabilityIndicator = ({ isProcessing = false, metaQube }: ReliabilityInd
   const reliabilityDots = Math.ceil(reliability / 2);
 
   return (
-    <div className="flex items-center gap-6 bg-muted/30 p-2 rounded-md">
+    <div 
+      className="flex items-center gap-6 bg-muted/30 p-2 rounded-md"
+      key={`reliability-${veniceActivated ? 'venice' : 'base'}-${trust}-${reliability}`}
+    >
       <div className="flex flex-col items-center">
         <div className="text-xs text-muted-foreground mb-1">
           {isProcessing ? "Thinking..." : "Reliability"}
