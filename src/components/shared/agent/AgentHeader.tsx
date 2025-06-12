@@ -46,7 +46,7 @@ const AgentHeader = ({ title, description, isProcessing }: AgentHeaderProps) => 
       </div>
       <ReliabilityIndicator 
         isProcessing={isProcessing} 
-        key={`reliability-${veniceActivated}-${Date.now()}`}
+        key={`reliability-${veniceActivated}`}
       />
     </div>
   );

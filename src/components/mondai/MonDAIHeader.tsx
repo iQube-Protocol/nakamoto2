@@ -30,7 +30,7 @@ const MonDAIHeader: React.FC<MonDAIHeaderProps> = ({
       <div className="flex items-center gap-4">
         <ReliabilityIndicator 
           isProcessing={isRetrying} 
-          key={`mondai-reliability-${veniceActivated}-${Date.now()}`}
+          key={`mondai-reliability-${veniceActivated}`}
         />
         <ConnectionStatus
           isRetrying={isRetrying}
