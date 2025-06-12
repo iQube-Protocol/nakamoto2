@@ -6,7 +6,6 @@ import MonDAIHeader from './MonDAIHeader';
 import { useKBAIConnection } from '@/hooks/mondai/useKBAIConnection';
 import { sonnerToast as toast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
-import ReliabilityIndicator from '@/components/shared/agent/ReliabilityIndicator';
 
 const MonDAIInterface: React.FC = () => {
   const isMobile = useIsMobile();
@@ -86,16 +85,13 @@ const MonDAIInterface: React.FC = () => {
     <div className="container py-6 max-w-7xl mx-auto h-full agent-interface">
       <div className="grid gap-6 h-full">
         <div className="flex flex-col h-full">
-          <div className="flex items-center justify-between mb-4">
-            <MonDAIHeader
-              isRetrying={isRetrying}
-              connectionStatus={connectionStatus}
-              serverConfig={serverConfig}
-              onConfigUpdate={handleConfigUpdate}
-              onRetryConnection={handleManualRetry}
-            />
-            <ReliabilityIndicator />
-          </div>
+          <MonDAIHeader
+            isRetrying={isRetrying}
+            connectionStatus={connectionStatus}
+            serverConfig={serverConfig}
+            onConfigUpdate={handleConfigUpdate}
+            onRetryConnection={handleManualRetry}
+          />
           
           <AgentInterface
             title="MonDAI"

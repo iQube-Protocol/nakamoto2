@@ -4,7 +4,7 @@ import { Badge } from '@/components/ui/badge';
 import { MetaQube } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
-import { Database, Brain, Cpu } from 'lucide-react';
+import { Database, Brain } from 'lucide-react';
 import ScoreTooltip from '@/components/shared/ScoreTooltips';
 
 interface MetaQubeHeaderProps {
@@ -69,27 +69,14 @@ const MetaQubeHeader = ({ metaQube, isActive, onToggleActive }: MetaQubeHeaderPr
   // Calculate Trust Score as average of Accuracy and Verifiability
   const trustScore = Math.round(((metaQube["Accuracy-Score"] + metaQube["Verifiability-Score"]) / 2) * 10) / 10;
   
-  // Determine the correct tooltip type and icon based on the iQube type
-  const getTooltipTypeAndIcon = (): { tooltipType: 'dataQube' | 'agentQube' | 'modelQube'; icon: React.ReactNode } => {
-    if (metaQube["iQube-Type"] === "DataQube") {
-      return {
-        tooltipType: "dataQube",
-        icon: <Database size={14} />
-      };
-    } else if (metaQube["iQube-Type"] === "ModelQube") {
-      return {
-        tooltipType: "modelQube",
-        icon: <Cpu size={14} />
-      };
+  // Determine the correct tooltip type based on the iQube identifier
+  const getTooltipType = (): 'dataQube' | 'agentQube' => {
+    if (metaQube["iQube-Identifier"] === "Metis iQube") {
+      return "agentQube";
     } else {
-      return {
-        tooltipType: "agentQube",
-        icon: <Brain size={14} />
-      };
+      return "dataQube";
     }
   };
-
-  const { tooltipType, icon } = getTooltipTypeAndIcon();
   
   return (
     <div className="p-2 bg-muted/30 border rounded-md overflow-x-auto">
@@ -106,10 +93,14 @@ const MetaQubeHeader = ({ metaQube, isActive, onToggleActive }: MetaQubeHeaderPr
           </ScoreTooltip>
           <span className="text-sm font-medium">{metaQube["iQube-Identifier"]}</span>
         </div>
-        <ScoreTooltip type={tooltipType}>
+        <ScoreTooltip type={getTooltipType()}>
           <div className="cursor-help">
             <Badge variant="outline" className="flex items-center gap-1 bg-iqube-primary/10 text-iqube-primary border-iqube-primary/30">
-              {icon}
+              {metaQube["iQube-Type"] === 'AgentQube' ? (
+                <Brain size={14} />
+              ) : (
+                <Database size={14} />
+              )}
               <span>{metaQube["iQube-Type"]}</span>
             </Badge>
           </div>
