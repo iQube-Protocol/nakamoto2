@@ -13,23 +13,29 @@ interface ReliabilityIndicatorProps {
 const ReliabilityIndicator = ({ isProcessing = false, metaQube }: ReliabilityIndicatorProps) => {
   const { veniceActivated } = useVeniceAgent();
   
-  // Debug logging for state changes
+  // More detailed debugging for state changes
   useEffect(() => {
     console.log('ReliabilityIndicator: Venice state changed to:', veniceActivated);
+    console.log('ReliabilityIndicator: Current timestamp:', Date.now());
   }, [veniceActivated]);
+  
+  // Log every render
+  console.log('ReliabilityIndicator: RENDER - Venice activated:', veniceActivated, 'Processing:', isProcessing);
   
   // Use useMemo to ensure calculations update when Venice state changes
   const { effectiveMetaQube, trust, reliability } = useMemo(() => {
-    console.log('ReliabilityIndicator: Recalculating scores with Venice:', veniceActivated);
+    console.log('ReliabilityIndicator: RECALCULATING scores with Venice:', veniceActivated);
     
     // Use the appropriate agent data based on Venice activation status
     const effective = metaQube || (veniceActivated ? agentQubeData.nakamotoWithVenice : agentQubeData.nakamotoBase);
+    
+    console.log('ReliabilityIndicator: Using metaQube:', effective["iQube-Identifier"], 'Venice activated:', veniceActivated);
     
     // Calculate trust and reliability from metaQube data
     const trustScore = Math.round(((effective["Accuracy-Score"] + effective["Verifiability-Score"]) / 2) * 10) / 10;
     const reliabilityScore = Math.round(((effective["Accuracy-Score"] + effective["Verifiability-Score"] + (10 - effective["Risk-Score"])) / 3) * 10) / 10;
     
-    console.log('ReliabilityIndicator: Calculated scores - Trust:', trustScore, 'Reliability:', reliabilityScore);
+    console.log('ReliabilityIndicator: NEW SCORES - Trust:', trustScore, 'Reliability:', reliabilityScore);
     
     return {
       effectiveMetaQube: effective,
@@ -66,7 +72,7 @@ const ReliabilityIndicator = ({ isProcessing = false, metaQube }: ReliabilityInd
   const trustDots = Math.ceil(trust / 2);
   const reliabilityDots = Math.ceil(reliability / 2);
 
-  console.log('ReliabilityIndicator: Rendering with dots - Trust:', trustDots, 'Reliability:', reliabilityDots, 'Venice:', veniceActivated);
+  console.log('ReliabilityIndicator: FINAL RENDER - Trust dots:', trustDots, 'Reliability dots:', reliabilityDots, 'Venice:', veniceActivated);
 
   return (
     <div className="flex items-center gap-6 bg-muted/30 p-2 rounded-md">
