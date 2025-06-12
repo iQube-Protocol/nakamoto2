@@ -13,7 +13,8 @@ export function useSettingsData() {
       telegram: true,
       twitter: false,
       discord: true,
-      wallet: false
+      wallet: false,
+      instagram: false
     },
     dataSync: true,
     notifications: true,

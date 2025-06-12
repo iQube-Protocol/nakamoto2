@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
@@ -112,11 +113,6 @@ class ConnectionService {
       // Clean up any previous OAuth attempts
       this.cleanupIncompleteOAuth();
 
-      // Store OAuth state
-      const state = Math.random().toString(36).substring(2);
-      localStorage.setItem('oauth_state', state);
-      localStorage.setItem('oauth_service', service);
-
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -124,7 +120,27 @@ class ConnectionService {
         return false;
       }
 
-      // For now, all OAuth services show "coming soon"
+      // Handle LinkedIn OAuth using Supabase's built-in provider
+      if (service === 'linkedin') {
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: 'linkedin_oidc',
+          options: {
+            redirectTo: `${window.location.origin}/settings?tab=connections`,
+            scopes: 'openid profile email'
+          }
+        });
+
+        if (error) {
+          console.error('LinkedIn OAuth error:', error);
+          toast.error('Failed to connect to LinkedIn. Please try again.');
+          return false;
+        }
+
+        // The OAuth flow will handle the redirect
+        return true;
+      }
+
+      // For other services, show "coming soon" for now
       toast.info(`${service} connection is coming soon!`);
       return false;
 
