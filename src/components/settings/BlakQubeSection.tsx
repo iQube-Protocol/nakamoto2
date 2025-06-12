@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Accordion } from '@/components/ui/accordion';
 import { MetaQube } from '@/lib/types';
@@ -15,9 +14,10 @@ interface BlakQubeSectionProps {
   privateData: PrivateData;
   onUpdatePrivateData: (newData: PrivateData) => void;
   metaQube?: MetaQube;
+  saving?: boolean;
 }
 
-const BlakQubeSection = ({ privateData, onUpdatePrivateData, metaQube }: BlakQubeSectionProps) => {
+const BlakQubeSection = ({ privateData, onUpdatePrivateData, metaQube, saving = false }: BlakQubeSectionProps) => {
   const [encryptionAlgorithm, setEncryptionAlgorithm] = useState("kyber");
   
   const iQubeType = metaQube?.["iQube-Type"] || "DataQube";
@@ -48,6 +48,7 @@ const BlakQubeSection = ({ privateData, onUpdatePrivateData, metaQube }: BlakQub
           onUpdatePrivateData={onUpdatePrivateData}
           iQubeType={iQubeType}
           sectionTitle={getBlakQubeTitle()}
+          saving={saving}
         />
         
         <EncryptionSettings 

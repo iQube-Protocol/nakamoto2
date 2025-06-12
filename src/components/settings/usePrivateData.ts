@@ -12,6 +12,7 @@ export const usePrivateData = (selectedIQube: MetaQube) => {
   const { user } = useAuth();
   const [privateData, setPrivateData] = useState<PrivateData>({});
   const [loading, setLoading] = useState(true);
+  const [saving, setSaving] = useState(false);
 
   // Load real BlakQube data from database
   const loadBlakQubeData = async () => {
@@ -135,14 +136,31 @@ export const usePrivateData = (selectedIQube: MetaQube) => {
 
   const handleUpdatePrivateData = async (newData: PrivateData) => {
     console.log('Updating private data:', newData);
-    setPrivateData(newData);
+    setSaving(true);
     
-    // Save to database using BlakQube service
     try {
-      // For now, just update local state. In a real implementation, you'd save to database
-      console.log('Private data updated locally');
+      // Update local state immediately for better UX
+      setPrivateData(newData);
+      
+      // Save to database using BlakQube service
+      const success = await blakQubeService.saveBlakQubeData(newData);
+      
+      if (success) {
+        console.log('Private data saved successfully');
+        // Dispatch event to notify other components that private data has been updated
+        const event = new CustomEvent('privateDataUpdated');
+        window.dispatchEvent(event);
+      } else {
+        // If save failed, revert local state by reloading from database
+        console.log('Save failed, reverting local state');
+        await loadBlakQubeData();
+      }
     } catch (error) {
       console.error('Error saving private data:', error);
+      // If save failed, revert local state by reloading from database
+      await loadBlakQubeData();
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -150,6 +168,7 @@ export const usePrivateData = (selectedIQube: MetaQube) => {
     privateData,
     handleUpdatePrivateData,
     loading,
+    saving,
     refreshData: loadBlakQubeData
   };
 };

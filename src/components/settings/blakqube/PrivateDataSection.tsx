@@ -1,6 +1,5 @@
-
 import React, { useState, useEffect } from 'react';
-import { Key } from 'lucide-react';
+import { Key, Loader2 } from 'lucide-react';
 import { AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
 import { User, Linkedin, Wallet, Database, Brain, Twitter, MessageCircle, Globe, Users, Youtube, Facebook } from 'lucide-react';
 import PrivateDataView from './PrivateDataView';
@@ -12,6 +11,7 @@ interface PrivateDataSectionProps {
   onUpdatePrivateData: (newData: { [key: string]: string | string[] }) => void;
   iQubeType: string;
   sectionTitle: string;
+  saving?: boolean;
 }
 
 const InstagramIcon = () => (
@@ -42,7 +42,8 @@ const PrivateDataSection = ({
   privateData,
   onUpdatePrivateData,
   iQubeType,
-  sectionTitle
+  sectionTitle,
+  saving = false
 }: PrivateDataSectionProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editingData, setEditingData] = useState<{ [key: string]: string | string[] }>({...privateData});
@@ -133,8 +134,8 @@ const PrivateDataSection = ({
     }
   }
 
-  const handleSavePrivateData = () => {
-    onUpdatePrivateData(editingData);
+  const handleSavePrivateData = async () => {
+    await onUpdatePrivateData(editingData);
     setIsEditing(false);
   };
 
@@ -205,6 +206,9 @@ const PrivateDataSection = ({
         <div className="flex items-center">
           <Key className="h-4 w-4 mr-2" />
           {sectionTitle}
+          {saving && (
+            <Loader2 className="h-4 w-4 ml-2 animate-spin text-blue-500" />
+          )}
         </div>
       </AccordionTrigger>
       <AccordionContent>
@@ -224,6 +228,7 @@ const PrivateDataSection = ({
               dataSources={dataSources}
               iQubeType={iQubeType}
               onSourceChange={handleSourceChange}
+              saving={saving}
             />
           )}
         </div>

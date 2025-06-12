@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { BlakQube } from '@/lib/types';
 import { toast } from 'sonner';
@@ -34,6 +33,59 @@ export const blakQubeService = {
     } catch (error) {
       console.error('Error in getBlakQubeData:', error);
       return null;
+    }
+  },
+  
+  /**
+   * Save BlakQube data for the current user
+   */
+  saveBlakQubeData: async (blakQubeData: Partial<BlakQube>): Promise<boolean> => {
+    try {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user) {
+        console.error('No authenticated user found');
+        toast.error('You must be logged in to save data.');
+        return false;
+      }
+
+      console.log('Saving BlakQube data for user:', user.user.id, blakQubeData);
+
+      // Prepare the data for upsert
+      const dataToSave = {
+        user_id: user.user.id,
+        ...blakQubeData,
+        updated_at: new Date().toISOString()
+      };
+
+      // Remove any undefined values to avoid database errors
+      Object.keys(dataToSave).forEach(key => {
+        if (dataToSave[key] === undefined) {
+          delete dataToSave[key];
+        }
+      });
+
+      const { data, error } = await (supabase as any)
+        .from('blak_qubes')
+        .upsert(dataToSave, { 
+          onConflict: 'user_id',
+          ignoreDuplicates: false 
+        })
+        .select()
+        .single();
+
+      if (error) {
+        console.error('Error saving BlakQube data:', error);
+        toast.error('Failed to save your data. Please try again.');
+        return false;
+      }
+
+      console.log('BlakQube data saved successfully:', data);
+      toast.success('Your data has been saved successfully!');
+      return true;
+    } catch (error) {
+      console.error('Error in saveBlakQubeData:', error);
+      toast.error('An unexpected error occurred while saving your data.');
+      return false;
     }
   },
   
