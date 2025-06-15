@@ -8,6 +8,7 @@ import { Separator } from '@/components/ui/separator';
 import { useUserInteractions } from '@/hooks/use-user-interactions';
 import { getRelativeTime } from '@/lib/utils';
 import ResponseDialog from '@/components/profile/ResponseDialog';
+import MessageContent from '@/components/shared/agent/message/MessageContent';
 
 const Profile = () => {
   const { user } = useAuth();
@@ -31,6 +32,21 @@ const Profile = () => {
   const handleDialogClose = () => {
     setIsDialogOpen(false);
     setSelectedResponse(null);
+  };
+
+  // Process historic content for preview display
+  const processHistoricPreview = (content: string) => {
+    return content
+      // Remove markdown formatting for preview
+      .replace(/\*\*([^*]+)\*\*/g, '$1')
+      .replace(/^\* /gm, '• ')
+      .replace(/^- /gm, '• ')
+      .replace(/^### (.+)$/gm, '$1:')
+      .replace(/^## (.+)$/gm, '$1:')
+      .replace(/^# (.+)$/gm, '$1:')
+      // Clean up and truncate
+      .replace(/\n\n+/g, ' ')
+      .trim();
   };
 
   if (!user) return null;
@@ -74,16 +90,27 @@ const Profile = () => {
           </CardContent>
         </Card>
 
-        {/* Interaction history section with fixed height and scrolling */}
+        {/* Interaction history section with enhanced styling */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="font-medium text-lg">History</CardTitle>
             <div className="flex space-x-2">
-              <button onClick={() => setActiveTab('learn')} className="bg-qrypto-primary px-[8px]">Learn  </button>
-              <button onClick={() => setActiveTab('earn')} className={`px-3 py-1 rounded ${activeTab === 'earn' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+              <button 
+                onClick={() => setActiveTab('learn')} 
+                className={`px-3 py-1 rounded transition-colors ${activeTab === 'learn' ? 'bg-qrypto-primary text-white' : 'bg-muted hover:bg-muted/80'}`}
+              >
+                Learn
+              </button>
+              <button 
+                onClick={() => setActiveTab('earn')} 
+                className={`px-3 py-1 rounded transition-colors ${activeTab === 'earn' ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'}`}
+              >
                 Earn
               </button>
-              <button onClick={() => setActiveTab('connect')} className={`px-3 py-1 rounded ${activeTab === 'connect' ? 'bg-primary text-primary-foreground' : 'bg-muted'}`}>
+              <button 
+                onClick={() => setActiveTab('connect')} 
+                className={`px-3 py-1 rounded transition-colors ${activeTab === 'connect' ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'}`}
+              >
                 Connect
               </button>
             </div>
@@ -92,35 +119,68 @@ const Profile = () => {
             <ScrollArea className="h-[400px] pr-4">
               <div className="space-y-4">
                 {interactions && interactions.length > 0 ? interactions.map(interaction => (
-                  <div key={interaction.id} className="space-y-3 p-4 border rounded-lg">
+                  <div key={interaction.id} className="space-y-3 p-4 border rounded-lg hover:shadow-md transition-shadow historic-content">
                     {/* User Query */}
                     {interaction.query && (
-                      <div className="p-3 rounded-lg bg-[#2d1f17]/45">
+                      <div className="p-3 rounded-lg bg-[#2d1f17]/45 border-l-4 border-orange-400">
                         <div className="flex items-center gap-2 mb-2">
-                          <Badge variant="outline">You asked</Badge>
+                          <Badge variant="outline" className="bg-orange-100 text-orange-800">You asked</Badge>
                           <span className="text-xs text-muted-foreground">
                             {new Date(interaction.created_at).toLocaleString()}
                           </span>
                         </div>
-                        <p className="text-sm text-zinc-100">{interaction.query}</p>
+                        <div className="text-sm text-zinc-100 conversational-content">
+                          <MessageContent content={interaction.query} sender="user" />
+                        </div>
                       </div>
                     )}
                     
-                    {/* Agent Response */}
+                    {/* Agent Response Preview */}
                     {interaction.response && (
                       <div 
-                        className="p-3 rounded-lg bg-[#23223f]/[0.32] cursor-pointer hover:bg-[#23223f]/[0.45] transition-colors"
+                        className="p-3 rounded-lg bg-[#23223f]/[0.32] cursor-pointer hover:bg-[#23223f]/[0.45] transition-colors border-l-4 border-indigo-400"
                         onClick={() => handleResponseClick(interaction)}
                       >
                         <div className="flex items-center gap-2 mb-2">
-                          <Badge variant="secondary" className="bg-qrypto-primary">{interaction.interaction_type} agent responded</Badge>
+                          <Badge variant="secondary" className="bg-qrypto-primary">
+                            {interaction.interaction_type} agent responded
+                          </Badge>
+                          {interaction.metadata && (
+                            <div className="flex gap-1">
+                              {interaction.metadata.qryptoItemsFound > 0 && (
+                                <Badge variant="outline" className="text-xs bg-blue-100 text-blue-800">
+                                  {interaction.metadata.qryptoItemsFound} KB items
+                                </Badge>
+                              )}
+                              {interaction.metadata.aiProvider && (
+                                <Badge variant="outline" className="text-xs bg-green-100 text-green-800">
+                                  {interaction.metadata.aiProvider}
+                                </Badge>
+                              )}
+                            </div>
+                          )}
                         </div>
-                        <p className="text-sm">
-                          {interaction.response.length > 200 ? `${interaction.response.substring(0, 200)}...` : interaction.response}
-                        </p>
-                        {interaction.response.length > 200 && (
-                          <p className="text-xs text-muted-foreground mt-2">Click to view full response</p>
-                        )}
+                        
+                        {/* Enhanced preview with conversational styling */}
+                        <div className="text-sm conversational-content">
+                          {interaction.response.length > 300 ? (
+                            <div>
+                              <p className="text-foreground leading-relaxed">
+                                {processHistoricPreview(interaction.response.substring(0, 300))}...
+                              </p>
+                              <p className="text-xs text-muted-foreground mt-2 flex items-center gap-1">
+                                <span>Click to view full response</span>
+                                {interaction.response.includes('```mermaid') && (
+                                  <Badge variant="outline" className="text-xs bg-purple-100 text-purple-800">
+                                    Contains diagram
+                                  </Badge>
+                                )}
+                              </p>
+                            </div>
+                          ) : (
+                            <MessageContent content={interaction.response} sender="agent" />
+                          )}
+                        </div>
                       </div>
                     )}
                   </div>

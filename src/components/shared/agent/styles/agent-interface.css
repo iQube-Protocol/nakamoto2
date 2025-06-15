@@ -163,6 +163,42 @@
   transform: translateY(-1px);
 }
 
+/* Profile specific historic content styling */
+.historic-content {
+  transition: all 0.2s ease;
+}
+
+.historic-content:hover {
+  border-color: rgba(139, 92, 246, 0.3);
+  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.1);
+}
+
+/* Historic response themes for profile */
+.historic-response.user-theme {
+  background: rgba(249, 115, 22, 0.03);
+  border-left-color: rgba(249, 115, 22, 0.4);
+}
+
+.historic-response.agent-theme {
+  background: rgba(99, 102, 241, 0.03);
+  border-left-color: rgba(99, 102, 241, 0.4);
+}
+
+/* Profile conversation preview styling */
+.conversation-preview {
+  background: rgba(148, 163, 184, 0.05);
+  border-radius: 0.5rem;
+  padding: 1rem;
+  margin: 0.5rem 0;
+  border-left: 4px solid rgba(148, 163, 184, 0.3);
+  transition: all 0.2s ease;
+}
+
+.conversation-preview:hover {
+  background: rgba(148, 163, 184, 0.08);
+  border-left-color: rgba(148, 163, 184, 0.5);
+}
+
 /* Responsive text sizing for better readability */
 @media (max-width: 640px) {
   .conversational-content {
@@ -175,6 +211,10 @@
   
   .knowledge-preview-content {
     font-size: 0.8rem;
+  }
+  
+  .historic-content {
+    padding: 0.75rem;
   }
 }
 
@@ -271,4 +311,47 @@
 .knowledge-interactive:hover {
   transform: translateY(-2px);
   box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+/* Profile specific enhancements */
+.profile-interaction-card {
+  background: rgba(139, 92, 246, 0.02);
+  border: 1px solid rgba(139, 92, 246, 0.1);
+  transition: all 0.2s ease;
+}
+
+.profile-interaction-card:hover {
+  background: rgba(139, 92, 246, 0.04);
+  border-color: rgba(139, 92, 246, 0.2);
+  transform: translateY(-1px);
+}
+
+/* Metadata badges in profile */
+.profile-metadata-badge {
+  font-size: 0.7rem;
+  padding: 0.2rem 0.4rem;
+  border-radius: 0.25rem;
+  font-weight: 500;
+}
+
+/* Enhanced diagram indicators */
+.diagram-indicator {
+  background: rgba(168, 85, 247, 0.1);
+  color: rgb(147, 51, 234);
+  border: 1px solid rgba(168, 85, 247, 0.2);
+}
+
+/* Preview truncation styling */
+.content-preview-truncated {
+  position: relative;
+}
+
+.content-preview-truncated::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  width: 20%;
+  height: 1.2em;
+  background: linear-gradient(to right, transparent, rgba(var(--background), 0.8));
 }
