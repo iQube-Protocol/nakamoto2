@@ -5,7 +5,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { useUserInteractions } from '@/hooks/use-user-interactions';
 
 /**
- * Hook to load and manage message history
+ * Hook to load and manage message history with enhanced conversational styling
  */
 export const useMessageHistory = (
   agentType: 'learn' | 'earn' | 'connect', // We'll handle 'mondai' separately in useAgentMessages.tsx
@@ -16,13 +16,26 @@ export const useMessageHistory = (
   const { user } = useAuth();
   const { interactions, refreshInteractions } = useUserInteractions(agentType);
   
+  // Process historic content with conversational styling
+  const processHistoricContent = (content: string, agentType: string) => {
+    // Apply the same conversational guidelines to historic responses
+    return content
+      // Add theme class for styling
+      .replace(/^(.*?)$/gm, (match) => {
+        if (match.trim()) {
+          return `<div class="historic-response ${agentType}-theme">${match}</div>`;
+        }
+        return match;
+      });
+  };
+  
   // Load message history from database when component mounts
   useEffect(() => {
     const loadConversationHistory = async () => {
       if (!user || isHistoryLoaded) return;
       
       try {
-        console.log(`Loading ${agentType} conversation history...`);
+        console.log(`Loading ${agentType} conversation history with enhanced styling...`);
         
         // Refresh interactions to get the latest data
         await refreshInteractions();
@@ -42,14 +55,22 @@ export const useMessageHistory = (
               });
             }
             
-            // Create agent message from the response
+            // Create agent message from the response with enhanced styling
             if (interaction.response && interaction.response.trim()) {
+              // Process the response content for better conversational display
+              const processedResponse = processHistoricContent(interaction.response, agentType);
+              
               historicalMessages.push({
                 id: `${interaction.id}-agent`,
                 sender: 'agent',
-                message: interaction.response,
+                message: processedResponse,
                 timestamp: interaction.created_at,
-                metadata: interaction.metadata || undefined
+                metadata: {
+                  ...interaction.metadata,
+                  historicResponse: true,
+                  agentTheme: agentType,
+                  enhancedStyling: true
+                }
               });
             }
           });
@@ -59,7 +80,7 @@ export const useMessageHistory = (
             new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
           );
           
-          console.log(`Loaded ${historicalMessages.length} historical messages (${interactions.length} interactions) for ${agentType}`);
+          console.log(`Loaded ${historicalMessages.length} historical messages (${interactions.length} interactions) for ${agentType} with enhanced styling`);
           
           // Only set messages if we have historical data and haven't loaded before
           if (historicalMessages.length > 0) {

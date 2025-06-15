@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -19,15 +20,37 @@ const KnowledgeItem = ({
 }: KnowledgeItemProps) => {
   const isMobile = useIsMobile();
 
-  // Truncated content for summary
-  const truncatedContent = item.content.length > 150 ? `${item.content.substring(0, 150)}...` : item.content;
+  // Process content for preview using our conversational guidelines
+  const processPreviewContent = (content: string) => {
+    return content
+      // Convert headers to friendly phrases
+      .replace(/^### (.+)$/gm, 'About $1:')
+      .replace(/^## (.+)$/gm, 'Key info on $1:')
+      .replace(/^# (.+)$/gm, 'Understanding $1:')
+      // Remove markdown formatting for preview
+      .replace(/\*\*([^*]+)\*\*/g, '$1')
+      .replace(/^\* /gm, '• ')
+      .replace(/^- /gm, '• ')
+      // Clean up
+      .replace(/\n\n+/g, ' ')
+      .trim();
+  };
+
+  // Truncated content for summary with conversational processing
+  const processedContent = processPreviewContent(item.content);
+  const truncatedContent = processedContent.length > 150 ? `${processedContent.substring(0, 150)}...` : processedContent;
 
   // Show only first 3 keywords, with +X indicator if more
   const visibleKeywords = item.keywords.slice(0, 3);
   const remainingKeywords = item.keywords.length - 3;
 
+  // Use different colors based on knowledge base
+  const baseColor = knowledgeBase === 'iQubes' ? 'blue' : 'orange';
+  const keywordBgColor = knowledgeBase === 'iQubes' ? 'bg-blue-100 text-blue-800 hover:bg-blue-200' : 'bg-orange-100 text-orange-800 hover:bg-orange-200';
+  const connectionBgColor = knowledgeBase === 'iQubes' ? 'bg-rose-100 text-rose-800 border-rose-300' : 'bg-purple-100 text-purple-800 border-purple-300';
+
   return (
-    <Card className="hover:shadow-lg transition-all duration-200 cursor-pointer hover:scale-[1.02]" onClick={() => onItemClick(item)}>
+    <Card className="hover:shadow-lg transition-all duration-200 cursor-pointer hover:scale-[1.02] knowledge-content" onClick={() => onItemClick(item)}>
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between">
           <CardTitle className="leading-tight text-base">{item.title}</CardTitle>
@@ -41,13 +64,16 @@ const KnowledgeItem = ({
         </CardDescription>
       </CardHeader>
       <CardContent>
-        <p className="text-sm mb-3 text-zinc-300">{truncatedContent}</p>
-        <div className="flex flex-wrap gap-1 mb-3 bg-transparent">
+        <div className="mb-3 p-3 bg-slate-50 border-l-4 border-slate-300 rounded-r-lg">
+          <p className="text-sm text-slate-700 leading-relaxed">{truncatedContent}</p>
+        </div>
+        
+        <div className="flex flex-wrap gap-1 mb-3">
           {visibleKeywords.map((keyword: string) => (
             <Badge 
               key={keyword} 
               variant="secondary" 
-              className="text-xs rounded-md px-2 py-1 h-6 transition-colors bg-gray-500 text-white border-gray-300/70 hover:bg-amber-600"
+              className={`text-xs rounded-md px-2 py-1 h-6 transition-colors ${keywordBgColor}`}
             >
               {keyword}
             </Badge>
@@ -55,20 +81,22 @@ const KnowledgeItem = ({
           {remainingKeywords > 0 && (
             <Badge 
               variant="secondary" 
-              className="text-xs rounded-md px-2 py-1 h-6 transition-colors bg-gray-500 text-white border-gray-300/70 hover:bg-amber-600"
+              className={`text-xs rounded-md px-2 py-1 h-6 transition-colors ${keywordBgColor}`}
             >
               +{remainingKeywords}
             </Badge>
           )}
         </div>
-        {item.connections && item.connections.length > 0 && <div className="mb-3 pt-2 border-t">
+        
+        {item.connections && item.connections.length > 0 && (
+          <div className="mb-3 pt-2 border-t">
             <p className="text-xs text-gray-500 mb-1">Connected to {isMobile ? 'COYN' : 'QryptoCOYN'} concepts:</p>
-            <div className="flex flex-wrap gap-1 bg-slate-800">
+            <div className="flex flex-wrap gap-1">
               {item.connections.slice(0, 2).map((connection: string) => (
                 <Badge 
                   key={connection} 
                   variant="outline" 
-                  className="text-xs rounded-md px-2 py-1 bg-gray-500 text-white border-rose-300/70 hover:bg-amber-600 transition-colors"
+                  className={`text-xs rounded-md px-2 py-1 ${connectionBgColor} transition-colors`}
                 >
                   {connection}
                 </Badge>
@@ -76,18 +104,20 @@ const KnowledgeItem = ({
               {item.connections.length > 2 && (
                 <Badge 
                   variant="outline" 
-                  className="text-xs rounded-md px-2 py-1 bg-gray-500 text-white border-gray-300/70"
+                  className="text-xs rounded-md px-2 py-1 bg-gray-100 text-gray-600 border-gray-300"
                 >
                   +{item.connections.length - 2}
                 </Badge>
               )}
             </div>
-          </div>}
+          </div>
+        )}
+        
         <div className="flex justify-between items-center">
-          <Badge variant="outline" className="text-xs rounded-md px-2 py-1 bg-gray-500 text-white border-gray-300/70">
+          <Badge variant="outline" className={`text-xs rounded-md px-2 py-1 ${knowledgeBase === 'iQubes' ? 'bg-blue-100 text-blue-800 border-blue-300' : 'bg-orange-100 text-orange-800 border-orange-300'}`}>
             {knowledgeBase}
           </Badge>
-          <Button variant="ghost" size="sm" className="h-6 px-2 text-blue-600 hover:text-blue-800 hover:bg-blue-50 transition-colors">
+          <Button variant="ghost" size="sm" className={`h-6 px-2 transition-colors ${knowledgeBase === 'iQubes' ? 'text-blue-600 hover:text-blue-800 hover:bg-blue-50' : 'text-orange-600 hover:text-orange-800 hover:bg-orange-50'}`}>
             <span className="text-xs">Read more</span>
             <ChevronRight className="h-3 w-3 ml-1" />
           </Button>

@@ -87,7 +87,7 @@
   border: 1px solid rgba(139, 92, 246, 0.2);
 }
 
-/* Knowledge base content styling */
+/* Knowledge base content styling with different color themes */
 .conversational-content .knowledge-content {
   background: rgba(139, 92, 246, 0.02);
   border: 1px solid rgba(139, 92, 246, 0.1);
@@ -96,13 +96,71 @@
   margin: 1rem 0;
 }
 
-/* Historic response styling */
+/* iQubes knowledge content - blue theme */
+.knowledge-content.iqubes-theme {
+  background: rgba(59, 130, 246, 0.02);
+  border: 1px solid rgba(59, 130, 246, 0.1);
+}
+
+.knowledge-content.iqubes-theme .knowledge-header {
+  color: rgb(37, 99, 235);
+  border-left-color: rgb(59, 130, 246);
+}
+
+/* COYN knowledge content - orange theme */
+.knowledge-content.coyn-theme {
+  background: rgba(249, 115, 22, 0.02);
+  border: 1px solid rgba(249, 115, 22, 0.1);
+}
+
+.knowledge-content.coyn-theme .knowledge-header {
+  color: rgb(194, 65, 12);
+  border-left-color: rgb(249, 115, 22);
+}
+
+/* Historic response styling with enhanced conversational layout */
 .conversational-content .historic-response {
   background: rgba(99, 102, 241, 0.03);
   border-left: 3px solid rgba(99, 102, 241, 0.3);
   padding: 0.75rem;
   margin: 0.75rem 0;
   border-radius: 0.375rem;
+}
+
+/* Knowledge base specific styling for cards */
+.knowledge-preview-content {
+  background: rgba(148, 163, 184, 0.1);
+  border-left: 4px solid rgba(148, 163, 184, 0.5);
+  padding: 0.75rem;
+  border-radius: 0 0.375rem 0.375rem 0;
+  font-size: 0.875rem;
+  line-height: 1.6;
+  color: rgba(71, 85, 105, 0.9);
+}
+
+/* Enhanced keyword and connection badges */
+.knowledge-keyword {
+  background: rgba(59, 130, 246, 0.1);
+  color: rgb(30, 64, 175);
+  border: 1px solid rgba(59, 130, 246, 0.2);
+  transition: all 0.2s ease;
+}
+
+.knowledge-keyword:hover {
+  background: rgba(59, 130, 246, 0.2);
+  transform: translateY(-1px);
+}
+
+.knowledge-connection {
+  background: rgba(236, 72, 153, 0.1);
+  color: rgb(157, 23, 77);
+  border: 1px solid rgba(236, 72, 153, 0.2);
+  transition: all 0.2s ease;
+}
+
+.knowledge-connection:hover {
+  background: rgba(236, 72, 153, 0.2);
+  transform: translateY(-1px);
 }
 
 /* Responsive text sizing for better readability */
@@ -113,6 +171,10 @@
   
   .conversational-content p {
     font-size: 0.9rem;
+  }
+  
+  .knowledge-preview-content {
+    font-size: 0.8rem;
   }
 }
 
@@ -154,7 +216,7 @@
   border-radius: 0.25rem;
 }
 
-/* Technical term definitions */
+/* Technical term definitions with knowledge base themes */
 .conversational-content .definition {
   background: rgba(139, 92, 246, 0.05);
   border-left: 3px solid rgba(139, 92, 246, 0.3);
@@ -163,11 +225,50 @@
   border-radius: 0.375rem;
 }
 
-/* Concept explanations */
+.conversational-content .definition.iqubes-theme {
+  background: rgba(59, 130, 246, 0.05);
+  border-left-color: rgba(59, 130, 246, 0.3);
+}
+
+.conversational-content .definition.coyn-theme {
+  background: rgba(249, 115, 22, 0.05);
+  border-left-color: rgba(249, 115, 22, 0.3);
+}
+
+/* Concept explanations with thematic colors */
 .conversational-content .concept-explanation {
   background: rgba(34, 197, 94, 0.05);
   border: 1px solid rgba(34, 197, 94, 0.2);
   padding: 1rem;
   margin: 1rem 0;
   border-radius: 0.5rem;
+}
+
+/* Mermaid diagrams in knowledge base context */
+.knowledge-content .mermaid-container {
+  background: rgba(255, 255, 255, 0.8);
+  border: 1px solid rgba(203, 213, 225, 0.5);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+/* Enhanced historic response styling */
+.conversational-content .historic-response.iqubes-theme {
+  background: rgba(59, 130, 246, 0.03);
+  border-left-color: rgba(59, 130, 246, 0.3);
+}
+
+.conversational-content .historic-response.coyn-theme {
+  background: rgba(249, 115, 22, 0.03);
+  border-left-color: rgba(249, 115, 22, 0.3);
+}
+
+/* Interactive knowledge elements */
+.knowledge-interactive {
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.knowledge-interactive:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
