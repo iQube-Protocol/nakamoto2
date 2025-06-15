@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
@@ -9,7 +10,7 @@ interface MessageContentProps {
 }
 
 const MessageContent = ({ content, sender }: MessageContentProps) => {
-  // Process the content to make it more user-friendly
+  // Process the content to make it more user-friendly for all message types
   const processUserFriendlyContent = (text: string) => {
     return text
       // Convert technical headers to friendly introductory phrases
@@ -147,7 +148,7 @@ const MessageContent = ({ content, sender }: MessageContentProps) => {
             // Process key terms and important words with subtle highlighting
             const processInlineFormatting = (text: string) => {
               // Look for key technical terms and add subtle emphasis
-              const keyTerms = ['iQube', 'COYN', 'blockchain', 'smart contract', 'token', 'wallet', 'DeFi', 'NFT', 'Web3', 'cryptocurrency'];
+              const keyTerms = ['iQube', 'COYN', 'QryptoCOYN', 'blockchain', 'smart contract', 'token', 'wallet', 'DeFi', 'NFT', 'Web3', 'cryptocurrency', 'metaKnyts', 'mẹtaKnyts', 'VFT', 'BlakQube', 'MetaQube', 'TokenQube'];
               let processedText = text;
               
               keyTerms.forEach(term => {

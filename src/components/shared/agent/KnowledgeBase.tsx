@@ -7,6 +7,7 @@ import { RefreshCw, Loader2, X, ChevronRight, Info } from 'lucide-react';
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from '@/components/ui/card';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { KBAIKnowledgeItem } from '@/integrations/kbai';
+import MessageContent from './message/MessageContent';
 
 interface KnowledgeBaseProps {
   agentType: 'learn' | 'earn' | 'connect';
@@ -100,7 +101,7 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ agentType }) => {
         </ScrollArea>
       </div>
       
-      {/* Detailed knowledge item dialog */}
+      {/* Detailed knowledge item dialog with conversational styling */}
       <Dialog open={!!selectedItem} onOpenChange={(open) => !open && closeDialog()}>
         <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
           <DialogHeader>
@@ -110,8 +111,13 @@ const KnowledgeBase: React.FC<KnowledgeBaseProps> = ({ agentType }) => {
             </DialogDescription>
           </DialogHeader>
           <ScrollArea className="flex-1 max-h-[60vh]">
-            <div className="p-4 whitespace-pre-line">
-              {selectedItem?.content}
+            <div className="p-4">
+              {selectedItem?.content && (
+                <MessageContent 
+                  content={selectedItem.content} 
+                  sender="agent" 
+                />
+              )}
             </div>
           </ScrollArea>
           <div className="border-t pt-2 flex justify-end">
