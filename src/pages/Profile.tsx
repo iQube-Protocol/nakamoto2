@@ -8,6 +8,7 @@ import { useUserInteractions } from '@/hooks/use-user-interactions';
 import { getRelativeTime } from '@/lib/utils';
 import ResponseDialog from '@/components/profile/ResponseDialog';
 import MessageContent from '@/components/shared/agent/message/MessageContent';
+
 const Profile = () => {
   const {
     user
@@ -26,10 +27,12 @@ const Profile = () => {
   useEffect(() => {
     refreshInteractions();
   }, [activeTab, refreshInteractions]);
+  
   const handleResponseClick = (interaction: any) => {
     setSelectedResponse(interaction);
     setIsDialogOpen(true);
   };
+  
   const handleDialogClose = () => {
     setIsDialogOpen(false);
     setSelectedResponse(null);
@@ -43,7 +46,9 @@ const Profile = () => {
     // Clean up and truncate
     .replace(/\n\n+/g, ' ').trim();
   };
+  
   if (!user) return null;
+  
   return <div className="container py-6">
       <div className="grid gap-6">
         {/* Compressed user info section */}
@@ -105,7 +110,7 @@ const Profile = () => {
                     {/* User Query */}
                     {interaction.query && <div className="p-3 rounded-lg bg-[#2d1f17]/45 border-l-4 border-orange-400">
                         <div className="flex items-center gap-2 mb-2">
-                          <Badge variant="outline" className="text-orange-800 bg-gray-500">You asked</Badge>
+                          <Badge variant="outline" className="text-orange-200 bg-gray-500 border-orange-400">You asked</Badge>
                           <span className="text-xs text-muted-foreground">
                             {new Date(interaction.created_at).toLocaleString()}
                           </span>
@@ -161,4 +166,5 @@ const Profile = () => {
       <ResponseDialog selectedResponse={selectedResponse} isOpen={isDialogOpen} onClose={handleDialogClose} />
     </div>;
 };
+
 export default Profile;
