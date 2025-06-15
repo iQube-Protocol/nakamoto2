@@ -53,7 +53,7 @@ const KnowledgeItem = ({
           <strong>Source:</strong> {item.source} | <strong>Section:</strong> {item.section}
         </CardDescription>
       </CardHeader>
-      <CardContent>
+      <CardContent className="">
         <div className="mb-3 p-3 border-l-4 border-slate-300 rounded-r-lg bg-indigo-950">
           <p className="text-sm leading-relaxed text-slate-100">{truncatedContent}</p>
         </div>
