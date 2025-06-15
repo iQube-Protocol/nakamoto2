@@ -15,15 +15,16 @@ interface KnowledgeItemDialogProps {
 const KnowledgeItemDialog = ({ selectedItem, isOpen, onClose }: KnowledgeItemDialogProps) => {
   return (
     <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
-      <DialogContent className="max-w-2xl max-h-[80vh] overflow-hidden flex flex-col">
-        <DialogHeader>
+      <DialogContent className="max-w-2xl h-[80vh] flex flex-col">
+        <DialogHeader className="flex-shrink-0">
           <DialogTitle className="pr-8">{selectedItem?.title}</DialogTitle>
           <DialogDescription className="text-xs">
             Source: {selectedItem?.source} • Type: {selectedItem?.type}
           </DialogDescription>
         </DialogHeader>
-        <ScrollArea className="flex-1 max-h-[60vh]">
-          <div className="p-4">
+        
+        <ScrollArea className="flex-1 min-h-0">
+          <div className="p-4 pr-6">
             {selectedItem?.content && (
               <MessageContent 
                 content={selectedItem.content} 
@@ -56,7 +57,8 @@ const KnowledgeItemDialog = ({ selectedItem, isOpen, onClose }: KnowledgeItemDia
             )}
           </div>
         </ScrollArea>
-        <div className="border-t pt-2 flex justify-end">
+        
+        <div className="border-t pt-2 flex justify-end flex-shrink-0">
           <Button variant="outline" size="sm" onClick={onClose}>
             Close
           </Button>
