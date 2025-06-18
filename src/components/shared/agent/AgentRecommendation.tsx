@@ -1,6 +1,6 @@
 
 import React from 'react';
-import { CheckCircle2, AlertTriangle, Cpu, Wallet, Brain, Bot, Database } from 'lucide-react';
+import { CheckCircle2, AlertTriangle, Cpu, Wallet, Brain, Bot, Database, Gift } from 'lucide-react';
 import { Button } from '@/components/ui/button';
 import { Card } from '@/components/ui/card';
 import {
@@ -30,7 +30,8 @@ const AgentRecommendation = ({
   
   // Determine if it's a monthly or one-time fee
   const isMonthly = fee >= 500; // Venice (800) and Metis (500) are monthly, Qrypto Profile (200) is one-time
-  const feeText = isMonthly ? "Monthly fee" : "One-time cost";
+  const isFree = fee === 0; // KNYT Persona is free with reward
+  const feeText = isFree ? "Free activation" : isMonthly ? "Monthly fee" : "One-time cost";
 
   // Get the appropriate icon and title based on agent name
   const getAgentIcon = () => {
@@ -41,6 +42,8 @@ const AgentRecommendation = ({
         return <Bot className="h-5 w-5 text-purple-500" />;
       case 'Qrypto Persona':
         return <Database className="h-4 w-4 text-blue-500" />;
+      case 'KNYT Persona':
+        return <Database className="h-4 w-4 text-purple-500" />;
       default:
         return <Cpu className="h-5 w-5 text-iqube-accent" />;
     }
@@ -54,6 +57,8 @@ const AgentRecommendation = ({
         return 'Metis AgentQube';
       case 'Qrypto Persona':
         return 'Qrypto Persona DataQube';
+      case 'KNYT Persona':
+        return 'KNYT Persona DataQube';
       default:
         return `Advanced Agent: ${agentName}`;
     }
@@ -72,12 +77,22 @@ const AgentRecommendation = ({
             <TooltipProvider>
               <Tooltip>
                 <TooltipTrigger asChild>
-                  <div className="ml-2 bg-amber-500/20 px-1.5 py-0.5 rounded-full flex items-center flex-shrink-0">
-                    <span className="text-[9px] font-medium text-amber-600">TOKEN-GATED</span>
+                  <div className={`ml-2 px-1.5 py-0.5 rounded-full flex items-center flex-shrink-0 ${
+                    isFree ? 'bg-green-500/20' : 'bg-amber-500/20'
+                  }`}>
+                    <span className={`text-[9px] font-medium ${
+                      isFree ? 'text-green-600' : 'text-amber-600'
+                    }`}>
+                      {isFree ? 'FREE + REWARD' : 'TOKEN-GATED'}
+                    </span>
                   </div>
                 </TooltipTrigger>
                 <TooltipContent>
-                  <p className="text-xs">This agent requires token payment to activate</p>
+                  <p className="text-xs">
+                    {isFree 
+                      ? 'This agent is free to activate and includes a reward' 
+                      : 'This agent requires token payment to activate'}
+                  </p>
                 </TooltipContent>
               </Tooltip>
             </TooltipProvider>
@@ -86,18 +101,31 @@ const AgentRecommendation = ({
           <p className="text-xs text-muted-foreground mt-1 line-clamp-2">{description}</p>
           
           <div className="mt-2 flex items-center text-xs text-muted-foreground">
-            <Wallet className="h-3 w-3 mr-1" />
-            <span>{feeText}: {fee} Satoshi (≈ ${usdEquivalent})</span>
+            {isFree ? (
+              <>
+                <Gift className="h-3 w-3 mr-1 text-green-500" />
+                <span className="text-green-600 font-medium">Free + 2,800 Satoshi reward!</span>
+              </>
+            ) : (
+              <>
+                <Wallet className="h-3 w-3 mr-1" />
+                <span>{feeText}: {fee} Satoshi (≈ ${usdEquivalent})</span>
+              </>
+            )}
           </div>
           
           <div className="mt-3 flex space-x-2">
             <Button 
               size="sm" 
               onClick={onActivate}
-              className="bg-iqube-primary hover:bg-iqube-primary/90 flex-1 text-xs"
+              className={`flex-1 text-xs ${
+                isFree 
+                  ? 'bg-green-600 hover:bg-green-700' 
+                  : 'bg-iqube-primary hover:bg-iqube-primary/90'
+              }`}
             >
               <CheckCircle2 className="h-3 w-3 mr-1" />
-              Activate
+              {isFree ? 'Activate Free' : 'Activate'}
             </Button>
             <Button 
               size="sm" 

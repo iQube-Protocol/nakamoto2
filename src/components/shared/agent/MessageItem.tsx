@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { AgentMessage } from '@/lib/types';
 import MessageContent from './message/MessageContent';
@@ -18,6 +19,7 @@ const MessageItem = ({ message, isPlaying, onPlayAudio }: MessageItemProps) => {
   const [showMetisRecommendation, setShowMetisRecommendation] = useState(false);
   const [showVeniceRecommendation, setShowVeniceRecommendation] = useState(false);
   const [showQryptoRecommendation, setShowQryptoRecommendation] = useState(false);
+  const [showKNYTRecommendation, setShowKNYTRecommendation] = useState(false);
   const [showActivationModal, setShowActivationModal] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState<{name: string, fee: number, description: string} | null>(null);
   const [metisActive, setMetisActive] = useState(false);
@@ -46,6 +48,10 @@ const MessageItem = ({ message, isPlaying, onPlayAudio }: MessageItemProps) => {
         lowerMessage.includes('personalise') || 
         lowerMessage.includes('customize') || 
         lowerMessage.includes('custom');
+
+      // KNYT Persona trigger words
+      const knytTriggers = ['metaknyts', 'metaiye', 'knowone', 'kn0w1', 'deji', 'fang', 'bat', 'digiterra', 'metaterm', 'terra', 'qryptopia', 'knyt'];
+      const hasKNYTTrigger = knytTriggers.some(trigger => lowerMessage.includes(trigger));
       
       // Show recommendations with delay
       if (hasMetisTrigger) {
@@ -59,6 +65,10 @@ const MessageItem = ({ message, isPlaying, onPlayAudio }: MessageItemProps) => {
       if (hasQryptoTrigger) {
         setTimeout(() => setShowQryptoRecommendation(true), 1000);
       }
+
+      if (hasKNYTTrigger) {
+        setTimeout(() => setShowKNYTRecommendation(true), 1000);
+      }
     }
   }, [message]);
 
@@ -70,12 +80,14 @@ const MessageItem = ({ message, isPlaying, onPlayAudio }: MessageItemProps) => {
     if (agentName === 'Metis') setShowMetisRecommendation(false);
     if (agentName === 'Venice') setShowVeniceRecommendation(false);
     if (agentName === 'Qrypto Persona') setShowQryptoRecommendation(false);
+    if (agentName === 'KNYT Persona') setShowKNYTRecommendation(false);
   };
 
   const handleDismissRecommendation = (agentName: string) => {
     if (agentName === 'Metis') setShowMetisRecommendation(false);
     if (agentName === 'Venice') setShowVeniceRecommendation(false);
     if (agentName === 'Qrypto Persona') setShowQryptoRecommendation(false);
+    if (agentName === 'KNYT Persona') setShowKNYTRecommendation(false);
     
     toast({
       title: "Recommendation dismissed",
@@ -97,6 +109,16 @@ const MessageItem = ({ message, isPlaying, onPlayAudio }: MessageItemProps) => {
     if (selectedAgent?.name === 'Metis') {
       setMetisActive(true);
       window.dispatchEvent(new CustomEvent('metisActivated'));
+    }
+
+    if (selectedAgent?.name === 'KNYT Persona') {
+      // Dispatch event to activate KNYT Persona
+      window.dispatchEvent(new CustomEvent('iqubeToggle', { 
+        detail: { 
+          iqubeId: "KNYT Persona", 
+          active: true 
+        } 
+      }));
     }
     
     toast({
@@ -173,6 +195,18 @@ const MessageItem = ({ message, isPlaying, onPlayAudio }: MessageItemProps) => {
                 fee={200}
                 onActivate={() => handleActivateAgent('Qrypto Persona', 200, 'Profile information about the user that enables personalized responses and customized AI interactions.')}
                 onDismiss={() => handleDismissRecommendation('Qrypto Persona')}
+              />
+            </div>
+          )}
+
+          {showKNYTRecommendation && (
+            <div className="mt-4">
+              <AgentRecommendation
+                agentName="KNYT Persona"
+                description="KNYT ecosystem profile with 2,800 Satoshi reward for completing LinkedIn, MetaMask, and data requirements."
+                fee={0}
+                onActivate={() => handleActivateAgent('KNYT Persona', 0, 'KNYT ecosystem profile with 2,800 Satoshi reward for completing LinkedIn, MetaMask, and data requirements.')}
+                onDismiss={() => handleDismissRecommendation('KNYT Persona')}
               />
             </div>
           )}
