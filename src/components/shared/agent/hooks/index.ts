@@ -1,10 +1,12 @@
 
-// Export all hooks for easy importing
-export * from './useAgentMessages';
-export * from './useAudioControl';
-export * from './useConversationId';
-export * from './useMessageHistory';
-export * from './useMessageInput';
-export * from './useMessageState';
-export * from './useMessageSubmit';
-export * from './useScrollToBottom';
+// Export all agent hooks
+export { useAgentMessages } from './useAgentMessages';
+export { useAudioControl } from './useAudioControl';
+export { useConversationId } from './useConversationId';
+export { useMessageHistory } from './useMessageHistory';
+export { useMessageInput } from './useMessageInput';
+export { useMessageState } from './useMessageState';
+export { useMessageSubmit } from './useMessageSubmit';
+export { useScrollToBottom } from './useScrollToBottom';
+export { useAgentRecommendations } from './useAgentRecommendations';
+export { useAgentActivation } from './useAgentActivation';

@@ -1,12 +1,12 @@
 
-import React, { useState, useEffect } from 'react';
+import React from 'react';
 import { AgentMessage } from '@/lib/types';
 import MessageContent from './message/MessageContent';
-import AudioPlayback from './message/AudioPlayback';
-import MetadataBadge from './message/MetadataBadge';
-import AgentRecommendation from './AgentRecommendation';
+import MessageMetadata from './message/MessageMetadata';
+import AgentRecommendations from './message/AgentRecommendations';
 import AgentActivationModal from './AgentActivationModal';
-import { useToast } from '@/components/ui/use-toast';
+import { useAgentRecommendations } from './hooks/useAgentRecommendations';
+import { useAgentActivation } from './hooks/useAgentActivation';
 
 interface MessageItemProps {
   message: AgentMessage;
@@ -15,120 +15,16 @@ interface MessageItemProps {
 }
 
 const MessageItem = ({ message, isPlaying, onPlayAudio }: MessageItemProps) => {
-  const { toast } = useToast();
-  const [showMetisRecommendation, setShowMetisRecommendation] = useState(false);
-  const [showVeniceRecommendation, setShowVeniceRecommendation] = useState(false);
-  const [showQryptoRecommendation, setShowQryptoRecommendation] = useState(false);
-  const [showKNYTRecommendation, setShowKNYTRecommendation] = useState(false);
-  const [showActivationModal, setShowActivationModal] = useState(false);
-  const [selectedAgent, setSelectedAgent] = useState<{name: string, fee: number, description: string} | null>(null);
-  const [metisActive, setMetisActive] = useState(false);
-
-  // Check for trigger words in user messages
-  useEffect(() => {
-    if (message.sender === 'user') {
-      const lowerMessage = message.message.toLowerCase();
-      
-      // Metis trigger words: crypto-risk related
-      const hasMetisTrigger = 
-        lowerMessage.includes('risk') && 
-        (lowerMessage.includes('token') || 
-         lowerMessage.includes('wallet') || 
-         lowerMessage.includes('crypto') || 
-         lowerMessage.includes('blockchain'));
-      
-      // Venice trigger words: privacy/censorship
-      const hasVeniceTrigger = 
-        lowerMessage.includes('privacy') || 
-        lowerMessage.includes('censorship');
-      
-      // Qrypto Profile trigger words: personalize/customize
-      const hasQryptoTrigger = 
-        lowerMessage.includes('personalize') || 
-        lowerMessage.includes('personalise') || 
-        lowerMessage.includes('customize') || 
-        lowerMessage.includes('custom');
-
-      // KNYT Persona trigger words
-      const knytTriggers = ['metaknyts', 'metaiye', 'knowone', 'kn0w1', 'deji', 'fang', 'bat', 'digiterra', 'metaterm', 'terra', 'qryptopia', 'knyt'];
-      const hasKNYTTrigger = knytTriggers.some(trigger => lowerMessage.includes(trigger));
-      
-      // Show recommendations with delay
-      if (hasMetisTrigger) {
-        setTimeout(() => setShowMetisRecommendation(true), 1000);
-      }
-      
-      if (hasVeniceTrigger) {
-        setTimeout(() => setShowVeniceRecommendation(true), 1000);
-      }
-      
-      if (hasQryptoTrigger) {
-        setTimeout(() => setShowQryptoRecommendation(true), 1000);
-      }
-
-      if (hasKNYTTrigger) {
-        setTimeout(() => setShowKNYTRecommendation(true), 1000);
-      }
-    }
-  }, [message]);
-
-  const handleActivateAgent = (agentName: string, fee: number, description: string) => {
-    setSelectedAgent({ name: agentName, fee, description });
-    setShowActivationModal(true);
-    
-    // Hide the relevant recommendation
-    if (agentName === 'Metis') setShowMetisRecommendation(false);
-    if (agentName === 'Venice') setShowVeniceRecommendation(false);
-    if (agentName === 'Qrypto Persona') setShowQryptoRecommendation(false);
-    if (agentName === 'KNYT Persona') setShowKNYTRecommendation(false);
-  };
-
-  const handleDismissRecommendation = (agentName: string) => {
-    if (agentName === 'Metis') setShowMetisRecommendation(false);
-    if (agentName === 'Venice') setShowVeniceRecommendation(false);
-    if (agentName === 'Qrypto Persona') setShowQryptoRecommendation(false);
-    if (agentName === 'KNYT Persona') setShowKNYTRecommendation(false);
-    
-    toast({
-      title: "Recommendation dismissed",
-      description: `You can always activate ${agentName} agent later by mentioning relevant keywords again.`,
-      variant: "default",
-    });
-  };
-
-  const handleConfirmPayment = async (): Promise<boolean> => {
-    // Simulate payment processing
-    return new Promise((resolve) => {
-      setTimeout(() => {
-        resolve(true); // Always succeed for demo purposes
-      }, 3000);
-    });
-  };
-
-  const handleActivationComplete = () => {
-    if (selectedAgent?.name === 'Metis') {
-      setMetisActive(true);
-      window.dispatchEvent(new CustomEvent('metisActivated'));
-    }
-
-    if (selectedAgent?.name === 'KNYT Persona') {
-      // Dispatch event to activate KNYT Persona
-      window.dispatchEvent(new CustomEvent('iqubeToggle', { 
-        detail: { 
-          iqubeId: "KNYT Persona", 
-          active: true 
-        } 
-      }));
-    }
-    
-    toast({
-      title: `${selectedAgent?.name} Agent Activated`,
-      description: `You now have access to ${selectedAgent?.name} capabilities.`,
-      variant: "default",
-    });
-    
-    setSelectedAgent(null);
-  };
+  const { recommendations, dismissRecommendation } = useAgentRecommendations(message);
+  const {
+    showActivationModal,
+    selectedAgent,
+    metisActive,
+    handleActivateAgent,
+    handleConfirmPayment,
+    handleActivationComplete,
+    closeActivationModal
+  } = useAgentActivation();
 
   // Add special styling for system messages
   const getMessageClass = () => {
@@ -141,21 +37,12 @@ const MessageItem = ({ message, isPlaying, onPlayAudio }: MessageItemProps) => {
     <div className={getMessageClass()}>
       <div className="flex">
         <div className="flex-1">
-          <div className="flex items-center justify-between mb-1">
-            {message.sender === 'agent' && (
-              <MetadataBadge 
-                metadata={message.metadata ? { 
-                  ...message.metadata,
-                  metisActive: message.metadata.metisActive || metisActive
-                } : { metisActive: metisActive }} 
-              />
-            )}
-            {message.sender === 'system' && (
-              <span className="text-xs font-medium text-amber-600 bg-amber-50 px-2 py-0.5 rounded-full">
-                System
-              </span>
-            )}
-          </div>
+          <MessageMetadata 
+            message={message}
+            metisActive={metisActive}
+            isPlaying={isPlaying}
+            onPlayAudio={onPlayAudio}
+          />
           
           {/* Apply formatted message content */}
           <div className={`prose prose-sm max-w-none ${message.sender === 'system' ? 'text-amber-700' : ''}`}>
@@ -163,76 +50,21 @@ const MessageItem = ({ message, isPlaying, onPlayAudio }: MessageItemProps) => {
           </div>
           
           {/* Agent Recommendations */}
-          {showMetisRecommendation && (
-            <div className="mt-4">
-              <AgentRecommendation
-                agentName="Metis"
-                description="An algorithm that evaluates risks associated with wallets and tokens for enhanced security analysis."
-                fee={500}
-                onActivate={() => handleActivateAgent('Metis', 500, 'An algorithm that evaluates risks associated with wallets and tokens for enhanced security analysis.')}
-                onDismiss={() => handleDismissRecommendation('Metis')}
-              />
-            </div>
-          )}
-          
-          {showVeniceRecommendation && (
-            <div className="mt-4">
-              <AgentRecommendation
-                agentName="Venice"
-                description="AI model service that protects privacy and prevents censorship for secure and unrestricted AI interactions."
-                fee={800}
-                onActivate={() => handleActivateAgent('Venice', 800, 'AI model service that protects privacy and prevents censorship for secure and unrestricted AI interactions.')}
-                onDismiss={() => handleDismissRecommendation('Venice')}
-              />
-            </div>
-          )}
-          
-          {showQryptoRecommendation && (
-            <div className="mt-4">
-              <AgentRecommendation
-                agentName="Qrypto Persona"
-                description="Profile information about the user that enables personalized responses and customized AI interactions."
-                fee={200}
-                onActivate={() => handleActivateAgent('Qrypto Persona', 200, 'Profile information about the user that enables personalized responses and customized AI interactions.')}
-                onDismiss={() => handleDismissRecommendation('Qrypto Persona')}
-              />
-            </div>
-          )}
-
-          {showKNYTRecommendation && (
-            <div className="mt-4">
-              <AgentRecommendation
-                agentName="KNYT Persona"
-                description="KNYT ecosystem profile with 2,800 Satoshi reward for completing LinkedIn, MetaMask, and data requirements."
-                fee={0}
-                onActivate={() => handleActivateAgent('KNYT Persona', 0, 'KNYT ecosystem profile with 2,800 Satoshi reward for completing LinkedIn, MetaMask, and data requirements.')}
-                onDismiss={() => handleDismissRecommendation('KNYT Persona')}
-              />
-            </div>
-          )}
-          
-          <div className="flex items-center justify-between mt-2">
-            <span className="text-xs text-muted-foreground">
-              {new Date(message.timestamp).toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
-            </span>
-            {message.sender === 'agent' && (
-              <AudioPlayback 
-                isPlaying={isPlaying} 
-                messageId={message.id} 
-                onPlayAudio={onPlayAudio} 
-              />
-            )}
-          </div>
+          <AgentRecommendations
+            showMetisRecommendation={recommendations.showMetisRecommendation}
+            showVeniceRecommendation={recommendations.showVeniceRecommendation}
+            showQryptoRecommendation={recommendations.showQryptoRecommendation}
+            showKNYTRecommendation={recommendations.showKNYTRecommendation}
+            onActivateAgent={handleActivateAgent}
+            onDismissRecommendation={dismissRecommendation}
+          />
         </div>
       </div>
       
       {selectedAgent && (
         <AgentActivationModal
           isOpen={showActivationModal}
-          onClose={() => {
-            setShowActivationModal(false);
-            setSelectedAgent(null);
-          }}
+          onClose={closeActivationModal}
           agentName={selectedAgent.name}
           fee={selectedAgent.fee}
           onConfirmPayment={handleConfirmPayment}
