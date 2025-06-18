@@ -1,11 +1,8 @@
-
-import React, { useState, useEffect } from 'react';
-import AgentRecommendation from '@/components/shared/agent/AgentRecommendation';
-import { ScrollArea, ScrollBar } from '@/components/ui/scroll-area';
+import React, { useEffect } from 'react';
 import { toast } from 'sonner';
 import { useMetisAgent } from '@/hooks/use-metis-agent';
-import { useVeniceAgent } from '@/hooks/use-venice-agent';
 import { useQryptoPersona } from '@/hooks/use-qrypto-persona';
+import { useVeniceAgent } from '@/hooks/use-venice-agent';
 import { useKNYTPersona } from '@/hooks/use-knyt-persona';
 
 interface AgentRecommendationHandlerProps {
@@ -18,23 +15,32 @@ const AgentRecommendationHandler = ({
   setActiveQubes 
 }: AgentRecommendationHandlerProps) => {
   const { metisActivated, activateMetis } = useMetisAgent();
-  const { veniceActivated, activateVenice } = useVeniceAgent();
-  const { qryptoPersonaActivated, activateQryptoPersona } = useQryptoPersona();
   const { knytPersonaActivated, activateKNYTPersona } = useKNYTPersona();
-  
-  const [dismissedAgents, setDismissedAgents] = useState<string[]>([]);
 
-  const availableAgents = [
-    {
-      name: "Metis",
-      description: "An algorithm that evaluates risks associated with wallets and tokens for enhanced security analysis.",
-      fee: 500,
-      activated: metisActivated,
-      onActivate: () => {
+  // Listen for agent recommendation events
+  useEffect(() => {
+    const handleAgentRecommendation = (e: CustomEvent) => {
+      const { message, agentType } = e.detail || {};
+      
+      if (!message) return;
+      
+      const messageLower = message.toLowerCase();
+      
+      // Check for Metis trigger words
+      const metisTriggers = ['metis', 'risk', 'evaluation', 'security', 'audit', 'wallet', 'token', 'safety', 'analysis'];
+      const hasMetisTrigger = metisTriggers.some(trigger => messageLower.includes(trigger));
+      
+      // Check for KNYT Persona trigger words
+      const knytTriggers = ['metaknyts', 'metaiye', 'knowone', 'kn0w1', 'deji', 'fang', 'bat', 'digiterra', 'metaterm', 'terra', 'qryptopia', 'knyt'];
+      const hasKNYTTrigger = knytTriggers.some(trigger => messageLower.includes(trigger));
+      
+      // Activate Metis if trigger words are found and it's not already active
+      if (hasMetisTrigger && !metisActivated && !activeQubes["Metis"]) {
+        console.log('Metis agent recommended based on trigger words');
         activateMetis();
         setActiveQubes(prev => ({...prev, "Metis": true}));
-        toast.success("Metis AgentQube activated successfully");
         
+        // Dispatch event to update sidebar
         const event = new CustomEvent('iqubeToggle', { 
           detail: { 
             iqubeId: "Metis", 
@@ -42,56 +48,17 @@ const AgentRecommendationHandler = ({
           } 
         });
         window.dispatchEvent(event);
-      }
-    },
-    {
-      name: "Venice",
-      description: "AI model service that protects privacy and prevents censorship for secure and unrestricted AI interactions.",
-      fee: 800,
-      activated: veniceActivated,
-      onActivate: () => {
-        activateVenice();
-        setActiveQubes(prev => ({...prev, "Venice": true}));
-        toast.success("Venice ModelQube activated successfully");
         
-        const event = new CustomEvent('iqubeToggle', { 
-          detail: { 
-            iqubeId: "Venice", 
-            active: true 
-          } 
-        });
-        window.dispatchEvent(event);
+        toast.info('Metis agent activated for risk analysis');
       }
-    },
-    {
-      name: "Qrypto Persona",
-      description: "Profile information about the user that enables personalized responses and customized AI interactions.",
-      fee: 200,
-      activated: qryptoPersonaActivated,
-      onActivate: () => {
-        activateQryptoPersona();
-        setActiveQubes(prev => ({...prev, "Qrypto Persona": true}));
-        toast.success("Qrypto Persona DataQube activated successfully");
-        
-        const event = new CustomEvent('iqubeToggle', { 
-          detail: { 
-            iqubeId: "Qrypto Persona", 
-            active: true 
-          } 
-        });
-        window.dispatchEvent(event);
-      }
-    },
-    {
-      name: "KNYT Persona",
-      description: "KNYT ecosystem profile with digital asset tracking. Earn 2,800 Satoshi (2 $KNYT = $2.80) for complete activation!",
-      fee: -2800, // Negative fee indicates reward
-      activated: knytPersonaActivated,
-      onActivate: () => {
+
+      // Activate KNYT Persona if trigger words are found and it's not already active
+      if (hasKNYTTrigger && !knytPersonaActivated && !activeQubes["KNYT Persona"]) {
+        console.log('KNYT Persona recommended based on trigger words');
         activateKNYTPersona();
         setActiveQubes(prev => ({...prev, "KNYT Persona": true}));
-        toast.success("KNYT Persona DataQube activated successfully");
         
+        // Dispatch event to update sidebar
         const event = new CustomEvent('iqubeToggle', { 
           detail: { 
             iqubeId: "KNYT Persona", 
@@ -99,48 +66,19 @@ const AgentRecommendationHandler = ({
           } 
         });
         window.dispatchEvent(event);
+        
+        toast.info('KNYT Persona activated for ecosystem insights');
       }
-    }
-  ];
-
-  const handleDismissAgent = (agentName: string) => {
-    setDismissedAgents(prev => [...prev, agentName]);
+    };
     
-    // Update toast message to use correct iQube naming
-    const agentTitle = agentName === 'Metis' ? 'Metis AgentQube' : 
-                     agentName === 'Venice' ? 'Venice ModelQube' : 
-                     agentName === 'KNYT Persona' ? 'KNYT Persona DataQube' :
-                     'Qrypto Persona DataQube';
-    toast.info(`${agentTitle} recommendation dismissed`);
-  };
+    window.addEventListener('agentRecommendation', handleAgentRecommendation as EventListener);
+    
+    return () => {
+      window.removeEventListener('agentRecommendation', handleAgentRecommendation as EventListener);
+    };
+  }, [metisActivated, activateMetis, knytPersonaActivated, activateKNYTPersona, activeQubes, setActiveQubes]);
 
-  const visibleAgents = availableAgents.filter(agent => 
-    !agent.activated && !dismissedAgents.includes(agent.name)
-  );
-
-  if (visibleAgents.length === 0) {
-    return null;
-  }
-
-  return (
-    <div className="mb-6">
-      <ScrollArea className="w-full whitespace-nowrap rounded-md">
-        <div className="flex w-max space-x-4 p-1">
-          {visibleAgents.map((agent) => (
-            <AgentRecommendation 
-              key={agent.name}
-              agentName={agent.name}
-              description={agent.description}
-              fee={agent.fee}
-              onActivate={agent.onActivate}
-              onDismiss={() => handleDismissAgent(agent.name)}
-            />
-          ))}
-        </div>
-        <ScrollBar orientation="horizontal" />
-      </ScrollArea>
-    </div>
-  );
+  return null; // This is a logic-only component, no UI
 };
 
 export default AgentRecommendationHandler;
