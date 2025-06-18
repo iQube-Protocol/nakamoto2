@@ -29,6 +29,7 @@ const blakQubeData: BlakQube = {
   updated_at: new Date().toISOString(),
   "First-Name": "",
   "Last-Name": "",
+  "KNYT-ID": "",
   "Qrypto-ID": "",
   "Profession": "Web Developer",
   "Web3-Interests": ["Smart Contracts", "Blockchain Fundamentals", "DApps"],
@@ -49,7 +50,21 @@ const blakQubeData: BlakQube = {
   "ThirdWeb-Public-Key": "",
   "Tokens-of-Interest": ["ETH", "SOL", "DOT", "LINK"],
   "Chain-IDs": ["1", "137", "1284"],
-  "Wallets-of-Interest": ["MetaMask", "Phantom", "Trust"]
+  "Wallets-of-Interest": ["MetaMask", "Phantom", "Trust"],
+  "Phone-Number": "",
+  "Age": "",
+  "Address": "",
+  "OM-Member-Since": "",
+  "OM-Tier-Status": "",
+  "Metaiye-Shares-Owned": "",
+  "KNYT-COYN-Owned": "",
+  "MetaKeep-Public-Key": "",
+  "Motion-Comics-Owned": "",
+  "Paper-Comics-Owned": "",
+  "Digital-Comics-Owned": "",
+  "KNYT-Posters-Owned": "",
+  "KNYT-Cards-Owned": "",
+  "Characters-Owned": ""
 };
 
 const Learn = () => {

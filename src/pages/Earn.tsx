@@ -39,6 +39,7 @@ const blakQubeData: BlakQube = {
   updated_at: new Date().toISOString(),
   "First-Name": "",
   "Last-Name": "",
+  "KNYT-ID": "",
   "Qrypto-ID": "",
   "Profession": "Financial Analyst",
   "Web3-Interests": ["DeFi", "Tokenomics", "DAOs"],
@@ -59,7 +60,21 @@ const blakQubeData: BlakQube = {
   "ThirdWeb-Public-Key": "",
   "Tokens-of-Interest": ["USDC", "ETH", "AVAX", "MATIC"],
   "Chain-IDs": ["1", "137", "43114"],
-  "Wallets-of-Interest": ["MetaMask", "Phantom", "Ledger"]
+  "Wallets-of-Interest": ["MetaMask", "Phantom", "Ledger"],
+  "Phone-Number": "",
+  "Age": "",
+  "Address": "",
+  "OM-Member-Since": "",
+  "OM-Tier-Status": "",
+  "Metaiye-Shares-Owned": "",
+  "KNYT-COYN-Owned": "",
+  "MetaKeep-Public-Key": "",
+  "Motion-Comics-Owned": "",
+  "Paper-Comics-Owned": "",
+  "Digital-Comics-Owned": "",
+  "KNYT-Posters-Owned": "",
+  "KNYT-Cards-Owned": "",
+  "Characters-Owned": ""
 };
 
 const Earn = () => {

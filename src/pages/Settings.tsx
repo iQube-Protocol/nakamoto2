@@ -1,5 +1,7 @@
+
 import React, { useState, useEffect } from 'react';
 import { qubeData, monDaiQubeData } from '@/components/settings/QubeData';
+import { MetaQube } from '@/lib/types';
 import IQubeSelector from '@/components/settings/IQubeSelector';
 import IQubeActivationManager from '@/components/settings/IQubeActivationManager';
 import AgentRecommendationHandler from '@/components/settings/AgentRecommendationHandler';

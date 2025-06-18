@@ -28,6 +28,7 @@ const blakQubeData: BlakQube = {
   updated_at: new Date().toISOString(),
   "First-Name": "",
   "Last-Name": "",
+  "KNYT-ID": "",
   "Qrypto-ID": "",
   "Profession": "Community Manager",
   "Web3-Interests": ["DAOs", "Social Tokens", "NFT Communities"],
@@ -48,7 +49,21 @@ const blakQubeData: BlakQube = {
   "ThirdWeb-Public-Key": "",
   "Tokens-of-Interest": ["USDC", "ETH", "PEOPLE", "ENS"],
   "Chain-IDs": ["1", "137", "10"],
-  "Wallets-of-Interest": ["MetaMask", "Rainbow", "Frame"]
+  "Wallets-of-Interest": ["MetaMask", "Rainbow", "Frame"],
+  "Phone-Number": "",
+  "Age": "",
+  "Address": "",
+  "OM-Member-Since": "",
+  "OM-Tier-Status": "",
+  "Metaiye-Shares-Owned": "",
+  "KNYT-COYN-Owned": "",
+  "MetaKeep-Public-Key": "",
+  "Motion-Comics-Owned": "",
+  "Paper-Comics-Owned": "",
+  "Digital-Comics-Owned": "",
+  "KNYT-Posters-Owned": "",
+  "KNYT-Cards-Owned": "",
+  "Characters-Owned": ""
 };
 
 // Sample community metrics
