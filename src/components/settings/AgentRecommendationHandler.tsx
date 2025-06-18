@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { useMetisAgent } from '@/hooks/use-metis-agent';
 import { useVeniceAgent } from '@/hooks/use-venice-agent';
 import { useQryptoPersona } from '@/hooks/use-qrypto-persona';
+import { useKNYTPersona } from '@/hooks/use-knyt-persona';
 
 interface AgentRecommendationHandlerProps {
   activeQubes: { [key: string]: boolean };
@@ -19,6 +20,7 @@ const AgentRecommendationHandler = ({
   const { metisActivated, activateMetis } = useMetisAgent();
   const { veniceActivated, activateVenice } = useVeniceAgent();
   const { qryptoPersonaActivated, activateQryptoPersona } = useQryptoPersona();
+  const { knytPersonaActivated, activateKNYTPersona } = useKNYTPersona();
   
   const [dismissedAgents, setDismissedAgents] = useState<string[]>([]);
 
@@ -79,6 +81,25 @@ const AgentRecommendationHandler = ({
         });
         window.dispatchEvent(event);
       }
+    },
+    {
+      name: "KNYT Persona",
+      description: "KNYT ecosystem profile with digital asset tracking. Earn 2,800 Satoshi (2 $KNYT = $2.80) for complete activation!",
+      fee: -2800, // Negative fee indicates reward
+      activated: knytPersonaActivated,
+      onActivate: () => {
+        activateKNYTPersona();
+        setActiveQubes(prev => ({...prev, "KNYT Persona": true}));
+        toast.success("KNYT Persona DataQube activated successfully");
+        
+        const event = new CustomEvent('iqubeToggle', { 
+          detail: { 
+            iqubeId: "KNYT Persona", 
+            active: true 
+          } 
+        });
+        window.dispatchEvent(event);
+      }
     }
   ];
 
@@ -88,6 +109,7 @@ const AgentRecommendationHandler = ({
     // Update toast message to use correct iQube naming
     const agentTitle = agentName === 'Metis' ? 'Metis AgentQube' : 
                      agentName === 'Venice' ? 'Venice ModelQube' : 
+                     agentName === 'KNYT Persona' ? 'KNYT Persona DataQube' :
                      'Qrypto Persona DataQube';
     toast.info(`${agentTitle} recommendation dismissed`);
   };

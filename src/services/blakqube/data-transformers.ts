@@ -1,75 +1,114 @@
-
 import { BlakQube } from '@/lib/types';
 import { PrivateData } from './types';
 
 export const privateDataToBlakQube = (data: PrivateData): Partial<BlakQube> => {
+  const getValue = (key: string): string => {
+    const value = data[key];
+    return Array.isArray(value) ? value.join(', ') : (value || "");
+  };
+
+  const getArrayValue = (key: string): string[] => {
+    const value = data[key];
+    if (Array.isArray(value)) return value;
+    if (typeof value === 'string' && value.trim()) {
+      return value.split(',').map(item => item.trim()).filter(Boolean);
+    }
+    return [];
+  };
+
   return {
-    "First-Name": data["First-Name"] as string || "",
-    "Last-Name": data["Last-Name"] as string || "",
-    "Qrypto-ID": data["Qrypto-ID"] as string || "",
-    "Profession": data["Profession"] as string || "",
-    "Local-City": data["Local-City"] as string || "",
-    "Email": data["Email"] as string || "",
-    "LinkedIn-ID": data["LinkedIn-ID"] as string || "",
-    "LinkedIn-Profile-URL": data["LinkedIn-Profile-URL"] as string || "",
-    "Twitter-Handle": data["Twitter-Handle"] as string || "",
-    "Telegram-Handle": data["Telegram-Handle"] as string || "",
-    "Discord-Handle": data["Discord-Handle"] as string || "",
-    "Instagram-Handle": data["Instagram-Handle"] as string || "",
-    "GitHub-Handle": data["GitHub-Handle"] as string || "",
-    "YouTube-ID": data["YouTube-ID"] as string || "",
-    "Facebook-ID": data["Facebook-ID"] as string || "",
-    "TikTok-Handle": data["TikTok-Handle"] as string || "",
-    "Web3-Interests": Array.isArray(data["Web3-Interests"]) ? data["Web3-Interests"] as string[] : [],
-    "EVM-Public-Key": data["EVM-Public-Key"] as string || "",
-    "BTC-Public-Key": data["BTC-Public-Key"] as string || "",
-    "ThirdWeb-Public-Key": data["ThirdWeb-Public-Key"] as string || "",
-    "Tokens-of-Interest": Array.isArray(data["Tokens-of-Interest"]) ? data["Tokens-of-Interest"] as string[] : [],
-    "Chain-IDs": Array.isArray(data["Chain-IDs"]) ? data["Chain-IDs"] as string[] : [],
-    "Wallets-of-Interest": Array.isArray(data["Wallets-of-Interest"]) ? data["Wallets-of-Interest"] as string[] : []
+    "Profession": getValue("Profession"),
+    "Web3-Interests": getArrayValue("Web3-Interests"),
+    "Local-City": getValue("Local-City"),
+    "Email": getValue("Email"),
+    "EVM-Public-Key": getValue("EVM-Public-Key"),
+    "BTC-Public-Key": getValue("BTC-Public-Key"),
+    "Tokens-of-Interest": getArrayValue("Tokens-of-Interest"),
+    "Chain-IDs": getArrayValue("Chain-IDs"),
+    "Wallets-of-Interest": getArrayValue("Wallets-of-Interest"),
+    "LinkedIn-ID": getValue("LinkedIn-ID"),
+    "LinkedIn-Profile-URL": getValue("LinkedIn-Profile-URL"),
+    "Twitter-Handle": getValue("Twitter-Handle"),
+    "Telegram-Handle": getValue("Telegram-Handle"),
+    "Discord-Handle": getValue("Discord-Handle"),
+    "Instagram-Handle": getValue("Instagram-Handle"),
+    "GitHub-Handle": getValue("GitHub-Handle"),
+    "First-Name": getValue("First-Name"),
+    "Last-Name": getValue("Last-Name"),
+    "KNYT-ID": getValue("KNYT-ID"),
+    "Qrypto-ID": getValue("Qrypto-ID"),
+    "ThirdWeb-Public-Key": getValue("ThirdWeb-Public-Key"),
+    "YouTube-ID": getValue("YouTube-ID"),
+    "Facebook-ID": getValue("Facebook-ID"),
+    "TikTok-Handle": getValue("TikTok-Handle"),
+    "Phone-Number": getValue("Phone-Number"),
+    "Age": getValue("Age"),
+    "Address": getValue("Address"),
+    "OM-Member-Since": getValue("OM-Member-Since"),
+    "OM-Tier-Status": getValue("OM-Tier-Status"),
+    "Metaiye-Shares-Owned": getValue("Metaiye-Shares-Owned"),
+    "KNYT-COYN-Owned": getValue("KNYT-COYN-Owned"),
+    "MetaKeep-Public-Key": getValue("MetaKeep-Public-Key"),
+    "Motion-Comics-Owned": getValue("Motion-Comics-Owned"),
+    "Paper-Comics-Owned": getValue("Paper-Comics-Owned"),
+    "Digital-Comics-Owned": getValue("Digital-Comics-Owned"),
+    "KNYT-Posters-Owned": getValue("KNYT-Posters-Owned"),
+    "KNYT-Cards-Owned": getValue("KNYT-Cards-Owned"),
+    "Characters-Owned": getValue("Characters-Owned")
   };
 };
 
-export const blakQubeToPrivateData = (blakQubeData: BlakQube): PrivateData => {
+export const blakQubeToPrivateData = (blakQube: BlakQube): PrivateData => {
   return {
-    "First-Name": blakQubeData["First-Name"] || "",
-    "Last-Name": blakQubeData["Last-Name"] || "",
-    "Qrypto-ID": blakQubeData["Qrypto-ID"] || "",
-    "Profession": blakQubeData["Profession"] || "",
-    "Local-City": blakQubeData["Local-City"] || "",
-    "Email": blakQubeData["Email"] || "",
-    "LinkedIn-ID": blakQubeData["LinkedIn-ID"] || "",
-    "LinkedIn-Profile-URL": blakQubeData["LinkedIn-Profile-URL"] || "",
-    "Twitter-Handle": blakQubeData["Twitter-Handle"] || "",
-    "Telegram-Handle": blakQubeData["Telegram-Handle"] || "",
-    "Discord-Handle": blakQubeData["Discord-Handle"] || "",
-    "Instagram-Handle": blakQubeData["Instagram-Handle"] || "",
-    "GitHub-Handle": blakQubeData["GitHub-Handle"] || "",
-    "YouTube-ID": blakQubeData["YouTube-ID"] || "",
-    "Facebook-ID": blakQubeData["Facebook-ID"] || "",
-    "TikTok-Handle": blakQubeData["TikTok-Handle"] || "",
-    "Web3-Interests": blakQubeData["Web3-Interests"] || [],
-    "EVM-Public-Key": blakQubeData["EVM-Public-Key"] || "",
-    "BTC-Public-Key": blakQubeData["BTC-Public-Key"] || "",
-    "ThirdWeb-Public-Key": blakQubeData["ThirdWeb-Public-Key"] || "",
-    "Tokens-of-Interest": blakQubeData["Tokens-of-Interest"] || [],
-    "Chain-IDs": blakQubeData["Chain-IDs"] || [],
-    "Wallets-of-Interest": blakQubeData["Wallets-of-Interest"] || []
+    "Profession": blakQube["Profession"] || "",
+    "Web3-Interests": blakQube["Web3-Interests"] || [],
+    "Local-City": blakQube["Local-City"] || "",
+    "Email": blakQube["Email"] || "",
+    "EVM-Public-Key": blakQube["EVM-Public-Key"] || "",
+    "BTC-Public-Key": blakQube["BTC-Public-Key"] || "",
+    "Tokens-of-Interest": blakQube["Tokens-of-Interest"] || [],
+    "Chain-IDs": blakQube["Chain-IDs"] || [],
+    "Wallets-of-Interest": blakQube["Wallets-of-Interest"] || [],
+    "LinkedIn-ID": blakQube["LinkedIn-ID"] || "",
+    "LinkedIn-Profile-URL": blakQube["LinkedIn-Profile-URL"] || "",
+    "Twitter-Handle": blakQube["Twitter-Handle"] || "",
+    "Telegram-Handle": blakQube["Telegram-Handle"] || "",
+    "Discord-Handle": blakQube["Discord-Handle"] || "",
+    "Instagram-Handle": blakQube["Instagram-Handle"] || "",
+    "GitHub-Handle": blakQube["GitHub-Handle"] || "",
+    "First-Name": blakQube["First-Name"] || "",
+    "Last-Name": blakQube["Last-Name"] || "",
+    "KNYT-ID": blakQube["KNYT-ID"] || "",
+    "Qrypto-ID": blakQube["Qrypto-ID"] || "",
+    "ThirdWeb-Public-Key": blakQube["ThirdWeb-Public-Key"] || "",
+    "YouTube-ID": blakQube["YouTube-ID"] || "",
+    "Facebook-ID": blakQube["Facebook-ID"] || "",
+    "TikTok-Handle": blakQube["TikTok-Handle"] || "",
+    "Phone-Number": blakQube["Phone-Number"] || "",
+    "Age": blakQube["Age"] || "",
+    "Address": blakQube["Address"] || "",
+    "OM-Member-Since": blakQube["OM-Member-Since"] || "",
+    "OM-Tier-Status": blakQube["OM-Tier-Status"] || "",
+    "Metaiye-Shares-Owned": blakQube["Metaiye-Shares-Owned"] || "",
+    "KNYT-COYN-Owned": blakQube["KNYT-COYN-Owned"] || "",
+    "MetaKeep-Public-Key": blakQube["MetaKeep-Public-Key"] || "",
+    "Motion-Comics-Owned": blakQube["Motion-Comics-Owned"] || "",
+    "Paper-Comics-Owned": blakQube["Paper-Comics-Owned"] || "",
+    "Digital-Comics-Owned": blakQube["Digital-Comics-Owned"] || "",
+    "KNYT-Posters-Owned": blakQube["KNYT-Posters-Owned"] || "",
+    "KNYT-Cards-Owned": blakQube["KNYT-Cards-Owned"] || "",
+    "Characters-Owned": blakQube["Characters-Owned"] || ""
   };
 };
 
-export const createDefaultBlakQube = (userEmail?: string): Partial<BlakQube> => {
+export const createDefaultBlakQube = (email?: string): Partial<BlakQube> => {
   return {
-    "First-Name": "",
-    "Last-Name": "",
-    "Qrypto-ID": "",
     "Profession": "",
     "Web3-Interests": [],
     "Local-City": "",
-    "Email": userEmail || "",
+    "Email": email || "",
     "EVM-Public-Key": "",
     "BTC-Public-Key": "",
-    "ThirdWeb-Public-Key": "",
     "Tokens-of-Interest": [],
     "Chain-IDs": [],
     "Wallets-of-Interest": [],
@@ -80,8 +119,27 @@ export const createDefaultBlakQube = (userEmail?: string): Partial<BlakQube> => 
     "Discord-Handle": "",
     "Instagram-Handle": "",
     "GitHub-Handle": "",
+    "First-Name": "",
+    "Last-Name": "",
+    "KNYT-ID": "",
+    "Qrypto-ID": "",
+    "ThirdWeb-Public-Key": "",
     "YouTube-ID": "",
     "Facebook-ID": "",
-    "TikTok-Handle": ""
+    "TikTok-Handle": "",
+    "Phone-Number": "",
+    "Age": "",
+    "Address": "",
+    "OM-Member-Since": "",
+    "OM-Tier-Status": "",
+    "Metaiye-Shares-Owned": "",
+    "KNYT-COYN-Owned": "",
+    "MetaKeep-Public-Key": "",
+    "Motion-Comics-Owned": "",
+    "Paper-Comics-Owned": "",
+    "Digital-Comics-Owned": "",
+    "KNYT-Posters-Owned": "",
+    "KNYT-Cards-Owned": "",
+    "Characters-Owned": ""
   };
 };

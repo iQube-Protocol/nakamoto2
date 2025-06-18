@@ -52,11 +52,26 @@ export interface BlakQube {
   "GitHub-Handle": string;
   "First-Name": string;
   "Last-Name": string;
+  "KNYT-ID": string;
   "Qrypto-ID": string;
   "ThirdWeb-Public-Key": string;
   "YouTube-ID": string;
   "Facebook-ID": string;
   "TikTok-Handle": string;
+  "Phone-Number": string;
+  "Age": string;
+  "Address": string;
+  "OM-Member-Since": string;
+  "OM-Tier-Status": string;
+  "Metaiye-Shares-Owned": string;
+  "KNYT-COYN-Owned": string;
+  "MetaKeep-Public-Key": string;
+  "Motion-Comics-Owned": string;
+  "Paper-Comics-Owned": string;
+  "Digital-Comics-Owned": string;
+  "KNYT-Posters-Owned": string;
+  "KNYT-Cards-Owned": string;
+  "Characters-Owned": string;
   created_at: string;
   updated_at: string;
 }

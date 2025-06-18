@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { useMetisAgent } from '@/hooks/use-metis-agent';
 import { useQryptoPersona } from '@/hooks/use-qrypto-persona';
 import { useVeniceAgent } from '@/hooks/use-venice-agent';
+import { useKNYTPersona } from '@/hooks/use-knyt-persona';
 
 interface IQubeActivationManagerProps {
   activeQubes: { [key: string]: boolean };
@@ -17,6 +18,7 @@ const IQubeActivationManager = ({
   const { metisActivated, metisVisible, activateMetis, hideMetis } = useMetisAgent();
   const { qryptoPersonaActivated, activateQryptoPersona, deactivateQryptoPersona } = useQryptoPersona();
   const { veniceActivated, veniceVisible, activateVenice, deactivateVenice, hideVenice } = useVeniceAgent();
+  const { knytPersonaActivated, activateKNYTPersona, deactivateKNYTPersona, hideKNYTPersona } = useKNYTPersona();
 
   // Update active states when hook values change
   useEffect(() => {
@@ -24,9 +26,10 @@ const IQubeActivationManager = ({
       ...prev, 
       "Metis": metisActivated,
       "Qrypto Persona": qryptoPersonaActivated,
-      "Venice": veniceActivated
+      "Venice": veniceActivated,
+      "KNYT Persona": knytPersonaActivated
     }));
-  }, [metisActivated, qryptoPersonaActivated, veniceActivated, setActiveQubes]);
+  }, [metisActivated, qryptoPersonaActivated, veniceActivated, knytPersonaActivated, setActiveQubes]);
 
   // Listen for iQube activation/deactivation events from sidebar
   useEffect(() => {
@@ -60,6 +63,14 @@ const IQubeActivationManager = ({
             deactivateVenice();
             toast.info(`Venice deactivated`);
           }
+        } else if (iqubeId === "KNYT Persona") {
+          if (active && !knytPersonaActivated) {
+            activateKNYTPersona();
+            toast.info(`KNYT Persona activated`);
+          } else if (!active && knytPersonaActivated) {
+            deactivateKNYTPersona();
+            toast.info(`KNYT Persona deactivated`);
+          }
         } else {
           toast.info(`${iqubeId} ${active ? 'activated' : 'deactivated'}`);
         }
@@ -71,7 +82,7 @@ const IQubeActivationManager = ({
     return () => {
       window.removeEventListener('iqubeToggle', handleIQubeToggle as EventListener);
     };
-  }, [metisActivated, metisVisible, activateMetis, hideMetis, qryptoPersonaActivated, activateQryptoPersona, deactivateQryptoPersona, veniceActivated, activateVenice, deactivateVenice, setActiveQubes]);
+  }, [metisActivated, metisVisible, activateMetis, hideMetis, qryptoPersonaActivated, activateQryptoPersona, deactivateQryptoPersona, veniceActivated, activateVenice, deactivateVenice, knytPersonaActivated, activateKNYTPersona, deactivateKNYTPersona, setActiveQubes]);
 
   return null; // This is a logic-only component, no UI
 };

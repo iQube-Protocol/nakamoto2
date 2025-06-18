@@ -24,6 +24,8 @@ const SettingsContainer = ({ activeQubes, toggleQubeActive, selectedIQube }: Set
   useEffect(() => {
     if (selectedIQube["iQube-Identifier"] === "Qrypto Persona iQube") {
       selectIQube("Qrypto Persona");
+    } else if (selectedIQube["iQube-Identifier"] === "KNYT Persona iQube") {
+      selectIQube("KNYT Persona");
     } else if (selectedIQube["iQube-Identifier"] === "Metis iQube") {
       selectIQube("Metis");
     } else if (selectedIQube["iQube-Identifier"] === "Venice iQube") {

@@ -11,9 +11,13 @@ export type Database = {
     Tables: {
       blak_qubes: {
         Row: {
+          Address: string | null
+          Age: string | null
           "BTC-Public-Key": string
           "Chain-IDs": string[]
+          "Characters-Owned": string | null
           created_at: string
+          "Digital-Comics-Owned": string | null
           "Discord-Handle": string | null
           Email: string
           "EVM-Public-Key": string
@@ -22,10 +26,21 @@ export type Database = {
           "GitHub-Handle": string | null
           id: string
           "Instagram-Handle": string | null
+          "KNYT-Cards-Owned": string | null
+          "KNYT-COYN-Owned": string | null
+          "KNYT-ID": string | null
+          "KNYT-Posters-Owned": string | null
           "Last-Name": string | null
           "LinkedIn-ID": string | null
           "LinkedIn-Profile-URL": string | null
           "Local-City": string
+          "Metaiye-Shares-Owned": string | null
+          "MetaKeep-Public-Key": string | null
+          "Motion-Comics-Owned": string | null
+          "OM-Member-Since": string | null
+          "OM-Tier-Status": string | null
+          "Paper-Comics-Owned": string | null
+          "Phone-Number": string | null
           Profession: string
           "Qrypto-ID": string | null
           "Telegram-Handle": string | null
@@ -40,9 +55,13 @@ export type Database = {
           "YouTube-ID": string | null
         }
         Insert: {
+          Address?: string | null
+          Age?: string | null
           "BTC-Public-Key"?: string
           "Chain-IDs"?: string[]
+          "Characters-Owned"?: string | null
           created_at?: string
+          "Digital-Comics-Owned"?: string | null
           "Discord-Handle"?: string | null
           Email?: string
           "EVM-Public-Key"?: string
@@ -51,10 +70,21 @@ export type Database = {
           "GitHub-Handle"?: string | null
           id?: string
           "Instagram-Handle"?: string | null
+          "KNYT-Cards-Owned"?: string | null
+          "KNYT-COYN-Owned"?: string | null
+          "KNYT-ID"?: string | null
+          "KNYT-Posters-Owned"?: string | null
           "Last-Name"?: string | null
           "LinkedIn-ID"?: string | null
           "LinkedIn-Profile-URL"?: string | null
           "Local-City"?: string
+          "Metaiye-Shares-Owned"?: string | null
+          "MetaKeep-Public-Key"?: string | null
+          "Motion-Comics-Owned"?: string | null
+          "OM-Member-Since"?: string | null
+          "OM-Tier-Status"?: string | null
+          "Paper-Comics-Owned"?: string | null
+          "Phone-Number"?: string | null
           Profession?: string
           "Qrypto-ID"?: string | null
           "Telegram-Handle"?: string | null
@@ -69,9 +99,13 @@ export type Database = {
           "YouTube-ID"?: string | null
         }
         Update: {
+          Address?: string | null
+          Age?: string | null
           "BTC-Public-Key"?: string
           "Chain-IDs"?: string[]
+          "Characters-Owned"?: string | null
           created_at?: string
+          "Digital-Comics-Owned"?: string | null
           "Discord-Handle"?: string | null
           Email?: string
           "EVM-Public-Key"?: string
@@ -80,10 +114,21 @@ export type Database = {
           "GitHub-Handle"?: string | null
           id?: string
           "Instagram-Handle"?: string | null
+          "KNYT-Cards-Owned"?: string | null
+          "KNYT-COYN-Owned"?: string | null
+          "KNYT-ID"?: string | null
+          "KNYT-Posters-Owned"?: string | null
           "Last-Name"?: string | null
           "LinkedIn-ID"?: string | null
           "LinkedIn-Profile-URL"?: string | null
           "Local-City"?: string
+          "Metaiye-Shares-Owned"?: string | null
+          "MetaKeep-Public-Key"?: string | null
+          "Motion-Comics-Owned"?: string | null
+          "OM-Member-Since"?: string | null
+          "OM-Tier-Status"?: string | null
+          "Paper-Comics-Owned"?: string | null
+          "Phone-Number"?: string | null
           Profession?: string
           "Qrypto-ID"?: string | null
           "Telegram-Handle"?: string | null
@@ -124,6 +169,42 @@ export type Database = {
           id?: string
           included_interaction_ids?: string[]
           summary_text?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      knyt_persona_rewards: {
+        Row: {
+          created_at: string
+          data_completed: boolean | null
+          id: string
+          linkedin_connected: boolean | null
+          metamask_connected: boolean | null
+          reward_amount: number | null
+          reward_claimed: boolean | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          data_completed?: boolean | null
+          id?: string
+          linkedin_connected?: boolean | null
+          metamask_connected?: boolean | null
+          reward_amount?: number | null
+          reward_claimed?: boolean | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          data_completed?: boolean | null
+          id?: string
+          linkedin_connected?: boolean | null
+          metamask_connected?: boolean | null
+          reward_amount?: number | null
+          reward_claimed?: boolean | null
           updated_at?: string
           user_id?: string
         }

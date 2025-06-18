@@ -1,4 +1,3 @@
-
 import { LucideIcon, Database, Settings, FolderGit2, Bot, User } from 'lucide-react';
 import CubeIcon from '../sidebar/CubeIcon';
 
@@ -85,3 +84,51 @@ export const veniceQubeData = {
   type: 'Privacy Agent',
   href: '/settings',
 };
+
+export const metaQubesData = [
+  {
+    id: "Qrypto Persona",
+    name: "Qrypto Persona",
+    type: "DataQube" as const,
+    description: "Personal cryptocurrency profile and preferences data",
+    color: "text-blue-400",
+    bgColor: "bg-blue-500/10",
+    borderColor: "border-blue-500/20"
+  },
+  {
+    id: "KNYT Persona", 
+    name: "KNYT Persona",
+    type: "DataQube" as const,
+    description: "KNYT ecosystem profile with 2,800 Satoshi reward",
+    color: "text-purple-400",
+    bgColor: "bg-purple-500/10", 
+    borderColor: "border-purple-500/20"
+  },
+  {
+    id: "Venice",
+    name: "Venice", 
+    type: "ModelQube" as const,
+    description: "Privacy-preserving AI model service",
+    color: "text-green-400",
+    bgColor: "bg-green-500/10",
+    borderColor: "border-green-500/20"
+  },
+  {
+    id: "Metis",
+    name: "Metis",
+    type: "AgentQube" as const, 
+    description: "Risk evaluation algorithm for wallets and tokens",
+    color: "text-orange-400",
+    bgColor: "bg-orange-500/10",
+    borderColor: "border-orange-500/20"
+  },
+  {
+    id: "GDrive",
+    name: "GDrive",
+    type: "DataQube" as const,
+    description: "Google Drive document integration", 
+    color: "text-indigo-400",
+    bgColor: "bg-indigo-500/10",
+    borderColor: "border-indigo-500/20"
+  }
+];

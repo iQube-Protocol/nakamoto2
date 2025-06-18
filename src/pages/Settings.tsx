@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { qubeData, monDaiQubeData } from '@/components/settings/QubeData';
 import IQubeSelector from '@/components/settings/IQubeSelector';
@@ -11,17 +10,31 @@ import { useQryptoPersona } from '@/hooks/use-qrypto-persona';
 import { useVeniceAgent } from '@/hooks/use-venice-agent';
 
 const Settings = () => {
-  const [selectedIQube, setSelectedIQube] = useState(monDaiQubeData);
+  const [selectedIQube, setSelectedIQube] = useState<MetaQube>(qubeData.monDai);
   const { metisActivated } = useMetisAgent();
   const { qryptoPersonaActivated } = useQryptoPersona();
   const { veniceActivated } = useVeniceAgent();
   
   const [activeQubes, setActiveQubes] = useState<{[key: string]: boolean}>({
-    "Qrypto Persona": qryptoPersonaActivated,
-    "Venice": veniceActivated,
-    "Metis": metisActivated,
-    "GDrive": false
+    "Qrypto Persona": false,
+    "KNYT Persona": false,
+    "Venice": false,
+    "Metis": false,
+    "GDrive": false,
+    "Content": false,
+    "Model": false
   });
+
+  // Available iQubes including KNYT Persona
+  const availableIQubes = [
+    { key: 'monDai', data: qubeData.monDai, name: 'Qrypto Persona' },
+    { key: 'knytPersona', data: qubeData.knytPersona, name: 'KNYT Persona' },
+    { key: 'venice', data: qubeData.venice, name: 'Venice' },
+    { key: 'metis', data: qubeData.metis, name: 'Metis' },
+    { key: 'gdrive', data: qubeData.gdrive, name: 'GDrive' },
+    { key: 'content', data: qubeData.content, name: 'Content' },
+    { key: 'model', data: qubeData.model, name: 'Model' }
+  ];
 
   // Function to toggle iQube active state
   const toggleQubeActive = (qubeName: string) => {

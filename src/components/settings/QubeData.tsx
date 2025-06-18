@@ -1,4 +1,3 @@
-
 import { MetaQube } from '@/lib/types';
 
 export const monDaiQubeData: MetaQube = {
@@ -163,11 +162,39 @@ export const modelQubeData: MetaQube = {
   "Risk-Score": 1.9
 };
 
+export const knytPersonaQubeData: MetaQube = {
+  "iQube-Identifier": "KNYT Persona iQube",
+  "iQube-Type": "DataQube",
+  "iQube-Designer": "Aigent KNYT",
+  "iQube-Use": "KNYT ecosystem profile and digital asset management data with 2,800 Satoshi reward",
+  "Owner-Type": "Person",
+  "Owner-Identifiability": "Semi-Identifiable",
+  "Date-Minted": "2024-03-01",
+  "Related-iQubes": ["QryptoPersonaQube", "VeniceQube", "MetisQube"],
+  "X-of-Y": "7 of 7",
+  "Description": "KNYT ecosystem profile including OM membership, digital assets, and reward system (2,800 Satoshi = 2 $KNYT = $2.80)",
+  "Access-Control": "Private",
+  "Encryption-Level": "AES-256",
+  "Created": "2024-03-01",
+  "Last-Updated": "2024-03-01",
+  "Version": "1.0.0",
+  "Size": "3.2 MB",
+  "Status": "Active",
+  "Network": "Ethereum",
+  "Smart-Contract": "0xd08i70Jj2198G0087K93iI",
+  "IPFS-Hash": "QmEuvnmW9WknFiJnKLwHCnL78vedxjQkDDP1mXWo2ajv",
+  "Sensitivity-Score": 6.5,
+  "Verifiability-Score": 8.7,
+  "Accuracy-Score": 8.9,
+  "Risk-Score": 2.1
+};
+
 export const qubeData = {
   monDai: monDaiQubeData,
   venice: veniceQubeData,
   metis: metisQubeData,
   gdrive: gdriveQubeData,
   content: contentQubeData,
-  model: modelQubeData
+  model: modelQubeData,
+  knytPersona: knytPersonaQubeData
 };
