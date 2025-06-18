@@ -45,6 +45,9 @@ const IQubesSection: React.FC<IQubesSectionProps> = ({
     if (qubeName === "Metis") {
       return <Bot className="h-4 w-4 text-purple-500" />;
     }
+    if (qubeName === "KNYT Persona") {
+      return <Database className="h-4 w-4 text-purple-500" />;
+    }
     
     // Default icons by type
     switch(type) {
@@ -78,6 +81,16 @@ const IQubesSection: React.FC<IQubesSectionProps> = ({
           <div className="font-semibold">Qrypto Persona</div>
           <div className="text-xs">
             Profile information about the user that when activated will be injected into the context window of the Agent, enabling it to give personalized responses.
+          </div>
+        </div>
+      );
+    }
+    if (qubeName === "KNYT Persona") {
+      return (
+        <div className="space-y-1">
+          <div className="font-semibold">KNYT Persona</div>
+          <div className="text-xs">
+            KNYT ecosystem profile with 2,800 Satoshi reward for completing LinkedIn, MetaMask, and data requirements.
           </div>
         </div>
       );

@@ -1,9 +1,11 @@
+
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 import { useMetisAgent } from '@/hooks/use-metis-agent';
 import { useQryptoPersona } from '@/hooks/use-qrypto-persona';
 import { useVeniceAgent } from '@/hooks/use-venice-agent';
+import { useKNYTPersona } from '@/hooks/use-knyt-persona';
 import { useSidebarState } from '@/hooks/use-sidebar-state';
 import { useAuth } from '@/hooks/use-auth';
 
@@ -13,6 +15,7 @@ export const useSidebarLogic = () => {
   const { metisActivated, metisVisible, activateMetis, hideMetis } = useMetisAgent();
   const { qryptoPersonaActivated, activateQryptoPersona, deactivateQryptoPersona } = useQryptoPersona();
   const { veniceActivated, veniceVisible, activateVenice, deactivateVenice, hideVenice } = useVeniceAgent();
+  const { knytPersonaActivated, activateKNYTPersona, deactivateKNYTPersona, hideKNYTPersona } = useKNYTPersona();
   const { 
     collapsed, 
     iQubesOpen, 
@@ -29,6 +32,7 @@ export const useSidebarLogic = () => {
   const [activeIQubes, setActiveIQubes] = useState<{[key: string]: boolean}>(() => {
     return {
       "Qrypto Persona": qryptoPersonaActivated,
+      "KNYT Persona": knytPersonaActivated,
       "Venice": veniceActivated,
       "Metis": metisActivated,
     };
@@ -39,10 +43,11 @@ export const useSidebarLogic = () => {
     setActiveIQubes(prev => ({
       ...prev, 
       "Qrypto Persona": qryptoPersonaActivated,
+      "KNYT Persona": knytPersonaActivated,
       "Venice": veniceActivated,
       "Metis": metisActivated
     }));
-  }, [qryptoPersonaActivated, veniceActivated, metisActivated]);
+  }, [qryptoPersonaActivated, knytPersonaActivated, veniceActivated, metisActivated]);
 
   // Listen for agent activation events from AgentActivationModal
   useEffect(() => {
@@ -53,6 +58,16 @@ export const useSidebarLogic = () => {
       if (activated) {
         activateQryptoPersona();
         setActiveIQubes(prev => ({...prev, "Qrypto Persona": true}));
+      }
+    };
+
+    const handleKNYTPersonaStateChanged = (e: CustomEvent) => {
+      const { activated } = e.detail || {};
+      console.log('KNYT Persona state changed event received:', activated);
+      
+      if (activated) {
+        activateKNYTPersona();
+        setActiveIQubes(prev => ({...prev, "KNYT Persona": true}));
       }
     };
 
@@ -73,15 +88,17 @@ export const useSidebarLogic = () => {
     };
 
     window.addEventListener('qryptoPersonaStateChanged', handleQryptoPersonaStateChanged as EventListener);
+    window.addEventListener('knytPersonaStateChanged', handleKNYTPersonaStateChanged as EventListener);
     window.addEventListener('veniceStateChanged', handleVeniceStateChanged as EventListener);
     window.addEventListener('metisActivated', handleMetisActivated as EventListener);
     
     return () => {
       window.removeEventListener('qryptoPersonaStateChanged', handleQryptoPersonaStateChanged as EventListener);
+      window.removeEventListener('knytPersonaStateChanged', handleKNYTPersonaStateChanged as EventListener);
       window.removeEventListener('veniceStateChanged', handleVeniceStateChanged as EventListener);
       window.removeEventListener('metisActivated', handleMetisActivated as EventListener);
     };
-  }, [activateQryptoPersona, activateVenice, activateMetis]);
+  }, [activateQryptoPersona, activateKNYTPersona, activateVenice, activateMetis]);
 
   // Listen for iQube toggle events from Settings page
   useEffect(() => {
@@ -103,6 +120,12 @@ export const useSidebarLogic = () => {
           } else {
             deactivateQryptoPersona();
           }
+        } else if (iqubeId === "KNYT Persona") {
+          if (active) {
+            activateKNYTPersona();
+          } else {
+            deactivateKNYTPersona();
+          }
         } else if (iqubeId === "Venice") {
           if (active) {
             activateVenice();
@@ -118,7 +141,7 @@ export const useSidebarLogic = () => {
     return () => {
       window.removeEventListener('iqubeToggle', handleIQubeToggle as EventListener);
     };
-  }, [metisActivated, metisVisible, activateMetis, hideMetis, activateQryptoPersona, deactivateQryptoPersona, veniceActivated, activateVenice, deactivateVenice]);
+  }, [metisActivated, metisVisible, activateMetis, hideMetis, activateQryptoPersona, deactivateQryptoPersona, knytPersonaActivated, activateKNYTPersona, deactivateKNYTPersona, veniceActivated, activateVenice, deactivateVenice]);
 
   const handleIQubeClick = (iqubeId: string) => {
     console.log("iQube clicked:", iqubeId);
@@ -173,6 +196,12 @@ export const useSidebarLogic = () => {
         activateQryptoPersona();
       } else {
         deactivateQryptoPersona();
+      }
+    } else if (qubeName === "KNYT Persona") {
+      if (newActiveState) {
+        activateKNYTPersona();
+      } else {
+        deactivateKNYTPersona();
       }
     } else if (qubeName === "Venice") {
       if (newActiveState) {

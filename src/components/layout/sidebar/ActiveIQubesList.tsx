@@ -37,6 +37,16 @@ const ActiveIQubesList: React.FC<ActiveIQubesListProps> = ({
         </div>
       );
     }
+    if (qubeName === "KNYT Persona") {
+      return (
+        <div className="space-y-1">
+          <div className="font-semibold">KNYT Persona</div>
+          <div className="text-xs">
+            KNYT ecosystem profile with 2,800 Satoshi reward for completing LinkedIn, MetaMask, and data requirements.
+          </div>
+        </div>
+      );
+    }
     if (qubeName === "Venice") {
       return (
         <div className="space-y-1">
@@ -95,6 +105,33 @@ const ActiveIQubesList: React.FC<ActiveIQubesListProps> = ({
               </TooltipTrigger>
               <TooltipContent side={collapsed ? "right" : "top"} align="center">
                 {getTooltipContent("Qrypto Persona")}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
+
+        {activeQubes["KNYT Persona"] && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div
+                  className={cn(
+                    "flex items-center rounded-md p-2 text-sm hover:bg-accent/30 cursor-pointer",
+                    collapsed ? "justify-center" : ""
+                  )}
+                  onClick={() => {
+                    onIQubeClick("KNYT Persona");
+                    if (isMobile && toggleMobileSidebar) {
+                      toggleMobileSidebar();
+                    }
+                  }}
+                >
+                  <Database className={cn("h-5 w-5 text-purple-500", collapsed ? "" : "mr-2")} />
+                  {!collapsed && <span>KNYT Persona</span>}
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side={collapsed ? "right" : "top"} align="center">
+                {getTooltipContent("KNYT Persona")}
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>

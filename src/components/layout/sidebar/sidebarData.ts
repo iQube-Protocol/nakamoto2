@@ -1,3 +1,4 @@
+
 import { LucideIcon, Database, Settings, FolderGit2, Bot, User } from 'lucide-react';
 import CubeIcon from '../sidebar/CubeIcon';
 
@@ -44,6 +45,14 @@ export const iQubeItems: QubeItem[] = [
     icon: Database,
     href: '/settings',
     description: 'Cryptocurrency AI agent',
+  },
+  {
+    id: 'knytpersona',
+    name: 'KNYT Persona',
+    type: 'DataQube',
+    icon: Database,
+    href: '/settings',
+    description: 'KNYT ecosystem profile with 2,800 Satoshi reward',
   },
   {
     id: 'venice',
