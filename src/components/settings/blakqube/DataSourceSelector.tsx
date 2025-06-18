@@ -40,6 +40,14 @@ const LumaIcon = () => (
   </svg>
 );
 
+const MetaKnytsIcon = () => (
+  <img 
+    src="/lovable-uploads/6f817ca0-9891-417f-8e40-7fa09f63eb3b.png" 
+    alt="metaKnyts" 
+    className="h-3 w-3 object-contain"
+  />
+);
+
 const DataSourceSelector = ({ sourceKey, currentSource, iQubeType, onSourceChange }: DataSourceSelectorProps) => {
   const getAvailableSourcesForField = (key: string, type: string) => {
     // Base sources available for all fields
@@ -110,7 +118,7 @@ const DataSourceSelector = ({ sourceKey, currentSource, iQubeType, onSourceChang
             allSources.push({ 
               value: 'metaknyts', 
               label: 'metaKnyts',
-              icon: <Users className="h-3 w-3 text-indigo-500" />
+              icon: <MetaKnytsIcon />
             });
             break;
           case 'linkedin':
