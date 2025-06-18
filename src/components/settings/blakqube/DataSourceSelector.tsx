@@ -51,113 +51,258 @@ const DataSourceSelector = ({ sourceKey, currentSource, iQubeType, onSourceChang
       }
     ];
 
-    // Define which fields can be populated from which services
-    const serviceSourceMap: { [key: string]: string[] } = {
-      'First-Name': ['linkedin'],
-      'Last-Name': ['linkedin'],
-      'Profession': ['linkedin'],
-      'Local-City': ['linkedin'],
-      'Email': ['linkedin'],
-      'LinkedIn-ID': ['linkedin'],
-      'LinkedIn-Profile-URL': ['linkedin'],
-      'Twitter-Handle': ['twitter'],
-      'Telegram-Handle': ['telegram'],
-      'Discord-Handle': ['discord'],
-      'Instagram-Handle': ['instagram'],
-      'GitHub-Handle': ['manual'], // Only manual for now
-      'YouTube-ID': ['youtube'],
-      'Facebook-ID': ['facebook'],
-      'TikTok-Handle': ['tiktok'],
-      'EVM-Public-Key': ['wallet'],
-      'BTC-Public-Key': ['wallet'],
-      'Chain-IDs': ['wallet'],
-      'Wallets-of-Interest': ['wallet'],
-      'Web3-Interests': ['linkedin', 'twitter'],
-      'Tokens-of-Interest': ['manual'], // Only manual for now
-    };
+    // Check if this is KNYT Persona based on current context
+    const isKNYTPersona = window.location.pathname.includes('knyt') || 
+                         window.location.search.includes('knyt');
 
-    // Get service sources for this field
-    const serviceSources = serviceSourceMap[key] || [];
-    
-    // Add service sources to base sources
-    const allSources = [...baseSources];
-    
-    serviceSources.forEach(service => {
-      switch (service) {
-        case 'linkedin':
-          allSources.push({ 
-            value: 'linkedin', 
-            label: 'LinkedIn',
-            icon: <Linkedin className="h-3 w-3 text-blue-500" />
-          });
-          break;
-        case 'twitter':
-          allSources.push({ 
-            value: 'twitter', 
-            label: 'Twitter',
-            icon: <Twitter className="h-3 w-3 text-blue-400" />
-          });
-          break;
-        case 'telegram':
-          allSources.push({ 
-            value: 'telegram', 
-            label: 'Telegram',
-            icon: <TelegramIcon />
-          });
-          break;
-        case 'discord':
-          allSources.push({ 
-            value: 'discord', 
-            label: 'Discord',
-            icon: <DiscordIcon />
-          });
-          break;
-        case 'instagram':
-          allSources.push({ 
-            value: 'instagram', 
-            label: 'Instagram',
-            icon: <InstagramIcon />
-          });
-          break;
-        case 'youtube':
-          allSources.push({ 
-            value: 'youtube', 
-            label: 'YouTube',
-            icon: <Youtube className="h-3 w-3 text-red-500" />
-          });
-          break;
-        case 'facebook':
-          allSources.push({ 
-            value: 'facebook', 
-            label: 'Facebook',
-            icon: <Facebook className="h-3 w-3 text-blue-600" />
-          });
-          break;
-        case 'tiktok':
-          allSources.push({ 
-            value: 'tiktok', 
-            label: 'TikTok',
-            icon: <TikTokIcon />
-          });
-          break;
-        case 'luma':
-          allSources.push({ 
-            value: 'luma', 
-            label: 'Luma',
-            icon: <LumaIcon />
-          });
-          break;
-        case 'wallet':
-          allSources.push({ 
-            value: 'wallet', 
-            label: 'Wallet',
-            icon: <Wallet className="h-3 w-3 text-orange-500" />
-          });
-          break;
-      }
-    });
+    if (isKNYTPersona) {
+      // KNYT Persona specific field mappings
+      const knytFieldMappings: { [key: string]: string[] } = {
+        'First-Name': ['metaknyts'],
+        'Last-Name': ['metaknyts'],
+        'Qrypto-ID': ['metaknyts'],
+        'Profession': ['linkedin', 'manual'],
+        'Local-City': ['metaknyts'],
+        'Email': ['metaknyts'],
+        'EVM-Public-Key': ['wallet'],
+        'BTC-Public-Key': ['wallet'],
+        'ThirdWeb-Public-Key': ['thirdweb', 'manual'],
+        'LinkedIn-ID': ['linkedin'],
+        'LinkedIn-Profile-URL': ['linkedin'],
+        'Twitter-Handle': ['twitter', 'manual'],
+        'Telegram-Handle': ['telegram', 'manual'],
+        'Discord-Handle': ['discord', 'manual'],
+        'Instagram-Handle': ['instagram', 'manual'],
+        'Luma-ID': ['luma', 'manual'],
+        'YouTube-ID': ['youtube', 'manual'],
+        'Facebook-ID': ['facebook', 'manual'],
+        'TikTok-Handle': ['tiktok', 'manual'],
+        'Web3-Interests': ['manual'],
+        'Tokens-of-Interest': ['manual'],
+        'Chain-IDs': ['manual'], // Associated Public Keys
+        'KNYT-ID': ['metaknyts'],
+        'Phone-Number': ['metaknyts'],
+        'Age': ['manual'],
+        'Address': ['metaknyts'],
+        'OM-Member-Since': ['metaknyts'],
+        'OM-Tier-Status': ['metaknyts'],
+        'Metaiye-Shares-Owned': ['metaknyts'],
+        'KNYT-COYN-Owned': ['metaknyts', 'manual'],
+        'MetaKeep-Public-Key': ['metaknyts', 'manual'],
+        'Motion-Comics-Owned': ['wallet'],
+        'Paper-Comics-Owned': ['manual'],
+        'Digital-Comics-Owned': ['wallet'],
+        'KNYT-Posters-Owned': ['manual'],
+        'KNYT-Cards-Owned': ['manual'],
+        'Characters-Owned': ['manual']
+      };
 
-    return allSources;
+      const serviceSources = knytFieldMappings[key] || ['manual'];
+      
+      // Add service sources to base sources
+      const allSources = [...baseSources];
+      
+      serviceSources.forEach(service => {
+        if (service === 'manual') return; // Skip manual as it's already in base
+        
+        switch (service) {
+          case 'metaknyts':
+            allSources.push({ 
+              value: 'metaknyts', 
+              label: 'metaKnyts',
+              icon: <Users className="h-3 w-3 text-indigo-500" />
+            });
+            break;
+          case 'linkedin':
+            allSources.push({ 
+              value: 'linkedin', 
+              label: 'LinkedIn',
+              icon: <Linkedin className="h-3 w-3 text-blue-500" />
+            });
+            break;
+          case 'twitter':
+            allSources.push({ 
+              value: 'twitter', 
+              label: 'Twitter',
+              icon: <Twitter className="h-3 w-3 text-blue-400" />
+            });
+            break;
+          case 'telegram':
+            allSources.push({ 
+              value: 'telegram', 
+              label: 'Telegram',
+              icon: <TelegramIcon />
+            });
+            break;
+          case 'discord':
+            allSources.push({ 
+              value: 'discord', 
+              label: 'Discord',
+              icon: <DiscordIcon />
+            });
+            break;
+          case 'instagram':
+            allSources.push({ 
+              value: 'instagram', 
+              label: 'Instagram',
+              icon: <InstagramIcon />
+            });
+            break;
+          case 'youtube':
+            allSources.push({ 
+              value: 'youtube', 
+              label: 'YouTube',
+              icon: <Youtube className="h-3 w-3 text-red-500" />
+            });
+            break;
+          case 'facebook':
+            allSources.push({ 
+              value: 'facebook', 
+              label: 'Facebook',
+              icon: <Facebook className="h-3 w-3 text-blue-600" />
+            });
+            break;
+          case 'tiktok':
+            allSources.push({ 
+              value: 'tiktok', 
+              label: 'TikTok',
+              icon: <TikTokIcon />
+            });
+            break;
+          case 'luma':
+            allSources.push({ 
+              value: 'luma', 
+              label: 'Luma',
+              icon: <Globe className="h-3 w-3 text-green-500" />
+            });
+            break;
+          case 'wallet':
+            allSources.push({ 
+              value: 'wallet', 
+              label: 'Wallet',
+              icon: <Wallet className="h-3 w-3 text-orange-500" />
+            });
+            break;
+          case 'thirdweb':
+            allSources.push({ 
+              value: 'thirdweb', 
+              label: 'ThirdWeb',
+              icon: <Wallet className="h-3 w-3 text-purple-500" />
+            });
+            break;
+        }
+      });
+
+      return allSources;
+    } else {
+      // Default DataQube field mappings for other personas
+      const serviceSourceMap: { [key: string]: string[] } = {
+        'First-Name': ['linkedin'],
+        'Last-Name': ['linkedin'],
+        'Profession': ['linkedin'],
+        'Local-City': ['linkedin'],
+        'Email': ['linkedin'],
+        'LinkedIn-ID': ['linkedin'],
+        'LinkedIn-Profile-URL': ['linkedin'],
+        'Twitter-Handle': ['twitter'],
+        'Telegram-Handle': ['telegram'],
+        'Discord-Handle': ['discord'],
+        'Instagram-Handle': ['instagram'],
+        'GitHub-Handle': ['manual'],
+        'YouTube-ID': ['youtube'],
+        'Facebook-ID': ['facebook'],
+        'TikTok-Handle': ['tiktok'],
+        'EVM-Public-Key': ['wallet'],
+        'BTC-Public-Key': ['wallet'],
+        'Chain-IDs': ['wallet'],
+        'Wallets-of-Interest': ['wallet'],
+        'Web3-Interests': ['linkedin', 'twitter'],
+        'Tokens-of-Interest': ['manual'],
+      };
+
+      // Get service sources for this field
+      const serviceSources = serviceSourceMap[key] || [];
+      
+      // Add service sources to base sources
+      const allSources = [...baseSources];
+      
+      serviceSources.forEach(service => {
+        switch (service) {
+          case 'linkedin':
+            allSources.push({ 
+              value: 'linkedin', 
+              label: 'LinkedIn',
+              icon: <Linkedin className="h-3 w-3 text-blue-500" />
+            });
+            break;
+          case 'twitter':
+            allSources.push({ 
+              value: 'twitter', 
+              label: 'Twitter',
+              icon: <Twitter className="h-3 w-3 text-blue-400" />
+            });
+            break;
+          case 'telegram':
+            allSources.push({ 
+              value: 'telegram', 
+              label: 'Telegram',
+              icon: <TelegramIcon />
+            });
+            break;
+          case 'discord':
+            allSources.push({ 
+              value: 'discord', 
+              label: 'Discord',
+              icon: <DiscordIcon />
+            });
+            break;
+          case 'instagram':
+            allSources.push({ 
+              value: 'instagram', 
+              label: 'Instagram',
+              icon: <InstagramIcon />
+            });
+            break;
+          case 'youtube':
+            allSources.push({ 
+              value: 'youtube', 
+              label: 'YouTube',
+              icon: <Youtube className="h-3 w-3 text-red-500" />
+            });
+            break;
+          case 'facebook':
+            allSources.push({ 
+              value: 'facebook', 
+              label: 'Facebook',
+              icon: <Facebook className="h-3 w-3 text-blue-600" />
+            });
+            break;
+          case 'tiktok':
+            allSources.push({ 
+              value: 'tiktok', 
+              label: 'TikTok',
+              icon: <TikTokIcon />
+            });
+            break;
+          case 'luma':
+            allSources.push({ 
+              value: 'luma', 
+              label: 'Luma',
+              icon: <Globe className="h-3 w-3 text-green-500" />
+            });
+            break;
+          case 'wallet':
+            allSources.push({ 
+              value: 'wallet', 
+              label: 'Wallet',
+              icon: <Wallet className="h-3 w-3 text-orange-500" />
+            });
+            break;
+        }
+      });
+
+      return allSources;
+    }
   };
 
   const availableSources = getAvailableSourcesForField(sourceKey, iQubeType);

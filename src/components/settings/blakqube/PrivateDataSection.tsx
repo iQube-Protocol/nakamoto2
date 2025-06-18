@@ -106,30 +106,77 @@ const PrivateDataSection = ({
         };
       case "DataQube":
       default:
-        return {
-          "First-Name": "linkedin",
-          "Last-Name": "linkedin",
-          "Qrypto-ID": "manual",
-          "Profession": "linkedin",
-          "Local-City": "linkedin",
-          "Email": "linkedin",
-          "LinkedIn-ID": "linkedin",
-          "LinkedIn-Profile-URL": "linkedin",
-          "Twitter-Handle": "twitter",
-          "Telegram-Handle": "telegram",
-          "Discord-Handle": "discord",
-          "Instagram-Handle": "instagram",
-          "GitHub-Handle": "manual",
-          "YouTube-ID": "youtube",
-          "Facebook-ID": "facebook",
-          "TikTok-Handle": "tiktok",
-          "Web3-Interests": "manual",
-          "EVM-Public-Key": "wallet",
-          "BTC-Public-Key": "wallet",
-          "Chain-IDs": "wallet",
-          "Wallets-of-Interest": "wallet",
-          "Tokens-of-Interest": "manual"
-        };
+        // Check if this is KNYT Persona based on the iQube identifier
+        const isKNYTPersona = window.location.pathname.includes('knyt') || 
+                             sectionTitle.toLowerCase().includes('knyt');
+        
+        if (isKNYTPersona) {
+          return {
+            "First-Name": "metaknyts",
+            "Last-Name": "metaknyts", 
+            "Qrypto-ID": "metaknyts",
+            "Profession": "linkedin", // Default to linkedin, but will show both options
+            "Local-City": "metaknyts",
+            "Email": "metaknyts",
+            "EVM-Public-Key": "wallet",
+            "BTC-Public-Key": "wallet",
+            "ThirdWeb-Public-Key": "thirdweb",
+            "LinkedIn-ID": "linkedin",
+            "LinkedIn-Profile-URL": "linkedin",
+            "Twitter-Handle": "twitter",
+            "Telegram-Handle": "telegram",
+            "Discord-Handle": "discord",
+            "Instagram-Handle": "instagram",
+            "Luma-ID": "luma",
+            "YouTube-ID": "youtube",
+            "Facebook-ID": "facebook",
+            "TikTok-Handle": "tiktok",
+            "Web3-Interests": "manual",
+            "Tokens-of-Interest": "manual",
+            "Chain-IDs": "manual", // Associated Public Keys mapped to Chain-IDs
+            "KNYT-ID": "metaknyts",
+            "Phone-Number": "metaknyts",
+            "Age": "manual",
+            "Address": "metaknyts",
+            "OM-Member-Since": "metaknyts",
+            "OM-Tier-Status": "metaknyts",
+            "Metaiye-Shares-Owned": "metaknyts",
+            "KNYT-COYN-Owned": "metaknyts",
+            "MetaKeep-Public-Key": "metaknyts",
+            "Motion-Comics-Owned": "wallet",
+            "Paper-Comics-Owned": "manual",
+            "Digital-Comics-Owned": "wallet",
+            "KNYT-Posters-Owned": "manual",
+            "KNYT-Cards-Owned": "manual",
+            "Characters-Owned": "manual"
+          };
+        } else {
+          // Default DataQube mappings for Qrypto Persona
+          return {
+            "First-Name": "linkedin",
+            "Last-Name": "linkedin",
+            "Qrypto-ID": "manual",
+            "Profession": "linkedin",
+            "Local-City": "linkedin",
+            "Email": "linkedin",
+            "LinkedIn-ID": "linkedin",
+            "LinkedIn-Profile-URL": "linkedin",
+            "Twitter-Handle": "twitter",
+            "Telegram-Handle": "telegram",
+            "Discord-Handle": "discord",
+            "Instagram-Handle": "instagram",
+            "GitHub-Handle": "manual",
+            "YouTube-ID": "youtube",
+            "Facebook-ID": "facebook",
+            "TikTok-Handle": "tiktok",
+            "Web3-Interests": "manual",
+            "EVM-Public-Key": "wallet",
+            "BTC-Public-Key": "wallet",
+            "Chain-IDs": "wallet",
+            "Wallets-of-Interest": "wallet",
+            "Tokens-of-Interest": "manual"
+          };
+        }
     }
   }
 
@@ -185,6 +232,10 @@ const PrivateDataSection = ({
             return <Facebook className="h-3 w-3 text-blue-600" />;
           case 'tiktok':
             return <TikTokIcon />;
+          case 'thirdweb':
+            return <Wallet className="h-3 w-3 text-purple-500" />;
+          case 'metaknyts':
+            return <Users className="h-3 w-3 text-indigo-500" />;
           case 'manual':
           default:
             return <User className="h-3 w-3 text-gray-500" />;
