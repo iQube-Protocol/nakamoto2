@@ -4,7 +4,6 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import DataSourceSelector from './DataSourceSelector';
-import ReadOnlyField from './ReadOnlyField';
 
 interface PrivateDataEditorProps {
   editingData: { [key: string]: string | string[] };
@@ -37,7 +36,6 @@ const PrivateDataEditor = ({
   ];
 
   const getSourceIcon = (key: string) => {
-    // This would be passed from parent, but for now we'll use a simple implementation
     return <span className="text-xs">📊</span>;
   };
 
@@ -53,12 +51,14 @@ const PrivateDataEditor = ({
             {isReadOnlyField(key) ? (
               <div className="flex items-center justify-between py-1 text-xs border-b border-gray-100">
                 <div className="flex items-center space-x-2 flex-1 min-w-0">
-                  {getSourceIcon(key)}
-                  <span className="font-medium text-gray-600 truncate">{key}:</span>
-                  <span className="truncate text-gray-500 italic">
+                  <span className="font-medium text-white truncate">{key}:</span>
+                  <span className="truncate text-gray-300 flex-1">
                     {Array.isArray(value) ? value.join(', ') : value || 'Not set'}
                   </span>
                   <span className="text-xs text-gray-400 ml-1">(Read-only)</span>
+                </div>
+                <div className="ml-2">
+                  {getSourceIcon(key)}
                 </div>
               </div>
             ) : (
