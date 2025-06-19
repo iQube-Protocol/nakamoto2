@@ -4,6 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import DataSourceSelector from '../DataSourceSelector';
 import ReadOnlyInputWithTooltip from '../ReadOnlyInputWithTooltip';
+import DropdownRadioSelector from './DropdownRadioSelector';
 
 interface PrivateDataFormProps {
   editingData: { [key: string]: string | string[] };
@@ -28,12 +29,26 @@ const PrivateDataForm = ({
   formatValue,
   isReadOnlyField
 }: PrivateDataFormProps) => {
+  
+  // Define the KNYT fields that should use dropdown radio selectors
+  const knytDropdownFields = {
+    'Paper-Comics-Owned': Array.from({length: 13}, (_, i) => `Episode #${i}`),
+    'Motion-Comics-Owned': Array.from({length: 13}, (_, i) => `Episode #${i}`),
+    'Digital-Comics-Owned': Array.from({length: 13}, (_, i) => `Episode #${i}`),
+    'KNYT-Posters-Owned': Array.from({length: 13}, (_, i) => `#${i}`),
+    'Characters-Owned': Array.from({length: 13}, (_, i) => `#${i}`),
+    'KNYT-Cards-Owned': Array.from({length: 13}, (_, i) => `Episode #${i}`)
+  };
+
+  const isKNYTDropdownField = (key: string) => {
+    return isKNYTPersona && knytDropdownFields.hasOwnProperty(key);
+  };
+
   return (
     <div className="max-h-[220px] overflow-y-auto pr-2">
       {Object.entries(editingData).map(([key, value]) => (
         <div key={key} className="space-y-1 border-b pb-2 mb-2">
           <div className="flex justify-between items-center">
-            <Label className="text-sm font-medium text-white">{key}</Label>
             <DataSourceSelector 
               sourceKey={key}
               currentSource={dataSources[key] || 'manual'}
@@ -42,23 +57,41 @@ const PrivateDataForm = ({
               isKNYTPersona={isKNYTPersona}
             />
           </div>
-          {isReadOnlyField(key) ? (
-            <ReadOnlyInputWithTooltip 
-              value={formatValue(key, value)}
-              className="h-7 text-sm"
+          
+          {isKNYTDropdownField(key) ? (
+            <DropdownRadioSelector
+              label={key}
+              value={value}
+              onChange={(newValue) => onInputChange(key, newValue)}
+              options={knytDropdownFields[key as keyof typeof knytDropdownFields]}
+              fieldKey={key}
             />
+          ) : isReadOnlyField(key) ? (
+            <>
+              <Label className="text-sm font-medium text-white">{key}</Label>
+              <ReadOnlyInputWithTooltip 
+                value={formatValue(key, value)}
+                className="h-7 text-sm"
+              />
+            </>
           ) : Array.isArray(value) ? (
-            <Input
-              value={value.join(', ')}
-              onChange={(e) => onArrayInputChange(key, e.target.value)}
-              className="h-7 text-sm"
-            />
+            <>
+              <Label className="text-sm font-medium text-white">{key}</Label>
+              <Input
+                value={value.join(', ')}
+                onChange={(e) => onArrayInputChange(key, e.target.value)}
+                className="h-7 text-sm"
+              />
+            </>
           ) : (
-            <Input
-              value={value as string}
-              onChange={(e) => onInputChange(key, e.target.value)}
-              className="h-7 text-sm"
-            />
+            <>
+              <Label className="text-sm font-medium text-white">{key}</Label>
+              <Input
+                value={value as string}
+                onChange={(e) => onInputChange(key, e.target.value)}
+                className="h-7 text-sm"
+              />
+            </>
           )}
         </div>
       ))}
