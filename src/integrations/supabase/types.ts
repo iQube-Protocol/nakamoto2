@@ -246,6 +246,7 @@ export type Database = {
           "ThirdWeb-Public-Key": string | null
           "TikTok-Handle": string | null
           "Tokens-of-Interest": string[] | null
+          "Total-Invested": string | null
           "Twitter-Handle": string | null
           updated_at: string
           user_id: string
@@ -287,6 +288,7 @@ export type Database = {
           "ThirdWeb-Public-Key"?: string | null
           "TikTok-Handle"?: string | null
           "Tokens-of-Interest"?: string[] | null
+          "Total-Invested"?: string | null
           "Twitter-Handle"?: string | null
           updated_at?: string
           user_id: string
@@ -328,6 +330,7 @@ export type Database = {
           "ThirdWeb-Public-Key"?: string | null
           "TikTok-Handle"?: string | null
           "Tokens-of-Interest"?: string[] | null
+          "Total-Invested"?: string | null
           "Twitter-Handle"?: string | null
           updated_at?: string
           user_id?: string

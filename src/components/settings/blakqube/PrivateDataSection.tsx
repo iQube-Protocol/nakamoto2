@@ -147,6 +147,7 @@ const PrivateDataSection = ({
             "OM-Member-Since": "metaknyts",
             "OM-Tier-Status": "metaknyts",
             "Metaiye-Shares-Owned": "metaknyts",
+            "Total-Invested": "manual",
             "KNYT-COYN-Owned": "metaknyts",
             "MetaKeep-Public-Key": "metaknyts",
             "Motion-Comics-Owned": "wallet",

@@ -53,6 +53,7 @@ export type KNYTPersonaTable = {
     "OM-Member-Since": string;
     "OM-Tier-Status": string;
     "Metaiye-Shares-Owned": string;
+    "Total-Invested": string;
     "KNYT-COYN-Owned": string;
     "Motion-Comics-Owned": string;
     "Paper-Comics-Owned": string;

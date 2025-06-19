@@ -1,58 +1,127 @@
-
 import { KNYTPersona, QryptoPersona, BlakQube } from '@/lib/types';
 import { PrivateData } from './types';
 
-export const privateDataToKNYTPersona = (data: PrivateData): Partial<KNYTPersona> => {
-  const getValue = (key: string): string => {
-    const value = data[key];
-    return Array.isArray(value) ? value.join(', ') : (value || "");
-  };
-
-  const getArrayValue = (key: string): string[] => {
-    const value = data[key];
-    if (Array.isArray(value)) return value;
-    if (typeof value === 'string' && value.trim()) {
-      return value.split(',').map(item => item.trim()).filter(Boolean);
-    }
-    return [];
-  };
-
+// KNYT Persona transformers
+export const knytPersonaToPrivateData = (persona: KNYTPersona): PrivateData => {
   return {
-    "First-Name": getValue("First-Name"),
-    "Last-Name": getValue("Last-Name"),
-    "KNYT-ID": getValue("KNYT-ID"),
-    "Profession": getValue("Profession"),
-    "Local-City": getValue("Local-City"),
-    "Email": getValue("Email"),
-    "Phone-Number": getValue("Phone-Number"),
-    "Age": getValue("Age"),
-    "Address": getValue("Address"),
-    "EVM-Public-Key": getValue("EVM-Public-Key"),
-    "BTC-Public-Key": getValue("BTC-Public-Key"),
-    "ThirdWeb-Public-Key": getValue("ThirdWeb-Public-Key"),
-    "MetaKeep-Public-Key": getValue("MetaKeep-Public-Key"),
-    "Chain-IDs": getArrayValue("Chain-IDs"),
-    "Web3-Interests": getArrayValue("Web3-Interests"),
-    "Tokens-of-Interest": getArrayValue("Tokens-of-Interest"),
-    "LinkedIn-ID": getValue("LinkedIn-ID"),
-    "LinkedIn-Profile-URL": getValue("LinkedIn-Profile-URL"),
-    "Twitter-Handle": getValue("Twitter-Handle"),
-    "Telegram-Handle": getValue("Telegram-Handle"),
-    "Discord-Handle": getValue("Discord-Handle"),
-    "Instagram-Handle": getValue("Instagram-Handle"),
-    "YouTube-ID": getValue("YouTube-ID"),
-    "Facebook-ID": getValue("Facebook-ID"),
-    "TikTok-Handle": getValue("TikTok-Handle"),
-    "OM-Member-Since": getValue("OM-Member-Since"),
-    "OM-Tier-Status": getValue("OM-Tier-Status"),
-    "Metaiye-Shares-Owned": getValue("Metaiye-Shares-Owned"),
-    "KNYT-COYN-Owned": getValue("KNYT-COYN-Owned"),
-    "Motion-Comics-Owned": getValue("Motion-Comics-Owned"),
-    "Paper-Comics-Owned": getValue("Paper-Comics-Owned"),
-    "Digital-Comics-Owned": getValue("Digital-Comics-Owned"),
-    "KNYT-Posters-Owned": getValue("KNYT-Posters-Owned"),
-    "KNYT-Cards-Owned": getValue("KNYT-Cards-Owned"),
-    "Characters-Owned": getValue("Characters-Owned")
+    "First-Name": persona["First-Name"] || "",
+    "Last-Name": persona["Last-Name"] || "",
+    "KNYT-ID": persona["KNYT-ID"] || "",
+    "Profession": persona["Profession"] || "",
+    "Local-City": persona["Local-City"] || "",
+    "Email": persona["Email"] || "",
+    "Phone-Number": persona["Phone-Number"] || "",
+    "Age": persona["Age"] || "",
+    "Address": persona["Address"] || "",
+    "EVM-Public-Key": persona["EVM-Public-Key"] || "",
+    "BTC-Public-Key": persona["BTC-Public-Key"] || "",
+    "ThirdWeb-Public-Key": persona["ThirdWeb-Public-Key"] || "",
+    "MetaKeep-Public-Key": persona["MetaKeep-Public-Key"] || "",
+    "Chain-IDs": persona["Chain-IDs"] || [],
+    "Web3-Interests": persona["Web3-Interests"] || [],
+    "Tokens-of-Interest": persona["Tokens-of-Interest"] || [],
+    "LinkedIn-ID": persona["LinkedIn-ID"] || "",
+    "LinkedIn-Profile-URL": persona["LinkedIn-Profile-URL"] || "",
+    "Twitter-Handle": persona["Twitter-Handle"] || "",
+    "Telegram-Handle": persona["Telegram-Handle"] || "",
+    "Discord-Handle": persona["Discord-Handle"] || "",
+    "Instagram-Handle": persona["Instagram-Handle"] || "",
+    "YouTube-ID": persona["YouTube-ID"] || "",
+    "Facebook-ID": persona["Facebook-ID"] || "",
+    "TikTok-Handle": persona["TikTok-Handle"] || "",
+    "OM-Member-Since": persona["OM-Member-Since"] || "",
+    "OM-Tier-Status": persona["OM-Tier-Status"] || "",
+    "Metaiye-Shares-Owned": persona["Metaiye-Shares-Owned"] || "",
+    "Total-Invested": persona["Total-Invested"] || "",
+    "KNYT-COYN-Owned": persona["KNYT-COYN-Owned"] || "",
+    "Motion-Comics-Owned": persona["Motion-Comics-Owned"] || "",
+    "Paper-Comics-Owned": persona["Paper-Comics-Owned"] || "",
+    "Digital-Comics-Owned": persona["Digital-Comics-Owned"] || "",
+    "KNYT-Posters-Owned": persona["KNYT-Posters-Owned"] || "",
+    "KNYT-Cards-Owned": persona["KNYT-Cards-Owned"] || "",
+    "Characters-Owned": persona["Characters-Owned"] || ""
+  };
+};
+
+export const privateDataToKNYTPersona = (data: PrivateData): Partial<KNYTPersona> => {
+  return {
+    "First-Name": (data["First-Name"] as string) || "",
+    "Last-Name": (data["Last-Name"] as string) || "",
+    "KNYT-ID": (data["KNYT-ID"] as string) || "",
+    "Profession": (data["Profession"] as string) || "",
+    "Local-City": (data["Local-City"] as string) || "",
+    "Email": (data["Email"] as string) || "",
+    "Phone-Number": (data["Phone-Number"] as string) || "",
+    "Age": (data["Age"] as string) || "",
+    "Address": (data["Address"] as string) || "",
+    "EVM-Public-Key": (data["EVM-Public-Key"] as string) || "",
+    "BTC-Public-Key": (data["BTC-Public-Key"] as string) || "",
+    "ThirdWeb-Public-Key": (data["ThirdWeb-Public-Key"] as string) || "",
+    "MetaKeep-Public-Key": (data["MetaKeep-Public-Key"] as string) || "",
+    "Chain-IDs": Array.isArray(data["Chain-IDs"]) ? data["Chain-IDs"] as string[] : [],
+    "Web3-Interests": Array.isArray(data["Web3-Interests"]) ? data["Web3-Interests"] as string[] : [],
+    "Tokens-of-Interest": Array.isArray(data["Tokens-of-Interest"]) ? data["Tokens-of-Interest"] as string[] : [],
+    "LinkedIn-ID": (data["LinkedIn-ID"] as string) || "",
+    "LinkedIn-Profile-URL": (data["LinkedIn-Profile-URL"] as string) || "",
+    "Twitter-Handle": (data["Twitter-Handle"] as string) || "",
+    "Telegram-Handle": (data["Telegram-Handle"] as string) || "",
+    "Discord-Handle": (data["Discord-Handle"] as string) || "",
+    "Instagram-Handle": (data["Instagram-Handle"] as string) || "",
+    "YouTube-ID": (data["YouTube-ID"] as string) || "",
+    "Facebook-ID": (data["Facebook-ID"] as string) || "",
+    "TikTok-Handle": (data["TikTok-Handle"] as string) || "",
+    "OM-Member-Since": (data["OM-Member-Since"] as string) || "",
+    "OM-Tier-Status": (data["OM-Tier-Status"] as string) || "",
+    "Metaiye-Shares-Owned": (data["Metaiye-Shares-Owned"] as string) || "",
+    "Total-Invested": (data["Total-Invested"] as string) || "",
+    "KNYT-COYN-Owned": (data["KNYT-COYN-Owned"] as string) || "",
+    "Motion-Comics-Owned": (data["Motion-Comics-Owned"] as string) || "",
+    "Paper-Comics-Owned": (data["Paper-Comics-Owned"] as string) || "",
+    "Digital-Comics-Owned": (data["Digital-Comics-Owned"] as string) || "",
+    "KNYT-Posters-Owned": (data["KNYT-Posters-Owned"] as string) || "",
+    "KNYT-Cards-Owned": (data["KNYT-Cards-Owned"] as string) || "",
+    "Characters-Owned": (data["Characters-Owned"] as string) || ""
+  };
+};
+
+export const createDefaultKNYTPersona = (userEmail?: string | null): Partial<KNYTPersona> => {
+  return {
+    "First-Name": "",
+    "Last-Name": "",
+    "KNYT-ID": "",
+    "Profession": "",
+    "Local-City": "",
+    "Email": userEmail || "",
+    "Phone-Number": "",
+    "Age": "",
+    "Address": "",
+    "EVM-Public-Key": "",
+    "BTC-Public-Key": "",
+    "ThirdWeb-Public-Key": "",
+    "MetaKeep-Public-Key": "",
+    "Chain-IDs": [],
+    "Web3-Interests": [],
+    "Tokens-of-Interest": [],
+    "LinkedIn-ID": "",
+    "LinkedIn-Profile-URL": "",
+    "Twitter-Handle": "",
+    "Telegram-Handle": "",
+    "Discord-Handle": "",
+    "Instagram-Handle": "",
+    "YouTube-ID": "",
+    "Facebook-ID": "",
+    "TikTok-Handle": "",
+    "OM-Member-Since": "",
+    "OM-Tier-Status": "",
+    "Metaiye-Shares-Owned": "",
+    "Total-Invested": "",
+    "KNYT-COYN-Owned": "",
+    "Motion-Comics-Owned": "",
+    "Paper-Comics-Owned": "",
+    "Digital-Comics-Owned": "",
+    "KNYT-Posters-Owned": "",
+    "KNYT-Cards-Owned": "",
+    "Characters-Owned": ""
   };
 };
 
@@ -94,46 +163,6 @@ export const privateDataToQryptoPersona = (data: PrivateData): Partial<QryptoPer
     "YouTube-ID": getValue("YouTube-ID"),
     "Facebook-ID": getValue("Facebook-ID"),
     "TikTok-Handle": getValue("TikTok-Handle")
-  };
-};
-
-export const knytPersonaToPrivateData = (persona: KNYTPersona): PrivateData => {
-  return {
-    "First-Name": persona["First-Name"] || "",
-    "Last-Name": persona["Last-Name"] || "",
-    "KNYT-ID": persona["KNYT-ID"] || "",
-    "Profession": persona["Profession"] || "",
-    "Local-City": persona["Local-City"] || "",
-    "Email": persona["Email"] || "",
-    "Phone-Number": persona["Phone-Number"] || "",
-    "Age": persona["Age"] || "",
-    "Address": persona["Address"] || "",
-    "EVM-Public-Key": persona["EVM-Public-Key"] || "",
-    "BTC-Public-Key": persona["BTC-Public-Key"] || "",
-    "ThirdWeb-Public-Key": persona["ThirdWeb-Public-Key"] || "",
-    "MetaKeep-Public-Key": persona["MetaKeep-Public-Key"] || "",
-    "Chain-IDs": persona["Chain-IDs"] || [],
-    "Web3-Interests": persona["Web3-Interests"] || [],
-    "Tokens-of-Interest": persona["Tokens-of-Interest"] || [],
-    "LinkedIn-ID": persona["LinkedIn-ID"] || "",
-    "LinkedIn-Profile-URL": persona["LinkedIn-Profile-URL"] || "",
-    "Twitter-Handle": persona["Twitter-Handle"] || "",
-    "Telegram-Handle": persona["Telegram-Handle"] || "",
-    "Discord-Handle": persona["Discord-Handle"] || "",
-    "Instagram-Handle": persona["Instagram-Handle"] || "",
-    "YouTube-ID": persona["YouTube-ID"] || "",
-    "Facebook-ID": persona["Facebook-ID"] || "",
-    "TikTok-Handle": persona["TikTok-Handle"] || "",
-    "OM-Member-Since": persona["OM-Member-Since"] || "",
-    "OM-Tier-Status": persona["OM-Tier-Status"] || "",
-    "Metaiye-Shares-Owned": persona["Metaiye-Shares-Owned"] || "",
-    "KNYT-COYN-Owned": persona["KNYT-COYN-Owned"] || "",
-    "Motion-Comics-Owned": persona["Motion-Comics-Owned"] || "",
-    "Paper-Comics-Owned": persona["Paper-Comics-Owned"] || "",
-    "Digital-Comics-Owned": persona["Digital-Comics-Owned"] || "",
-    "KNYT-Posters-Owned": persona["KNYT-Posters-Owned"] || "",
-    "KNYT-Cards-Owned": persona["KNYT-Cards-Owned"] || "",
-    "Characters-Owned": persona["Characters-Owned"] || ""
   };
 };
 
@@ -219,46 +248,6 @@ export const blakQubeToPrivateData = (blakQube: BlakQube): PrivateData => {
     "KNYT-Posters-Owned": blakQube["KNYT-Posters-Owned"] || "",
     "KNYT-Cards-Owned": blakQube["KNYT-Cards-Owned"] || "",
     "Characters-Owned": blakQube["Characters-Owned"] || ""
-  };
-};
-
-export const createDefaultKNYTPersona = (email?: string): Partial<KNYTPersona> => {
-  return {
-    "First-Name": "",
-    "Last-Name": "",
-    "KNYT-ID": "",
-    "Profession": "",
-    "Local-City": "",
-    "Email": email || "",
-    "Phone-Number": "",
-    "Age": "",
-    "Address": "",
-    "EVM-Public-Key": "",
-    "BTC-Public-Key": "",
-    "ThirdWeb-Public-Key": "",
-    "MetaKeep-Public-Key": "",
-    "Chain-IDs": [],
-    "Web3-Interests": [],
-    "Tokens-of-Interest": [],
-    "LinkedIn-ID": "",
-    "LinkedIn-Profile-URL": "",
-    "Twitter-Handle": "",
-    "Telegram-Handle": "",
-    "Discord-Handle": "",
-    "Instagram-Handle": "",
-    "YouTube-ID": "",
-    "Facebook-ID": "",
-    "TikTok-Handle": "",
-    "OM-Member-Since": "",
-    "OM-Tier-Status": "",
-    "Metaiye-Shares-Owned": "",
-    "KNYT-COYN-Owned": "",
-    "Motion-Comics-Owned": "",
-    "Paper-Comics-Owned": "",
-    "Digital-Comics-Owned": "",
-    "KNYT-Posters-Owned": "",
-    "KNYT-Cards-Owned": "",
-    "Characters-Owned": ""
   };
 };
 
