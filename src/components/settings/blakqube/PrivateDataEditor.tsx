@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -168,7 +169,7 @@ const PrivateDataEditor = ({
         {Object.entries(editingData).map(([key, value]) => (
           <div key={key} className="space-y-1 border-b pb-2 mb-2">
             <div className="flex justify-between items-center">
-              <Label className="text-xs font-medium text-white">{key}</Label>
+              <Label className="text-sm font-medium text-white">{key}</Label>
               <DataSourceSelector 
                 sourceKey={key}
                 currentSource={dataSources[key] || 'manual'}
@@ -180,19 +181,19 @@ const PrivateDataEditor = ({
             {isReadOnlyField(key) ? (
               <ReadOnlyInputWithTooltip 
                 value={formatValue(key, value)}
-                className="h-7 text-xs"
+                className="h-7 text-sm"
               />
             ) : Array.isArray(value) ? (
               <Input
                 value={value.join(', ')}
                 onChange={(e) => handleArrayInputChange(key, e.target.value)}
-                className="h-7 text-xs"
+                className="h-7 text-sm"
               />
             ) : (
               <Input
                 value={value as string}
                 onChange={(e) => handleInputChange(key, e.target.value)}
-                className="h-7 text-xs"
+                className="h-7 text-sm"
               />
             )}
           </div>
