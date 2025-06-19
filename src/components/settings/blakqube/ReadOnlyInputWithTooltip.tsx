@@ -18,7 +18,7 @@ const ReadOnlyInputWithTooltip = ({ value, className }: ReadOnlyInputWithTooltip
             <Input
               value={value}
               readOnly
-              className={`${className} bg-gray-50 cursor-not-allowed pr-8`}
+              className={`${className} bg-gray-700 text-gray-100 cursor-not-allowed pr-8 border-gray-600`}
             />
             <Lock className="absolute right-2 top-1/2 transform -translate-y-1/2 h-3 w-3 text-gray-400" />
           </div>
