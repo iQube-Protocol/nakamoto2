@@ -92,7 +92,7 @@ const handler = async (req: Request): Promise<Response> => {
         const emailData = {
           Messages: [{
             From: {
-              Email: "noreply@yourdomain.com", // Replace with your verified sender email
+              Email: "hello@trial-z3m5jgrmk8x4dpyo.mlsender.net", // Mailjet trial sender
               Name: "Agent Nakamoto"
             },
             To: [{
