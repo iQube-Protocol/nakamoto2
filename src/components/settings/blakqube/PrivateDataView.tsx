@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { Info } from 'lucide-react';
@@ -29,10 +30,12 @@ const PrivateDataView = ({
             <span className="font-medium text-white text-sm">
               {key}
             </span>
-            <span className="text-muted-foreground truncate max-w-[60%] text-right flex items-center justify-end text-sm">
-              {formatDisplayValue(key, value)}
-              <span className="ml-1.5">{getSourceIcon(key)}</span>
-            </span>
+            <div className="text-muted-foreground truncate max-w-[60%] text-right flex items-center justify-end text-sm">
+              <span className="mr-1.5">{formatDisplayValue(key, value)}</span>
+              <div className="flex items-center justify-center w-4 h-4 flex-shrink-0">
+                {getSourceIcon(key)}
+              </div>
+            </div>
           </div>)}
       </div>
       <div className="flex justify-between pt-2">
