@@ -272,6 +272,7 @@ const PrivateDataSection = ({
               privateData={privateData} 
               onEdit={() => setIsEditing(true)}
               getSourceIcon={getSourceIcon}
+              isKNYTPersona={isKNYTPersona}
             />
           ) : (
             <PrivateDataEditor 
