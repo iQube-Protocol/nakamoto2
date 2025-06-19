@@ -75,16 +75,18 @@ export const fetchBlakQubeFromDB = async (userId: string): Promise<BlakQube | nu
   // Fallback: try to construct from new tables
   const knytPersona = await fetchKNYTPersonaFromDB(userId);
   if (knytPersona) {
-    // Convert KNYT persona to legacy format
+    // Convert KNYT persona to legacy format with all required BlakQube fields
     return {
       ...knytPersona,
-      "Wallets-of-Interest": [] // KNYT doesn't have this field
+      "Wallets-of-Interest": [], // KNYT doesn't have this field
+      "GitHub-Handle": "", // KNYT doesn't have this field
+      "Qrypto-ID": "" // KNYT personas don't have Qrypto-ID
     } as BlakQube;
   }
   
   const qryptoPersona = await fetchQryptoPersonaFromDB(userId);
   if (qryptoPersona) {
-    // Convert Qrypto persona to legacy format
+    // Convert Qrypto persona to legacy format with all required BlakQube fields
     return {
       ...qryptoPersona,
       "KNYT-ID": "",
@@ -96,6 +98,7 @@ export const fetchBlakQubeFromDB = async (userId: string): Promise<BlakQube | nu
       "OM-Member-Since": "",
       "OM-Tier-Status": "",
       "Metaiye-Shares-Owned": "",
+      "Total-Invested": "",
       "KNYT-COYN-Owned": "",
       "Motion-Comics-Owned": "",
       "Paper-Comics-Owned": "",
