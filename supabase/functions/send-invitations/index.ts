@@ -67,33 +67,94 @@ const handler = async (req: Request): Promise<Response> => {
     const errors: string[] = [];
     let successCount = 0;
 
-    // For now, we'll just log the invitation details
-    // In a real implementation, you would integrate with an email service like Resend
+    // Get Mailjet credentials
+    const mailjetApiKey = Deno.env.get('MAILJET_API_KEY');
+    const mailjetSecretKey = Deno.env.get('MAILJET_SECRET_KEY');
+    
+    if (!mailjetApiKey || !mailjetSecretKey) {
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          errors: ['Mailjet API credentials not configured. Please add MAILJET_API_KEY and MAILJET_SECRET_KEY to your Supabase secrets.']
+        }),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
+    // Send emails using Mailjet
     for (const invitation of invitations) {
       try {
-        const invitationUrl = `${supabaseUrl.replace('supabase.co', 'vercel.app')}/signup?token=${invitation.invitation_token}`;
+        const invitationUrl = `${supabaseUrl.replace('.supabase.co', '.lovable.app')}/invited-signup?token=${invitation.invitation_token}`;
         
-        console.log(`Would send invitation email to: ${invitation.email}`);
-        console.log(`Invitation URL: ${invitationUrl}`);
-        console.log(`Persona Type: ${invitation.persona_type}`);
-        
-        // TODO: Integrate with email service
-        // Example with Resend:
-        /*
-        const emailResponse = await resend.emails.send({
-          from: "Agent Nakamoto <invitations@yourdomain.com>",
-          to: [invitation.email],
-          subject: "You're invited to join Agent Nakamoto",
-          html: `
-            <h1>Welcome to Agent Nakamoto!</h1>
-            <p>You've been invited to create your ${invitation.persona_type} persona account.</p>
-            <p><a href="${invitationUrl}">Click here to complete your signup</a></p>
-            <p>This invitation expires in 30 days.</p>
-          `,
+        const emailData = {
+          Messages: [{
+            From: {
+              Email: "noreply@yourdomain.com", // Replace with your verified sender email
+              Name: "Agent Nakamoto"
+            },
+            To: [{
+              Email: invitation.email,
+              Name: invitation.email.split('@')[0]
+            }],
+            Subject: `You're invited to join Agent Nakamoto as a ${invitation.persona_type} persona`,
+            HTMLPart: `
+              <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto; padding: 20px;">
+                <h1 style="color: #333; text-align: center;">Welcome to Agent Nakamoto!</h1>
+                <p style="font-size: 16px; line-height: 1.6; color: #555;">
+                  You've been invited to create your <strong>${invitation.persona_type.toUpperCase()}</strong> persona account on our platform.
+                </p>
+                <div style="text-align: center; margin: 30px 0;">
+                  <a href="${invitationUrl}" 
+                     style="background-color: #007bff; color: white; padding: 15px 30px; text-decoration: none; border-radius: 5px; display: inline-block; font-weight: bold;">
+                    Complete Your Signup
+                  </a>
+                </div>
+                <p style="font-size: 14px; color: #666; text-align: center;">
+                  This invitation expires in 30 days. If you didn't expect this invitation, you can safely ignore this email.
+                </p>
+                <hr style="border: none; border-top: 1px solid #eee; margin: 20px 0;">
+                <p style="font-size: 12px; color: #999; text-align: center;">
+                  Agent Nakamoto Platform
+                </p>
+              </div>
+            `,
+            TextPart: `
+              Welcome to Agent Nakamoto!
+              
+              You've been invited to create your ${invitation.persona_type.toUpperCase()} persona account.
+              
+              Complete your signup here: ${invitationUrl}
+              
+              This invitation expires in 30 days.
+              
+              If you didn't expect this invitation, you can safely ignore this email.
+            `
+          }]
+        };
+
+        const response = await fetch('https://api.mailjet.com/v3.1/send', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Basic ${btoa(`${mailjetApiKey}:${mailjetSecretKey}`)}`
+          },
+          body: JSON.stringify(emailData)
         });
-        */
-        
+
+        if (!response.ok) {
+          const errorData = await response.text();
+          console.error(`Error sending email to ${invitation.email}:`, errorData);
+          errors.push(`Failed to send to ${invitation.email}: ${response.status}`);
+          continue;
+        }
+
+        const result = await response.json();
+        console.log(`Email sent successfully to ${invitation.email}:`, result);
         successCount++;
+
       } catch (error) {
         console.error(`Error processing invitation for ${invitation.email}:`, error);
         errors.push(`Failed to send to ${invitation.email}`);
@@ -105,7 +166,7 @@ const handler = async (req: Request): Promise<Response> => {
         success: successCount > 0,
         errors,
         sent: successCount,
-        message: `Would send ${successCount} invitation emails (email integration needed)`
+        message: `Successfully sent ${successCount} invitation emails${errors.length > 0 ? ` (${errors.length} failed)` : ''}`
       }),
       {
         status: 200,
