@@ -130,19 +130,29 @@ class InvitationService {
 
   // Parse CSV content into invitation data
   parseCSV(csvContent: string, personaType: 'knyt' | 'qrypto'): InvitationData[] {
+    console.log('Starting CSV parsing with content:', csvContent.substring(0, 200));
+    
     const lines = csvContent.trim().split('\n');
     if (lines.length < 2) {
       throw new Error('CSV must have at least a header row and one data row');
     }
 
-    const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+    // More flexible CSV parsing to handle different formats
+    const headers = this.parseCSVLine(lines[0]);
     const invitations: InvitationData[] = [];
 
+    console.log('Parsed headers:', headers);
+
     for (let i = 1; i < lines.length; i++) {
-      const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
+      const line = lines[i].trim();
+      if (!line) continue; // Skip empty lines
+      
+      const values = this.parseCSVLine(line);
+      
+      console.log(`Processing row ${i}: ${values.length} values vs ${headers.length} headers`);
       
       if (values.length !== headers.length) {
-        console.warn(`Skipping row ${i + 1}: column count mismatch`);
+        console.warn(`Skipping row ${i + 1}: column count mismatch (${values.length} vs ${headers.length})`);
         continue;
       }
 
@@ -153,28 +163,66 @@ class InvitationService {
       headers.forEach((header, index) => {
         const value = values[index];
         
-        if (header.toLowerCase().includes('email')) {
+        // Find email field - be more flexible with column names
+        if (header.toLowerCase().includes('email') || header.toLowerCase() === 'e-mail') {
           email = value;
         }
         
-        // Handle array fields
+        // Handle array fields for specific columns
         if (['Chain-IDs', 'Web3-Interests', 'Tokens-of-Interest', 'Wallets-of-Interest'].includes(header)) {
-          personaData[header] = value ? value.split(';').map(v => v.trim()) : [];
+          personaData[header] = value ? value.split(';').map(v => v.trim()).filter(v => v) : [];
         } else {
           personaData[header] = value || '';
         }
       });
 
-      if (email) {
+      if (email && email.includes('@')) {
         invitations.push({
-          email,
+          email: email.toLowerCase().trim(),
           personaType,
           personaData
         });
+        console.log(`Added invitation for: ${email}`);
+      } else {
+        console.warn(`Skipping row ${i + 1}: no valid email found (got: "${email}")`);
       }
     }
 
+    console.log(`Parsed ${invitations.length} invitations from CSV`);
     return invitations;
+  }
+
+  // Helper method to parse CSV line handling quoted values
+  private parseCSVLine(line: string): string[] {
+    const result: string[] = [];
+    let current = '';
+    let inQuotes = false;
+    
+    for (let i = 0; i < line.length; i++) {
+      const char = line[i];
+      
+      if (char === '"') {
+        if (inQuotes && line[i + 1] === '"') {
+          // Handle escaped quote
+          current += '"';
+          i++; // Skip next quote
+        } else {
+          // Toggle quote state
+          inQuotes = !inQuotes;
+        }
+      } else if (char === ',' && !inQuotes) {
+        // End of field
+        result.push(current.trim());
+        current = '';
+      } else {
+        current += char;
+      }
+    }
+    
+    // Add the last field
+    result.push(current.trim());
+    
+    return result;
   }
 
   // Get invitation by token (for signup flow)
