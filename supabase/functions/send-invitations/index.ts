@@ -88,7 +88,8 @@ const handler = async (req: Request): Promise<Response> => {
     // Send emails using Mailjet
     for (const invitation of invitations) {
       try {
-        const invitationUrl = `${supabaseUrl.replace('.supabase.co', '.lovable.app')}/invited-signup?token=${invitation.invitation_token}`;
+        // Use the preview URL for now - you can change this to your custom domain later
+        const invitationUrl = `https://preview--nakamoto2.lovable.app/invited-signup?token=${invitation.invitation_token}`;
         
         const emailData = {
           Messages: [{
