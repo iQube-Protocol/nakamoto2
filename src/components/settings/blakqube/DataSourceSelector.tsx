@@ -49,6 +49,8 @@ const MetaKnytsIcon = () => (
 );
 
 const DataSourceSelector = ({ sourceKey, currentSource, iQubeType, onSourceChange, isKNYTPersona = false }: DataSourceSelectorProps) => {
+  console.log("DataSourceSelector - sourceKey:", sourceKey, "isKNYTPersona:", isKNYTPersona);
+  
   const getAvailableSourcesForField = (key: string, type: string) => {
     // Base sources available for all fields
     const baseSources = [
@@ -60,6 +62,8 @@ const DataSourceSelector = ({ sourceKey, currentSource, iQubeType, onSourceChang
     ];
 
     if (isKNYTPersona) {
+      console.log("DataSourceSelector - Processing KNYT Persona field:", key);
+      
       // KNYT Persona specific field mappings
       const knytFieldMappings: { [key: string]: string[] } = {
         'First-Name': ['metaknyts'],
@@ -102,12 +106,15 @@ const DataSourceSelector = ({ sourceKey, currentSource, iQubeType, onSourceChang
       };
 
       const serviceSources = knytFieldMappings[key] || ['manual'];
+      console.log("DataSourceSelector - Service sources for", key, ":", serviceSources);
       
       // Add service sources to base sources
       const allSources = [...baseSources];
       
       serviceSources.forEach(service => {
         if (service === 'manual') return; // Skip manual as it's already in base
+        
+        console.log("DataSourceSelector - Adding service:", service);
         
         switch (service) {
           case 'metaknyts':
@@ -197,6 +204,7 @@ const DataSourceSelector = ({ sourceKey, currentSource, iQubeType, onSourceChang
         }
       });
 
+      console.log("DataSourceSelector - Final sources for KNYT field:", allSources);
       return allSources;
     } else {
       // Default DataQube field mappings for other personas
@@ -311,6 +319,9 @@ const DataSourceSelector = ({ sourceKey, currentSource, iQubeType, onSourceChang
 
   const availableSources = getAvailableSourcesForField(sourceKey, iQubeType);
   const currentSourceData = availableSources.find(source => source.value === currentSource);
+
+  console.log("DataSourceSelector - Available sources:", availableSources);
+  console.log("DataSourceSelector - Current source data:", currentSourceData);
 
   return (
     <Select value={currentSource} onValueChange={(value) => onSourceChange(sourceKey, value)}>

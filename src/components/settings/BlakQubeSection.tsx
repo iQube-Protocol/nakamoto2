@@ -22,8 +22,16 @@ const BlakQubeSection = ({ privateData, onUpdatePrivateData, metaQube }: BlakQub
   
   const iQubeType = metaQube?.["iQube-Type"] || "DataQube";
   
+  // Debug logging to see the actual identifier value
+  console.log("BlakQubeSection - metaQube identifier:", metaQube?.["iQube-Identifier"]);
+  console.log("BlakQubeSection - full metaQube:", metaQube);
+  
   // Check if this is KNYT Persona based on the metaQube identifier
-  const isKNYTPersona = metaQube?.["iQube-Identifier"] === "KNYT Persona";
+  // Support both possible identifier formats
+  const isKNYTPersona = metaQube?.["iQube-Identifier"] === "KNYT Persona" || 
+                        metaQube?.["iQube-Identifier"] === "KNYT Persona iQube";
+  
+  console.log("BlakQubeSection - isKNYTPersona:", isKNYTPersona);
   
   // Get the appropriate title for the blakQube section based on iQube type
   const getBlakQubeTitle = () => {
