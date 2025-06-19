@@ -32,14 +32,36 @@ class InvitationService {
     const validInvitations: any[] = [];
     const skippedEmails: string[] = [];
 
-    // First, check which emails already exist in the database
-    const emails = invitations.map(inv => inv.email.toLowerCase().trim());
-    const { data: existingInvitations } = await supabase
-      .from('invited_users')
-      .select('email')
-      .in('email', emails);
+    console.log(`Processing ${invitations.length} invitations for creation`);
 
-    const existingEmails = new Set(existingInvitations?.map(inv => inv.email) || []);
+    // Check which emails already exist in smaller batches to avoid CORS issues
+    const existingEmails = new Set<string>();
+    const batchSize = 100;
+    const emails = invitations.map(inv => inv.email.toLowerCase().trim());
+
+    try {
+      for (let i = 0; i < emails.length; i += batchSize) {
+        const emailBatch = emails.slice(i, i + batchSize);
+        console.log(`Checking batch ${Math.floor(i/batchSize) + 1} of ${Math.ceil(emails.length/batchSize)} for existing emails`);
+        
+        const { data: existingInBatch, error } = await supabase
+          .from('invited_users')
+          .select('email')
+          .in('email', emailBatch);
+
+        if (error) {
+          console.error('Error checking existing emails:', error);
+          // If we can't check, we'll try to insert and handle duplicates in the catch block
+          break;
+        }
+
+        if (existingInBatch) {
+          existingInBatch.forEach(inv => existingEmails.add(inv.email));
+        }
+      }
+    } catch (error) {
+      console.error('Failed to check existing emails, will handle duplicates during insertion:', error);
+    }
 
     // Validate and prepare invitation records
     for (const invitation of invitations) {
@@ -82,24 +104,57 @@ class InvitationService {
     }
 
     try {
-      const { error } = await supabase
-        .from('invited_users')
-        .insert(validInvitations);
+      console.log(`Attempting to insert ${validInvitations.length} valid invitations`);
+      
+      // Insert invitations in smaller batches to avoid timeout issues
+      const insertBatchSize = 50;
+      let totalInserted = 0;
+      const duplicateErrors: string[] = [];
 
-      if (error) {
-        console.error('Error creating invitations:', error);
-        return { success: false, errors: [`Database error: ${error.message}`] };
+      for (let i = 0; i < validInvitations.length; i += insertBatchSize) {
+        const batch = validInvitations.slice(i, i + insertBatchSize);
+        console.log(`Inserting batch ${Math.floor(i/insertBatchSize) + 1} of ${Math.ceil(validInvitations.length/insertBatchSize)}`);
+        
+        const { data, error } = await supabase
+          .from('invited_users')
+          .insert(batch)
+          .select('email');
+
+        if (error) {
+          // Handle duplicate key errors specifically
+          if (error.message.includes('duplicate key value violates unique constraint')) {
+            // Extract emails that caused duplicates and add to skipped list
+            batch.forEach(inv => {
+              if (!skippedEmails.includes(inv.email)) {
+                skippedEmails.push(inv.email);
+                duplicateErrors.push(inv.email);
+              }
+            });
+          } else {
+            console.error('Error inserting batch:', error);
+            return { success: false, errors: [`Database error: ${error.message}`] };
+          }
+        } else if (data) {
+          totalInserted += data.length;
+        }
       }
 
-      console.log(`Successfully created ${validInvitations.length} invitations`);
+      if (duplicateErrors.length > 0) {
+        errors.push(`Found ${duplicateErrors.length} additional duplicate emails during insertion: ${duplicateErrors.slice(0, 3).join(', ')}${duplicateErrors.length > 3 ? '...' : ''}`);
+      }
+
+      console.log(`Successfully created ${totalInserted} invitations`);
       
       // Include both success and warning messages
-      const successMessages = [`Successfully created ${validInvitations.length} new invitations`];
+      const successMessages: string[] = [];
+      if (totalInserted > 0) {
+        successMessages.push(`Successfully created ${totalInserted} new invitations`);
+      }
       if (skippedEmails.length > 0) {
         successMessages.push(`Skipped ${skippedEmails.length} existing emails`);
       }
       
-      return { success: true, errors: successMessages };
+      return { success: true, errors: successMessages.length > 0 ? successMessages : errors };
     } catch (error) {
       console.error('Unexpected error creating invitations:', error);
       return { success: false, errors: [`Unexpected error: ${error}`] };
