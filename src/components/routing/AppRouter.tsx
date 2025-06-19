@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { AuthProvider } from '@/hooks/use-auth';
 import Index from '@/pages/Index';
 import SplashPage from '@/pages/SplashPage';
 import SignIn from '@/pages/SignIn';
@@ -26,40 +27,42 @@ import InvitedUserSignup from '@/components/auth/InvitedUserSignup';
 const AppRouter = () => {
   return (
     <Router>
-      <Routes>
-        {/* Public routes */}
-        <Route path="/" element={<Index />} />
-        <Route path="/splash" element={<SplashPage />} />
-        <Route path="/signin" element={<SignIn />} />
-        <Route path="/signup" element={<SignUpPage />} />
-        <Route path="/invited-signup" element={<InvitedUserSignup />} />
-        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-        
-        {/* Admin routes */}
-        <Route path="/admin/invitations" element={<InvitationsPage />} />
-        
-        {/* Protected routes */}
-        <Route element={<ProtectedRoute />}>
-          <Route element={<MainLayout />}>
-            <Route path="/mondai" element={<MonDAI />} />
-            <Route path="/learn" element={<Learn />} />
-            <Route path="/earn" element={<Earn />} />
-            <Route path="/connect" element={<Connect />} />
-            <Route path="/profile" element={<Profile />} />
-            <Route path="/settings" element={<Settings />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/legacy-dashboard" element={<LegacyDashboard />} />
-            
-            {/* Qube pages */}
-            <Route path="/qubes/data" element={<DataQube />} />
-            <Route path="/qubes/tool" element={<ToolQube />} />
-            <Route path="/qubes/agent" element={<AgentQube />} />
+      <AuthProvider>
+        <Routes>
+          {/* Public routes */}
+          <Route path="/" element={<Index />} />
+          <Route path="/splash" element={<SplashPage />} />
+          <Route path="/signin" element={<SignIn />} />
+          <Route path="/signup" element={<SignUpPage />} />
+          <Route path="/invited-signup" element={<InvitedUserSignup />} />
+          <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          
+          {/* Admin routes */}
+          <Route path="/admin/invitations" element={<InvitationsPage />} />
+          
+          {/* Protected routes */}
+          <Route element={<ProtectedRoute />}>
+            <Route element={<MainLayout />}>
+              <Route path="/mondai" element={<MonDAI />} />
+              <Route path="/learn" element={<Learn />} />
+              <Route path="/earn" element={<Earn />} />
+              <Route path="/connect" element={<Connect />} />
+              <Route path="/profile" element={<Profile />} />
+              <Route path="/settings" element={<Settings />} />
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/legacy-dashboard" element={<LegacyDashboard />} />
+              
+              {/* Qube pages */}
+              <Route path="/qubes/data" element={<DataQube />} />
+              <Route path="/qubes/tool" element={<ToolQube />} />
+              <Route path="/qubes/agent" element={<AgentQube />} />
+            </Route>
           </Route>
-        </Route>
-        
-        {/* 404 page */}
-        <Route path="*" element={<NotFound />} />
-      </Routes>
+          
+          {/* 404 page */}
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </AuthProvider>
     </Router>
   );
 };
