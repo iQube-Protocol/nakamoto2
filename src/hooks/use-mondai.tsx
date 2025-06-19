@@ -26,6 +26,10 @@ export const useMondAI = () => {
       }
 
       console.log(`✅ MonDAI: Response received from ${response.metadata.aiProvider || (veniceActivated ? 'Venice AI' : 'OpenAI')}`);
+      
+      if (response.metadata.personaContextUsed) {
+        console.log(`🧠 MonDAI: Personalized response for ${response.metadata.preferredName || 'user'}`);
+      }
 
       return {
         id: Date.now().toString(),

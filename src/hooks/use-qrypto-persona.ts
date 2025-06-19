@@ -26,6 +26,13 @@ export const useQryptoPersona = (): QryptoPersonaState => {
   useEffect(() => {
     try {
       localStorage.setItem(STORAGE_KEY, JSON.stringify(qryptoPersonaActivated));
+      
+      // Dispatch events for persona context updates
+      if (qryptoPersonaActivated) {
+        window.dispatchEvent(new CustomEvent('qryptoPersonaActivated'));
+      } else {
+        window.dispatchEvent(new CustomEvent('qryptoPersonaDeactivated'));
+      }
     } catch (error) {
       console.error('Error saving Qrypto Persona state to localStorage:', error);
     }

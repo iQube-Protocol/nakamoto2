@@ -30,7 +30,7 @@ interface KnowledgeItem {
 }
 
 /**
- * MonDAI system prompt for conversational responses
+ * Enhanced MonDAI system prompt with persona contextualization
  */
 const MONDAI_SYSTEM_PROMPT = `
 ## **MonDAI: Crypto-Agentic AI for the CryptoMondays Community**
@@ -40,6 +40,20 @@ You are MonDAI, a friendly and intelligent AI agent designed to serve the global
 
 You are not a typical AI assistant. You are a crypto-agentic AI, meaning you prioritize user sovereignty, privacy, and contextual intelligence. You do not rely on centralized data extraction models. Instead, you use a privacy-preserving and decentralized technology called iQubes. These are secure, modular information containers that allow you to deliver personalized, context-aware support while protecting the user's data rights.
 
+**<persona-contextualization>**
+When users activate their Persona iQubes (Qrypto Profile or KNYT Profile), you gain access to rich context about their identity, experience level, investments, digital assets, crypto interests, and social presence. Use this information intelligently to:
+
+1. **Address users appropriately**: Use their first name (Qrypto Profile) or KNYT ID prefix (KNYT Profile) when available
+2. **Tailor complexity**: Adjust explanations based on their experience level (beginner/intermediate/advanced/expert)
+3. **Reference relevant assets**: When discussing NFTs or digital assets, reference their owned comics, cards, or characters
+4. **Consider investment context**: Factor in their tier status, investment history, and owned tokens
+5. **Match interests**: Align examples and discussions with their stated Web3 interests and tokens of interest
+6. **Respect experience**: For KNYT members, consider their membership duration and tier status
+
+**IMPORTANT**: Never explicitly mention that you're using their profile data. The interaction should feel natural and familiar, like talking to someone who remembers your interests and background.
+
+When no Persona iQubes are active, treat the user anonymously without making assumptions about their background or preferences.
+
 ---
 
 **<personality>**
@@ -47,6 +61,7 @@ You are not a typical AI assistant. You are a crypto-agentic AI, meaning you pri
 * **Insightful** – You guide users toward understanding the deeper potential of Web3 and decentralized technologies.
 * **Respectful of autonomy** – You never presume, overreach, or track unnecessarily. You honor digital self-sovereignty.
 * **Action-oriented** – You help users take meaningful steps, from learning about DAOs and wallets to joining events or earning through participation.
+* **Context-aware** – You adapt your responses based on the user's activated persona context.
 
 ---
 
@@ -55,6 +70,7 @@ You are not a typical AI assistant. You are a crypto-agentic AI, meaning you pri
 2. Connecting users with relevant people, events, or discussions within CryptoMondays and the wider Web3 world.
 3. Offering guidance on how to get involved, including using iQubes to securely manage their data, identity, and engagement.
 4. Responding in ways that build trust and confidence, particularly for those unfamiliar with AI or crypto.
+5. Providing personalized insights based on the user's investment portfolio, digital assets, and crypto interests when persona context is available.
 
 ---
 
@@ -72,6 +88,7 @@ Your responses MUST be:
 5. Focused on summarizing knowledge, not quoting it verbatim
 6. Natural and conversational, not overly formal or robotic
 7. Including whitespace between paragraphs for improved readability
+8. Appropriately personalized when persona context is available
 
 ---
 
@@ -93,11 +110,11 @@ Use appropriate diagram types (flowchart, sequence, class, etc.) based on what y
 ---
 
 **<tone-guidance>**
-Your tone is conversational, upbeat, and always encouraging — like a helpful friend who knows the ropes of Web3 but never talks down. Use accessible language and avoid jargon unless necessary, and when you do use technical terms, briefly explain them.
+Your tone is conversational, upbeat, and always encouraging — like a helpful friend who knows the ropes of Web3 but never talks down. Use accessible language and avoid jargon unless necessary, and when you do use technical terms, briefly explain them. When persona context is available, adjust your tone to match the user's experience level and interests.
 `;
 
 /**
- * Default Aigent Nakamoto system prompt
+ * Default Aigent Nakamoto system prompt for non-personalized interactions
  */
 const DEFAULT_AIGENT_NAKAMOTO_SYSTEM_PROMPT = `
 ## **Aigent Nakamoto: Crypto-Agentic AI for the QryptoCOYN Ecosystem**
@@ -191,7 +208,7 @@ function selectVeniceModel(message: string): string {
 }
 
 /**
- * Process the user's query with enhanced context and proper Venice configuration
+ * Process the user's query with enhanced persona context
  */
 async function processWithOpenAI(
   message: string,
@@ -200,12 +217,20 @@ async function processWithOpenAI(
   historicalContext?: string,
   systemPrompt?: string,
   qryptoKnowledgeContext?: string,
-  useVenice: boolean = false
+  useVenice: boolean = false,
+  personaContext?: any,
+  contextualPrompt?: string
 ): Promise<string> {
   const client = createAIClient(useVenice);
 
-  // Use provided system prompt or default
-  const finalSystemPrompt = systemPrompt || DEFAULT_AIGENT_NAKAMOTO_SYSTEM_PROMPT;
+  // Use provided system prompt or default based on persona context
+  let finalSystemPrompt = systemPrompt || DEFAULT_AIGENT_NAKAMOTO_SYSTEM_PROMPT;
+  
+  // If we have persona context, use the enhanced MonDAI prompt
+  if (personaContext && !personaContext.isAnonymous) {
+    finalSystemPrompt = MONDAI_SYSTEM_PROMPT;
+    console.log('🧠 Using personalized MonDAI system prompt');
+  }
 
   // Format general knowledge items for the AI prompt
   let generalKnowledgeContext = '';
@@ -228,13 +253,21 @@ Type: ${item.type || 'General'}
     `Previous conversation context:\n${historicalContext}\n\nContinue the conversation based on this history.` : 
     'This is a new conversation.';
 
-  // Combine all context
-  const fullContext = [
+  // Combine all context including persona context
+  const contextParts = [
     finalSystemPrompt,
     contextPrompt,
     qryptoKnowledgeContext || '',
     generalKnowledgeContext
-  ].filter(Boolean).join('\n\n');
+  ];
+
+  // Add persona context if available
+  if (contextualPrompt && !personaContext?.isAnonymous) {
+    contextParts.push(`\n### User Context\n${contextualPrompt}`);
+    console.log('🔧 Added persona context to system prompt');
+  }
+
+  const fullContext = contextParts.filter(Boolean).join('\n\n');
 
   // Configure model and parameters based on provider
   let modelConfig;
@@ -289,7 +322,8 @@ Type: ${item.type || 'General'}
     console.log(`🔧 ${useVenice ? 'Venice' : 'OpenAI'}: Request config:`, {
       model: requestBody.model,
       hasVeniceParams: !!requestBody.venice_parameters,
-      messageCount: requestBody.messages.length
+      messageCount: requestBody.messages.length,
+      hasPersonaContext: !personaContext?.isAnonymous
     });
 
     const response = await client.chat.completions.create(requestBody);
@@ -316,7 +350,9 @@ Type: ${item.type || 'General'}
         historicalContext,
         systemPrompt,
         qryptoKnowledgeContext,
-        false // Use OpenAI as fallback
+        false, // Use OpenAI as fallback
+        personaContext,
+        contextualPrompt
       );
     }
     
@@ -332,7 +368,7 @@ function detectMermaidDiagram(content: string): boolean {
 }
 
 /**
- * Process a user message and generate a response
+ * Process a user message and generate a response with persona context
  */
 async function processMonDAIInteraction(
   message: string, 
@@ -341,7 +377,9 @@ async function processMonDAIInteraction(
   historicalContext?: string,
   systemPrompt?: string,
   qryptoKnowledgeContext?: string,
-  useVenice: boolean = false
+  useVenice: boolean = false,
+  personaContext?: any,
+  contextualPrompt?: string
 ): Promise<MonDAIResponse> {
   // Generate a new conversation ID if none provided
   if (!conversationId) {
@@ -349,8 +387,11 @@ async function processMonDAIInteraction(
   }
   
   console.log(`🔄 MonDAI Edge Function: Processing with ${useVenice ? 'Venice AI (uncensored)' : 'OpenAI'}`);
+  if (personaContext && !personaContext.isAnonymous) {
+    console.log(`🧠 MonDAI Edge Function: Using persona context for ${personaContext.preferredName || 'user'}`);
+  }
   
-  // Process with the AI API (OpenAI or Venice)
+  // Process with the AI API (OpenAI or Venice) including persona context
   const aiResponse = await processWithOpenAI(
     message, 
     knowledgeItems, 
@@ -358,7 +399,9 @@ async function processMonDAIInteraction(
     historicalContext,
     systemPrompt,
     qryptoKnowledgeContext,
-    useVenice
+    useVenice,
+    personaContext,
+    contextualPrompt
   );
   
   // Detect if response contains a mermaid diagram
@@ -383,7 +426,9 @@ async function processMonDAIInteraction(
       visualsProvided,
       mermaidDiagramIncluded,
       isOffline: false,
-      aiProvider
+      aiProvider,
+      personaContextUsed: personaContext && !personaContext.isAnonymous,
+      preferredName: personaContext?.preferredName
     }
   };
 }
@@ -405,7 +450,9 @@ serve(async (req) => {
       historicalContext,
       systemPrompt,
       qryptoKnowledgeContext,
-      useVenice = false
+      useVenice = false,
+      personaContext,
+      contextualPrompt
     } = await req.json();
 
     console.log(`🚀 MonDAI Edge Function: Received request with Venice: ${useVenice}`);
@@ -431,7 +478,9 @@ serve(async (req) => {
       historicalContext,
       systemPrompt,
       qryptoKnowledgeContext,
-      useVenice
+      useVenice,
+      personaContext,
+      contextualPrompt
     );
 
     console.log(`✅ MonDAI Edge Function: Response generated using ${response.metadata.aiProvider}`);
