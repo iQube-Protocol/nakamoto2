@@ -4,7 +4,16 @@ import { MetaQube } from '@/lib/types';
 import { blakQubeService } from '@/services/blakqube-service';
 import { useAuth } from '@/hooks/use-auth';
 import { toast } from 'sonner';
-import { blakQubeToPrivateData, createDefaultBlakQube } from '@/services/blakqube/data-transformers';
+import { 
+  knytPersonaToPrivateData, 
+  qryptoPersonaToPrivateData,
+  createDefaultKNYTPersona,
+  createDefaultQryptoPersona,
+  // Legacy functions
+  blakQubeToPrivateData, 
+  createDefaultBlakQube 
+} from '@/services/blakqube/data-transformers';
+import { getPersonaType } from '@/services/blakqube/database-operations';
 
 interface PrivateData {
   [key: string]: string | string[];
@@ -15,49 +24,71 @@ export const usePrivateData = (selectedIQube: MetaQube) => {
   const [privateData, setPrivateData] = useState<PrivateData>({});
   const [loading, setLoading] = useState(true);
 
-  // Load real BlakQube data from database
-  const loadBlakQubeData = async () => {
+  // Determine persona type based on the selected iQube
+  const personaType = getPersonaType(selectedIQube["iQube-Identifier"]);
+
+  // Load real persona data from database
+  const loadPersonaData = async () => {
     if (!user) {
       setLoading(false);
       return;
     }
 
     try {
-      console.log('Loading BlakQube data...');
-      const blakQubeData = await blakQubeService.getBlakQubeData();
+      console.log('Loading persona data for type:', personaType);
+      const personaData = await blakQubeService.getPersonaData(personaType);
       
-      if (blakQubeData) {
-        console.log('BlakQube data loaded:', blakQubeData);
-        // Convert BlakQube data to privateData format
-        const formattedData = blakQubeToPrivateData(blakQubeData);
+      if (personaData) {
+        console.log('Persona data loaded:', personaData);
+        // Convert persona data to privateData format
+        let formattedData: PrivateData;
+        if (personaType === 'knyt') {
+          formattedData = knytPersonaToPrivateData(personaData as any);
+        } else {
+          formattedData = qryptoPersonaToPrivateData(personaData as any);
+        }
         setPrivateData(formattedData);
       } else {
-        console.log('No BlakQube data found, using defaults');
-        // Set default empty data if no BlakQube exists
-        const defaultData = createDefaultBlakQube(user.email);
-        const formattedData = blakQubeToPrivateData(defaultData as any);
-        setPrivateData(formattedData);
+        console.log('No persona data found, using defaults for type:', personaType);
+        // Set default empty data if no persona exists
+        let defaultData;
+        if (personaType === 'knyt') {
+          defaultData = createDefaultKNYTPersona(user.email);
+          const formattedData = knytPersonaToPrivateData(defaultData as any);
+          setPrivateData(formattedData);
+        } else {
+          defaultData = createDefaultQryptoPersona(user.email);
+          const formattedData = qryptoPersonaToPrivateData(defaultData as any);
+          setPrivateData(formattedData);
+        }
       }
     } catch (error) {
-      console.error('Error loading BlakQube data:', error);
+      console.error('Error loading persona data:', error);
       // Fallback to empty data
-      const defaultData = createDefaultBlakQube(user?.email);
-      const formattedData = blakQubeToPrivateData(defaultData as any);
-      setPrivateData(formattedData);
+      let defaultData;
+      if (personaType === 'knyt') {
+        defaultData = createDefaultKNYTPersona(user?.email);
+        const formattedData = knytPersonaToPrivateData(defaultData as any);
+        setPrivateData(formattedData);
+      } else {
+        defaultData = createDefaultQryptoPersona(user?.email);
+        const formattedData = qryptoPersonaToPrivateData(defaultData as any);
+        setPrivateData(formattedData);
+      }
     } finally {
       setLoading(false);
     }
   };
 
   useEffect(() => {
-    loadBlakQubeData();
-  }, [user]);
+    loadPersonaData();
+  }, [user, personaType]);
 
   // Listen for private data updates from wallet connections
   useEffect(() => {
     const handlePrivateDataUpdate = () => {
-      console.log('Private data update event received, reloading BlakQube data...');
-      loadBlakQubeData();
+      console.log('Private data update event received, reloading persona data...');
+      loadPersonaData();
     };
 
     window.addEventListener('privateDataUpdated', handlePrivateDataUpdate);
@@ -65,41 +96,41 @@ export const usePrivateData = (selectedIQube: MetaQube) => {
     return () => {
       window.removeEventListener('privateDataUpdated', handlePrivateDataUpdate);
     };
-  }, [user]);
+  }, [user, personaType]);
 
   const handleUpdatePrivateData = async (newData: PrivateData) => {
-    console.log('Updating private data:', newData);
+    console.log('Updating private data for persona type:', personaType, newData);
     
     try {
       // Update local state immediately for UI responsiveness
       setPrivateData(newData);
       
-      // Save to database using BlakQube service
-      const success = await blakQubeService.saveManualBlakQubeData(newData);
+      // Save to database using the new persona service
+      const success = await blakQubeService.saveManualPersonaData(newData, personaType);
       
       if (success) {
         console.log('Private data saved successfully to database');
-        toast.success('BlakQube data saved successfully');
+        toast.success(`${personaType === 'knyt' ? 'KNYT' : 'Qrypto'} Persona data saved successfully`);
         
         // Also trigger connection updates to maintain consistency
         console.log('Triggering connection updates after manual save...');
-        await blakQubeService.updateBlakQubeFromConnections();
+        await blakQubeService.updatePersonaFromConnections(personaType);
         
         // Trigger a final refresh to ensure data consistency
-        await loadBlakQubeData();
+        await loadPersonaData();
       } else {
         console.error('Failed to save private data to database');
-        toast.error('Failed to save BlakQube data. Please try again.');
+        toast.error(`Failed to save ${personaType === 'knyt' ? 'KNYT' : 'Qrypto'} Persona data. Please try again.`);
         
         // Revert local state on failure
-        await loadBlakQubeData();
+        await loadPersonaData();
       }
     } catch (error) {
       console.error('Error saving private data:', error);
-      toast.error('Error saving BlakQube data. Please try again.');
+      toast.error(`Error saving ${personaType === 'knyt' ? 'KNYT' : 'Qrypto'} Persona data. Please try again.`);
       
       // Revert local state on error
-      await loadBlakQubeData();
+      await loadPersonaData();
     }
   };
 
@@ -107,6 +138,7 @@ export const usePrivateData = (selectedIQube: MetaQube) => {
     privateData,
     handleUpdatePrivateData,
     loading,
-    refreshData: loadBlakQubeData
+    refreshData: loadPersonaData,
+    personaType
   };
 };

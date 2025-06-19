@@ -7,19 +7,20 @@ import { blakQubeService } from '@/services/blakqube-service';
 
 interface BlakQubeRefreshButtonProps {
   onRefresh?: () => void;
+  personaType?: 'knyt' | 'qrypto';
 }
 
-const BlakQubeRefreshButton = ({ onRefresh }: BlakQubeRefreshButtonProps) => {
+const BlakQubeRefreshButton = ({ onRefresh, personaType = 'qrypto' }: BlakQubeRefreshButtonProps) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      console.log('Refreshing BlakQube data from connections...');
-      const success = await blakQubeService.updateBlakQubeFromConnections();
+      console.log('Refreshing persona data from connections for type:', personaType);
+      const success = await blakQubeService.updatePersonaFromConnections(personaType);
       
       if (success) {
-        toast.success('BlakQube data refreshed successfully!');
+        toast.success(`${personaType === 'knyt' ? 'KNYT' : 'Qrypto'} Persona data refreshed successfully!`);
         
         // Trigger private data refresh
         const updateEvent = new CustomEvent('privateDataUpdated');
@@ -30,11 +31,11 @@ const BlakQubeRefreshButton = ({ onRefresh }: BlakQubeRefreshButtonProps) => {
           onRefresh();
         }
       } else {
-        toast.error('Failed to refresh BlakQube data');
+        toast.error(`Failed to refresh ${personaType === 'knyt' ? 'KNYT' : 'Qrypto'} Persona data`);
       }
     } catch (error) {
-      console.error('Error refreshing BlakQube data:', error);
-      toast.error('Error refreshing BlakQube data');
+      console.error('Error refreshing persona data:', error);
+      toast.error(`Error refreshing ${personaType === 'knyt' ? 'KNYT' : 'Qrypto'} Persona data`);
     } finally {
       setIsRefreshing(false);
     }

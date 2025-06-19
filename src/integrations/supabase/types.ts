@@ -210,6 +210,219 @@ export type Database = {
         }
         Relationships: []
       }
+      knyt_personas: {
+        Row: {
+          Address: string | null
+          Age: string | null
+          "BTC-Public-Key": string | null
+          "Chain-IDs": string[] | null
+          "Characters-Owned": string | null
+          created_at: string
+          "Digital-Comics-Owned": string | null
+          "Discord-Handle": string | null
+          Email: string | null
+          "EVM-Public-Key": string | null
+          "Facebook-ID": string | null
+          "First-Name": string | null
+          id: string
+          "Instagram-Handle": string | null
+          "KNYT-Cards-Owned": string | null
+          "KNYT-COYN-Owned": string | null
+          "KNYT-ID": string | null
+          "KNYT-Posters-Owned": string | null
+          "Last-Name": string | null
+          "LinkedIn-ID": string | null
+          "LinkedIn-Profile-URL": string | null
+          "Local-City": string | null
+          "Metaiye-Shares-Owned": string | null
+          "MetaKeep-Public-Key": string | null
+          "Motion-Comics-Owned": string | null
+          "OM-Member-Since": string | null
+          "OM-Tier-Status": string | null
+          "Paper-Comics-Owned": string | null
+          "Phone-Number": string | null
+          Profession: string | null
+          "Telegram-Handle": string | null
+          "ThirdWeb-Public-Key": string | null
+          "TikTok-Handle": string | null
+          "Tokens-of-Interest": string[] | null
+          "Twitter-Handle": string | null
+          updated_at: string
+          user_id: string
+          "Web3-Interests": string[] | null
+          "YouTube-ID": string | null
+        }
+        Insert: {
+          Address?: string | null
+          Age?: string | null
+          "BTC-Public-Key"?: string | null
+          "Chain-IDs"?: string[] | null
+          "Characters-Owned"?: string | null
+          created_at?: string
+          "Digital-Comics-Owned"?: string | null
+          "Discord-Handle"?: string | null
+          Email?: string | null
+          "EVM-Public-Key"?: string | null
+          "Facebook-ID"?: string | null
+          "First-Name"?: string | null
+          id?: string
+          "Instagram-Handle"?: string | null
+          "KNYT-Cards-Owned"?: string | null
+          "KNYT-COYN-Owned"?: string | null
+          "KNYT-ID"?: string | null
+          "KNYT-Posters-Owned"?: string | null
+          "Last-Name"?: string | null
+          "LinkedIn-ID"?: string | null
+          "LinkedIn-Profile-URL"?: string | null
+          "Local-City"?: string | null
+          "Metaiye-Shares-Owned"?: string | null
+          "MetaKeep-Public-Key"?: string | null
+          "Motion-Comics-Owned"?: string | null
+          "OM-Member-Since"?: string | null
+          "OM-Tier-Status"?: string | null
+          "Paper-Comics-Owned"?: string | null
+          "Phone-Number"?: string | null
+          Profession?: string | null
+          "Telegram-Handle"?: string | null
+          "ThirdWeb-Public-Key"?: string | null
+          "TikTok-Handle"?: string | null
+          "Tokens-of-Interest"?: string[] | null
+          "Twitter-Handle"?: string | null
+          updated_at?: string
+          user_id: string
+          "Web3-Interests"?: string[] | null
+          "YouTube-ID"?: string | null
+        }
+        Update: {
+          Address?: string | null
+          Age?: string | null
+          "BTC-Public-Key"?: string | null
+          "Chain-IDs"?: string[] | null
+          "Characters-Owned"?: string | null
+          created_at?: string
+          "Digital-Comics-Owned"?: string | null
+          "Discord-Handle"?: string | null
+          Email?: string | null
+          "EVM-Public-Key"?: string | null
+          "Facebook-ID"?: string | null
+          "First-Name"?: string | null
+          id?: string
+          "Instagram-Handle"?: string | null
+          "KNYT-Cards-Owned"?: string | null
+          "KNYT-COYN-Owned"?: string | null
+          "KNYT-ID"?: string | null
+          "KNYT-Posters-Owned"?: string | null
+          "Last-Name"?: string | null
+          "LinkedIn-ID"?: string | null
+          "LinkedIn-Profile-URL"?: string | null
+          "Local-City"?: string | null
+          "Metaiye-Shares-Owned"?: string | null
+          "MetaKeep-Public-Key"?: string | null
+          "Motion-Comics-Owned"?: string | null
+          "OM-Member-Since"?: string | null
+          "OM-Tier-Status"?: string | null
+          "Paper-Comics-Owned"?: string | null
+          "Phone-Number"?: string | null
+          Profession?: string | null
+          "Telegram-Handle"?: string | null
+          "ThirdWeb-Public-Key"?: string | null
+          "TikTok-Handle"?: string | null
+          "Tokens-of-Interest"?: string[] | null
+          "Twitter-Handle"?: string | null
+          updated_at?: string
+          user_id?: string
+          "Web3-Interests"?: string[] | null
+          "YouTube-ID"?: string | null
+        }
+        Relationships: []
+      }
+      qrypto_personas: {
+        Row: {
+          "BTC-Public-Key": string | null
+          "Chain-IDs": string[] | null
+          created_at: string
+          "Discord-Handle": string | null
+          Email: string | null
+          "EVM-Public-Key": string | null
+          "Facebook-ID": string | null
+          "First-Name": string | null
+          "GitHub-Handle": string | null
+          id: string
+          "Instagram-Handle": string | null
+          "Last-Name": string | null
+          "LinkedIn-ID": string | null
+          "LinkedIn-Profile-URL": string | null
+          "Local-City": string | null
+          Profession: string | null
+          "Qrypto-ID": string | null
+          "Telegram-Handle": string | null
+          "TikTok-Handle": string | null
+          "Tokens-of-Interest": string[] | null
+          "Twitter-Handle": string | null
+          updated_at: string
+          user_id: string
+          "Wallets-of-Interest": string[] | null
+          "Web3-Interests": string[] | null
+          "YouTube-ID": string | null
+        }
+        Insert: {
+          "BTC-Public-Key"?: string | null
+          "Chain-IDs"?: string[] | null
+          created_at?: string
+          "Discord-Handle"?: string | null
+          Email?: string | null
+          "EVM-Public-Key"?: string | null
+          "Facebook-ID"?: string | null
+          "First-Name"?: string | null
+          "GitHub-Handle"?: string | null
+          id?: string
+          "Instagram-Handle"?: string | null
+          "Last-Name"?: string | null
+          "LinkedIn-ID"?: string | null
+          "LinkedIn-Profile-URL"?: string | null
+          "Local-City"?: string | null
+          Profession?: string | null
+          "Qrypto-ID"?: string | null
+          "Telegram-Handle"?: string | null
+          "TikTok-Handle"?: string | null
+          "Tokens-of-Interest"?: string[] | null
+          "Twitter-Handle"?: string | null
+          updated_at?: string
+          user_id: string
+          "Wallets-of-Interest"?: string[] | null
+          "Web3-Interests"?: string[] | null
+          "YouTube-ID"?: string | null
+        }
+        Update: {
+          "BTC-Public-Key"?: string | null
+          "Chain-IDs"?: string[] | null
+          created_at?: string
+          "Discord-Handle"?: string | null
+          Email?: string | null
+          "EVM-Public-Key"?: string | null
+          "Facebook-ID"?: string | null
+          "First-Name"?: string | null
+          "GitHub-Handle"?: string | null
+          id?: string
+          "Instagram-Handle"?: string | null
+          "Last-Name"?: string | null
+          "LinkedIn-ID"?: string | null
+          "LinkedIn-Profile-URL"?: string | null
+          "Local-City"?: string | null
+          Profession?: string | null
+          "Qrypto-ID"?: string | null
+          "Telegram-Handle"?: string | null
+          "TikTok-Handle"?: string | null
+          "Tokens-of-Interest"?: string[] | null
+          "Twitter-Handle"?: string | null
+          updated_at?: string
+          user_id?: string
+          "Wallets-of-Interest"?: string[] | null
+          "Web3-Interests"?: string[] | null
+          "YouTube-ID"?: string | null
+        }
+        Relationships: []
+      }
       user_connections: {
         Row: {
           connected_at: string

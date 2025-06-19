@@ -31,6 +31,94 @@ export interface MetaQube {
   "Reliability-Index"?: number;
 }
 
+// KNYT Persona interface (replacing BlakQube for KNYT)
+export interface KNYTPersona {
+  id: string;
+  user_id: string;
+  created_at: string;
+  updated_at: string;
+  
+  // Basic Info
+  "First-Name": string;
+  "Last-Name": string;
+  "KNYT-ID": string;
+  "Profession": string;
+  "Local-City": string;
+  "Email": string;
+  "Phone-Number": string;
+  "Age": string;
+  "Address": string;
+  
+  // Crypto & Wallet Info
+  "EVM-Public-Key": string;
+  "BTC-Public-Key": string;
+  "ThirdWeb-Public-Key": string;
+  "MetaKeep-Public-Key": string;
+  "Chain-IDs": string[];
+  "Web3-Interests": string[];
+  "Tokens-of-Interest": string[];
+  
+  // Social Media
+  "LinkedIn-ID": string;
+  "LinkedIn-Profile-URL": string;
+  "Twitter-Handle": string;
+  "Telegram-Handle": string;
+  "Discord-Handle": string;
+  "Instagram-Handle": string;
+  "YouTube-ID": string;
+  "Facebook-ID": string;
+  "TikTok-Handle": string;
+  
+  // KNYT-specific fields
+  "OM-Member-Since": string;
+  "OM-Tier-Status": string;
+  "Metaiye-Shares-Owned": string;
+  "KNYT-COYN-Owned": string;
+  "Motion-Comics-Owned": string;
+  "Paper-Comics-Owned": string;
+  "Digital-Comics-Owned": string;
+  "KNYT-Posters-Owned": string;
+  "KNYT-Cards-Owned": string;
+  "Characters-Owned": string;
+}
+
+// Qrypto Persona interface
+export interface QryptoPersona {
+  id: string;
+  user_id: string;
+  created_at: string;
+  updated_at: string;
+  
+  // Basic Info
+  "First-Name": string;
+  "Last-Name": string;
+  "Qrypto-ID": string;
+  "Profession": string;
+  "Local-City": string;
+  "Email": string;
+  
+  // Crypto & Wallet Info
+  "EVM-Public-Key": string;
+  "BTC-Public-Key": string;
+  "Chain-IDs": string[];
+  "Wallets-of-Interest": string[];
+  "Web3-Interests": string[];
+  "Tokens-of-Interest": string[];
+  
+  // Social Media
+  "LinkedIn-ID": string;
+  "LinkedIn-Profile-URL": string;
+  "Twitter-Handle": string;
+  "Telegram-Handle": string;
+  "Discord-Handle": string;
+  "Instagram-Handle": string;
+  "GitHub-Handle": string;
+  "YouTube-ID": string;
+  "Facebook-ID": string;
+  "TikTok-Handle": string;
+}
+
+// Legacy BlakQube interface (kept for backward compatibility, but deprecated)
 export interface BlakQube {
   id: string;
   user_id: string;

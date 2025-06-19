@@ -1,8 +1,15 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { BlakQube } from '@/lib/types';
+import { KNYTPersona, QryptoPersona, BlakQube } from '@/lib/types';
 import { PrivateData } from './blakqube/types';
 import { 
+  privateDataToKNYTPersona, 
+  privateDataToQryptoPersona,
+  knytPersonaToPrivateData,
+  qryptoPersonaToPrivateData,
+  createDefaultKNYTPersona,
+  createDefaultQryptoPersona,
+  // Legacy functions
   privateDataToBlakQube, 
   blakQubeToPrivateData, 
   createDefaultBlakQube 
@@ -15,19 +22,46 @@ import {
   processSocialConnection
 } from './blakqube/connection-processors';
 import {
+  fetchKNYTPersonaFromDB,
+  fetchQryptoPersonaFromDB,
+  saveKNYTPersonaToDB,
+  saveQryptoPersonaToDB,
+  getPersonaType,
+  fetchUserConnections,
+  // Legacy functions
   fetchBlakQubeFromDB,
-  saveBlakQubeToDB,
-  fetchUserConnections
+  saveBlakQubeToDB
 } from './blakqube/database-operations';
 
 /**
- * Service for managing BlakQube data
+ * Service for managing persona data (KNYT and Qrypto)
  */
 export const blakQubeService = {
   /**
-   * Get BlakQube data for the current user
+   * Get persona data for the current user based on persona type
+   */
+  getPersonaData: async (personaType: 'knyt' | 'qrypto'): Promise<KNYTPersona | QryptoPersona | null> => {
+    try {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user) return null;
+      
+      if (personaType === 'knyt') {
+        return await fetchKNYTPersonaFromDB(user.user.id);
+      } else {
+        return await fetchQryptoPersonaFromDB(user.user.id);
+      }
+    } catch (error) {
+      console.error('Error in getPersonaData:', error);
+      return null;
+    }
+  },
+
+  /**
+   * Get BlakQube data for the current user (legacy method)
    */
   getBlakQubeData: async (): Promise<BlakQube | null> => {
+    console.warn('getBlakQubeData is deprecated. Use getPersonaData instead.');
+    
     try {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) return null;
@@ -40,9 +74,39 @@ export const blakQubeService = {
   },
   
   /**
-   * Save manually edited BlakQube data to the database
+   * Save manually edited persona data to the database
+   */
+  saveManualPersonaData: async (data: PrivateData, personaType: 'knyt' | 'qrypto'): Promise<boolean> => {
+    try {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user) {
+        console.error('User not authenticated');
+        return false;
+      }
+      
+      console.log('Saving manual persona data for user:', user.user.id, 'type:', personaType, data);
+      
+      if (personaType === 'knyt') {
+        const personaData = privateDataToKNYTPersona(data);
+        console.log('Converted KNYT persona data for save:', personaData);
+        return await saveKNYTPersonaToDB(user.user.id, personaData);
+      } else {
+        const personaData = privateDataToQryptoPersona(data);
+        console.log('Converted Qrypto persona data for save:', personaData);
+        return await saveQryptoPersonaToDB(user.user.id, personaData);
+      }
+    } catch (error) {
+      console.error('Error in saveManualPersonaData:', error);
+      return false;
+    }
+  },
+
+  /**
+   * Save manually edited BlakQube data to the database (legacy method)
    */
   saveManualBlakQubeData: async (data: PrivateData): Promise<boolean> => {
+    console.warn('saveManualBlakQubeData is deprecated. Use saveManualPersonaData instead.');
+    
     try {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) {
@@ -65,9 +129,85 @@ export const blakQubeService = {
   },
   
   /**
-   * Update BlakQube data with information from connected services
+   * Update persona data with information from connected services
+   */
+  updatePersonaFromConnections: async (personaType: 'knyt' | 'qrypto'): Promise<boolean> => {
+    try {
+      const { data: user } = await supabase.auth.getUser();
+      if (!user.user) return false;
+      
+      console.log('Updating persona from connections for user:', user.user.id, 'type:', personaType);
+      
+      // Get current persona data
+      let currentPersona: KNYTPersona | QryptoPersona | null = null;
+      if (personaType === 'knyt') {
+        currentPersona = await fetchKNYTPersonaFromDB(user.user.id);
+      } else {
+        currentPersona = await fetchQryptoPersonaFromDB(user.user.id);
+      }
+      
+      // Get user connections
+      const connections = await fetchUserConnections(user.user.id);
+      if (!connections) return false;
+      
+      // Start with existing persona or create new one with all fields
+      let newPersona: Partial<KNYTPersona | QryptoPersona>;
+      if (currentPersona) {
+        newPersona = { ...currentPersona };
+      } else {
+        if (personaType === 'knyt') {
+          newPersona = createDefaultKNYTPersona(user.user.email);
+        } else {
+          newPersona = createDefaultQryptoPersona(user.user.email);
+        }
+      }
+      
+      // Update persona based on connections
+      for (const connection of connections) {
+        console.log('Processing connection:', connection.service, connection.connection_data);
+        
+        switch (connection.service) {
+          case 'linkedin':
+            processLinkedInConnection(connection, newPersona as any);
+            break;
+          case 'wallet':
+            processWalletConnection(connection, newPersona as any);
+            break;
+          case 'thirdweb':
+            processThirdWebConnection(connection, newPersona as any);
+            break;
+          case 'twitter':
+            processTwitterConnection(connection, newPersona as any);
+            break;
+          case 'telegram':
+          case 'discord':
+          case 'facebook':
+          case 'youtube':
+          case 'tiktok':
+            processSocialConnection(connection.service, connection, newPersona as any);
+            break;
+        }
+      }
+      
+      console.log('Updated persona data:', newPersona);
+      
+      if (personaType === 'knyt') {
+        return await saveKNYTPersonaToDB(user.user.id, newPersona as Partial<KNYTPersona>);
+      } else {
+        return await saveQryptoPersonaToDB(user.user.id, newPersona as Partial<QryptoPersona>);
+      }
+    } catch (error) {
+      console.error('Error in updatePersonaFromConnections:', error);
+      return false;
+    }
+  },
+
+  /**
+   * Update BlakQube data with information from connected services (legacy method)
    */
   updateBlakQubeFromConnections: async (): Promise<boolean> => {
+    console.warn('updateBlakQubeFromConnections is deprecated. Use updatePersonaFromConnections instead.');
+    
     try {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) return false;
