@@ -17,6 +17,23 @@ interface PrivateDataEditorProps {
   isKNYTPersona?: boolean;
 }
 
+// Function to calculate OM Tier Status based on investment amount
+const calculateOMTierStatus = (totalInvested: string): string => {
+  if (!totalInvested) return '';
+  
+  // Extract numeric value from string (remove $ and commas)
+  const numericValue = parseFloat(totalInvested.replace(/[$,]/g, ''));
+  
+  if (isNaN(numericValue)) return '';
+  
+  if (numericValue >= 999) return 'ZeroJ+KNYT';
+  if (numericValue >= 499) return 'FirstKNYT';
+  if (numericValue >= 299) return 'KejiKNYT';
+  if (numericValue >= 100) return 'KetaKNYT';
+  
+  return '';
+};
+
 const PrivateDataEditor = ({
   editingData,
   setEditingData,
@@ -45,6 +62,30 @@ const PrivateDataEditor = ({
     return Array.isArray(value) ? value.join(', ') : value;
   };
 
+  const handleInputChange = (key: string, newValue: string) => {
+    const updatedData = {
+      ...editingData,
+      [key]: newValue
+    };
+
+    // If this is KNYT Persona and Total-Invested changed, recalculate OM-Tier-Status
+    if (isKNYTPersona && key === 'Total-Invested') {
+      const calculatedTier = calculateOMTierStatus(newValue);
+      if (calculatedTier) {
+        updatedData['OM-Tier-Status'] = calculatedTier;
+      }
+    }
+
+    setEditingData(updatedData);
+  };
+
+  const handleArrayInputChange = (key: string, newValue: string) => {
+    setEditingData({
+      ...editingData,
+      [key]: newValue.split(',').map(item => item.trim())
+    });
+  };
+
   return (
     <>
       <div className="max-h-[220px] overflow-y-auto pr-2">
@@ -68,19 +109,13 @@ const PrivateDataEditor = ({
             ) : Array.isArray(value) ? (
               <Input
                 value={value.join(', ')}
-                onChange={(e) => setEditingData({
-                  ...editingData,
-                  [key]: e.target.value.split(',').map(item => item.trim())
-                })}
+                onChange={(e) => handleArrayInputChange(key, e.target.value)}
                 className="h-7 text-xs"
               />
             ) : (
               <Input
                 value={value as string}
-                onChange={(e) => setEditingData({
-                  ...editingData,
-                  [key]: e.target.value
-                })}
+                onChange={(e) => handleInputChange(key, e.target.value)}
                 className="h-7 text-xs"
               />
             )}

@@ -1,8 +1,28 @@
 import { KNYTPersona, QryptoPersona, BlakQube } from '@/lib/types';
 import { PrivateData } from './types';
 
+// Function to calculate OM Tier Status based on investment amount
+const calculateOMTierStatus = (totalInvested: string): string => {
+  if (!totalInvested) return '';
+  
+  // Extract numeric value from string (remove $ and commas)
+  const numericValue = parseFloat(totalInvested.replace(/[$,]/g, ''));
+  
+  if (isNaN(numericValue)) return '';
+  
+  if (numericValue >= 999) return 'ZeroJ+KNYT';
+  if (numericValue >= 499) return 'FirstKNYT';
+  if (numericValue >= 299) return 'KejiKNYT';
+  if (numericValue >= 100) return 'KetaKNYT';
+  
+  return '';
+};
+
 // KNYT Persona transformers
 export const knytPersonaToPrivateData = (persona: KNYTPersona): PrivateData => {
+  // Calculate tier status based on investment
+  const calculatedTier = calculateOMTierStatus(persona["Total-Invested"] || "");
+  
   return {
     "First-Name": persona["First-Name"] || "",
     "Last-Name": persona["Last-Name"] || "",
@@ -30,7 +50,7 @@ export const knytPersonaToPrivateData = (persona: KNYTPersona): PrivateData => {
     "Facebook-ID": persona["Facebook-ID"] || "",
     "TikTok-Handle": persona["TikTok-Handle"] || "",
     "OM-Member-Since": persona["OM-Member-Since"] || "",
-    "OM-Tier-Status": persona["OM-Tier-Status"] || "",
+    "OM-Tier-Status": calculatedTier || persona["OM-Tier-Status"] || "",
     "Metaiye-Shares-Owned": persona["Metaiye-Shares-Owned"] || "",
     "Total-Invested": persona["Total-Invested"] || "",
     "KNYT-COYN-Owned": persona["KNYT-COYN-Owned"] || "",
@@ -44,6 +64,9 @@ export const knytPersonaToPrivateData = (persona: KNYTPersona): PrivateData => {
 };
 
 export const privateDataToKNYTPersona = (data: PrivateData): Partial<KNYTPersona> => {
+  // Calculate tier status based on investment when converting from private data
+  const calculatedTier = calculateOMTierStatus((data["Total-Invested"] as string) || "");
+  
   return {
     "First-Name": (data["First-Name"] as string) || "",
     "Last-Name": (data["Last-Name"] as string) || "",
@@ -71,7 +94,7 @@ export const privateDataToKNYTPersona = (data: PrivateData): Partial<KNYTPersona
     "Facebook-ID": (data["Facebook-ID"] as string) || "",
     "TikTok-Handle": (data["TikTok-Handle"] as string) || "",
     "OM-Member-Since": (data["OM-Member-Since"] as string) || "",
-    "OM-Tier-Status": (data["OM-Tier-Status"] as string) || "",
+    "OM-Tier-Status": calculatedTier || (data["OM-Tier-Status"] as string) || "",
     "Metaiye-Shares-Owned": (data["Metaiye-Shares-Owned"] as string) || "",
     "Total-Invested": (data["Total-Invested"] as string) || "",
     "KNYT-COYN-Owned": (data["KNYT-COYN-Owned"] as string) || "",
@@ -83,6 +106,8 @@ export const privateDataToKNYTPersona = (data: PrivateData): Partial<KNYTPersona
     "Characters-Owned": (data["Characters-Owned"] as string) || ""
   };
 };
+
+// ... keep existing code (createDefaultKNYTPersona function)
 
 export const createDefaultKNYTPersona = (userEmail?: string | null): Partial<KNYTPersona> => {
   return {
@@ -124,6 +149,8 @@ export const createDefaultKNYTPersona = (userEmail?: string | null): Partial<KNY
     "Characters-Owned": ""
   };
 };
+
+// ... keep existing code (privateDataToQryptoPersona, qryptoPersonaToPrivateData, createDefaultQryptoPersona, and legacy functions)
 
 export const privateDataToQryptoPersona = (data: PrivateData): Partial<QryptoPersona> => {
   const getValue = (key: string): string => {
