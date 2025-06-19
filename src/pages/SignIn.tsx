@@ -23,10 +23,10 @@ const SignIn = () => {
     }
   }, [searchParams]);
   
-  // Check if user is already logged in - redirect to MonDAI instead of dashboard
+  // Check if user is already logged in - redirect to dashboard specifically
   useEffect(() => {
     if (user) {
-      console.log("User already logged in, redirecting to MonDAI");
+      console.log("User already logged in, redirecting to dashboard");
       navigate('/mondai', { replace: true });
     }
   }, [user, navigate]);

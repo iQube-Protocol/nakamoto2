@@ -1,41 +1,33 @@
 
 import React from 'react';
 import { Button } from '@/components/ui/button';
-import { Edit2 } from 'lucide-react';
+import { Info, User, Linkedin, Wallet, Twitter, MessageCircle, Globe, Users, Database, Brain } from 'lucide-react';
 
 interface PrivateDataViewProps {
   privateData: { [key: string]: string | string[] };
   onEdit: () => void;
-  getSourceIcon: (key: string) => React.ReactNode;
-  isKNYTPersona?: boolean;
+  getSourceIcon: (key: string) => JSX.Element;
 }
 
-const PrivateDataView = ({ privateData, onEdit, getSourceIcon, isKNYTPersona = false }: PrivateDataViewProps) => {
+const PrivateDataView = ({ privateData, onEdit, getSourceIcon }: PrivateDataViewProps) => {
   return (
     <>
-      <div className="max-h-[200px] overflow-y-auto pr-2">
-        {Object.entries(privateData).map(([key, value]) => {
-          const displayValue = Array.isArray(value) ? value.join(', ') : value;
-          
-          return (
-            <div key={key} className="flex items-center justify-between py-1 text-xs border-b border-gray-100">
-              <div className="flex items-center space-x-2 flex-1 min-w-0">
-                <span className="font-medium text-white truncate">{key}:</span>
-                <span className="truncate text-gray-300 flex-1">
-                  {displayValue || 'Not set'}
-                </span>
-              </div>
-              <div className="ml-2">
-                {getSourceIcon(key)}
-              </div>
-            </div>
-          );
-        })}
+      <div className="max-h-[220px] overflow-y-auto pr-2 space-y-1.5">
+        {Object.entries(privateData).map(([key, value]) => (
+          <div key={key} className="flex justify-between items-center border-b pb-1">
+            <span className="text-xs font-medium">
+              {key}
+            </span>
+            <span className="text-xs text-muted-foreground truncate max-w-[60%] text-right flex items-center justify-end">
+              {Array.isArray(value) ? value.join(", ") : value}
+              <span className="ml-1.5">{getSourceIcon(key)}</span>
+            </span>
+          </div>
+        ))}
       </div>
-      <div className="flex justify-end pt-2">
-        <Button size="sm" variant="outline" onClick={onEdit}>
-          <Edit2 className="h-3 w-3 mr-1" />
-          Edit Data
+      <div className="flex justify-between pt-2">
+        <Button variant="outline" size="sm" onClick={onEdit}>
+          <Info className="h-3.5 w-3.5 mr-1" /> Edit Data
         </Button>
       </div>
     </>
