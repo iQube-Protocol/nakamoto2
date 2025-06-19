@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { User, Linkedin, Wallet, Twitter, MessageCircle, MessageSquare, Users, Globe, Database, Brain, Youtube, Facebook } from 'lucide-react';
@@ -64,7 +65,7 @@ const DataSourceSelector = ({ sourceKey, currentSource, iQubeType, onSourceChang
     if (isKNYTPersona) {
       console.log("DataSourceSelector - Processing KNYT Persona field:", key);
       
-      // KNYT Persona specific field mappings
+      // KNYT Persona specific field mappings - these fields get metaKnyts as a source
       const knytFieldMappings: { [key: string]: string[] } = {
         'First-Name': ['metaknyts'],
         'Last-Name': ['metaknyts'],
@@ -87,7 +88,7 @@ const DataSourceSelector = ({ sourceKey, currentSource, iQubeType, onSourceChang
         'TikTok-Handle': ['tiktok', 'manual'],
         'Web3-Interests': ['manual'],
         'Tokens-of-Interest': ['manual'],
-        'Chain-IDs': ['manual'], // Associated Public Keys
+        'Chain-IDs': ['manual'],
         'KNYT-ID': ['metaknyts'],
         'Phone-Number': ['metaknyts'],
         'Age': ['manual'],
@@ -207,8 +208,8 @@ const DataSourceSelector = ({ sourceKey, currentSource, iQubeType, onSourceChang
       console.log("DataSourceSelector - Final sources for KNYT field:", allSources);
       return allSources;
     } else {
-      // Default DataQube field mappings for other personas
-      const serviceSourceMap: { [key: string]: string[] } = {
+      // Qrypto Persona specific field mappings - NO metaKnyts sources
+      const qryptoFieldMappings: { [key: string]: string[] } = {
         'First-Name': ['linkedin'],
         'Last-Name': ['linkedin'],
         'Profession': ['linkedin'],
@@ -230,10 +231,11 @@ const DataSourceSelector = ({ sourceKey, currentSource, iQubeType, onSourceChang
         'Wallets-of-Interest': ['wallet'],
         'Web3-Interests': ['linkedin', 'twitter'],
         'Tokens-of-Interest': ['manual'],
+        'Qrypto-ID': ['manual']
       };
 
       // Get service sources for this field
-      const serviceSources = serviceSourceMap[key] || [];
+      const serviceSources = qryptoFieldMappings[key] || [];
       
       // Add service sources to base sources
       const allSources = [...baseSources];
