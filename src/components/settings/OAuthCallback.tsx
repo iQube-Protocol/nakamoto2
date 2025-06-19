@@ -49,7 +49,11 @@ const OAuthCallback = () => {
               return;
             }
             
-            // Save the connection to the database
+            // Clean up any existing OAuth state
+            localStorage.removeItem('oauth_state');
+            localStorage.removeItem('oauth_service');
+            
+            // Save the connection to the database with proper error handling
             console.log('Saving connection to database...');
             const { error: saveError } = await supabase
               .from('user_connections')
@@ -58,25 +62,27 @@ const OAuthCallback = () => {
                 service: service,
                 connected_at: new Date().toISOString(),
                 connection_data: connectionData
+              }, {
+                onConflict: 'user_id,service'
               });
             
             if (saveError) {
               console.error('Error saving connection:', saveError);
               setStatus('error');
               setMessage('Failed to save connection data.');
-              toast.error(`Failed to save ${service} connection.`);
+              toast.error(`Failed to save ${service} connection: ${saveError.message}`);
               setTimeout(() => navigate('/settings?tab=connections'), 3000);
               return;
             }
             
             console.log(`${service} connection saved successfully`);
             
-            // CRITICAL FIX: Always update BlakQube after any successful connection
+            // Update BlakQube with connection data
             console.log('Updating BlakQube with connection data...');
             setMessage(`Importing your ${service} profile data...`);
             
             // Add a small delay to ensure the database has been updated
-            await new Promise(resolve => setTimeout(resolve, 500));
+            await new Promise(resolve => setTimeout(resolve, 1000));
             
             const updateSuccess = await blakQubeService.updateBlakQubeFromConnections();
             
@@ -105,7 +111,7 @@ const OAuthCallback = () => {
             // Redirect back to settings after a short delay
             setTimeout(() => {
               navigate('/settings?tab=connections');
-            }, 2000);
+            }, 2500);
             
           } catch (parseError) {
             console.error('Error parsing connection data:', parseError);

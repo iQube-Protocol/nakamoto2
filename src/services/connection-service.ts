@@ -138,21 +138,25 @@ class ConnectionService {
           if (error) {
             console.error('LinkedIn connection service error:', error);
             toast.error('Failed to initialize LinkedIn connection. Please try again.');
+            this.cleanupIncompleteOAuth();
             return false;
           }
 
           if (data?.authUrl) {
+            console.log('Redirecting to LinkedIn OAuth:', data.authUrl);
             // Redirect to LinkedIn OAuth
             window.location.href = data.authUrl;
             return true;
           } else {
             console.error('No auth URL received from LinkedIn service');
             toast.error('Failed to get LinkedIn authorization URL. Please try again.');
+            this.cleanupIncompleteOAuth();
             return false;
           }
         } catch (error) {
           console.error('Error calling LinkedIn connection service:', error);
           toast.error('Failed to connect to LinkedIn service. Please try again.');
+          this.cleanupIncompleteOAuth();
           return false;
         }
       }
