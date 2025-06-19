@@ -6,14 +6,15 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
-import { Upload, Send, Users, CheckCircle, Clock, AlertCircle } from 'lucide-react';
+import { Upload, Send, Users, CheckCircle, Clock, AlertCircle, FileText, Merge } from 'lucide-react';
 import { toast } from 'sonner';
-import { invitationService, type InvitationData, type PendingInvitation } from '@/services/invitation-service';
+import { invitationService, type InvitationData, type PendingInvitation, type DeduplicationStats } from '@/services/invitation-service';
 
 const InvitationManager = () => {
   const [selectedPersonaType, setSelectedPersonaType] = useState<'knyt' | 'qrypto'>('knyt');
   const [csvContent, setCsvContent] = useState('');
   const [parsedInvitations, setParsedInvitations] = useState<InvitationData[]>([]);
+  const [deduplicationStats, setDeduplicationStats] = useState<DeduplicationStats | null>(null);
   const [pendingInvitations, setPendingInvitations] = useState<PendingInvitation[]>([]);
   const [completedInvitations, setCompletedInvitations] = useState<PendingInvitation[]>([]);
   const [isUploading, setIsUploading] = useState(false);
@@ -50,12 +51,19 @@ const InvitationManager = () => {
       setCsvContent(content);
       
       try {
-        const invitations = invitationService.parseCSV(content, selectedPersonaType);
+        const { invitations, stats } = invitationService.parseCSV(content, selectedPersonaType);
         setParsedInvitations(invitations);
-        toast.success(`Parsed ${invitations.length} potential invitations`);
+        setDeduplicationStats(stats);
+        
+        let message = `Parsed ${stats.finalCount} unique invitations`;
+        if (stats.duplicatesFound > 0) {
+          message += ` (${stats.duplicatesFound} duplicates merged)`;
+        }
+        toast.success(message);
       } catch (error) {
         toast.error(`Error parsing CSV: ${error}`);
         setParsedInvitations([]);
+        setDeduplicationStats(null);
       }
     };
     reader.readAsText(file);
@@ -146,23 +154,65 @@ const InvitationManager = () => {
               onChange={handleFileUpload}
             />
             <p className="text-sm text-gray-500 mt-1">
-              Upload a CSV file with user data. First row should contain column headers.
+              Upload a CSV file with user data. First row should contain column headers. Duplicate emails will be automatically merged.
             </p>
           </div>
 
           {csvContent && (
-            <div>
-              <Label>CSV Preview</Label>
-              <Textarea
-                value={csvContent.split('\n').slice(0, 5).join('\n')}
-                readOnly
-                rows={5}
-                className="font-mono text-xs"
-              />
-              <p className="text-sm text-gray-500 mt-1">
-                Showing first 5 rows. Parsed {parsedInvitations.length} invitations.
-              </p>
-            </div>
+            <>
+              <div>
+                <Label>CSV Preview</Label>
+                <Textarea
+                  value={csvContent.split('\n').slice(0, 5).join('\n')}
+                  readOnly
+                  rows={5}
+                  className="font-mono text-xs"
+                />
+              </div>
+
+              {deduplicationStats && (
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
+                  <div className="flex items-center mb-2">
+                    <FileText className="h-4 w-4 text-blue-600 mr-2" />
+                    <span className="font-medium text-blue-900">Processing Summary</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div>
+                      <span className="text-gray-600">Total entries:</span>
+                      <span className="ml-2 font-medium">{deduplicationStats.totalEntries}</span>
+                    </div>
+                    <div>
+                      <span className="text-gray-600">Final count:</span>
+                      <span className="ml-2 font-medium text-green-600">{deduplicationStats.finalCount}</span>
+                    </div>
+                    {deduplicationStats.duplicatesFound > 0 && (
+                      <>
+                        <div>
+                          <span className="text-gray-600">Duplicates merged:</span>
+                          <span className="ml-2 font-medium text-orange-600">{deduplicationStats.duplicatesFound}</span>
+                        </div>
+                        <div>
+                          <span className="text-gray-600">Affected emails:</span>
+                          <span className="ml-2 font-medium">{deduplicationStats.mergedEmails.length}</span>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                  
+                  {deduplicationStats.mergedEmails.length > 0 && (
+                    <div className="mt-3">
+                      <div className="flex items-center mb-1">
+                        <Merge className="h-3 w-3 text-orange-600 mr-1" />
+                        <span className="text-xs font-medium text-orange-800">Merged emails:</span>
+                      </div>
+                      <div className="text-xs text-gray-600 max-h-20 overflow-y-auto">
+                        {deduplicationStats.mergedEmails.join(', ')}
+                      </div>
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
           )}
 
           <Button 

@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface InvitationData {
@@ -16,6 +15,13 @@ export interface PendingInvitation {
   expires_at: string;
   signup_completed: boolean;
   invitation_token: string;
+}
+
+export interface DeduplicationStats {
+  totalEntries: number;
+  duplicatesFound: number;
+  finalCount: number;
+  mergedEmails: string[];
 }
 
 class InvitationService {
@@ -128,8 +134,8 @@ class InvitationService {
     }
   }
 
-  // Parse CSV content into invitation data
-  parseCSV(csvContent: string, personaType: 'knyt' | 'qrypto'): InvitationData[] {
+  // Parse CSV content into invitation data with deduplication
+  parseCSV(csvContent: string, personaType: 'knyt' | 'qrypto'): { invitations: InvitationData[]; stats: DeduplicationStats } {
     console.log('Starting CSV parsing with content:', csvContent.substring(0, 200));
     
     const lines = csvContent.trim().split('\n');
@@ -137,19 +143,17 @@ class InvitationService {
       throw new Error('CSV must have at least a header row and one data row');
     }
 
-    // More flexible CSV parsing to handle different formats
     const headers = this.parseCSVLine(lines[0]);
-    const invitations: InvitationData[] = [];
+    const rawInvitations: InvitationData[] = [];
 
     console.log('Parsed headers:', headers);
 
+    // First pass: parse all entries
     for (let i = 1; i < lines.length; i++) {
       const line = lines[i].trim();
-      if (!line) continue; // Skip empty lines
+      if (!line) continue;
       
       const values = this.parseCSVLine(line);
-      
-      console.log(`Processing row ${i}: ${values.length} values vs ${headers.length} headers`);
       
       if (values.length !== headers.length) {
         console.warn(`Skipping row ${i + 1}: column count mismatch (${values.length} vs ${headers.length})`);
@@ -159,16 +163,13 @@ class InvitationService {
       const personaData: Record<string, any> = {};
       let email = '';
 
-      // Map CSV columns to persona data
       headers.forEach((header, index) => {
         const value = values[index];
         
-        // Find email field - be more flexible with column names
         if (header.toLowerCase().includes('email') || header.toLowerCase() === 'e-mail') {
           email = value;
         }
         
-        // Handle array fields for specific columns
         if (['Chain-IDs', 'Web3-Interests', 'Tokens-of-Interest', 'Wallets-of-Interest'].includes(header)) {
           personaData[header] = value ? value.split(';').map(v => v.trim()).filter(v => v) : [];
         } else {
@@ -177,22 +178,200 @@ class InvitationService {
       });
 
       if (email && email.includes('@')) {
-        invitations.push({
+        rawInvitations.push({
           email: email.toLowerCase().trim(),
           personaType,
           personaData
         });
-        console.log(`Added invitation for: ${email}`);
-      } else {
-        console.warn(`Skipping row ${i + 1}: no valid email found (got: "${email}")`);
       }
     }
 
-    console.log(`Parsed ${invitations.length} invitations from CSV`);
-    return invitations;
+    // Second pass: deduplicate and merge
+    const { deduplicatedInvitations, stats } = this.deduplicateInvitations(rawInvitations);
+
+    console.log(`Deduplication complete: ${stats.totalEntries} -> ${stats.finalCount} entries`);
+    return { invitations: deduplicatedInvitations, stats };
   }
 
-  // Helper method to parse CSV line handling quoted values
+  // Deduplicate invitations and merge duplicate entries
+  private deduplicateInvitations(invitations: InvitationData[]): { deduplicatedInvitations: InvitationData[]; stats: DeduplicationStats } {
+    const emailGroups = new Map<string, InvitationData[]>();
+    const mergedEmails: string[] = [];
+
+    // Group by email
+    invitations.forEach(invitation => {
+      const email = invitation.email;
+      if (!emailGroups.has(email)) {
+        emailGroups.set(email, []);
+      }
+      emailGroups.get(email)!.push(invitation);
+    });
+
+    const deduplicatedInvitations: InvitationData[] = [];
+
+    // Process each email group
+    emailGroups.forEach((group, email) => {
+      if (group.length > 1) {
+        mergedEmails.push(email);
+        console.log(`Merging ${group.length} entries for email: ${email}`);
+      }
+
+      const mergedInvitation = this.mergeInvitationGroup(group);
+      deduplicatedInvitations.push(mergedInvitation);
+    });
+
+    const stats: DeduplicationStats = {
+      totalEntries: invitations.length,
+      duplicatesFound: invitations.length - deduplicatedInvitations.length,
+      finalCount: deduplicatedInvitations.length,
+      mergedEmails
+    };
+
+    return { deduplicatedInvitations, stats };
+  }
+
+  // Merge multiple invitation entries for the same email
+  private mergeInvitationGroup(group: InvitationData[]): InvitationData {
+    if (group.length === 1) {
+      return group[0];
+    }
+
+    const merged = {
+      email: group[0].email,
+      personaType: group[0].personaType,
+      personaData: {},
+      invitedBy: group[0].invitedBy
+    };
+
+    // Get all unique keys from all entries
+    const allKeys = new Set<string>();
+    group.forEach(invitation => {
+      Object.keys(invitation.personaData).forEach(key => allKeys.add(key));
+    });
+
+    // Merge each field according to its type and importance
+    allKeys.forEach(key => {
+      merged.personaData[key] = this.mergeField(key, group.map(inv => inv.personaData[key]));
+    });
+
+    return merged;
+  }
+
+  // Merge individual fields based on their type and business logic
+  private mergeField(fieldName: string, values: any[]): any {
+    const nonEmptyValues = values.filter(v => v !== undefined && v !== null && v !== '');
+
+    if (nonEmptyValues.length === 0) {
+      return '';
+    }
+
+    // Numeric fields that should be summed
+    const sumFields = ['Total-Invested', 'Metaiye-Shares-Owned', 'KNYT-COYN-Owned', 
+                      'Motion-Comics-Owned', 'Paper-Comics-Owned', 'Digital-Comics-Owned',
+                      'KNYT-Posters-Owned', 'KNYT-Cards-Owned'];
+    
+    if (sumFields.includes(fieldName)) {
+      return this.sumNumericValues(nonEmptyValues);
+    }
+
+    // Date fields - use earliest date
+    if (fieldName === 'OM-Member-Since') {
+      return this.getEarliestDate(nonEmptyValues);
+    }
+
+    // Array fields - merge and deduplicate
+    const arrayFields = ['Chain-IDs', 'Web3-Interests', 'Tokens-of-Interest', 'Wallets-of-Interest'];
+    if (arrayFields.includes(fieldName)) {
+      return this.mergeArrays(nonEmptyValues);
+    }
+
+    // For other fields, use the first non-empty value
+    return nonEmptyValues[0];
+  }
+
+  // Sum numeric values (handle currency formatting)
+  private sumNumericValues(values: any[]): string {
+    let total = 0;
+    let hasValues = false;
+
+    values.forEach(value => {
+      if (typeof value === 'string' && value.trim()) {
+        // Remove currency symbols and commas
+        const numericValue = parseFloat(value.replace(/[$,]/g, ''));
+        if (!isNaN(numericValue)) {
+          total += numericValue;
+          hasValues = true;
+        }
+      } else if (typeof value === 'number') {
+        total += value;
+        hasValues = true;
+      }
+    });
+
+    if (!hasValues) {
+      return '';
+    }
+
+    // Format back as currency if it looks like a monetary value
+    const firstValue = values[0]?.toString() || '';
+    if (firstValue.includes('$')) {
+      return `$${total.toLocaleString()}`;
+    }
+
+    return total.toString();
+  }
+
+  // Get the earliest date from date strings
+  private getEarliestDate(values: any[]): string {
+    const dates = values
+      .filter(v => v && typeof v === 'string')
+      .map(dateStr => {
+        // Try to parse various date formats
+        const date = new Date(dateStr);
+        return isNaN(date.getTime()) ? null : date;
+      })
+      .filter(d => d !== null);
+
+    if (dates.length === 0) {
+      return values[0] || '';
+    }
+
+    const earliestDate = new Date(Math.min(...dates.map(d => d!.getTime())));
+    
+    // Return in the same format as the original (try to preserve format)
+    const originalFormat = values.find(v => {
+      const date = new Date(v);
+      return !isNaN(date.getTime()) && date.getTime() === earliestDate.getTime();
+    });
+
+    return originalFormat || earliestDate.toLocaleDateString();
+  }
+
+  // Merge and deduplicate arrays
+  private mergeArrays(values: any[]): string[] {
+    const merged = new Set<string>();
+
+    values.forEach(value => {
+      if (Array.isArray(value)) {
+        value.forEach(item => {
+          if (item && typeof item === 'string' && item.trim()) {
+            merged.add(item.trim());
+          }
+        });
+      } else if (value && typeof value === 'string') {
+        // Handle comma or semicolon separated values
+        value.split(/[,;]/).forEach(item => {
+          if (item && item.trim()) {
+            merged.add(item.trim());
+          }
+        });
+      }
+    });
+
+    return Array.from(merged);
+  }
+
+  // Parse CSV line handling quoted values
   private parseCSVLine(line: string): string[] {
     const result: string[] = [];
     let current = '';
