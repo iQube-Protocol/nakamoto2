@@ -24,7 +24,7 @@ const SignInForm = () => {
       const { error, success } = await signIn(email, password);
       if (success) {
         toast.success('Signed in successfully');
-        navigate('/dashboard');
+        navigate('/mondai');
       } else if (error) {
         toast.error(`Sign in failed: ${error.message}`);
       }
