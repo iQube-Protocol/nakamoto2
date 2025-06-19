@@ -37,11 +37,12 @@ const AppRouter = () => {
           <Route path="/invited-signup" element={<InvitedUserSignup />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           
-          {/* Admin routes */}
-          <Route path="/admin/invitations" element={<InvitationsPage />} />
-          
           {/* Protected routes */}
           <Route element={<ProtectedRoute />}>
+            {/* Admin routes - protected but outside MainLayout */}
+            <Route path="/admin/invitations" element={<InvitationsPage />} />
+            
+            {/* Main app routes with layout */}
             <Route element={<MainLayout />}>
               <Route path="/mondai" element={<MonDAI />} />
               <Route path="/learn" element={<Learn />} />
