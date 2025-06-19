@@ -4,6 +4,7 @@ import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
 import DataSourceSelector from './DataSourceSelector';
+import ReadOnlyInputWithTooltip from './ReadOnlyInputWithTooltip';
 
 interface PrivateDataEditorProps {
   editingData: { [key: string]: string | string[] };
@@ -26,6 +27,24 @@ const PrivateDataEditor = ({
   onSourceChange,
   isKNYTPersona = false
 }: PrivateDataEditorProps) => {
+  // Fields that should be read-only for KNYT Persona
+  const knytReadOnlyFields = ['OM-Member-Since', 'Metaiye-Shares-Owned', 'Total-Invested'];
+  
+  const isReadOnlyField = (key: string) => {
+    return isKNYTPersona && knytReadOnlyFields.includes(key);
+  };
+
+  const formatValue = (key: string, value: string | string[]) => {
+    if (key === 'Total-Invested' && typeof value === 'string' && value) {
+      // Format as dollar amount if not already formatted
+      const numericValue = value.replace(/[$,]/g, '');
+      if (!isNaN(Number(numericValue)) && numericValue !== '') {
+        return `$${Number(numericValue).toLocaleString()}`;
+      }
+    }
+    return Array.isArray(value) ? value.join(', ') : value;
+  };
+
   return (
     <>
       <div className="max-h-[220px] overflow-y-auto pr-2">
@@ -41,7 +60,12 @@ const PrivateDataEditor = ({
                 isKNYTPersona={isKNYTPersona}
               />
             </div>
-            {Array.isArray(value) ? (
+            {isReadOnlyField(key) ? (
+              <ReadOnlyInputWithTooltip 
+                value={formatValue(key, value)}
+                className="h-7 text-xs"
+              />
+            ) : Array.isArray(value) ? (
               <Input
                 value={value.join(', ')}
                 onChange={(e) => setEditingData({
