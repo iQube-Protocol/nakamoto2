@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Label } from '@/components/ui/label';
 import { Input } from '@/components/ui/input';
@@ -65,7 +64,7 @@ const PrivateDataEditor = ({
   isKNYTPersona = false
 }: PrivateDataEditorProps) => {
   // Fields that should be read-only for KNYT Persona
-  const knytReadOnlyFields = ['OM-Member-Since', 'Metaiye-Shares-Owned', 'Total-Invested'];
+  const knytReadOnlyFields = ['OM-Member-Since', 'Metaiye-Shares-Owned', 'Total-Invested', 'OM-Tier-Status'];
   
   const isReadOnlyField = (key: string) => {
     return isKNYTPersona && knytReadOnlyFields.includes(key);
@@ -169,12 +168,7 @@ const PrivateDataEditor = ({
         {Object.entries(editingData).map(([key, value]) => (
           <div key={key} className="space-y-1 border-b pb-2 mb-2">
             <div className="flex justify-between items-center">
-              <div className="flex items-center">
-                <Label className="text-xs font-medium text-white mr-2">{key}</Label>
-                <div className="flex items-center justify-center w-4 h-4">
-                  {getSourceIcon(key)}
-                </div>
-              </div>
+              <Label className="text-xs font-medium text-white">{key}</Label>
               <DataSourceSelector 
                 sourceKey={key}
                 currentSource={dataSources[key] || 'manual'}
