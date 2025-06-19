@@ -174,6 +174,45 @@ export type Database = {
         }
         Relationships: []
       }
+      invited_users: {
+        Row: {
+          completed_at: string | null
+          email: string
+          expires_at: string
+          id: string
+          invitation_token: string
+          invited_at: string
+          invited_by: string | null
+          persona_data: Json
+          persona_type: string
+          signup_completed: boolean
+        }
+        Insert: {
+          completed_at?: string | null
+          email: string
+          expires_at?: string
+          id?: string
+          invitation_token?: string
+          invited_at?: string
+          invited_by?: string | null
+          persona_data: Json
+          persona_type: string
+          signup_completed?: boolean
+        }
+        Update: {
+          completed_at?: string | null
+          email?: string
+          expires_at?: string
+          id?: string
+          invitation_token?: string
+          invited_at?: string
+          invited_by?: string | null
+          persona_data?: Json
+          persona_type?: string
+          signup_completed?: boolean
+        }
+        Relationships: []
+      }
       knyt_persona_rewards: {
         Row: {
           created_at: string

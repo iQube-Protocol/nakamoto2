@@ -1,81 +1,64 @@
 import React from 'react';
-import { Route, Routes, BrowserRouter as Router, useLocation, Navigate } from 'react-router-dom';
-import { AnimatePresence } from 'framer-motion';
-import { Toaster } from '@/components/ui/sonner';
-import ProtectedRoute from '../auth/ProtectedRoute';
-import MainLayout from '../layout/MainLayout';
-import SignUp from '../../pages/auth/SignUp';
-import SignIn from '../../pages/SignIn';
-import Index from '../../pages/Index';
-import Settings from '../../pages/Settings';
-import Learn from '../../pages/Learn';
-import Earn from '../../pages/Earn';
-import Connect from '../../pages/Connect';
-import NotFound from '../../pages/NotFound';
-import Profile from '../../pages/Profile';
-import MonDAI from '../../pages/MonDAI';
-import AgentQube from '../../pages/qubes/AgentQube';
-import ToolQube from '../../pages/qubes/ToolQube';
-import DataQube from '../../pages/qubes/DataQube';
-import SplashPage from '../../pages/SplashPage';
-import LegacyDashboard from '../../pages/LegacyDashboard';
-import { AuthProvider } from '@/hooks/use-auth';
-import OAuthCallback from '@/components/settings/OAuthCallback';
-import EmailConfirmation from '@/components/auth/EmailConfirmation';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import Index from '@/pages';
+import SplashPage from '@/pages/Splash';
+import SignIn from '@/pages/SignIn';
+import SignUpPage from '@/pages/SignUp';
+import MonDAI from '@/pages/MonDAI';
+import Learn from '@/pages/Learn';
+import Earn from '@/pages/Earn';
+import Connect from '@/pages/Connect';
+import Profile from '@/pages/Profile';
+import Settings from '@/pages/Settings';
+import Dashboard from '@/pages/Dashboard';
+import LegacyDashboard from '@/pages/LegacyDashboard';
+import DataQube from '@/pages/qubes/DataQube';
+import ToolQube from '@/pages/qubes/ToolQube';
+import AgentQube from '@/pages/qubes/AgentQube';
+import NotFound from '@/pages/NotFound';
 import PrivacyPolicy from '@/pages/PrivacyPolicy';
+import { ProtectedRoute } from './ProtectedRoute';
+import { MainLayout } from '../layout/MainLayout';
+import InvitationsPage from '@/pages/admin/Invitations';
+import InvitedUserSignup from '@/components/auth/InvitedUserSignup';
 
-const ProtectedLayoutRoute = ({ element }) => {
+export const AppRouter = () => {
   return (
-    <ProtectedRoute>
-      <MainLayout>
-        {element}
-      </MainLayout>
-    </ProtectedRoute>
-  );
-};
-
-const AppRoutes = () => {
-  const location = useLocation();
-  
-  return (
-    <AnimatePresence mode="wait">
-      <Routes location={location} key={location.pathname}>
+    <Router>
+      <Routes>
+        {/* Public routes */}
         <Route path="/" element={<Index />} />
         <Route path="/splash" element={<SplashPage />} />
         <Route path="/signin" element={<SignIn />} />
-        <Route path="/signup" element={<SignUp />} />
-        <Route path="/legacy" element={<LegacyDashboard />} />
-        <Route path="/oauth-callback" element={<OAuthCallback />} />
-        <Route path="/auth/confirm" element={<EmailConfirmation />} />
+        <Route path="/signup" element={<SignUpPage />} />
+        <Route path="/invited-signup" element={<InvitedUserSignup />} />
+        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         
-        {/* Redirect /dashboard to /mondai */}
-        <Route path="/dashboard" element={<Navigate to="/mondai" replace />} />
+        {/* Admin routes */}
+        <Route path="/admin/invitations" element={<InvitationsPage />} />
         
-        <Route path="/mondai" element={<ProtectedLayoutRoute element={<MonDAI />} />} />
-        <Route path="/learn" element={<ProtectedLayoutRoute element={<Learn />} />} />
-        <Route path="/earn" element={<ProtectedLayoutRoute element={<Earn />} />} />
-        <Route path="/connect" element={<ProtectedLayoutRoute element={<Connect />} />} />
-        <Route path="/settings" element={<ProtectedLayoutRoute element={<Settings />} />} />
-        <Route path="/profile" element={<ProtectedLayoutRoute element={<Profile />} />} />
-        <Route path="/qubes/agent" element={<ProtectedLayoutRoute element={<AgentQube />} />} />
-        <Route path="/qubes/tool" element={<ProtectedLayoutRoute element={<ToolQube />} />} />
-        <Route path="/qubes/data" element={<ProtectedLayoutRoute element={<DataQube />} />} />
-        <Route path="/privacy" element={<PrivacyPolicy />} />
+        {/* Protected routes */}
+        <Route element={<ProtectedRoute />}>
+          <Route element={<MainLayout />}>
+            <Route path="/mondai" element={<MonDAI />} />
+            <Route path="/learn" element={<Learn />} />
+            <Route path="/earn" element={<Earn />} />
+            <Route path="/connect" element={<Connect />} />
+            <Route path="/profile" element={<Profile />} />
+            <Route path="/settings" element={<Settings />} />
+            <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/legacy-dashboard" element={<LegacyDashboard />} />
+            
+            {/* Qube pages */}
+            <Route path="/qubes/data" element={<DataQube />} />
+            <Route path="/qubes/tool" element={<ToolQube />} />
+            <Route path="/qubes/agent" element={<AgentQube />} />
+          </Route>
+        </Route>
+        
+        {/* 404 page */}
         <Route path="*" element={<NotFound />} />
       </Routes>
-    </AnimatePresence>
-  );
-};
-
-const AppRouter = () => {
-  return (
-    <Router>
-      <AuthProvider>
-        <AppRoutes />
-        <Toaster />
-      </AuthProvider>
     </Router>
   );
 };
-
-export default AppRouter;
