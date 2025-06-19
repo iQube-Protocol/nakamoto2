@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 
 export interface InvitationData {
@@ -29,9 +30,21 @@ class InvitationService {
   async createInvitations(invitations: InvitationData[]): Promise<{ success: boolean; errors: string[] }> {
     const errors: string[] = [];
     const validInvitations: any[] = [];
+    const skippedEmails: string[] = [];
+
+    // First, check which emails already exist in the database
+    const emails = invitations.map(inv => inv.email.toLowerCase().trim());
+    const { data: existingInvitations } = await supabase
+      .from('invited_users')
+      .select('email')
+      .in('email', emails);
+
+    const existingEmails = new Set(existingInvitations?.map(inv => inv.email) || []);
 
     // Validate and prepare invitation records
     for (const invitation of invitations) {
+      const email = invitation.email.toLowerCase().trim();
+
       if (!invitation.email || !invitation.email.includes('@')) {
         errors.push(`Invalid email: ${invitation.email}`);
         continue;
@@ -42,15 +55,29 @@ class InvitationService {
         continue;
       }
 
+      // Skip emails that already exist in the database
+      if (existingEmails.has(email)) {
+        skippedEmails.push(email);
+        continue;
+      }
+
       validInvitations.push({
-        email: invitation.email.toLowerCase().trim(),
+        email: email,
         persona_type: invitation.personaType,
         persona_data: invitation.personaData,
         invited_by: invitation.invitedBy || 'system'
       });
     }
 
+    // Report skipped emails
+    if (skippedEmails.length > 0) {
+      errors.push(`Skipped ${skippedEmails.length} emails that already have invitations: ${skippedEmails.slice(0, 5).join(', ')}${skippedEmails.length > 5 ? '...' : ''}`);
+    }
+
     if (validInvitations.length === 0) {
+      if (skippedEmails.length > 0) {
+        return { success: true, errors: [`All ${invitations.length} emails already have invitations - no new invitations created`] };
+      }
       return { success: false, errors: ['No valid invitations to create'] };
     }
 
@@ -65,7 +92,14 @@ class InvitationService {
       }
 
       console.log(`Successfully created ${validInvitations.length} invitations`);
-      return { success: true, errors };
+      
+      // Include both success and warning messages
+      const successMessages = [`Successfully created ${validInvitations.length} new invitations`];
+      if (skippedEmails.length > 0) {
+        successMessages.push(`Skipped ${skippedEmails.length} existing emails`);
+      }
+      
+      return { success: true, errors: successMessages };
     } catch (error) {
       console.error('Unexpected error creating invitations:', error);
       return { success: false, errors: [`Unexpected error: ${error}`] };

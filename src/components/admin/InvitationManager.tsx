@@ -81,13 +81,30 @@ const InvitationManager = () => {
       const result = await invitationService.createInvitations(parsedInvitations);
       
       if (result.success) {
-        toast.success(`Created ${parsedInvitations.length} invitations successfully`);
+        // Show success message with details
+        if (result.errors.length > 0) {
+          // Show success with additional info (like skipped emails)
+          result.errors.forEach(message => {
+            if (message.includes('Successfully created')) {
+              toast.success(message);
+            } else {
+              toast.info(message);
+            }
+          });
+        } else {
+          toast.success(`Created ${parsedInvitations.length} invitations successfully`);
+        }
+        
         setParsedInvitations([]);
         setCsvContent('');
+        setDeduplicationStats(null);
         if (fileInputRef.current) fileInputRef.current.value = '';
         await loadInvitations();
       } else {
-        toast.error(`Failed to create invitations: ${result.errors.join(', ')}`);
+        // Show error messages
+        result.errors.forEach(error => {
+          toast.error(error);
+        });
       }
     } catch (error) {
       toast.error(`Error creating invitations: ${error}`);
