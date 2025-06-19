@@ -1,9 +1,10 @@
+
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
-import Index from '@/pages';
-import SplashPage from '@/pages/Splash';
+import Index from '@/pages/Index';
+import SplashPage from '@/pages/SplashPage';
 import SignIn from '@/pages/SignIn';
-import SignUpPage from '@/pages/SignUp';
+import SignUpPage from '@/pages/auth/SignUp';
 import MonDAI from '@/pages/MonDAI';
 import Learn from '@/pages/Learn';
 import Earn from '@/pages/Earn';
@@ -17,12 +18,12 @@ import ToolQube from '@/pages/qubes/ToolQube';
 import AgentQube from '@/pages/qubes/AgentQube';
 import NotFound from '@/pages/NotFound';
 import PrivacyPolicy from '@/pages/PrivacyPolicy';
-import { ProtectedRoute } from './ProtectedRoute';
-import { MainLayout } from '../layout/MainLayout';
+import ProtectedRoute from '@/components/auth/ProtectedRoute';
+import MainLayout from '@/components/layout/MainLayout';
 import InvitationsPage from '@/pages/admin/Invitations';
 import InvitedUserSignup from '@/components/auth/InvitedUserSignup';
 
-export const AppRouter = () => {
+const AppRouter = () => {
   return (
     <Router>
       <Routes>
@@ -62,3 +63,5 @@ export const AppRouter = () => {
     </Router>
   );
 };
+
+export default AppRouter;
