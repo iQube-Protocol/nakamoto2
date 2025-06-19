@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -9,6 +8,8 @@ import { Textarea } from '@/components/ui/textarea';
 import { Upload, Send, Users, CheckCircle, Clock, AlertCircle, FileText, Merge } from 'lucide-react';
 import { toast } from 'sonner';
 import { invitationService, type InvitationData, type PendingInvitation, type DeduplicationStats } from '@/services/invitation-service';
+import { type BatchProgress } from '@/services/invitation-progress-tracker';
+import BatchProgressDialog from './BatchProgressDialog';
 
 const InvitationManager = () => {
   const [selectedPersonaType, setSelectedPersonaType] = useState<'knyt' | 'qrypto'>('knyt');
@@ -19,6 +20,8 @@ const InvitationManager = () => {
   const [completedInvitations, setCompletedInvitations] = useState<PendingInvitation[]>([]);
   const [isUploading, setIsUploading] = useState(false);
   const [isSendingEmails, setIsSendingEmails] = useState(false);
+  const [batchProgress, setBatchProgress] = useState<BatchProgress | null>(null);
+  const [showProgressDialog, setShowProgressDialog] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Load existing invitations
@@ -69,7 +72,7 @@ const InvitationManager = () => {
     reader.readAsText(file);
   };
 
-  // Create invitations in database
+  // Create invitations in database with progress tracking
   const handleCreateInvitations = async () => {
     if (parsedInvitations.length === 0) {
       toast.error('No invitations to create');
@@ -77,8 +80,15 @@ const InvitationManager = () => {
     }
 
     setIsUploading(true);
+    setShowProgressDialog(true);
+    
     try {
-      const result = await invitationService.createInvitations(parsedInvitations);
+      const result = await invitationService.createInvitations(
+        parsedInvitations,
+        (progress: BatchProgress) => {
+          setBatchProgress(progress);
+        }
+      );
       
       if (result.success) {
         // Show success message with details
@@ -108,9 +118,25 @@ const InvitationManager = () => {
       }
     } catch (error) {
       toast.error(`Error creating invitations: ${error}`);
+      setBatchProgress(prev => prev ? {
+        ...prev,
+        errors: [...prev.errors, `Unexpected error: ${error}`]
+      } : null);
     } finally {
       setIsUploading(false);
+      // Keep dialog open for a moment to show final results
+      setTimeout(() => {
+        setShowProgressDialog(false);
+        setBatchProgress(null);
+      }, 3000);
     }
+  };
+
+  const handleCancelBatch = () => {
+    setShowProgressDialog(false);
+    setBatchProgress(null);
+    setIsUploading(false);
+    toast.info('Batch processing cancelled');
   };
 
   // Send invitation emails
@@ -139,6 +165,14 @@ const InvitationManager = () => {
 
   return (
     <div className="space-y-6">
+      {/* Batch Progress Dialog */}
+      <BatchProgressDialog
+        open={showProgressDialog}
+        progress={batchProgress}
+        onCancel={handleCancelBatch}
+        canCancel={!batchProgress || batchProgress.emailsProcessed < batchProgress.totalEmails}
+      />
+
       {/* Upload CSV Section */}
       <Card>
         <CardHeader>
@@ -237,7 +271,7 @@ const InvitationManager = () => {
             disabled={parsedInvitations.length === 0 || isUploading}
             className="w-full"
           >
-            {isUploading ? 'Creating Invitations...' : `Create ${parsedInvitations.length} Invitations`}
+            {isUploading ? 'Processing...' : `Create ${parsedInvitations.length} Invitations`}
           </Button>
         </CardContent>
       </Card>

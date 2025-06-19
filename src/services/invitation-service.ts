@@ -1,5 +1,5 @@
-
 import { supabase } from '@/integrations/supabase/client';
+import { InvitationProgressTracker, type ProgressCallback } from './invitation-progress-tracker';
 
 export interface InvitationData {
   email: string;
@@ -26,23 +26,43 @@ export interface DeduplicationStats {
 }
 
 class InvitationService {
-  // Create multiple invitations from CSV data
-  async createInvitations(invitations: InvitationData[]): Promise<{ success: boolean; errors: string[] }> {
+  // Create multiple invitations from CSV data with progress tracking
+  async createInvitations(
+    invitations: InvitationData[], 
+    progressCallback?: ProgressCallback
+  ): Promise<{ success: boolean; errors: string[] }> {
     const errors: string[] = [];
     const validInvitations: any[] = [];
     const skippedEmails: string[] = [];
 
+    // Initialize progress tracker
+    const tracker = new InvitationProgressTracker(invitations.length, progressCallback);
+    
     console.log(`Processing ${invitations.length} invitations for creation`);
+    tracker.updateProgress({ 
+      currentOperation: 'Checking for existing emails...',
+      totalBatches: Math.ceil(invitations.length / 100) + Math.ceil(invitations.length / 50)
+    });
 
     // Check which emails already exist in smaller batches to avoid CORS issues
     const existingEmails = new Set<string>();
-    const batchSize = 100;
+    const checkBatchSize = 100;
     const emails = invitations.map(inv => inv.email.toLowerCase().trim());
 
     try {
-      for (let i = 0; i < emails.length; i += batchSize) {
-        const emailBatch = emails.slice(i, i + batchSize);
-        console.log(`Checking batch ${Math.floor(i/batchSize) + 1} of ${Math.ceil(emails.length/batchSize)} for existing emails`);
+      const totalCheckBatches = Math.ceil(emails.length / checkBatchSize);
+      
+      for (let i = 0; i < emails.length; i += checkBatchSize) {
+        const emailBatch = emails.slice(i, i + checkBatchSize);
+        const currentBatch = Math.floor(i / checkBatchSize) + 1;
+        
+        tracker.updateProgress({
+          currentBatch: currentBatch,
+          currentOperation: `Checking batch ${currentBatch} of ${totalCheckBatches} for existing emails`,
+          emailsProcessed: Math.min(i + checkBatchSize, emails.length)
+        });
+        
+        console.log(`Checking batch ${currentBatch} of ${totalCheckBatches} for existing emails`);
         
         const { data: existingInBatch, error } = await supabase
           .from('invited_users')
@@ -51,19 +71,29 @@ class InvitationService {
 
         if (error) {
           console.error('Error checking existing emails:', error);
-          // If we can't check, we'll try to insert and handle duplicates in the catch block
+          tracker.updateProgress({
+            errors: [...tracker.getProgress().errors, `Error checking emails: ${error.message}`]
+          });
           break;
         }
 
         if (existingInBatch) {
           existingInBatch.forEach(inv => existingEmails.add(inv.email));
         }
+
+        // Small delay to prevent overwhelming the database
+        await new Promise(resolve => setTimeout(resolve, 50));
       }
     } catch (error) {
       console.error('Failed to check existing emails, will handle duplicates during insertion:', error);
+      tracker.updateProgress({
+        errors: [...tracker.getProgress().errors, `Failed to check existing emails: ${error}`]
+      });
     }
 
     // Validate and prepare invitation records
+    tracker.updateProgress({ currentOperation: 'Validating invitation data...' });
+    
     for (const invitation of invitations) {
       const email = invitation.email.toLowerCase().trim();
 
@@ -96,8 +126,17 @@ class InvitationService {
       errors.push(`Skipped ${skippedEmails.length} emails that already have invitations: ${skippedEmails.slice(0, 5).join(', ')}${skippedEmails.length > 5 ? '...' : ''}`);
     }
 
+    tracker.updateProgress({
+      emailsSkipped: skippedEmails.length,
+      currentOperation: skippedEmails.length > 0 ? `Found ${skippedEmails.length} existing emails` : 'No existing emails found'
+    });
+
     if (validInvitations.length === 0) {
       if (skippedEmails.length > 0) {
+        tracker.updateProgress({ 
+          currentOperation: 'Complete - all emails already exist',
+          emailsProcessed: invitations.length 
+        });
         return { success: true, errors: [`All ${invitations.length} emails already have invitations - no new invitations created`] };
       }
       return { success: false, errors: ['No valid invitations to create'] };
@@ -110,10 +149,24 @@ class InvitationService {
       const insertBatchSize = 50;
       let totalInserted = 0;
       const duplicateErrors: string[] = [];
+      const totalInsertBatches = Math.ceil(validInvitations.length / insertBatchSize);
+
+      tracker.updateProgress({
+        currentOperation: 'Creating invitations...',
+        totalBatches: totalInsertBatches
+      });
 
       for (let i = 0; i < validInvitations.length; i += insertBatchSize) {
         const batch = validInvitations.slice(i, i + insertBatchSize);
-        console.log(`Inserting batch ${Math.floor(i/insertBatchSize) + 1} of ${Math.ceil(validInvitations.length/insertBatchSize)}`);
+        const currentBatch = Math.floor(i / insertBatchSize) + 1;
+        
+        tracker.updateProgress({
+          currentBatch: currentBatch,
+          currentOperation: `Creating batch ${currentBatch} of ${totalInsertBatches}`,
+          emailsProcessed: Math.min(emails.length, emails.length - validInvitations.length + i + insertBatchSize)
+        });
+        
+        console.log(`Inserting batch ${currentBatch} of ${totalInsertBatches}`);
         
         const { data, error } = await supabase
           .from('invited_users')
@@ -130,13 +183,26 @@ class InvitationService {
                 duplicateErrors.push(inv.email);
               }
             });
+            tracker.updateProgress({
+              emailsSkipped: tracker.getProgress().emailsSkipped + batch.length,
+              errors: [...tracker.getProgress().errors, `Batch ${currentBatch}: Found ${batch.length} duplicate emails`]
+            });
           } else {
             console.error('Error inserting batch:', error);
+            tracker.updateProgress({
+              errors: [...tracker.getProgress().errors, `Batch ${currentBatch}: ${error.message}`]
+            });
             return { success: false, errors: [`Database error: ${error.message}`] };
           }
         } else if (data) {
           totalInserted += data.length;
+          tracker.updateProgress({
+            emailsCreated: totalInserted
+          });
         }
+
+        // Small delay to prevent overwhelming the database
+        await new Promise(resolve => setTimeout(resolve, 100));
       }
 
       if (duplicateErrors.length > 0) {
@@ -144,6 +210,13 @@ class InvitationService {
       }
 
       console.log(`Successfully created ${totalInserted} invitations`);
+      
+      tracker.updateProgress({
+        currentOperation: 'Complete!',
+        emailsProcessed: invitations.length,
+        emailsCreated: totalInserted,
+        emailsSkipped: skippedEmails.length
+      });
       
       // Include both success and warning messages
       const successMessages: string[] = [];
@@ -157,6 +230,9 @@ class InvitationService {
       return { success: true, errors: successMessages.length > 0 ? successMessages : errors };
     } catch (error) {
       console.error('Unexpected error creating invitations:', error);
+      tracker.updateProgress({
+        errors: [...tracker.getProgress().errors, `Unexpected error: ${error}`]
+      });
       return { success: false, errors: [`Unexpected error: ${error}`] };
     }
   }
