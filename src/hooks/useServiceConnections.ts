@@ -1,3 +1,4 @@
+
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
@@ -156,7 +157,9 @@ export function useServiceConnections() {
         if (success) {
           // Update BlakQube data after wallet connection
           console.log('Wallet connected, updating BlakQube...');
-          await blakQubeService.updateBlakQubeFromConnections();
+          const qryptoUpdateSuccess = await blakQubeService.updatePersonaFromConnections('qrypto');
+          const knytUpdateSuccess = await blakQubeService.updatePersonaFromConnections('knyt');
+          
           // Refresh connections to get the latest data without page reload
           await fetchConnections(false);
           
@@ -257,6 +260,17 @@ export function useServiceConnections() {
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
   }, [user]);
+
+  // Listen for connection update events from OAuth callback
+  useEffect(() => {
+    const handleConnectionsUpdated = () => {
+      console.log('Connections updated event received, refreshing...');
+      fetchConnections(false);
+    };
+
+    window.addEventListener('connectionsUpdated', handleConnectionsUpdated);
+    return () => window.removeEventListener('connectionsUpdated', handleConnectionsUpdated);
+  }, []);
   
   return {
     connections,

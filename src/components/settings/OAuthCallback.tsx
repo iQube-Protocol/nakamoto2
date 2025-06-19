@@ -77,14 +77,18 @@ const OAuthCallback = () => {
             
             console.log(`${service} connection saved successfully`);
             
-            // Update BlakQube with connection data
+            // Update BlakQube with connection data - use the correct persona type
             console.log('Updating BlakQube with connection data...');
             setMessage(`Importing your ${service} profile data...`);
             
             // Add a small delay to ensure the database has been updated
             await new Promise(resolve => setTimeout(resolve, 1000));
             
-            const updateSuccess = await blakQubeService.updateBlakQubeFromConnections();
+            // For now, update both persona types to maintain compatibility
+            const qryptoUpdateSuccess = await blakQubeService.updatePersonaFromConnections('qrypto');
+            const knytUpdateSuccess = await blakQubeService.updatePersonaFromConnections('knyt');
+            
+            const updateSuccess = qryptoUpdateSuccess || knytUpdateSuccess;
             
             if (updateSuccess) {
               console.log('BlakQube updated successfully with connection data');
@@ -101,6 +105,10 @@ const OAuthCallback = () => {
               // Trigger private data update event for immediate UI refresh
               const event = new CustomEvent('privateDataUpdated');
               window.dispatchEvent(event);
+              
+              // Trigger connection refresh event for settings UI
+              const connectionEvent = new CustomEvent('connectionsUpdated');
+              window.dispatchEvent(connectionEvent);
             } else {
               console.warn('BlakQube update failed, but connection was successful');
               setStatus('success');
