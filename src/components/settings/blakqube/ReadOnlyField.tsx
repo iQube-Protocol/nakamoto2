@@ -14,20 +14,15 @@ const ReadOnlyField = ({ label, value, getSourceIcon, fieldKey }: ReadOnlyFieldP
   const displayValue = Array.isArray(value) ? value.join(', ') : value;
   
   return (
-    <div className="space-y-1 border-b pb-2 mb-2">
-      <div className="flex justify-between items-center">
-        <Label className="text-xs">{label}</Label>
-        <div className="flex items-center space-x-1">
-          {getSourceIcon(fieldKey)}
-          <span className="text-xs text-gray-500">Read-only</span>
-        </div>
+    <div className="flex items-center justify-between py-1 text-xs border-b border-gray-100">
+      <div className="flex items-center space-x-2 flex-1 min-w-0">
+        {getSourceIcon(fieldKey)}
+        <span className="font-medium text-gray-600 truncate">{label}:</span>
+        <span className="truncate text-gray-500 italic">
+          {displayValue || 'Not set'}
+        </span>
+        <span className="text-xs text-gray-400 ml-1">(Read-only)</span>
       </div>
-      <Input
-        value={displayValue}
-        readOnly
-        className="h-7 text-xs bg-gray-50 cursor-not-allowed"
-        disabled
-      />
     </div>
   );
 };

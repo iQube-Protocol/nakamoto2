@@ -51,12 +51,16 @@ const PrivateDataEditor = ({
         {Object.entries(editingData).map(([key, value]) => (
           <div key={key}>
             {isReadOnlyField(key) ? (
-              <ReadOnlyField
-                label={key}
-                value={value}
-                getSourceIcon={getSourceIcon}
-                fieldKey={key}
-              />
+              <div className="flex items-center justify-between py-1 text-xs border-b border-gray-100">
+                <div className="flex items-center space-x-2 flex-1 min-w-0">
+                  {getSourceIcon(key)}
+                  <span className="font-medium text-gray-600 truncate">{key}:</span>
+                  <span className="truncate text-gray-500 italic">
+                    {Array.isArray(value) ? value.join(', ') : value || 'Not set'}
+                  </span>
+                  <span className="text-xs text-gray-400 ml-1">(Read-only)</span>
+                </div>
+              </div>
             ) : (
               <div className="space-y-1 border-b pb-2 mb-2">
                 <div className="flex justify-between items-center">
