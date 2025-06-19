@@ -1,5 +1,5 @@
 import { KNYTPersona, QryptoPersona, BlakQube } from '@/lib/types';
-import { PrivateData } from './blakqube/types';
+import { PrivateData } from './types';
 
 // Helper function to convert PrivateData to BlakQube format
 export const privateDataToBlakQube = (data: PrivateData): Partial<BlakQube> => {
