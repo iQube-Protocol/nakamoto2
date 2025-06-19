@@ -1,4 +1,5 @@
 
+
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.8';
 
@@ -92,7 +93,7 @@ const handler = async (req: Request): Promise<Response> => {
         const emailData = {
           Messages: [{
             From: {
-              Email: "hello@trial-z3m5jgrmk8x4dpyo.mlsender.net", // Mailjet trial sender
+              Email: "nakamoto@metame.com", // Your verified sender email
               Name: "Agent Nakamoto"
             },
             To: [{
@@ -187,3 +188,4 @@ const handler = async (req: Request): Promise<Response> => {
 };
 
 serve(handler);
+
