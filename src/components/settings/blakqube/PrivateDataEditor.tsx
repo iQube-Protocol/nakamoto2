@@ -13,6 +13,7 @@ interface PrivateDataEditorProps {
   dataSources: { [key: string]: string };
   iQubeType: string;
   onSourceChange: (key: string, value: string) => void;
+  isKNYTPersona?: boolean;
 }
 
 const PrivateDataEditor = ({
@@ -22,7 +23,8 @@ const PrivateDataEditor = ({
   onCancel,
   dataSources,
   iQubeType,
-  onSourceChange
+  onSourceChange,
+  isKNYTPersona = false
 }: PrivateDataEditorProps) => {
   return (
     <>
@@ -36,6 +38,7 @@ const PrivateDataEditor = ({
                 currentSource={dataSources[key] || 'manual'}
                 iQubeType={iQubeType}
                 onSourceChange={onSourceChange}
+                isKNYTPersona={isKNYTPersona}
               />
             </div>
             {Array.isArray(value) ? (

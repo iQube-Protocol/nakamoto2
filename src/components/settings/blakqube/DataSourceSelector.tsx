@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { User, Linkedin, Wallet, Twitter, MessageCircle, MessageSquare, Users, Globe, Database, Brain, Youtube, Facebook } from 'lucide-react';
@@ -8,6 +7,7 @@ interface DataSourceSelectorProps {
   currentSource: string;
   iQubeType: string;
   onSourceChange: (key: string, value: string) => void;
+  isKNYTPersona?: boolean;
 }
 
 const InstagramIcon = () => (
@@ -48,7 +48,7 @@ const MetaKnytsIcon = () => (
   />
 );
 
-const DataSourceSelector = ({ sourceKey, currentSource, iQubeType, onSourceChange }: DataSourceSelectorProps) => {
+const DataSourceSelector = ({ sourceKey, currentSource, iQubeType, onSourceChange, isKNYTPersona = false }: DataSourceSelectorProps) => {
   const getAvailableSourcesForField = (key: string, type: string) => {
     // Base sources available for all fields
     const baseSources = [
@@ -58,10 +58,6 @@ const DataSourceSelector = ({ sourceKey, currentSource, iQubeType, onSourceChang
         icon: <User className="h-3 w-3 text-gray-500" />
       }
     ];
-
-    // Check if this is KNYT Persona based on current context
-    const isKNYTPersona = window.location.pathname.includes('knyt') || 
-                         window.location.search.includes('knyt');
 
     if (isKNYTPersona) {
       // KNYT Persona specific field mappings

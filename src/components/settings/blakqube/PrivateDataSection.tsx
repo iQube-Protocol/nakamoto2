@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Key } from 'lucide-react';
 import { AccordionItem, AccordionTrigger, AccordionContent } from '@/components/ui/accordion';
@@ -11,6 +12,7 @@ interface PrivateDataSectionProps {
   onUpdatePrivateData: (newData: { [key: string]: string | string[] }) => void;
   iQubeType: string;
   sectionTitle: string;
+  isKNYTPersona?: boolean;
 }
 
 const InstagramIcon = () => (
@@ -49,7 +51,8 @@ const PrivateDataSection = ({
   privateData,
   onUpdatePrivateData,
   iQubeType,
-  sectionTitle
+  sectionTitle,
+  isKNYTPersona = false
 }: PrivateDataSectionProps) => {
   const [isEditing, setIsEditing] = useState(false);
   const [editingData, setEditingData] = useState<{ [key: string]: string | string[] }>({...privateData});
@@ -57,11 +60,11 @@ const PrivateDataSection = ({
 
   // Update the data sources and editing data whenever iQube type or private data changes
   useEffect(() => {
-    setDataSources(getDefaultDataSourcesByType(iQubeType));
+    setDataSources(getDefaultDataSourcesByType(iQubeType, isKNYTPersona));
     setEditingData({...privateData});
-  }, [iQubeType, privateData]);
+  }, [iQubeType, privateData, isKNYTPersona]);
 
-  function getDefaultDataSourcesByType(type: string): {[key: string]: string} {
+  function getDefaultDataSourcesByType(type: string, isKNYT: boolean): {[key: string]: string} {
     switch (type) {
       case "AgentQube":
         return {
@@ -113,11 +116,7 @@ const PrivateDataSection = ({
         };
       case "DataQube":
       default:
-        // Check if this is KNYT Persona based on the iQube identifier
-        const isKNYTPersona = window.location.pathname.includes('knyt') || 
-                             sectionTitle.toLowerCase().includes('knyt');
-        
-        if (isKNYTPersona) {
+        if (isKNYT) {
           return {
             "First-Name": "metaknyts",
             "Last-Name": "metaknyts", 
@@ -282,6 +281,7 @@ const PrivateDataSection = ({
               dataSources={dataSources}
               iQubeType={iQubeType}
               onSourceChange={handleSourceChange}
+              isKNYTPersona={isKNYTPersona}
             />
           )}
         </div>

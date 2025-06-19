@@ -22,6 +22,9 @@ const BlakQubeSection = ({ privateData, onUpdatePrivateData, metaQube }: BlakQub
   
   const iQubeType = metaQube?.["iQube-Type"] || "DataQube";
   
+  // Check if this is KNYT Persona based on the metaQube identifier
+  const isKNYTPersona = metaQube?.["iQube-Identifier"] === "KNYT Persona";
+  
   // Get the appropriate title for the blakQube section based on iQube type
   const getBlakQubeTitle = () => {
     switch (iQubeType) {
@@ -48,6 +51,7 @@ const BlakQubeSection = ({ privateData, onUpdatePrivateData, metaQube }: BlakQub
           onUpdatePrivateData={onUpdatePrivateData}
           iQubeType={iQubeType}
           sectionTitle={getBlakQubeTitle()}
+          isKNYTPersona={isKNYTPersona}
         />
         
         <EncryptionSettings 
