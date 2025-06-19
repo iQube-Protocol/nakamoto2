@@ -23,6 +23,7 @@ import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import MainLayout from '@/components/layout/MainLayout';
 import InvitationsPage from '@/pages/admin/Invitations';
 import InvitedUserSignup from '@/components/auth/InvitedUserSignup';
+import OAuthCallback from '@/components/settings/OAuthCallback';
 
 const AppRouter = () => {
   return (
@@ -36,6 +37,7 @@ const AppRouter = () => {
           <Route path="/signup" element={<SignUpPage />} />
           <Route path="/invited-signup" element={<InvitedUserSignup />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+          <Route path="/oauth-callback" element={<OAuthCallback />} />
           
           {/* Protected routes */}
           <Route element={<ProtectedRoute />}>
