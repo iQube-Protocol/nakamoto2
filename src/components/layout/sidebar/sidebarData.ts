@@ -62,14 +62,15 @@ export const iQubeItems: QubeItem[] = [
     href: '/settings',
     description: 'AI service that protects privacy and prevents censorship',
   },
-  {
-    id: 'agentqube',
-    name: 'Metis',
-    type: 'AgentQube',
-    icon: Bot,
-    href: '/settings',
-    description: 'Your AI assistant for learning',
-  },
+  // Metis temporarily hidden - uncomment to reactivate
+  // {
+  //   id: 'agentqube',
+  //   name: 'Metis',
+  //   type: 'AgentQube',
+  //   icon: Bot,
+  //   href: '/settings',
+  //   description: 'Your AI assistant for learning',
+  // },
 ];
 
 export const nakamotoQubeData = {
@@ -122,15 +123,16 @@ export const metaQubesData = [
     bgColor: "bg-green-500/10",
     borderColor: "border-green-500/20"
   },
-  {
-    id: "Metis",
-    name: "Metis",
-    type: "AgentQube" as const, 
-    description: "Risk evaluation algorithm for wallets and tokens",
-    color: "text-orange-400",
-    bgColor: "bg-orange-500/10",
-    borderColor: "border-orange-500/20"
-  },
+  // Metis temporarily hidden - uncomment to reactivate
+  // {
+  //   id: "Metis",
+  //   name: "Metis",
+  //   type: "AgentQube" as const, 
+  //   description: "Risk evaluation algorithm for wallets and tokens",
+  //   color: "text-orange-400",
+  //   bgColor: "bg-orange-500/10",
+  //   borderColor: "border-orange-500/20"
+  // },
   {
     id: "GDrive",
     name: "GDrive",

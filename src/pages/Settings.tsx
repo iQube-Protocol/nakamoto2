@@ -21,18 +21,19 @@ const Settings = () => {
     "Qrypto Persona": false,
     "KNYT Persona": false,
     "Venice": false,
-    "Metis": false,
+    "Metis": false, // Keep state but hide from UI
     "GDrive": false,
     "Content": false,
     "Model": false
   });
 
-  // Available iQubes including KNYT Persona
+  // Available iQubes - Metis temporarily removed from UI
   const availableIQubes = [
     { key: 'monDai', data: qubeData.monDai, name: 'Qrypto Persona' },
     { key: 'knytPersona', data: qubeData.knytPersona, name: 'KNYT Persona' },
     { key: 'venice', data: qubeData.venice, name: 'Venice' },
-    { key: 'metis', data: qubeData.metis, name: 'Metis' },
+    // Metis temporarily hidden - uncomment to reactivate
+    // { key: 'metis', data: qubeData.metis, name: 'Metis' },
     { key: 'gdrive', data: qubeData.gdrive, name: 'GDrive' },
     { key: 'content', data: qubeData.content, name: 'Content' },
     { key: 'model', data: qubeData.model, name: 'Model' }
