@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -6,7 +5,7 @@ import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, CheckCircle, RefreshCw, Database, Clock, AlertCircle as AlertIcon, Shield } from 'lucide-react';
 import { toast } from 'sonner';
 import { dataReconciliationService, type ReconciliationResult, type DuplicateEmailRecord } from '@/services/data-reconciliation';
-import { unifiedInvitationService, type UnifiedInvitationStats } from '@/services/unified-invitation-service';
+import { unifiedInvitationService, type UnifiedInvitationStats } from '@/services/unified-invitation';
 
 const DataReconciliationPanel = () => {
   const [isReconciling, setIsReconciling] = useState(false);

@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -18,7 +17,7 @@ import {
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { invitationService, type EmailBatch, type PendingInvitation, type UserDetail } from '@/services/invitation-service';
-import { unifiedInvitationService, type UnifiedInvitationStats } from '@/services/unified-invitation-service';
+import { unifiedInvitationService, type UnifiedInvitationStats } from '@/services/unified-invitation';
 import UserListModal from './UserListModal';
 import UserDetailModal from './UserDetailModal';
 
