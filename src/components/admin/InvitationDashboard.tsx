@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -16,7 +15,9 @@ import {
   Download
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { invitationService, type InvitationStats, type EmailBatch, type PendingInvitation } from '@/services/invitation-service';
+import { invitationService, type InvitationStats, type EmailBatch, type PendingInvitation, type UserDetail } from '@/services/invitation-service';
+import UserListModal from './UserListModal';
+import UserDetailModal from './UserDetailModal';
 
 const InvitationDashboard = () => {
   const [stats, setStats] = useState<InvitationStats | null>(null);
@@ -27,6 +28,17 @@ const InvitationDashboard = () => {
   const [completedSignups, setCompletedSignups] = useState<PendingInvitation[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSending, setIsSending] = useState(false);
+
+  // Modal states
+  const [userListModal, setUserListModal] = useState<{ open: boolean; category: string; title: string }>({
+    open: false,
+    category: '',
+    title: ''
+  });
+  const [userDetailModal, setUserDetailModal] = useState<{ open: boolean; userId: string | null }>({
+    open: false,
+    userId: null
+  });
 
   const loadDashboardData = async () => {
     setIsLoading(true);
@@ -41,7 +53,7 @@ const InvitationDashboard = () => {
       ] = await Promise.all([
         invitationService.getInvitationStats(),
         invitationService.getEmailBatches(),
-        invitationService.getPendingEmailSend(1000), // Show next 1000 to send
+        invitationService.getPendingEmailSend(1000),
         invitationService.getEmailsSent(),
         invitationService.getAwaitingSignup(),
         invitationService.getCompletedInvitations()
@@ -106,6 +118,15 @@ const InvitationDashboard = () => {
     window.URL.revokeObjectURL(url);
   };
 
+  const handleStatCardClick = (category: string, title: string) => {
+    setUserListModal({ open: true, category, title });
+  };
+
+  const handleUserClick = (user: UserDetail) => {
+    setUserListModal({ open: false, category: '', title: '' });
+    setUserDetailModal({ open: true, userId: user.id });
+  };
+
   if (isLoading) {
     return (
       <div className="flex items-center justify-center p-8">
@@ -117,9 +138,9 @@ const InvitationDashboard = () => {
 
   return (
     <div className="space-y-6">
-      {/* Stats Overview */}
+      {/* Interactive Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-        <Card>
+        <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => handleStatCardClick('totalCreated', 'Total Created')}>
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
               <Users className="h-5 w-5 text-blue-600" />
@@ -131,7 +152,7 @@ const InvitationDashboard = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => handleStatCardClick('emailsSent', 'Emails Sent')}>
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
               <Mail className="h-5 w-5 text-green-600" />
@@ -143,7 +164,7 @@ const InvitationDashboard = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => handleStatCardClick('emailsPending', 'Pending Send')}>
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
               <Clock className="h-5 w-5 text-orange-600" />
@@ -155,7 +176,7 @@ const InvitationDashboard = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => handleStatCardClick('awaitingSignup', 'Awaiting Signup')}>
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
               <AlertCircle className="h-5 w-5 text-yellow-600" />
@@ -167,7 +188,7 @@ const InvitationDashboard = () => {
           </CardContent>
         </Card>
 
-        <Card>
+        <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => handleStatCardClick('signupsCompleted', 'Completed')}>
           <CardContent className="p-4">
             <div className="flex items-center space-x-2">
               <CheckCircle className="h-5 w-5 text-green-600" />
@@ -439,6 +460,21 @@ const InvitationDashboard = () => {
           Refresh Dashboard
         </Button>
       </div>
+
+      {/* Modals */}
+      <UserListModal
+        open={userListModal.open}
+        onClose={() => setUserListModal({ open: false, category: '', title: '' })}
+        category={userListModal.category}
+        title={userListModal.title}
+        onUserClick={handleUserClick}
+      />
+
+      <UserDetailModal
+        open={userDetailModal.open}
+        onClose={() => setUserDetailModal({ open: false, userId: null })}
+        userId={userDetailModal.userId}
+      />
     </div>
   );
 };

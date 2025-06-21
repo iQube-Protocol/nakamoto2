@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -8,8 +9,7 @@ import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Upload, Send, Users, CheckCircle, Clock, AlertCircle, FileText, Merge, BarChart3 } from 'lucide-react';
 import { toast } from 'sonner';
-import { invitationService, type InvitationData, type PendingInvitation, type DeduplicationStats } from '@/services/invitation-service';
-import { type BatchProgress } from '@/services/invitation-progress-tracker';
+import { invitationService, type InvitationData, type PendingInvitation, type DeduplicationStats, type BatchProgress } from '@/services/invitation-service';
 import BatchProgressDialog from './BatchProgressDialog';
 import InvitationDashboard from './InvitationDashboard';
 

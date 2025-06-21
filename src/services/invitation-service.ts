@@ -1,7 +1,23 @@
 import { supabase } from '@/integrations/supabase/client';
-import type { InvitationData, PendingInvitation, DeduplicationStats } from './invitation-service-types';
+import type { 
+  InvitationData, 
+  PendingInvitation, 
+  DeduplicationStats, 
+  BatchProgress,
+  EmailBatch,
+  InvitationStats,
+  UserDetail
+} from './invitation-service-types';
 
-export type { InvitationData, PendingInvitation, DeduplicationStats };
+export type { 
+  InvitationData, 
+  PendingInvitation, 
+  DeduplicationStats, 
+  BatchProgress,
+  EmailBatch,
+  InvitationStats,
+  UserDetail
+};
 
 export interface BatchProgress {
   batchId: string;
@@ -227,6 +243,124 @@ class InvitationService {
     };
   }
 
+  async getInvitationByToken(token: string): Promise<any> {
+    const { data, error } = await supabase
+      .from('invited_users')
+      .select('*')
+      .eq('invitation_token', token)
+      .eq('signup_completed', false)
+      .gte('expires_at', new Date().toISOString())
+      .single();
+
+    if (error) {
+      console.error('Error fetching invitation by token:', error);
+      return null;
+    }
+
+    return data;
+  }
+
+  async getUserDetails(category: string, searchTerm?: string): Promise<UserDetail[]> {
+    let query = supabase
+      .from('invited_users')
+      .select(`
+        id, 
+        email, 
+        persona_type, 
+        invited_at, 
+        email_sent, 
+        email_sent_at, 
+        signup_completed, 
+        completed_at, 
+        persona_data,
+        batch_id,
+        send_attempts
+      `);
+
+    // Apply category filters
+    switch (category) {
+      case 'totalCreated':
+        // No additional filter needed - all invitations
+        break;
+      case 'emailsSent':
+        query = query.eq('email_sent', true);
+        break;
+      case 'emailsPending':
+        query = query.eq('email_sent', false);
+        break;
+      case 'signupsCompleted':
+        query = query.eq('signup_completed', true);
+        break;
+      case 'awaitingSignup':
+        query = query.eq('email_sent', true).eq('signup_completed', false);
+        break;
+    }
+
+    // Apply search filter if provided
+    if (searchTerm) {
+      query = query.or(`email.ilike.%${searchTerm}%,persona_data->>First-Name.ilike.%${searchTerm}%,persona_data->>Last-Name.ilike.%${searchTerm}%`);
+    }
+
+    query = query.order('invited_at', { ascending: false });
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('Error fetching user details:', error);
+      throw new Error(`Failed to fetch user details: ${error.message}`);
+    }
+
+    return data || [];
+  }
+
+  async getUserDetailWithBlakQube(userId: string): Promise<UserDetail | null> {
+    // First get the invitation data
+    const { data: invitation, error: invError } = await supabase
+      .from('invited_users')
+      .select('*')
+      .eq('id', userId)
+      .single();
+
+    if (invError) {
+      console.error('Error fetching invitation:', invError);
+      return null;
+    }
+
+    let blakQubeData = null;
+    let userAuthId = null;
+
+    // If user has signed up, try to get their BlakQube data
+    if (invitation.signup_completed) {
+      // Find the user's auth ID by email
+      const { data: userData, error: userError } = await supabase
+        .from('knyt_personas')
+        .select('user_id, *')
+        .eq('Email', invitation.email)
+        .single();
+
+      if (!userError && userData) {
+        userAuthId = userData.user_id;
+        
+        // Get BlakQube data
+        const { data: blakData, error: blakError } = await supabase
+          .from('blak_qubes')
+          .select('*')
+          .eq('user_id', userData.user_id)
+          .single();
+
+        if (!blakError && blakData) {
+          blakQubeData = blakData;
+        }
+      }
+    }
+
+    return {
+      ...invitation,
+      blak_qube_data: blakQubeData,
+      user_id: userAuthId
+    };
+  }
+
   async getPendingEmailSend(limit?: number): Promise<PendingInvitation[]> {
     let query = supabase
       .from('invited_users')
@@ -293,7 +427,10 @@ class InvitationService {
       throw new Error(`Failed to fetch email batches: ${error.message}`);
     }
 
-    return data || [];
+    return (data || []).map(batch => ({
+      ...batch,
+      status: batch.status as 'pending' | 'in_progress' | 'completed' | 'failed'
+    }));
   }
 
   async createEmailBatch(emails: string[]): Promise<string> {
