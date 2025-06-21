@@ -1,7 +1,100 @@
-
 import { MetaKnytsKnowledgeItem } from './types';
 
 export const METAKNYTS_KNOWLEDGE_DATA: MetaKnytsKnowledgeItem[] = [
+  {
+    id: 'knyt-coyn-wallet-setup',
+    title: 'How to Add $KNYT COYN to Your Web3 Wallet',
+    content: `# 🧠 How to Add $KNYT COYN to Your Web3 Wallet
+
+To use your $KNYT COYN tokens in the metaKnyts Ecosystem, you first need to add them to your wallet (like MetaMask or Coinbase Wallet). Here's how to do it:
+
+## 🪙 $KNYT COYN Token Details
+
+**Token Information:**
+- **Token Name:** KNYT COYN
+- **Token Symbol:** KNYT  
+- **Token Contract Address:** 0xe53dad36cd0A8EdC656448CE7912bba72beBECb4
+- **Decimals:** 18
+- **Network:** Ethereum Mainnet
+
+## Wallet Setup Process
+
+\`\`\`mermaid
+flowchart TD
+    A[Choose Your Wallet] --> B{MetaMask or Coinbase?}
+    B -->|MetaMask| C[Open MetaMask]
+    B -->|Coinbase| D[Open Coinbase Wallet]
+    
+    C --> E[Check Ethereum Mainnet]
+    E --> F[Click Import Tokens]
+    F --> G[Select Custom Token Tab]
+    G --> H[Paste Contract Address]
+    H --> I[Verify Symbol & Decimals]
+    I --> J[Add Custom Token]
+    J --> K[Import Tokens]
+    K --> L[✅ $KNYT Added Successfully]
+    
+    D --> M[Tap + or Import Token]
+    M --> N[Paste Contract Address]
+    N --> O[Enter Symbol: KNYT]
+    O --> P[Enter Decimals: 18]
+    P --> Q[Confirm Addition]
+    Q --> L
+    
+    L --> R[Ready to Use in metaKnyts!]
+\`\`\`
+
+## 🦊 If You're Using MetaMask
+
+1. **Open your MetaMask wallet**
+2. **Make sure you're on the Ethereum Mainnet** (check the network dropdown at the top)
+3. **Scroll down and click "Import tokens"**
+4. **Select the "Custom Token" tab**
+5. **Copy and paste this into the Token Contract Address field:**
+   \`0xe53dad36cd0A8EdC656448CE7912bba72beBECb4\`
+6. **MetaMask will auto-fill the Token Symbol and Decimals (KNYT, 18).** If not, enter them manually
+7. **Click "Add Custom Token", then "Import Tokens"**
+8. **You're done! 🎉** You should now see your $KNYT in your wallet
+
+## 🏦 If You're Using Coinbase Wallet
+
+1. **Open your Coinbase Wallet app**
+2. **Tap the "+" or "Import token" button** in the wallet view
+3. **Paste this contract address when prompted:**
+   \`0xe53dad36cd0A8EdC656448CE7912bba72beBECb4\`
+4. **Enter the symbol:** KNYT
+5. **Enter the decimals:** 18
+6. **Confirm to add the token**
+
+## Visual Guide
+
+![KNYT COYN Wallet Setup Guide](/lovable-uploads/de9d26e8-c9d5-48ba-87a5-e18a52c904a6.png)
+
+## Need Help?
+
+If you get stuck, ask Aigent Nakamoto for help or reach out to our support team on WhatsApp or ask in the metaKnyts community – we're here to help!
+
+## Important Security Notes
+
+- **Always verify the contract address:** 0xe53dad36cd0A8EdC656448CE7912bba72beBECb4
+- **Only use official sources** for token information
+- **Double-check the network** (Ethereum Mainnet) before adding tokens
+- **Never share your private keys** or seed phrases with anyone
+
+## What's Next?
+
+Once you've successfully added $KNYT COYN to your wallet, you can:
+- **Participate in metaKnyts governance**
+- **Access exclusive content and experiences**
+- **Engage with the metaKnyts community**
+- **Use tokens for in-ecosystem transactions**`,
+    section: 'Token Management',
+    category: 'technology',
+    keywords: ['KNYT COYN', '$KNYT', 'wallet setup', 'MetaMask', 'Coinbase Wallet', 'Ethereum', 'token contract', 'Web3 wallet', 'cryptocurrency'],
+    timestamp: new Date().toISOString(),
+    source: 'metaKnyts Token Guide',
+    connections: ['qoyn-economy-fundamentals', 'metaknyts-protagonists']
+  },
   {
     id: 'metaknyts-overview',
     title: 'metaKnyts: World\'s First CryptoComic™',
