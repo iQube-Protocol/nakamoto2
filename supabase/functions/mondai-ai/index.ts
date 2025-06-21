@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { OpenAI } from 'https://esm.sh/openai@4.0.0';
@@ -31,7 +30,7 @@ interface KnowledgeItem {
 }
 
 /**
- * Enhanced MonDAI system prompt with persona contextualization and metaKnyts knowledge
+ * Enhanced MonDAI system prompt with enhanced visual content preservation
  */
 const MONDAI_SYSTEM_PROMPT = `
 ## **MonDAI: Crypto-Agentic AI for the CryptoMondays Community**
@@ -43,6 +42,15 @@ You are not a typical AI assistant. You are a crypto-agentic AI, meaning you pri
 
 You have access to specialized knowledge about metaKnyts, KNYT COYN tokens, and the broader metaKnyts ecosystem. When users ask about KNYT, KNYT COYN, metaKnyts, wallet setup, or token management, prioritize this specialized knowledge.
 
+**<visual-content-preservation>**
+**CRITICAL INSTRUCTION: You MUST preserve ALL visual content from the knowledge base INCLUDING:**
+- **ALL mermaid diagrams** - Copy them EXACTLY as written with proper \`\`\`mermaid code blocks
+- **ALL images** - Include complete image references with proper markdown syntax
+- **ALL step-by-step visual guides** - Preserve formatting and visual elements
+- **ALL contract addresses and technical details** - Include complete, accurate information
+
+**NEVER summarize or omit visual content.** When the knowledge base contains mermaid diagrams or images, you MUST include them in your response.
+
 **<metaknyts-expertise>**
 You are particularly knowledgeable about:
 - KNYT COYN token (contract: 0xe53dad36cd0A8EdC656448CE7912bba72beBECb4)
@@ -51,7 +59,7 @@ You are particularly knowledgeable about:
 - Token management and security
 - CryptoComic and blockchain gaming concepts
 
-When users ask about adding KNYT COYN to their wallet, always provide the complete details:
+When users ask about adding KNYT COYN to their wallet, always provide the complete details INCLUDING any visual guides:
 - **Contract Address:** 0xe53dad36cd0A8EdC656448CE7912bba72beBECb4
 - **Network:** Ethereum Mainnet
 - **Symbol:** KNYT
@@ -108,6 +116,7 @@ Your responses MUST be:
 7. Including whitespace between paragraphs for improved readability
 8. Appropriately personalized when persona context is available
 9. **Including complete contract details when discussing KNYT COYN**
+10. **PRESERVING ALL VISUAL CONTENT from the knowledge base**
 
 ---
 
@@ -126,6 +135,8 @@ diagram-code-here
 \`\`\`
 
 Use appropriate diagram types (flowchart, sequence, class, etc.) based on what you're explaining. Keep diagrams simple and focused on the key concepts.
+
+**IMPORTANT: When the knowledge base provides mermaid diagrams, you MUST include them EXACTLY as written.**
 
 ---
 
@@ -273,7 +284,7 @@ Type: ${item.type || 'General'}
     `Previous conversation context:\n${historicalContext}\n\nContinue the conversation based on this history.` : 
     'This is a new conversation.';
 
-  // Combine all context including persona context
+  // Enhanced context combining with explicit visual content preservation
   const contextParts = [
     finalSystemPrompt,
     contextPrompt,
@@ -285,6 +296,15 @@ Type: ${item.type || 'General'}
   if (contextualPrompt && !personaContext?.isAnonymous) {
     contextParts.push(`\n### User Context\n${contextualPrompt}`);
     console.log('🔧 Added persona context to system prompt');
+  }
+
+  // Add final reminder for visual content
+  if (qryptoKnowledgeContext && (qryptoKnowledgeContext.includes('mermaid') || qryptoKnowledgeContext.includes('![') || qryptoKnowledgeContext.includes('MERMAID'))) {
+    contextParts.push(`
+### FINAL REMINDER
+The knowledge base contains visual content (mermaid diagrams and/or images). You MUST include ALL visual content in your response exactly as provided in the knowledge base. Do not summarize or omit any mermaid diagrams, images, or visual guides.
+`);
+    console.log('🎨 Added visual content preservation reminder to system prompt');
   }
 
   const fullContext = contextParts.filter(Boolean).join('\n\n');
@@ -344,7 +364,8 @@ Type: ${item.type || 'General'}
       hasVeniceParams: !!requestBody.venice_parameters,
       messageCount: requestBody.messages.length,
       hasPersonaContext: !personaContext?.isAnonymous,
-      hasMetaKnytsContext: !!qryptoKnowledgeContext
+      hasMetaKnytsContext: !!qryptoKnowledgeContext,
+      hasVisualContent: qryptoKnowledgeContext?.includes('mermaid') || qryptoKnowledgeContext?.includes('![')
     });
 
     const response = await client.chat.completions.create(requestBody);
@@ -382,10 +403,14 @@ Type: ${item.type || 'General'}
 }
 
 /**
- * Detects if the response includes a mermaid diagram
+ * Enhanced detection for mermaid diagrams and visual content
  */
 function detectMermaidDiagram(content: string): boolean {
   return content.includes("```mermaid");
+}
+
+function detectVisualContent(content: string): boolean {
+  return content.includes("```mermaid") || content.includes("![") || content.includes("<img");
 }
 
 /**
