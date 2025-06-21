@@ -52,8 +52,8 @@ class UnifiedInvitationService {
       // Get all invitation data in one query
       const { data: allInvitations, error } = await supabase
         .from('invited_users')
-        .select('email_sent, signup_completed, created_at')
-        .order('created_at', { ascending: false });
+        .select('email_sent, signup_completed, invited_at')
+        .order('invited_at', { ascending: false });
 
       if (error) {
         console.error('UnifiedInvitationService: Error fetching invitations:', error);
@@ -61,10 +61,10 @@ class UnifiedInvitationService {
       }
 
       const totalCreated = allInvitations?.length || 0;
-      const emailsSent = allInvitations?.filter(inv => inv.email_sent).length || 0;
-      const emailsPending = allInvitations?.filter(inv => !inv.email_sent).length || 0;
-      const signupsCompleted = allInvitations?.filter(inv => inv.signup_completed).length || 0;
-      const awaitingSignup = allInvitations?.filter(inv => inv.email_sent && !inv.signup_completed).length || 0;
+      const emailsSent = allInvitations?.filter(inv => inv.email_sent === true).length || 0;
+      const emailsPending = allInvitations?.filter(inv => inv.email_sent === false).length || 0;
+      const signupsCompleted = allInvitations?.filter(inv => inv.signup_completed === true).length || 0;
+      const awaitingSignup = allInvitations?.filter(inv => inv.email_sent === true && inv.signup_completed === false).length || 0;
       const conversionRate = emailsSent > 0 ? (signupsCompleted / emailsSent) * 100 : 0;
 
       const stats: UnifiedInvitationStats = {

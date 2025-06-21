@@ -409,23 +409,23 @@ const InvitationDashboard = () => {
                   <div className="space-y-2">
                     <div className="flex justify-between">
                       <span>Total Created:</span>
-                      <span className="font-medium">{stats?.totalCreated || 0}</span>
+                      <span className="font-medium">{unifiedStats?.totalCreated || 0}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Emails Sent:</span>
-                      <span className="font-medium text-green-600">{stats?.emailsSent || 0}</span>
+                      <span className="font-medium text-green-600">{unifiedStats?.emailsSent || 0}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Pending Send:</span>
-                      <span className="font-medium text-orange-600">{stats?.emailsPending || 0}</span>
+                      <span className="font-medium text-orange-600">{unifiedStats?.emailsPending || 0}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Awaiting Signup:</span>
-                      <span className="font-medium text-yellow-600">{stats?.awaitingSignup || 0}</span>
+                      <span className="font-medium text-yellow-600">{unifiedStats?.awaitingSignup || 0}</span>
                     </div>
                     <div className="flex justify-between">
                       <span>Completed:</span>
-                      <span className="font-medium text-green-600">{stats?.signupsCompleted || 0}</span>
+                      <span className="font-medium text-green-600">{unifiedStats?.signupsCompleted || 0}</span>
                     </div>
                   </div>
                 </div>
@@ -435,13 +435,13 @@ const InvitationDashboard = () => {
                     <div className="flex justify-between">
                       <span>Email Send Rate:</span>
                       <span className="font-medium">
-                        {stats?.totalCreated ? ((stats.emailsSent / stats.totalCreated) * 100).toFixed(1) : 0}%
+                        {unifiedStats?.totalCreated ? ((unifiedStats.emailsSent / unifiedStats.totalCreated) * 100).toFixed(1) : 0}%
                       </span>
                     </div>
                     <div className="flex justify-between">
                       <span>Signup Conversion:</span>
                       <span className="font-medium">
-                        {stats?.conversionRate?.toFixed(1) || 0}%
+                        {unifiedStats?.conversionRate?.toFixed(1) || 0}%
                       </span>
                     </div>
                     <div className="flex justify-between">
