@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -12,15 +13,17 @@ import {
   Send,
   BarChart3,
   RefreshCw,
-  Download
+  Download,
+  Shield
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { invitationService, type InvitationStats, type EmailBatch, type PendingInvitation, type UserDetail } from '@/services/invitation-service';
+import { invitationService, type EmailBatch, type PendingInvitation, type UserDetail } from '@/services/invitation-service';
+import { unifiedInvitationService, type UnifiedInvitationStats } from '@/services/unified-invitation-service';
 import UserListModal from './UserListModal';
 import UserDetailModal from './UserDetailModal';
 
 const InvitationDashboard = () => {
-  const [stats, setStats] = useState<InvitationStats | null>(null);
+  const [unifiedStats, setUnifiedStats] = useState<UnifiedInvitationStats | null>(null);
   const [batches, setBatches] = useState<EmailBatch[]>([]);
   const [pendingEmailSend, setPendingEmailSend] = useState<PendingInvitation[]>([]);
   const [emailsSent, setEmailsSent] = useState<PendingInvitation[]>([]);
@@ -40,18 +43,20 @@ const InvitationDashboard = () => {
     userId: null
   });
 
-  const loadDashboardData = async () => {
+  const loadDashboardData = async (forceRefresh: boolean = false) => {
     setIsLoading(true);
     try {
+      console.log('InvitationDashboard: Loading dashboard data with unified service...', { forceRefresh });
+      
       const [
-        statsData,
+        unifiedStatsData,
         batchesData,
         pendingData,
         sentData,
         awaitingData,
         completedData
       ] = await Promise.all([
-        invitationService.getInvitationStats(),
+        unifiedInvitationService.getUnifiedStats(forceRefresh),
         invitationService.getEmailBatches(),
         invitationService.getPendingEmailSend(1000),
         invitationService.getEmailsSent(),
@@ -59,14 +64,24 @@ const InvitationDashboard = () => {
         invitationService.getCompletedInvitations()
       ]);
 
-      setStats(statsData);
+      console.log('InvitationDashboard: Loaded dashboard data:', {
+        unifiedStats: unifiedStatsData,
+        batchesCount: batchesData.length,
+        pendingCount: pendingData.length
+      });
+
+      setUnifiedStats(unifiedStatsData);
       setBatches(batchesData);
       setPendingEmailSend(pendingData);
       setEmailsSent(sentData);
       setAwaitingSignup(awaitingData);
       setCompletedSignups(completedData);
+
+      if (forceRefresh) {
+        toast.success('Dashboard data refreshed');
+      }
     } catch (error) {
-      console.error('Error loading dashboard data:', error);
+      console.error('InvitationDashboard: Error loading dashboard data:', error);
       toast.error('Failed to load dashboard data');
     } finally {
       setIsLoading(false);
@@ -85,20 +100,29 @@ const InvitationDashboard = () => {
 
     setIsSending(true);
     try {
+      console.log(`InvitationDashboard: Sending batch of ${batchSize} emails using unified service`);
+      
       const emailsToSend = pendingEmailSend.slice(0, batchSize).map(inv => inv.email);
-      const result = await invitationService.sendInvitationEmails(emailsToSend);
+      const result = await unifiedInvitationService.sendEmailBatch(emailsToSend, 100); // Use 100 as chunk size
       
       if (result.success) {
-        toast.success(`Successfully sent ${emailsToSend.length} invitation emails`);
-        await loadDashboardData(); // Refresh data
+        toast.success(`Email sending started for ${emailsToSend.length} emails. Check batch status for progress.`);
+        await loadDashboardData(true); // Force refresh after sending
       } else {
-        toast.error(`Failed to send some emails: ${result.errors.join(', ')}`);
+        toast.error(`Failed to send emails: ${result.errors.join(', ')}`);
       }
-    } catch (error) {
-      toast.error(`Error sending emails: ${error}`);
+    } catch (error: any) {
+      console.error('InvitationDashboard: Error sending emails:', error);
+      toast.error(`Error sending emails: ${error.message}`);
     } finally {
       setIsSending(false);
     }
+  };
+
+  const handleRefresh = async () => {
+    console.log('InvitationDashboard: Manual refresh triggered');
+    unifiedInvitationService.clearCache();
+    await loadDashboardData(true);
   };
 
   const exportEmails = (emails: PendingInvitation[], filename: string) => {
@@ -138,6 +162,31 @@ const InvitationDashboard = () => {
 
   return (
     <div className="space-y-6">
+      {/* Unified Stats Header */}
+      <Card className="bg-gradient-to-r from-blue-50 to-green-50 border-2 border-blue-200">
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center">
+              <Shield className="h-5 w-5 mr-2 text-blue-600" />
+              Unified Dashboard (Authoritative Data Source)
+            </div>
+            <Button onClick={handleRefresh} variant="outline" size="sm">
+              <RefreshCw className="h-4 w-4 mr-1" />
+              Refresh All Data
+            </Button>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          {unifiedStats && (
+            <div className="text-center text-sm text-gray-600 mb-4">
+              This dashboard uses the unified data service to ensure all numbers are consistent across all views.
+              <br />
+              Last updated: {new Date(unifiedStats.lastUpdated).toLocaleString()}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+
       {/* Interactive Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
         <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => handleStatCardClick('totalCreated', 'Total Created')}>
@@ -146,7 +195,7 @@ const InvitationDashboard = () => {
               <Users className="h-5 w-5 text-blue-600" />
               <div>
                 <p className="text-sm font-medium text-gray-600">Total Created</p>
-                <p className="text-2xl font-bold">{stats?.totalCreated || 0}</p>
+                <p className="text-2xl font-bold">{unifiedStats?.totalCreated || 0}</p>
               </div>
             </div>
           </CardContent>
@@ -158,7 +207,7 @@ const InvitationDashboard = () => {
               <Mail className="h-5 w-5 text-green-600" />
               <div>
                 <p className="text-sm font-medium text-gray-600">Emails Sent</p>
-                <p className="text-2xl font-bold">{stats?.emailsSent || 0}</p>
+                <p className="text-2xl font-bold">{unifiedStats?.emailsSent || 0}</p>
               </div>
             </div>
           </CardContent>
@@ -170,7 +219,7 @@ const InvitationDashboard = () => {
               <Clock className="h-5 w-5 text-orange-600" />
               <div>
                 <p className="text-sm font-medium text-gray-600">Pending Send</p>
-                <p className="text-2xl font-bold">{stats?.emailsPending || 0}</p>
+                <p className="text-2xl font-bold">{unifiedStats?.emailsPending || 0}</p>
               </div>
             </div>
           </CardContent>
@@ -182,7 +231,7 @@ const InvitationDashboard = () => {
               <AlertCircle className="h-5 w-5 text-yellow-600" />
               <div>
                 <p className="text-sm font-medium text-gray-600">Awaiting Signup</p>
-                <p className="text-2xl font-bold">{stats?.awaitingSignup || 0}</p>
+                <p className="text-2xl font-bold">{unifiedStats?.awaitingSignup || 0}</p>
               </div>
             </div>
           </CardContent>
@@ -194,9 +243,9 @@ const InvitationDashboard = () => {
               <CheckCircle className="h-5 w-5 text-green-600" />
               <div>
                 <p className="text-sm font-medium text-gray-600">Completed</p>
-                <p className="text-2xl font-bold">{stats?.signupsCompleted || 0}</p>
+                <p className="text-2xl font-bold">{unifiedStats?.signupsCompleted || 0}</p>
                 <p className="text-xs text-gray-500">
-                  {stats?.conversionRate ? `${stats.conversionRate.toFixed(1)}% conversion` : ''}
+                  {unifiedStats?.conversionRate ? `${unifiedStats.conversionRate.toFixed(1)}% conversion` : ''}
                 </p>
               </div>
             </div>
@@ -234,11 +283,16 @@ const InvitationDashboard = () => {
                   onClick={() => handleSendNextBatch(1000)}
                   disabled={pendingEmailSend.length === 0 || isSending}
                 >
-                  {isSending ? 'Sending...' : 'Send 1000'}
+                  {isSending ? 'Sending...' : 'Send 1000 (Chunked)'}
                 </Button>
               </div>
             </CardHeader>
             <CardContent>
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
+                <p className="text-sm text-blue-700">
+                  <strong>Improved Batch Processing:</strong> Large batches (1000+ emails) are now automatically split into smaller chunks of 100 emails each to prevent timeouts and ensure reliable delivery.
+                </p>
+              </div>
               <div className="space-y-2 max-h-60 overflow-y-auto">
                 {pendingEmailSend.slice(0, 10).map((invitation) => (
                   <div key={invitation.id} className="flex items-center justify-between p-2 border rounded">
@@ -452,14 +506,6 @@ const InvitationDashboard = () => {
           </Card>
         </TabsContent>
       </Tabs>
-
-      {/* Refresh Button */}
-      <div className="flex justify-center">
-        <Button onClick={loadDashboardData} variant="outline">
-          <RefreshCw className="h-4 w-4 mr-2" />
-          Refresh Dashboard
-        </Button>
-      </div>
 
       {/* Modals */}
       <UserListModal
