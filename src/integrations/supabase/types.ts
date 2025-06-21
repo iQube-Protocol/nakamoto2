@@ -174,10 +174,52 @@ export type Database = {
         }
         Relationships: []
       }
+      email_batches: {
+        Row: {
+          batch_id: string
+          completed_at: string | null
+          created_at: string
+          created_by: string | null
+          emails_failed: number
+          emails_sent: number
+          id: string
+          started_at: string | null
+          status: string
+          total_emails: number
+        }
+        Insert: {
+          batch_id: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          emails_failed?: number
+          emails_sent?: number
+          id?: string
+          started_at?: string | null
+          status?: string
+          total_emails: number
+        }
+        Update: {
+          batch_id?: string
+          completed_at?: string | null
+          created_at?: string
+          created_by?: string | null
+          emails_failed?: number
+          emails_sent?: number
+          id?: string
+          started_at?: string | null
+          status?: string
+          total_emails?: number
+        }
+        Relationships: []
+      }
       invited_users: {
         Row: {
+          batch_id: string | null
           completed_at: string | null
           email: string
+          email_sent: boolean
+          email_sent_at: string | null
           expires_at: string
           id: string
           invitation_token: string
@@ -185,11 +227,15 @@ export type Database = {
           invited_by: string | null
           persona_data: Json
           persona_type: string
+          send_attempts: number
           signup_completed: boolean
         }
         Insert: {
+          batch_id?: string | null
           completed_at?: string | null
           email: string
+          email_sent?: boolean
+          email_sent_at?: string | null
           expires_at?: string
           id?: string
           invitation_token?: string
@@ -197,11 +243,15 @@ export type Database = {
           invited_by?: string | null
           persona_data: Json
           persona_type: string
+          send_attempts?: number
           signup_completed?: boolean
         }
         Update: {
+          batch_id?: string | null
           completed_at?: string | null
           email?: string
+          email_sent?: boolean
+          email_sent_at?: string | null
           expires_at?: string
           id?: string
           invitation_token?: string
@@ -209,6 +259,7 @@ export type Database = {
           invited_by?: string | null
           persona_data?: Json
           persona_type?: string
+          send_attempts?: number
           signup_completed?: boolean
         }
         Relationships: []

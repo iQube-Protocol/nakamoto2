@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.8';
 import { RetryService } from './retry-service.ts';
@@ -10,7 +9,8 @@ const corsHeaders = {
 
 interface SendInvitationsRequest {
   emails: string[];
-  testMode?: boolean; // For single email testing
+  testMode?: boolean;
+  batchId?: string;
 }
 
 interface MailjetResponse {
@@ -35,12 +35,13 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { emails, testMode = false }: SendInvitationsRequest = await req.json();
+    const { emails, testMode = false, batchId }: SendInvitationsRequest = await req.json();
 
     console.log('=== EMAIL SEND REQUEST START ===');
     console.log('Request details:', {
       emailCount: emails?.length || 0,
       testMode,
+      batchId,
       timestamp: new Date().toISOString()
     });
 
@@ -215,8 +216,9 @@ const handler = async (req: Request): Promise<Response> => {
 
     const errors: string[] = [];
     let successCount = 0;
+    const sentEmails: string[] = [];
 
-    // 6. SEND EMAILS WITH ENHANCED LOGGING
+    // 6. SEND EMAILS WITH ENHANCED LOGGING AND DATABASE UPDATES
     console.log('=== STARTING EMAIL SEND PROCESS ===');
     
     for (const [index, invitation] of allInvitations.entries()) {
@@ -224,6 +226,14 @@ const handler = async (req: Request): Promise<Response> => {
         console.log(`\n--- Processing email ${index + 1}/${allInvitations.length} ---`);
         console.log(`Sending to: ${invitation.email} (${invitation.persona_type})`);
         
+        // Increment send attempts
+        await supabase
+          .from('invited_users')
+          .update({ 
+            send_attempts: { increment: 1 } as any 
+          })
+          .eq('email', invitation.email);
+
         // Use the preview URL for now - you can change this to your custom domain later
         const invitationUrl = `https://preview--nakamoto2.lovable.app/invited-signup?token=${invitation.invitation_token}`;
         
@@ -316,7 +326,23 @@ const handler = async (req: Request): Promise<Response> => {
         });
 
         console.log(`✅ Email sent successfully to ${invitation.email}:`, result);
+        
+        // Mark email as sent in database
+        const { error: updateError } = await supabase
+          .from('invited_users')
+          .update({ 
+            email_sent: true,
+            email_sent_at: new Date().toISOString(),
+            batch_id: batchId
+          })
+          .eq('email', invitation.email);
+
+        if (updateError) {
+          console.error(`Error updating email sent status for ${invitation.email}:`, updateError);
+        }
+
         successCount++;
+        sentEmails.push(invitation.email);
 
         // In test mode, only send one email
         if (testMode) {
@@ -344,6 +370,8 @@ const handler = async (req: Request): Promise<Response> => {
       message: testMode 
         ? `Test email ${successCount > 0 ? 'sent successfully' : 'failed'}`
         : `Successfully sent ${successCount} of ${allInvitations.length} invitation emails${errors.length > 0 ? ` (${errors.length} failed)` : ''}`,
+      sentEmails,
+      batchId,
       debug: {
         mailjetConfigured: !!(mailjetApiKey && mailjetSecretKey),
         databaseInvitations: allInvitations.length,

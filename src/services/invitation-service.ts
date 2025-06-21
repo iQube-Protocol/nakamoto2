@@ -1,595 +1,418 @@
 import { supabase } from '@/integrations/supabase/client';
-import { InvitationProgressTracker, type ProgressCallback } from './invitation-progress-tracker';
+import type { InvitationData, PendingInvitation, DeduplicationStats } from './invitation-service-types';
 
-export interface InvitationData {
-  email: string;
-  personaType: 'knyt' | 'qrypto';
-  personaData: Record<string, any>;
-  invitedBy?: string;
+export type { InvitationData, PendingInvitation, DeduplicationStats };
+
+export interface BatchProgress {
+  batchId: string;
+  totalEmails: number;
+  emailsProcessed: number;
+  emailsSuccessful: number;
+  emailsFailed: number;
+  errors: string[];
+  isComplete: boolean;
 }
 
-export interface PendingInvitation {
+export interface EmailBatch {
   id: string;
-  email: string;
-  persona_type: string;
-  invited_at: string;
-  expires_at: string;
-  signup_completed: boolean;
-  invitation_token: string;
+  batch_id: string;
+  total_emails: number;
+  emails_sent: number;
+  emails_failed: number;
+  status: 'pending' | 'in_progress' | 'completed' | 'failed';
+  started_at: string | null;
+  completed_at: string | null;
+  created_at: string;
+  created_by: string | null;
 }
 
-export interface DeduplicationStats {
-  totalEntries: number;
-  duplicatesFound: number;
-  finalCount: number;
-  mergedEmails: string[];
+export interface InvitationStats {
+  totalCreated: number;
+  emailsSent: number;
+  emailsPending: number;
+  signupsCompleted: number;
+  awaitingSignup: number;
+  conversionRate: number;
 }
 
 class InvitationService {
-  // Create multiple invitations from CSV data with progress tracking
-  async createInvitations(
-    invitations: InvitationData[], 
-    progressCallback?: ProgressCallback
-  ): Promise<{ success: boolean; errors: string[] }> {
-    const errors: string[] = [];
-    const validInvitations: any[] = [];
-    const skippedEmails: string[] = [];
-
-    // Initialize progress tracker
-    const tracker = new InvitationProgressTracker(invitations.length, progressCallback);
-    
-    console.log(`Processing ${invitations.length} invitations for creation`);
-    tracker.updateProgress({ 
-      currentOperation: 'Checking for existing emails...',
-      totalBatches: Math.ceil(invitations.length / 100) + Math.ceil(invitations.length / 50)
-    });
-
-    // Check which emails already exist in smaller batches to avoid CORS issues
-    const existingEmails = new Set<string>();
-    const checkBatchSize = 100;
-    const emails = invitations.map(inv => inv.email.toLowerCase().trim());
-
-    try {
-      const totalCheckBatches = Math.ceil(emails.length / checkBatchSize);
-      
-      for (let i = 0; i < emails.length; i += checkBatchSize) {
-        const emailBatch = emails.slice(i, i + checkBatchSize);
-        const currentBatch = Math.floor(i / checkBatchSize) + 1;
-        
-        tracker.updateProgress({
-          currentBatch: currentBatch,
-          currentOperation: `Checking batch ${currentBatch} of ${totalCheckBatches} for existing emails`,
-          emailsProcessed: Math.min(i + checkBatchSize, emails.length)
-        });
-        
-        console.log(`Checking batch ${currentBatch} of ${totalCheckBatches} for existing emails`);
-        
-        const { data: existingInBatch, error } = await supabase
-          .from('invited_users')
-          .select('email')
-          .in('email', emailBatch);
-
-        if (error) {
-          console.error('Error checking existing emails:', error);
-          tracker.updateProgress({
-            errors: [...tracker.getProgress().errors, `Error checking emails: ${error.message}`]
-          });
-          break;
-        }
-
-        if (existingInBatch) {
-          existingInBatch.forEach(inv => existingEmails.add(inv.email));
-        }
-
-        // Small delay to prevent overwhelming the database
-        await new Promise(resolve => setTimeout(resolve, 50));
-      }
-    } catch (error) {
-      console.error('Failed to check existing emails, will handle duplicates during insertion:', error);
-      tracker.updateProgress({
-        errors: [...tracker.getProgress().errors, `Failed to check existing emails: ${error}`]
-      });
-    }
-
-    // Validate and prepare invitation records
-    tracker.updateProgress({ currentOperation: 'Validating invitation data...' });
-    
-    for (const invitation of invitations) {
-      const email = invitation.email.toLowerCase().trim();
-
-      if (!invitation.email || !invitation.email.includes('@')) {
-        errors.push(`Invalid email: ${invitation.email}`);
-        continue;
-      }
-
-      if (!invitation.personaType || !['knyt', 'qrypto'].includes(invitation.personaType)) {
-        errors.push(`Invalid persona type for ${invitation.email}: ${invitation.personaType}`);
-        continue;
-      }
-
-      // Skip emails that already exist in the database
-      if (existingEmails.has(email)) {
-        skippedEmails.push(email);
-        continue;
-      }
-
-      validInvitations.push({
-        email: email,
-        persona_type: invitation.personaType,
-        persona_data: invitation.personaData,
-        invited_by: invitation.invitedBy || 'system'
-      });
-    }
-
-    // Report skipped emails
-    if (skippedEmails.length > 0) {
-      errors.push(`Skipped ${skippedEmails.length} emails that already have invitations: ${skippedEmails.slice(0, 5).join(', ')}${skippedEmails.length > 5 ? '...' : ''}`);
-    }
-
-    tracker.updateProgress({
-      emailsSkipped: skippedEmails.length,
-      currentOperation: skippedEmails.length > 0 ? `Found ${skippedEmails.length} existing emails` : 'No existing emails found'
-    });
-
-    if (validInvitations.length === 0) {
-      if (skippedEmails.length > 0) {
-        tracker.updateProgress({ 
-          currentOperation: 'Complete - all emails already exist',
-          emailsProcessed: invitations.length 
-        });
-        return { success: true, errors: [`All ${invitations.length} emails already have invitations - no new invitations created`] };
-      }
-      return { success: false, errors: ['No valid invitations to create'] };
-    }
-
-    try {
-      console.log(`Attempting to insert ${validInvitations.length} valid invitations`);
-      
-      // Insert invitations in smaller batches to avoid timeout issues
-      const insertBatchSize = 50;
-      let totalInserted = 0;
-      const duplicateErrors: string[] = [];
-      const totalInsertBatches = Math.ceil(validInvitations.length / insertBatchSize);
-
-      tracker.updateProgress({
-        currentOperation: 'Creating invitations...',
-        totalBatches: totalInsertBatches
-      });
-
-      for (let i = 0; i < validInvitations.length; i += insertBatchSize) {
-        const batch = validInvitations.slice(i, i + insertBatchSize);
-        const currentBatch = Math.floor(i / insertBatchSize) + 1;
-        
-        tracker.updateProgress({
-          currentBatch: currentBatch,
-          currentOperation: `Creating batch ${currentBatch} of ${totalInsertBatches}`,
-          emailsProcessed: Math.min(emails.length, emails.length - validInvitations.length + i + insertBatchSize)
-        });
-        
-        console.log(`Inserting batch ${currentBatch} of ${totalInsertBatches}`);
-        
-        const { data, error } = await supabase
-          .from('invited_users')
-          .insert(batch)
-          .select('email');
-
-        if (error) {
-          // Handle duplicate key errors specifically
-          if (error.message.includes('duplicate key value violates unique constraint')) {
-            // Extract emails that caused duplicates and add to skipped list
-            batch.forEach(inv => {
-              if (!skippedEmails.includes(inv.email)) {
-                skippedEmails.push(inv.email);
-                duplicateErrors.push(inv.email);
-              }
-            });
-            tracker.updateProgress({
-              emailsSkipped: tracker.getProgress().emailsSkipped + batch.length,
-              errors: [...tracker.getProgress().errors, `Batch ${currentBatch}: Found ${batch.length} duplicate emails`]
-            });
-          } else {
-            console.error('Error inserting batch:', error);
-            tracker.updateProgress({
-              errors: [...tracker.getProgress().errors, `Batch ${currentBatch}: ${error.message}`]
-            });
-            return { success: false, errors: [`Database error: ${error.message}`] };
-          }
-        } else if (data) {
-          totalInserted += data.length;
-          tracker.updateProgress({
-            emailsCreated: totalInserted
-          });
-        }
-
-        // Small delay to prevent overwhelming the database
-        await new Promise(resolve => setTimeout(resolve, 100));
-      }
-
-      if (duplicateErrors.length > 0) {
-        errors.push(`Found ${duplicateErrors.length} additional duplicate emails during insertion: ${duplicateErrors.slice(0, 3).join(', ')}${duplicateErrors.length > 3 ? '...' : ''}`);
-      }
-
-      console.log(`Successfully created ${totalInserted} invitations`);
-      
-      tracker.updateProgress({
-        currentOperation: 'Complete!',
-        emailsProcessed: invitations.length,
-        emailsCreated: totalInserted,
-        emailsSkipped: skippedEmails.length
-      });
-      
-      // Include both success and warning messages
-      const successMessages: string[] = [];
-      if (totalInserted > 0) {
-        successMessages.push(`Successfully created ${totalInserted} new invitations`);
-      }
-      if (skippedEmails.length > 0) {
-        successMessages.push(`Skipped ${skippedEmails.length} existing emails`);
-      }
-      
-      return { success: true, errors: successMessages.length > 0 ? successMessages : errors };
-    } catch (error) {
-      console.error('Unexpected error creating invitations:', error);
-      tracker.updateProgress({
-        errors: [...tracker.getProgress().errors, `Unexpected error: ${error}`]
-      });
-      return { success: false, errors: [`Unexpected error: ${error}`] };
-    }
-  }
-
-  // Get pending invitations
-  async getPendingInvitations(): Promise<PendingInvitation[]> {
-    try {
-      const { data, error } = await supabase
-        .from('invited_users')
-        .select('id, email, persona_type, invited_at, expires_at, signup_completed, invitation_token')
-        .eq('signup_completed', false)
-        .gt('expires_at', new Date().toISOString())
-        .order('invited_at', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching pending invitations:', error);
-        return [];
-      }
-
-      return data || [];
-    } catch (error) {
-      console.error('Unexpected error fetching invitations:', error);
-      return [];
-    }
-  }
-
-  // Get completed invitations
-  async getCompletedInvitations(): Promise<PendingInvitation[]> {
-    try {
-      const { data, error } = await supabase
-        .from('invited_users')
-        .select('id, email, persona_type, invited_at, expires_at, signup_completed, invitation_token')
-        .eq('signup_completed', true)
-        .order('completed_at', { ascending: false });
-
-      if (error) {
-        console.error('Error fetching completed invitations:', error);
-        return [];
-      }
-
-      return data || [];
-    } catch (error) {
-      console.error('Unexpected error fetching completed invitations:', error);
-      return [];
-    }
-  }
-
-  // Send invitation emails (calls edge function)
-  async sendInvitationEmails(emails: string[]): Promise<{ success: boolean; errors: string[] }> {
-    try {
-      const { data, error } = await supabase.functions.invoke('send-invitations', {
-        body: { emails }
-      });
-
-      if (error) {
-        console.error('Error sending invitation emails:', error);
-        return { success: false, errors: [error.message] };
-      }
-
-      return data;
-    } catch (error) {
-      console.error('Unexpected error sending emails:', error);
-      return { success: false, errors: [`Unexpected error: ${error}`] };
-    }
-  }
-
-  // Parse CSV content into invitation data with deduplication
-  parseCSV(csvContent: string, personaType: 'knyt' | 'qrypto'): { invitations: InvitationData[]; stats: DeduplicationStats } {
-    console.log('Starting CSV parsing with content:', csvContent.substring(0, 200));
-    
+  parseCSV(csvContent: string, personaType: 'knyt' | 'qrypto'): { invitations: InvitationData[], stats: DeduplicationStats } {
     const lines = csvContent.trim().split('\n');
     if (lines.length < 2) {
       throw new Error('CSV must have at least a header row and one data row');
     }
 
-    const headers = this.parseCSVLine(lines[0]);
-    const rawInvitations: InvitationData[] = [];
+    const headers = lines[0].split(',').map(h => h.trim().replace(/"/g, ''));
+    const emailColumnIndex = headers.findIndex(h => 
+      h.toLowerCase().includes('email') || h.toLowerCase() === 'e-mail'
+    );
 
-    console.log('Parsed headers:', headers);
+    if (emailColumnIndex === -1) {
+      throw new Error('No email column found in CSV. Please ensure there is a column with "email" in the name.');
+    }
 
-    // First pass: parse all entries
+    // Parse and deduplicate
+    const emailMap = new Map<string, InvitationData>();
+    const duplicatesFound: string[] = [];
+
     for (let i = 1; i < lines.length; i++) {
-      const line = lines[i].trim();
-      if (!line) continue;
-      
-      const values = this.parseCSVLine(line);
-      
-      if (values.length !== headers.length) {
-        console.warn(`Skipping row ${i + 1}: column count mismatch (${values.length} vs ${headers.length})`);
-        continue;
-      }
+      const values = lines[i].split(',').map(v => v.trim().replace(/"/g, ''));
+      if (values.length !== headers.length) continue;
 
-      const personaData: Record<string, any> = {};
-      let email = '';
+      const email = values[emailColumnIndex]?.toLowerCase().trim();
+      if (!email || !email.includes('@')) continue;
 
+      const personaData: any = {};
       headers.forEach((header, index) => {
-        const value = values[index];
-        
-        if (header.toLowerCase().includes('email') || header.toLowerCase() === 'e-mail') {
-          email = value;
-        }
-        
-        if (['Chain-IDs', 'Web3-Interests', 'Tokens-of-Interest', 'Wallets-of-Interest'].includes(header)) {
-          personaData[header] = value ? value.split(';').map(v => v.trim()).filter(v => v) : [];
-        } else {
-          personaData[header] = value || '';
+        if (values[index]) {
+          // Handle array fields
+          if (['Chain-IDs', 'Web3-Interests', 'Tokens-of-Interest', 'Wallets-of-Interest'].includes(header)) {
+            personaData[header] = values[index].split(';').map(item => item.trim()).filter(item => item);
+          } else {
+            personaData[header] = values[index];
+          }
         }
       });
 
-      if (email && email.includes('@')) {
-        rawInvitations.push({
-          email: email.toLowerCase().trim(),
+      if (emailMap.has(email)) {
+        duplicatesFound.push(email);
+        // Merge data, keeping non-empty values
+        const existing = emailMap.get(email)!;
+        Object.keys(personaData).forEach(key => {
+          if (personaData[key] && (!existing.personaData[key] || existing.personaData[key] === '')) {
+            existing.personaData[key] = personaData[key];
+          }
+        });
+      } else {
+        emailMap.set(email, {
+          email,
           personaType,
           personaData
         });
       }
     }
 
-    // Second pass: deduplicate and merge
-    const { deduplicatedInvitations, stats } = this.deduplicateInvitations(rawInvitations);
-
-    console.log(`Deduplication complete: ${stats.totalEntries} -> ${stats.finalCount} entries`);
-    return { invitations: deduplicatedInvitations, stats };
-  }
-
-  // Deduplicate invitations and merge duplicate entries
-  private deduplicateInvitations(invitations: InvitationData[]): { deduplicatedInvitations: InvitationData[]; stats: DeduplicationStats } {
-    const emailGroups = new Map<string, InvitationData[]>();
-    const mergedEmails: string[] = [];
-
-    // Group by email
-    invitations.forEach(invitation => {
-      const email = invitation.email;
-      if (!emailGroups.has(email)) {
-        emailGroups.set(email, []);
-      }
-      emailGroups.get(email)!.push(invitation);
-    });
-
-    const deduplicatedInvitations: InvitationData[] = [];
-
-    // Process each email group
-    emailGroups.forEach((group, email) => {
-      if (group.length > 1) {
-        mergedEmails.push(email);
-        console.log(`Merging ${group.length} entries for email: ${email}`);
-      }
-
-      const mergedInvitation = this.mergeInvitationGroup(group);
-      deduplicatedInvitations.push(mergedInvitation);
-    });
-
+    const invitations = Array.from(emailMap.values());
     const stats: DeduplicationStats = {
-      totalEntries: invitations.length,
-      duplicatesFound: invitations.length - deduplicatedInvitations.length,
-      finalCount: deduplicatedInvitations.length,
-      mergedEmails
+      totalEntries: lines.length - 1,
+      finalCount: invitations.length,
+      duplicatesFound: duplicatesFound.length,
+      mergedEmails: Array.from(new Set(duplicatesFound))
     };
 
-    return { deduplicatedInvitations, stats };
+    return { invitations, stats };
   }
 
-  // Merge multiple invitation entries for the same email
-  private mergeInvitationGroup(group: InvitationData[]): InvitationData {
-    if (group.length === 1) {
-      return group[0];
-    }
+  async createInvitations(
+    invitations: InvitationData[],
+    onProgress?: (progress: BatchProgress) => void
+  ): Promise<{ success: boolean; errors: string[] }> {
+    const batchId = `create_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    const errors: string[] = [];
+    let processed = 0;
+    let successful = 0;
 
-    const merged = {
-      email: group[0].email,
-      personaType: group[0].personaType,
-      personaData: {},
-      invitedBy: group[0].invitedBy
+    const updateProgress = () => {
+      if (onProgress) {
+        onProgress({
+          batchId,
+          totalEmails: invitations.length,
+          emailsProcessed: processed,
+          emailsSuccessful: successful,
+          emailsFailed: processed - successful,
+          errors,
+          isComplete: processed === invitations.length
+        });
+      }
     };
 
-    // Get all unique keys from all entries
-    const allKeys = new Set<string>();
-    group.forEach(invitation => {
-      Object.keys(invitation.personaData).forEach(key => allKeys.add(key));
-    });
-
-    // Merge each field according to its type and importance
-    allKeys.forEach(key => {
-      merged.personaData[key] = this.mergeField(key, group.map(inv => inv.personaData[key]));
-    });
-
-    return merged;
-  }
-
-  // Merge individual fields based on their type and business logic
-  private mergeField(fieldName: string, values: any[]): any {
-    const nonEmptyValues = values.filter(v => v !== undefined && v !== null && v !== '');
-
-    if (nonEmptyValues.length === 0) {
-      return '';
-    }
-
-    // Numeric fields that should be summed
-    const sumFields = ['Total-Invested', 'Metaiye-Shares-Owned', 'KNYT-COYN-Owned', 
-                      'Motion-Comics-Owned', 'Paper-Comics-Owned', 'Digital-Comics-Owned',
-                      'KNYT-Posters-Owned', 'KNYT-Cards-Owned'];
-    
-    if (sumFields.includes(fieldName)) {
-      return this.sumNumericValues(nonEmptyValues);
-    }
-
-    // Date fields - use earliest date
-    if (fieldName === 'OM-Member-Since') {
-      return this.getEarliestDate(nonEmptyValues);
-    }
-
-    // Array fields - merge and deduplicate
-    const arrayFields = ['Chain-IDs', 'Web3-Interests', 'Tokens-of-Interest', 'Wallets-of-Interest'];
-    if (arrayFields.includes(fieldName)) {
-      return this.mergeArrays(nonEmptyValues);
-    }
-
-    // For other fields, use the first non-empty value
-    return nonEmptyValues[0];
-  }
-
-  // Sum numeric values (handle currency formatting)
-  private sumNumericValues(values: any[]): string {
-    let total = 0;
-    let hasValues = false;
-
-    values.forEach(value => {
-      if (typeof value === 'string' && value.trim()) {
-        // Remove currency symbols and commas
-        const numericValue = parseFloat(value.replace(/[$,]/g, ''));
-        if (!isNaN(numericValue)) {
-          total += numericValue;
-          hasValues = true;
-        }
-      } else if (typeof value === 'number') {
-        total += value;
-        hasValues = true;
-      }
-    });
-
-    if (!hasValues) {
-      return '';
-    }
-
-    // Format back as currency if it looks like a monetary value
-    const firstValue = values[0]?.toString() || '';
-    if (firstValue.includes('$')) {
-      return `$${total.toLocaleString()}`;
-    }
-
-    return total.toString();
-  }
-
-  // Get the earliest date from date strings
-  private getEarliestDate(values: any[]): string {
-    const dates = values
-      .filter(v => v && typeof v === 'string')
-      .map(dateStr => {
-        // Try to parse various date formats
-        const date = new Date(dateStr);
-        return isNaN(date.getTime()) ? null : date;
-      })
-      .filter(d => d !== null);
-
-    if (dates.length === 0) {
-      return values[0] || '';
-    }
-
-    const earliestDate = new Date(Math.min(...dates.map(d => d!.getTime())));
-    
-    // Return in the same format as the original (try to preserve format)
-    const originalFormat = values.find(v => {
-      const date = new Date(v);
-      return !isNaN(date.getTime()) && date.getTime() === earliestDate.getTime();
-    });
-
-    return originalFormat || earliestDate.toLocaleDateString();
-  }
-
-  // Merge and deduplicate arrays
-  private mergeArrays(values: any[]): string[] {
-    const merged = new Set<string>();
-
-    values.forEach(value => {
-      if (Array.isArray(value)) {
-        value.forEach(item => {
-          if (item && typeof item === 'string' && item.trim()) {
-            merged.add(item.trim());
-          }
-        });
-      } else if (value && typeof value === 'string') {
-        // Handle comma or semicolon separated values
-        value.split(/[,;]/).forEach(item => {
-          if (item && item.trim()) {
-            merged.add(item.trim());
-          }
-        });
-      }
-    });
-
-    return Array.from(merged);
-  }
-
-  // Parse CSV line handling quoted values
-  private parseCSVLine(line: string): string[] {
-    const result: string[] = [];
-    let current = '';
-    let inQuotes = false;
-    
-    for (let i = 0; i < line.length; i++) {
-      const char = line[i];
+    const BATCH_SIZE = 50;
+    for (let i = 0; i < invitations.length; i += BATCH_SIZE) {
+      const batch = invitations.slice(i, i + BATCH_SIZE);
       
-      if (char === '"') {
-        if (inQuotes && line[i + 1] === '"') {
-          // Handle escaped quote
-          current += '"';
-          i++; // Skip next quote
+      try {
+        const { data, error } = await supabase
+          .from('invited_users')
+          .insert(
+            batch.map(inv => ({
+              email: inv.email,
+              persona_type: inv.personaType,
+              persona_data: inv.personaData,
+              expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+            }))
+          )
+          .select('email');
+
+        if (error) {
+          // Handle individual conflicts
+          if (error.code === '23505') {
+            for (const inv of batch) {
+              try {
+                const { error: singleError } = await supabase
+                  .from('invited_users')
+                  .insert({
+                    email: inv.email,
+                    persona_type: inv.personaType,
+                    persona_data: inv.personaData,
+                    expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+                  });
+
+                if (singleError && singleError.code === '23505') {
+                  errors.push(`Invitation already exists for ${inv.email}`);
+                } else if (singleError) {
+                  errors.push(`Error creating invitation for ${inv.email}: ${singleError.message}`);
+                } else {
+                  successful++;
+                }
+                processed++;
+                updateProgress();
+              } catch (err) {
+                errors.push(`Unexpected error for ${inv.email}: ${err}`);
+                processed++;
+                updateProgress();
+              }
+            }
+          } else {
+            errors.push(`Batch error: ${error.message}`);
+            processed += batch.length;
+            updateProgress();
+          }
         } else {
-          // Toggle quote state
-          inQuotes = !inQuotes;
+          successful += data?.length || 0;
+          processed += batch.length;
+          updateProgress();
         }
-      } else if (char === ',' && !inQuotes) {
-        // End of field
-        result.push(current.trim());
-        current = '';
-      } else {
-        current += char;
+      } catch (err) {
+        errors.push(`Unexpected batch error: ${err}`);
+        processed += batch.length;
+        updateProgress();
       }
     }
-    
-    // Add the last field
-    result.push(current.trim());
-    
-    return result;
+
+    const successMessage = `Successfully created ${successful} invitations`;
+    if (successful > 0) {
+      errors.unshift(successMessage);
+    }
+
+    return {
+      success: successful > 0,
+      errors
+    };
   }
 
-  // Get invitation by token (for signup flow)
-  async getInvitationByToken(token: string): Promise<any> {
+  async getInvitationStats(): Promise<InvitationStats> {
+    const { data: allInvitations, error } = await supabase
+      .from('invited_users')
+      .select('email_sent, signup_completed');
+
+    if (error) {
+      console.error('Error fetching invitation stats:', error);
+      throw new Error(`Failed to fetch invitation stats: ${error.message}`);
+    }
+
+    const totalCreated = allInvitations?.length || 0;
+    const emailsSent = allInvitations?.filter(inv => inv.email_sent).length || 0;
+    const emailsPending = allInvitations?.filter(inv => !inv.email_sent).length || 0;
+    const signupsCompleted = allInvitations?.filter(inv => inv.signup_completed).length || 0;
+    const awaitingSignup = allInvitations?.filter(inv => inv.email_sent && !inv.signup_completed).length || 0;
+    const conversionRate = emailsSent > 0 ? (signupsCompleted / emailsSent) * 100 : 0;
+
+    return {
+      totalCreated,
+      emailsSent,
+      emailsPending,
+      signupsCompleted,
+      awaitingSignup,
+      conversionRate
+    };
+  }
+
+  async getPendingEmailSend(limit?: number): Promise<PendingInvitation[]> {
+    let query = supabase
+      .from('invited_users')
+      .select('id, email, persona_type, invited_at, email_sent, email_sent_at, batch_id, send_attempts')
+      .eq('email_sent', false)
+      .eq('signup_completed', false)
+      .gte('expires_at', new Date().toISOString())
+      .order('invited_at', { ascending: true });
+
+    if (limit) {
+      query = query.limit(limit);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('Error fetching pending email send:', error);
+      throw new Error(`Failed to fetch pending email send: ${error.message}`);
+    }
+
+    return data || [];
+  }
+
+  async getEmailsSent(): Promise<PendingInvitation[]> {
+    const { data, error } = await supabase
+      .from('invited_users')
+      .select('id, email, persona_type, invited_at, email_sent, email_sent_at, batch_id, send_attempts, signup_completed')
+      .eq('email_sent', true)
+      .order('email_sent_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching sent emails:', error);
+      throw new Error(`Failed to fetch sent emails: ${error.message}`);
+    }
+
+    return data || [];
+  }
+
+  async getAwaitingSignup(): Promise<PendingInvitation[]> {
+    const { data, error } = await supabase
+      .from('invited_users')
+      .select('id, email, persona_type, invited_at, email_sent, email_sent_at, batch_id, send_attempts')
+      .eq('email_sent', true)
+      .eq('signup_completed', false)
+      .gte('expires_at', new Date().toISOString())
+      .order('email_sent_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching awaiting signup:', error);
+      throw new Error(`Failed to fetch awaiting signup: ${error.message}`);
+    }
+
+    return data || [];
+  }
+
+  async getEmailBatches(): Promise<EmailBatch[]> {
+    const { data, error } = await supabase
+      .from('email_batches')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching email batches:', error);
+      throw new Error(`Failed to fetch email batches: ${error.message}`);
+    }
+
+    return data || [];
+  }
+
+  async createEmailBatch(emails: string[]): Promise<string> {
+    const batchId = `batch_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    const { error: batchError } = await supabase
+      .from('email_batches')
+      .insert({
+        batch_id: batchId,
+        total_emails: emails.length,
+        status: 'pending'
+      });
+
+    if (batchError) {
+      console.error('Error creating email batch:', batchError);
+      throw new Error(`Failed to create email batch: ${batchError.message}`);
+    }
+
+    // Update invited_users with batch_id
+    const { error: updateError } = await supabase
+      .from('invited_users')
+      .update({ batch_id: batchId })
+      .in('email', emails)
+      .eq('email_sent', false);
+
+    if (updateError) {
+      console.error('Error updating invitations with batch_id:', updateError);
+      throw new Error(`Failed to update invitations with batch_id: ${updateError.message}`);
+    }
+
+    return batchId;
+  }
+
+  async sendInvitationEmails(emails: string[], testMode: boolean = false): Promise<{ success: boolean; errors: string[]; batchId?: string }> {
     try {
-      const { data, error } = await supabase
-        .from('invited_users')
-        .select('*')
-        .eq('invitation_token', token)
-        .eq('signup_completed', false)
-        .gt('expires_at', new Date().toISOString())
-        .single();
+      // Create batch for tracking
+      const batchId = await this.createEmailBatch(emails);
+
+      // Update batch status to in_progress
+      await supabase
+        .from('email_batches')
+        .update({ 
+          status: 'in_progress',
+          started_at: new Date().toISOString()
+        })
+        .eq('batch_id', batchId);
+
+      // Call the edge function
+      const { data, error } = await supabase.functions.invoke('send-invitations', {
+        body: { emails, testMode, batchId }
+      });
 
       if (error) {
-        console.error('Error fetching invitation by token:', error);
-        return null;
+        // Update batch status to failed
+        await supabase
+          .from('email_batches')
+          .update({ 
+            status: 'failed',
+            completed_at: new Date().toISOString()
+          })
+          .eq('batch_id', batchId);
+
+        throw error;
       }
 
-      return data;
-    } catch (error) {
-      console.error('Unexpected error fetching invitation:', error);
-      return null;
+      // Update batch with final results
+      await supabase
+        .from('email_batches')
+        .update({ 
+          status: data.success ? 'completed' : 'failed',
+          emails_sent: data.sent || 0,
+          emails_failed: (data.total || 0) - (data.sent || 0),
+          completed_at: new Date().toISOString()
+        })
+        .eq('batch_id', batchId);
+
+      return { 
+        success: data.success, 
+        errors: data.errors || [], 
+        batchId 
+      };
+    } catch (error: any) {
+      console.error('Error sending invitation emails:', error);
+      return { 
+        success: false, 
+        errors: [`Failed to send emails: ${error.message}`] 
+      };
     }
+  }
+
+  async getPendingInvitations(): Promise<PendingInvitation[]> {
+    const { data, error } = await supabase
+      .from('invited_users')
+      .select('id, email, persona_type, invited_at, email_sent, email_sent_at, batch_id, send_attempts')
+      .eq('signup_completed', false)
+      .gte('expires_at', new Date().toISOString())
+      .order('invited_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching pending invitations:', error);
+      throw new Error(`Failed to fetch pending invitations: ${error.message}`);
+    }
+
+    return data || [];
+  }
+
+  async getCompletedInvitations(): Promise<PendingInvitation[]> {
+    const { data, error } = await supabase
+      .from('invited_users')
+      .select('id, email, persona_type, invited_at, email_sent, email_sent_at, batch_id, send_attempts')
+      .eq('signup_completed', true)
+      .order('invited_at', { ascending: false });
+
+    if (error) {
+      console.error('Error fetching completed invitations:', error);
+      throw new Error(`Failed to fetch completed invitations: ${error.message}`);
+    }
+
+    return data || [];
   }
 }
 
