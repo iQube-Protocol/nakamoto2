@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
@@ -45,12 +46,64 @@ const MessageContent = ({ content, sender }: MessageContentProps) => {
     };
   }, []);
 
-  // Process code blocks with memoization
+  // Process images and code blocks with memoization
   const processedContent = React.useMemo(() => {
-    return content.split('```').map((part, i) => {
+    // First, extract and process images
+    const imageRegex = /!\[([^\]]*)\]\(([^)]+)\)/g;
+    const parts: (string | React.ReactElement)[] = [];
+    let lastIndex = 0;
+    let match;
+
+    // Split content by images first
+    const contentWithImages = content.replace(imageRegex, (match, alt, src) => {
+      return `\n\n__IMAGE__${alt}__${src}__\n\n`;
+    });
+
+    // Now process code blocks
+    return contentWithImages.split('```').map((part, i) => {
       // Even indices are regular text, odd indices are code blocks
       if (i % 2 === 0) {
-        return processUserFriendlyContent(part);
+        // Process text parts that might contain images
+        const textParts: (string | React.ReactElement)[] = [];
+        const imageParts = part.split(/\n\n__IMAGE__([^_]*)__([^_]*)__\n\n/);
+        
+        imageParts.forEach((textPart, j) => {
+          if (j % 3 === 0) {
+            // Regular text
+            if (textPart.trim()) {
+              textParts.push(processUserFriendlyContent(textPart));
+            }
+          } else if (j % 3 === 1) {
+            // Alt text
+            const alt = textPart;
+            const src = imageParts[j + 1];
+            if (src) {
+              textParts.push(
+                <div key={`image-${i}-${j}`} className="my-6 flex justify-center">
+                  <div className="max-w-full">
+                    <img 
+                      src={src} 
+                      alt={alt}
+                      className="max-w-full h-auto rounded-lg shadow-lg border border-gray-200"
+                      onError={(e) => {
+                        console.error('Failed to load image:', src);
+                        e.currentTarget.style.display = 'none';
+                      }}
+                    />
+                    {alt && (
+                      <p className="text-center text-sm text-muted-foreground mt-2 italic">
+                        {alt}
+                      </p>
+                    )}
+                  </div>
+                </div>
+              );
+            }
+          }
+          // Skip j % 3 === 2 as it's the src which we handle above
+        });
+        
+        return textParts;
       } else {
         // Extract the language and code
         const firstLineBreak = part.indexOf('\n');
@@ -80,7 +133,7 @@ const MessageContent = ({ content, sender }: MessageContentProps) => {
           </SyntaxHighlighter>
         );
       }
-    });
+    }).flat();
   }, [content, processUserFriendlyContent]);
 
   // Memoized inline formatting processor
@@ -172,7 +225,7 @@ const MessageContent = ({ content, sender }: MessageContentProps) => {
           </div>
         );
       } else {
-        // Return already processed React elements (syntax highlighted code or diagrams)
+        // Return already processed React elements (syntax highlighted code, diagrams, or images)
         return part;
       }
     });
