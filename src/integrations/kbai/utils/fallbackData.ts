@@ -1,4 +1,23 @@
 import { KBAIKnowledgeItem } from '../index';
+import { MetaKnytsKnowledgeBase } from '@/services/metaknyts-knowledge-base/MetaKnytsKnowledgeBase';
+
+// Get metaKnyts knowledge base instance
+const metaKnytsKB = MetaKnytsKnowledgeBase.getInstance();
+
+// Convert metaKnyts knowledge items to KBAI format
+const convertMetaKnytsToKBAI = (): KBAIKnowledgeItem[] => {
+  const metaKnytsItems = metaKnytsKB.getAllKnowledge();
+  
+  return metaKnytsItems.map(item => ({
+    id: item.id,
+    title: item.title,
+    content: item.content,
+    type: 'metaknyts-guide',
+    source: item.source,
+    relevance: 1.0,
+    timestamp: item.timestamp
+  }));
+};
 
 // Expanded set of fallback knowledge items
 const fallbackKnowledgeItems: KBAIKnowledgeItem[] = [
@@ -185,6 +204,28 @@ const topicSpecificItems: Record<string, KBAIKnowledgeItem[]> = {
       timestamp: new Date().toISOString()
     }
   ],
+  'knyt': [
+    {
+      id: 'kb-knyt-coyn-wallet-setup',
+      title: 'How to Add KNYT COYN to Your Web3 Wallet',
+      content: 'To use your $KNYT COYN tokens in the metaKnyts Ecosystem, you need to add them to your wallet. **Token Contract Address:** 0xe53dad36cd0A8EdC656448CE7912bba72beBECb4 **Network:** Ethereum Mainnet **Symbol:** KNYT **Decimals:** 18. For MetaMask: Open wallet → Check Ethereum Mainnet → Import tokens → Custom Token → Paste contract address → Add token. For Coinbase Wallet: Open app → Tap + → Paste contract address → Enter KNYT symbol → Enter 18 decimals → Confirm.',
+      type: 'metaknyts-guide',
+      source: 'metaKnyts Knowledge Base',
+      relevance: 1.0,
+      timestamp: new Date().toISOString()
+    }
+  ],
+  'metaknyts': [
+    {
+      id: 'kb-metaknyts-overview',
+      title: 'metaKnyts: World\'s First CryptoComic™',
+      content: 'metaKnyts is the world\'s first CryptoComic™ and blockchain enabled gaming franchise. It is an episodic, cyberpunk and Afri-futurist saga about a new social, economic and technological paradigm. Episodes and in-game inventory are sold as NFTs that can appreciate in value and be traded peer to peer.',
+      type: 'metaknyts-guide',
+      source: 'metaKnyts Knowledge Base',
+      relevance: 1.0,
+      timestamp: new Date().toISOString()
+    }
+  ],
   'mondai': [
     {
       id: 'kb-mondai-full',
@@ -222,11 +263,41 @@ const topicSpecificItems: Record<string, KBAIKnowledgeItem[]> = {
 export const getFallbackItems = (query: string = ''): KBAIKnowledgeItem[] => {
   console.log('Getting fallback items for query:', query);
   
+  // Get metaKnyts knowledge base items
+  const metaKnytsItems = convertMetaKnytsToKBAI();
+  
   // If we have specific items for this topic, use them first
   const lowerQuery = query.toLowerCase();
   let relevantItems: KBAIKnowledgeItem[] = [];
   
-  // Check for topic-specific items first
+  // Check for metaKnyts-specific queries first
+  if (lowerQuery.includes('knyt') || lowerQuery.includes('coyn') || 
+      lowerQuery.includes('wallet') || lowerQuery.includes('metaknyts') ||
+      lowerQuery.includes('add token') || lowerQuery.includes('contract address')) {
+    
+    // Find the KNYT COYN wallet setup guide specifically
+    const knytWalletGuide = metaKnytsItems.find(item => 
+      item.id === 'knyt-coyn-wallet-setup' || 
+      item.title.toLowerCase().includes('knyt coyn') ||
+      item.title.toLowerCase().includes('wallet')
+    );
+    
+    if (knytWalletGuide) {
+      relevantItems.push(knytWalletGuide);
+      console.log('Found KNYT COYN wallet guide in metaKnyts knowledge base');
+    }
+    
+    // Also include other relevant metaKnyts items
+    const otherMetaKnytsItems = metaKnytsItems.filter(item => 
+      item.id !== 'knyt-coyn-wallet-setup' &&
+      (item.content.toLowerCase().includes(lowerQuery) || 
+       item.title.toLowerCase().includes(lowerQuery))
+    ).slice(0, 3);
+    
+    relevantItems = [...relevantItems, ...otherMetaKnytsItems];
+  }
+  
+  // Check for topic-specific items
   Object.keys(topicSpecificItems).forEach(topic => {
     if (lowerQuery.includes(topic)) {
       relevantItems = [...relevantItems, ...topicSpecificItems[topic]];
@@ -234,13 +305,15 @@ export const getFallbackItems = (query: string = ''): KBAIKnowledgeItem[] => {
   });
   
   // If query contains "mondai" but we didn't match the exact topic, still show mondai items
-  if (lowerQuery.includes('mondai') && !relevantItems.length) {
+  if (lowerQuery.includes('mondai') && !relevantItems.some(item => item.type === 'agent-info')) {
     relevantItems = [...relevantItems, ...topicSpecificItems['mondai']];
   }
   
-  // If no topic-specific items or query is empty, return all fallback items
+  // If no topic-specific items or query is empty, return mix of metaKnyts and fallback items
   if (relevantItems.length === 0 || !query) {
-    return fallbackKnowledgeItems;
+    // Prioritize metaKnyts items for empty queries
+    const priorityMetaKnytsItems = metaKnytsItems.slice(0, 4);
+    return [...priorityMetaKnytsItems, ...fallbackKnowledgeItems.slice(0, 6)];
   }
   
   // Combine topic items with general items, up to 8 total

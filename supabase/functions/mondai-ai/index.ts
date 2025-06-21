@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { OpenAI } from 'https://esm.sh/openai@4.0.0';
@@ -30,7 +31,7 @@ interface KnowledgeItem {
 }
 
 /**
- * Enhanced MonDAI system prompt with persona contextualization
+ * Enhanced MonDAI system prompt with persona contextualization and metaKnyts knowledge
  */
 const MONDAI_SYSTEM_PROMPT = `
 ## **MonDAI: Crypto-Agentic AI for the CryptoMondays Community**
@@ -39,6 +40,22 @@ const MONDAI_SYSTEM_PROMPT = `
 You are MonDAI, a friendly and intelligent AI agent designed to serve the global CryptoMondays community. Your mission is to help users learn, earn, and connect around the themes of blockchain, Web3, and decentralized AI in a way that is welcoming, clear, and empowering — especially for newcomers.
 
 You are not a typical AI assistant. You are a crypto-agentic AI, meaning you prioritize user sovereignty, privacy, and contextual intelligence. You do not rely on centralized data extraction models. Instead, you use a privacy-preserving and decentralized technology called iQubes. These are secure, modular information containers that allow you to deliver personalized, context-aware support while protecting the user's data rights.
+
+You have access to specialized knowledge about metaKnyts, KNYT COYN tokens, and the broader metaKnyts ecosystem. When users ask about KNYT, KNYT COYN, metaKnyts, wallet setup, or token management, prioritize this specialized knowledge.
+
+**<metaknyts-expertise>**
+You are particularly knowledgeable about:
+- KNYT COYN token (contract: 0xe53dad36cd0A8EdC656448CE7912bba72beBECb4)
+- metaKnyts ecosystem and storylines
+- Wallet setup for Web3 tokens
+- Token management and security
+- CryptoComic and blockchain gaming concepts
+
+When users ask about adding KNYT COYN to their wallet, always provide the complete details:
+- **Contract Address:** 0xe53dad36cd0A8EdC656448CE7912bba72beBECb4
+- **Network:** Ethereum Mainnet
+- **Symbol:** KNYT
+- **Decimals:** 18
 
 **<persona-contextualization>**
 When users activate their Persona iQubes (Qrypto Profile or KNYT Profile), you gain access to rich context about their identity, experience level, investments, digital assets, crypto interests, and social presence. Use this information intelligently to:
@@ -71,6 +88,7 @@ When no Persona iQubes are active, treat the user anonymously without making ass
 3. Offering guidance on how to get involved, including using iQubes to securely manage their data, identity, and engagement.
 4. Responding in ways that build trust and confidence, particularly for those unfamiliar with AI or crypto.
 5. Providing personalized insights based on the user's investment portfolio, digital assets, and crypto interests when persona context is available.
+6. **Prioritizing metaKnyts and KNYT COYN information** when relevant to user queries.
 
 ---
 
@@ -89,6 +107,7 @@ Your responses MUST be:
 6. Natural and conversational, not overly formal or robotic
 7. Including whitespace between paragraphs for improved readability
 8. Appropriately personalized when persona context is available
+9. **Including complete contract details when discussing KNYT COYN**
 
 ---
 
@@ -99,6 +118,7 @@ When explaining complex processes or concepts, offer to create visual aids using
 - Protocol operations
 - Relationships between components
 - System architectures
+- **Wallet setup processes (especially for KNYT COYN)**
 
 When creating Mermaid diagrams, use this format:
 \`\`\`mermaid
@@ -208,7 +228,7 @@ function selectVeniceModel(message: string): string {
 }
 
 /**
- * Process the user's query with enhanced persona context
+ * Process the user's query with enhanced persona context and metaKnyts knowledge
  */
 async function processWithOpenAI(
   message: string,
@@ -226,10 +246,10 @@ async function processWithOpenAI(
   // Use provided system prompt or default based on persona context
   let finalSystemPrompt = systemPrompt || DEFAULT_AIGENT_NAKAMOTO_SYSTEM_PROMPT;
   
-  // If we have persona context, use the enhanced MonDAI prompt
-  if (personaContext && !personaContext.isAnonymous) {
+  // If we have persona context or metaKnyts knowledge, use the enhanced MonDAI prompt
+  if ((personaContext && !personaContext.isAnonymous) || qryptoKnowledgeContext) {
     finalSystemPrompt = MONDAI_SYSTEM_PROMPT;
-    console.log('🧠 Using personalized MonDAI system prompt');
+    console.log('🧠 Using personalized MonDAI system prompt with metaKnyts knowledge');
   }
 
   // Format general knowledge items for the AI prompt
@@ -323,7 +343,8 @@ Type: ${item.type || 'General'}
       model: requestBody.model,
       hasVeniceParams: !!requestBody.venice_parameters,
       messageCount: requestBody.messages.length,
-      hasPersonaContext: !personaContext?.isAnonymous
+      hasPersonaContext: !personaContext?.isAnonymous,
+      hasMetaKnytsContext: !!qryptoKnowledgeContext
     });
 
     const response = await client.chat.completions.create(requestBody);
@@ -368,7 +389,7 @@ function detectMermaidDiagram(content: string): boolean {
 }
 
 /**
- * Process a user message and generate a response with persona context
+ * Process a user message and generate a response with persona context and metaKnyts knowledge
  */
 async function processMonDAIInteraction(
   message: string, 
@@ -391,7 +412,11 @@ async function processMonDAIInteraction(
     console.log(`🧠 MonDAI Edge Function: Using persona context for ${personaContext.preferredName || 'user'}`);
   }
   
-  // Process with the AI API (OpenAI or Venice) including persona context
+  if (qryptoKnowledgeContext) {
+    console.log(`📚 MonDAI Edge Function: Using metaKnyts knowledge context`);
+  }
+  
+  // Process with the AI API (OpenAI or Venice) including persona context and metaKnyts knowledge
   const aiResponse = await processWithOpenAI(
     message, 
     knowledgeItems, 
@@ -413,6 +438,16 @@ async function processMonDAIInteraction(
   const modelUsed = useVenice ? selectVeniceModel(message) : "gpt-4o-mini";
   const aiProvider = useVenice ? "Venice AI (Uncensored)" : "OpenAI";
   
+  // Determine knowledge source
+  let knowledgeSource = "General Knowledge";
+  if (qryptoKnowledgeContext && knowledgeItems.length > 0) {
+    knowledgeSource = "metaKnyts Knowledge Base + KBAI Knowledge Base";
+  } else if (qryptoKnowledgeContext) {
+    knowledgeSource = "metaKnyts Knowledge Base";
+  } else if (knowledgeItems.length > 0) {
+    knowledgeSource = "KBAI Knowledge Base";
+  }
+  
   return {
     conversationId,
     message: aiResponse,
@@ -420,15 +455,15 @@ async function processMonDAIInteraction(
     metadata: {
       version: "1.0",
       modelUsed,
-      knowledgeSource: qryptoKnowledgeContext ? "QryptoCOYN Knowledge Base + AI" : 
-                      knowledgeItems.length > 0 ? "KBAI Knowledge Base" : "General Knowledge",
+      knowledgeSource,
       itemsFound: knowledgeItems.length,
       visualsProvided,
       mermaidDiagramIncluded,
       isOffline: false,
       aiProvider,
       personaContextUsed: personaContext && !personaContext.isAnonymous,
-      preferredName: personaContext?.preferredName
+      preferredName: personaContext?.preferredName,
+      metaKnytsContextUsed: !!qryptoKnowledgeContext
     }
   };
 }
