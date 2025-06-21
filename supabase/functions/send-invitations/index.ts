@@ -129,57 +129,67 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // 4. FETCH INVITATION DATA - Fixed query
+    // 4. FETCH INVITATION DATA - Batched approach for large email lists
     console.log('Fetching invitations from database...');
     console.log('Query parameters:', {
-      emails: validEmails,
+      emailCount: validEmails.length,
       currentTime: new Date().toISOString()
     });
     
-    // Build the query step by step for better debugging
-    let query = supabase
-      .from('invited_users')
-      .select('email, invitation_token, persona_type')
-      .eq('signup_completed', false)
-      .gte('expires_at', new Date().toISOString());
+    const BATCH_SIZE = 100; // Process emails in batches of 100
+    const allInvitations: any[] = [];
+    
+    for (let i = 0; i < validEmails.length; i += BATCH_SIZE) {
+      const emailBatch = validEmails.slice(i, i + BATCH_SIZE);
+      console.log(`Processing batch ${Math.floor(i / BATCH_SIZE) + 1}, emails ${i + 1}-${Math.min(i + BATCH_SIZE, validEmails.length)}`);
+      
+      try {
+        let query = supabase
+          .from('invited_users')
+          .select('email, invitation_token, persona_type')
+          .eq('signup_completed', false)
+          .gte('expires_at', new Date().toISOString());
 
-    // Handle the email filtering more carefully
-    if (validEmails.length === 1) {
-      query = query.eq('email', validEmails[0]);
-    } else {
-      query = query.in('email', validEmails);
-    }
-
-    const { data: invitations, error: fetchError } = await query;
-
-    if (fetchError) {
-      console.error('Database error fetching invitations:', {
-        error: fetchError,
-        message: fetchError.message,
-        details: fetchError.details,
-        hint: fetchError.hint,
-        code: fetchError.code
-      });
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          errors: [`Database error: ${fetchError.message}`] 
-        }),
-        {
-          status: 500,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
+        // Handle batch filtering
+        if (emailBatch.length === 1) {
+          query = query.eq('email', emailBatch[0]);
+        } else {
+          query = query.in('email', emailBatch);
         }
-      );
+
+        const { data: batchInvitations, error: fetchError } = await query;
+
+        if (fetchError) {
+          console.error(`Database error fetching invitations for batch ${Math.floor(i / BATCH_SIZE) + 1}:`, {
+            error: fetchError,
+            message: fetchError.message,
+            details: fetchError.details,
+            hint: fetchError.hint,
+            code: fetchError.code,
+            emailBatch: emailBatch.slice(0, 5) // Log first 5 emails only
+          });
+          continue; // Continue with next batch instead of failing completely
+        }
+
+        if (batchInvitations && batchInvitations.length > 0) {
+          allInvitations.push(...batchInvitations);
+          console.log(`Batch ${Math.floor(i / BATCH_SIZE) + 1} results: ${batchInvitations.length} invitations found`);
+        }
+      } catch (batchError) {
+        console.error(`Error processing batch ${Math.floor(i / BATCH_SIZE) + 1}:`, batchError);
+        continue; // Continue with next batch
+      }
     }
 
     console.log('Database query results:', {
-      foundInvitations: invitations?.length || 0,
+      totalBatches: Math.ceil(validEmails.length / BATCH_SIZE),
+      foundInvitations: allInvitations.length,
       requestedEmails: validEmails.length,
-      invitationEmails: invitations?.map(inv => inv.email) || []
+      sampleInvitations: allInvitations.slice(0, 3).map(inv => inv.email)
     });
 
-    if (!invitations || invitations.length === 0) {
-      console.log('No valid invitations found for emails:', validEmails);
+    if (allInvitations.length === 0) {
+      console.log('No valid invitations found for any emails');
       return new Response(
         JSON.stringify({ 
           success: false, 
@@ -209,9 +219,9 @@ const handler = async (req: Request): Promise<Response> => {
     // 6. SEND EMAILS WITH ENHANCED LOGGING
     console.log('=== STARTING EMAIL SEND PROCESS ===');
     
-    for (const [index, invitation] of invitations.entries()) {
+    for (const [index, invitation] of allInvitations.entries()) {
       try {
-        console.log(`\n--- Processing email ${index + 1}/${invitations.length} ---`);
+        console.log(`\n--- Processing email ${index + 1}/${allInvitations.length} ---`);
         console.log(`Sending to: ${invitation.email} (${invitation.persona_type})`);
         
         // Use the preview URL for now - you can change this to your custom domain later
@@ -330,14 +340,16 @@ const handler = async (req: Request): Promise<Response> => {
       success: successCount > 0,
       errors,
       sent: successCount,
-      total: testMode ? Math.min(1, invitations.length) : invitations.length,
+      total: testMode ? Math.min(1, allInvitations.length) : allInvitations.length,
       message: testMode 
         ? `Test email ${successCount > 0 ? 'sent successfully' : 'failed'}`
-        : `Successfully sent ${successCount} of ${invitations.length} invitation emails${errors.length > 0 ? ` (${errors.length} failed)` : ''}`,
+        : `Successfully sent ${successCount} of ${allInvitations.length} invitation emails${errors.length > 0 ? ` (${errors.length} failed)` : ''}`,
       debug: {
         mailjetConfigured: !!(mailjetApiKey && mailjetSecretKey),
-        databaseInvitations: invitations.length,
-        validEmails: validEmails.length
+        databaseInvitations: allInvitations.length,
+        validEmails: validEmails.length,
+        batchProcessing: true,
+        batchSize: BATCH_SIZE
       }
     };
 
