@@ -19,38 +19,6 @@ export type {
   UserDetail
 };
 
-export interface BatchProgress {
-  batchId: string;
-  totalEmails: number;
-  emailsProcessed: number;
-  emailsSuccessful: number;
-  emailsFailed: number;
-  errors: string[];
-  isComplete: boolean;
-}
-
-export interface EmailBatch {
-  id: string;
-  batch_id: string;
-  total_emails: number;
-  emails_sent: number;
-  emails_failed: number;
-  status: 'pending' | 'in_progress' | 'completed' | 'failed';
-  started_at: string | null;
-  completed_at: string | null;
-  created_at: string;
-  created_by: string | null;
-}
-
-export interface InvitationStats {
-  totalCreated: number;
-  emailsSent: number;
-  emailsPending: number;
-  signupsCompleted: number;
-  awaitingSignup: number;
-  conversionRate: number;
-}
-
 class InvitationService {
   parseCSV(csvContent: string, personaType: 'knyt' | 'qrypto'): { invitations: InvitationData[], stats: DeduplicationStats } {
     const lines = csvContent.trim().split('\n');
@@ -310,7 +278,11 @@ class InvitationService {
       throw new Error(`Failed to fetch user details: ${error.message}`);
     }
 
-    return data || [];
+    // Transform the data to match UserDetail interface
+    return (data || []).map(item => ({
+      ...item,
+      persona_data: item.persona_data as Record<string, any>
+    }));
   }
 
   async getUserDetailWithBlakQube(userId: string): Promise<UserDetail | null> {
@@ -356,6 +328,7 @@ class InvitationService {
 
     return {
       ...invitation,
+      persona_data: invitation.persona_data as Record<string, any>,
       blak_qube_data: blakQubeData,
       user_id: userAuthId
     };

@@ -66,6 +66,8 @@ export interface UserDetail {
   signup_completed: boolean;
   completed_at: string | null;
   persona_data: Record<string, any>;
+  batch_id?: string | null;
+  send_attempts?: number;
   blak_qube_data?: Record<string, any>;
   user_id?: string;
 }
