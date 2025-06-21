@@ -58,9 +58,9 @@ Source: ${item.source}
     // Get KBAI knowledge items as fallback/supplement
     let kbaiKnowledgeItems: any[] = [];
     try {
-      // Try to get from KBAI service
+      // Try to get from KBAI service - pass query as string parameter
       const { fetchKnowledgeItems } = useKnowledgeBase();
-      kbaiKnowledgeItems = await fetchKnowledgeItems(message);
+      kbaiKnowledgeItems = await fetchKnowledgeItems(message, true);
       console.log(`🔍 MonDAI: Found ${kbaiKnowledgeItems.length} KBAI knowledge items`);
     } catch (error) {
       console.log('📚 MonDAI: KBAI service not available, using fallback');
