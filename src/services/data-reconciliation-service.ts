@@ -102,27 +102,31 @@ class DataReconciliationService {
       for (const invitation of allInvitations) {
         if (!invitation.email_sent && !invitation.batch_id) {
           // This might be a historical email - check if user has signed up
-          const { data: persona } = await supabase
-            .from('knyt_personas')
-            .select('user_id')
-            .eq('"Email"', invitation.email)
-            .single();
+          try {
+            const personaQuery = await supabase
+              .from('knyt_personas')
+              .select('user_id')
+              .eq('"Email"', invitation.email)
+              .maybeSingle();
 
-          if (persona) {
-            // User signed up, so they must have received an email
-            const { error: updateError } = await supabase
-              .from('invited_users')
-              .update({
-                email_sent: true,
-                email_sent_at: invitation.invited_at || new Date().toISOString()
-              })
-              .eq('id', invitation.id);
+            if (personaQuery.data) {
+              // User signed up, so they must have received an email
+              const { error: updateError } = await supabase
+                .from('invited_users')
+                .update({
+                  email_sent: true,
+                  email_sent_at: invitation.invited_at || new Date().toISOString()
+                })
+                .eq('id', invitation.id);
 
-            if (updateError) {
-              result.errors.push(`Failed to update email status for ${invitation.email}: ${updateError.message}`);
-            } else {
-              result.emailsReconciled++;
+              if (updateError) {
+                result.errors.push(`Failed to update email status for ${invitation.email}: ${updateError.message}`);
+              } else {
+                result.emailsReconciled++;
+              }
             }
+          } catch (personaError: any) {
+            result.errors.push(`Error checking persona for ${invitation.email}: ${personaError.message}`);
           }
         }
       }
