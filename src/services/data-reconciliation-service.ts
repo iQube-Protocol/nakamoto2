@@ -84,16 +84,17 @@ class DataReconciliationService {
   private async reconcileEmailCounts(result: ReconciliationResult): Promise<void> {
     try {
       // Get all invitations that should have emails sent
-      const { data: allInvitations, error } = await supabase
+      const invitationsResponse = await supabase
         .from('invited_users')
         .select('id, email, email_sent, email_sent_at, batch_id, invited_at');
 
-      if (error) {
-        result.errors.push(`Error fetching invitations for email reconciliation: ${error.message}`);
+      if (invitationsResponse.error) {
+        result.errors.push(`Error fetching invitations for email reconciliation: ${invitationsResponse.error.message}`);
         return;
       }
 
-      if (!allInvitations) {
+      const allInvitations = invitationsResponse.data;
+      if (!allInvitations || allInvitations.length === 0) {
         return;
       }
 
@@ -103,15 +104,16 @@ class DataReconciliationService {
         if (!invitation.email_sent && !invitation.batch_id) {
           // This might be a historical email - check if user has signed up
           try {
-            const personaQuery = await supabase
+            const personaResponse = await supabase
               .from('knyt_personas')
               .select('user_id')
               .eq('"Email"', invitation.email)
               .maybeSingle();
 
-            if (personaQuery.data) {
+            // Check if persona query was successful and has data
+            if (!personaResponse.error && personaResponse.data) {
               // User signed up, so they must have received an email
-              const { error: updateError } = await supabase
+              const updateResponse = await supabase
                 .from('invited_users')
                 .update({
                   email_sent: true,
@@ -119,8 +121,8 @@ class DataReconciliationService {
                 })
                 .eq('id', invitation.id);
 
-              if (updateError) {
-                result.errors.push(`Failed to update email status for ${invitation.email}: ${updateError.message}`);
+              if (updateResponse.error) {
+                result.errors.push(`Failed to update email status for ${invitation.email}: ${updateResponse.error.message}`);
               } else {
                 result.emailsReconciled++;
               }
