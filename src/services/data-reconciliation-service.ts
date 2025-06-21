@@ -93,9 +93,13 @@ class DataReconciliationService {
         return;
       }
 
+      if (!allInvitations) {
+        return;
+      }
+
       // For historical emails (before batch system), we'll assume they were sent
       // if the user has signed up or if we know they received an email
-      for (const invitation of (allInvitations as InvitationRecord[]) || []) {
+      for (const invitation of allInvitations) {
         if (!invitation.email_sent && !invitation.batch_id) {
           // This might be a historical email - check if user has signed up
           const { data: persona } = await supabase
