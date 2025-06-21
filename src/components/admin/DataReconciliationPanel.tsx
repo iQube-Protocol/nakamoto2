@@ -1,11 +1,10 @@
-
 import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { AlertTriangle, CheckCircle, RefreshCw, Database } from 'lucide-react';
 import { toast } from 'sonner';
-import { dataReconciliationService } from '@/services/data-reconciliation-service';
+import { dataReconciliationService, type ReconciliationResult, type DuplicateEmailRecord } from '@/services/data-reconciliation';
 
 const DataReconciliationPanel = () => {
   const [isReconciling, setIsReconciling] = useState(false);
