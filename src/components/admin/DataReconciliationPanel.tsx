@@ -1,57 +1,99 @@
+
 import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
-import { AlertTriangle, CheckCircle, RefreshCw, Database } from 'lucide-react';
+import { AlertTriangle, CheckCircle, RefreshCw, Database, Clock, AlertCircle as AlertIcon } from 'lucide-react';
 import { toast } from 'sonner';
 import { dataReconciliationService, type ReconciliationResult, type DuplicateEmailRecord } from '@/services/data-reconciliation';
 
 const DataReconciliationPanel = () => {
   const [isReconciling, setIsReconciling] = useState(false);
-  const [lastReconciliation, setLastReconciliation] = useState<any>(null);
+  const [isRefreshing, setIsRefreshing] = useState(false);
+  const [lastReconciliation, setLastReconciliation] = useState<ReconciliationResult | null>(null);
   const [report, setReport] = useState<any>(null);
-  const [duplicates, setDuplicates] = useState<any[]>([]);
+  const [duplicates, setDuplicates] = useState<DuplicateEmailRecord[]>([]);
+  const [lastRefreshTime, setLastRefreshTime] = useState<Date | null>(null);
+  const [dataError, setDataError] = useState<string | null>(null);
 
   const handleReconciliation = async () => {
     setIsReconciling(true);
+    setDataError(null);
+    
     try {
+      console.log('DataReconciliationPanel: Starting reconciliation...');
       toast.info('Starting data reconciliation...');
-      const result = await dataReconciliationService.reconcileHistoricalData();
       
+      const result = await dataReconciliationService.reconcileHistoricalData();
       setLastReconciliation(result);
       
       if (result.errors.length > 0) {
+        console.error('DataReconciliationPanel: Reconciliation errors:', result.errors);
         toast.error(`Reconciliation completed with ${result.errors.length} errors`);
         result.errors.forEach(error => {
           console.error('Reconciliation error:', error);
         });
       } else {
+        console.log('DataReconciliationPanel: Reconciliation successful:', result);
         toast.success(`Reconciliation completed successfully! Updated ${result.emailsReconciled} emails and ${result.signupsReconciled} signups.`);
       }
       
-      // Refresh the report
-      await loadReport();
+      // Force refresh the report after reconciliation
+      await loadReport(true);
     } catch (error: any) {
+      console.error('DataReconciliationPanel: Reconciliation failed:', error);
+      setDataError(`Reconciliation failed: ${error.message}`);
       toast.error(`Reconciliation failed: ${error.message}`);
     } finally {
       setIsReconciling(false);
     }
   };
 
-  const loadReport = async () => {
+  const loadReport = async (forceRefresh: boolean = false) => {
+    if (forceRefresh) {
+      setIsRefreshing(true);
+    }
+    setDataError(null);
+
     try {
+      console.log('DataReconciliationPanel: Loading report data...', { forceRefresh });
+      
       const [reportData, duplicateData] = await Promise.all([
         dataReconciliationService.getReconciliationReport(),
         dataReconciliationService.findDuplicateEmails()
       ]);
+      
+      console.log('DataReconciliationPanel: Loaded report data:', {
+        report: reportData,
+        duplicatesCount: duplicateData.length
+      });
+      
       setReport(reportData);
       setDuplicates(duplicateData);
+      setLastRefreshTime(new Date());
+      
+      if (forceRefresh) {
+        toast.success('Data refreshed successfully');
+      }
     } catch (error: any) {
-      toast.error(`Failed to load report: ${error.message}`);
+      console.error('DataReconciliationPanel: Failed to load report:', error);
+      const errorMessage = `Failed to load report: ${error.message}`;
+      setDataError(errorMessage);
+      toast.error(errorMessage);
+    } finally {
+      if (forceRefresh) {
+        setIsRefreshing(false);
+      }
     }
   };
 
+  const handleManualRefresh = async () => {
+    console.log('DataReconciliationPanel: Manual refresh triggered');
+    await loadReport(true);
+  };
+
   React.useEffect(() => {
+    console.log('DataReconciliationPanel: Component mounted, loading initial data');
     loadReport();
   }, []);
 
@@ -59,12 +101,49 @@ const DataReconciliationPanel = () => {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center">
-            <Database className="h-5 w-5 mr-2" />
-            Data Reconciliation
+          <CardTitle className="flex items-center justify-between">
+            <div className="flex items-center">
+              <Database className="h-5 w-5 mr-2" />
+              Data Reconciliation
+            </div>
+            <div className="flex items-center space-x-2">
+              {lastRefreshTime && (
+                <div className="flex items-center text-xs text-gray-500">
+                  <Clock className="h-3 w-3 mr-1" />
+                  Last updated: {lastRefreshTime.toLocaleTimeString()}
+                </div>
+              )}
+              <Button
+                onClick={handleManualRefresh}
+                disabled={isRefreshing}
+                variant="outline"
+                size="sm"
+              >
+                <RefreshCw className={`h-4 w-4 mr-1 ${isRefreshing ? 'animate-spin' : ''}`} />
+                {isRefreshing ? 'Refreshing...' : 'Refresh Data'}
+              </Button>
+            </div>
           </CardTitle>
         </CardHeader>
         <CardContent className="space-y-4">
+          {dataError && (
+            <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+              <div className="flex items-center mb-2">
+                <AlertIcon className="h-4 w-4 text-red-600 mr-2" />
+                <span className="font-medium text-red-800">Data Loading Error</span>
+              </div>
+              <p className="text-sm text-red-700">{dataError}</p>
+              <Button
+                onClick={handleManualRefresh}
+                className="mt-2"
+                size="sm"
+                variant="outline"
+              >
+                Try Again
+              </Button>
+            </div>
+          )}
+
           <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4">
             <div className="flex items-center mb-2">
               <AlertTriangle className="h-4 w-4 text-yellow-600 mr-2" />
@@ -78,7 +157,7 @@ const DataReconciliationPanel = () => {
 
           <Button 
             onClick={handleReconciliation}
-            disabled={isReconciling}
+            disabled={isReconciling || isRefreshing}
             className="w-full"
           >
             <RefreshCw className={`h-4 w-4 mr-2 ${isReconciling ? 'animate-spin' : ''}`} />
@@ -125,7 +204,12 @@ const DataReconciliationPanel = () => {
       {report && (
         <Card>
           <CardHeader>
-            <CardTitle>Current Data Status</CardTitle>
+            <CardTitle className="flex items-center justify-between">
+              Current Data Status
+              {isRefreshing && (
+                <RefreshCw className="h-4 w-4 animate-spin text-blue-600" />
+              )}
+            </CardTitle>
           </CardHeader>
           <CardContent>
             <div className="grid grid-cols-2 md:grid-cols-3 gap-4">
