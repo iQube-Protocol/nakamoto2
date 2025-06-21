@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,6 +11,7 @@ import { toast } from 'sonner';
 import { invitationService, type InvitationData, type PendingInvitation, type DeduplicationStats, type BatchProgress } from '@/services/invitation-service';
 import BatchProgressDialog from './BatchProgressDialog';
 import InvitationDashboard from './InvitationDashboard';
+import DataReconciliationPanel from './DataReconciliationPanel';
 
 const InvitationManager = () => {
   const [selectedPersonaType, setSelectedPersonaType] = useState<'knyt' | 'qrypto'>('knyt');
@@ -176,7 +176,7 @@ const InvitationManager = () => {
       />
 
       <Tabs defaultValue="dashboard" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-3">
+        <TabsList className="grid w-full grid-cols-4">
           <TabsTrigger value="dashboard">
             <BarChart3 className="h-4 w-4 mr-2" />
             Dashboard
@@ -184,6 +184,10 @@ const InvitationManager = () => {
           <TabsTrigger value="upload">
             <Upload className="h-4 w-4 mr-2" />
             Upload CSV
+          </TabsTrigger>
+          <TabsTrigger value="reconcile">
+            <AlertCircle className="h-4 w-4 mr-2" />
+            Data Cleanup
           </TabsTrigger>
           <TabsTrigger value="legacy">
             <Users className="h-4 w-4 mr-2" />
@@ -298,6 +302,10 @@ const InvitationManager = () => {
               </Button>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="reconcile">
+          <DataReconciliationPanel />
         </TabsContent>
 
         <TabsContent value="legacy" className="space-y-6">
