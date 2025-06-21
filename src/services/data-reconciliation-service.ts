@@ -104,35 +104,27 @@ class DataReconciliationService {
         if (!invitation.email_sent && !invitation.batch_id) {
           // This might be a historical email - check if user has signed up
           try {
-            // Use a simpler approach to avoid type complexity
-            const { data: personaData } = await supabase.rpc('check_user_signup', {
-              user_email: invitation.email
-            });
+            // Simple query to check if user exists in personas
+            const queryResult = await supabase
+              .from('knyt_personas')
+              .select('user_id')
+              .ilike('Email', invitation.email)
+              .limit(1);
 
-            // If we can't use RPC, fall back to a direct approach
-            if (!personaData) {
-              // Simple query without complex column names
-              const queryResult = await supabase
-                .from('knyt_personas')
-                .select('user_id')
-                .ilike('Email', invitation.email)
-                .limit(1);
+            if (queryResult.data && queryResult.data.length > 0) {
+              // User signed up, so they must have received an email
+              const updateResponse = await supabase
+                .from('invited_users')
+                .update({
+                  email_sent: true,
+                  email_sent_at: invitation.invited_at || new Date().toISOString()
+                })
+                .eq('id', invitation.id);
 
-              if (queryResult.data && queryResult.data.length > 0) {
-                // User signed up, so they must have received an email
-                const updateResponse = await supabase
-                  .from('invited_users')
-                  .update({
-                    email_sent: true,
-                    email_sent_at: invitation.invited_at || new Date().toISOString()
-                  })
-                  .eq('id', invitation.id);
-
-                if (updateResponse.error) {
-                  result.errors.push(`Failed to update email status for ${invitation.email}: ${updateResponse.error.message}`);
-                } else {
-                  result.emailsReconciled++;
-                }
+              if (updateResponse.error) {
+                result.errors.push(`Failed to update email status for ${invitation.email}: ${updateResponse.error.message}`);
+              } else {
+                result.emailsReconciled++;
               }
             }
           } catch (personaError: any) {
