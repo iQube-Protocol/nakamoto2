@@ -1,3 +1,4 @@
+
 import React, { useState, useRef } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -12,6 +13,17 @@ import { invitationService, type InvitationData, type PendingInvitation, type De
 import BatchProgressDialog from './BatchProgressDialog';
 import InvitationDashboard from './InvitationDashboard';
 import DataReconciliationPanel from './DataReconciliationPanel';
+
+// Define a simpler BatchProgress for the reconciliation dialog
+interface SimpleProgress {
+  batchId: string;
+  totalEmails: number;
+  emailsProcessed: number;
+  emailsSuccessful: number;
+  emailsFailed: number;
+  errors: string[];
+  isComplete: boolean;
+}
 
 const InvitationManager = () => {
   const [selectedPersonaType, setSelectedPersonaType] = useState<'knyt' | 'qrypto'>('knyt');
@@ -118,7 +130,7 @@ const InvitationManager = () => {
           toast.error(error);
         });
       }
-    } catch (error) {
+    } catch (error: any) {
       toast.error(`Error creating invitations: ${error}`);
       setBatchProgress(prev => prev ? {
         ...prev,

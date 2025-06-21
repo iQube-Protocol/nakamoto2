@@ -77,7 +77,7 @@ class DataReconciliationService {
       // Get all invitations that should have emails sent
       const { data: allInvitations, error } = await supabase
         .from('invited_users')
-        .select('id, email, email_sent, email_sent_at, batch_id, created_at');
+        .select('id, email, email_sent, email_sent_at, batch_id, invited_at');
 
       if (error) {
         result.errors.push(`Error fetching invitations for email reconciliation: ${error.message}`);
@@ -101,7 +101,7 @@ class DataReconciliationService {
               .from('invited_users')
               .update({
                 email_sent: true,
-                email_sent_at: invitation.created_at || new Date().toISOString()
+                email_sent_at: invitation.invited_at || new Date().toISOString()
               })
               .eq('id', invitation.id);
 
