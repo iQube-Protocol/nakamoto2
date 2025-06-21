@@ -2,6 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { useKnowledgeBase } from '@/hooks/mcp/useKnowledgeBase';
 import { MetaKnytsKnowledgeBase } from '@/services/metaknyts-knowledge-base/MetaKnytsKnowledgeBase';
+import { PersonaContextService } from '@/services/persona-context-service';
 
 interface MonDAIResponse {
   conversationId: string;
@@ -58,20 +59,23 @@ Source: ${item.source}
     // Get KBAI knowledge items as fallback/supplement
     let kbaiKnowledgeItems: any[] = [];
     try {
-      // Try to get from KBAI service - pass query as string parameter
+      // Try to get from KBAI service
       const { fetchKnowledgeItems } = useKnowledgeBase();
-      kbaiKnowledgeItems = await fetchKnowledgeItems(message, true);
+      kbaiKnowledgeItems = await fetchKnowledgeItems();
       console.log(`🔍 MonDAI: Found ${kbaiKnowledgeItems.length} KBAI knowledge items`);
     } catch (error) {
       console.log('📚 MonDAI: KBAI service not available, using fallback');
       // Fallback will be handled by the edge function
     }
     
-    // Simple persona context (without profile data since hooks don't provide it)
-    const personaContext = { isAnonymous: true };
-    const contextualPrompt = '';
+    // Get persona context using the service
+    const conversationContext = await PersonaContextService.getConversationContext();
+    const contextualPrompt = PersonaContextService.generateContextualPrompt(conversationContext, message);
     
-    console.log('📝 MonDAI: Using anonymous persona context');
+    console.log(`📝 MonDAI: Using persona context - Anonymous: ${conversationContext.isAnonymous}`);
+    if (conversationContext.preferredName) {
+      console.log(`👤 MonDAI: Preferred name: ${conversationContext.preferredName}`);
+    }
     
     // Call the edge function
     const { data, error } = await supabase.functions.invoke('mondai-ai', {
@@ -81,7 +85,7 @@ Source: ${item.source}
         knowledgeItems: kbaiKnowledgeItems,
         qryptoKnowledgeContext: metaKnytsContext,
         useVenice,
-        personaContext,
+        personaContext: conversationContext,
         contextualPrompt
       }
     });
