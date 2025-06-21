@@ -1,4 +1,5 @@
 
+
 import React from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
@@ -79,19 +80,20 @@ const MessageContent = ({ content, sender }: MessageContentProps) => {
             const src = imageParts[j + 1];
             if (src) {
               textParts.push(
-                <div key={`image-${i}-${j}`} className="my-6 flex justify-center">
-                  <div className="max-w-full">
+                <div key={`image-${i}-${j}`} className="my-4 w-full">
+                  <div className="w-full max-w-4xl mx-auto">
                     <img 
                       src={src} 
                       alt={alt}
-                      className="max-w-full h-auto rounded-lg shadow-lg border border-gray-200"
+                      className="w-full h-auto rounded-lg shadow-md border border-gray-200 object-contain"
+                      style={{ maxHeight: '80vh' }}
                       onError={(e) => {
                         console.error('Failed to load image:', src);
                         e.currentTarget.style.display = 'none';
                       }}
                     />
                     {alt && (
-                      <p className="text-center text-sm text-muted-foreground mt-2 italic">
+                      <p className="text-center text-sm text-muted-foreground mt-3 px-2 italic">
                         {alt}
                       </p>
                     )}
@@ -239,3 +241,4 @@ const MessageContent = ({ content, sender }: MessageContentProps) => {
 };
 
 export default MessageContent;
+
