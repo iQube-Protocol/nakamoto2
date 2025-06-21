@@ -1,5 +1,4 @@
 
-
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.8';
 
@@ -21,6 +20,8 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const { emails }: SendInvitationsRequest = await req.json();
 
+    console.log('Received request to send emails to:', emails);
+
     if (!emails || !Array.isArray(emails) || emails.length === 0) {
       return new Response(
         JSON.stringify({ success: false, errors: ['No emails provided'] }),
@@ -34,9 +35,23 @@ const handler = async (req: Request): Promise<Response> => {
     // Initialize Supabase client
     const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    
+    if (!supabaseUrl || !supabaseServiceKey) {
+      console.error('Missing Supabase configuration');
+      return new Response(
+        JSON.stringify({ success: false, errors: ['Server configuration error'] }),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
     // Fetch invitation data for the provided emails
+    console.log('Fetching invitations for emails:', emails);
+    
     const { data: invitations, error: fetchError } = await supabase
       .from('invited_users')
       .select('email, invitation_token, persona_type')
@@ -47,7 +62,10 @@ const handler = async (req: Request): Promise<Response> => {
     if (fetchError) {
       console.error('Error fetching invitations:', fetchError);
       return new Response(
-        JSON.stringify({ success: false, errors: ['Failed to fetch invitation data'] }),
+        JSON.stringify({ 
+          success: false, 
+          errors: [`Failed to fetch invitation data: ${fetchError.message}`] 
+        }),
         {
           status: 500,
           headers: { "Content-Type": "application/json", ...corsHeaders },
@@ -55,9 +73,14 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    console.log('Found invitations:', invitations?.length || 0);
+
     if (!invitations || invitations.length === 0) {
       return new Response(
-        JSON.stringify({ success: false, errors: ['No valid invitations found'] }),
+        JSON.stringify({ 
+          success: false, 
+          errors: ['No valid invitations found for the provided emails'] 
+        }),
         {
           status: 404,
           headers: { "Content-Type": "application/json", ...corsHeaders },
@@ -73,10 +96,11 @@ const handler = async (req: Request): Promise<Response> => {
     const mailjetSecretKey = Deno.env.get('MAILJET_SECRET_KEY');
     
     if (!mailjetApiKey || !mailjetSecretKey) {
+      console.error('Missing Mailjet credentials');
       return new Response(
         JSON.stringify({ 
           success: false, 
-          errors: ['Mailjet API credentials not configured. Please add MAILJET_API_KEY and MAILJET_SECRET_KEY to your Supabase secrets.']
+          errors: ['Email service not configured. Please add MAILJET_API_KEY and MAILJET_SECRET_KEY to your Supabase secrets.']
         }),
         {
           status: 500,
@@ -88,6 +112,8 @@ const handler = async (req: Request): Promise<Response> => {
     // Send emails using Mailjet
     for (const invitation of invitations) {
       try {
+        console.log(`Sending email to: ${invitation.email}`);
+        
         // Use the preview URL for now - you can change this to your custom domain later
         const invitationUrl = `https://preview--nakamoto2.lovable.app/invited-signup?token=${invitation.invitation_token}`;
         
@@ -159,17 +185,21 @@ const handler = async (req: Request): Promise<Response> => {
 
       } catch (error) {
         console.error(`Error processing invitation for ${invitation.email}:`, error);
-        errors.push(`Failed to send to ${invitation.email}`);
+        errors.push(`Failed to send to ${invitation.email}: ${error.message}`);
       }
     }
 
+    const responseData = { 
+      success: successCount > 0,
+      errors,
+      sent: successCount,
+      message: `Successfully sent ${successCount} invitation emails${errors.length > 0 ? ` (${errors.length} failed)` : ''}`
+    };
+
+    console.log('Final response:', responseData);
+
     return new Response(
-      JSON.stringify({ 
-        success: successCount > 0,
-        errors,
-        sent: successCount,
-        message: `Successfully sent ${successCount} invitation emails${errors.length > 0 ? ` (${errors.length} failed)` : ''}`
-      }),
+      JSON.stringify(responseData),
       {
         status: 200,
         headers: { "Content-Type": "application/json", ...corsHeaders },
@@ -179,7 +209,10 @@ const handler = async (req: Request): Promise<Response> => {
   } catch (error) {
     console.error('Error in send-invitations function:', error);
     return new Response(
-      JSON.stringify({ success: false, errors: [`Unexpected error: ${error.message}`] }),
+      JSON.stringify({ 
+        success: false, 
+        errors: [`Unexpected error: ${error.message}`] 
+      }),
       {
         status: 500,
         headers: { "Content-Type": "application/json", ...corsHeaders },
@@ -189,4 +222,3 @@ const handler = async (req: Request): Promise<Response> => {
 };
 
 serve(handler);
-
