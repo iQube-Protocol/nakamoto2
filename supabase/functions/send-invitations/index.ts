@@ -129,18 +129,37 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // 4. FETCH INVITATION DATA
+    // 4. FETCH INVITATION DATA - Fixed query
     console.log('Fetching invitations from database...');
+    console.log('Query parameters:', {
+      emails: validEmails,
+      currentTime: new Date().toISOString()
+    });
     
-    const { data: invitations, error: fetchError } = await supabase
+    // Build the query step by step for better debugging
+    let query = supabase
       .from('invited_users')
       .select('email, invitation_token, persona_type')
-      .in('email', validEmails)
       .eq('signup_completed', false)
       .gte('expires_at', new Date().toISOString());
 
+    // Handle the email filtering more carefully
+    if (validEmails.length === 1) {
+      query = query.eq('email', validEmails[0]);
+    } else {
+      query = query.in('email', validEmails);
+    }
+
+    const { data: invitations, error: fetchError } = await query;
+
     if (fetchError) {
-      console.error('Database error fetching invitations:', fetchError);
+      console.error('Database error fetching invitations:', {
+        error: fetchError,
+        message: fetchError.message,
+        details: fetchError.details,
+        hint: fetchError.hint,
+        code: fetchError.code
+      });
       return new Response(
         JSON.stringify({ 
           success: false, 
