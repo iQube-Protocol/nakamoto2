@@ -20,11 +20,12 @@ const handler = async (req: Request): Promise<Response> => {
   try {
     const { emails }: SendInvitationsRequest = await req.json();
 
-    console.log('Received request to send emails to:', emails);
+    console.log('Received request to send emails to:', emails?.length || 0, 'recipients');
 
     if (!emails || !Array.isArray(emails) || emails.length === 0) {
+      console.error('Invalid emails array:', emails);
       return new Response(
-        JSON.stringify({ success: false, errors: ['No emails provided'] }),
+        JSON.stringify({ success: false, errors: ['No valid emails provided'] }),
         {
           status: 400,
           headers: { "Content-Type": "application/json", ...corsHeaders },
@@ -33,8 +34,8 @@ const handler = async (req: Request): Promise<Response> => {
     }
 
     // Initialize Supabase client
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabaseUrl = Deno.env.get('SUPABASE_URL');
+    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
     
     if (!supabaseUrl || !supabaseServiceKey) {
       console.error('Missing Supabase configuration');
@@ -49,22 +50,42 @@ const handler = async (req: Request): Promise<Response> => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Fetch invitation data for the provided emails
-    console.log('Fetching invitations for emails:', emails);
+    // Validate emails and filter out invalid ones
+    const validEmails = emails.filter(email => {
+      const isValid = email && typeof email === 'string' && email.includes('@');
+      if (!isValid) {
+        console.warn('Invalid email format:', email);
+      }
+      return isValid;
+    });
+
+    if (validEmails.length === 0) {
+      console.error('No valid emails found after filtering');
+      return new Response(
+        JSON.stringify({ success: false, errors: ['No valid email addresses provided'] }),
+        {
+          status: 400,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
+    console.log('Fetching invitations for', validEmails.length, 'valid emails');
     
+    // Fetch invitation data for the provided emails with improved query
     const { data: invitations, error: fetchError } = await supabase
       .from('invited_users')
       .select('email, invitation_token, persona_type')
-      .in('email', emails)
+      .in('email', validEmails)
       .eq('signup_completed', false)
-      .gt('expires_at', new Date().toISOString());
+      .gte('expires_at', new Date().toISOString());
 
     if (fetchError) {
-      console.error('Error fetching invitations:', fetchError);
+      console.error('Database error fetching invitations:', fetchError);
       return new Response(
         JSON.stringify({ 
           success: false, 
-          errors: [`Failed to fetch invitation data: ${fetchError.message}`] 
+          errors: [`Database error: ${fetchError.message}`] 
         }),
         {
           status: 500,
@@ -76,10 +97,11 @@ const handler = async (req: Request): Promise<Response> => {
     console.log('Found invitations:', invitations?.length || 0);
 
     if (!invitations || invitations.length === 0) {
+      console.log('No valid invitations found for emails:', validEmails);
       return new Response(
         JSON.stringify({ 
           success: false, 
-          errors: ['No valid invitations found for the provided emails'] 
+          errors: ['No valid pending invitations found for the provided emails. Make sure the invitations exist and have not expired.'] 
         }),
         {
           status: 404,
@@ -174,8 +196,8 @@ const handler = async (req: Request): Promise<Response> => {
 
         if (!response.ok) {
           const errorData = await response.text();
-          console.error(`Error sending email to ${invitation.email}:`, errorData);
-          errors.push(`Failed to send to ${invitation.email}: ${response.status}`);
+          console.error(`Mailjet API error for ${invitation.email}:`, response.status, errorData);
+          errors.push(`Failed to send to ${invitation.email}: ${response.status} ${response.statusText}`);
           continue;
         }
 
@@ -193,7 +215,8 @@ const handler = async (req: Request): Promise<Response> => {
       success: successCount > 0,
       errors,
       sent: successCount,
-      message: `Successfully sent ${successCount} invitation emails${errors.length > 0 ? ` (${errors.length} failed)` : ''}`
+      total: invitations.length,
+      message: `Successfully sent ${successCount} of ${invitations.length} invitation emails${errors.length > 0 ? ` (${errors.length} failed)` : ''}`
     };
 
     console.log('Final response:', responseData);
