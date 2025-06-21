@@ -1,6 +1,7 @@
 
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.8';
+import { RetryService } from './retry-service.ts';
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": "*",
@@ -9,6 +10,22 @@ const corsHeaders = {
 
 interface SendInvitationsRequest {
   emails: string[];
+  testMode?: boolean; // For single email testing
+}
+
+interface MailjetResponse {
+  Messages: Array<{
+    Status: string;
+    CustomID: string;
+    To: Array<{
+      Email: string;
+      MessageUUID: string;
+      MessageID: number;
+      MessageHref: string;
+    }>;
+    Cc: Array<any>;
+    Bcc: Array<any>;
+  }>;
 }
 
 const handler = async (req: Request): Promise<Response> => {
@@ -18,9 +35,14 @@ const handler = async (req: Request): Promise<Response> => {
   }
 
   try {
-    const { emails }: SendInvitationsRequest = await req.json();
+    const { emails, testMode = false }: SendInvitationsRequest = await req.json();
 
-    console.log('Received request to send emails to:', emails?.length || 0, 'recipients');
+    console.log('=== EMAIL SEND REQUEST START ===');
+    console.log('Request details:', {
+      emailCount: emails?.length || 0,
+      testMode,
+      timestamp: new Date().toISOString()
+    });
 
     if (!emails || !Array.isArray(emails) || emails.length === 0) {
       console.error('Invalid emails array:', emails);
@@ -33,9 +55,15 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // Initialize Supabase client
+    // 1. CHECK SUPABASE CONFIGURATION
     const supabaseUrl = Deno.env.get('SUPABASE_URL');
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY');
+    
+    console.log('Supabase config check:', {
+      hasUrl: !!supabaseUrl,
+      hasServiceKey: !!supabaseServiceKey,
+      urlPrefix: supabaseUrl?.substring(0, 20) + '...'
+    });
     
     if (!supabaseUrl || !supabaseServiceKey) {
       console.error('Missing Supabase configuration');
@@ -50,13 +78,44 @@ const handler = async (req: Request): Promise<Response> => {
 
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Validate emails and filter out invalid ones
+    // 2. CHECK MAILJET CONFIGURATION
+    const mailjetApiKey = Deno.env.get('MAILJET_API_KEY');
+    const mailjetSecretKey = Deno.env.get('MAILJET_SECRET_KEY');
+    
+    console.log('Mailjet config check:', {
+      hasApiKey: !!mailjetApiKey,
+      hasSecretKey: !!mailjetSecretKey,
+      apiKeyPrefix: mailjetApiKey?.substring(0, 8) + '...',
+      secretKeyPrefix: mailjetSecretKey?.substring(0, 8) + '...'
+    });
+    
+    if (!mailjetApiKey || !mailjetSecretKey) {
+      console.error('Missing Mailjet credentials');
+      return new Response(
+        JSON.stringify({ 
+          success: false, 
+          errors: ['Email service not configured. Please add MAILJET_API_KEY and MAILJET_SECRET_KEY to your Supabase secrets.']
+        }),
+        {
+          status: 500,
+          headers: { "Content-Type": "application/json", ...corsHeaders },
+        }
+      );
+    }
+
+    // 3. VALIDATE AND FILTER EMAILS
     const validEmails = emails.filter(email => {
-      const isValid = email && typeof email === 'string' && email.includes('@');
+      const isValid = email && typeof email === 'string' && email.includes('@') && email.includes('.');
       if (!isValid) {
         console.warn('Invalid email format:', email);
       }
       return isValid;
+    });
+
+    console.log('Email validation:', {
+      totalReceived: emails.length,
+      validEmails: validEmails.length,
+      invalidCount: emails.length - validEmails.length
     });
 
     if (validEmails.length === 0) {
@@ -70,9 +129,9 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    console.log('Fetching invitations for', validEmails.length, 'valid emails');
+    // 4. FETCH INVITATION DATA
+    console.log('Fetching invitations from database...');
     
-    // Fetch invitation data for the provided emails with improved query
     const { data: invitations, error: fetchError } = await supabase
       .from('invited_users')
       .select('email, invitation_token, persona_type')
@@ -94,7 +153,11 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    console.log('Found invitations:', invitations?.length || 0);
+    console.log('Database query results:', {
+      foundInvitations: invitations?.length || 0,
+      requestedEmails: validEmails.length,
+      invitationEmails: invitations?.map(inv => inv.email) || []
+    });
 
     if (!invitations || invitations.length === 0) {
       console.log('No valid invitations found for emails:', validEmails);
@@ -110,31 +173,27 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
+    // 5. SETUP RETRY SERVICE
+    const retryService = new RetryService({
+      maxRetries: 3,
+      baseDelay: 1000,
+      maxDelay: 10000,
+      retryCondition: (error: any) => {
+        // Retry on network errors or 5xx server errors
+        return error?.status >= 500 || error?.message?.includes('fetch');
+      }
+    });
+
     const errors: string[] = [];
     let successCount = 0;
 
-    // Get Mailjet credentials
-    const mailjetApiKey = Deno.env.get('MAILJET_API_KEY');
-    const mailjetSecretKey = Deno.env.get('MAILJET_SECRET_KEY');
+    // 6. SEND EMAILS WITH ENHANCED LOGGING
+    console.log('=== STARTING EMAIL SEND PROCESS ===');
     
-    if (!mailjetApiKey || !mailjetSecretKey) {
-      console.error('Missing Mailjet credentials');
-      return new Response(
-        JSON.stringify({ 
-          success: false, 
-          errors: ['Email service not configured. Please add MAILJET_API_KEY and MAILJET_SECRET_KEY to your Supabase secrets.']
-        }),
-        {
-          status: 500,
-          headers: { "Content-Type": "application/json", ...corsHeaders },
-        }
-      );
-    }
-
-    // Send emails using Mailjet
-    for (const invitation of invitations) {
+    for (const [index, invitation] of invitations.entries()) {
       try {
-        console.log(`Sending email to: ${invitation.email}`);
+        console.log(`\n--- Processing email ${index + 1}/${invitations.length} ---`);
+        console.log(`Sending to: ${invitation.email} (${invitation.persona_type})`);
         
         // Use the preview URL for now - you can change this to your custom domain later
         const invitationUrl = `https://preview--nakamoto2.lovable.app/invited-signup?token=${invitation.invitation_token}`;
@@ -142,7 +201,7 @@ const handler = async (req: Request): Promise<Response> => {
         const emailData = {
           Messages: [{
             From: {
-              Email: "nakamoto@metame.com", // Your verified sender email
+              Email: "nakamoto@metame.com",
               Name: "Agent Nakamoto"
             },
             To: [{
@@ -185,41 +244,86 @@ const handler = async (req: Request): Promise<Response> => {
           }]
         };
 
-        const response = await fetch('https://api.mailjet.com/v3.1/send', {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'Authorization': `Basic ${btoa(`${mailjetApiKey}:${mailjetSecretKey}`)}`
-          },
-          body: JSON.stringify(emailData)
+        console.log('Email payload prepared:', {
+          from: emailData.Messages[0].From,
+          to: emailData.Messages[0].To[0].Email,
+          subject: emailData.Messages[0].Subject
         });
 
-        if (!response.ok) {
-          const errorData = await response.text();
-          console.error(`Mailjet API error for ${invitation.email}:`, response.status, errorData);
-          errors.push(`Failed to send to ${invitation.email}: ${response.status} ${response.statusText}`);
-          continue;
-        }
+        // Send email with retry logic
+        const result = await retryService.execute(async () => {
+          console.log(`Making Mailjet API call for ${invitation.email}...`);
+          
+          const response = await fetch('https://api.mailjet.com/v3.1/send', {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Basic ${btoa(`${mailjetApiKey}:${mailjetSecretKey}`)}`
+            },
+            body: JSON.stringify(emailData)
+          });
 
-        const result = await response.json();
-        console.log(`Email sent successfully to ${invitation.email}:`, result);
+          console.log(`Mailjet API response for ${invitation.email}:`, {
+            status: response.status,
+            statusText: response.statusText,
+            headers: Object.fromEntries(response.headers.entries())
+          });
+
+          if (!response.ok) {
+            const errorData = await response.text();
+            console.error(`Mailjet API error for ${invitation.email}:`, {
+              status: response.status,
+              statusText: response.statusText,
+              errorData: errorData
+            });
+            
+            const error = new Error(`HTTP ${response.status}: ${response.statusText}`);
+            (error as any).status = response.status;
+            (error as any).response = errorData;
+            throw error;
+          }
+
+          return await response.json();
+        });
+
+        console.log(`✅ Email sent successfully to ${invitation.email}:`, result);
         successCount++;
 
-      } catch (error) {
-        console.error(`Error processing invitation for ${invitation.email}:`, error);
+        // In test mode, only send one email
+        if (testMode) {
+          console.log('Test mode: stopping after first successful send');
+          break;
+        }
+
+      } catch (error: any) {
+        console.error(`❌ Error processing invitation for ${invitation.email}:`, {
+          message: error.message,
+          status: error.status,
+          response: error.response
+        });
         errors.push(`Failed to send to ${invitation.email}: ${error.message}`);
       }
     }
+
+    console.log('\n=== EMAIL SEND PROCESS COMPLETE ===');
 
     const responseData = { 
       success: successCount > 0,
       errors,
       sent: successCount,
-      total: invitations.length,
-      message: `Successfully sent ${successCount} of ${invitations.length} invitation emails${errors.length > 0 ? ` (${errors.length} failed)` : ''}`
+      total: testMode ? Math.min(1, invitations.length) : invitations.length,
+      message: testMode 
+        ? `Test email ${successCount > 0 ? 'sent successfully' : 'failed'}`
+        : `Successfully sent ${successCount} of ${invitations.length} invitation emails${errors.length > 0 ? ` (${errors.length} failed)` : ''}`,
+      debug: {
+        mailjetConfigured: !!(mailjetApiKey && mailjetSecretKey),
+        databaseInvitations: invitations.length,
+        validEmails: validEmails.length
+      }
     };
 
     console.log('Final response:', responseData);
+    console.log('=== EMAIL SEND REQUEST END ===\n');
 
     return new Response(
       JSON.stringify(responseData),
@@ -229,12 +333,19 @@ const handler = async (req: Request): Promise<Response> => {
       }
     );
 
-  } catch (error) {
+  } catch (error: any) {
+    console.error('=== UNEXPECTED ERROR ===');
     console.error('Error in send-invitations function:', error);
+    console.error('Error stack:', error.stack);
+    
     return new Response(
       JSON.stringify({ 
         success: false, 
-        errors: [`Unexpected error: ${error.message}`] 
+        errors: [`Unexpected error: ${error.message}`],
+        debug: {
+          errorType: error.constructor.name,
+          timestamp: new Date().toISOString()
+        }
       }),
       {
         status: 500,
