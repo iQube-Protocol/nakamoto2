@@ -2,8 +2,6 @@
 import { supabase } from '@/integrations/supabase/client';
 import { useKnowledgeBase } from '@/hooks/mcp/useKnowledgeBase';
 import { MetaKnytsKnowledgeBase } from '@/services/metaknyts-knowledge-base/MetaKnytsKnowledgeBase';
-import { useQryptoPersona } from '@/hooks/use-qrypto-persona';
-import { useKNYTPersona } from '@/hooks/use-knyt-persona';
 
 interface MonDAIResponse {
   conversationId: string;
@@ -69,53 +67,11 @@ Source: ${item.source}
       // Fallback will be handled by the edge function
     }
     
-    // Get persona context
-    let personaContext: any = { isAnonymous: true };
-    let contextualPrompt = '';
+    // Simple persona context (without profile data since hooks don't provide it)
+    const personaContext = { isAnonymous: true };
+    const contextualPrompt = '';
     
-    // Check for active personas
-    try {
-      const qryptoPersona = useQryptoPersona();
-      const knytPersona = useKNYTPersona();
-      
-      if (qryptoPersona.qryptoPersonaActivated && qryptoPersona.qryptoProfile) {
-        personaContext = {
-          isAnonymous: false,
-          preferredName: qryptoPersona.qryptoProfile.firstName || 'Friend',
-          profileType: 'qrypto',
-          experienceLevel: qryptoPersona.qryptoProfile.experienceLevel,
-          interests: qryptoPersona.qryptoProfile.web3Interests,
-          portfolioValue: qryptoPersona.qryptoProfile.portfolioValue
-        };
-        
-        contextualPrompt = `User Profile Context:
-- Name: ${qryptoPersona.qryptoProfile.firstName}
-- Experience Level: ${qryptoPersona.qryptoProfile.experienceLevel}
-- Web3 Interests: ${qryptoPersona.qryptoProfile.web3Interests?.join(', ') || 'General'}
-- Portfolio Value: ${qryptoPersona.qryptoProfile.portfolioValue || 'Not specified'}`;
-        
-        console.log(`🧠 MonDAI: Using Qrypto persona for ${personaContext.preferredName}`);
-      } else if (knytPersona.knytPersonaActivated && knytPersona.knytProfile) {
-        personaContext = {
-          isAnonymous: false,
-          preferredName: knytPersona.knytProfile.knytId || 'KNYT Member',
-          profileType: 'knyt',
-          membershipTier: knytPersona.knytProfile.membershipTier,
-          knytTokens: knytPersona.knytProfile.knytTokensOwned,
-          memberSince: knytPersona.knytProfile.memberSince
-        };
-        
-        contextualPrompt = `User Profile Context:
-- KNYT ID: ${knytPersona.knytProfile.knytId}
-- Membership Tier: ${knytPersona.knytProfile.membershipTier}
-- KNYT Tokens: ${knytPersona.knytProfile.knytTokensOwned}
-- Member Since: ${knytPersona.knytProfile.memberSince}`;
-        
-        console.log(`🧠 MonDAI: Using KNYT persona for ${personaContext.preferredName}`);
-      }
-    } catch (error) {
-      console.log('📝 MonDAI: Persona context not available, proceeding anonymously');
-    }
+    console.log('📝 MonDAI: Using anonymous persona context');
     
     // Call the edge function
     const { data, error } = await supabase.functions.invoke('mondai-ai', {
