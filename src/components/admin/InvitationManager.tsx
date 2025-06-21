@@ -1,4 +1,3 @@
-
 import React, { useState, useRef } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -131,10 +130,10 @@ const InvitationManager = () => {
         });
       }
     } catch (error: any) {
-      toast.error(`Error creating invitations: ${error}`);
+      toast.error(`Error creating invitations: ${error.message}`);
       setBatchProgress(prev => prev ? {
         ...prev,
-        errors: [...prev.errors, `Unexpected error: ${error}`]
+        errors: [...prev.errors, `Unexpected error: ${error.message}`]
       } : null);
     } finally {
       setIsUploading(false);

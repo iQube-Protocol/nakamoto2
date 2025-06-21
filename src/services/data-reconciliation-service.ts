@@ -8,6 +8,15 @@ interface ReconciliationResult {
   errors: string[];
 }
 
+interface InvitationRecord {
+  id: string;
+  email: string;
+  email_sent: boolean;
+  email_sent_at: string | null;
+  batch_id: string | null;
+  invited_at: string;
+}
+
 class DataReconciliationService {
   async reconcileHistoricalData(): Promise<ReconciliationResult> {
     const result: ReconciliationResult = {
@@ -86,7 +95,7 @@ class DataReconciliationService {
 
       // For historical emails (before batch system), we'll assume they were sent
       // if the user has signed up or if we know they received an email
-      for (const invitation of allInvitations || []) {
+      for (const invitation of (allInvitations as InvitationRecord[]) || []) {
         if (!invitation.email_sent && !invitation.batch_id) {
           // This might be a historical email - check if user has signed up
           const { data: persona } = await supabase

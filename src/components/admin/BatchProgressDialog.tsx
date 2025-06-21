@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/u
 import { Progress } from '@/components/ui/progress';
 import { Button } from '@/components/ui/button';
 import { CheckCircle, Clock, AlertCircle, Loader2 } from 'lucide-react';
-import { BatchProgress } from '@/services/invitation-progress-tracker';
+import { BatchProgress } from '@/services/invitation-service-types';
 
 interface BatchProgressDialogProps {
   open: boolean;
@@ -17,7 +17,7 @@ const BatchProgressDialog = ({ open, progress, onCancel, canCancel = true }: Bat
   if (!progress) return null;
 
   const progressPercentage = (progress.emailsProcessed / progress.totalEmails) * 100;
-  const isComplete = progress.emailsProcessed >= progress.totalEmails;
+  const isComplete = progress.isComplete;
 
   const formatTime = (ms: number) => {
     const seconds = Math.floor(ms / 1000);
@@ -53,43 +53,24 @@ const BatchProgressDialog = ({ open, progress, onCancel, canCancel = true }: Bat
             <Progress value={progressPercentage} className="h-2" />
           </div>
 
-          {/* Current Operation */}
-          <div className="text-sm text-gray-600">
-            <strong>Current:</strong> {progress.currentOperation}
-          </div>
-
-          {/* Batch Progress */}
-          {progress.totalBatches > 0 && (
-            <div className="text-sm">
-              <strong>Batch:</strong> {progress.currentBatch} of {progress.totalBatches}
-            </div>
-          )}
-
           {/* Statistics */}
           <div className="grid grid-cols-2 gap-4 text-sm">
             <div>
               <div className="flex items-center">
                 <CheckCircle className="h-4 w-4 text-green-500 mr-1" />
-                <span>Created: {progress.emailsCreated}</span>
+                <span>Successful: {progress.emailsSuccessful}</span>
               </div>
             </div>
             <div>
               <div className="flex items-center">
-                <Clock className="h-4 w-4 text-yellow-500 mr-1" />
-                <span>Skipped: {progress.emailsSkipped}</span>
+                <Clock className="h-4 w-4 text-red-500 mr-1" />
+                <span>Failed: {progress.emailsFailed}</span>
               </div>
             </div>
             <div className="col-span-2">
               <span>Processed: {progress.emailsProcessed} / {progress.totalEmails}</span>
             </div>
           </div>
-
-          {/* Time Estimates */}
-          {!isComplete && progress.estimatedTimeRemaining && (
-            <div className="text-sm text-gray-600">
-              <strong>Est. remaining:</strong> {formatTime(progress.estimatedTimeRemaining)}
-            </div>
-          )}
 
           {/* Errors */}
           {progress.errors.length > 0 && (
