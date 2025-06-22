@@ -16,9 +16,25 @@ export interface BatchStatus {
   emailsSent: number;
   emailsFailed: number;
   errors: string[];
+  createdAt?: string;
+  startedAt?: string;
+  completedAt?: string;
 }
 
 export interface ValidationResult {
   isConsistent: boolean;
   issues: string[];
+}
+
+export interface DetailedValidationResult {
+  isConsistent: boolean;
+  issues: string[];
+  detailedStats: {
+    totalInvitations?: number;
+    emailsSent?: number;
+    emailsPending?: number;
+    signupsCompleted?: number;
+    totalBatches?: number;
+    batchEmailTotals?: number;
+  };
 }

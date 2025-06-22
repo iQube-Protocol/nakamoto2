@@ -1,0 +1,174 @@
+
+import React, { useState } from 'react';
+import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
+import { Button } from '@/components/ui/button';
+import { Badge } from '@/components/ui/badge';
+import { 
+  RotateCcw, 
+  AlertTriangle, 
+  Clock,
+  CheckCircle,
+  XCircle
+} from 'lucide-react';
+import { toast } from 'sonner';
+import { BatchManager } from '@/services/unified-invitation/batch-manager';
+import type { BatchStatus } from '@/services/unified-invitation/types';
+
+interface BatchRetryControlProps {
+  batches: BatchStatus[];
+  onBatchRetried: () => void;
+}
+
+const BatchRetryControl: React.FC<BatchRetryControlProps> = ({ batches, onBatchRetried }) => {
+  const [retryingBatch, setRetryingBatch] = useState<string | null>(null);
+
+  const handleRetryBatch = async (batchId: string) => {
+    setRetryingBatch(batchId);
+    try {
+      console.log(`BatchRetryControl: Retrying batch ${batchId}`);
+      const result = await BatchManager.retryStuckBatch(batchId);
+      
+      if (result.success) {
+        toast.success(result.message);
+        onBatchRetried();
+      } else {
+        toast.error(result.message);
+      }
+    } catch (error: any) {
+      console.error('BatchRetryControl: Retry failed:', error);
+      toast.error(`Retry failed: ${error.message}`);
+    } finally {
+      setRetryingBatch(null);
+    }
+  };
+
+  const getStatusIcon = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return <CheckCircle className="h-4 w-4 text-green-600" />;
+      case 'failed':
+        return <XCircle className="h-4 w-4 text-red-600" />;
+      case 'in_progress':
+        return <Clock className="h-4 w-4 text-blue-600" />;
+      case 'pending':
+        return <AlertTriangle className="h-4 w-4 text-yellow-600" />;
+      default:
+        return <Clock className="h-4 w-4 text-gray-600" />;
+    }
+  };
+
+  const getStatusVariant = (status: string) => {
+    switch (status) {
+      case 'completed':
+        return 'default';
+      case 'failed':
+        return 'destructive';
+      case 'in_progress':
+        return 'secondary';
+      case 'pending':
+        return 'outline';
+      default:
+        return 'outline';
+    }
+  };
+
+  const stuckBatches = batches.filter(batch => 
+    batch.status === 'pending' || batch.status === 'failed' || batch.errors.length > 0
+  );
+
+  const needsRetry = stuckBatches.length > 0;
+
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="flex items-center">
+          <RotateCcw className="h-5 w-5 mr-2" />
+          Batch Retry Control
+          {needsRetry && (
+            <Badge variant="destructive" className="ml-2">
+              {stuckBatches.length} need attention
+            </Badge>
+          )}
+        </CardTitle>
+      </CardHeader>
+      <CardContent>
+        {!needsRetry ? (
+          <div className="text-center py-6">
+            <CheckCircle className="h-12 w-12 mx-auto text-green-600 mb-3" />
+            <p className="text-gray-600">All batches are running smoothly!</p>
+          </div>
+        ) : (
+          <div className="space-y-4">
+            <div className="text-sm text-gray-600 mb-4">
+              The following batches need attention or can be retried:
+            </div>
+            
+            {stuckBatches.map((batch) => {
+              const isStuck = batch.status === 'pending' && batch.createdAt && 
+                Date.now() - new Date(batch.createdAt).getTime() > 300000;
+              
+              return (
+                <div key={batch.batchId} className="border rounded-lg p-4">
+                  <div className="flex items-center justify-between mb-3">
+                    <div className="flex items-center">
+                      {getStatusIcon(batch.status)}
+                      <span className="font-medium ml-2">{batch.batchId}</span>
+                      <Badge variant={getStatusVariant(batch.status) as any} className="ml-2">
+                        {batch.status}
+                      </Badge>
+                      {isStuck && (
+                        <Badge variant="destructive" className="ml-2">
+                          Stuck
+                        </Badge>
+                      )}
+                    </div>
+                    
+                    {(batch.status === 'pending' || batch.status === 'failed') && (
+                      <Button
+                        onClick={() => handleRetryBatch(batch.batchId)}
+                        disabled={retryingBatch === batch.batchId}
+                        size="sm"
+                        variant="outline"
+                      >
+                        <RotateCcw className={`h-4 w-4 mr-1 ${retryingBatch === batch.batchId ? 'animate-spin' : ''}`} />
+                        {retryingBatch === batch.batchId ? 'Retrying...' : 'Retry'}
+                      </Button>
+                    )}
+                  </div>
+                  
+                  <div className="grid grid-cols-3 gap-4 text-sm text-gray-600 mb-2">
+                    <div>Total: {batch.totalEmails}</div>
+                    <div>Sent: {batch.emailsSent}</div>
+                    <div>Failed: {batch.emailsFailed}</div>
+                  </div>
+                  
+                  {batch.createdAt && (
+                    <div className="text-xs text-gray-500 mb-2">
+                      Created: {new Date(batch.createdAt).toLocaleString()}
+                      {isStuck && (
+                        <span className="text-red-600 ml-2">
+                          (Stuck for {Math.round((Date.now() - new Date(batch.createdAt).getTime()) / 60000)} minutes)
+                        </span>
+                      )}
+                    </div>
+                  )}
+                  
+                  {batch.errors.length > 0 && (
+                    <div className="mt-2">
+                      <p className="text-xs text-red-600 font-medium">Errors:</p>
+                      {batch.errors.map((error, index) => (
+                        <p key={index} className="text-xs text-red-600">• {error}</p>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </CardContent>
+    </Card>
+  );
+};
+
+export default BatchRetryControl;

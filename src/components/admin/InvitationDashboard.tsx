@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -13,13 +12,16 @@ import {
   Send,
   BarChart3,
   RefreshCw,
-  Download
+  Download,
+  Database
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { invitationService, type EmailBatch, type PendingInvitation, type UserDetail } from '@/services/invitation-service';
 import { unifiedInvitationService, type UnifiedInvitationStats } from '@/services/unified-invitation';
 import UserListModal from './UserListModal';
 import UserDetailModal from './UserDetailModal';
+import DataValidationDashboard from './components/DataValidationDashboard';
+import BatchRetryControl from './components/BatchRetryControl';
 
 const InvitationDashboard = () => {
   const [unifiedStats, setUnifiedStats] = useState<UnifiedInvitationStats | null>(null);
@@ -102,7 +104,7 @@ const InvitationDashboard = () => {
       console.log(`InvitationDashboard: Sending batch of ${batchSize} emails using unified service`);
       
       const emailsToSend = pendingEmailSend.slice(0, batchSize).map(inv => inv.email);
-      const result = await unifiedInvitationService.sendEmailBatch(emailsToSend, 100); // Use 100 as chunk size
+      const result = await unifiedInvitationService.sendEmailBatch(emailsToSend, 50); // Use smaller chunks
       
       if (result.success) {
         toast.success(`Email sending started for ${emailsToSend.length} emails. Check batch status for progress.`);
@@ -237,9 +239,10 @@ const InvitationDashboard = () => {
 
       {/* Main Content Tabs */}
       <Tabs defaultValue="pipeline" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="pipeline">Pipeline</TabsTrigger>
           <TabsTrigger value="batches">Batches</TabsTrigger>
+          <TabsTrigger value="validation">Validation</TabsTrigger>
           <TabsTrigger value="analytics">Analytics</TabsTrigger>
           <TabsTrigger value="export">Export</TabsTrigger>
         </TabsList>
@@ -265,7 +268,7 @@ const InvitationDashboard = () => {
                   onClick={() => handleSendNextBatch(1000)}
                   disabled={pendingEmailSend.length === 0 || isSending}
                 >
-                  {isSending ? 'Sending...' : 'Send 1000 (Chunked)'}
+                  {isSending ? 'Sending...' : 'Send 1000 (Auto-Chunked)'}
                 </Button>
               </div>
             </CardHeader>
@@ -369,6 +372,25 @@ const InvitationDashboard = () => {
               </div>
             </CardContent>
           </Card>
+
+          <BatchRetryControl 
+            batches={batches.map(b => ({
+              batchId: b.batch_id,
+              status: b.status as any,
+              totalEmails: b.total_emails,
+              emailsSent: b.emails_sent,
+              emailsFailed: b.emails_failed,
+              errors: [],
+              createdAt: b.created_at,
+              startedAt: b.started_at,
+              completedAt: b.completed_at
+            }))}
+            onBatchRetried={handleRefresh}
+          />
+        </TabsContent>
+
+        <TabsContent value="validation" className="space-y-4">
+          <DataValidationDashboard />
         </TabsContent>
 
         <TabsContent value="analytics" className="space-y-4">
