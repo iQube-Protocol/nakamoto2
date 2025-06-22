@@ -1,13 +1,23 @@
 
 import React, { useState, useEffect } from 'react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
-import { Input } from '@/components/ui/input';
 import { Button } from '@/components/ui/button';
+import { Input } from '@/components/ui/input';
 import { Badge } from '@/components/ui/badge';
-import { ScrollArea } from '@/components/ui/scroll-area';
-import { Search, User, Mail, Calendar, RefreshCw } from 'lucide-react';
-import { invitationService, type UserDetail } from '@/services/invitation-service';
+import { Search, RefreshCw, User, Mail, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
+import { unifiedInvitationService, type PendingInvitation } from '@/services/unified-invitation';
+
+interface UserDetail {
+  id: string;
+  email: string;
+  persona_type: string;
+  invited_at?: string;
+  email_sent?: boolean;
+  email_sent_at?: string;
+  signup_completed?: boolean;
+  completed_at?: string;
+}
 
 interface UserListModalProps {
   open: boolean;
@@ -17,140 +27,191 @@ interface UserListModalProps {
   onUserClick: (user: UserDetail) => void;
 }
 
-const UserListModal = ({ open, onClose, category, title, onUserClick }: UserListModalProps) => {
+const UserListModal: React.FC<UserListModalProps> = ({
+  open,
+  onClose,
+  category,
+  title,
+  onUserClick
+}) => {
   const [users, setUsers] = useState<UserDetail[]>([]);
+  const [filteredUsers, setFilteredUsers] = useState<UserDetail[]>([]);
   const [searchTerm, setSearchTerm] = useState('');
   const [isLoading, setIsLoading] = useState(false);
 
   const loadUsers = async () => {
+    if (!open || !category) return;
+    
     setIsLoading(true);
     try {
-      const userData = await invitationService.getUserDetails(category, searchTerm);
-      setUsers(userData);
-    } catch (error) {
-      console.error('Error loading users:', error);
-      toast.error('Failed to load user data');
+      console.log(`UserListModal: Loading users for category: ${category}`);
+      
+      let userData: PendingInvitation[] = [];
+      
+      // Use the unified service for ALL categories
+      switch (category) {
+        case 'totalCreated':
+          // Get all invitations by combining pending and sent
+          const [pending, sent] = await Promise.all([
+            unifiedInvitationService.getPendingEmailSend(10000),
+            unifiedInvitationService.getEmailsSent()
+          ]);
+          userData = [...pending, ...sent];
+          break;
+        case 'emailsSent':
+          userData = await unifiedInvitationService.getEmailsSent();
+          break;
+        case 'emailsPending':
+          userData = await unifiedInvitationService.getPendingEmailSend(10000);
+          break;
+        case 'awaitingSignup':
+          userData = await unifiedInvitationService.getAwaitingSignup();
+          break;
+        case 'signupsCompleted':
+          userData = await unifiedInvitationService.getCompletedInvitations();
+          break;
+        default:
+          console.warn(`UserListModal: Unknown category: ${category}`);
+          userData = [];
+      }
+
+      console.log(`UserListModal: Loaded ${userData.length} users for category ${category}`);
+
+      // Convert PendingInvitation to UserDetail format
+      const convertedUsers: UserDetail[] = userData.map(user => ({
+        id: user.id,
+        email: user.email,
+        persona_type: user.persona_type,
+        invited_at: user.invited_at,
+        email_sent: user.email_sent,
+        email_sent_at: user.email_sent_at
+      }));
+
+      setUsers(convertedUsers);
+      setFilteredUsers(convertedUsers);
+    } catch (error: any) {
+      console.error('UserListModal: Error loading users:', error);
+      toast.error(`Failed to load users: ${error.message}`);
+      setUsers([]);
+      setFilteredUsers([]);
     } finally {
       setIsLoading(false);
     }
   };
 
   useEffect(() => {
-    if (open) {
+    if (open && category) {
       loadUsers();
     }
   }, [open, category]);
 
   useEffect(() => {
-    const debounceTimer = setTimeout(() => {
-      if (open) {
-        loadUsers();
-      }
-    }, 300);
-
-    return () => clearTimeout(debounceTimer);
-  }, [searchTerm]);
+    if (searchTerm.trim() === '') {
+      setFilteredUsers(users);
+    } else {
+      const filtered = users.filter(user =>
+        user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.persona_type.toLowerCase().includes(searchTerm.toLowerCase())
+      );
+      setFilteredUsers(filtered);
+    }
+  }, [searchTerm, users]);
 
   const getStatusBadge = (user: UserDetail) => {
-    if (user.signup_completed) {
-      return <Badge className="bg-green-100 text-green-800">Signed Up</Badge>;
-    } else if (user.email_sent) {
-      return <Badge className="bg-blue-100 text-blue-800">Email Sent</Badge>;
-    } else {
-      return <Badge className="bg-gray-100 text-gray-800">Pending</Badge>;
+    if (category === 'signupsCompleted') {
+      return <Badge className="bg-green-600">Signed Up</Badge>;
     }
+    if (category === 'awaitingSignup') {
+      return <Badge className="bg-blue-600">Email Sent</Badge>;
+    }
+    if (category === 'emailsSent') {
+      return <Badge className="bg-green-600">Email Sent</Badge>;
+    }
+    if (category === 'emailsPending') {
+      return <Badge variant="outline">Pending</Badge>;
+    }
+    if (user.email_sent) {
+      return <Badge className="bg-green-600">Email Sent</Badge>;
+    }
+    return <Badge variant="outline">Pending</Badge>;
   };
 
-  const getDisplayName = (user: UserDetail) => {
-    const firstName = user.persona_data?.['First-Name'] || '';
-    const lastName = user.persona_data?.['Last-Name'] || '';
-    return firstName && lastName ? `${firstName} ${lastName}` : user.email;
+  const formatDate = (dateString?: string) => {
+    if (!dateString) return 'N/A';
+    return new Date(dateString).toLocaleDateString();
+  };
+
+  const handleRefresh = () => {
+    console.log('UserListModal: Manual refresh triggered');
+    unifiedInvitationService.clearCache();
+    loadUsers();
   };
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
-      <DialogContent className="max-w-4xl max-h-[80vh]">
-        <DialogHeader>
-          <DialogTitle className="flex items-center justify-between">
-            <span>{title} ({users.length})</span>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={loadUsers}
-              disabled={isLoading}
-            >
-              <RefreshCw className={`h-4 w-4 mr-2 ${isLoading ? 'animate-spin' : ''}`} />
-              Refresh
-            </Button>
+      <DialogContent className="max-w-4xl max-h-[80vh] overflow-hidden flex flex-col">
+        <DialogHeader className="flex flex-row items-center justify-between">
+          <DialogTitle className="flex items-center">
+            <User className="h-5 w-5 mr-2" />
+            {title} ({filteredUsers.length})
           </DialogTitle>
+          <Button onClick={handleRefresh} variant="outline" size="sm" disabled={isLoading}>
+            <RefreshCw className={`h-4 w-4 mr-1 ${isLoading ? 'animate-spin' : ''}`} />
+            Refresh
+          </Button>
         </DialogHeader>
-        
-        <div className="space-y-4">
-          <div className="relative">
-            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-4 w-4 text-gray-400" />
-            <Input
-              placeholder="Search by name or email..."
-              value={searchTerm}
-              onChange={(e) => setSearchTerm(e.target.value)}
-              className="pl-10"
-            />
-          </div>
 
-          <ScrollArea className="h-96">
+        <div className="flex items-center space-x-2 p-4 border-b">
+          <Search className="h-4 w-4 text-gray-500" />
+          <Input
+            placeholder="Search by name or email..."
+            value={searchTerm}
+            onChange={(e) => setSearchTerm(e.target.value)}
+            className="flex-1"
+          />
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-4">
+          {isLoading ? (
+            <div className="flex items-center justify-center py-8">
+              <RefreshCw className="h-8 w-8 animate-spin text-blue-600" />
+              <span className="ml-2">Loading users...</span>
+            </div>
+          ) : filteredUsers.length === 0 ? (
+            <div className="text-center py-8 text-gray-500">
+              {searchTerm ? 'No users found matching your search.' : 'No users found.'}
+            </div>
+          ) : (
             <div className="space-y-2">
-              {users.map((user) => (
+              {filteredUsers.map((user) => (
                 <div
                   key={user.id}
-                  className="border rounded-lg p-4 hover:bg-gray-50 cursor-pointer transition-colors"
+                  className="p-3 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
                   onClick={() => onUserClick(user)}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex-1">
-                      <div className="flex items-center space-x-2">
-                        <User className="h-4 w-4 text-gray-500" />
-                        <span className="font-medium">{getDisplayName(user)}</span>
+                      <div className="flex items-center space-x-2 mb-1">
+                        <Mail className="h-4 w-4 text-gray-500" />
+                        <span className="font-medium">{user.email}</span>
                         {getStatusBadge(user)}
                       </div>
-                      <div className="flex items-center space-x-4 mt-2 text-sm text-gray-600">
-                        <div className="flex items-center space-x-1">
-                          <Mail className="h-3 w-3" />
-                          <span>{user.email}</span>
-                        </div>
+                      <div className="flex items-center space-x-4 text-sm text-gray-600">
+                        <span>{user.persona_type}</span>
                         <div className="flex items-center space-x-1">
                           <Calendar className="h-3 w-3" />
-                          <span>Invited {new Date(user.invited_at).toLocaleDateString()}</span>
+                          <span>Invited {formatDate(user.invited_at)}</span>
                         </div>
-                        <span className="capitalize">{user.persona_type}</span>
+                        {user.email_sent && user.email_sent_at && (
+                          <span>Email sent: {formatDate(user.email_sent_at)}</span>
+                        )}
                       </div>
-                      {user.email_sent && user.email_sent_at && (
-                        <div className="text-xs text-blue-600 mt-1">
-                          Email sent: {new Date(user.email_sent_at).toLocaleString()}
-                        </div>
-                      )}
-                      {user.signup_completed && user.completed_at && (
-                        <div className="text-xs text-green-600 mt-1">
-                          Signed up: {new Date(user.completed_at).toLocaleString()}
-                        </div>
-                      )}
                     </div>
                   </div>
                 </div>
               ))}
-              
-              {users.length === 0 && !isLoading && (
-                <div className="text-center py-8 text-gray-500">
-                  {searchTerm ? 'No users found matching your search.' : 'No users found in this category.'}
-                </div>
-              )}
-              
-              {isLoading && (
-                <div className="text-center py-8">
-                  <RefreshCw className="h-6 w-6 animate-spin mx-auto mb-2" />
-                  <p className="text-gray-500">Loading users...</p>
-                </div>
-              )}
             </div>
-          </ScrollArea>
+          )}
         </div>
       </DialogContent>
     </Dialog>
