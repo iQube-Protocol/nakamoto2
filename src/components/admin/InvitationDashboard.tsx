@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Badge } from '@/components/ui/badge';
@@ -12,8 +13,7 @@ import {
   Send,
   BarChart3,
   RefreshCw,
-  Download,
-  Shield
+  Download
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { invitationService, type EmailBatch, type PendingInvitation, type UserDetail } from '@/services/invitation-service';
@@ -161,30 +161,13 @@ const InvitationDashboard = () => {
 
   return (
     <div className="space-y-6">
-      {/* Unified Stats Header */}
-      <Card className="bg-gradient-to-r from-blue-50 to-green-50 border-2 border-blue-200">
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <div className="flex items-center">
-              <Shield className="h-5 w-5 mr-2 text-blue-600" />
-              Unified Dashboard (Authoritative Data Source)
-            </div>
-            <Button onClick={handleRefresh} variant="outline" size="sm">
-              <RefreshCw className="h-4 w-4 mr-1" />
-              Refresh All Data
-            </Button>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          {unifiedStats && (
-            <div className="text-center text-sm text-gray-600 mb-4">
-              This dashboard uses the unified data service to ensure all numbers are consistent across all views.
-              <br />
-              Last updated: {new Date(unifiedStats.lastUpdated).toLocaleString()}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+      {/* Refresh Button Header */}
+      <div className="flex justify-end">
+        <Button onClick={handleRefresh} variant="outline" size="sm">
+          <RefreshCw className="h-4 w-4 mr-1" />
+          Refresh All Data
+        </Button>
+      </div>
 
       {/* Interactive Stats Overview */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
@@ -287,11 +270,6 @@ const InvitationDashboard = () => {
               </div>
             </CardHeader>
             <CardContent>
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-3 mb-4">
-                <p className="text-sm text-blue-700">
-                  <strong>Improved Batch Processing:</strong> Large batches (1000+ emails) are now automatically split into smaller chunks of 100 emails each to prevent timeouts and ensure reliable delivery.
-                </p>
-              </div>
               <div className="space-y-2 max-h-60 overflow-y-auto">
                 {pendingEmailSend.slice(0, 10).map((invitation) => (
                   <div key={invitation.id} className="flex items-center justify-between p-2 border rounded">
