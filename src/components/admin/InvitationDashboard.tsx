@@ -3,8 +3,6 @@ import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { RefreshCw } from 'lucide-react';
-import { toast } from 'sonner';
-import { unifiedInvitationService, type UnifiedInvitationStats, type PendingInvitation, type EmailBatch } from '@/services/unified-invitation';
 import UserListModal from './UserListModal';
 import UserDetailModal from './UserDetailModal';
 import DataValidationDashboard from './components/DataValidationDashboard';
@@ -13,6 +11,7 @@ import PipelineTab from './dashboard/PipelineTab';
 import BatchesTab from './dashboard/BatchesTab';
 import AnalyticsTab from './dashboard/AnalyticsTab';
 import ExportTab from './dashboard/ExportTab';
+import { useDashboardData } from './hooks/useDashboardData';
 
 // Define UserDetail type locally since we removed the old service
 interface UserDetail {
@@ -22,14 +21,19 @@ interface UserDetail {
 }
 
 const InvitationDashboard = () => {
-  const [unifiedStats, setUnifiedStats] = useState<UnifiedInvitationStats | null>(null);
-  const [batches, setBatches] = useState<EmailBatch[]>([]);
-  const [pendingEmailSend, setPendingEmailSend] = useState<PendingInvitation[]>([]);
-  const [emailsSent, setEmailsSent] = useState<PendingInvitation[]>([]);
-  const [awaitingSignup, setAwaitingSignup] = useState<PendingInvitation[]>([]);
-  const [completedSignups, setCompletedSignups] = useState<PendingInvitation[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [isSending, setIsSending] = useState(false);
+  const {
+    unifiedStats,
+    batches,
+    pendingEmailSend,
+    emailsSent,
+    awaitingSignup,
+    completedSignups,
+    isLoading,
+    isSending,
+    loadDashboardData,
+    handleSendNextBatch,
+    handleRefresh
+  } = useDashboardData();
 
   // Modal states
   const [userListModal, setUserListModal] = useState<{ open: boolean; category: string; title: string }>({
@@ -42,91 +46,9 @@ const InvitationDashboard = () => {
     userId: null
   });
 
-  const loadDashboardData = async (forceRefresh: boolean = false) => {
-    setIsLoading(true);
-    try {
-      console.log('InvitationDashboard: Loading dashboard data with unified service only...', { forceRefresh });
-      
-      // Use ONLY the unified service for ALL data
-      const [
-        unifiedStatsData,
-        batchesData,
-        pendingData,
-        sentData,
-        awaitingData,
-        completedData
-      ] = await Promise.all([
-        unifiedInvitationService.getUnifiedStats(forceRefresh),
-        unifiedInvitationService.getEmailBatches(),
-        unifiedInvitationService.getPendingEmailSend(1000),
-        unifiedInvitationService.getEmailsSent(),
-        unifiedInvitationService.getAwaitingSignup(),
-        unifiedInvitationService.getCompletedInvitations()
-      ]);
-
-      console.log('InvitationDashboard: Loaded dashboard data from unified service:', {
-        unifiedStats: unifiedStatsData,
-        batchesCount: batchesData.length,
-        pendingCount: pendingData.length,
-        sentCount: sentData.length,
-        awaitingCount: awaitingData.length,
-        completedCount: completedData.length
-      });
-
-      setUnifiedStats(unifiedStatsData);
-      setBatches(batchesData);
-      setPendingEmailSend(pendingData);
-      setEmailsSent(sentData);
-      setAwaitingSignup(awaitingData);
-      setCompletedSignups(completedData);
-
-      if (forceRefresh) {
-        toast.success('Dashboard data refreshed');
-      }
-    } catch (error) {
-      console.error('InvitationDashboard: Error loading dashboard data:', error);
-      toast.error('Failed to load dashboard data');
-    } finally {
-      setIsLoading(false);
-    }
-  };
-
   useEffect(() => {
     loadDashboardData();
-  }, []);
-
-  const handleSendNextBatch = async (batchSize: number = 1000) => {
-    if (pendingEmailSend.length === 0) {
-      toast.error('No emails pending to send');
-      return;
-    }
-
-    setIsSending(true);
-    try {
-      console.log(`InvitationDashboard: Sending batch of ${batchSize} emails using unified service`);
-      
-      const emailsToSend = pendingEmailSend.slice(0, batchSize).map(inv => inv.email);
-      const result = await unifiedInvitationService.sendEmailBatch(emailsToSend, 50); // Use smaller chunks
-      
-      if (result.success) {
-        toast.success(`Email sending started for ${emailsToSend.length} emails. Check batch status for progress.`);
-        await loadDashboardData(true); // Force refresh after sending
-      } else {
-        toast.error(`Failed to send emails: ${result.errors.join(', ')}`);
-      }
-    } catch (error: any) {
-      console.error('InvitationDashboard: Error sending emails:', error);
-      toast.error(`Error sending emails: ${error.message}`);
-    } finally {
-      setIsSending(false);
-    }
-  };
-
-  const handleRefresh = async () => {
-    console.log('InvitationDashboard: Manual refresh triggered');
-    unifiedInvitationService.clearCache();
-    await loadDashboardData(true);
-  };
+  }, [loadDashboardData]);
 
   const handleStatCardClick = (category: string, title: string) => {
     setUserListModal({ open: true, category, title });

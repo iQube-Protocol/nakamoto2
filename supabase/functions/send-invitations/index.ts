@@ -1,3 +1,4 @@
+
 import { serve } from "https://deno.land/std@0.190.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.49.8';
 import { RetryService } from './retry-service.ts';
@@ -226,13 +227,20 @@ const handler = async (req: Request): Promise<Response> => {
         console.log(`\n--- Processing email ${index + 1}/${allInvitations.length} ---`);
         console.log(`Sending to: ${invitation.email} (${invitation.persona_type})`);
         
-        // Increment send attempts
-        await supabase
-          .from('invited_users')
-          .update({ 
-            send_attempts: { increment: 1 } as any 
-          })
-          .eq('email', invitation.email);
+        // FIXED: Increment send attempts using proper Supabase RPC call
+        try {
+          const { error: incrementError } = await supabase.rpc('increment_send_attempts', {
+            target_email: invitation.email
+          });
+          
+          if (incrementError) {
+            console.warn(`Failed to increment send attempts for ${invitation.email}:`, incrementError);
+            // Don't fail the email send for this, just log it
+          }
+        } catch (incrementErr) {
+          console.warn(`Error incrementing send attempts for ${invitation.email}:`, incrementErr);
+          // Continue with email send
+        }
 
         // Use the preview URL for now - you can change this to your custom domain later
         const invitationUrl = `https://preview--nakamoto2.lovable.app/invited-signup?token=${invitation.invitation_token}`;
