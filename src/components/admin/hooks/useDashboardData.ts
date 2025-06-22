@@ -44,8 +44,15 @@ export const useDashboardData = () => {
       ]);
 
       // Calculate unified stats from the actual data we just loaded
+      // Total created should be unique emails across all states
+      const allEmails = new Set([
+        ...pendingData.map(inv => inv.email),
+        ...sentData.map(inv => inv.email),
+        ...completedData.map(inv => inv.email)
+      ]);
+
       const calculatedStats: UnifiedInvitationStats = {
-        totalCreated: pendingData.length + sentData.length,
+        totalCreated: allEmails.size, // Use unique email count for total
         emailsSent: sentData.length,
         emailsPending: pendingData.length,
         signupsCompleted: completedData.length,
@@ -56,6 +63,7 @@ export const useDashboardData = () => {
 
       console.log('useDashboardData: Calculated stats from loaded data:', {
         calculatedStats,
+        uniqueEmails: allEmails.size,
         batchesCount: batchesData.length,
         pendingCount: pendingData.length,
         sentCount: sentData.length,

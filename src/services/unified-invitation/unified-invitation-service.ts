@@ -50,12 +50,12 @@ class UnifiedInvitationService {
 
     console.log('UnifiedInvitationService: Fetching pending emails...');
     
+    // Remove the expires_at filter to get ALL pending emails, not just non-expired ones
     const { data, error } = await supabase
       .from('invited_users')
       .select('id, email, persona_type, invited_at, email_sent, email_sent_at, batch_id, send_attempts')
       .eq('email_sent', false)
       .eq('signup_completed', false)
-      .gte('expires_at', new Date().toISOString())
       .order('invited_at', { ascending: true })
       .limit(limit);
 
@@ -65,7 +65,7 @@ class UnifiedInvitationService {
     }
 
     const result = data || [];
-    console.log(`UnifiedInvitationService: Found ${result.length} pending emails`);
+    console.log(`UnifiedInvitationService: Found ${result.length} pending emails (including expired)`);
     this.cacheManager.setCache(cacheKey, result);
     return result;
   }
@@ -105,12 +105,12 @@ class UnifiedInvitationService {
 
     console.log('UnifiedInvitationService: Fetching awaiting signup...');
     
+    // Remove the expires_at filter to get ALL awaiting signup, not just non-expired ones
     const { data, error } = await supabase
       .from('invited_users')
       .select('id, email, persona_type, invited_at, email_sent, email_sent_at, batch_id, send_attempts')
       .eq('email_sent', true)
       .eq('signup_completed', false)
-      .gte('expires_at', new Date().toISOString())
       .order('email_sent_at', { ascending: false });
 
     if (error) {
@@ -119,7 +119,7 @@ class UnifiedInvitationService {
     }
 
     const result = data || [];
-    console.log(`UnifiedInvitationService: Found ${result.length} awaiting signup`);
+    console.log(`UnifiedInvitationService: Found ${result.length} awaiting signup (including expired)`);
     this.cacheManager.setCache(cacheKey, result);
     return result;
   }
