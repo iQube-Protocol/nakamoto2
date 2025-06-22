@@ -41,7 +41,7 @@ class UnifiedInvitationService {
     return batchStatuses;
   }
 
-  async getPendingEmailSend(limit: number = 1000): Promise<PendingInvitation[]> {
+  async getPendingEmailSend(limit: number = 10000): Promise<PendingInvitation[]> {
     const cacheKey = `pending-emails-${limit}`;
     
     if (this.cacheManager.isCacheValid(cacheKey)) {
@@ -65,6 +65,7 @@ class UnifiedInvitationService {
     }
 
     const result = data || [];
+    console.log(`UnifiedInvitationService: Found ${result.length} pending emails`);
     this.cacheManager.setCache(cacheKey, result);
     return result;
   }
@@ -90,6 +91,7 @@ class UnifiedInvitationService {
     }
 
     const result = data || [];
+    console.log(`UnifiedInvitationService: Found ${result.length} sent emails`);
     this.cacheManager.setCache(cacheKey, result);
     return result;
   }
@@ -117,6 +119,7 @@ class UnifiedInvitationService {
     }
 
     const result = data || [];
+    console.log(`UnifiedInvitationService: Found ${result.length} awaiting signup`);
     this.cacheManager.setCache(cacheKey, result);
     return result;
   }
@@ -142,6 +145,7 @@ class UnifiedInvitationService {
     }
 
     const result = data || [];
+    console.log(`UnifiedInvitationService: Found ${result.length} completed invitations`);
     this.cacheManager.setCache(cacheKey, result);
     return result;
   }
@@ -226,7 +230,7 @@ class UnifiedInvitationService {
     // Pre-load all data with fresh queries
     await Promise.all([
       this.getUnifiedStats(true),
-      this.getPendingEmailSend(1000),
+      this.getPendingEmailSend(10000), // Increased limit
       this.getEmailsSent(),
       this.getAwaitingSignup(),
       this.getCompletedInvitations(),

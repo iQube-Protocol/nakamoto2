@@ -28,24 +28,34 @@ export const useDashboardData = () => {
         await unifiedInvitationService.forceRefreshAllData();
       }
       
+      // Load all data in parallel
       const [
-        unifiedStatsData,
         batchesData,
         pendingData,
         sentData,
         awaitingData,
         completedData
       ] = await Promise.all([
-        unifiedInvitationService.getUnifiedStats(forceRefresh),
         unifiedInvitationService.getEmailBatches(),
-        unifiedInvitationService.getPendingEmailSend(1000),
+        unifiedInvitationService.getPendingEmailSend(10000), // Increased limit to get all
         unifiedInvitationService.getEmailsSent(),
         unifiedInvitationService.getAwaitingSignup(),
         unifiedInvitationService.getCompletedInvitations()
       ]);
 
-      console.log('useDashboardData: Loaded dashboard data:', {
-        unifiedStats: unifiedStatsData,
+      // Calculate unified stats from the actual data we just loaded
+      const calculatedStats: UnifiedInvitationStats = {
+        totalCreated: pendingData.length + sentData.length,
+        emailsSent: sentData.length,
+        emailsPending: pendingData.length,
+        signupsCompleted: completedData.length,
+        awaitingSignup: awaitingData.length,
+        conversionRate: sentData.length > 0 ? (completedData.length / sentData.length) * 100 : 0,
+        lastUpdated: new Date().toISOString()
+      };
+
+      console.log('useDashboardData: Calculated stats from loaded data:', {
+        calculatedStats,
         batchesCount: batchesData.length,
         pendingCount: pendingData.length,
         sentCount: sentData.length,
@@ -53,7 +63,8 @@ export const useDashboardData = () => {
         completedCount: completedData.length
       });
 
-      setUnifiedStats(unifiedStatsData);
+      // Set all the data
+      setUnifiedStats(calculatedStats);
       setBatches(batchesData);
       setPendingEmailSend(pendingData);
       setEmailsSent(sentData);
@@ -61,7 +72,7 @@ export const useDashboardData = () => {
       setCompletedSignups(completedData);
 
       if (forceRefresh) {
-        toast.success(`Dashboard refreshed: ${batchesData.length} batches, ${sentData.length} sent emails`);
+        toast.success(`Dashboard refreshed: ${batchesData.length} batches, ${sentData.length} sent emails, ${pendingData.length} pending`);
       }
     } catch (error) {
       console.error('useDashboardData: Error loading dashboard data:', error);
