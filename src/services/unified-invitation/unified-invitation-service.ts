@@ -1,3 +1,4 @@
+
 import { CacheManager } from './cache-manager';
 import { StatsCalculator } from './stats-calculator';
 import { BatchManager } from './batch-manager';
@@ -40,7 +41,6 @@ class UnifiedInvitationService {
     return batchStatuses;
   }
 
-  // New method: Get pending email send (emails that haven't been sent yet)
   async getPendingEmailSend(limit: number = 1000): Promise<PendingInvitation[]> {
     const cacheKey = `pending-emails-${limit}`;
     
@@ -54,6 +54,8 @@ class UnifiedInvitationService {
       .from('invited_users')
       .select('id, email, persona_type, invited_at, email_sent, email_sent_at, batch_id, send_attempts')
       .eq('email_sent', false)
+      .eq('signup_completed', false)
+      .gte('expires_at', new Date().toISOString())
       .order('invited_at', { ascending: true })
       .limit(limit);
 
@@ -67,7 +69,6 @@ class UnifiedInvitationService {
     return result;
   }
 
-  // New method: Get emails that have been sent
   async getEmailsSent(): Promise<PendingInvitation[]> {
     const cacheKey = 'emails-sent';
     
@@ -93,7 +94,6 @@ class UnifiedInvitationService {
     return result;
   }
 
-  // New method: Get users awaiting signup (email sent but not completed)
   async getAwaitingSignup(): Promise<PendingInvitation[]> {
     const cacheKey = 'awaiting-signup';
     
@@ -108,6 +108,7 @@ class UnifiedInvitationService {
       .select('id, email, persona_type, invited_at, email_sent, email_sent_at, batch_id, send_attempts')
       .eq('email_sent', true)
       .eq('signup_completed', false)
+      .gte('expires_at', new Date().toISOString())
       .order('email_sent_at', { ascending: false });
 
     if (error) {
@@ -120,7 +121,6 @@ class UnifiedInvitationService {
     return result;
   }
 
-  // New method: Get completed invitations (signup completed)
   async getCompletedInvitations(): Promise<PendingInvitation[]> {
     const cacheKey = 'completed-invitations';
     
@@ -146,7 +146,7 @@ class UnifiedInvitationService {
     return result;
   }
 
-  // New method: Get email batches
+  // Enhanced email batches fetching with no limit and better ordering
   async getEmailBatches(): Promise<EmailBatch[]> {
     const cacheKey = 'email-batches';
     
@@ -154,8 +154,9 @@ class UnifiedInvitationService {
       return this.cacheManager.getCache(cacheKey);
     }
 
-    console.log('UnifiedInvitationService: Fetching email batches...');
+    console.log('UnifiedInvitationService: Fetching ALL email batches...');
     
+    // Fetch ALL batches, not just a limited number
     const { data, error } = await supabase
       .from('email_batches')
       .select('*')
@@ -178,6 +179,7 @@ class UnifiedInvitationService {
       completed_at: batch.completed_at
     }));
 
+    console.log(`UnifiedInvitationService: Found ${result.length} total batches`);
     this.cacheManager.setCache(cacheKey, result);
     return result;
   }
@@ -185,8 +187,8 @@ class UnifiedInvitationService {
   async sendEmailBatch(emails: string[], batchSize: number = 100): Promise<{ success: boolean; batchId?: string; errors: string[] }> {
     const result = await BatchManager.sendEmailBatch(emails, batchSize);
     
-    // Clear cache to force refresh
-    this.cacheManager.clearCache();
+    // Force clear ALL cache to ensure fresh data
+    this.clearCache();
     
     return result;
   }
@@ -212,6 +214,26 @@ class UnifiedInvitationService {
         issues: [`Validation failed: ${error.message}`]
       };
     }
+  }
+
+  // New method to force refresh all data
+  async forceRefreshAllData(): Promise<void> {
+    console.log('UnifiedInvitationService: Force refreshing ALL data...');
+    
+    // Clear all cache first
+    this.clearCache();
+    
+    // Pre-load all data with fresh queries
+    await Promise.all([
+      this.getUnifiedStats(true),
+      this.getPendingEmailSend(1000),
+      this.getEmailsSent(),
+      this.getAwaitingSignup(),
+      this.getCompletedInvitations(),
+      this.getEmailBatches()
+    ]);
+    
+    console.log('UnifiedInvitationService: All data refreshed successfully');
   }
 }
 

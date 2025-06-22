@@ -608,6 +608,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      increment_send_attempts: {
+        Args: { target_email: string }
+        Returns: undefined
+      }
       is_admin_user: {
         Args: Record<PropertyKey, never>
         Returns: boolean

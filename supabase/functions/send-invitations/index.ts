@@ -131,14 +131,10 @@ const handler = async (req: Request): Promise<Response> => {
       );
     }
 
-    // 4. FETCH INVITATION DATA - Batched approach for large email lists
+    // 4. FETCH INVITATION DATA - Improved batched approach
     console.log('Fetching invitations from database...');
-    console.log('Query parameters:', {
-      emailCount: validEmails.length,
-      currentTime: new Date().toISOString()
-    });
     
-    const BATCH_SIZE = 100; // Process emails in batches of 100
+    const BATCH_SIZE = 50; // Reduced batch size for better reliability
     const allInvitations: any[] = [];
     
     for (let i = 0; i < validEmails.length; i += BATCH_SIZE) {
@@ -146,31 +142,16 @@ const handler = async (req: Request): Promise<Response> => {
       console.log(`Processing batch ${Math.floor(i / BATCH_SIZE) + 1}, emails ${i + 1}-${Math.min(i + BATCH_SIZE, validEmails.length)}`);
       
       try {
-        let query = supabase
+        const { data: batchInvitations, error: fetchError } = await supabase
           .from('invited_users')
           .select('email, invitation_token, persona_type')
           .eq('signup_completed', false)
-          .gte('expires_at', new Date().toISOString());
-
-        // Handle batch filtering
-        if (emailBatch.length === 1) {
-          query = query.eq('email', emailBatch[0]);
-        } else {
-          query = query.in('email', emailBatch);
-        }
-
-        const { data: batchInvitations, error: fetchError } = await query;
+          .gte('expires_at', new Date().toISOString())
+          .in('email', emailBatch);
 
         if (fetchError) {
-          console.error(`Database error fetching invitations for batch ${Math.floor(i / BATCH_SIZE) + 1}:`, {
-            error: fetchError,
-            message: fetchError.message,
-            details: fetchError.details,
-            hint: fetchError.hint,
-            code: fetchError.code,
-            emailBatch: emailBatch.slice(0, 5) // Log first 5 emails only
-          });
-          continue; // Continue with next batch instead of failing completely
+          console.error(`Database error fetching invitations for batch ${Math.floor(i / BATCH_SIZE) + 1}:`, fetchError);
+          continue;
         }
 
         if (batchInvitations && batchInvitations.length > 0) {
@@ -179,7 +160,7 @@ const handler = async (req: Request): Promise<Response> => {
         }
       } catch (batchError) {
         console.error(`Error processing batch ${Math.floor(i / BATCH_SIZE) + 1}:`, batchError);
-        continue; // Continue with next batch
+        continue;
       }
     }
 
@@ -210,7 +191,6 @@ const handler = async (req: Request): Promise<Response> => {
       baseDelay: 1000,
       maxDelay: 10000,
       retryCondition: (error: any) => {
-        // Retry on network errors or 5xx server errors
         return error?.status >= 500 || error?.message?.includes('fetch');
       }
     });
@@ -219,7 +199,7 @@ const handler = async (req: Request): Promise<Response> => {
     let successCount = 0;
     const sentEmails: string[] = [];
 
-    // 6. SEND EMAILS WITH ENHANCED LOGGING AND DATABASE UPDATES
+    // 6. SEND EMAILS WITH ENHANCED ERROR HANDLING
     console.log('=== STARTING EMAIL SEND PROCESS ===');
     
     for (const [index, invitation] of allInvitations.entries()) {
@@ -227,7 +207,7 @@ const handler = async (req: Request): Promise<Response> => {
         console.log(`\n--- Processing email ${index + 1}/${allInvitations.length} ---`);
         console.log(`Sending to: ${invitation.email} (${invitation.persona_type})`);
         
-        // FIXED: Increment send attempts using proper Supabase RPC call
+        // Increment send attempts - with better error handling
         try {
           const { error: incrementError } = await supabase.rpc('increment_send_attempts', {
             target_email: invitation.email
@@ -235,14 +215,11 @@ const handler = async (req: Request): Promise<Response> => {
           
           if (incrementError) {
             console.warn(`Failed to increment send attempts for ${invitation.email}:`, incrementError);
-            // Don't fail the email send for this, just log it
           }
         } catch (incrementErr) {
           console.warn(`Error incrementing send attempts for ${invitation.email}:`, incrementErr);
-          // Continue with email send
         }
 
-        // Use the preview URL for now - you can change this to your custom domain later
         const invitationUrl = `https://preview--nakamoto2.lovable.app/invited-signup?token=${invitation.invitation_token}`;
         
         const emailData = {
@@ -291,13 +268,9 @@ const handler = async (req: Request): Promise<Response> => {
           }]
         };
 
-        console.log('Email payload prepared:', {
-          from: emailData.Messages[0].From,
-          to: emailData.Messages[0].To[0].Email,
-          subject: emailData.Messages[0].Subject
-        });
+        console.log('Email payload prepared for:', invitation.email);
 
-        // Send email with retry logic
+        // Send email with retry logic and better error handling
         const result = await retryService.execute(async () => {
           console.log(`Making Mailjet API call for ${invitation.email}...`);
           
@@ -312,8 +285,7 @@ const handler = async (req: Request): Promise<Response> => {
 
           console.log(`Mailjet API response for ${invitation.email}:`, {
             status: response.status,
-            statusText: response.statusText,
-            headers: Object.fromEntries(response.headers.entries())
+            statusText: response.statusText
           });
 
           if (!response.ok) {
@@ -333,20 +305,24 @@ const handler = async (req: Request): Promise<Response> => {
           return await response.json();
         });
 
-        console.log(`✅ Email sent successfully to ${invitation.email}:`, result);
+        console.log(`✅ Email sent successfully to ${invitation.email}`);
         
-        // Mark email as sent in database
-        const { error: updateError } = await supabase
-          .from('invited_users')
-          .update({ 
-            email_sent: true,
-            email_sent_at: new Date().toISOString(),
-            batch_id: batchId
-          })
-          .eq('email', invitation.email);
+        // Mark email as sent in database with error handling
+        try {
+          const { error: updateError } = await supabase
+            .from('invited_users')
+            .update({ 
+              email_sent: true,
+              email_sent_at: new Date().toISOString(),
+              batch_id: batchId
+            })
+            .eq('email', invitation.email);
 
-        if (updateError) {
-          console.error(`Error updating email sent status for ${invitation.email}:`, updateError);
+          if (updateError) {
+            console.error(`Error updating email sent status for ${invitation.email}:`, updateError);
+          }
+        } catch (updateErr) {
+          console.error(`Failed to update database for ${invitation.email}:`, updateErr);
         }
 
         successCount++;
@@ -357,6 +333,9 @@ const handler = async (req: Request): Promise<Response> => {
           console.log('Test mode: stopping after first successful send');
           break;
         }
+
+        // Add small delay between emails to avoid rate limiting
+        await new Promise(resolve => setTimeout(resolve, 100));
 
       } catch (error: any) {
         console.error(`❌ Error processing invitation for ${invitation.email}:`, {

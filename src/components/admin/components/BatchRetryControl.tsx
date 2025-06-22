@@ -8,10 +8,12 @@ import {
   AlertTriangle, 
   Clock,
   CheckCircle,
-  XCircle
+  XCircle,
+  RefreshCw
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { BatchManager } from '@/services/unified-invitation/batch-manager';
+import { unifiedInvitationService } from '@/services/unified-invitation';
 import type { BatchStatus } from '@/services/unified-invitation/types';
 
 interface BatchRetryControlProps {
@@ -21,11 +23,25 @@ interface BatchRetryControlProps {
 
 const BatchRetryControl: React.FC<BatchRetryControlProps> = ({ batches, onBatchRetried }) => {
   const [retryingBatch, setRetryingBatch] = useState<string | null>(null);
+  const [checkingEmails, setCheckingEmails] = useState<string | null>(null);
 
   const handleRetryBatch = async (batchId: string) => {
     setRetryingBatch(batchId);
     try {
       console.log(`BatchRetryControl: Retrying batch ${batchId}`);
+      
+      // First, check if there are actually pending emails for this batch
+      const pendingEmails = await unifiedInvitationService.getPendingEmailSend(1000);
+      const batchPendingEmails = pendingEmails.filter(email => 
+        email.batch_id === batchId || !email.batch_id // Include emails without batch_id
+      );
+      
+      if (batchPendingEmails.length === 0) {
+        toast.info(`No pending emails found for batch ${batchId}. All emails may have already been sent.`);
+        onBatchRetried(); // Refresh the display
+        return;
+      }
+      
       const result = await BatchManager.retryStuckBatch(batchId);
       
       if (result.success) {
@@ -39,6 +55,28 @@ const BatchRetryControl: React.FC<BatchRetryControlProps> = ({ batches, onBatchR
       toast.error(`Retry failed: ${error.message}`);
     } finally {
       setRetryingBatch(null);
+    }
+  };
+
+  const checkBatchEmails = async (batchId: string) => {
+    setCheckingEmails(batchId);
+    try {
+      const [pendingEmails, sentEmails] = await Promise.all([
+        unifiedInvitationService.getPendingEmailSend(1000),
+        unifiedInvitationService.getEmailsSent()
+      ]);
+      
+      const batchPending = pendingEmails.filter(email => email.batch_id === batchId);
+      const batchSent = sentEmails.filter(email => email.batch_id === batchId);
+      
+      toast.info(`Batch ${batchId}: ${batchPending.length} pending, ${batchSent.length} sent`, {
+        duration: 5000
+      });
+    } catch (error: any) {
+      console.error('Error checking batch emails:', error);
+      toast.error(`Failed to check batch emails: ${error.message}`);
+    } finally {
+      setCheckingEmails(null);
     }
   };
 
@@ -72,40 +110,57 @@ const BatchRetryControl: React.FC<BatchRetryControlProps> = ({ batches, onBatchR
     }
   };
 
-  const stuckBatches = batches.filter(batch => 
-    batch.status === 'pending' || batch.status === 'failed' || batch.errors.length > 0
-  );
+  const problematicBatches = batches.filter(batch => {
+    const isStuck = batch.status === 'pending' && batch.createdAt && 
+      Date.now() - new Date(batch.createdAt).getTime() > 300000; // 5 minutes
+    const hasFailed = batch.status === 'failed';
+    const hasErrors = batch.errors.length > 0;
+    const hasIncompleteProgress = batch.status === 'in_progress' && 
+      batch.createdAt && Date.now() - new Date(batch.createdAt).getTime() > 600000; // 10 minutes
+    
+    return isStuck || hasFailed || hasErrors || hasIncompleteProgress;
+  });
 
-  const needsRetry = stuckBatches.length > 0;
+  const needsAttention = problematicBatches.length > 0;
 
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center">
-          <RotateCcw className="h-5 w-5 mr-2" />
-          Batch Retry Control
-          {needsRetry && (
-            <Badge variant="destructive" className="ml-2">
-              {stuckBatches.length} need attention
-            </Badge>
-          )}
+        <CardTitle className="flex items-center justify-between">
+          <div className="flex items-center">
+            <RotateCcw className="h-5 w-5 mr-2" />
+            Batch Retry Control
+            {needsAttention && (
+              <Badge variant="destructive" className="ml-2">
+                {problematicBatches.length} need attention
+              </Badge>
+            )}
+          </div>
+          <div className="text-sm text-gray-600">
+            Total batches: {batches.length}
+          </div>
         </CardTitle>
       </CardHeader>
       <CardContent>
-        {!needsRetry ? (
+        {!needsAttention ? (
           <div className="text-center py-6">
             <CheckCircle className="h-12 w-12 mx-auto text-green-600 mb-3" />
-            <p className="text-gray-600">All batches are running smoothly!</p>
+            <p className="text-gray-600">All {batches.length} batches are running smoothly!</p>
+            <p className="text-sm text-gray-500 mt-2">
+              No stuck, failed, or problematic batches detected.
+            </p>
           </div>
         ) : (
           <div className="space-y-4">
             <div className="text-sm text-gray-600 mb-4">
-              The following batches need attention or can be retried:
+              Found {problematicBatches.length} batches that need attention out of {batches.length} total:
             </div>
             
-            {stuckBatches.map((batch) => {
+            {problematicBatches.map((batch) => {
               const isStuck = batch.status === 'pending' && batch.createdAt && 
                 Date.now() - new Date(batch.createdAt).getTime() > 300000;
+              const isStuckInProgress = batch.status === 'in_progress' && batch.createdAt && 
+                Date.now() - new Date(batch.createdAt).getTime() > 600000;
               
               return (
                 <div key={batch.batchId} className="border rounded-lg p-4">
@@ -118,22 +173,39 @@ const BatchRetryControl: React.FC<BatchRetryControlProps> = ({ batches, onBatchR
                       </Badge>
                       {isStuck && (
                         <Badge variant="destructive" className="ml-2">
-                          Stuck
+                          Stuck (Pending)
+                        </Badge>
+                      )}
+                      {isStuckInProgress && (
+                        <Badge variant="destructive" className="ml-2">
+                          Stuck (In Progress)
                         </Badge>
                       )}
                     </div>
                     
-                    {(batch.status === 'pending' || batch.status === 'failed') && (
+                    <div className="flex space-x-2">
                       <Button
-                        onClick={() => handleRetryBatch(batch.batchId)}
-                        disabled={retryingBatch === batch.batchId}
+                        onClick={() => checkBatchEmails(batch.batchId)}
+                        disabled={checkingEmails === batch.batchId}
                         size="sm"
-                        variant="outline"
+                        variant="ghost"
                       >
-                        <RotateCcw className={`h-4 w-4 mr-1 ${retryingBatch === batch.batchId ? 'animate-spin' : ''}`} />
-                        {retryingBatch === batch.batchId ? 'Retrying...' : 'Retry'}
+                        <RefreshCw className={`h-4 w-4 mr-1 ${checkingEmails === batch.batchId ? 'animate-spin' : ''}`} />
+                        Check Status
                       </Button>
-                    )}
+                      
+                      {(batch.status === 'pending' || batch.status === 'failed' || isStuckInProgress) && (
+                        <Button
+                          onClick={() => handleRetryBatch(batch.batchId)}
+                          disabled={retryingBatch === batch.batchId}
+                          size="sm"
+                          variant="outline"
+                        >
+                          <RotateCcw className={`h-4 w-4 mr-1 ${retryingBatch === batch.batchId ? 'animate-spin' : ''}`} />
+                          {retryingBatch === batch.batchId ? 'Retrying...' : 'Retry'}
+                        </Button>
+                      )}
+                    </div>
                   </div>
                   
                   <div className="grid grid-cols-3 gap-4 text-sm text-gray-600 mb-2">
@@ -150,6 +222,11 @@ const BatchRetryControl: React.FC<BatchRetryControlProps> = ({ batches, onBatchR
                           (Stuck for {Math.round((Date.now() - new Date(batch.createdAt).getTime()) / 60000)} minutes)
                         </span>
                       )}
+                      {isStuckInProgress && (
+                        <span className="text-red-600 ml-2">
+                          (In progress for {Math.round((Date.now() - new Date(batch.createdAt).getTime()) / 60000)} minutes)
+                        </span>
+                      )}
                     </div>
                   )}
                   
@@ -161,6 +238,11 @@ const BatchRetryControl: React.FC<BatchRetryControlProps> = ({ batches, onBatchR
                       ))}
                     </div>
                   )}
+                  
+                  <div className="mt-2 text-xs text-gray-500">
+                    Progress: {batch.emailsSent}/{batch.totalEmails} 
+                    ({batch.totalEmails > 0 ? Math.round((batch.emailsSent / batch.totalEmails) * 100) : 0}%)
+                  </div>
                 </div>
               );
             })}

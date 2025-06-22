@@ -24,8 +24,8 @@ export const useDashboardData = () => {
       console.log('useDashboardData: Loading dashboard data...', { forceRefresh });
       
       if (forceRefresh) {
-        // Clear all caches before refreshing
-        unifiedInvitationService.clearCache();
+        // Force refresh all data from service
+        await unifiedInvitationService.forceRefreshAllData();
       }
       
       const [
@@ -61,7 +61,7 @@ export const useDashboardData = () => {
       setCompletedSignups(completedData);
 
       if (forceRefresh) {
-        toast.success('Dashboard data refreshed successfully');
+        toast.success(`Dashboard refreshed: ${batchesData.length} batches, ${sentData.length} sent emails`);
       }
     } catch (error) {
       console.error('useDashboardData: Error loading dashboard data:', error);
