@@ -7,4 +7,3 @@ export type {
   PendingInvitation,
   EmailBatch
 } from './types';
-export type { PendingInvitation, EmailBatch } from './unified-invitation-service';

@@ -1,34 +1,15 @@
-
 import { CacheManager } from './cache-manager';
 import { StatsCalculator } from './stats-calculator';
 import { BatchManager } from './batch-manager';
 import { DataValidator } from './data-validator';
 import { supabase } from '@/integrations/supabase/client';
-import type { UnifiedInvitationStats, BatchStatus, ValidationResult } from './types';
-
-// Define the types we need for consistency with the old service
-export interface PendingInvitation {
-  id: string;
-  email: string;
-  persona_type: string;
-  invited_at: string;
-  email_sent: boolean;
-  email_sent_at?: string;
-  batch_id?: string;
-  send_attempts: number;
-}
-
-export interface EmailBatch {
-  id: string;
-  batch_id: string;
-  total_emails: number;
-  emails_sent: number;
-  emails_failed: number;
-  status: string;
-  created_at: string;
-  started_at?: string;
-  completed_at?: string;
-}
+import type { 
+  UnifiedInvitationStats, 
+  BatchStatus, 
+  ValidationResult, 
+  PendingInvitation, 
+  EmailBatch 
+} from './types';
 
 class UnifiedInvitationService {
   private cacheManager = new CacheManager();
