@@ -16,12 +16,18 @@ import {
   Database
 } from 'lucide-react';
 import { toast } from 'sonner';
-import { invitationService, type EmailBatch, type PendingInvitation, type UserDetail } from '@/services/invitation-service';
-import { unifiedInvitationService, type UnifiedInvitationStats } from '@/services/unified-invitation';
+import { unifiedInvitationService, type UnifiedInvitationStats, type PendingInvitation, type EmailBatch } from '@/services/unified-invitation';
 import UserListModal from './UserListModal';
 import UserDetailModal from './UserDetailModal';
 import DataValidationDashboard from './components/DataValidationDashboard';
 import BatchRetryControl from './components/BatchRetryControl';
+
+// Define UserDetail type locally since we removed the old service
+interface UserDetail {
+  id: string;
+  email: string;
+  persona_type: string;
+}
 
 const InvitationDashboard = () => {
   const [unifiedStats, setUnifiedStats] = useState<UnifiedInvitationStats | null>(null);
@@ -47,8 +53,9 @@ const InvitationDashboard = () => {
   const loadDashboardData = async (forceRefresh: boolean = false) => {
     setIsLoading(true);
     try {
-      console.log('InvitationDashboard: Loading dashboard data with unified service...', { forceRefresh });
+      console.log('InvitationDashboard: Loading dashboard data with unified service only...', { forceRefresh });
       
+      // Use ONLY the unified service for ALL data
       const [
         unifiedStatsData,
         batchesData,
@@ -58,17 +65,20 @@ const InvitationDashboard = () => {
         completedData
       ] = await Promise.all([
         unifiedInvitationService.getUnifiedStats(forceRefresh),
-        invitationService.getEmailBatches(),
-        invitationService.getPendingEmailSend(1000),
-        invitationService.getEmailsSent(),
-        invitationService.getAwaitingSignup(),
-        invitationService.getCompletedInvitations()
+        unifiedInvitationService.getEmailBatches(),
+        unifiedInvitationService.getPendingEmailSend(1000),
+        unifiedInvitationService.getEmailsSent(),
+        unifiedInvitationService.getAwaitingSignup(),
+        unifiedInvitationService.getCompletedInvitations()
       ]);
 
-      console.log('InvitationDashboard: Loaded dashboard data:', {
+      console.log('InvitationDashboard: Loaded dashboard data from unified service:', {
         unifiedStats: unifiedStatsData,
         batchesCount: batchesData.length,
-        pendingCount: pendingData.length
+        pendingCount: pendingData.length,
+        sentCount: sentData.length,
+        awaitingCount: awaitingData.length,
+        completedCount: completedData.length
       });
 
       setUnifiedStats(unifiedStatsData);
