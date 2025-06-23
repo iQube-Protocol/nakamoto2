@@ -1,10 +1,9 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import type { UnifiedInvitationStats } from './types';
 
 export class StatsCalculator {
   static async calculateUnifiedStats(): Promise<UnifiedInvitationStats> {
-    console.log('StatsCalculator: Calculating unified stats...');
+    console.log('StatsCalculator: Calculating unified stats with corrected logic...');
     
     try {
       // Get all invitation data without any limit to ensure we get everything
@@ -48,18 +47,33 @@ export class StatsCalculator {
         totalFromArray: allInvitations?.length,
         emailsSentCalculated: emailsSent,
         emailsPendingCalculated: emailsPending,
-        mathCheck: emailsSent + emailsPending === totalCreated,
+        basicMathCheck: emailsSent + emailsPending === totalCreated,
         signupsCompletedCalculated: signupsCompleted,
-        awaitingSignupCalculated: awaitingSignup
+        awaitingSignupCalculated: awaitingSignup,
+        signupMathCheck: signupsCompleted + awaitingSignup,
+        emailsSentForComparison: emailsSent,
+        signupConversionCheck: signupsCompleted + awaitingSignup <= emailsSent
       });
 
-      // Validate the math
+      // BUSINESS CRITICAL: Validate the core math that must always be true
       if (emailsSent + emailsPending !== totalCreated) {
-        console.warn('StatsCalculator: Math validation failed:', {
+        console.error('StatsCalculator: CRITICAL - Basic math validation failed:', {
           emailsSent,
           emailsPending,
           totalCreated,
-          sum: emailsSent + emailsPending
+          sum: emailsSent + emailsPending,
+          difference: Math.abs((emailsSent + emailsPending) - totalCreated)
+        });
+      }
+
+      // BUSINESS CRITICAL: Check signup logic consistency  
+      if (signupsCompleted + awaitingSignup > emailsSent) {
+        console.error('StatsCalculator: CRITICAL - More signups than emails sent:', {
+          signupsCompleted,
+          awaitingSignup,
+          sumSignups: signupsCompleted + awaitingSignup,
+          emailsSent,
+          difference: (signupsCompleted + awaitingSignup) - emailsSent
         });
       }
 
@@ -141,12 +155,12 @@ export class StatsCalculator {
     }
   }
 
-  // Add debug method to see actual status distribution
+  // Enhanced debug method to identify specific data issues
   static async debugStatusDistribution(): Promise<void> {
     try {
       const { data: allInvitations, error } = await supabase
         .from('invited_users')
-        .select('email_sent, signup_completed, email_sent_at, completed_at, send_attempts');
+        .select('email_sent, signup_completed, email_sent_at, completed_at, send_attempts, invited_at');
 
       if (error) {
         console.error('Debug query failed:', error);
@@ -160,20 +174,88 @@ export class StatsCalculator {
         signupCompletedTrue: allInvitations?.filter(inv => inv.signup_completed === true).length || 0,
         signupCompletedFalse: allInvitations?.filter(inv => inv.signup_completed === false).length || 0,
         awaitingSignup: allInvitations?.filter(inv => inv.email_sent === true && inv.signup_completed === false).length || 0,
-        pendingEmailSend: allInvitations?.filter(inv => inv.email_sent === false && inv.signup_completed === false).length || 0
+        pendingEmailSend: allInvitations?.filter(inv => inv.email_sent === false && inv.signup_completed === false).length || 0,
+        // CRITICAL: Identify impossible states
+        impossibleStates: allInvitations?.filter(inv => inv.signup_completed === true && inv.email_sent === false).length || 0,
+        missingSentTimestamp: allInvitations?.filter(inv => inv.email_sent === true && !inv.email_sent_at).length || 0,
+        missingCompletedTimestamp: allInvitations?.filter(inv => inv.signup_completed === true && !inv.completed_at).length || 0
       };
 
-      console.log('StatsCalculator: Actual data distribution:', distribution);
+      console.log('StatsCalculator: DETAILED data distribution:', distribution);
       
-      // Verify math
-      console.log('StatsCalculator: Math verification:', {
-        emailSentTrue_plus_emailSentFalse: distribution.emailSentTrue + distribution.emailSentFalse,
-        total: distribution.total,
-        mathCorrect: (distribution.emailSentTrue + distribution.emailSentFalse) === distribution.total
+      // Verify all math relationships
+      console.log('StatsCalculator: COMPREHENSIVE math verification:', {
+        basicMath: {
+          emailSentTrue_plus_emailSentFalse: distribution.emailSentTrue + distribution.emailSentFalse,
+          total: distribution.total,
+          isCorrect: (distribution.emailSentTrue + distribution.emailSentFalse) === distribution.total
+        },
+        signupMath: {
+          signupsCompleted_plus_awaitingSignup: distribution.signupCompletedTrue + distribution.awaitingSignup,
+          emailsSent: distribution.emailSentTrue,
+          shouldBeEqual: distribution.signupCompletedTrue + distribution.awaitingSignup === distribution.emailSentTrue,
+          difference: Math.abs((distribution.signupCompletedTrue + distribution.awaitingSignup) - distribution.emailSentTrue)
+        },
+        dataQuality: {
+          impossibleStates: distribution.impossibleStates,
+          missingSentTimestamp: distribution.missingSentTimestamp,
+          missingCompletedTimestamp: distribution.missingCompletedTimestamp
+        }
       });
+
+      // Identify specific problematic records
+      if (distribution.impossibleStates > 0) {
+        const problematicRecords = allInvitations?.filter(inv => 
+          inv.signup_completed === true && inv.email_sent === false
+        ).slice(0, 5); // Show first 5 for debugging
+        
+        console.error('StatsCalculator: CRITICAL - Found impossible states (sample):', problematicRecords);
+      }
 
     } catch (error) {
       console.error('StatsCalculator: Debug failed:', error);
+    }
+  }
+
+  // New method to get the most accurate stats directly from database
+  static async getRealTimeStats(): Promise<UnifiedInvitationStats> {
+    console.log('StatsCalculator: Getting real-time stats directly from database...');
+    
+    try {
+      // Use individual count queries to ensure accuracy
+      const [
+        { count: totalCreated },
+        { count: emailsSent },
+        { count: emailsPending },
+        { count: signupsCompleted },
+        { count: awaitingSignup }
+      ] = await Promise.all([
+        supabase.from('invited_users').select('*', { count: 'exact', head: true }),
+        supabase.from('invited_users').select('*', { count: 'exact', head: true }).eq('email_sent', true),
+        supabase.from('invited_users').select('*', { count: 'exact', head: true }).eq('email_sent', false),
+        supabase.from('invited_users').select('*', { count: 'exact', head: true }).eq('signup_completed', true),
+        supabase.from('invited_users').select('*', { count: 'exact', head: true })
+          .eq('email_sent', true)
+          .eq('signup_completed', false)
+      ]);
+
+      const conversionRate = (emailsSent || 0) > 0 ? ((signupsCompleted || 0) / (emailsSent || 0)) * 100 : 0;
+
+      const stats: UnifiedInvitationStats = {
+        totalCreated: totalCreated || 0,
+        emailsSent: emailsSent || 0,
+        emailsPending: emailsPending || 0,
+        signupsCompleted: signupsCompleted || 0,
+        awaitingSignup: awaitingSignup || 0,
+        conversionRate,
+        lastUpdated: new Date().toISOString()
+      };
+
+      console.log('StatsCalculator: Real-time stats from individual queries:', stats);
+      return stats;
+    } catch (error: any) {
+      console.error('StatsCalculator: Real-time stats failed:', error);
+      throw new Error(`Failed to get real-time stats: ${error.message}`);
     }
   }
 }

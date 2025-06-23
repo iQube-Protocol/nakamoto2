@@ -22,23 +22,23 @@ export const useDashboardData = () => {
   const loadDashboardData = useCallback(async (forceRefresh: boolean = false) => {
     setIsLoading(true);
     try {
-      console.log('useDashboardData: Loading dashboard data...', { forceRefresh });
+      console.log('useDashboardData: Loading dashboard data with enhanced monitoring...', { forceRefresh });
       
       if (forceRefresh) {
         // Force refresh all data from service
         await unifiedInvitationService.forceRefreshAllData();
       }
       
-      // Load all data in parallel - use StatsCalculator for authoritative stats
+      // Load all data in parallel - use real-time stats for maximum accuracy
       const [
-        statsData,
+        realTimeStats,
         batchesData,
         pendingData,
         sentData,
         awaitingData,
         completedData
       ] = await Promise.all([
-        StatsCalculator.calculateUnifiedStats(), // Use authoritative source
+        StatsCalculator.getRealTimeStats(), // Use new real-time method
         unifiedInvitationService.getEmailBatches(),
         unifiedInvitationService.getPendingEmailSend(10000),
         unifiedInvitationService.getEmailsSent(),
@@ -46,8 +46,8 @@ export const useDashboardData = () => {
         unifiedInvitationService.getCompletedInvitations()
       ]);
 
-      console.log('useDashboardData: Loaded data from authoritative sources:', {
-        statsFromCalculator: statsData,
+      console.log('useDashboardData: Loaded data with real-time stats:', {
+        realTimeStats,
         batchesCount: batchesData.length,
         pendingCount: pendingData.length,
         sentCount: sentData.length,
@@ -55,13 +55,27 @@ export const useDashboardData = () => {
         completedCount: completedData.length
       });
 
-      // Set all the data - use authoritative stats from StatsCalculator
-      setUnifiedStats(statsData);
+      // Set all the data - using real-time stats for maximum accuracy
+      setUnifiedStats(realTimeStats);
       setBatches(batchesData);
       setPendingEmailSend(pendingData);
       setEmailsSent(sentData);
       setAwaitingSignup(awaitingData);
       setCompletedSignups(completedData);
+
+      // Validate data consistency and warn if issues found
+      const basicMathCheck = realTimeStats.emailsSent + realTimeStats.emailsPending === realTimeStats.totalCreated;
+      const signupMathCheck = realTimeStats.signupsCompleted + realTimeStats.awaitingSignup <= realTimeStats.emailsSent;
+      
+      if (!basicMathCheck) {
+        console.error('useDashboardData: CRITICAL - Basic math validation failed!');
+        toast.error('Data inconsistency detected! Please check Data Integrity Monitor.');
+      }
+      
+      if (!signupMathCheck) {
+        console.error('useDashboardData: CRITICAL - Signup math validation failed!');
+        toast.error('Signup data inconsistency detected! Please check Data Integrity Monitor.');
+      }
 
       if (forceRefresh) {
         toast.success(`Dashboard refreshed: ${batchesData.length} batches, ${sentData.length} sent emails, ${pendingData.length} pending`);
