@@ -10,7 +10,8 @@ import {
   RefreshCw, 
   Shield,
   Wrench,
-  TrendingUp
+  TrendingUp,
+  Users
 } from 'lucide-react';
 import { toast } from 'sonner';
 import { DataIntegrityService } from '@/services/unified-invitation/data-integrity-service';
@@ -22,7 +23,6 @@ interface DataIntegrityReport {
   emailsPending: number;
   signupsCompleted: number;
   awaitingSignup: number;
-  authUsersCount: number;
   discrepancies: string[];
   criticalIssues: string[];
   recommendations: string[];
@@ -33,6 +33,7 @@ const DataIntegrityMonitor: React.FC = () => {
   const [isChecking, setIsChecking] = useState(false);
   const [isFixing, setIsFixing] = useState(false);
   const [lastCheck, setLastCheck] = useState<Date | null>(null);
+  const [legacyUsers, setLegacyUsers] = useState<{ email: string; invited_at: string; completed_at: string | null }[]>([]);
 
   const runIntegrityCheck = async () => {
     setIsChecking(true);
@@ -43,6 +44,10 @@ const DataIntegrityMonitor: React.FC = () => {
       const integrityReport = await DataIntegrityService.generateFullReport();
       setReport(integrityReport);
       setLastCheck(new Date());
+      
+      // Get legacy users for display
+      const legacy = await DataIntegrityService.getLegacyUsers();
+      setLegacyUsers(legacy);
       
       // Also run the debug method for detailed logging
       await StatsCalculator.debugStatusDistribution();
@@ -200,6 +205,28 @@ const DataIntegrityMonitor: React.FC = () => {
                 <div className="text-sm text-gray-600">Conversion Rate</div>
               </div>
             </div>
+
+            {/* Legacy Users Alert */}
+            {legacyUsers.length > 0 && (
+              <Alert className="border-blue-200 bg-blue-50">
+                <Users className="h-4 w-4 text-blue-600" />
+                <AlertDescription>
+                  <div className="space-y-2">
+                    <p className="font-medium text-blue-800">Legacy Users Found ({legacyUsers.length}):</p>
+                    <p className="text-sm text-blue-700">
+                      These users signed up before the automated email system was implemented. 
+                      Click "Fix Issues" to correct their email_sent status.
+                    </p>
+                    <div className="text-xs text-blue-600 max-h-20 overflow-y-auto">
+                      {legacyUsers.slice(0, 5).map((user, index) => (
+                        <div key={index}>{user.email} (invited: {new Date(user.invited_at).toLocaleDateString()})</div>
+                      ))}
+                      {legacyUsers.length > 5 && <div>... and {legacyUsers.length - 5} more</div>}
+                    </div>
+                  </div>
+                </AlertDescription>
+              </Alert>
+            )}
 
             {/* Critical Issues */}
             {hasCriticalIssues && (

@@ -7,7 +7,6 @@ interface DataIntegrityReport {
   emailsPending: number;
   signupsCompleted: number;
   awaitingSignup: number;
-  authUsersCount: number;
   discrepancies: string[];
   criticalIssues: string[];
   recommendations: string[];
@@ -25,20 +24,6 @@ export class DataIntegrityService {
 
       if (invitationError) {
         throw new Error(`Failed to fetch invitations: ${invitationError.message}`);
-      }
-
-      // Get auth users count (this requires admin privileges)
-      let authUsersCount = 0;
-      try {
-        const { count: authCount, error: authError } = await supabase
-          .from('auth.users')
-          .select('*', { count: 'exact', head: true });
-        
-        if (!authError) {
-          authUsersCount = authCount || 0;
-        }
-      } catch (error) {
-        console.warn('DataIntegrityService: Cannot access auth.users table (expected in client-side)');
       }
 
       const totalInvitations = invitations?.length || 0;
@@ -62,19 +47,29 @@ export class DataIntegrityService {
         criticalIssues.push(`Signup logic error: Completed (${signupsCompleted}) + Awaiting (${awaitingSignup}) = ${signupsCompleted + awaitingSignup} ≠ Emails Sent (${emailsSent}). Difference: ${difference}`);
         
         if (signupsCompleted + awaitingSignup > emailsSent) {
-          criticalIssues.push(`CRITICAL: More signups than emails sent suggests data corruption or trigger malfunction`);
-          recommendations.push(`Investigate handle_invited_user_signup() trigger functionality`);
+          criticalIssues.push(`CRITICAL: More signups than emails sent suggests data corruption or legacy users`);
+          recommendations.push(`Fix legacy users who signed up before email system was implemented`);
         }
       }
 
-      // Find records with impossible states
+      // Find records with impossible states (signup without email sent)
       const impossibleStates = invitations?.filter(inv => 
         inv.signup_completed === true && inv.email_sent === false
       ) || [];
 
       if (impossibleStates.length > 0) {
-        criticalIssues.push(`Found ${impossibleStates.length} users who completed signup without email being sent`);
-        recommendations.push(`Review signup process - users should not complete signup without email_sent = true`);
+        criticalIssues.push(`Found ${impossibleStates.length} users who completed signup without email being sent (likely legacy users)`);
+        recommendations.push(`Fix legacy users by setting email_sent = true for users who signed up before automated system`);
+        
+        // Log the specific problematic records for debugging
+        console.log('DataIntegrityService: Legacy users found:', impossibleStates.map(inv => ({
+          id: inv.id,
+          email: inv.email,
+          invited_at: inv.invited_at,
+          completed_at: inv.completed_at,
+          email_sent: inv.email_sent,
+          signup_completed: inv.signup_completed
+        })));
       }
 
       // Check for users with missing email_sent_at
@@ -119,7 +114,6 @@ export class DataIntegrityService {
         emailsPending,
         signupsCompleted,
         awaitingSignup,
-        authUsersCount,
         discrepanciesCount: discrepancies.length,
         criticalIssuesCount: criticalIssues.length
       });
@@ -130,7 +124,6 @@ export class DataIntegrityService {
         emailsPending,
         signupsCompleted,
         awaitingSignup,
-        authUsersCount,
         discrepancies,
         criticalIssues,
         recommendations
@@ -148,15 +141,45 @@ export class DataIntegrityService {
     const errors: string[] = [];
 
     try {
+      // Fix legacy users who signed up without email_sent being true
+      const { data: legacyUsers, error: fetchError } = await supabase
+        .from('invited_users')
+        .select('id, email, invited_at, completed_at')
+        .eq('signup_completed', true)
+        .eq('email_sent', false);
+
+      if (fetchError) {
+        errors.push(`Failed to fetch legacy users: ${fetchError.message}`);
+      } else if (legacyUsers && legacyUsers.length > 0) {
+        console.log(`DataIntegrityService: Found ${legacyUsers.length} legacy users to fix`);
+        
+        for (const user of legacyUsers) {
+          const { error: updateError } = await supabase
+            .from('invited_users')
+            .update({ 
+              email_sent: true,
+              email_sent_at: user.invited_at || new Date().toISOString()
+            })
+            .eq('id', user.id);
+
+          if (updateError) {
+            errors.push(`Failed to fix legacy user ${user.email}: ${updateError.message}`);
+          } else {
+            console.log(`DataIntegrityService: Fixed legacy user ${user.email}`);
+            fixed++;
+          }
+        }
+      }
+
       // Fix missing email_sent_at timestamps
-      const { data: missingSentTimestamp, error: fetchError } = await supabase
+      const { data: missingSentTimestamp, error: missingError } = await supabase
         .from('invited_users')
         .select('id, invited_at')
         .eq('email_sent', true)
         .is('email_sent_at', null);
 
-      if (fetchError) {
-        errors.push(`Failed to fetch missing timestamps: ${fetchError.message}`);
+      if (missingError) {
+        errors.push(`Failed to fetch missing timestamps: ${missingError.message}`);
       } else if (missingSentTimestamp && missingSentTimestamp.length > 0) {
         for (const record of missingSentTimestamp) {
           const { error: updateError } = await supabase
@@ -172,38 +195,33 @@ export class DataIntegrityService {
         }
       }
 
-      // Fix impossible states (signup_completed = true but email_sent = false)
-      const { data: impossibleStates, error: impossibleError } = await supabase
-        .from('invited_users')
-        .select('id')
-        .eq('signup_completed', true)
-        .eq('email_sent', false);
-
-      if (impossibleError) {
-        errors.push(`Failed to fetch impossible states: ${impossibleError.message}`);
-      } else if (impossibleStates && impossibleStates.length > 0) {
-        for (const record of impossibleStates) {
-          const { error: updateError } = await supabase
-            .from('invited_users')
-            .update({ 
-              email_sent: true,
-              email_sent_at: new Date().toISOString()
-            })
-            .eq('id', record.id);
-
-          if (updateError) {
-            errors.push(`Failed to fix impossible state for ${record.id}: ${updateError.message}`);
-          } else {
-            fixed++;
-          }
-        }
-      }
-
       console.log(`DataIntegrityService: Fixed ${fixed} records with ${errors.length} errors`);
       return { fixed, errors };
     } catch (error: any) {
       errors.push(`Fix process failed: ${error.message}`);
       return { fixed, errors };
+    }
+  }
+
+  static async getLegacyUsers(): Promise<{ email: string; invited_at: string; completed_at: string | null }[]> {
+    console.log('DataIntegrityService: Fetching legacy users...');
+    
+    try {
+      const { data: legacyUsers, error } = await supabase
+        .from('invited_users')
+        .select('email, invited_at, completed_at')
+        .eq('signup_completed', true)
+        .eq('email_sent', false)
+        .order('invited_at', { ascending: true });
+
+      if (error) {
+        throw new Error(`Failed to fetch legacy users: ${error.message}`);
+      }
+
+      return legacyUsers || [];
+    } catch (error: any) {
+      console.error('DataIntegrityService: Failed to get legacy users:', error);
+      throw error;
     }
   }
 }
