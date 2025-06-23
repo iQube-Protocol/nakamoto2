@@ -48,8 +48,20 @@ export class StatsCalculator {
         totalFromArray: allInvitations?.length,
         emailsSentCalculated: emailsSent,
         emailsPendingCalculated: emailsPending,
-        mathCheck: emailsSent + emailsPending === totalCreated
+        mathCheck: emailsSent + emailsPending === totalCreated,
+        signupsCompletedCalculated: signupsCompleted,
+        awaitingSignupCalculated: awaitingSignup
       });
+
+      // Validate the math
+      if (emailsSent + emailsPending !== totalCreated) {
+        console.warn('StatsCalculator: Math validation failed:', {
+          emailsSent,
+          emailsPending,
+          totalCreated,
+          sum: emailsSent + emailsPending
+        });
+      }
 
       return stats;
     } catch (error) {
@@ -126,6 +138,42 @@ export class StatsCalculator {
         issues: [`Validation failed: ${error.message}`],
         detailedStats: {}
       };
+    }
+  }
+
+  // Add debug method to see actual status distribution
+  static async debugStatusDistribution(): Promise<void> {
+    try {
+      const { data: allInvitations, error } = await supabase
+        .from('invited_users')
+        .select('email_sent, signup_completed, email_sent_at, completed_at, send_attempts');
+
+      if (error) {
+        console.error('Debug query failed:', error);
+        return;
+      }
+
+      const distribution = {
+        total: allInvitations?.length || 0,
+        emailSentTrue: allInvitations?.filter(inv => inv.email_sent === true).length || 0,
+        emailSentFalse: allInvitations?.filter(inv => inv.email_sent === false).length || 0,
+        signupCompletedTrue: allInvitations?.filter(inv => inv.signup_completed === true).length || 0,
+        signupCompletedFalse: allInvitations?.filter(inv => inv.signup_completed === false).length || 0,
+        awaitingSignup: allInvitations?.filter(inv => inv.email_sent === true && inv.signup_completed === false).length || 0,
+        pendingEmailSend: allInvitations?.filter(inv => inv.email_sent === false && inv.signup_completed === false).length || 0
+      };
+
+      console.log('StatsCalculator: Actual data distribution:', distribution);
+      
+      // Verify math
+      console.log('StatsCalculator: Math verification:', {
+        emailSentTrue_plus_emailSentFalse: distribution.emailSentTrue + distribution.emailSentFalse,
+        total: distribution.total,
+        mathCorrect: (distribution.emailSentTrue + distribution.emailSentFalse) === distribution.total
+      });
+
+    } catch (error) {
+      console.error('StatsCalculator: Debug failed:', error);
     }
   }
 }
