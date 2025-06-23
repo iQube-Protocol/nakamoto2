@@ -2,6 +2,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
 import { unifiedInvitationService } from '@/services/unified-invitation';
+import { StatsCalculator } from '@/services/unified-invitation/stats-calculator';
 import type { 
   UnifiedInvitationStats, 
   PendingInvitation, 
@@ -28,42 +29,25 @@ export const useDashboardData = () => {
         await unifiedInvitationService.forceRefreshAllData();
       }
       
-      // Load all data in parallel
+      // Load all data in parallel - use StatsCalculator for authoritative stats
       const [
+        statsData,
         batchesData,
         pendingData,
         sentData,
         awaitingData,
         completedData
       ] = await Promise.all([
+        StatsCalculator.calculateUnifiedStats(), // Use authoritative source
         unifiedInvitationService.getEmailBatches(),
-        unifiedInvitationService.getPendingEmailSend(10000), // Increased limit to get all
+        unifiedInvitationService.getPendingEmailSend(10000),
         unifiedInvitationService.getEmailsSent(),
         unifiedInvitationService.getAwaitingSignup(),
         unifiedInvitationService.getCompletedInvitations()
       ]);
 
-      // Calculate unified stats from the actual data we just loaded
-      // Total created should be unique emails across all states
-      const allEmails = new Set([
-        ...pendingData.map(inv => inv.email),
-        ...sentData.map(inv => inv.email),
-        ...completedData.map(inv => inv.email)
-      ]);
-
-      const calculatedStats: UnifiedInvitationStats = {
-        totalCreated: allEmails.size, // Use unique email count for total
-        emailsSent: sentData.length,
-        emailsPending: pendingData.length,
-        signupsCompleted: completedData.length,
-        awaitingSignup: awaitingData.length,
-        conversionRate: sentData.length > 0 ? (completedData.length / sentData.length) * 100 : 0,
-        lastUpdated: new Date().toISOString()
-      };
-
-      console.log('useDashboardData: Calculated stats from loaded data:', {
-        calculatedStats,
-        uniqueEmails: allEmails.size,
+      console.log('useDashboardData: Loaded data from authoritative sources:', {
+        statsFromCalculator: statsData,
         batchesCount: batchesData.length,
         pendingCount: pendingData.length,
         sentCount: sentData.length,
@@ -71,8 +55,8 @@ export const useDashboardData = () => {
         completedCount: completedData.length
       });
 
-      // Set all the data
-      setUnifiedStats(calculatedStats);
+      // Set all the data - use authoritative stats from StatsCalculator
+      setUnifiedStats(statsData);
       setBatches(batchesData);
       setPendingEmailSend(pendingData);
       setEmailsSent(sentData);

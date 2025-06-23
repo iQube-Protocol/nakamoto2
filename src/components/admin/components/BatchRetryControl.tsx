@@ -1,4 +1,3 @@
-
 import React, { useState } from 'react';
 import { Card, CardHeader, CardTitle, CardContent } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
@@ -30,15 +29,15 @@ const BatchRetryControl: React.FC<BatchRetryControlProps> = ({ batches, onBatchR
     try {
       console.log(`BatchRetryControl: Retrying batch ${batchId}`);
       
-      // First, check if there are actually pending emails for this batch
+      // Check for pending emails (those with email_sent = false)
       const pendingEmails = await unifiedInvitationService.getPendingEmailSend(1000);
       const batchPendingEmails = pendingEmails.filter(email => 
-        email.batch_id === batchId || !email.batch_id // Include emails without batch_id
+        email.batch_id === batchId || !email.batch_id
       );
       
       if (batchPendingEmails.length === 0) {
         toast.info(`No pending emails found for batch ${batchId}. All emails may have already been sent.`);
-        onBatchRetried(); // Refresh the display
+        onBatchRetried();
         return;
       }
       

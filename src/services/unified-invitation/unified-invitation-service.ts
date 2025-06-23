@@ -50,7 +50,7 @@ class UnifiedInvitationService {
 
     console.log('UnifiedInvitationService: Fetching pending emails...');
     
-    // Remove the expires_at filter to get ALL pending emails, not just non-expired ones
+    // Get ALL pending emails (email_sent = false)
     const { data, error } = await supabase
       .from('invited_users')
       .select('id, email, persona_type, invited_at, email_sent, email_sent_at, batch_id, send_attempts')
@@ -65,7 +65,7 @@ class UnifiedInvitationService {
     }
 
     const result = data || [];
-    console.log(`UnifiedInvitationService: Found ${result.length} pending emails (including expired)`);
+    console.log(`UnifiedInvitationService: Found ${result.length} pending emails`);
     this.cacheManager.setCache(cacheKey, result);
     return result;
   }
@@ -105,7 +105,7 @@ class UnifiedInvitationService {
 
     console.log('UnifiedInvitationService: Fetching awaiting signup...');
     
-    // Remove the expires_at filter to get ALL awaiting signup, not just non-expired ones
+    // Get ALL users awaiting signup (email_sent = true, signup_completed = false)
     const { data, error } = await supabase
       .from('invited_users')
       .select('id, email, persona_type, invited_at, email_sent, email_sent_at, batch_id, send_attempts')
@@ -119,7 +119,7 @@ class UnifiedInvitationService {
     }
 
     const result = data || [];
-    console.log(`UnifiedInvitationService: Found ${result.length} awaiting signup (including expired)`);
+    console.log(`UnifiedInvitationService: Found ${result.length} awaiting signup`);
     this.cacheManager.setCache(cacheKey, result);
     return result;
   }
@@ -150,7 +150,7 @@ class UnifiedInvitationService {
     return result;
   }
 
-  // Enhanced email batches fetching with no limit and better ordering
+  // Get ALL email batches without any limit
   async getEmailBatches(): Promise<EmailBatch[]> {
     const cacheKey = 'email-batches';
     
@@ -160,7 +160,7 @@ class UnifiedInvitationService {
 
     console.log('UnifiedInvitationService: Fetching ALL email batches...');
     
-    // Fetch ALL batches, not just a limited number
+    // Fetch ALL batches without any limit
     const { data, error } = await supabase
       .from('email_batches')
       .select('*')
@@ -220,7 +220,7 @@ class UnifiedInvitationService {
     }
   }
 
-  // New method to force refresh all data
+  // Force refresh all data
   async forceRefreshAllData(): Promise<void> {
     console.log('UnifiedInvitationService: Force refreshing ALL data...');
     
@@ -230,7 +230,7 @@ class UnifiedInvitationService {
     // Pre-load all data with fresh queries
     await Promise.all([
       this.getUnifiedStats(true),
-      this.getPendingEmailSend(10000), // Increased limit
+      this.getPendingEmailSend(10000),
       this.getEmailsSent(),
       this.getAwaitingSignup(),
       this.getCompletedInvitations(),
