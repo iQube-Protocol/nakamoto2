@@ -26,17 +26,28 @@ const InvitedUserSignup = () => {
   useEffect(() => {
     const loadInvitation = async () => {
       if (!token) {
+        console.log('InvitedUserSignup: No token provided');
         setLoading(false);
         return;
       }
 
+      console.log('InvitedUserSignup: Loading invitation for token:', token.substring(0, 8) + '...');
+
       try {
         const invitationData = await invitationService.getInvitationByToken(token);
         if (invitationData) {
+          console.log('InvitedUserSignup: Invitation loaded successfully:', {
+            email: invitationData.email,
+            personaType: invitationData.persona_type,
+            expired: invitationData.expires_at ? new Date(invitationData.expires_at) < new Date() : false
+          });
           setInvitation(invitationData);
+        } else {
+          console.log('InvitedUserSignup: No invitation found for token');
         }
       } catch (error) {
-        console.error('Error loading invitation:', error);
+        console.error('InvitedUserSignup: Error loading invitation:', error);
+        toast.error('Failed to load invitation. Please check your invitation link.');
       } finally {
         setLoading(false);
       }
@@ -48,7 +59,10 @@ const InvitedUserSignup = () => {
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!invitation) return;
+    if (!invitation) {
+      toast.error('No valid invitation found');
+      return;
+    }
     
     if (password !== confirmPassword) {
       toast.error('Passwords do not match');
@@ -61,6 +75,8 @@ const InvitedUserSignup = () => {
     }
 
     setIsSigningUp(true);
+    console.log('InvitedUserSignup: Starting signup process for:', invitation.email);
+    
     try {
       const result = await signUp(
         invitation.email, 
@@ -70,12 +86,15 @@ const InvitedUserSignup = () => {
       );
 
       if (result.success) {
+        console.log('InvitedUserSignup: Signup successful for:', invitation.email);
         toast.success('Account created successfully! Please check your email for confirmation.');
         navigate('/signin?confirmed=true');
       } else {
+        console.error('InvitedUserSignup: Signup failed:', result.error);
         toast.error(result.error?.message || 'Failed to create account');
       }
-    } catch (error) {
+    } catch (error: any) {
+      console.error('InvitedUserSignup: Unexpected signup error:', error);
       toast.error('An unexpected error occurred');
     } finally {
       setIsSigningUp(false);
@@ -125,7 +144,38 @@ const InvitedUserSignup = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <p>This invitation is invalid, expired, or has already been used.</p>
+            <div className="space-y-4">
+              <p>This invitation is invalid, expired, or has already been used.</p>
+              <div className="p-3 bg-yellow-50 border border-yellow-200 rounded">
+                <p className="text-sm text-yellow-700">
+                  <strong>Note:</strong> If you received this link recently, please try refreshing the page. 
+                  The system may be updating invitation URLs.
+                </p>
+              </div>
+              <Button className="w-full" onClick={() => navigate('/signin')}>
+                Go to Sign In
+              </Button>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
+  // Check if invitation has expired
+  const isExpired = invitation.expires_at && new Date(invitation.expires_at) < new Date();
+  if (isExpired) {
+    return (
+      <div className="min-h-screen flex items-center justify-center">
+        <Card className="w-full max-w-md">
+          <CardHeader>
+            <CardTitle className="flex items-center text-red-600">
+              <AlertCircle className="h-5 w-5 mr-2" />
+              Invitation Expired
+            </CardTitle>
+          </CardHeader>
+          <CardContent>
+            <p>This invitation has expired. Please contact support for a new invitation.</p>
             <Button className="w-full mt-4" onClick={() => navigate('/signin')}>
               Go to Sign In
             </Button>
