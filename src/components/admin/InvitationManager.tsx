@@ -6,12 +6,13 @@ import { Label } from '@/components/ui/label';
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select';
 import { Textarea } from '@/components/ui/textarea';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Upload, Send, Users, CheckCircle, Clock, AlertCircle, FileText, Merge, BarChart3 } from 'lucide-react';
+import { Upload, Send, Users, CheckCircle, Clock, AlertCircle, FileText, Merge, BarChart3, TestTube } from 'lucide-react';
 import { toast } from 'sonner';
 import { invitationService, type InvitationData, type PendingInvitation, type DeduplicationStats, type BatchProgress } from '@/services/invitation-service';
 import BatchProgressDialog from './BatchProgressDialog';
 import InvitationDashboard from './InvitationDashboard';
 import DataReconciliationPanel from './DataReconciliationPanel';
+import InvitationTestPanel from './InvitationTestPanel';
 
 // Define a simpler BatchProgress for the reconciliation dialog
 interface SimpleProgress {
@@ -187,7 +188,7 @@ const InvitationManager = () => {
       />
 
       <Tabs defaultValue="dashboard" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="dashboard">
             <BarChart3 className="h-4 w-4 mr-2" />
             Dashboard
@@ -195,6 +196,10 @@ const InvitationManager = () => {
           <TabsTrigger value="upload">
             <Upload className="h-4 w-4 mr-2" />
             Upload CSV
+          </TabsTrigger>
+          <TabsTrigger value="test">
+            <TestTube className="h-4 w-4 mr-2" />
+            Test
           </TabsTrigger>
           <TabsTrigger value="reconcile">
             <AlertCircle className="h-4 w-4 mr-2" />
@@ -208,6 +213,10 @@ const InvitationManager = () => {
 
         <TabsContent value="dashboard">
           <InvitationDashboard />
+        </TabsContent>
+
+        <TabsContent value="test">
+          <InvitationTestPanel />
         </TabsContent>
 
         <TabsContent value="upload" className="space-y-6">
