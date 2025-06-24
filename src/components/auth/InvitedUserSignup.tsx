@@ -23,8 +23,17 @@ const InvitedUserSignup = () => {
 
   const token = searchParams.get('token');
 
+  console.log('InvitedUserSignup: Component rendering', {
+    token: token?.substring(0, 8) + '...',
+    url: window.location.href,
+    loading,
+    hasInvitation: !!invitation
+  });
+
   useEffect(() => {
     const loadInvitation = async () => {
+      console.log('InvitedUserSignup: Starting to load invitation');
+      
       if (!token) {
         console.log('InvitedUserSignup: No token provided');
         setLoading(false);
@@ -35,6 +44,12 @@ const InvitedUserSignup = () => {
 
       try {
         const invitationData = await invitationService.getInvitationByToken(token);
+        console.log('InvitedUserSignup: Invitation service response:', {
+          hasData: !!invitationData,
+          email: invitationData?.email,
+          personaType: invitationData?.persona_type
+        });
+        
         if (invitationData) {
           console.log('InvitedUserSignup: Invitation loaded successfully:', {
             email: invitationData.email,
@@ -101,7 +116,15 @@ const InvitedUserSignup = () => {
     }
   };
 
+  console.log('InvitedUserSignup: Rendering with state:', {
+    loading,
+    hasToken: !!token,
+    hasInvitation: !!invitation,
+    invitationEmail: invitation?.email
+  });
+
   if (loading) {
+    console.log('InvitedUserSignup: Showing loading state');
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -113,6 +136,7 @@ const InvitedUserSignup = () => {
   }
 
   if (!token) {
+    console.log('InvitedUserSignup: Showing no token error');
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Card className="w-full max-w-md">
@@ -134,6 +158,7 @@ const InvitedUserSignup = () => {
   }
 
   if (!invitation) {
+    console.log('InvitedUserSignup: Showing no invitation found error');
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Card className="w-full max-w-md">
@@ -165,6 +190,7 @@ const InvitedUserSignup = () => {
   // Check if invitation has expired
   const isExpired = invitation.expires_at && new Date(invitation.expires_at) < new Date();
   if (isExpired) {
+    console.log('InvitedUserSignup: Showing expired invitation error');
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Card className="w-full max-w-md">
@@ -185,6 +211,7 @@ const InvitedUserSignup = () => {
     );
   }
 
+  console.log('InvitedUserSignup: Showing main signup form');
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <Card className="w-full max-w-md">

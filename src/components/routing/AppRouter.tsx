@@ -1,5 +1,4 @@
 
-
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import AuthLayout from '@/components/auth/AuthLayout';
@@ -59,6 +58,8 @@ const InvitationRedirectHandler = () => {
 export const AppRouter = () => {
   const { user, loading } = useAuth();
   
+  console.log('AppRouter rendering with auth state:', { user: !!user, loading });
+  
   if (loading) {
     return <SplashScreen />;
   }
@@ -69,7 +70,7 @@ export const AppRouter = () => {
       <Route path="/" element={<SplashPage />} />
       <Route path="/privacy-policy" element={<PrivacyPolicy />} />
       
-      {/* Auth routes */}
+      {/* Auth routes - these should work without authentication */}
       <Route path="/signin" element={<AuthLayout title="Welcome back"><SignIn /></AuthLayout>} />
       <Route path="/signup" element={<AuthLayout title="Create account"><SignUp /></AuthLayout>} />
       <Route path="/invited-signup" element={<InvitedUserSignup />} />
