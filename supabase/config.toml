@@ -3,3 +3,6 @@ project_id = "ysykvckvggaqykhhntyo"
 
 [functions.oauth-callback-linkedin]
 verify_jwt = false
+
+[functions.invitation-redirect]
+verify_jwt = false

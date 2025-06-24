@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import AuthLayout from '@/components/auth/AuthLayout';
@@ -33,22 +32,37 @@ import ToolQube from '@/pages/qubes/ToolQube';
 import InvitedUserSignup from '@/components/auth/InvitedUserSignup';
 import EmailConfirmation from '@/components/auth/EmailConfirmation';
 
-// Redirect handler for old invitation URLs
+// Enhanced redirect handler for old invitation URLs with better debugging
 const InvitationRedirectHandler = () => {
   const urlParams = new URLSearchParams(window.location.search);
   const token = urlParams.get('token');
+  const currentHost = window.location.host;
   
-  console.log('InvitationRedirectHandler: Handling old URL redirect', {
+  console.log('🔄 InvitationRedirectHandler activated:', {
     currentUrl: window.location.href,
-    token: token?.substring(0, 8) + '...',
+    currentHost: currentHost,
+    token: token ? token.substring(0, 12) + '...' : 'NO_TOKEN',
+    pathname: window.location.pathname,
     timestamp: new Date().toISOString()
   });
   
+  // If we're on the old domain (nakamoto2), redirect to the new domain
+  if (currentHost.includes('nakamoto2')) {
+    const newUrl = `https://preview--aigent-nakamoto.lovable.app/invited-signup${token ? `?token=${token}` : ''}`;
+    console.log('🚀 Redirecting from old domain to new domain:', newUrl);
+    window.location.replace(newUrl);
+    return <div>Redirecting to updated site...</div>;
+  }
+  
+  // If we have a token, redirect to invited-signup
   if (token) {
     const newUrl = `/invited-signup?token=${token}`;
+    console.log('📧 Redirecting with token to:', newUrl);
     return <Navigate to={newUrl} replace />;
   }
   
+  // Default redirect to home
+  console.log('🏠 No token found, redirecting to home');
   return <Navigate to="/" replace />;
 };
 
@@ -73,12 +87,11 @@ export const AppRouter = () => {
       <Route path="/signin" element={<AuthLayout title="Welcome back"><SignIn /></AuthLayout>} />
       <Route path="/signup" element={<AuthLayout title="Create account"><SignUp /></AuthLayout>} />
       
-      {/* SIMPLIFIED INVITATION SIGNUP - NO AUTH REQUIRED */}
+      {/* ENHANCED INVITATION SIGNUP with better debugging */}
       <Route 
         path="/invited-signup" 
         element={
           <div>
-            <h1>Route matched for /invited-signup</h1>
             <InvitedUserSignup />
           </div>
         } 
