@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import AuthLayout from '@/components/auth/AuthLayout';
@@ -69,8 +70,8 @@ export const AppRouter = () => {
         <Route path="/privacy-policy" element={<PrivacyPolicy />} />
         
         {/* Auth routes */}
-        <Route path="/signin" element={<AuthLayout><SignIn /></AuthLayout>} />
-        <Route path="/signup" element={<AuthLayout><SignUp /></AuthLayout>} />
+        <Route path="/signin" element={<AuthLayout title="Welcome back"><SignIn /></AuthLayout>} />
+        <Route path="/signup" element={<AuthLayout title="Create account"><SignUp /></AuthLayout>} />
         <Route path="/invited-signup" element={<InvitedUserSignup />} />
         <Route path="/email-confirmation" element={<EmailConfirmation />} />
         
