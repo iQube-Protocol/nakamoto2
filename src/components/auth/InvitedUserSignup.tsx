@@ -6,14 +6,13 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { AlertCircle, CheckCircle, Loader } from 'lucide-react';
-import { useAuth } from '@/hooks/use-auth';
 import { invitationService } from '@/services/invitation-service';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 
 const InvitedUserSignup = () => {
   const [searchParams] = useSearchParams();
   const navigate = useNavigate();
-  const { signUp } = useAuth();
   
   const [invitation, setInvitation] = useState<any>(null);
   const [loading, setLoading] = useState(true);
@@ -23,47 +22,43 @@ const InvitedUserSignup = () => {
 
   const token = searchParams.get('token');
 
-  console.log('InvitedUserSignup: Component rendering', {
+  console.log('InvitedUserSignup: Component mounted successfully', {
     token: token?.substring(0, 8) + '...',
     url: window.location.href,
-    loading,
-    hasInvitation: !!invitation
+    timestamp: new Date().toISOString()
   });
 
   useEffect(() => {
     const loadInvitation = async () => {
-      console.log('InvitedUserSignup: Starting to load invitation');
+      console.log('InvitedUserSignup: Starting invitation load process');
       
       if (!token) {
-        console.log('InvitedUserSignup: No token provided');
+        console.log('InvitedUserSignup: No token found in URL parameters');
         setLoading(false);
         return;
       }
 
-      console.log('InvitedUserSignup: Loading invitation for token:', token.substring(0, 8) + '...');
+      console.log('InvitedUserSignup: Token found, calling invitation service');
 
       try {
         const invitationData = await invitationService.getInvitationByToken(token);
-        console.log('InvitedUserSignup: Invitation service response:', {
-          hasData: !!invitationData,
+        console.log('InvitedUserSignup: Invitation service call completed', {
+          success: !!invitationData,
           email: invitationData?.email,
           personaType: invitationData?.persona_type
         });
         
         if (invitationData) {
-          console.log('InvitedUserSignup: Invitation loaded successfully:', {
-            email: invitationData.email,
-            personaType: invitationData.persona_type,
-            expired: invitationData.expires_at ? new Date(invitationData.expires_at) < new Date() : false
-          });
+          console.log('InvitedUserSignup: Setting invitation data');
           setInvitation(invitationData);
         } else {
-          console.log('InvitedUserSignup: No invitation found for token');
+          console.log('InvitedUserSignup: No invitation data received');
         }
       } catch (error) {
         console.error('InvitedUserSignup: Error loading invitation:', error);
         toast.error('Failed to load invitation. Please check your invitation link.');
       } finally {
+        console.log('InvitedUserSignup: Setting loading to false');
         setLoading(false);
       }
     };
@@ -73,6 +68,8 @@ const InvitedUserSignup = () => {
 
   const handleSignup = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    console.log('InvitedUserSignup: Signup form submitted');
     
     if (!invitation) {
       toast.error('No valid invitation found');
@@ -90,23 +87,31 @@ const InvitedUserSignup = () => {
     }
 
     setIsSigningUp(true);
-    console.log('InvitedUserSignup: Starting signup process for:', invitation.email);
+    console.log('InvitedUserSignup: Starting Supabase signup for:', invitation.email);
     
     try {
-      const result = await signUp(
-        invitation.email, 
-        password,
-        invitation.persona_data['First-Name'] || '',
-        invitation.persona_data['Last-Name'] || ''
-      );
+      // Use Supabase directly instead of useAuth hook
+      const redirectTo = `${window.location.origin}/signin?confirmed=true`;
+      
+      const { data, error } = await supabase.auth.signUp({
+        email: invitation.email,
+        password: password,
+        options: {
+          data: {
+            first_name: invitation.persona_data['First-Name'] || '',
+            last_name: invitation.persona_data['Last-Name'] || '',
+          },
+          emailRedirectTo: redirectTo
+        }
+      });
 
-      if (result.success) {
-        console.log('InvitedUserSignup: Signup successful for:', invitation.email);
+      if (error) {
+        console.error('InvitedUserSignup: Supabase signup error:', error);
+        toast.error(error.message || 'Failed to create account');
+      } else {
+        console.log('InvitedUserSignup: Signup successful');
         toast.success('Account created successfully! Please check your email for confirmation.');
         navigate('/signin?confirmed=true');
-      } else {
-        console.error('InvitedUserSignup: Signup failed:', result.error);
-        toast.error(result.error?.message || 'Failed to create account');
       }
     } catch (error: any) {
       console.error('InvitedUserSignup: Unexpected signup error:', error);
@@ -116,7 +121,7 @@ const InvitedUserSignup = () => {
     }
   };
 
-  console.log('InvitedUserSignup: Rendering with state:', {
+  console.log('InvitedUserSignup: About to render with state:', {
     loading,
     hasToken: !!token,
     hasInvitation: !!invitation,
@@ -124,19 +129,20 @@ const InvitedUserSignup = () => {
   });
 
   if (loading) {
-    console.log('InvitedUserSignup: Showing loading state');
+    console.log('InvitedUserSignup: Rendering loading state');
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
           <Loader className="h-8 w-8 animate-spin mx-auto mb-4" />
           <p>Loading invitation...</p>
+          <p className="text-xs text-gray-500 mt-2">Token: {token?.substring(0, 8)}...</p>
         </div>
       </div>
     );
   }
 
   if (!token) {
-    console.log('InvitedUserSignup: Showing no token error');
+    console.log('InvitedUserSignup: Rendering no token error');
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Card className="w-full max-w-md">
@@ -158,7 +164,7 @@ const InvitedUserSignup = () => {
   }
 
   if (!invitation) {
-    console.log('InvitedUserSignup: Showing no invitation found error');
+    console.log('InvitedUserSignup: Rendering no invitation found error');
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Card className="w-full max-w-md">
@@ -173,8 +179,9 @@ const InvitedUserSignup = () => {
               <p>This invitation is invalid, expired, or has already been used.</p>
               <div className="p-3 bg-yellow-50 border border-yellow-200 rounded">
                 <p className="text-sm text-yellow-700">
-                  <strong>Note:</strong> If you received this link recently, please try refreshing the page. 
-                  The system may be updating invitation URLs.
+                  <strong>Debug Info:</strong><br />
+                  Token: {token?.substring(0, 8)}...<br />
+                  URL: {window.location.href}
                 </p>
               </div>
               <Button className="w-full" onClick={() => navigate('/signin')}>
@@ -190,7 +197,7 @@ const InvitedUserSignup = () => {
   // Check if invitation has expired
   const isExpired = invitation.expires_at && new Date(invitation.expires_at) < new Date();
   if (isExpired) {
-    console.log('InvitedUserSignup: Showing expired invitation error');
+    console.log('InvitedUserSignup: Rendering expired invitation error');
     return (
       <div className="min-h-screen flex items-center justify-center">
         <Card className="w-full max-w-md">
@@ -211,7 +218,7 @@ const InvitedUserSignup = () => {
     );
   }
 
-  console.log('InvitedUserSignup: Showing main signup form');
+  console.log('InvitedUserSignup: Rendering main signup form');
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50">
       <Card className="w-full max-w-md">
