@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { Routes, Route, Navigate } from 'react-router-dom';
 import AuthLayout from '@/components/auth/AuthLayout';
@@ -69,13 +70,20 @@ const InvitationRedirectHandler = () => {
 export const AppRouter = () => {
   const { user, loading } = useAuth();
   
-  console.log('AppRouter rendering with auth state:', { user: !!user, loading });
+  console.log('🚀 AppRouter rendering with auth state:', { 
+    user: !!user, 
+    loading,
+    currentPath: window.location.pathname,
+    currentSearch: window.location.search,
+    timestamp: new Date().toISOString()
+  });
   
   if (loading) {
+    console.log('⏳ Still loading auth state, showing splash screen');
     return <SplashScreen />;
   }
 
-  console.log('AppRouter: About to render routes');
+  console.log('✅ AppRouter: About to render routes for path:', window.location.pathname);
 
   return (
     <Routes>
