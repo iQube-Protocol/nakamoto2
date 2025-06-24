@@ -1,6 +1,7 @@
 
+
 import React from 'react';
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
+import { Routes, Route, Navigate } from 'react-router-dom';
 import AuthLayout from '@/components/auth/AuthLayout';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import { useAuth } from '@/hooks/use-auth';
@@ -63,43 +64,41 @@ export const AppRouter = () => {
   }
 
   return (
-    <Router>
-      <Routes>
-        {/* Public routes */}
-        <Route path="/" element={<SplashPage />} />
-        <Route path="/privacy-policy" element={<PrivacyPolicy />} />
-        
-        {/* Auth routes */}
-        <Route path="/signin" element={<AuthLayout title="Welcome back"><SignIn /></AuthLayout>} />
-        <Route path="/signup" element={<AuthLayout title="Create account"><SignUp /></AuthLayout>} />
-        <Route path="/invited-signup" element={<InvitedUserSignup />} />
-        <Route path="/email-confirmation" element={<EmailConfirmation />} />
-        
-        {/* Legacy invitation URL redirect handler */}
-        <Route path="/invite" element={<InvitationRedirectHandler />} />
-        <Route path="/invitation" element={<InvitationRedirectHandler />} />
-        
-        {/* Protected routes */}
-        <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
-        <Route path="/legacy-dashboard" element={<ProtectedRoute><LegacyDashboard /></ProtectedRoute>} />
-        <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
-        <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
-        <Route path="/learn" element={<ProtectedRoute><Learn /></ProtectedRoute>} />
-        <Route path="/earn" element={<ProtectedRoute><Earn /></ProtectedRoute>} />
-        <Route path="/connect" element={<ProtectedRoute><Connect /></ProtectedRoute>} />
-        <Route path="/mondai" element={<ProtectedRoute><MonDAI /></ProtectedRoute>} />
-        
-        {/* Qube routes */}
-        <Route path="/agent-qube" element={<ProtectedRoute><AgentQube /></ProtectedRoute>} />
-        <Route path="/data-qube" element={<ProtectedRoute><DataQube /></ProtectedRoute>} />
-        <Route path="/tool-qube" element={<ProtectedRoute><ToolQube /></ProtectedRoute>} />
-        
-        {/* Admin routes */}
-        <Route path="/admin/invitations" element={<ProtectedRoute><InvitationsAdmin /></ProtectedRoute>} />
-        
-        {/* 404 */}
-        <Route path="*" element={<NotFound />} />
-      </Routes>
-    </Router>
+    <Routes>
+      {/* Public routes */}
+      <Route path="/" element={<SplashPage />} />
+      <Route path="/privacy-policy" element={<PrivacyPolicy />} />
+      
+      {/* Auth routes */}
+      <Route path="/signin" element={<AuthLayout title="Welcome back"><SignIn /></AuthLayout>} />
+      <Route path="/signup" element={<AuthLayout title="Create account"><SignUp /></AuthLayout>} />
+      <Route path="/invited-signup" element={<InvitedUserSignup />} />
+      <Route path="/email-confirmation" element={<EmailConfirmation />} />
+      
+      {/* Legacy invitation URL redirect handler */}
+      <Route path="/invite" element={<InvitationRedirectHandler />} />
+      <Route path="/invitation" element={<InvitationRedirectHandler />} />
+      
+      {/* Protected routes */}
+      <Route path="/dashboard" element={<ProtectedRoute><Dashboard /></ProtectedRoute>} />
+      <Route path="/legacy-dashboard" element={<ProtectedRoute><LegacyDashboard /></ProtectedRoute>} />
+      <Route path="/profile" element={<ProtectedRoute><Profile /></ProtectedRoute>} />
+      <Route path="/settings" element={<ProtectedRoute><Settings /></ProtectedRoute>} />
+      <Route path="/learn" element={<ProtectedRoute><Learn /></ProtectedRoute>} />
+      <Route path="/earn" element={<ProtectedRoute><Earn /></ProtectedRoute>} />
+      <Route path="/connect" element={<ProtectedRoute><Connect /></ProtectedRoute>} />
+      <Route path="/mondai" element={<ProtectedRoute><MonDAI /></ProtectedRoute>} />
+      
+      {/* Qube routes */}
+      <Route path="/agent-qube" element={<ProtectedRoute><AgentQube /></ProtectedRoute>} />
+      <Route path="/data-qube" element={<ProtectedRoute><DataQube /></ProtectedRoute>} />
+      <Route path="/tool-qube" element={<ProtectedRoute><ToolQube /></ProtectedRoute>} />
+      
+      {/* Admin routes */}
+      <Route path="/admin/invitations" element={<ProtectedRoute><InvitationsAdmin /></ProtectedRoute>} />
+      
+      {/* 404 */}
+      <Route path="*" element={<NotFound />} />
+    </Routes>
   );
 };
