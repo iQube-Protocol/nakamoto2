@@ -6,10 +6,13 @@ ALTER TABLE public.invited_users ENABLE ROW LEVEL SECURITY;
 CREATE OR REPLACE FUNCTION public.is_admin_user()
 RETURNS BOOLEAN AS $$
 BEGIN
-  -- Check if the current user's email contains 'admin' or 'nakamoto'
+  -- Enhanced admin check - allow multiple admin patterns
   RETURN (
     SELECT CASE 
-      WHEN auth.jwt() ->> 'email' LIKE '%admin%' OR auth.jwt() ->> 'email' LIKE '%nakamoto%' 
+      WHEN auth.jwt() ->> 'email' LIKE '%admin%' OR 
+           auth.jwt() ->> 'email' LIKE '%nakamoto%' OR
+           auth.jwt() ->> 'email' = 'nakamoto@metame.com' OR
+           auth.jwt() ->> 'email' LIKE '%@metame.com'
       THEN true 
       ELSE false 
     END
