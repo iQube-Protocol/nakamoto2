@@ -24,10 +24,10 @@ const handler = async (req: Request): Promise<Response> => {
       timestamp: new Date().toISOString()
     });
 
-    // If no token, redirect to main app
+    // If no token, redirect to main app (current site)
     if (!token) {
       console.log('No token found, redirecting to main app');
-      const redirectUrl = 'https://preview--nakamoto2.lovable.app/';
+      const redirectUrl = 'https://preview--aigent-nakamoto.lovable.app/';
       return new Response(null, {
         status: 302,
         headers: {
@@ -37,8 +37,8 @@ const handler = async (req: Request): Promise<Response> => {
       });
     }
 
-    // Construct the new invitation URL with the token
-    const newInvitationUrl = `https://preview--nakamoto2.lovable.app/invited-signup?token=${token}`;
+    // Construct the new invitation URL with the token (redirect to current site)
+    const newInvitationUrl = `https://preview--aigent-nakamoto.lovable.app/invited-signup?token=${token}`;
     
     console.log('Redirecting invitation:', {
       from: req.url,
@@ -59,8 +59,8 @@ const handler = async (req: Request): Promise<Response> => {
   } catch (error: any) {
     console.error('Error in invitation redirect:', error);
     
-    // In case of error, still try to redirect to the main app
-    const fallbackUrl = 'https://preview--nakamoto2.lovable.app/';
+    // In case of error, still try to redirect to the main app (current site)
+    const fallbackUrl = 'https://preview--aigent-nakamoto.lovable.app/';
     return new Response(null, {
       status: 302,
       headers: {
