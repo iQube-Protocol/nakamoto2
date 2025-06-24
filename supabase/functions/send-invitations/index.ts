@@ -220,7 +220,8 @@ const handler = async (req: Request): Promise<Response> => {
           console.warn(`Error incrementing send attempts for ${invitation.email}:`, incrementErr);
         }
 
-        const invitationUrl = `https://preview--nakamoto2.lovable.app/invited-signup?token=${invitation.invitation_token}`;
+        // Updated to use current domain instead of hardcoded old one
+        const invitationUrl = `https://preview--aigent-nakamoto.lovable.app/invited-signup?token=${invitation.invitation_token}`;
         
         const emailData = {
           Messages: [{
