@@ -228,12 +228,6 @@ class InvitationService {
     return data;
   }
 
-  generateInvitationUrl(token: string): string {
-    // Point to the Supabase edge function which will handle the redirect
-    const supabaseUrl = 'https://ysykvckvggaqykhhntyo.supabase.co';
-    return `${supabaseUrl}/functions/v1/invitation-redirect?token=${token}`;
-  }
-
   async getUserDetails(category: string, searchTerm?: string): Promise<UserDetail[]> {
     let query = supabase
       .from('invited_users')
@@ -457,15 +451,9 @@ class InvitationService {
         })
         .eq('batch_id', batchId);
 
-      // Call the edge function with enhanced data including proper invitation URLs
+      // Call the edge function
       const { data, error } = await supabase.functions.invoke('send-invitations', {
-        body: { 
-          emails, 
-          testMode, 
-          batchId,
-          // Pass the service for URL generation
-          generateInvitationUrl: (token: string) => this.generateInvitationUrl(token)
-        }
+        body: { emails, testMode, batchId }
       });
 
       if (error) {

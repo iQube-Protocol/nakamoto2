@@ -6,21 +6,8 @@ import InvitationManager from '@/components/admin/InvitationManager';
 const InvitationsPage = () => {
   const { user, isGuest } = useAuth();
 
-  // Enhanced admin check - allow nakamoto.metame.com and other admin patterns
-  const isAdmin = user?.email && (
-    user.email.includes('nakamoto') || 
-    user.email.includes('admin') ||
-    user.email === 'nakamoto@metame.com' ||
-    // Add more specific admin emails here as needed
-    user.email.endsWith('@metame.com')
-  );
-
-  console.log('Admin access check:', {
-    userEmail: user?.email,
-    isAdmin,
-    isGuest,
-    timestamp: new Date().toISOString()
-  });
+  // Simple admin check - you may want to implement proper role-based access
+  const isAdmin = user?.email?.includes('admin') || user?.email?.includes('nakamoto');
 
   if (isGuest || !user) {
     return (
@@ -38,10 +25,7 @@ const InvitationsPage = () => {
       <div className="container mx-auto p-6">
         <div className="text-center">
           <h1 className="text-2xl font-bold mb-4">Access Denied</h1>
-          <p className="mb-4">This page is restricted to administrators.</p>
-          <p className="text-sm text-gray-600">
-            Current user: {user.email}
-          </p>
+          <p>This page is restricted to administrators.</p>
         </div>
       </div>
     );
