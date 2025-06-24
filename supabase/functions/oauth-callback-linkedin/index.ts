@@ -1,4 +1,3 @@
-
 import { serve } from "https://deno.land/std@0.177.0/http/server.ts";
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.0';
 import { corsHeaders } from "../_shared/cors.ts";
@@ -27,7 +26,7 @@ serve(async (req) => {
         hasClientSecret: !!LINKEDIN_CLIENT_SECRET
       });
       
-      const clientOrigin = 'https://preview--nakamoto2.lovable.app';
+      const clientOrigin = 'https://nakamoto.aigentz.me';
       
       return new Response(
         `<html><body><h1>Configuration Error</h1><p>LinkedIn service not properly configured. Please contact support.</p><script>setTimeout(() => window.location.href = '${clientOrigin}/settings?tab=connections&error=config', 3000)</script></body></html>`,
@@ -52,7 +51,7 @@ serve(async (req) => {
       state 
     });
     
-    const clientOrigin = 'https://preview--nakamoto2.lovable.app';
+    const clientOrigin = 'https://nakamoto.aigentz.me';
     console.log("Client origin for redirects:", clientOrigin);
     
     // Handle LinkedIn OAuth errors
@@ -318,7 +317,7 @@ serve(async (req) => {
     console.error("=== Unexpected error ===", error);
     console.error("Error stack:", error.stack);
     
-    const clientOrigin = 'https://preview--nakamoto2.lovable.app';
+    const clientOrigin = 'https://nakamoto.aigentz.me';
     
     return new Response(
       `<html><body><h1>Server Error</h1><p>An unexpected error occurred. Please try again.</p><script>setTimeout(() => window.location.href = '${clientOrigin}/oauth-callback?service=linkedin&error=server_error', 3000)</script></body></html>`,
