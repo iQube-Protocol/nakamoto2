@@ -38,7 +38,6 @@ const InvitationRedirectHandler = () => {
   const urlParams = new URLSearchParams(window.location.search);
   const token = urlParams.get('token');
   
-  // Log the redirect attempt
   console.log('InvitationRedirectHandler: Handling old URL redirect', {
     currentUrl: window.location.href,
     token: token?.substring(0, 8) + '...',
@@ -46,12 +45,10 @@ const InvitationRedirectHandler = () => {
   });
   
   if (token) {
-    // Redirect to the new invitation signup URL
     const newUrl = `/invited-signup?token=${token}`;
     return <Navigate to={newUrl} replace />;
   }
   
-  // If no token, redirect to home
   return <Navigate to="/" replace />;
 };
 
@@ -64,6 +61,8 @@ export const AppRouter = () => {
     return <SplashScreen />;
   }
 
+  console.log('AppRouter: About to render routes');
+
   return (
     <Routes>
       {/* Public routes */}
@@ -73,7 +72,18 @@ export const AppRouter = () => {
       {/* Auth routes - these should work without authentication */}
       <Route path="/signin" element={<AuthLayout title="Welcome back"><SignIn /></AuthLayout>} />
       <Route path="/signup" element={<AuthLayout title="Create account"><SignUp /></AuthLayout>} />
-      <Route path="/invited-signup" element={<InvitedUserSignup />} />
+      
+      {/* SIMPLIFIED INVITATION SIGNUP - NO AUTH REQUIRED */}
+      <Route 
+        path="/invited-signup" 
+        element={
+          <div>
+            <h1>Route matched for /invited-signup</h1>
+            <InvitedUserSignup />
+          </div>
+        } 
+      />
+      
       <Route path="/email-confirmation" element={<EmailConfirmation />} />
       
       {/* Legacy invitation URL redirect handler */}
