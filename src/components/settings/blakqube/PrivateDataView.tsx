@@ -14,6 +14,14 @@ const PrivateDataView = ({
   onEdit,
   getSourceIcon
 }: PrivateDataViewProps) => {
+  console.log('PrivateDataView: Rendering with data:', {
+    keys: Object.keys(privateData),
+    first_name: privateData['First-Name'],
+    last_name: privateData['Last-Name'],
+    email: privateData['Email'],
+    total_fields: Object.keys(privateData).length
+  });
+
   const formatDisplayValue = (key: string, value: string | string[]) => {
     if (key === 'Total-Invested' && typeof value === 'string' && value) {
       // Format as dollar amount if not already formatted
@@ -24,9 +32,23 @@ const PrivateDataView = ({
     }
     return Array.isArray(value) ? value.join(", ") : value;
   };
+
+  // Filter out empty values for display
+  const filteredData = Object.entries(privateData).filter(([key, value]) => {
+    if (Array.isArray(value)) {
+      return value.length > 0;
+    }
+    return value !== null && value !== undefined && value !== '';
+  });
+
+  console.log('PrivateDataView: Filtered data for display:', {
+    original_count: Object.keys(privateData).length,
+    filtered_count: filteredData.length,
+    filtered_keys: filteredData.map(([key]) => key)
+  });
   return <>
       <div className="max-h-[220px] overflow-y-auto pr-2 space-y-1.5">
-        {Object.entries(privateData).map(([key, value]) => <div key={key} className="flex justify-between items-center border-b pb-1">
+        {filteredData.map(([key, value]) => <div key={key} className="flex justify-between items-center border-b pb-1">
             <span className="font-medium text-white text-sm">
               {key}
             </span>
