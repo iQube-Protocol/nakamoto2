@@ -320,7 +320,7 @@ class InvitationService {
         .select('user_id')
         .limit(1);
 
-      // Alternative approach: query persona tables by email directly
+      // Query persona tables by email directly
       if (invitation.persona_type === 'knyt') {
         const { data: knytData, error: knytError } = await supabase
           .from('knyt_personas')
@@ -328,20 +328,16 @@ class InvitationService {
           .eq('Email', invitation.email)
           .maybeSingle();
 
-        console.log('KNYT persona query result:', { knytData, knytError });
+        console.log('KNYT persona query result for', invitation.email, ':', { 
+          found: !!knytData, 
+          error: knytError?.message,
+          firstName: knytData?.['First-Name'],
+          lastName: knytData?.['Last-Name']
+        });
         
         if (!knytError && knytData) {
           userAuthId = knytData.user_id;
           personaData = knytData;
-          console.log('Found KNYT persona data:', {
-            user_id: knytData.user_id,
-            email: knytData.Email,
-            first_name: knytData['First-Name'],
-            last_name: knytData['Last-Name'],
-            data_keys: Object.keys(knytData)
-          });
-        } else {
-          console.log('No KNYT persona found for email:', invitation.email);
         }
       } else {
         const { data: qryptoData, error: qryptoError } = await supabase
@@ -350,20 +346,16 @@ class InvitationService {
           .eq('Email', invitation.email)
           .maybeSingle();
 
-        console.log('Qrypto persona query result:', { qryptoData, qryptoError });
+        console.log('Qrypto persona query result for', invitation.email, ':', { 
+          found: !!qryptoData, 
+          error: qryptoError?.message,
+          firstName: qryptoData?.['First-Name'],
+          lastName: qryptoData?.['Last-Name']
+        });
         
         if (!qryptoError && qryptoData) {
           userAuthId = qryptoData.user_id;
           personaData = qryptoData;
-          console.log('Found Qrypto persona data:', {
-            user_id: qryptoData.user_id,
-            email: qryptoData.Email,
-            first_name: qryptoData['First-Name'],
-            last_name: qryptoData['Last-Name'],
-            data_keys: Object.keys(qryptoData)
-          });
-        } else {
-          console.log('No Qrypto persona found for email:', invitation.email);
         }
       }
     } else {

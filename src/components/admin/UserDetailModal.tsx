@@ -163,7 +163,11 @@ const UserDetailModal = ({ open, onClose, userId }: UserDetailModalProps) => {
               <User className="h-5 w-5" />
               <span>
                 {userDetail ? 
-                  `${userDetail.persona_data?.['First-Name'] || ''} ${userDetail.persona_data?.['Last-Name'] || ''}`.trim() || userDetail.email
+                  // Show current persona name if available, otherwise invitation name, otherwise email
+                  (userDetail.blak_qube_data ? 
+                    `${userDetail.blak_qube_data['First-Name'] || ''} ${userDetail.blak_qube_data['Last-Name'] || ''}`.trim() :
+                    `${userDetail.persona_data?.['First-Name'] || ''} ${userDetail.persona_data?.['Last-Name'] || ''}`.trim()
+                  ) || userDetail.email
                   : 'Loading...'
                 }
               </span>
