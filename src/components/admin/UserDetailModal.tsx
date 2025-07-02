@@ -24,22 +24,12 @@ const UserDetailModal = ({ open, onClose, userId }: UserDetailModalProps) => {
   const loadUserDetail = async () => {
     if (!userId) return;
     
-    console.log('UserDetailModal: Loading user detail for userId:', userId);
     setIsLoading(true);
     try {
       const detail = await invitationService.getUserDetailWithBlakQube(userId);
-      console.log('UserDetailModal: Received user detail:', {
-        email: detail?.email,
-        persona_type: detail?.persona_type,
-        signup_completed: detail?.signup_completed,
-        has_invitation_data: !!detail?.persona_data,
-        has_current_data: !!detail?.blak_qube_data,
-        invitation_name: detail?.persona_data ? `${detail.persona_data['First-Name'] || ''} ${detail.persona_data['Last-Name'] || ''}`.trim() : 'No invitation name',
-        current_name: detail?.blak_qube_data ? `${detail.blak_qube_data['First-Name'] || ''} ${detail.blak_qube_data['Last-Name'] || ''}`.trim() : 'No current name'
-      });
       setUserDetail(detail);
     } catch (error) {
-      console.error('UserDetailModal: Error loading user detail:', error);
+      console.error('Error loading user detail:', error);
       toast.error('Failed to load user details');
     } finally {
       setIsLoading(false);

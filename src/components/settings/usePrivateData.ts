@@ -36,18 +36,11 @@ export const usePrivateData = (selectedIQube: MetaQube) => {
     }
 
     try {
-      console.log('usePrivateData: Loading persona data for user:', user.email, 'persona type:', personaType);
+      console.log('Loading persona data for type:', personaType);
       const personaData = await blakQubeService.getPersonaData(personaType);
       
       if (personaData) {
-        console.log('usePrivateData: Persona data loaded:', {
-          user_id: personaData.user_id,
-          email: personaData.Email,
-          first_name: personaData['First-Name'],
-          last_name: personaData['Last-Name'],
-          data_keys: Object.keys(personaData)
-        });
-        
+        console.log('Persona data loaded:', personaData);
         // Convert persona data to privateData format
         let formattedData: PrivateData;
         if (personaType === 'knyt') {
@@ -55,17 +48,9 @@ export const usePrivateData = (selectedIQube: MetaQube) => {
         } else {
           formattedData = qryptoPersonaToPrivateData(personaData as any);
         }
-        
-        console.log('usePrivateData: Formatted private data:', {
-          formatted_keys: Object.keys(formattedData),
-          first_name: formattedData['First-Name'],
-          last_name: formattedData['Last-Name'],
-          email: formattedData['Email']
-        });
-        
         setPrivateData(formattedData);
       } else {
-        console.log('usePrivateData: No persona data found, using defaults for type:', personaType);
+        console.log('No persona data found, using defaults for type:', personaType);
         // Set default empty data if no persona exists
         let defaultData;
         if (personaType === 'knyt') {
@@ -79,7 +64,7 @@ export const usePrivateData = (selectedIQube: MetaQube) => {
         }
       }
     } catch (error) {
-      console.error('usePrivateData: Error loading persona data:', error);
+      console.error('Error loading persona data:', error);
       // Fallback to empty data
       let defaultData;
       if (personaType === 'knyt') {

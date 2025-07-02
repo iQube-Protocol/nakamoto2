@@ -286,8 +286,6 @@ class InvitationService {
   }
 
   async getUserDetailWithBlakQube(userId: string): Promise<UserDetail | null> {
-    console.log('getUserDetailWithBlakQube called for userId:', userId);
-    
     // First get the invitation data
     const { data: invitation, error: invError } = await supabase
       .from('invited_users')
@@ -300,13 +298,6 @@ class InvitationService {
       return null;
     }
 
-    console.log('Invitation data found:', {
-      email: invitation.email,
-      persona_type: invitation.persona_type,
-      signup_completed: invitation.signup_completed,
-      invitation_data_keys: Object.keys(invitation.persona_data || {})
-    });
-
     let personaData = null;
     let userAuthId = null;
 
@@ -314,79 +305,40 @@ class InvitationService {
     if (invitation.signup_completed) {
       console.log('User has signed up, fetching current persona data for:', invitation.email, 'type:', invitation.persona_type);
       
-      // First try to find the user by email in auth.users to get their user_id
-      const { data: authUsers, error: authError } = await supabase
-        .from('user_connections') // Use a table that has user_id to find users by email
-        .select('user_id')
-        .limit(1);
-
-      // Alternative approach: query persona tables by email directly
+      // Try to find user in the appropriate persona table based on invitation type
       if (invitation.persona_type === 'knyt') {
-        const { data: knytData, error: knytError } = await supabase
+        const { data: knyvData, error: knytError } = await supabase
           .from('knyt_personas')
-          .select('*')
+          .select('user_id, *')
           .eq('Email', invitation.email)
           .maybeSingle();
 
-        console.log('KNYT persona query result:', { knytData, knytError });
-        
-        if (!knytError && knytData) {
-          userAuthId = knytData.user_id;
-          personaData = knytData;
-          console.log('Found KNYT persona data:', {
-            user_id: knytData.user_id,
-            email: knytData.Email,
-            first_name: knytData['First-Name'],
-            last_name: knytData['Last-Name'],
-            data_keys: Object.keys(knytData)
-          });
-        } else {
-          console.log('No KNYT persona found for email:', invitation.email);
+        if (!knytError && knyvData) {
+          userAuthId = knyvData.user_id;
+          personaData = knyvData;
+          console.log('Found KNYT persona data:', knyvData);
         }
       } else {
         const { data: qryptoData, error: qryptoError } = await supabase
           .from('qrypto_personas')
-          .select('*')
+          .select('user_id, *')
           .eq('Email', invitation.email)
           .maybeSingle();
 
-        console.log('Qrypto persona query result:', { qryptoData, qryptoError });
-        
         if (!qryptoError && qryptoData) {
           userAuthId = qryptoData.user_id;
           personaData = qryptoData;
-          console.log('Found Qrypto persona data:', {
-            user_id: qryptoData.user_id,
-            email: qryptoData.Email,
-            first_name: qryptoData['First-Name'],
-            last_name: qryptoData['Last-Name'],
-            data_keys: Object.keys(qryptoData)
-          });
-        } else {
-          console.log('No Qrypto persona found for email:', invitation.email);
+          console.log('Found Qrypto persona data:', qryptoData);
         }
       }
-    } else {
-      console.log('User has not signed up yet, only showing invitation data');
     }
 
-    const result = {
+    return {
       ...invitation,
       persona_data: invitation.persona_data as Record<string, any>,
       blak_qube_data: personaData, // This is now the current persona data, not legacy blak_qube
       user_id: userAuthId
     };
-
-    console.log('Returning user detail:', {
-      email: result.email,
-      persona_type: result.persona_type,
-      has_invitation_data: !!result.persona_data,
-      has_current_persona_data: !!result.blak_qube_data,
-      invitation_name: `${result.persona_data?.['First-Name'] || ''} ${result.persona_data?.['Last-Name'] || ''}`.trim(),
-      current_name: result.blak_qube_data ? `${result.blak_qube_data['First-Name'] || ''} ${result.blak_qube_data['Last-Name'] || ''}`.trim() : 'No current data'
-    });
-
-    return result;
   }
 
   async getPendingEmailSend(limit?: number): Promise<PendingInvitation[]> {
