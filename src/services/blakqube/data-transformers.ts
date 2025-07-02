@@ -107,7 +107,16 @@ export const privateDataToKNYTPersona = (data: PrivateData): Partial<KNYTPersona
   };
 };
 
-// ... keep existing code (createDefaultKNYTPersona function)
+// Function to automatically update OM Tier Status when Total-Invested changes
+export const updateOMTierStatus = (personaData: Partial<KNYTPersona>): Partial<KNYTPersona> => {
+  if (personaData["Total-Invested"]) {
+    const calculatedTier = calculateOMTierStatus(personaData["Total-Invested"]);
+    if (calculatedTier) {
+      personaData["OM-Tier-Status"] = calculatedTier;
+    }
+  }
+  return personaData;
+};
 
 export const createDefaultKNYTPersona = (userEmail?: string | null): Partial<KNYTPersona> => {
   return {

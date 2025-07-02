@@ -2,6 +2,7 @@
 import { supabase } from '@/integrations/supabase/client';
 import { KNYTPersona, QryptoPersona, BlakQube } from '@/lib/types';
 import { PrivateData } from './blakqube/types';
+import { personaDataSync } from './persona-data-sync';
 import { 
   privateDataToKNYTPersona, 
   privateDataToQryptoPersona,
@@ -86,15 +87,23 @@ export const blakQubeService = {
       
       console.log('Saving manual persona data for user:', user.user.id, 'type:', personaType, data);
       
+      let success: boolean;
       if (personaType === 'knyt') {
         const personaData = privateDataToKNYTPersona(data);
         console.log('Converted KNYT persona data for save:', personaData);
-        return await saveKNYTPersonaToDB(user.user.id, personaData);
+        success = await saveKNYTPersonaToDB(user.user.id, personaData);
       } else {
         const personaData = privateDataToQryptoPersona(data);
         console.log('Converted Qrypto persona data for save:', personaData);
-        return await saveQryptoPersonaToDB(user.user.id, personaData);
+        success = await saveQryptoPersonaToDB(user.user.id, personaData);
       }
+      
+      // Notify other components of the data update
+      if (success) {
+        personaDataSync.notifyDataUpdated();
+      }
+      
+      return success;
     } catch (error) {
       console.error('Error in saveManualPersonaData:', error);
       return false;
@@ -191,11 +200,19 @@ export const blakQubeService = {
       
       console.log('Updated persona data:', newPersona);
       
+      let success: boolean;
       if (personaType === 'knyt') {
-        return await saveKNYTPersonaToDB(user.user.id, newPersona as Partial<KNYTPersona>);
+        success = await saveKNYTPersonaToDB(user.user.id, newPersona as Partial<KNYTPersona>);
       } else {
-        return await saveQryptoPersonaToDB(user.user.id, newPersona as Partial<QryptoPersona>);
+        success = await saveQryptoPersonaToDB(user.user.id, newPersona as Partial<QryptoPersona>);
       }
+      
+      // Notify other components of the data update
+      if (success) {
+        personaDataSync.notifyDataUpdated();
+      }
+      
+      return success;
     } catch (error) {
       console.error('Error in updatePersonaFromConnections:', error);
       return false;

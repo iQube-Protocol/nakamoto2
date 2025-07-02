@@ -9,6 +9,7 @@ import { User, Mail, Calendar, Database, Settings, RefreshCw } from 'lucide-reac
 import { invitationService, type UserDetail } from '@/services/invitation-service';
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
+import { personaDataSync } from '@/services/persona-data-sync';
 
 interface UserDetailModalProps {
   open: boolean;
@@ -42,6 +43,18 @@ const UserDetailModal = ({ open, onClose, userId }: UserDetailModalProps) => {
       setUserDetail(null);
     }
   }, [open, userId]);
+
+  // Subscribe to persona data updates for real-time sync
+  useEffect(() => {
+    if (!open || !userId || !userDetail?.signup_completed) return;
+
+    const unsubscribe = personaDataSync.subscribe(() => {
+      console.log('UserDetailModal: Received persona data update notification, refreshing...');
+      loadUserDetail();
+    });
+
+    return unsubscribe;
+  }, [open, userId, userDetail?.signup_completed]);
 
   if (!userDetail && !isLoading) {
     return null;
@@ -108,6 +121,17 @@ const UserDetailModal = ({ open, onClose, userId }: UserDetailModalProps) => {
                         </Badge>
                       ))}
                     </div>
+                  ) : key === 'Total-Invested' && typeof value === 'string' && value ? (
+                    // Format investment amount as currency if not already formatted
+                    <span className="break-words">
+                      {(() => {
+                        const numericValue = value.replace(/[$,]/g, '');
+                        if (!isNaN(Number(numericValue)) && numericValue !== '') {
+                          return `$${Number(numericValue).toLocaleString()}`;
+                        }
+                        return String(value);
+                      })()}
+                    </span>
                   ) : (
                     <span className="break-words">{String(value)}</span>
                   )}
@@ -205,24 +229,24 @@ const UserDetailModal = ({ open, onClose, userId }: UserDetailModalProps) => {
 
               <Tabs defaultValue="persona-data" className="w-full">
                 <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="persona-data">Original Persona Data</TabsTrigger>
-                  <TabsTrigger value="blak-qube" disabled={!userDetail.blak_qube_data}>
-                    BlakQube Data {!userDetail.blak_qube_data && '(Not Available)'}
+                  <TabsTrigger value="persona-data">Original Invitation Data</TabsTrigger>
+                  <TabsTrigger value="current-persona" disabled={!userDetail.blak_qube_data}>
+                    Current Persona Data {!userDetail.blak_qube_data && '(Not Available)'}
                   </TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="persona-data" className="space-y-4">
                   {renderDataSection(
-                    'Persona Data from Invitation',
+                    'Original Data from Invitation',
                     userDetail.persona_data,
                     <Database className="h-4 w-4" />
                   )}
                 </TabsContent>
 
-                <TabsContent value="blak-qube" className="space-y-4">
+                <TabsContent value="current-persona" className="space-y-4">
                   {userDetail.blak_qube_data ? (
                     renderDataSection(
-                      'BlakQube Updated Data',
+                      `Current ${userDetail.persona_type === 'knyt' ? 'KNYT' : 'Qrypto'} Persona Data`,
                       userDetail.blak_qube_data,
                       <Settings className="h-4 w-4" />
                     )
@@ -231,11 +255,11 @@ const UserDetailModal = ({ open, onClose, userId }: UserDetailModalProps) => {
                       <CardContent className="flex items-center justify-center py-12">
                         <div className="text-center">
                           <Settings className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                          <h3 className="text-lg font-medium text-gray-900 mb-2">No BlakQube Data</h3>
+                          <h3 className="text-lg font-medium text-gray-900 mb-2">No Current Persona Data</h3>
                           <p className="text-gray-500">
                             {userDetail.signup_completed 
-                              ? "User hasn't updated their BlakQube data yet."
-                              : "User needs to sign up first before BlakQube data is available."
+                              ? "User hasn't updated their persona data yet."
+                              : "User needs to sign up first before persona data is available."
                             }
                           </p>
                         </div>

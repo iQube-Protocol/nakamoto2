@@ -14,6 +14,7 @@ import {
   createDefaultBlakQube 
 } from '@/services/blakqube/data-transformers';
 import { getPersonaType } from '@/services/blakqube/database-operations';
+import { personaDataSync } from '@/services/persona-data-sync';
 
 interface PrivateData {
   [key: string]: string | string[];
@@ -118,6 +119,9 @@ export const usePrivateData = (selectedIQube: MetaQube) => {
         
         // Trigger a final refresh to ensure data consistency
         await loadPersonaData();
+        
+        // Notify all components listening for persona data updates
+        personaDataSync.notifyDataUpdated();
       } else {
         console.error('Failed to save private data to database');
         toast.error(`Failed to save ${personaType === 'knyt' ? 'KNYT' : 'Qrypto'} Persona data. Please try again.`);

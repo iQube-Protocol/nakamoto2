@@ -298,30 +298,37 @@ class InvitationService {
       return null;
     }
 
-    let blakQubeData = null;
+    let personaData = null;
     let userAuthId = null;
 
-    // If user has signed up, try to get their BlakQube data
+    // If user has signed up, try to get their current persona data
     if (invitation.signup_completed) {
-      // Find the user's auth ID by email
-      const { data: userData, error: userError } = await supabase
-        .from('knyt_personas')
-        .select('user_id, *')
-        .eq('Email', invitation.email)
-        .single();
+      console.log('User has signed up, fetching current persona data for:', invitation.email, 'type:', invitation.persona_type);
+      
+      // Try to find user in the appropriate persona table based on invitation type
+      if (invitation.persona_type === 'knyt') {
+        const { data: knyvData, error: knytError } = await supabase
+          .from('knyt_personas')
+          .select('user_id, *')
+          .eq('Email', invitation.email)
+          .maybeSingle();
 
-      if (!userError && userData) {
-        userAuthId = userData.user_id;
-        
-        // Get BlakQube data
-        const { data: blakData, error: blakError } = await supabase
-          .from('blak_qubes')
-          .select('*')
-          .eq('user_id', userData.user_id)
-          .single();
+        if (!knytError && knyvData) {
+          userAuthId = knyvData.user_id;
+          personaData = knyvData;
+          console.log('Found KNYT persona data:', knyvData);
+        }
+      } else {
+        const { data: qryptoData, error: qryptoError } = await supabase
+          .from('qrypto_personas')
+          .select('user_id, *')
+          .eq('Email', invitation.email)
+          .maybeSingle();
 
-        if (!blakError && blakData) {
-          blakQubeData = blakData;
+        if (!qryptoError && qryptoData) {
+          userAuthId = qryptoData.user_id;
+          personaData = qryptoData;
+          console.log('Found Qrypto persona data:', qryptoData);
         }
       }
     }
@@ -329,7 +336,7 @@ class InvitationService {
     return {
       ...invitation,
       persona_data: invitation.persona_data as Record<string, any>,
-      blak_qube_data: blakQubeData,
+      blak_qube_data: personaData, // This is now the current persona data, not legacy blak_qube
       user_id: userAuthId
     };
   }
