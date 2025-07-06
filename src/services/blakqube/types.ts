@@ -35,8 +35,19 @@ export interface LinkedInConnectionData {
   email?: string;
 }
 
+export interface TokenBalanceData {
+  balance: string;
+  formatted: string;
+  lastUpdated: number;
+  transactionHash?: string;
+}
+
 export interface WalletConnectionData {
   address?: string;
+  signature?: string;
+  message?: string;
+  signedAt?: string;
+  knytTokenBalance?: TokenBalanceData;
 }
 
 export interface ThirdWebConnectionData {

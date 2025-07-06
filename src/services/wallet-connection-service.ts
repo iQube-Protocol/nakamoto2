@@ -207,12 +207,20 @@ export const walletConnectionService = {
         .eq('service', 'wallet')
         .single();
 
-      if (!connections || !connections.connection_data?.address) {
+      if (!connections || !connections.connection_data) {
         console.log('No wallet connection found');
         return false;
       }
 
-      const walletAddress = connections.connection_data.address;
+      // Type the connection data properly
+      const connectionData = connections.connection_data as Record<string, any>;
+      const walletAddress = connectionData?.address;
+
+      if (!walletAddress) {
+        console.log('No wallet address found in connection data');
+        return false;
+      }
+
       console.log('Refreshing KNYT balance for:', walletAddress);
 
       // Get updated token balance
@@ -221,7 +229,7 @@ export const walletConnectionService = {
 
       // Update connection data with new balance
       const updatedConnectionData = {
-        ...connections.connection_data,
+        ...connectionData,
         knytTokenBalance: {
           balance: tokenBalance.balance,
           formatted: tokenBalance.formatted,
@@ -278,6 +286,7 @@ declare global {
     ethereum?: {
       request: (options: { method: string; params?: any[] }) => Promise<any>;
       on: (event: string, callback: (...args: any[]) => void) => void;
+      removeAllListeners?: (event: string) => void;
     };
   }
 }
