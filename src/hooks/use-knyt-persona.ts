@@ -1,5 +1,6 @@
 
 import { useState, useEffect, useCallback } from 'react';
+import { walletConnectionService } from '@/services/wallet-connection-service';
 
 interface KNYTPersonaState {
   knytPersonaActivated: boolean;
@@ -34,6 +35,12 @@ export const useKNYTPersona = (): KNYTPersonaState => {
       // Dispatch events for persona context updates
       if (knytPersonaActivated) {
         window.dispatchEvent(new CustomEvent('knytPersonaActivated'));
+        
+        // Trigger KNYT balance refresh when persona is activated
+        console.log('KNYT Persona activated, refreshing token balance...');
+        walletConnectionService.refreshKnytBalance().catch(error => {
+          console.error('Error refreshing KNYT balance on activation:', error);
+        });
       } else {
         window.dispatchEvent(new CustomEvent('knytPersonaDeactivated'));
       }

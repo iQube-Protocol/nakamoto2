@@ -1,6 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { knytTokenService } from './knyt-token-service';
 
 // Track wallet connection state to prevent duplicates
 let isWalletConnecting = false;
@@ -110,6 +111,10 @@ export const walletConnectionService = {
         
         console.log('Signature received');
         
+        // Get KNYT token balance
+        console.log('Fetching KNYT token balance...');
+        const tokenBalance = await knytTokenService.getTokenBalance(walletAddress);
+        
         // Get user
         const { data: { user } } = await supabase.auth.getUser();
         if (!user) {
@@ -117,20 +122,28 @@ export const walletConnectionService = {
           return false;
         }
 
-        // Save wallet connection to database with signature
+        // Save wallet connection to database with signature and token balance
         console.log('Saving wallet connection to database...');
+        const connectionData = { 
+          address: walletAddress,
+          signature: signature,
+          message: message,
+          signedAt: new Date().toISOString(),
+          knytTokenBalance: tokenBalance ? {
+            balance: tokenBalance.balance,
+            formatted: tokenBalance.formatted,
+            lastUpdated: tokenBalance.timestamp,
+            transactionHash: tokenBalance.transactionHash
+          } : null
+        };
+
         const { error: connectionError } = await supabase
           .from('user_connections')
           .upsert({
             user_id: user.id,
             service: 'wallet',
             connected_at: new Date().toISOString(),
-            connection_data: { 
-              address: walletAddress,
-              signature: signature,
-              message: message,
-              signedAt: new Date().toISOString()
-            }
+            connection_data: connectionData
           });
         
         if (connectionError) {
@@ -140,7 +153,14 @@ export const walletConnectionService = {
         }
 
         console.log('Wallet connection saved successfully');
-        toast.success('Wallet connected and signature verified successfully!');
+        
+        // Show success message with token balance if available
+        if (tokenBalance) {
+          toast.success(`Wallet connected successfully! KNYT Balance: ${tokenBalance.formatted}`);
+        } else {
+          toast.success('Wallet connected and signature verified successfully!');
+        }
+        
         return true;
         
       } catch (signError: any) {
@@ -168,6 +188,68 @@ export const walletConnectionService = {
         clearTimeout(connectionTimeout);
         connectionTimeout = null;
       }
+    }
+  },
+
+  /**
+   * Refresh KNYT token balance for connected wallet
+   */
+  refreshKnytBalance: async (): Promise<boolean> => {
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return false;
+
+      // Get current wallet connection
+      const { data: connections } = await supabase
+        .from('user_connections')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('service', 'wallet')
+        .single();
+
+      if (!connections || !connections.connection_data?.address) {
+        console.log('No wallet connection found');
+        return false;
+      }
+
+      const walletAddress = connections.connection_data.address;
+      console.log('Refreshing KNYT balance for:', walletAddress);
+
+      // Get updated token balance
+      const tokenBalance = await knytTokenService.getTokenBalance(walletAddress);
+      if (!tokenBalance) return false;
+
+      // Update connection data with new balance
+      const updatedConnectionData = {
+        ...connections.connection_data,
+        knytTokenBalance: {
+          balance: tokenBalance.balance,
+          formatted: tokenBalance.formatted,
+          lastUpdated: tokenBalance.timestamp,
+          transactionHash: tokenBalance.transactionHash
+        }
+      };
+
+      const { error } = await supabase
+        .from('user_connections')
+        .update({ 
+          connection_data: updatedConnectionData,
+          connected_at: new Date().toISOString() 
+        })
+        .eq('id', connections.id);
+
+      if (error) {
+        console.error('Error updating wallet connection:', error);
+        return false;
+      }
+
+      console.log('KNYT balance refreshed successfully:', tokenBalance.formatted);
+      toast.success(`KNYT balance updated: ${tokenBalance.formatted}`);
+      
+      return true;
+    } catch (error) {
+      console.error('Error refreshing KNYT balance:', error);
+      return false;
     }
   },
   

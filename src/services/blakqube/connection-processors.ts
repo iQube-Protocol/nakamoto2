@@ -135,6 +135,23 @@ export const processWalletConnection = (
   console.log('Setting EVM public key:', connectionData.address);
   blakQube["EVM-Public-Key"] = connectionData.address;
 
+  // Process KNYT token balance if available
+  if (connectionData.knytTokenBalance) {
+    const tokenBalance = connectionData.knytTokenBalance;
+    console.log('Setting KNYT-COYN-Owned from wallet balance:', tokenBalance.formatted);
+    blakQube["KNYT-COYN-Owned"] = tokenBalance.formatted;
+    
+    // Add audit metadata for balance updates
+    const auditInfo = {
+      lastBalanceUpdate: new Date(tokenBalance.lastUpdated).toISOString(),
+      balanceSource: 'wallet_connection',
+      transactionHash: tokenBalance.transactionHash || null,
+      rawBalance: tokenBalance.balance
+    };
+    
+    console.log('Adding KNYT balance audit info:', auditInfo);
+  }
+
   // Add MetaMask to wallets of interest
   if (!blakQube["Wallets-of-Interest"]?.includes("MetaMask")) {
     blakQube["Wallets-of-Interest"] = [
@@ -143,8 +160,8 @@ export const processWalletConnection = (
     ];
   }
 
-  // Add common tokens of interest
-  const commonTokens = ["ETH", "BTC", "USDC", "USDT"];
+  // Add common tokens of interest including KNYT
+  const commonTokens = ["ETH", "BTC", "USDC", "USDT", "KNYT"];
   const currentTokens = blakQube["Tokens-of-Interest"] || [];
   const newTokens = commonTokens.filter(token => !currentTokens.includes(token));
   if (newTokens.length > 0) {
