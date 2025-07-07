@@ -40,11 +40,16 @@ const Settings = () => {
     { key: 'model', data: qubeData.model, name: 'Model' }
   ];
 
-  // Update wallet connections with KNYT balance on component mount
+  // Update wallet connections with KNYT balance on component mount and refresh balance
   useEffect(() => {
     const updateWalletData = async () => {
       try {
+        console.log('Settings page loaded, updating wallet data...');
         await walletConnectionService.updateWalletWithKnytBalance();
+        
+        // Also refresh the balance to ensure it's current
+        await walletConnectionService.refreshKnytBalance();
+        console.log('Wallet data update completed');
       } catch (error) {
         console.error('Error updating wallet with KNYT balance:', error);
       }

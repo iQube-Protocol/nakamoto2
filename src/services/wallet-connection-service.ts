@@ -29,6 +29,15 @@ export const walletConnectionService = {
         return false;
       }
       
+      // Validate network before connecting
+      const isValidNetwork = await knytTokenService.validateNetwork();
+      if (!isValidNetwork) {
+        const switched = await knytTokenService.switchToMainnet();
+        if (!switched) {
+          return false;
+        }
+      }
+      
       // Set a timeout for the wallet connection
       const timeoutPromise = new Promise<never>((_, reject) => {
         connectionTimeout = setTimeout(() => {
@@ -110,9 +119,10 @@ export const walletConnectionService = {
         
         console.log('Signature received');
         
-        // Get KNYT token balance
+        // Get KNYT token balance with enhanced error handling
         console.log('Fetching KNYT token balance...');
         const tokenBalance = await knytTokenService.getTokenBalance(walletAddress);
+        console.log('Token balance result:', tokenBalance);
         
         // Get user
         const { data: { user } } = await supabase.auth.getUser();
@@ -153,8 +163,19 @@ export const walletConnectionService = {
 
         console.log('Wallet connection saved successfully');
         
+        // Trigger persona data update after successful wallet connection
+        try {
+          console.log('Triggering persona data update...');
+          const { blakQubeService } = await import('./blakqube-service');
+          await blakQubeService.updatePersonaFromConnections('knyt');
+          console.log('Persona data updated successfully');
+        } catch (updateError) {
+          console.error('Error updating persona data:', updateError);
+          // Don't fail the whole connection for this
+        }
+        
         // Show success message with token balance if available
-        if (tokenBalance) {
+        if (tokenBalance && parseFloat(tokenBalance.balance) > 0) {
           toast.success(`Wallet connected successfully! KNYT Balance: ${tokenBalance.formatted}`);
         } else {
           toast.success('Wallet connected and signature verified successfully!');
@@ -219,19 +240,9 @@ export const walletConnectionService = {
         return false;
       }
 
-      // Check if KNYT balance is already present and recent (less than 1 hour old)
-      if (connectionData.knytTokenBalance) {
-        const lastUpdated = connectionData.knytTokenBalance.lastUpdated;
-        const oneHourAgo = Date.now() - (60 * 60 * 1000);
-        if (lastUpdated && lastUpdated > oneHourAgo) {
-          console.log('KNYT balance is recent, skipping update');
-          return true;
-        }
-      }
-
       console.log('Updating wallet connection with KNYT balance for:', walletAddress);
 
-      // Get updated token balance
+      // Get updated token balance with enhanced debugging
       const tokenBalance = await knytTokenService.getTokenBalance(walletAddress);
       if (!tokenBalance) {
         console.log('Failed to fetch token balance');
@@ -263,6 +274,17 @@ export const walletConnectionService = {
       }
 
       console.log('Wallet connection updated with KNYT balance:', tokenBalance.formatted);
+      
+      // Trigger persona data update after balance update
+      try {
+        console.log('Triggering persona data update after balance refresh...');
+        const { blakQubeService } = await import('./blakqube-service');
+        await blakQubeService.updatePersonaFromConnections('knyt');
+        console.log('Persona data updated successfully');
+      } catch (updateError) {
+        console.error('Error updating persona data:', updateError);
+      }
+      
       return true;
     } catch (error) {
       console.error('Error updating wallet with KNYT balance:', error);
@@ -302,7 +324,7 @@ export const walletConnectionService = {
 
       console.log('Refreshing KNYT balance for:', walletAddress);
 
-      // Get updated token balance
+      // Get updated token balance with enhanced debugging
       const tokenBalance = await knytTokenService.getTokenBalance(walletAddress);
       if (!tokenBalance) return false;
 
@@ -331,6 +353,21 @@ export const walletConnectionService = {
       }
 
       console.log('KNYT balance refreshed successfully:', tokenBalance.formatted);
+      
+      // Trigger persona data update after balance refresh
+      try {
+        console.log('Triggering persona data update after balance refresh...');
+        const { blakQubeService } = await import('./blakqube-service');
+        await blakQubeService.updatePersonaFromConnections('knyt');
+        console.log('Persona data updated successfully');
+        
+        // Dispatch event to notify UI components
+        const event = new CustomEvent('privateDataUpdated');
+        window.dispatchEvent(event);
+      } catch (updateError) {
+        console.error('Error updating persona data:', updateError);
+      }
+      
       toast.success(`KNYT balance updated: ${tokenBalance.formatted}`);
       
       return true;
