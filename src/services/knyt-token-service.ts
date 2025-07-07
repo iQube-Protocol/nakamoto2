@@ -276,20 +276,6 @@ export const knytTokenService = {
 
     console.log('Setting up KNYT balance monitoring for:', walletAddress);
 
-    const handleTransaction = async (txHash: string) => {
-      console.log('Transaction detected:', txHash);
-      
-      // Wait a bit for transaction to be mined
-      setTimeout(async () => {
-        console.log('Checking balance after transaction...');
-        const newBalance = await knytTokenService.getTokenBalance(walletAddress);
-        if (newBalance) {
-          newBalance.transactionHash = txHash;
-          onBalanceChange(newBalance);
-        }
-      }, 5000);
-    };
-
     // Listen for account changes
     const handleAccountsChanged = async (accounts: string[]) => {
       console.log('Accounts changed:', accounts);
