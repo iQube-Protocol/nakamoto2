@@ -72,12 +72,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             // 1. Not initial load (session restoration)
             // 2. User is on root path or sign-in related pages
             // 3. Not already on a protected route
+            // 4. Not on the password reset page (allow password reset flow to complete)
             if (!isInitialLoad && 
                 (location.pathname === '/' || 
                  location.pathname === '/signin' || 
                  location.pathname === '/signup' ||
                  location.pathname === '/splash') &&
-                !isOnProtectedRoute) {
+                !isOnProtectedRoute &&
+                location.pathname !== '/reset-password') {
               console.log("Redirecting to MonDAI after fresh sign-in");
               navigate('/mondai');
             } else {

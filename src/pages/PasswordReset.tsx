@@ -19,11 +19,18 @@ const PasswordReset = () => {
   const [searchParams] = useSearchParams();
 
   useEffect(() => {
+    console.log("PasswordReset page loaded with URL params:", window.location.href);
+    console.log("Search params:", Object.fromEntries(searchParams.entries()));
+    
     // Check if we have the necessary auth tokens in the URL
     const accessToken = searchParams.get('access_token');
     const refreshToken = searchParams.get('refresh_token');
+    const type = searchParams.get('type');
     
-    if (!accessToken || !refreshToken) {
+    console.log("Tokens found:", { accessToken: !!accessToken, refreshToken: !!refreshToken, type });
+    
+    if (!accessToken || !refreshToken || type !== 'recovery') {
+      console.log("Missing required tokens or incorrect type, redirecting to signin");
       toast.error('Invalid password reset link. Please request a new one.');
       navigate('/signin');
     }
@@ -45,6 +52,7 @@ const PasswordReset = () => {
     setIsLoading(true);
     
     try {
+      console.log("Attempting to update password...");
       const { error } = await supabase.auth.updateUser({
         password: password
       });
@@ -53,6 +61,7 @@ const PasswordReset = () => {
         console.error('Error updating password:', error.message);
         toast.error(`Failed to update password: ${error.message}`);
       } else {
+        console.log("Password updated successfully");
         toast.success('Password updated successfully! You can now sign in with your new password.');
         navigate('/signin');
       }
