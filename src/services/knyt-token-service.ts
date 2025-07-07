@@ -305,14 +305,14 @@ export const knytTokenService = {
 
       const wasAdded = await window.ethereum.request({
         method: 'wallet_watchAsset',
-        params: {
+        params: [{
           type: 'ERC20',
           options: {
             address: KNYT_TOKEN_CONFIG.address,
             symbol: KNYT_TOKEN_CONFIG.symbol,
             decimals: KNYT_TOKEN_CONFIG.decimals,
           },
-        },
+        }],
       });
 
       if (wasAdded) {

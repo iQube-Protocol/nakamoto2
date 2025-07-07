@@ -1,5 +1,5 @@
 
-import { BlakQube } from '@/lib/types';
+import { BlakQube, KNYTPersona, QryptoPersona } from '@/lib/types';
 import {
   ConnectionData,
   LinkedInConnectionData,
@@ -9,9 +9,11 @@ import {
   SocialConnectionData
 } from './types';
 
+type PersonaType = Partial<BlakQube> | Partial<KNYTPersona> | Partial<QryptoPersona>;
+
 export const processLinkedInConnection = (
   connection: ConnectionData,
-  blakQube: Partial<BlakQube>
+  persona: PersonaType
 ): void => {
   const connectionData = connection.connection_data as LinkedInConnectionData;
   if (!connectionData?.profile) return;
@@ -23,18 +25,18 @@ export const processLinkedInConnection = (
 
   // Extract first name and last name
   if (profile.firstName) {
-    blakQube["First-Name"] = profile.firstName;
+    persona["First-Name"] = profile.firstName;
     console.log('Set First-Name from LinkedIn:', profile.firstName);
   }
 
   if (profile.lastName) {
-    blakQube["Last-Name"] = profile.lastName;
+    persona["Last-Name"] = profile.lastName;
     console.log('Set Last-Name from LinkedIn:', profile.lastName);
   }
 
   // Extract LinkedIn ID
   if (profile.id) {
-    blakQube["LinkedIn-ID"] = profile.id;
+    persona["LinkedIn-ID"] = profile.id;
     console.log('Set LinkedIn ID:', profile.id);
   }
 
@@ -55,19 +57,19 @@ export const processLinkedInConnection = (
   }
 
   if (profileUrl) {
-    blakQube["LinkedIn-Profile-URL"] = profileUrl;
+    persona["LinkedIn-Profile-URL"] = profileUrl;
     console.log('Set LinkedIn Profile URL:', profileUrl);
   }
 
   // Use email from LinkedIn if available
-  if (email && (!blakQube["Email"] || blakQube["Email"] === '')) {
-    blakQube["Email"] = email;
+  if (email && (!persona["Email"] || persona["Email"] === '')) {
+    persona["Email"] = email;
     console.log('Set Email from LinkedIn:', email);
   }
 
   // Set profession from headline
-  if (profile.headline && !blakQube["Profession"]) {
-    blakQube["Profession"] = profile.headline;
+  if (profile.headline && !persona["Profession"]) {
+    persona["Profession"] = profile.headline;
     console.log('Set Profession from LinkedIn headline:', profile.headline);
   }
 
@@ -81,8 +83,8 @@ export const processLinkedInConnection = (
     locationName = profile.location.preferredGeoPlace.name;
   }
 
-  if (locationName && !blakQube["Local-City"]) {
-    blakQube["Local-City"] = locationName;
+  if (locationName && !persona["Local-City"]) {
+    persona["Local-City"] = locationName;
     console.log('Set Local City from LinkedIn:', locationName);
   }
 
@@ -97,9 +99,9 @@ export const processLinkedInConnection = (
     ];
 
     if (web3Keywords.some(keyword => industry.includes(keyword))) {
-      const currentInterests = blakQube["Web3-Interests"] || [];
+      const currentInterests = persona["Web3-Interests"] || [];
       if (!currentInterests.includes(industryName)) {
-        blakQube["Web3-Interests"] = [...currentInterests, industryName];
+        persona["Web3-Interests"] = [...currentInterests, industryName];
         console.log('Added Web3 interest from LinkedIn industry:', industryName);
       }
     }
@@ -117,9 +119,9 @@ export const processLinkedInConnection = (
     });
 
     if (web3Skills.length > 0) {
-      const currentInterests = blakQube["Web3-Interests"] || [];
+      const currentInterests = persona["Web3-Interests"] || [];
       const uniqueInterests = [...new Set([...currentInterests, ...web3Skills])];
-      blakQube["Web3-Interests"] = uniqueInterests;
+      persona["Web3-Interests"] = uniqueInterests;
       console.log('Added Web3 interests from LinkedIn skills:', web3Skills);
     }
   }
@@ -127,19 +129,28 @@ export const processLinkedInConnection = (
 
 export const processWalletConnection = (
   connection: ConnectionData,
-  blakQube: Partial<BlakQube>
+  persona: PersonaType
 ): void => {
   const connectionData = connection.connection_data as WalletConnectionData;
   if (!connectionData?.address) return;
 
-  console.log('Setting EVM public key:', connectionData.address);
-  blakQube["EVM-Public-Key"] = connectionData.address;
+  console.log('=== PROCESSING WALLET CONNECTION ===');
+  console.log('Wallet address:', connectionData.address);
+  console.log('Current persona EVM key:', persona["EVM-Public-Key"]);
+  
+  // Set EVM public key
+  persona["EVM-Public-Key"] = connectionData.address;
+  console.log('✅ Set EVM-Public-Key:', connectionData.address);
 
-  // Process KNYT token balance if available
+  // Process KNYT token balance if available  
   if (connectionData.knytTokenBalance) {
     const tokenBalance = connectionData.knytTokenBalance;
-    console.log('Setting KNYT-COYN-Owned from wallet balance:', tokenBalance.formatted);
-    blakQube["KNYT-COYN-Owned"] = tokenBalance.formatted;
+    console.log('💰 Processing KNYT token balance:', tokenBalance);
+    console.log('Current KNYT-COYN-Owned:', persona["KNYT-COYN-Owned"]);
+    
+    // Update KNYT balance for all persona types
+    persona["KNYT-COYN-Owned"] = tokenBalance.formatted;
+    console.log('✅ Updated KNYT-COYN-Owned to:', tokenBalance.formatted);
     
     // Add audit metadata for balance updates
     const auditInfo = {
@@ -149,41 +160,46 @@ export const processWalletConnection = (
       rawBalance: tokenBalance.balance
     };
     
-    console.log('Adding KNYT balance audit info:', auditInfo);
+    console.log('📋 KNYT balance audit info:', auditInfo);
+  } else {
+    console.log('⚠️ No KNYT token balance found in wallet connection data');
   }
 
   // Add MetaMask to wallets of interest
-  if (!blakQube["Wallets-of-Interest"]?.includes("MetaMask")) {
-    blakQube["Wallets-of-Interest"] = [
-      ...(blakQube["Wallets-of-Interest"] || []),
+  if (!persona["Wallets-of-Interest"]?.includes("MetaMask")) {
+    persona["Wallets-of-Interest"] = [
+      ...(persona["Wallets-of-Interest"] || []),
       "MetaMask"
     ];
+    console.log('✅ Added MetaMask to wallets of interest');
   }
 
   // Add common tokens of interest including KNYT
   const commonTokens = ["ETH", "BTC", "USDC", "USDT", "KNYT"];
-  const currentTokens = blakQube["Tokens-of-Interest"] || [];
+  const currentTokens = persona["Tokens-of-Interest"] || [];
   const newTokens = commonTokens.filter(token => !currentTokens.includes(token));
   if (newTokens.length > 0) {
-    blakQube["Tokens-of-Interest"] = [...currentTokens, ...newTokens];
-    console.log('Added common tokens of interest:', newTokens);
+    persona["Tokens-of-Interest"] = [...currentTokens, ...newTokens];
+    console.log('✅ Added common tokens of interest:', newTokens);
   }
+  
+  console.log('=== WALLET CONNECTION PROCESSING COMPLETE ===');
 };
 
 export const processThirdWebConnection = (
   connection: ConnectionData,
-  blakQube: Partial<BlakQube>
+  persona: PersonaType
 ): void => {
   const connectionData = connection.connection_data as ThirdWebConnectionData;
   if (!connectionData?.address) return;
 
   console.log('Setting ThirdWeb public key:', connectionData.address);
-  blakQube["ThirdWeb-Public-Key"] = connectionData.address;
+  persona["ThirdWeb-Public-Key"] = connectionData.address;
 
   // Add ThirdWeb to wallets of interest
-  if (!blakQube["Wallets-of-Interest"]?.includes("ThirdWeb")) {
-    blakQube["Wallets-of-Interest"] = [
-      ...(blakQube["Wallets-of-Interest"] || []),
+  if (!persona["Wallets-of-Interest"]?.includes("ThirdWeb")) {
+    persona["Wallets-of-Interest"] = [
+      ...(persona["Wallets-of-Interest"] || []),
       "ThirdWeb"
     ];
   }
@@ -191,14 +207,14 @@ export const processThirdWebConnection = (
 
 export const processTwitterConnection = (
   connection: ConnectionData,
-  blakQube: Partial<BlakQube>
+  persona: PersonaType
 ): void => {
   const connectionData = connection.connection_data as TwitterConnectionData;
   if (!connectionData?.profile) return;
 
   // Extract Twitter handle
   if (connectionData.profile.username) {
-    blakQube["Twitter-Handle"] = `@${connectionData.profile.username}`;
+    persona["Twitter-Handle"] = `@${connectionData.profile.username}`;
   }
 
   // Extract Web3 interests from Twitter
@@ -212,19 +228,19 @@ export const processTwitterConnection = (
     );
 
   if (web3Interests.length > 0) {
-    blakQube["Web3-Interests"] = [
-      ...(blakQube["Web3-Interests"] || []),
+    persona["Web3-Interests"] = [
+      ...(persona["Web3-Interests"] || []),
       ...web3Interests
     ];
     // Remove duplicates
-    blakQube["Web3-Interests"] = [...new Set(blakQube["Web3-Interests"])];
+    persona["Web3-Interests"] = [...new Set(persona["Web3-Interests"])];
   }
 };
 
 export const processSocialConnection = (
   service: string,
   connection: ConnectionData,
-  blakQube: Partial<BlakQube>
+  persona: PersonaType
 ): void => {
   const connectionData = connection.connection_data as SocialConnectionData;
   if (!connectionData?.profile) return;
@@ -232,27 +248,27 @@ export const processSocialConnection = (
   switch (service) {
     case 'telegram':
       if (connectionData.profile.username) {
-        blakQube["Telegram-Handle"] = `@${connectionData.profile.username}`;
+        persona["Telegram-Handle"] = `@${connectionData.profile.username}`;
       }
       break;
     case 'discord':
       if (connectionData.profile.username) {
-        blakQube["Discord-Handle"] = connectionData.profile.username;
+        persona["Discord-Handle"] = connectionData.profile.username;
       }
       break;
     case 'facebook':
       if (connectionData.profile.id) {
-        blakQube["Facebook-ID"] = connectionData.profile.id;
+        persona["Facebook-ID"] = connectionData.profile.id;
       }
       break;
     case 'youtube':
       if (connectionData.profile.id) {
-        blakQube["YouTube-ID"] = connectionData.profile.id;
+        persona["YouTube-ID"] = connectionData.profile.id;
       }
       break;
     case 'tiktok':
       if (connectionData.profile.username) {
-        blakQube["TikTok-Handle"] = `@${connectionData.profile.username}`;
+        persona["TikTok-Handle"] = `@${connectionData.profile.username}`;
       }
       break;
   }
