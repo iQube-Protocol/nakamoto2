@@ -65,7 +65,7 @@ const DataSourceSelector = ({ sourceKey, currentSource, iQubeType, onSourceChang
     if (isKNYTPersona) {
       console.log("DataSourceSelector - Processing KNYT Persona field:", key);
       
-      // KNYT Persona specific field mappings - these fields get metaKnyts as a source
+      // KNYT Persona specific field mappings - FIXED KNYT-COYN-Owned to use wallet
       const knytFieldMappings: { [key: string]: string[] } = {
         'First-Name': ['metaknyts'],
         'Last-Name': ['metaknyts'],
@@ -96,7 +96,7 @@ const DataSourceSelector = ({ sourceKey, currentSource, iQubeType, onSourceChang
         'OM-Member-Since': ['metaknyts'],
         'OM-Tier-Status': ['metaknyts'],
         'Metaiye-Shares-Owned': ['metaknyts'],
-        'KNYT-COYN-Owned': ['metaknyts', 'manual'],
+        'KNYT-COYN-Owned': ['wallet', 'manual'], // FIXED: Changed from 'metaknyts' to 'wallet'
         'MetaKeep-Public-Key': ['metaknyts', 'manual'],
         'Motion-Comics-Owned': ['wallet'],
         'Paper-Comics-Owned': ['manual'],
