@@ -192,7 +192,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const resetPassword = async (email: string) => {
     try {
-      const redirectTo = `${window.location.origin}/signin?reset=true`;
+      const redirectTo = `${window.location.origin}/reset-password`;
       
       console.log("Attempting password reset for:", email, "with redirect to:", redirectTo);
       

@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from '@/hooks/use-auth';
@@ -6,6 +5,7 @@ import Index from '@/pages/Index';
 import SplashPage from '@/pages/SplashPage';
 import SignIn from '@/pages/SignIn';
 import SignUpPage from '@/pages/auth/SignUp';
+import PasswordReset from '@/pages/PasswordReset';
 import MonDAI from '@/pages/MonDAI';
 import Learn from '@/pages/Learn';
 import Earn from '@/pages/Earn';
@@ -35,6 +35,7 @@ const AppRouter = () => {
           <Route path="/splash" element={<SplashPage />} />
           <Route path="/signin" element={<SignIn />} />
           <Route path="/signup" element={<SignUpPage />} />
+          <Route path="/reset-password" element={<PasswordReset />} />
           <Route path="/invited-signup" element={<InvitedUserSignup />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/oauth-callback" element={<OAuthCallback />} />
