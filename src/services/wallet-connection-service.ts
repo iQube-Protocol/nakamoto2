@@ -8,10 +8,9 @@ let connectionTimeout: NodeJS.Timeout | null = null;
 
 export const walletConnectionService = {
   /**
-   * Connect wallet with proper state management and timeout handling
+   * Connect wallet with comprehensive debugging and data sync
    */
   connectWallet: async (): Promise<boolean> => {
-    // Prevent duplicate connections
     if (isWalletConnecting) {
       console.log('Wallet connection already in progress');
       toast.error('Wallet connection is already in progress. Please wait.');
@@ -21,7 +20,7 @@ export const walletConnectionService = {
     isWalletConnecting = true;
     
     try {
-      console.log('Starting wallet connection...');
+      console.log('=== WALLET CONNECTION START ===');
       
       // Check if Web3 provider exists
       if (typeof window.ethereum === 'undefined') {
@@ -30,22 +29,26 @@ export const walletConnectionService = {
       }
       
       // Validate network before connecting
+      console.log('🌐 Validating network...');
       const isValidNetwork = await knytTokenService.validateNetwork();
       if (!isValidNetwork) {
+        console.log('❌ Invalid network, attempting to switch...');
         const switched = await knytTokenService.switchToMainnet();
         if (!switched) {
           return false;
         }
       }
+      console.log('✅ Network validation passed');
       
       // Set a timeout for the wallet connection
       const timeoutPromise = new Promise<never>((_, reject) => {
         connectionTimeout = setTimeout(() => {
           reject(new Error('Wallet connection timeout'));
-        }, 30000); // 30 second timeout
+        }, 30000);
       });
       
       // Request account access with timeout
+      console.log('🔐 Requesting account access...');
       const accountsPromise = window.ethereum.request({ method: 'eth_requestAccounts' });
       
       let accounts;
@@ -64,7 +67,6 @@ export const walletConnectionService = {
         throw error;
       }
       
-      // Clear timeout on success
       if (connectionTimeout) {
         clearTimeout(connectionTimeout);
         connectionTimeout = null;
@@ -76,14 +78,13 @@ export const walletConnectionService = {
       }
       
       const walletAddress = accounts[0];
-      console.log('Wallet connected:', walletAddress);
+      console.log('✅ Wallet connected:', walletAddress);
       
       // Create a message for the user to sign
       const message = `Please sign this message to verify your wallet ownership.\n\nWallet: ${walletAddress}\nTimestamp: ${new Date().toISOString()}`;
       
       try {
-        // Request signature from user with timeout
-        console.log('Requesting signature...');
+        console.log('✍️ Requesting signature...');
         const signaturePromise = window.ethereum.request({
           method: 'personal_sign',
           params: [message, walletAddress],
@@ -92,7 +93,7 @@ export const walletConnectionService = {
         const signatureTimeoutPromise = new Promise<never>((_, reject) => {
           connectionTimeout = setTimeout(() => {
             reject(new Error('Signature timeout'));
-          }, 60000); // 60 second timeout for signature
+          }, 60000);
         });
         
         let signature;
@@ -111,16 +112,15 @@ export const walletConnectionService = {
           throw error;
         }
         
-        // Clear timeout on success
         if (connectionTimeout) {
           clearTimeout(connectionTimeout);
           connectionTimeout = null;
         }
         
-        console.log('Signature received');
+        console.log('✅ Signature received');
         
-        // Get KNYT token balance with enhanced error handling
-        console.log('Fetching KNYT token balance...');
+        // Get KNYT token balance with comprehensive logging
+        console.log('💰 Fetching KNYT token balance...');
         const tokenBalance = await knytTokenService.getTokenBalance(walletAddress);
         console.log('Token balance result:', tokenBalance);
         
@@ -131,8 +131,8 @@ export const walletConnectionService = {
           return false;
         }
 
-        // Save wallet connection to database with signature and token balance
-        console.log('Saving wallet connection to database...');
+        // Save wallet connection to database with comprehensive data
+        console.log('💾 Saving wallet connection to database...');
         const connectionData = { 
           address: walletAddress,
           signature: signature,
@@ -156,53 +156,65 @@ export const walletConnectionService = {
           });
         
         if (connectionError) {
-          console.error('Error saving wallet connection:', connectionError);
+          console.error('❌ Error saving wallet connection:', connectionError);
           toast.error('Failed to save wallet connection.');
           return false;
         }
 
-        console.log('Wallet connection saved successfully');
+        console.log('✅ Wallet connection saved successfully');
         
-        // Trigger persona data update after successful wallet connection with improved error handling
+        // Update persona data after successful wallet connection
         try {
-          console.log('Triggering persona data update...');
+          console.log('👤 Updating persona data...');
           const { blakQubeService } = await import('./blakqube-service');
           
-          // Update both KNYT and Qrypto personas
+          // Update both KNYT and Qrypto personas with comprehensive logging
+          console.log('🔄 Updating KNYT persona...');
           const knytUpdateSuccess = await blakQubeService.updatePersonaFromConnections('knyt');
-          const qryptoUpdateSuccess = await blakQubeService.updatePersonaFromConnections('qrypto');
+          console.log('KNYT persona update result:', knytUpdateSuccess);
           
-          console.log('KNYT persona update success:', knytUpdateSuccess);
-          console.log('Qrypto persona update success:', qryptoUpdateSuccess);
+          console.log('🔄 Updating Qrypto persona...');
+          const qryptoUpdateSuccess = await blakQubeService.updatePersonaFromConnections('qrypto');
+          console.log('Qrypto persona update result:', qryptoUpdateSuccess);
           
           if (knytUpdateSuccess || qryptoUpdateSuccess) {
-            console.log('Persona data updated successfully');
+            console.log('✅ Persona data updated successfully');
             
-            // Dispatch events to notify UI components
-            const event = new CustomEvent('privateDataUpdated');
-            window.dispatchEvent(event);
-            
-            const personaEvent = new CustomEvent('personaDataUpdated');
-            window.dispatchEvent(personaEvent);
+            // Dispatch comprehensive events to notify UI components
+            const events = ['privateDataUpdated', 'personaDataUpdated', 'balanceUpdated', 'walletDataRefreshed'];
+            events.forEach(eventName => {
+              const event = new CustomEvent(eventName, {
+                detail: {
+                  balance: tokenBalance?.formatted || '0 KNYT',
+                  address: walletAddress,
+                  timestamp: tokenBalance?.timestamp || Date.now()
+                }
+              });
+              console.log(`📡 Dispatching event: ${eventName}`);
+              window.dispatchEvent(event);
+            });
           }
         } catch (updateError) {
-          console.error('Error updating persona data:', updateError);
+          console.error('❌ Error updating persona data:', updateError);
           // Don't fail the whole connection for this
         }
         
-        // Show success message with token balance if available
+        // Show success message with balance information
         if (tokenBalance && parseFloat(tokenBalance.balance) > 0) {
           toast.success(`Wallet connected successfully! KNYT Balance: ${tokenBalance.formatted}`);
         } else {
           toast.success('Wallet connected and signature verified successfully!');
+          if (tokenBalance && tokenBalance.balance === '0') {
+            toast.info('KNYT balance is 0. Make sure you have KNYT tokens on Ethereum Mainnet.');
+          }
         }
         
+        console.log('=== WALLET CONNECTION SUCCESS ===');
         return true;
         
       } catch (signError: any) {
-        console.error('Error during signing process:', signError);
+        console.error('❌ Error during signing process:', signError);
         if (signError.code === 4001) {
-          // User rejected the request
           toast.error('Wallet connection cancelled by user.');
         } else {
           toast.error('Failed to sign message. Wallet connection cancelled.');
@@ -210,9 +222,8 @@ export const walletConnectionService = {
         return false;
       }
     } catch (error: any) {
-      console.error('Error connecting wallet:', error);
+      console.error('❌ Error connecting wallet:', error);
       if (error.code === 4001) {
-        // User rejected the request
         toast.error('Wallet connection cancelled by user.');
       } else {
         toast.error('Failed to connect wallet. Please try again.');
@@ -224,16 +235,22 @@ export const walletConnectionService = {
         clearTimeout(connectionTimeout);
         connectionTimeout = null;
       }
+      console.log('=== WALLET CONNECTION END ===');
     }
   },
 
   /**
-   * Update existing wallet connection with KNYT balance if missing
+   * Update existing wallet connection with KNYT balance
    */
   updateWalletWithKnytBalance: async (): Promise<boolean> => {
     try {
+      console.log('=== UPDATE WALLET WITH KNYT BALANCE START ===');
+      
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return false;
+      if (!user) {
+        console.log('❌ No user found');
+        return false;
+      }
 
       // Get current wallet connection
       const { data: connections } = await supabase
@@ -244,7 +261,7 @@ export const walletConnectionService = {
         .single();
 
       if (!connections || !connections.connection_data) {
-        console.log('No wallet connection found');
+        console.log('❌ No wallet connection found');
         return false;
       }
 
@@ -252,18 +269,20 @@ export const walletConnectionService = {
       const walletAddress = connectionData?.address;
 
       if (!walletAddress) {
-        console.log('No wallet address found in connection data');
+        console.log('❌ No wallet address found in connection data');
         return false;
       }
 
-      console.log('Updating wallet connection with KNYT balance for:', walletAddress);
+      console.log('💰 Fetching updated KNYT balance for:', walletAddress);
 
-      // Get updated token balance with enhanced debugging
+      // Get updated token balance with comprehensive debugging
       const tokenBalance = await knytTokenService.getTokenBalance(walletAddress);
       if (!tokenBalance) {
-        console.log('Failed to fetch token balance');
+        console.log('❌ Failed to fetch token balance');
         return false;
       }
+
+      console.log('✅ Token balance fetched:', tokenBalance);
 
       // Update connection data with new balance
       const updatedConnectionData = {
@@ -276,6 +295,7 @@ export const walletConnectionService = {
         }
       };
 
+      console.log('💾 Updating database with new balance...');
       const { error } = await supabase
         .from('user_connections')
         .update({ 
@@ -285,18 +305,17 @@ export const walletConnectionService = {
         .eq('id', connections.id);
 
       if (error) {
-        console.error('Error updating wallet connection:', error);
+        console.error('❌ Error updating wallet connection:', error);
         return false;
       }
 
-      console.log('Wallet connection updated with KNYT balance:', tokenBalance.formatted);
+      console.log('✅ Database updated with KNYT balance:', tokenBalance.formatted);
       
-      // Trigger persona data update after balance update with improved handling
+      // Trigger persona data update after balance update
       try {
-        console.log('Triggering persona data update after balance refresh...');
+        console.log('👤 Updating persona data after balance refresh...');
         const { blakQubeService } = await import('./blakqube-service');
         
-        // Update both personas to ensure comprehensive data sync
         const knytSuccess = await blakQubeService.updatePersonaFromConnections('knyt');
         const qryptoSuccess = await blakQubeService.updatePersonaFromConnections('qrypto');
         
@@ -304,20 +323,28 @@ export const walletConnectionService = {
         console.log('Qrypto persona update success:', qryptoSuccess);
         
         if (knytSuccess || qryptoSuccess) {
-          // Dispatch multiple events to ensure UI updates
-          const events = ['privateDataUpdated', 'personaDataUpdated', 'balanceUpdated'];
+          // Dispatch comprehensive events
+          const events = ['privateDataUpdated', 'personaDataUpdated', 'balanceUpdated', 'walletDataRefreshed'];
           events.forEach(eventName => {
-            const event = new CustomEvent(eventName);
+            const event = new CustomEvent(eventName, {
+              detail: {
+                balance: tokenBalance.formatted,
+                address: walletAddress,
+                timestamp: tokenBalance.timestamp
+              }
+            });
+            console.log(`📡 Dispatching event: ${eventName}`);
             window.dispatchEvent(event);
           });
         }
       } catch (updateError) {
-        console.error('Error updating persona data:', updateError);
+        console.error('❌ Error updating persona data:', updateError);
       }
       
+      console.log('=== UPDATE WALLET WITH KNYT BALANCE SUCCESS ===');
       return true;
     } catch (error) {
-      console.error('Error updating wallet with KNYT balance:', error);
+      console.error('❌ Error updating wallet with KNYT balance:', error);
       return false;
     }
   },
@@ -327,6 +354,8 @@ export const walletConnectionService = {
    */
   refreshKnytBalance: async (): Promise<boolean> => {
     try {
+      console.log('=== REFRESH KNYT BALANCE START ===');
+      
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return false;
 
@@ -339,26 +368,25 @@ export const walletConnectionService = {
         .single();
 
       if (!connections || !connections.connection_data) {
-        console.log('No wallet connection found');
+        console.log('❌ No wallet connection found');
         return false;
       }
 
-      // Type the connection data properly
       const connectionData = connections.connection_data as Record<string, any>;
       const walletAddress = connectionData?.address;
 
       if (!walletAddress) {
-        console.log('No wallet address found in connection data');
+        console.log('❌ No wallet address found');
         return false;
       }
 
-      console.log('Refreshing KNYT balance for:', walletAddress);
+      console.log('💰 Refreshing KNYT balance for:', walletAddress);
 
-      // Get updated token balance with enhanced debugging
+      // Get updated token balance
       const tokenBalance = await knytTokenService.getTokenBalance(walletAddress);
       if (!tokenBalance) return false;
 
-      // Update connection data with new balance
+      // Update connection data
       const updatedConnectionData = {
         ...connectionData,
         knytTokenBalance: {
@@ -378,18 +406,17 @@ export const walletConnectionService = {
         .eq('id', connections.id);
 
       if (error) {
-        console.error('Error updating wallet connection:', error);
+        console.error('❌ Error updating wallet connection:', error);
         return false;
       }
 
-      console.log('KNYT balance refreshed successfully:', tokenBalance.formatted);
+      console.log('✅ KNYT balance refreshed successfully:', tokenBalance.formatted);
       
-      // Trigger persona data update after balance refresh with comprehensive updates
+      // Trigger comprehensive persona data update
       try {
-        console.log('Triggering comprehensive persona data update after balance refresh...');
+        console.log('👤 Updating persona data after balance refresh...');
         const { blakQubeService } = await import('./blakqube-service');
         
-        // Update both personas
         const knytSuccess = await blakQubeService.updatePersonaFromConnections('knyt');
         const qryptoSuccess = await blakQubeService.updatePersonaFromConnections('qrypto');
         
@@ -397,7 +424,7 @@ export const walletConnectionService = {
         console.log('Qrypto persona update success:', qryptoSuccess);
         
         if (knytSuccess || qryptoSuccess) {
-          // Dispatch comprehensive events to notify all UI components
+          // Dispatch comprehensive events
           const events = ['privateDataUpdated', 'personaDataUpdated', 'balanceUpdated', 'walletDataRefreshed'];
           events.forEach(eventName => {
             const event = new CustomEvent(eventName, { 
@@ -407,20 +434,22 @@ export const walletConnectionService = {
                 timestamp: tokenBalance.timestamp
               }
             });
+            console.log(`📡 Dispatching event: ${eventName}`);
             window.dispatchEvent(event);
           });
           
-          console.log('Persona data updated and events dispatched successfully');
+          console.log('✅ Persona data updated and events dispatched');
         }
       } catch (updateError) {
-        console.error('Error updating persona data:', updateError);
+        console.error('❌ Error updating persona data:', updateError);
       }
       
       toast.success(`KNYT balance updated: ${tokenBalance.formatted}`);
       
+      console.log('=== REFRESH KNYT BALANCE SUCCESS ===');
       return true;
     } catch (error) {
-      console.error('Error refreshing KNYT balance:', error);
+      console.error('❌ Error refreshing KNYT balance:', error);
       return false;
     }
   },

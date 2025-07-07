@@ -2,7 +2,7 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { RefreshCw, Wallet, Plus, Settings, AlertCircle } from 'lucide-react';
+import { RefreshCw, Wallet, Plus, Settings, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
 import { walletConnectionService } from '@/services/wallet-connection-service';
 import { knytTokenService, KNYT_TOKEN_CONFIG } from '@/services/knyt-token-service';
 import { useServiceConnections } from '@/hooks/useServiceConnections';
@@ -16,9 +16,10 @@ const KnytBalanceDisplay = ({ onBalanceUpdate }: KnytBalanceDisplayProps) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isAddingToken, setIsAddingToken] = useState(false);
   const [lastRefreshTime, setLastRefreshTime] = useState<Date | null>(null);
+  const [debugInfo, setDebugInfo] = useState<string>('');
   const { connections, connectionData, refreshConnections } = useServiceConnections();
 
-  // Enhanced refresh balance function
+  // Enhanced refresh balance function with comprehensive debugging
   const handleRefreshBalance = async () => {
     if (!connections.wallet) {
       toast.error('Please connect your wallet first');
@@ -26,19 +27,26 @@ const KnytBalanceDisplay = ({ onBalanceUpdate }: KnytBalanceDisplayProps) => {
     }
 
     setIsRefreshing(true);
+    setDebugInfo('Starting balance refresh...');
+    
     try {
-      console.log('Starting balance refresh...');
+      console.log('=== BALANCE REFRESH UI START ===');
+      setDebugInfo('Validating network and updating wallet data...');
       
       // First update wallet with KNYT balance
       const updateSuccess = await walletConnectionService.updateWalletWithKnytBalance();
       console.log('Wallet update success:', updateSuccess);
+      setDebugInfo(updateSuccess ? '✅ Wallet data updated' : '❌ Wallet update failed');
       
       // Then refresh the balance
+      setDebugInfo('Refreshing balance data...');
       const refreshSuccess = await walletConnectionService.refreshKnytBalance();
       console.log('Balance refresh success:', refreshSuccess);
+      setDebugInfo(refreshSuccess ? '✅ Balance refreshed' : '❌ Balance refresh failed');
       
       if (updateSuccess || refreshSuccess) {
         // Refresh connections to get latest data
+        setDebugInfo('Updating UI with latest data...');
         await refreshConnections();
         
         // Update last refresh time
@@ -55,22 +63,33 @@ const KnytBalanceDisplay = ({ onBalanceUpdate }: KnytBalanceDisplayProps) => {
           window.dispatchEvent(event);
         });
         
+        setDebugInfo('✅ Balance refresh completed successfully');
         toast.success('KNYT balance refreshed successfully');
       } else {
-        toast.error('Failed to refresh KNYT balance');
+        setDebugInfo('❌ Balance refresh failed - check console for details');
+        toast.error('Failed to refresh KNYT balance - check console for details');
       }
     } catch (error) {
       console.error('Error refreshing KNYT balance:', error);
+      setDebugInfo(`❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
       toast.error('Failed to refresh KNYT balance');
     } finally {
       setIsRefreshing(false);
+      // Clear debug info after a delay
+      setTimeout(() => setDebugInfo(''), 5000);
     }
   };
 
   const handleAddTokenToWallet = async () => {
     setIsAddingToken(true);
     try {
-      await knytTokenService.addTokenToWallet();
+      const success = await knytTokenService.addTokenToWallet();
+      if (success) {
+        // Refresh balance after adding token
+        setTimeout(() => {
+          handleRefreshBalance();
+        }, 2000);
+      }
     } catch (error) {
       console.error('Error adding token to wallet:', error);
     } finally {
@@ -80,11 +99,13 @@ const KnytBalanceDisplay = ({ onBalanceUpdate }: KnytBalanceDisplayProps) => {
 
   const handleSwitchNetwork = async () => {
     try {
-      await knytTokenService.switchToMainnet();
-      // Refresh balance after network switch
-      setTimeout(() => {
-        handleRefreshBalance();
-      }, 1000);
+      const success = await knytTokenService.switchToMainnet();
+      if (success) {
+        // Refresh balance after network switch
+        setTimeout(() => {
+          handleRefreshBalance();
+        }, 1000);
+      }
     } catch (error) {
       console.error('Error switching network:', error);
     }
@@ -105,15 +126,15 @@ const KnytBalanceDisplay = ({ onBalanceUpdate }: KnytBalanceDisplayProps) => {
     return new Date(connectionData.wallet.knytTokenBalance.lastUpdated).toLocaleString();
   };
 
-  // Listen for balance update events
+  // Listen for balance update events with enhanced logging
   useEffect(() => {
-    const handleBalanceUpdate = () => {
-      console.log('Balance update event received');
+    const handleBalanceUpdate = (event: any) => {
+      console.log('Balance update event received:', event.detail);
       refreshConnections();
     };
 
-    const handlePersonaUpdate = () => {
-      console.log('Persona update event received');
+    const handlePersonaUpdate = (event: any) => {
+      console.log('Persona update event received:', event.detail);
       refreshConnections();
     };
 
@@ -148,6 +169,7 @@ const KnytBalanceDisplay = ({ onBalanceUpdate }: KnytBalanceDisplayProps) => {
 
   const currentBalance = getKnytBalance();
   const isZeroBalance = currentBalance === '0 KNYT' || currentBalance === 'Not available';
+  const walletAddress = connectionData.wallet?.address;
 
   return (
     <Card>
@@ -181,20 +203,45 @@ const KnytBalanceDisplay = ({ onBalanceUpdate }: KnytBalanceDisplayProps) => {
         </CardTitle>
       </CardHeader>
       <CardContent className="space-y-4">
+        {/* Wallet Address Display */}
+        {walletAddress && (
+          <div>
+            <label className="text-sm font-medium text-gray-600">Connected Wallet</label>
+            <p className="text-sm font-mono text-muted-foreground">
+              {walletAddress.slice(0, 6)}...{walletAddress.slice(-4)}
+            </p>
+          </div>
+        )}
+
+        {/* Balance Display */}
         <div>
           <label className="text-sm font-medium text-gray-600">Current Balance</label>
-          <p className={`text-lg font-semibold ${isZeroBalance ? 'text-orange-600' : 'text-green-600'}`}>
-            {currentBalance}
-          </p>
+          <div className="flex items-center space-x-2">
+            <p className={`text-lg font-semibold ${isZeroBalance ? 'text-orange-600' : 'text-green-600'}`}>
+              {currentBalance}
+            </p>
+            {isZeroBalance ? (
+              <XCircle className="h-4 w-4 text-orange-600" />
+            ) : (
+              <CheckCircle className="h-4 w-4 text-green-600" />
+            )}
+          </div>
           {isZeroBalance && (
             <div className="flex items-center space-x-2 mt-1">
               <AlertCircle className="h-4 w-4 text-orange-600" />
               <p className="text-sm text-orange-600">
-                If you have KNYT tokens but balance shows 0, try the troubleshooting steps below.
+                Balance shows 0. Try the troubleshooting steps below or check console for details.
               </p>
             </div>
           )}
         </div>
+        
+        {/* Debug Information Display */}
+        {debugInfo && (
+          <div className="p-3 bg-blue-50 rounded-lg border border-blue-200">
+            <p className="text-sm text-blue-700 font-mono">{debugInfo}</p>
+          </div>
+        )}
         
         {getLastUpdated() && (
           <div>
@@ -210,9 +257,13 @@ const KnytBalanceDisplay = ({ onBalanceUpdate }: KnytBalanceDisplayProps) => {
           </div>
         )}
 
+        {/* Enhanced Troubleshooting Section */}
         {isZeroBalance && (
-          <div className="space-y-2 p-3 bg-yellow-50 rounded-lg border border-yellow-200">
-            <h4 className="text-sm font-semibold text-yellow-800">Troubleshooting Steps:</h4>
+          <div className="space-y-3 p-4 bg-yellow-50 rounded-lg border border-yellow-200">
+            <h4 className="text-sm font-semibold text-yellow-800 flex items-center">
+              <AlertCircle className="h-4 w-4 mr-2" />
+              Troubleshooting Steps:
+            </h4>
             <div className="space-y-2 text-sm text-yellow-700">
               <div className="flex items-center justify-between">
                 <span>1. Switch to Ethereum Mainnet</span>
@@ -229,16 +280,23 @@ const KnytBalanceDisplay = ({ onBalanceUpdate }: KnytBalanceDisplayProps) => {
                 </Button>
               </div>
               <div>3. Refresh balance after network/token changes</div>
+              <div>4. Check browser console for detailed error logs</div>
               <div className="text-xs text-yellow-600 mt-2">
-                Contract: {KNYT_TOKEN_CONFIG?.address || '0xe53dad36cd0A8EdC656448CE7912bba72beBECb4'}
+                <strong>Contract:</strong> {KNYT_TOKEN_CONFIG?.address}
+              </div>
+              <div className="text-xs text-yellow-600">
+                <strong>Network:</strong> Ethereum Mainnet (Chain ID: {KNYT_TOKEN_CONFIG?.chainId})
               </div>
             </div>
           </div>
         )}
 
+        {/* Status Information */}
         <div className="text-xs text-muted-foreground">
           Balance automatically syncs when connecting wallet or completing transactions.
           If balance appears incorrect, use the refresh button or troubleshooting steps above.
+          Check browser console for detailed debug information.
+          
           {isRefreshing && (
             <div className="mt-2 p-2 bg-blue-50 rounded text-blue-700">
               <div className="flex items-center space-x-2">
