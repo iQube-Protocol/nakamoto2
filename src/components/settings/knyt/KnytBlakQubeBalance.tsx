@@ -30,32 +30,36 @@ const KnytBlakQubeBalance = ({ onBalanceUpdate }: KnytBlakQubeBalanceProps) => {
     console.log('🔄 Syncing KNYT persona data with wallet connection...');
     
     try {
-      // Update both KNYT and Qrypto personas with wallet data
+      // Force update wallet data first
+      const { walletConnectionService } = await import('@/services/wallet-connection-service');
+      await walletConnectionService.updateWalletWithKnytBalance();
+      
+      // Update KNYT persona with wallet data
       const knytSuccess = await blakQubeService.updatePersonaFromConnections('knyt');
-      const qryptoSuccess = await blakQubeService.updatePersonaFromConnections('qrypto');
-      
       console.log('KNYT persona sync result:', knytSuccess);
-      console.log('Qrypto persona sync result:', qryptoSuccess);
       
-      if (knytSuccess || qryptoSuccess) {
+      if (knytSuccess) {
         // Refresh connections to get updated data
         await refreshConnections();
         
-        // Dispatch update events
-        const events = ['privateDataUpdated', 'personaDataUpdated', 'balanceUpdated'];
-        events.forEach(eventName => {
-          const event = new CustomEvent(eventName);
-          window.dispatchEvent(event);
-        });
+        // Force refresh the persona data display
+        setTimeout(() => {
+          const events = ['privateDataUpdated', 'personaDataUpdated', 'balanceUpdated'];
+          events.forEach(eventName => {
+            const event = new CustomEvent(eventName);
+            window.dispatchEvent(event);
+          });
+        }, 500);
         
         if (onBalanceUpdate) {
           onBalanceUpdate();
         }
         
-        console.log('✅ Persona data synchronized successfully');
+        console.log('✅ KNYT persona data synchronized successfully');
         return true;
       }
       
+      console.log('❌ KNYT persona sync failed');
       return false;
     } catch (error) {
       console.error('❌ Error syncing persona data:', error);
