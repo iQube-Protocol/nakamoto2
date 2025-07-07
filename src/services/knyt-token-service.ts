@@ -10,7 +10,7 @@ export const KNYT_TOKEN_CONFIG = {
   chainId: '0x1' // Ethereum Mainnet
 };
 
-// ERC-20 ABI for balance checking
+// Fixed ERC-20 ABI for balance checking
 const ERC20_ABI = [
   {
     constant: true,
@@ -167,9 +167,9 @@ export const knytTokenService = {
         const hexValue = result.startsWith('0x') ? result.slice(2) : result;
         console.log('Hex value (without 0x):', hexValue);
         
-        balanceWei = parseInt(result, 16);
-        console.log('Balance in Wei (raw):', balanceWei);
-        console.log('Balance in Wei (string):', balanceWei.toString());
+        // Use BigInt for large numbers to avoid precision loss
+        balanceWei = BigInt('0x' + hexValue);
+        console.log('Balance in Wei (BigInt):', balanceWei.toString());
       } catch (parseError) {
         console.error('Error parsing hex result:', parseError);
         toast.error('Error parsing balance data from blockchain');
@@ -179,16 +179,28 @@ export const knytTokenService = {
       // Convert to token units (divide by 10^18 for 18 decimals)
       console.log('Step 6: Converting to token units...');
       const decimals = KNYT_TOKEN_CONFIG.decimals;
-      const divisor = Math.pow(10, decimals);
+      const divisor = BigInt(10) ** BigInt(decimals);
       console.log('Decimals:', decimals);
-      console.log('Divisor:', divisor);
+      console.log('Divisor (BigInt):', divisor.toString());
       
-      const balanceEther = balanceWei / divisor;
-      console.log('Balance in KNYT tokens:', balanceEther);
+      // Use BigInt division and then convert to number for display
+      const balanceTokens = balanceWei / divisor;
+      const remainderWei = balanceWei % divisor;
+      
+      // Convert to decimal representation
+      let balanceDecimal = Number(balanceTokens);
+      if (remainderWei > 0n) {
+        const fractionalPart = Number(remainderWei) / Number(divisor);
+        balanceDecimal += fractionalPart;
+      }
+      
+      console.log('Balance in KNYT tokens (BigInt division):', balanceTokens.toString());
+      console.log('Remainder Wei:', remainderWei.toString());
+      console.log('Final balance decimal:', balanceDecimal);
 
       const result_data = {
-        balance: balanceEther.toString(),
-        formatted: `${balanceEther.toLocaleString()} KNYT`,
+        balance: balanceDecimal.toString(),
+        formatted: `${balanceDecimal.toLocaleString()} KNYT`,
         timestamp: Date.now()
       };
 
