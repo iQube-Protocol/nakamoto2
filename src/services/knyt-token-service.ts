@@ -90,7 +90,7 @@ export const knytTokenService = {
   },
 
   /**
-   * Get KNYT token balance for a wallet address with enhanced debugging
+   * Get KNYT token balance for a wallet address with enhanced debugging and improved logic
    */
   getTokenBalance: async (walletAddress: string): Promise<TokenBalanceResult | null> => {
     try {
@@ -125,18 +125,26 @@ export const knytTokenService = {
         return null;
       }
 
-      // Construct the contract call data for balanceOf(address)
+      // Construct the contract call data for balanceOf(address) - FIXED METHOD
       console.log('Step 3: Constructing contract call...');
-      const paddedAddress = walletAddress.slice(2).padStart(64, '0');
-      const data = `0x70a08231000000000000000000000000${paddedAddress}`;
-      console.log('Contract call data:', data);
-      console.log('Method signature: 0x70a08231 (balanceOf)');
+      
+      // Remove 0x prefix from address and pad to 32 bytes (64 hex chars)
+      const cleanAddress = walletAddress.replace('0x', '').toLowerCase();
+      const paddedAddress = cleanAddress.padStart(64, '0');
+      
+      // balanceOf function signature: 0x70a08231
+      const functionSelector = '0x70a08231';
+      const data = functionSelector + paddedAddress;
+      
+      console.log('Function selector (balanceOf):', functionSelector);
+      console.log('Clean address:', cleanAddress);
       console.log('Padded address:', paddedAddress);
+      console.log('Final contract call data:', data);
 
-      // Make the contract call
+      // Make the contract call with improved parameters
       console.log('Step 4: Making eth_call to contract...');
       const callParams = {
-        to: KNYT_TOKEN_CONFIG.address,
+        to: KNYT_TOKEN_CONFIG.address.toLowerCase(),
         data: data
       };
       console.log('Call parameters:', callParams);
@@ -157,11 +165,11 @@ export const knytTokenService = {
         };
       }
 
-      // Convert hex result to decimal
+      // Convert hex result to decimal with improved parsing
       console.log('Step 5: Converting hex to decimal...');
-      let balanceWei;
+      let balanceWei: bigint;
       try {
-        // Remove 0x prefix and convert
+        // Remove 0x prefix if present and convert
         const hexValue = result.startsWith('0x') ? result.slice(2) : result;
         console.log('Hex value (without 0x):', hexValue);
         
@@ -174,31 +182,21 @@ export const knytTokenService = {
         return null;
       }
 
-      // Convert to token units (divide by 10^18 for 18 decimals)
+      // Convert to token units (divide by 10^18 for 18 decimals) - IMPROVED CALCULATION
       console.log('Step 6: Converting to token units...');
       const decimals = KNYT_TOKEN_CONFIG.decimals;
       const divisor = BigInt(10) ** BigInt(decimals);
       console.log('Decimals:', decimals);
       console.log('Divisor (BigInt):', divisor.toString());
       
-      // Use BigInt division and then convert to number for display
-      const balanceTokens = balanceWei / divisor;
-      const remainderWei = balanceWei % divisor;
+      // Calculate balance with proper decimal handling
+      const balanceInTokens = Number(balanceWei) / Number(divisor);
       
-      // Convert to decimal representation
-      let balanceDecimal = Number(balanceTokens);
-      if (remainderWei > 0n) {
-        const fractionalPart = Number(remainderWei) / Number(divisor);
-        balanceDecimal += fractionalPart;
-      }
-      
-      console.log('Balance in KNYT tokens (BigInt division):', balanceTokens.toString());
-      console.log('Remainder Wei:', remainderWei.toString());
-      console.log('Final balance decimal:', balanceDecimal);
+      console.log('Balance in KNYT tokens:', balanceInTokens);
 
       const result_data = {
-        balance: balanceDecimal.toString(),
-        formatted: `${balanceDecimal.toLocaleString()} KNYT`,
+        balance: balanceInTokens.toString(),
+        formatted: `${balanceInTokens.toLocaleString()} KNYT`,
         timestamp: Date.now()
       };
 
@@ -286,7 +284,6 @@ export const knytTokenService = {
 
     console.log('Setting up KNYT balance monitoring for:', walletAddress);
 
-    // Listen for account changes
     const handleAccountsChanged = async (accounts: string[]) => {
       console.log('Accounts changed:', accounts);
       if (accounts.length > 0 && accounts[0] === walletAddress) {
@@ -297,7 +294,6 @@ export const knytTokenService = {
       }
     };
 
-    // Listen for network changes
     const handleChainChanged = async (chainId: string) => {
       console.log('Chain changed to:', chainId);
       if (chainId === KNYT_TOKEN_CONFIG.chainId) {

@@ -1,8 +1,8 @@
 
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
-import { RefreshCw, Wallet, Plus, Settings } from 'lucide-react';
+import { RefreshCw, Wallet, Plus, Settings, AlertCircle } from 'lucide-react';
 import { walletConnectionService } from '@/services/wallet-connection-service';
 import { knytTokenService, KNYT_TOKEN_CONFIG } from '@/services/knyt-token-service';
 import { useServiceConnections } from '@/hooks/useServiceConnections';
@@ -15,8 +15,10 @@ interface KnytBalanceDisplayProps {
 const KnytBalanceDisplay = ({ onBalanceUpdate }: KnytBalanceDisplayProps) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const [isAddingToken, setIsAddingToken] = useState(false);
-  const { connections, connectionData } = useServiceConnections();
+  const [lastRefreshTime, setLastRefreshTime] = useState<Date | null>(null);
+  const { connections, connectionData, refreshConnections } = useServiceConnections();
 
+  // Enhanced refresh balance function
   const handleRefreshBalance = async () => {
     if (!connections.wallet) {
       toast.error('Please connect your wallet first');
@@ -25,12 +27,37 @@ const KnytBalanceDisplay = ({ onBalanceUpdate }: KnytBalanceDisplayProps) => {
 
     setIsRefreshing(true);
     try {
-      const success = await walletConnectionService.refreshKnytBalance();
-      if (success && onBalanceUpdate) {
-        onBalanceUpdate();
-        // Dispatch event to notify other components
-        const event = new CustomEvent('privateDataUpdated');
-        window.dispatchEvent(event);
+      console.log('Starting balance refresh...');
+      
+      // First update wallet with KNYT balance
+      const updateSuccess = await walletConnectionService.updateWalletWithKnytBalance();
+      console.log('Wallet update success:', updateSuccess);
+      
+      // Then refresh the balance
+      const refreshSuccess = await walletConnectionService.refreshKnytBalance();
+      console.log('Balance refresh success:', refreshSuccess);
+      
+      if (updateSuccess || refreshSuccess) {
+        // Refresh connections to get latest data
+        await refreshConnections();
+        
+        // Update last refresh time
+        setLastRefreshTime(new Date());
+        
+        if (onBalanceUpdate) {
+          onBalanceUpdate();
+        }
+        
+        // Dispatch comprehensive events
+        const events = ['privateDataUpdated', 'personaDataUpdated', 'balanceUpdated'];
+        events.forEach(eventName => {
+          const event = new CustomEvent(eventName);
+          window.dispatchEvent(event);
+        });
+        
+        toast.success('KNYT balance refreshed successfully');
+      } else {
+        toast.error('Failed to refresh KNYT balance');
       }
     } catch (error) {
       console.error('Error refreshing KNYT balance:', error);
@@ -63,6 +90,7 @@ const KnytBalanceDisplay = ({ onBalanceUpdate }: KnytBalanceDisplayProps) => {
     }
   };
 
+  // Enhanced balance getting function
   const getKnytBalance = () => {
     if (!connectionData.wallet?.knytTokenBalance) {
       return 'Not available';
@@ -76,6 +104,31 @@ const KnytBalanceDisplay = ({ onBalanceUpdate }: KnytBalanceDisplayProps) => {
     }
     return new Date(connectionData.wallet.knytTokenBalance.lastUpdated).toLocaleString();
   };
+
+  // Listen for balance update events
+  useEffect(() => {
+    const handleBalanceUpdate = () => {
+      console.log('Balance update event received');
+      refreshConnections();
+    };
+
+    const handlePersonaUpdate = () => {
+      console.log('Persona update event received');
+      refreshConnections();
+    };
+
+    window.addEventListener('balanceUpdated', handleBalanceUpdate);
+    window.addEventListener('personaDataUpdated', handlePersonaUpdate);
+    window.addEventListener('privateDataUpdated', handleBalanceUpdate);
+    window.addEventListener('walletDataRefreshed', handleBalanceUpdate);
+
+    return () => {
+      window.removeEventListener('balanceUpdated', handleBalanceUpdate);
+      window.removeEventListener('personaDataUpdated', handlePersonaUpdate);
+      window.removeEventListener('privateDataUpdated', handleBalanceUpdate);
+      window.removeEventListener('walletDataRefreshed', handleBalanceUpdate);
+    };
+  }, [refreshConnections]);
 
   if (!connections.wallet) {
     return (
@@ -134,9 +187,12 @@ const KnytBalanceDisplay = ({ onBalanceUpdate }: KnytBalanceDisplayProps) => {
             {currentBalance}
           </p>
           {isZeroBalance && (
-            <p className="text-sm text-orange-600 mt-1">
-              If you have KNYT tokens but balance shows 0, try the troubleshooting steps below.
-            </p>
+            <div className="flex items-center space-x-2 mt-1">
+              <AlertCircle className="h-4 w-4 text-orange-600" />
+              <p className="text-sm text-orange-600">
+                If you have KNYT tokens but balance shows 0, try the troubleshooting steps below.
+              </p>
+            </div>
           )}
         </div>
         
@@ -144,6 +200,13 @@ const KnytBalanceDisplay = ({ onBalanceUpdate }: KnytBalanceDisplayProps) => {
           <div>
             <label className="text-sm font-medium text-gray-600">Last Updated</label>
             <p className="text-sm text-muted-foreground">{getLastUpdated()}</p>
+          </div>
+        )}
+
+        {lastRefreshTime && (
+          <div>
+            <label className="text-sm font-medium text-gray-600">Last Refresh</label>
+            <p className="text-sm text-muted-foreground">{lastRefreshTime.toLocaleString()}</p>
           </div>
         )}
 
@@ -176,6 +239,14 @@ const KnytBalanceDisplay = ({ onBalanceUpdate }: KnytBalanceDisplayProps) => {
         <div className="text-xs text-muted-foreground">
           Balance automatically syncs when connecting wallet or completing transactions.
           If balance appears incorrect, use the refresh button or troubleshooting steps above.
+          {isRefreshing && (
+            <div className="mt-2 p-2 bg-blue-50 rounded text-blue-700">
+              <div className="flex items-center space-x-2">
+                <RefreshCw className="h-3 w-3 animate-spin" />
+                <span>Refreshing balance and updating persona data...</span>
+              </div>
+            </div>
+          )}
         </div>
       </CardContent>
     </Card>

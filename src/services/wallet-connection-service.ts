@@ -163,12 +163,28 @@ export const walletConnectionService = {
 
         console.log('Wallet connection saved successfully');
         
-        // Trigger persona data update after successful wallet connection
+        // Trigger persona data update after successful wallet connection with improved error handling
         try {
           console.log('Triggering persona data update...');
           const { blakQubeService } = await import('./blakqube-service');
-          await blakQubeService.updatePersonaFromConnections('knyt');
-          console.log('Persona data updated successfully');
+          
+          // Update both KNYT and Qrypto personas
+          const knytUpdateSuccess = await blakQubeService.updatePersonaFromConnections('knyt');
+          const qryptoUpdateSuccess = await blakQubeService.updatePersonaFromConnections('qrypto');
+          
+          console.log('KNYT persona update success:', knytUpdateSuccess);
+          console.log('Qrypto persona update success:', qryptoUpdateSuccess);
+          
+          if (knytUpdateSuccess || qryptoUpdateSuccess) {
+            console.log('Persona data updated successfully');
+            
+            // Dispatch events to notify UI components
+            const event = new CustomEvent('privateDataUpdated');
+            window.dispatchEvent(event);
+            
+            const personaEvent = new CustomEvent('personaDataUpdated');
+            window.dispatchEvent(personaEvent);
+          }
         } catch (updateError) {
           console.error('Error updating persona data:', updateError);
           // Don't fail the whole connection for this
@@ -275,12 +291,26 @@ export const walletConnectionService = {
 
       console.log('Wallet connection updated with KNYT balance:', tokenBalance.formatted);
       
-      // Trigger persona data update after balance update
+      // Trigger persona data update after balance update with improved handling
       try {
         console.log('Triggering persona data update after balance refresh...');
         const { blakQubeService } = await import('./blakqube-service');
-        await blakQubeService.updatePersonaFromConnections('knyt');
-        console.log('Persona data updated successfully');
+        
+        // Update both personas to ensure comprehensive data sync
+        const knytSuccess = await blakQubeService.updatePersonaFromConnections('knyt');
+        const qryptoSuccess = await blakQubeService.updatePersonaFromConnections('qrypto');
+        
+        console.log('KNYT persona update success:', knytSuccess);
+        console.log('Qrypto persona update success:', qryptoSuccess);
+        
+        if (knytSuccess || qryptoSuccess) {
+          // Dispatch multiple events to ensure UI updates
+          const events = ['privateDataUpdated', 'personaDataUpdated', 'balanceUpdated'];
+          events.forEach(eventName => {
+            const event = new CustomEvent(eventName);
+            window.dispatchEvent(event);
+          });
+        }
       } catch (updateError) {
         console.error('Error updating persona data:', updateError);
       }
@@ -354,16 +384,34 @@ export const walletConnectionService = {
 
       console.log('KNYT balance refreshed successfully:', tokenBalance.formatted);
       
-      // Trigger persona data update after balance refresh
+      // Trigger persona data update after balance refresh with comprehensive updates
       try {
-        console.log('Triggering persona data update after balance refresh...');
+        console.log('Triggering comprehensive persona data update after balance refresh...');
         const { blakQubeService } = await import('./blakqube-service');
-        await blakQubeService.updatePersonaFromConnections('knyt');
-        console.log('Persona data updated successfully');
         
-        // Dispatch event to notify UI components
-        const event = new CustomEvent('privateDataUpdated');
-        window.dispatchEvent(event);
+        // Update both personas
+        const knytSuccess = await blakQubeService.updatePersonaFromConnections('knyt');
+        const qryptoSuccess = await blakQubeService.updatePersonaFromConnections('qrypto');
+        
+        console.log('KNYT persona update success:', knytSuccess);
+        console.log('Qrypto persona update success:', qryptoSuccess);
+        
+        if (knytSuccess || qryptoSuccess) {
+          // Dispatch comprehensive events to notify all UI components
+          const events = ['privateDataUpdated', 'personaDataUpdated', 'balanceUpdated', 'walletDataRefreshed'];
+          events.forEach(eventName => {
+            const event = new CustomEvent(eventName, { 
+              detail: { 
+                balance: tokenBalance.formatted,
+                address: walletAddress,
+                timestamp: tokenBalance.timestamp
+              }
+            });
+            window.dispatchEvent(event);
+          });
+          
+          console.log('Persona data updated and events dispatched successfully');
+        }
       } catch (updateError) {
         console.error('Error updating persona data:', updateError);
       }
