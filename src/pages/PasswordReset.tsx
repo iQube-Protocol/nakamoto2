@@ -15,6 +15,7 @@ const PasswordReset = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isValidToken, setIsValidToken] = useState(false);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -29,7 +30,24 @@ const PasswordReset = () => {
     
     console.log("Tokens found:", { accessToken: !!accessToken, refreshToken: !!refreshToken, type });
     
-    if (!accessToken || !refreshToken || type !== 'recovery') {
+    if (accessToken && refreshToken && type === 'recovery') {
+      console.log("Valid password reset tokens found, setting session");
+      setIsValidToken(true);
+      
+      // Set the session with the tokens from URL
+      supabase.auth.setSession({
+        access_token: accessToken,
+        refresh_token: refreshToken
+      }).then(({ data, error }) => {
+        if (error) {
+          console.error("Error setting session:", error);
+          toast.error('Invalid password reset link. Please request a new one.');
+          navigate('/signin');
+        } else {
+          console.log("Session set successfully for password reset");
+        }
+      });
+    } else {
       console.log("Missing required tokens or incorrect type, redirecting to signin");
       toast.error('Invalid password reset link. Please request a new one.');
       navigate('/signin');
@@ -72,6 +90,20 @@ const PasswordReset = () => {
       setIsLoading(false);
     }
   };
+
+  // Don't render the form until we've validated the token
+  if (!isValidToken) {
+    return (
+      <AuthLayout 
+        title="Validating Reset Link" 
+        subtitle="Please wait while we validate your password reset link..."
+      >
+        <div className="flex justify-center py-8">
+          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+        </div>
+      </AuthLayout>
+    );
+  }
 
   return (
     <AuthLayout 

@@ -1,3 +1,4 @@
+
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -195,6 +196,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const resetPassword = async (email: string) => {
     try {
+      // Use the current origin to construct the redirect URL
       const redirectTo = `${window.location.origin}/reset-password`;
       
       console.log("Attempting password reset for:", email, "with redirect to:", redirectTo);
