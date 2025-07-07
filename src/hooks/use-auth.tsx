@@ -1,4 +1,3 @@
-
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -46,7 +45,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                              urlParams.get('refresh_token');
     const isResetPath = window.location.pathname === '/reset-password';
     
-    return isResetPath || hasRecoveryTokens;
+    return Boolean(isResetPath || hasRecoveryTokens);
   };
 
   // Check for password reset on location changes
@@ -155,7 +154,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
     
     return () => {
-      mounted = false;
+      mounted = true;
       subscription.unsubscribe();
     };
   }, [navigate, location.pathname, isPasswordResetActive]);
