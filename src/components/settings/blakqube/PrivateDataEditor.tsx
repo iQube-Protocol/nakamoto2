@@ -26,7 +26,7 @@ const PrivateDataEditor = ({
   isKNYTPersona = false
 }: PrivateDataEditorProps) => {
   // Fields that should be read-only for KNYT Persona
-  const knytReadOnlyFields = ['OM-Member-Since', 'Metaiye-Shares-Owned', 'Total-Invested', 'OM-Tier-Status'];
+  const knytReadOnlyFields = ['OM-Member-Since', 'Metaiye-Shares-Owned', 'Total-Invested', 'OM-Tier-Status', 'KNYT-COYN-Owned'];
   
   const isReadOnlyField = (key: string) => {
     return isKNYTPersona && knytReadOnlyFields.includes(key);

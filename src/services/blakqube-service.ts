@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { KNYTPersona, QryptoPersona, BlakQube } from '@/lib/types';
 import { PrivateData } from './blakqube/types';
@@ -146,6 +145,10 @@ export const blakQubeService = {
       if (!user.user) return false;
       
       console.log('Updating persona from connections for user:', user.user.id, 'type:', personaType);
+      
+      // First, ensure wallet connection has KNYT balance data if it exists
+      const { walletConnectionService } = await import('./wallet-connection-service');
+      await walletConnectionService.updateWalletWithKnytBalance();
       
       // Get current persona data
       let currentPersona: KNYTPersona | QryptoPersona | null = null;

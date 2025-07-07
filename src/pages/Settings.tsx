@@ -10,6 +10,7 @@ import { sonnerToast as toast } from '@/hooks/use-toast';
 import { useMetisAgent } from '@/hooks/use-metis-agent';
 import { useQryptoPersona } from '@/hooks/use-qrypto-persona';
 import { useVeniceAgent } from '@/hooks/use-venice-agent';
+import { walletConnectionService } from '@/services/wallet-connection-service';
 
 const Settings = () => {
   const [selectedIQube, setSelectedIQube] = useState<MetaQube>(qubeData.monDai);
@@ -38,6 +39,19 @@ const Settings = () => {
     { key: 'content', data: qubeData.content, name: 'Content' },
     { key: 'model', data: qubeData.model, name: 'Model' }
   ];
+
+  // Update wallet connections with KNYT balance on component mount
+  useEffect(() => {
+    const updateWalletData = async () => {
+      try {
+        await walletConnectionService.updateWalletWithKnytBalance();
+      } catch (error) {
+        console.error('Error updating wallet with KNYT balance:', error);
+      }
+    };
+
+    updateWalletData();
+  }, []);
 
   // Function to toggle iQube active state
   const toggleQubeActive = (qubeName: string) => {
