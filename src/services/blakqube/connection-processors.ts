@@ -142,25 +142,34 @@ export const processWalletConnection = (
   persona["EVM-Public-Key"] = connectionData.address;
   console.log('✅ Set EVM-Public-Key:', connectionData.address);
 
-  // Process KNYT token balance if available  
+  // Process KNYT token balance if available - ONLY for KNYT personas
   if (connectionData.knytTokenBalance) {
     const tokenBalance = connectionData.knytTokenBalance;
     console.log('💰 Processing KNYT token balance:', tokenBalance);
-    console.log('Current KNYT-COYN-Owned:', persona["KNYT-COYN-Owned"]);
     
-    // Update KNYT balance for all persona types
-    persona["KNYT-COYN-Owned"] = tokenBalance.formatted;
-    console.log('✅ Updated KNYT-COYN-Owned to:', tokenBalance.formatted);
+    // Check if this is a KNYT persona by looking for KNYT-specific fields
+    const isKNYTPersona = 'KNYT-COYN-Owned' in persona || 'KNYT-ID' in persona || 'OM-Member-Since' in persona;
     
-    // Add audit metadata for balance updates
-    const auditInfo = {
-      lastBalanceUpdate: new Date(tokenBalance.lastUpdated).toISOString(),
-      balanceSource: 'wallet_connection',
-      transactionHash: tokenBalance.transactionHash || null,
-      rawBalance: tokenBalance.balance
-    };
-    
-    console.log('📋 KNYT balance audit info:', auditInfo);
+    if (isKNYTPersona) {
+      console.log('Current KNYT-COYN-Owned:', persona["KNYT-COYN-Owned"]);
+      
+      // Update KNYT balance for KNYT personas only
+      (persona as any)["KNYT-COYN-Owned"] = tokenBalance.formatted;
+      console.log('✅ Updated KNYT-COYN-Owned to:', tokenBalance.formatted);
+      
+      // Add audit metadata for balance updates
+      const auditInfo = {
+        lastBalanceUpdate: new Date(tokenBalance.lastUpdated).toISOString(),
+        balanceSource: 'wallet_connection',
+        transactionHash: tokenBalance.transactionHash || null,
+        rawBalance: tokenBalance.balance
+      };
+      
+      console.log('📋 KNYT balance audit info:', auditInfo);
+    } else {
+      console.log('⚠️ Skipping KNYT-COYN-Owned field for non-KNYT persona');
+      console.log('💡 KNYT balance available but not applicable to this persona type');
+    }
   } else {
     console.log('⚠️ No KNYT token balance found in wallet connection data');
   }
