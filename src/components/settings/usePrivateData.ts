@@ -1,6 +1,6 @@
 
 import { useState, useEffect } from 'react';
-import { MetaQube } from '@/lib/types';
+import { MetaQube, KNYTPersona, QryptoPersona } from '@/lib/types';
 import { blakQubeService } from '@/services/blakqube-service';
 import { getPersonaType } from '@/services/blakqube/database-operations';
 import { 
@@ -27,7 +27,7 @@ export const usePrivateData = (selectedIQube: MetaQube) => {
       
       if (personaType === 'knyt') {
         console.log('🔍 Fetching KNYT persona data...');
-        const knytPersona = await blakQubeService.getPersonaData('knyt');
+        const knytPersona = await blakQubeService.getPersonaData('knyt') as KNYTPersona;
         console.log('📋 Raw KNYT persona from DB:', knytPersona);
         
         if (knytPersona) {
@@ -42,7 +42,7 @@ export const usePrivateData = (selectedIQube: MetaQube) => {
         }
       } else {
         console.log('🔍 Fetching Qrypto persona data...');
-        const qryptoPersona = await blakQubeService.getPersonaData('qrypto');
+        const qryptoPersona = await blakQubeService.getPersonaData('qrypto') as QryptoPersona;
         console.log('📋 Raw Qrypto persona from DB:', qryptoPersona);
         
         if (qryptoPersona) {
