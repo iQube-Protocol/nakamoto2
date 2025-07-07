@@ -117,7 +117,10 @@ export const saveKNYTPersonaToDB = async (
   personaData: Partial<KNYTPersona>
 ): Promise<boolean> => {
   try {
-    console.log('Saving KNYT Persona data for user:', userId, personaData);
+    console.log('=== SAVING KNYT PERSONA TO DB ===');
+    console.log('📋 User ID:', userId);
+    console.log('📋 Persona data to save:', personaData);
+    console.log('💰 KNYT-COYN-Owned in data:', personaData["KNYT-COYN-Owned"]);
     
     // First try to update existing record
     const { data: updateResult, error: updateError } = await (supabase as any)
@@ -129,30 +132,54 @@ export const saveKNYTPersonaToDB = async (
       .eq('user_id', userId)
       .select();
     
+    console.log('📋 Update result:', updateResult);
+    console.log('📋 Update error:', updateError);
+    
     // If no rows were updated, insert a new one
     if (updateResult && updateResult.length === 0) {
-      console.log('No existing KNYT Persona found, inserting new record');
-      const { error: insertError } = await (supabase as any)
+      console.log('🆕 No existing KNYT Persona found, inserting new record');
+      const { data: insertResult, error: insertError } = await (supabase as any)
         .from('knyt_personas')
         .insert({
           user_id: userId,
           ...personaData,
           updated_at: new Date().toISOString()
-        });
+        })
+        .select();
+      
+      console.log('📋 Insert result:', insertResult);
+      console.log('📋 Insert error:', insertError);
       
       if (insertError) {
-        console.error('Error inserting new KNYT Persona data:', insertError);
+        console.error('❌ Error inserting new KNYT Persona data:', insertError);
         return false;
       }
     } else if (updateError) {
-      console.error('Error updating KNYT Persona data:', updateError);
+      console.error('❌ Error updating KNYT Persona data:', updateError);
       return false;
     }
     
-    console.log('KNYT Persona data saved successfully');
+    // Verify the data was actually saved by reading it back
+    console.log('🔍 Verifying saved data...');
+    const { data: verifyData, error: verifyError } = await (supabase as any)
+      .from('knyt_personas')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+    
+    if (verifyError) {
+      console.error('❌ Error verifying saved data:', verifyError);
+    } else {
+      console.log('✅ Verified saved KNYT Persona data:', verifyData);
+      console.log('💰 Verified KNYT-COYN-Owned:', verifyData?.["KNYT-COYN-Owned"]);
+    }
+    
+    console.log('✅ KNYT Persona data saved successfully');
+    console.log('=== KNYT PERSONA SAVE COMPLETE ===');
     return true;
   } catch (error) {
-    console.error('Error in saveKNYTPersonaToDB:', error);
+    console.error('❌ Error in saveKNYTPersonaToDB:', error);
+    console.log('=== KNYT PERSONA SAVE FAILED ===');
     return false;
   }
 };

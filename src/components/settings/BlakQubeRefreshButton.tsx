@@ -16,28 +16,45 @@ const BlakQubeRefreshButton = ({ onRefresh, personaType = 'qrypto' }: BlakQubeRe
   const handleRefresh = async () => {
     setIsRefreshing(true);
     try {
-      console.log('Refreshing persona data from connections for type:', personaType);
+      console.log('=== BLAKQUBE REFRESH START ===');
+      console.log('🔄 Refreshing persona data from connections for type:', personaType);
+      console.log('📋 Refresh button persona type:', personaType);
+      
+      // First ensure wallet data is updated with KNYT balance
+      const { walletConnectionService } = await import('@/services/wallet-connection-service');
+      console.log('💰 Updating wallet with KNYT balance...');
+      await walletConnectionService.updateWalletWithKnytBalance();
+      
+      // Update persona from connections with explicit type logging
+      console.log('🔄 Calling updatePersonaFromConnections with type:', personaType);
       const success = await blakQubeService.updatePersonaFromConnections(personaType);
       
       if (success) {
+        console.log('✅ Persona data refresh successful for type:', personaType);
         toast.success(`${personaType === 'knyt' ? 'KNYT' : 'Qrypto'} Persona data refreshed successfully!`);
         
-        // Trigger private data refresh
-        const updateEvent = new CustomEvent('privateDataUpdated');
-        window.dispatchEvent(updateEvent);
+        // Trigger comprehensive data refresh events
+        const events = ['privateDataUpdated', 'personaDataUpdated', 'balanceUpdated', 'walletDataRefreshed'];
+        events.forEach(eventName => {
+          console.log(`📡 Dispatching event: ${eventName}`);
+          const event = new CustomEvent(eventName);
+          window.dispatchEvent(event);
+        });
         
         // Call the optional onRefresh callback
         if (onRefresh) {
           onRefresh();
         }
       } else {
+        console.error('❌ Persona data refresh failed for type:', personaType);
         toast.error(`Failed to refresh ${personaType === 'knyt' ? 'KNYT' : 'Qrypto'} Persona data`);
       }
     } catch (error) {
-      console.error('Error refreshing persona data:', error);
+      console.error('❌ Error refreshing persona data:', error);
       toast.error(`Error refreshing ${personaType === 'knyt' ? 'KNYT' : 'Qrypto'} Persona data`);
     } finally {
       setIsRefreshing(false);
+      console.log('=== BLAKQUBE REFRESH END ===');
     }
   };
 

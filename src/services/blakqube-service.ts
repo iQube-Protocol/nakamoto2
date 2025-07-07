@@ -144,46 +144,64 @@ export const blakQubeService = {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) return false;
       
-      console.log('Updating persona from connections for user:', user.user.id, 'type:', personaType);
+      console.log('=== UPDATE PERSONA FROM CONNECTIONS START ===');
+      console.log('📋 User ID:', user.user.id);
+      console.log('📋 Persona Type:', personaType);
       
       // First, ensure wallet connection has KNYT balance data if it exists
       const { walletConnectionService } = await import('./wallet-connection-service');
+      console.log('💰 Updating wallet with KNYT balance...');
       await walletConnectionService.updateWalletWithKnytBalance();
       
       // Get current persona data
       let currentPersona: KNYTPersona | QryptoPersona | null = null;
       if (personaType === 'knyt') {
+        console.log('🔍 Fetching existing KNYT persona...');
         currentPersona = await fetchKNYTPersonaFromDB(user.user.id);
       } else {
+        console.log('🔍 Fetching existing Qrypto persona...');
         currentPersona = await fetchQryptoPersonaFromDB(user.user.id);
       }
+      console.log('📋 Current persona data:', currentPersona);
       
       // Get user connections
+      console.log('🔍 Fetching user connections...');
       const connections = await fetchUserConnections(user.user.id);
-      if (!connections) return false;
+      if (!connections) {
+        console.error('❌ No connections found');
+        return false;
+      }
+      console.log('📋 User connections:', connections);
       
       // Start with existing persona or create new one with all fields
       let newPersona: Partial<KNYTPersona | QryptoPersona>;
       if (currentPersona) {
+        console.log('🔄 Using existing persona as base');
         newPersona = { ...currentPersona };
       } else {
+        console.log('🆕 Creating new default persona');
         if (personaType === 'knyt') {
           newPersona = createDefaultKNYTPersona(user.user.email);
         } else {
           newPersona = createDefaultQryptoPersona(user.user.email);
         }
       }
+      console.log('📋 Base persona for updates:', newPersona);
+      console.log('💰 Base persona KNYT-COYN-Owned:', newPersona["KNYT-COYN-Owned"]);
       
       // Update persona based on connections
+      console.log('🔄 Processing connections...');
       for (const connection of connections) {
-        console.log('Processing connection:', connection.service, connection.connection_data);
+        console.log('📡 Processing connection:', connection.service);
         
         switch (connection.service) {
           case 'linkedin':
             processLinkedInConnection(connection, newPersona as any);
             break;
           case 'wallet':
+            console.log('💰 Processing wallet connection...');
             processWalletConnection(connection, newPersona as any);
+            console.log('💰 Post-wallet processing KNYT-COYN-Owned:', newPersona["KNYT-COYN-Owned"]);
             break;
           case 'thirdweb':
             processThirdWebConnection(connection, newPersona as any);
@@ -201,23 +219,30 @@ export const blakQubeService = {
         }
       }
       
-      console.log('Updated persona data:', newPersona);
+      console.log('📋 Final updated persona data:', newPersona);
+      console.log('💰 Final KNYT-COYN-Owned value:', newPersona["KNYT-COYN-Owned"]);
       
       let success: boolean;
+      console.log('💾 Saving persona to database...');
       if (personaType === 'knyt') {
         success = await saveKNYTPersonaToDB(user.user.id, newPersona as Partial<KNYTPersona>);
       } else {
         success = await saveQryptoPersonaToDB(user.user.id, newPersona as Partial<QryptoPersona>);
       }
       
+      console.log('📋 Database save result:', success);
+      
       // Notify other components of the data update
       if (success) {
+        console.log('📡 Notifying components of data update...');
         personaDataSync.notifyDataUpdated();
       }
       
+      console.log('=== UPDATE PERSONA FROM CONNECTIONS END ===');
       return success;
     } catch (error) {
-      console.error('Error in updatePersonaFromConnections:', error);
+      console.error('❌ Error in updatePersonaFromConnections:', error);
+      console.log('=== UPDATE PERSONA FROM CONNECTIONS FAILED ===');
       return false;
     }
   },
