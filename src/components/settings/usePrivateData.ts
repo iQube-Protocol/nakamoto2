@@ -78,11 +78,11 @@ export const usePrivateData = (selectedIQube: MetaQube) => {
         setPrivateData(newData);
         console.log('✅ Private data updated successfully');
         
-        // Force a fresh fetch to verify the save worked
+        // Force a fresh fetch after a delay to verify the save worked
         setTimeout(() => {
           console.log('🔄 Refetching data to verify save...');
           fetchPrivateData();
-        }, 1000);
+        }, 2000);
       } else {
         console.error('❌ Failed to update private data');
       }
@@ -98,11 +98,20 @@ export const usePrivateData = (selectedIQube: MetaQube) => {
     fetchPrivateData();
   }, [selectedIQube]);
 
-  // Listen for data updates
+  // Listen for data updates with debouncing
   useEffect(() => {
+    let timeoutId: NodeJS.Timeout;
+    
     const handleDataUpdate = () => {
-      console.log('📡 Received data update event, refetching...');
-      fetchPrivateData();
+      console.log('📡 Received data update event, scheduling refetch...');
+      // Clear any existing timeout
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
+      // Debounce the refetch to avoid multiple rapid calls
+      timeoutId = setTimeout(() => {
+        fetchPrivateData();
+      }, 1000);
     };
 
     // Listen to multiple event types
@@ -115,6 +124,9 @@ export const usePrivateData = (selectedIQube: MetaQube) => {
     const unsubscribe = personaDataSync.subscribe(handleDataUpdate);
 
     return () => {
+      if (timeoutId) {
+        clearTimeout(timeoutId);
+      }
       events.forEach(eventName => {
         window.removeEventListener(eventName, handleDataUpdate);
       });

@@ -340,6 +340,7 @@ export type Database = {
           "Twitter-Handle": string | null
           updated_at: string
           user_id: string
+          "Wallets-of-Interest": string[] | null
           "Web3-Interests": string[] | null
           "YouTube-ID": string | null
         }
@@ -382,6 +383,7 @@ export type Database = {
           "Twitter-Handle"?: string | null
           updated_at?: string
           user_id: string
+          "Wallets-of-Interest"?: string[] | null
           "Web3-Interests"?: string[] | null
           "YouTube-ID"?: string | null
         }
@@ -424,6 +426,7 @@ export type Database = {
           "Twitter-Handle"?: string | null
           updated_at?: string
           user_id?: string
+          "Wallets-of-Interest"?: string[] | null
           "Web3-Interests"?: string[] | null
           "YouTube-ID"?: string | null
         }
