@@ -4,7 +4,7 @@ import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { RefreshCw, Wallet, Plus, Settings } from 'lucide-react';
 import { walletConnectionService } from '@/services/wallet-connection-service';
-import { knytTokenService } from '@/services/knyt-token-service';
+import { knytTokenService, KNYT_TOKEN_CONFIG } from '@/services/knyt-token-service';
 import { useServiceConnections } from '@/hooks/useServiceConnections';
 import { toast } from 'sonner';
 
@@ -167,7 +167,7 @@ const KnytBalanceDisplay = ({ onBalanceUpdate }: KnytBalanceDisplayProps) => {
               </div>
               <div>3. Refresh balance after network/token changes</div>
               <div className="text-xs text-yellow-600 mt-2">
-                Contract: {knytTokenService.KNYT_TOKEN_CONFIG?.address || '0xe53dad36cd0A8EdC656448CE7912bba72beBECb4'}
+                Contract: {KNYT_TOKEN_CONFIG?.address || '0xe53dad36cd0A8EdC656448CE7912bba72beBECb4'}
               </div>
             </div>
           </div>

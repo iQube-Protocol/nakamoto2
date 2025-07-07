@@ -36,11 +36,13 @@ export const knytTokenService = {
     try {
       if (!window.ethereum) {
         console.error('No Web3 provider found');
+        toast.error('No Web3 provider found. Please install MetaMask.');
         return false;
       }
 
       const chainId = await window.ethereum.request({ method: 'eth_chainId' });
       console.log('Current network chainId:', chainId);
+      console.log('Expected chainId:', KNYT_TOKEN_CONFIG.chainId);
       
       if (chainId !== KNYT_TOKEN_CONFIG.chainId) {
         console.error(`Wrong network. Expected ${KNYT_TOKEN_CONFIG.chainId}, got ${chainId}`);
@@ -48,9 +50,11 @@ export const knytTokenService = {
         return false;
       }
 
+      console.log('Network validation successful - connected to Ethereum Mainnet');
       return true;
     } catch (error) {
       console.error('Error validating network:', error);
+      toast.error('Failed to validate network connection');
       return false;
     }
   },
@@ -60,19 +64,26 @@ export const knytTokenService = {
    */
   switchToMainnet: async (): Promise<boolean> => {
     try {
-      if (!window.ethereum) return false;
+      if (!window.ethereum) {
+        toast.error('MetaMask not found');
+        return false;
+      }
 
+      console.log('Attempting to switch to Ethereum Mainnet...');
       await window.ethereum.request({
         method: 'wallet_switchEthereumChain',
         params: [{ chainId: KNYT_TOKEN_CONFIG.chainId }],
       });
 
       toast.success('Switched to Ethereum Mainnet');
+      console.log('Successfully switched to Ethereum Mainnet');
       return true;
     } catch (error: any) {
       console.error('Error switching network:', error);
       if (error.code === 4902) {
         toast.error('Ethereum Mainnet not found in wallet');
+      } else if (error.code === 4001) {
+        toast.error('Network switch cancelled by user');
       } else {
         toast.error('Failed to switch to Ethereum Mainnet');
       }
@@ -85,8 +96,11 @@ export const knytTokenService = {
    */
   getTokenBalance: async (walletAddress: string): Promise<TokenBalanceResult | null> => {
     try {
+      console.log('=== KNYT Balance Fetch Debug ===');
       console.log('Starting KNYT balance fetch for address:', walletAddress);
       console.log('Using contract address:', KNYT_TOKEN_CONFIG.address);
+      console.log('Target network:', KNYT_TOKEN_CONFIG.network);
+      console.log('Expected chainId:', KNYT_TOKEN_CONFIG.chainId);
       
       if (!window.ethereum) {
         console.error('No Web3 provider found');
@@ -95,35 +109,49 @@ export const knytTokenService = {
       }
 
       // Validate network first
+      console.log('Step 1: Validating network...');
       const isValidNetwork = await knytTokenService.validateNetwork();
       if (!isValidNetwork) {
-        console.error('Network validation failed');
+        console.error('Network validation failed - stopping balance fetch');
         return null;
       }
 
       // Request access to the user's accounts
+      console.log('Step 2: Requesting account access...');
       const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
       console.log('Connected accounts:', accounts);
 
-      // Construct the contract call data
+      if (!accounts || accounts.length === 0) {
+        console.error('No accounts found');
+        toast.error('No wallet accounts found. Please unlock your wallet.');
+        return null;
+      }
+
+      // Construct the contract call data for balanceOf(address)
+      console.log('Step 3: Constructing contract call...');
       const paddedAddress = walletAddress.slice(2).padStart(64, '0');
       const data = `0x70a08231000000000000000000000000${paddedAddress}`;
       console.log('Contract call data:', data);
+      console.log('Method signature: 0x70a08231 (balanceOf)');
+      console.log('Padded address:', paddedAddress);
 
       // Make the contract call
-      console.log('Making eth_call to contract...');
+      console.log('Step 4: Making eth_call to contract...');
+      const callParams = {
+        to: KNYT_TOKEN_CONFIG.address,
+        data: data
+      };
+      console.log('Call parameters:', callParams);
+
       const result = await window.ethereum.request({
         method: 'eth_call',
-        params: [{
-          to: KNYT_TOKEN_CONFIG.address,
-          data: data
-        }, 'latest']
+        params: [callParams, 'latest']
       });
 
       console.log('Raw contract response:', result);
 
       if (!result || result === '0x' || result === '0x0') {
-        console.log('No balance found or contract returned empty response');
+        console.log('Contract returned empty response - balance is 0');
         return {
           balance: '0',
           formatted: '0 KNYT',
@@ -132,10 +160,16 @@ export const knytTokenService = {
       }
 
       // Convert hex result to decimal
+      console.log('Step 5: Converting hex to decimal...');
       let balanceWei;
       try {
+        // Remove 0x prefix and convert
+        const hexValue = result.startsWith('0x') ? result.slice(2) : result;
+        console.log('Hex value (without 0x):', hexValue);
+        
         balanceWei = parseInt(result, 16);
         console.log('Balance in Wei (raw):', balanceWei);
+        console.log('Balance in Wei (string):', balanceWei.toString());
       } catch (parseError) {
         console.error('Error parsing hex result:', parseError);
         toast.error('Error parsing balance data from blockchain');
@@ -143,7 +177,13 @@ export const knytTokenService = {
       }
 
       // Convert to token units (divide by 10^18 for 18 decimals)
-      const balanceEther = balanceWei / Math.pow(10, KNYT_TOKEN_CONFIG.decimals);
+      console.log('Step 6: Converting to token units...');
+      const decimals = KNYT_TOKEN_CONFIG.decimals;
+      const divisor = Math.pow(10, decimals);
+      console.log('Decimals:', decimals);
+      console.log('Divisor:', divisor);
+      
+      const balanceEther = balanceWei / divisor;
       console.log('Balance in KNYT tokens:', balanceEther);
 
       const result_data = {
@@ -153,11 +193,30 @@ export const knytTokenService = {
       };
 
       console.log('Final balance result:', result_data);
+      console.log('=== KNYT Balance Fetch Complete ===');
+      
       return result_data;
 
     } catch (error) {
+      console.error('=== KNYT Balance Fetch Error ===');
       console.error('Error fetching KNYT token balance:', error);
-      toast.error('Failed to fetch KNYT balance. Please try again.');
+      console.error('Error details:', {
+        message: error instanceof Error ? error.message : 'Unknown error',
+        code: (error as any)?.code,
+        data: (error as any)?.data
+      });
+      
+      // More specific error messages
+      if ((error as any)?.code === 4001) {
+        toast.error('User cancelled the balance request');
+      } else if ((error as any)?.code === -32002) {
+        toast.error('Please unlock your MetaMask wallet');
+      } else if ((error as any)?.message?.includes('network')) {
+        toast.error('Network error - please check your connection');
+      } else {
+        toast.error('Failed to fetch KNYT balance. Please try refreshing.');
+      }
+      
       return null;
     }
   },
@@ -171,6 +230,8 @@ export const knytTokenService = {
         toast.error('MetaMask not found');
         return false;
       }
+
+      console.log('Adding KNYT token to wallet with config:', KNYT_TOKEN_CONFIG);
 
       const wasAdded = await window.ethereum.request({
         method: 'wallet_watchAsset',
@@ -186,6 +247,9 @@ export const knytTokenService = {
 
       if (wasAdded) {
         toast.success('KNYT token added to MetaMask');
+        console.log('KNYT token successfully added to wallet');
+      } else {
+        console.log('User declined to add KNYT token');
       }
       return wasAdded;
     } catch (error) {
@@ -210,11 +274,14 @@ export const knytTokenService = {
   monitorTransactions: (walletAddress: string, onBalanceChange: (newBalance: TokenBalanceResult) => void) => {
     if (!window.ethereum) return;
 
+    console.log('Setting up KNYT balance monitoring for:', walletAddress);
+
     const handleTransaction = async (txHash: string) => {
       console.log('Transaction detected:', txHash);
       
       // Wait a bit for transaction to be mined
       setTimeout(async () => {
+        console.log('Checking balance after transaction...');
         const newBalance = await knytTokenService.getTokenBalance(walletAddress);
         if (newBalance) {
           newBalance.transactionHash = txHash;
