@@ -1,5 +1,4 @@
-
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { RefreshCw, Wallet, Plus, Settings, AlertCircle, CheckCircle, XCircle } from 'lucide-react';
@@ -17,15 +16,26 @@ const KnytBalanceDisplay = ({ onBalanceUpdate }: KnytBalanceDisplayProps) => {
   const [isAddingToken, setIsAddingToken] = useState(false);
   const [lastRefreshTime, setLastRefreshTime] = useState<Date | null>(null);
   const [debugInfo, setDebugInfo] = useState<string>('');
+  const [stableBalance, setStableBalance] = useState<string>('Not available');
   const { connections, connectionData, refreshConnections } = useServiceConnections();
+  
+  // Refs to prevent multiple simultaneous refreshes
+  const refreshInProgress = useRef(false);
+  const lastSuccessfulBalance = useRef<string>('Not available');
 
-  // Enhanced refresh balance function with comprehensive debugging
+  // Enhanced refresh balance function with stability logic
   const handleRefreshBalance = async () => {
     if (!connections.wallet) {
       toast.error('Please connect your wallet first');
       return;
     }
 
+    if (refreshInProgress.current) {
+      console.log('Refresh already in progress, skipping...');
+      return;
+    }
+
+    refreshInProgress.current = true;
     setIsRefreshing(true);
     setDebugInfo('Starting balance refresh...');
     
@@ -52,6 +62,20 @@ const KnytBalanceDisplay = ({ onBalanceUpdate }: KnytBalanceDisplayProps) => {
         // Update last refresh time
         setLastRefreshTime(new Date());
         
+        // Update stable balance with validation
+        const newBalance = getKnytBalance();
+        if (newBalance !== 'Not available' && newBalance !== '0 KNYT') {
+          lastSuccessfulBalance.current = newBalance;
+          setStableBalance(newBalance);
+        } else if (lastSuccessfulBalance.current !== 'Not available') {
+          // If we get 0 but had a previous successful balance, show warning but keep the last good balance
+          console.warn('Got 0 balance but had previous successful balance:', lastSuccessfulBalance.current);
+          setStableBalance(lastSuccessfulBalance.current);
+          setDebugInfo('⚠️ Got 0 balance - using last known good balance');
+        } else {
+          setStableBalance(newBalance);
+        }
+        
         if (onBalanceUpdate) {
           onBalanceUpdate();
         }
@@ -75,6 +99,7 @@ const KnytBalanceDisplay = ({ onBalanceUpdate }: KnytBalanceDisplayProps) => {
       toast.error('Failed to refresh KNYT balance');
     } finally {
       setIsRefreshing(false);
+      refreshInProgress.current = false;
       // Clear debug info after a delay
       setTimeout(() => setDebugInfo(''), 5000);
     }
@@ -101,6 +126,12 @@ const KnytBalanceDisplay = ({ onBalanceUpdate }: KnytBalanceDisplayProps) => {
     try {
       const success = await knytTokenService.switchToMainnet();
       if (success) {
+        // Clear any cached balances when switching networks
+        const walletAddress = connectionData.wallet?.address;
+        if (walletAddress) {
+          knytTokenService.clearBalanceCache(walletAddress);
+        }
+        
         // Refresh balance after network switch
         setTimeout(() => {
           handleRefreshBalance();
@@ -111,7 +142,7 @@ const KnytBalanceDisplay = ({ onBalanceUpdate }: KnytBalanceDisplayProps) => {
     }
   };
 
-  // Enhanced balance getting function
+  // Enhanced balance getting function with stability check
   const getKnytBalance = () => {
     if (!connectionData.wallet?.knytTokenBalance) {
       return 'Not available';
@@ -126,10 +157,27 @@ const KnytBalanceDisplay = ({ onBalanceUpdate }: KnytBalanceDisplayProps) => {
     return new Date(connectionData.wallet.knytTokenBalance.lastUpdated).toLocaleString();
   };
 
+  // Initialize stable balance on component mount
+  useEffect(() => {
+    const currentBalance = getKnytBalance();
+    if (currentBalance !== 'Not available' && currentBalance !== '0 KNYT') {
+      lastSuccessfulBalance.current = currentBalance;
+      setStableBalance(currentBalance);
+    }
+  }, [connectionData.wallet?.knytTokenBalance]);
+
   // Listen for balance update events with enhanced logging
   useEffect(() => {
     const handleBalanceUpdate = (event: any) => {
       console.log('Balance update event received:', event.detail);
+      
+      // Update stable balance with validation
+      const newBalance = getKnytBalance();
+      if (newBalance !== 'Not available' && newBalance !== '0 KNYT') {
+        lastSuccessfulBalance.current = newBalance;
+        setStableBalance(newBalance);
+      }
+      
       refreshConnections();
     };
 
@@ -168,7 +216,8 @@ const KnytBalanceDisplay = ({ onBalanceUpdate }: KnytBalanceDisplayProps) => {
   }
 
   const currentBalance = getKnytBalance();
-  const isZeroBalance = currentBalance === '0 KNYT' || currentBalance === 'Not available';
+  const displayBalance = stableBalance; // Use stable balance for display
+  const isZeroBalance = displayBalance === '0 KNYT' || displayBalance === 'Not available';
   const walletAddress = connectionData.wallet?.address;
 
   return (
@@ -218,14 +267,22 @@ const KnytBalanceDisplay = ({ onBalanceUpdate }: KnytBalanceDisplayProps) => {
           <label className="text-sm font-medium text-gray-600">Current Balance</label>
           <div className="flex items-center space-x-2">
             <p className={`text-lg font-semibold ${isZeroBalance ? 'text-orange-600' : 'text-green-600'}`}>
-              {currentBalance}
+              {displayBalance}
             </p>
             {isZeroBalance ? (
               <XCircle className="h-4 w-4 text-orange-600" />
             ) : (
               <CheckCircle className="h-4 w-4 text-green-600" />
             )}
+            {isRefreshing && (
+              <RefreshCw className="h-4 w-4 animate-spin text-blue-500" />
+            )}
           </div>
+          {currentBalance !== displayBalance && (
+            <p className="text-xs text-blue-600 mt-1">
+              (Showing stable balance - raw: {currentBalance})
+            </p>
+          )}
           {isZeroBalance && (
             <div className="flex items-center space-x-2 mt-1">
               <AlertCircle className="h-4 w-4 text-orange-600" />
@@ -279,7 +336,7 @@ const KnytBalanceDisplay = ({ onBalanceUpdate }: KnytBalanceDisplayProps) => {
                   Add
                 </Button>
               </div>
-              <div>3. Refresh balance after network/token changes</div>
+              <div>3. Clear cache and refresh balance</div>
               <div>4. Check browser console for detailed error logs</div>
               <div className="text-xs text-yellow-600 mt-2">
                 <strong>Contract:</strong> {KNYT_TOKEN_CONFIG?.address}

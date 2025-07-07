@@ -1,3 +1,4 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { knytTokenService } from './knyt-token-service';
@@ -118,6 +119,9 @@ export const walletConnectionService = {
         }
         
         console.log('✅ Signature received');
+        
+        // Clear any existing cache for this wallet before fetching balance
+        knytTokenService.clearBalanceCache(walletAddress);
         
         // Get KNYT token balance with comprehensive logging
         console.log('💰 Fetching KNYT token balance...');
@@ -240,7 +244,7 @@ export const walletConnectionService = {
   },
 
   /**
-   * Update existing wallet connection with KNYT balance
+   * Update existing wallet connection with KNYT balance (with debouncing)
    */
   updateWalletWithKnytBalance: async (): Promise<boolean> => {
     try {
@@ -275,7 +279,7 @@ export const walletConnectionService = {
 
       console.log('💰 Fetching updated KNYT balance for:', walletAddress);
 
-      // Get updated token balance with comprehensive debugging
+      // Get updated token balance with caching and debouncing
       const tokenBalance = await knytTokenService.getTokenBalance(walletAddress);
       if (!tokenBalance) {
         console.log('❌ Failed to fetch token balance');
@@ -350,7 +354,7 @@ export const walletConnectionService = {
   },
 
   /**
-   * Refresh KNYT token balance for connected wallet
+   * Refresh KNYT token balance for connected wallet (with caching)
    */
   refreshKnytBalance: async (): Promise<boolean> => {
     try {
@@ -381,6 +385,9 @@ export const walletConnectionService = {
       }
 
       console.log('💰 Refreshing KNYT balance for:', walletAddress);
+
+      // Clear cache to force fresh balance fetch
+      knytTokenService.clearBalanceCache(walletAddress);
 
       // Get updated token balance
       const tokenBalance = await knytTokenService.getTokenBalance(walletAddress);

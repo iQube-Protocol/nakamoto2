@@ -1,3 +1,4 @@
+
 import { toast } from 'sonner';
 
 // KNYT Token contract details
@@ -8,6 +9,19 @@ export const KNYT_TOKEN_CONFIG = {
   network: 'ethereum',
   chainId: '0x1' // Ethereum Mainnet
 };
+
+// Balance cache to prevent redundant calls
+interface BalanceCache {
+  balance: string;
+  formatted: string;
+  timestamp: number;
+  transactionHash?: string;
+}
+
+let balanceCache: { [address: string]: BalanceCache } = {};
+let pendingBalanceFetches: { [address: string]: Promise<any> } = {};
+const CACHE_DURATION = 30000; // 30 seconds cache
+const BALANCE_FETCH_TIMEOUT = 15000; // 15 seconds timeout
 
 // Fixed ERC-20 ABI for balance checking
 const ERC20_ABI = [
@@ -91,144 +105,191 @@ export const knytTokenService = {
   },
 
   /**
-   * Get KNYT token balance for a wallet address with comprehensive debugging
+   * Check if cached balance is still valid
+   */
+  getCachedBalance: (walletAddress: string): TokenBalanceResult | null => {
+    const cached = balanceCache[walletAddress.toLowerCase()];
+    if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION) {
+      console.log('📦 Using cached balance for:', walletAddress, cached.formatted);
+      return cached;
+    }
+    return null;
+  },
+
+  /**
+   * Get KNYT token balance with caching and debouncing
    */
   getTokenBalance: async (walletAddress: string): Promise<TokenBalanceResult | null> => {
+    const normalizedAddress = walletAddress.toLowerCase();
+    
+    // Check cache first
+    const cachedBalance = knytTokenService.getCachedBalance(walletAddress);
+    if (cachedBalance) {
+      return cachedBalance;
+    }
+
+    // Check if there's already a pending fetch for this address
+    if (pendingBalanceFetches[normalizedAddress]) {
+      console.log('⏳ Waiting for existing balance fetch for:', walletAddress);
+      try {
+        return await pendingBalanceFetches[normalizedAddress];
+      } catch (error) {
+        console.error('Existing fetch failed:', error);
+        delete pendingBalanceFetches[normalizedAddress];
+        // Continue with new fetch
+      }
+    }
+
+    // Create new fetch promise
+    const balanceFetchPromise = knytTokenService.fetchBalanceFromBlockchain(walletAddress);
+    pendingBalanceFetches[normalizedAddress] = balanceFetchPromise;
+
     try {
-      console.log('=== KNYT Balance Fetch Debug START ===');
-      console.log('Wallet address:', walletAddress);
-      console.log('Contract address:', KNYT_TOKEN_CONFIG.address);
-      console.log('Expected chainId:', KNYT_TOKEN_CONFIG.chainId);
+      const result = await balanceFetchPromise;
       
-      if (!window.ethereum) {
-        console.error('❌ No Web3 provider found');
-        toast.error('No Web3 provider found. Please install MetaMask.');
-        return null;
+      // Cache the result if successful
+      if (result) {
+        balanceCache[normalizedAddress] = result;
+        console.log('💾 Cached balance for:', walletAddress, result.formatted);
       }
-
-      // Step 1: Validate network
-      console.log('📡 Step 1: Validating network...');
-      const currentChainId = await window.ethereum.request({ method: 'eth_chainId' });
-      console.log('Current chainId:', currentChainId);
       
-      if (currentChainId !== KNYT_TOKEN_CONFIG.chainId) {
-        console.error('❌ Wrong network detected');
-        toast.error('Please switch to Ethereum Mainnet first');
-        return null;
-      }
-      console.log('✅ Network validation passed');
-
-      // Step 2: Request account access
-      console.log('🔐 Step 2: Requesting account access...');
-      const accounts = await window.ethereum.request({ method: 'eth_requestAccounts' });
-      console.log('Connected accounts:', accounts);
-      
-      if (!accounts || accounts.length === 0) {
-        console.error('❌ No accounts found');
-        toast.error('No wallet accounts found. Please unlock your wallet.');
-        return null;
-      }
-      console.log('✅ Account access granted');
-
-      // Step 3: Prepare contract call
-      console.log('📋 Step 3: Preparing contract call...');
-      
-      // Use the balanceOf function signature: balanceOf(address)
-      const functionSignature = '0x70a08231'; // balanceOf function selector
-      const paddedAddress = walletAddress.slice(2).toLowerCase().padStart(64, '0');
-      const callData = functionSignature + paddedAddress;
-      
-      console.log('Function signature:', functionSignature);
-      console.log('Padded address:', paddedAddress);
-      console.log('Complete call data:', callData);
-
-      // Step 4: Make the contract call
-      console.log('📞 Step 4: Making contract call...');
-      const callParams = {
-        to: KNYT_TOKEN_CONFIG.address,
-        data: callData
-      };
-      console.log('Call parameters:', callParams);
-
-      const result = await window.ethereum.request({
-        method: 'eth_call',
-        params: [callParams, 'latest']
-      });
-
-      console.log('📋 Raw contract response:', result);
-
-      // Step 5: Parse the result
-      console.log('🔧 Step 5: Parsing result...');
-      
-      if (!result || result === '0x' || result === '0x0') {
-        console.log('⚠️ Contract returned empty response - balance is 0');
-        const zeroBalance = {
-          balance: '0',
-          formatted: '0 KNYT',
-          timestamp: Date.now()
-        };
-        console.log('✅ Zero balance result:', zeroBalance);
-        return zeroBalance;
-      }
-
-      // Convert hex to decimal using BigInt for precision
-      const hexValue = result.startsWith('0x') ? result.slice(2) : result;
-      console.log('Hex value (without 0x):', hexValue);
-      
-      if (hexValue.length === 0) {
-        console.log('⚠️ Empty hex value - balance is 0');
-        return {
-          balance: '0',
-          formatted: '0 KNYT',
-          timestamp: Date.now()
-        };
-      }
-
-      const balanceWei = BigInt('0x' + hexValue);
-      console.log('Balance in Wei (BigInt):', balanceWei.toString());
-
-      // Convert to KNYT tokens (18 decimals)
-      const decimals = BigInt(KNYT_TOKEN_CONFIG.decimals);
-      const divisor = BigInt(10) ** decimals;
-      
-      // Use Number conversion for display (should be safe for most token amounts)
-      const balanceInTokens = Number(balanceWei) / Number(divisor);
-      
-      console.log('Balance in KNYT tokens:', balanceInTokens);
-
-      const finalResult = {
-        balance: balanceInTokens.toString(),
-        formatted: `${balanceInTokens.toLocaleString()} KNYT`,
-        timestamp: Date.now()
-      };
-
-      console.log('✅ Final balance result:', finalResult);
-      console.log('=== KNYT Balance Fetch Debug END ===');
-      
-      return finalResult;
-
+      return result;
     } catch (error) {
-      console.error('=== KNYT Balance Fetch ERROR ===');
-      console.error('Error details:', error);
-      console.error('Error message:', error instanceof Error ? error.message : 'Unknown error');
-      console.error('Error code:', (error as any)?.code);
-      console.error('Error data:', (error as any)?.data);
+      console.error('Balance fetch failed:', error);
       
-      // Provide specific error messages
-      if ((error as any)?.code === 4001) {
-        toast.error('User cancelled the balance request');
-      } else if ((error as any)?.code === -32002) {
-        toast.error('Please unlock your MetaMask wallet');
-      } else if ((error as any)?.message?.includes('network')) {
-        toast.error('Network error - please check your connection');
-      } else if ((error as any)?.message?.includes('Invalid JSON RPC')) {
-        toast.error('RPC error - please try again or check network connection');
-      } else {
-        toast.error('Failed to fetch KNYT balance. Please try refreshing.');
+      // If we have a recent cached balance (even if expired), return it as fallback
+      const fallbackCached = balanceCache[normalizedAddress];
+      if (fallbackCached && (Date.now() - fallbackCached.timestamp) < (CACHE_DURATION * 3)) {
+        console.log('🔄 Using fallback cached balance due to fetch error');
+        return fallbackCached;
       }
       
       return null;
+    } finally {
+      // Clean up pending fetch
+      delete pendingBalanceFetches[normalizedAddress];
     }
+  },
+
+  /**
+   * Fetch balance directly from blockchain (internal method)
+   */
+  fetchBalanceFromBlockchain: async (walletAddress: string): Promise<TokenBalanceResult | null> => {
+    return new Promise(async (resolve, reject) => {
+      const timeoutId = setTimeout(() => {
+        reject(new Error('Balance fetch timeout'));
+      }, BALANCE_FETCH_TIMEOUT);
+
+      try {
+        console.log('=== KNYT Balance Fetch START ===');
+        console.log('Wallet address:', walletAddress);
+        console.log('Contract address:', KNYT_TOKEN_CONFIG.address);
+        
+        if (!window.ethereum) {
+          clearTimeout(timeoutId);
+          console.error('❌ No Web3 provider found');
+          reject(new Error('No Web3 provider found'));
+          return;
+        }
+
+        // Step 1: Validate network
+        console.log('📡 Step 1: Validating network...');
+        const currentChainId = await window.ethereum.request({ method: 'eth_chainId' });
+        console.log('Current chainId:', currentChainId);
+        
+        if (currentChainId !== KNYT_TOKEN_CONFIG.chainId) {
+          clearTimeout(timeoutId);
+          console.error('❌ Wrong network detected');
+          reject(new Error('Wrong network - please switch to Ethereum Mainnet'));
+          return;
+        }
+        console.log('✅ Network validation passed');
+
+        // Step 2: Prepare contract call
+        console.log('📋 Step 2: Preparing contract call...');
+        const functionSignature = '0x70a08231'; // balanceOf function selector
+        const paddedAddress = walletAddress.slice(2).toLowerCase().padStart(64, '0');
+        const callData = functionSignature + paddedAddress;
+        
+        console.log('Function signature:', functionSignature);
+        console.log('Call data:', callData);
+
+        // Step 3: Make the contract call
+        console.log('📞 Step 3: Making contract call...');
+        const callParams = {
+          to: KNYT_TOKEN_CONFIG.address,
+          data: callData
+        };
+
+        const result = await window.ethereum.request({
+          method: 'eth_call',
+          params: [callParams, 'latest']
+        });
+
+        console.log('📋 Raw contract response:', result);
+
+        // Step 4: Parse the result
+        console.log('🔧 Step 4: Parsing result...');
+        
+        if (!result || result === '0x' || result === '0x0') {
+          console.log('⚠️ Contract returned empty response - balance is 0');
+          const zeroBalance = {
+            balance: '0',
+            formatted: '0 KNYT',
+            timestamp: Date.now()
+          };
+          clearTimeout(timeoutId);
+          resolve(zeroBalance);
+          return;
+        }
+
+        // Convert hex to decimal using BigInt for precision
+        const hexValue = result.startsWith('0x') ? result.slice(2) : result;
+        console.log('Hex value (without 0x):', hexValue);
+        
+        if (hexValue.length === 0) {
+          console.log('⚠️ Empty hex value - balance is 0');
+          const zeroBalance = {
+            balance: '0',
+            formatted: '0 KNYT',
+            timestamp: Date.now()
+          };
+          clearTimeout(timeoutId);
+          resolve(zeroBalance);
+          return;
+        }
+
+        const balanceWei = BigInt('0x' + hexValue);
+        console.log('Balance in Wei (BigInt):', balanceWei.toString());
+
+        // Convert to KNYT tokens (18 decimals)
+        const decimals = BigInt(KNYT_TOKEN_CONFIG.decimals);
+        const divisor = BigInt(10) ** decimals;
+        
+        // Use Number conversion for display (should be safe for most token amounts)
+        const balanceInTokens = Number(balanceWei) / Number(divisor);
+        
+        console.log('Balance in KNYT tokens:', balanceInTokens);
+
+        const finalResult = {
+          balance: balanceInTokens.toString(),
+          formatted: `${balanceInTokens.toLocaleString()} KNYT`,
+          timestamp: Date.now()
+        };
+
+        console.log('✅ Final balance result:', finalResult);
+        console.log('=== KNYT Balance Fetch SUCCESS ===');
+        
+        clearTimeout(timeoutId);
+        resolve(finalResult);
+
+      } catch (error) {
+        clearTimeout(timeoutId);
+        console.error('=== KNYT Balance Fetch ERROR ===');
+        console.error('Error details:', error);
+        reject(error);
+      }
+    });
   },
 
   /**
@@ -270,6 +331,22 @@ export const knytTokenService = {
   },
 
   /**
+   * Clear balance cache for specific address or all addresses
+   */
+  clearBalanceCache: (walletAddress?: string): void => {
+    if (walletAddress) {
+      const normalizedAddress = walletAddress.toLowerCase();
+      delete balanceCache[normalizedAddress];
+      delete pendingBalanceFetches[normalizedAddress];
+      console.log('🗑️ Cleared cache for:', walletAddress);
+    } else {
+      balanceCache = {};
+      pendingBalanceFetches = {};
+      console.log('🗑️ Cleared all balance caches');
+    }
+  },
+
+  /**
    * Format token balance for display
    */
   formatBalance: (balance: string | number): string => {
@@ -289,6 +366,8 @@ export const knytTokenService = {
     const handleAccountsChanged = async (accounts: string[]) => {
       console.log('Accounts changed:', accounts);
       if (accounts.length > 0 && accounts[0] === walletAddress) {
+        // Clear cache when account changes
+        knytTokenService.clearBalanceCache(walletAddress);
         const newBalance = await knytTokenService.getTokenBalance(walletAddress);
         if (newBalance) {
           onBalanceChange(newBalance);
@@ -299,6 +378,8 @@ export const knytTokenService = {
     const handleChainChanged = async (chainId: string) => {
       console.log('Chain changed to:', chainId);
       if (chainId === KNYT_TOKEN_CONFIG.chainId) {
+        // Clear cache when network changes
+        knytTokenService.clearBalanceCache(walletAddress);
         const newBalance = await knytTokenService.getTokenBalance(walletAddress);
         if (newBalance) {
           onBalanceChange(newBalance);
