@@ -17,6 +17,7 @@ const PasswordReset = () => {
   const [isLoading, setIsLoading] = useState(false);
   const [isValidating, setIsValidating] = useState(true);
   const [isValidToken, setIsValidToken] = useState(false);
+  const [tokenValidationError, setTokenValidationError] = useState<string | null>(null);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
 
@@ -24,35 +25,57 @@ const PasswordReset = () => {
     console.log("PasswordReset page loaded with URL params:", window.location.href);
     console.log("Search params:", Object.fromEntries(searchParams.entries()));
     
-    // Check if we have the necessary auth tokens in the URL
+    // Immediate token validation - highest priority
     const accessToken = searchParams.get('access_token');
     const refreshToken = searchParams.get('refresh_token');
     const type = searchParams.get('type');
     
-    console.log("Tokens found:", { accessToken: !!accessToken, refreshToken: !!refreshToken, type });
+    console.log("Token validation:", { 
+      hasAccessToken: !!accessToken, 
+      hasRefreshToken: !!refreshToken, 
+      type,
+      tokenLength: accessToken ? accessToken.length : 0
+    });
     
     if (accessToken && refreshToken && type === 'recovery') {
-      console.log("Valid password reset tokens found, setting session");
+      console.log("Valid password reset tokens found, setting session immediately");
       
-      // Set the session with the tokens from URL - this is critical for password updates
+      // Critical: Set session IMMEDIATELY with the tokens from URL
       supabase.auth.setSession({
         access_token: accessToken,
         refresh_token: refreshToken
       }).then(({ data, error }) => {
         if (error) {
           console.error("Error setting session:", error);
+          setTokenValidationError(`Invalid password reset link: ${error.message}`);
           toast.error('Invalid password reset link. Please request a new one.');
-          navigate('/signin');
+          setTimeout(() => {
+            navigate('/signin');
+          }, 3000);
         } else {
           console.log("Session set successfully for password reset");
+          console.log("Session data:", data);
           setIsValidToken(true);
+          setTokenValidationError(null);
         }
+        setIsValidating(false);
+      }).catch((err) => {
+        console.error("Unexpected error setting session:", err);
+        setTokenValidationError(`Unexpected error: ${err.message}`);
         setIsValidating(false);
       });
     } else {
-      console.log("Missing required tokens or incorrect type, redirecting to signin");
+      console.log("Missing required tokens:", { 
+        accessToken: !!accessToken, 
+        refreshToken: !!refreshToken, 
+        type 
+      });
+      setTokenValidationError('Invalid password reset link - missing required parameters');
       toast.error('Invalid password reset link. Please request a new one.');
-      navigate('/signin');
+      setTimeout(() => {
+        navigate('/signin');
+      }, 2000);
+      setIsValidating(false);
     }
   }, [searchParams, navigate]);
 
@@ -73,6 +96,19 @@ const PasswordReset = () => {
     
     try {
       console.log("Attempting to update password...");
+      
+      // Get current session to ensure we're authenticated
+      const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+      
+      if (sessionError || !session) {
+        console.error('No valid session for password update:', sessionError);
+        toast.error('Your password reset session has expired. Please request a new reset link.');
+        navigate('/signin');
+        return;
+      }
+      
+      console.log("Current session valid, updating password...");
+      
       const { error } = await supabase.auth.updateUser({
         password: password
       });
@@ -84,9 +120,13 @@ const PasswordReset = () => {
         console.log("Password updated successfully");
         toast.success('Password updated successfully! You can now sign in with your new password.');
         
-        // Sign out the user after successful password reset to ensure clean state
+        // Clear the session and redirect to sign in
         await supabase.auth.signOut();
-        navigate('/signin');
+        
+        // Add a small delay to ensure the success message is seen
+        setTimeout(() => {
+          navigate('/signin', { replace: true });
+        }, 1500);
       }
     } catch (err) {
       console.error('Unexpected error during password reset:', err);
@@ -110,9 +150,30 @@ const PasswordReset = () => {
     );
   }
 
-  // Don't render the form if token validation failed
-  if (!isValidToken) {
-    return null; // Will have already redirected to signin
+  // Show error state if token validation failed
+  if (tokenValidationError || !isValidToken) {
+    return (
+      <AuthLayout 
+        title="Invalid Reset Link" 
+        subtitle="This password reset link is invalid or has expired"
+      >
+        <div className="text-center py-8">
+          <p className="text-red-600 mb-4">
+            {tokenValidationError || 'The password reset link is invalid or has expired.'}
+          </p>
+          <p className="text-muted-foreground">
+            Please request a new password reset from the sign-in page.
+          </p>
+          <Button 
+            onClick={() => navigate('/signin')} 
+            className="mt-4"
+            variant="outline"
+          >
+            Back to Sign In
+          </Button>
+        </div>
+      </AuthLayout>
+    );
   }
 
   return (

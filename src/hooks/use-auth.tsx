@@ -1,3 +1,4 @@
+
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -33,15 +34,27 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isGuest, setIsGuest] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
+  const [isPasswordResetActive, setIsPasswordResetActive] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Helper function to check if current URL is a password reset
+  // Enhanced helper function to detect password reset flow
   const isPasswordResetFlow = () => {
     const urlParams = new URLSearchParams(window.location.search);
-    return window.location.pathname === '/reset-password' || 
-           (urlParams.get('type') === 'recovery' && urlParams.get('access_token'));
+    const hasRecoveryTokens = urlParams.get('type') === 'recovery' && 
+                             urlParams.get('access_token') && 
+                             urlParams.get('refresh_token');
+    const isResetPath = window.location.pathname === '/reset-password';
+    
+    return isResetPath || hasRecoveryTokens;
   };
+
+  // Check for password reset on location changes
+  useEffect(() => {
+    const isReset = isPasswordResetFlow();
+    console.log("Password reset flow check:", isReset, "Current path:", location.pathname);
+    setIsPasswordResetActive(isReset);
+  }, [location]);
 
   useEffect(() => {
     console.log("Auth provider initialized");
@@ -60,19 +73,21 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, newSession) => {
         console.log("Auth state changed:", event, newSession?.user?.email);
+        console.log("Password reset active:", isPasswordResetActive);
+        
         if (mounted) {
           setSession(newSession);
           setUser(newSession?.user ?? null);
           setIsGuest(false);
           setLoading(false);
           
-          // Handle specific auth events with more selective redirect logic
+          // Handle specific auth events with password reset priority
           if (event === 'SIGNED_IN') {
             console.log("User signed in, checking if redirect needed");
             
-            // CRITICAL: Don't redirect if this is a password reset flow
-            if (isPasswordResetFlow()) {
-              console.log("Password reset flow detected, skipping redirect");
+            // CRITICAL: Absolute priority for password reset flow
+            if (isPasswordResetActive || isPasswordResetFlow()) {
+              console.log("Password reset flow active - blocking ALL redirects");
               return;
             }
             
@@ -100,7 +115,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             console.log("User signed out, session cleared");
             localStorage.removeItem('guestMode');
             setIsGuest(false);
-            navigate('/signin');
+            setIsPasswordResetActive(false);
+            
+            // Don't redirect if we're in password reset flow
+            if (!isPasswordResetFlow()) {
+              navigate('/signin');
+            }
           } else if (event === 'TOKEN_REFRESHED') {
             console.log("Token refreshed successfully");
           } else if (event === 'USER_UPDATED') {
@@ -138,7 +158,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       mounted = false;
       subscription.unsubscribe();
     };
-  }, [navigate, location.pathname]);
+  }, [navigate, location.pathname, isPasswordResetActive]);
 
   const signIn = async (email: string, password: string) => {
     console.log("Attempting sign in for:", email);
@@ -243,6 +263,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(null);
       setSession(null);
       setIsGuest(false);
+      setIsPasswordResetActive(false);
       localStorage.removeItem('guestMode');
       navigate('/signin', { replace: true });
     } catch (error) {
