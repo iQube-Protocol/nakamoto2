@@ -78,11 +78,11 @@ export const usePrivateData = (selectedIQube: MetaQube) => {
         setPrivateData(newData);
         console.log('✅ Private data updated successfully');
         
-        // Force a fresh fetch after a delay to verify the save worked
+        // Trigger a refetch after a brief delay
         setTimeout(() => {
           console.log('🔄 Refetching data to verify save...');
           fetchPrivateData();
-        }, 2000);
+        }, 500);
       } else {
         console.error('❌ Failed to update private data');
       }
@@ -98,7 +98,7 @@ export const usePrivateData = (selectedIQube: MetaQube) => {
     fetchPrivateData();
   }, [selectedIQube]);
 
-  // Listen for data updates with debouncing
+  // Listen for data updates with simplified debouncing
   useEffect(() => {
     let timeoutId: NodeJS.Timeout;
     
@@ -108,10 +108,10 @@ export const usePrivateData = (selectedIQube: MetaQube) => {
       if (timeoutId) {
         clearTimeout(timeoutId);
       }
-      // Debounce the refetch to avoid multiple rapid calls
+      // Debounce the refetch with a shorter delay
       timeoutId = setTimeout(() => {
         fetchPrivateData();
-      }, 1000);
+      }, 500);
     };
 
     // Listen to multiple event types

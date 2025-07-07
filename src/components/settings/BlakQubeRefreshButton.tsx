@@ -14,7 +14,10 @@ const BlakQubeRefreshButton = ({ onRefresh, personaType = 'qrypto' }: BlakQubeRe
   const [isRefreshing, setIsRefreshing] = useState(false);
 
   const handleRefresh = async () => {
+    if (isRefreshing) return; // Prevent multiple simultaneous refreshes
+    
     setIsRefreshing(true);
+    
     try {
       console.log('=== BLAKQUBE REFRESH START ===');
       console.log('🔄 Refreshing persona data for type:', personaType);
@@ -35,21 +38,17 @@ const BlakQubeRefreshButton = ({ onRefresh, personaType = 'qrypto' }: BlakQubeRe
         console.log('✅ Persona data refresh successful for type:', personaType);
         toast.success(`${personaType === 'knyt' ? 'KNYT' : 'Qrypto'} Persona data refreshed successfully!`);
         
-        // Trigger comprehensive data refresh events with a longer delay to ensure DB is updated
-        setTimeout(() => {
-          const events = ['privateDataUpdated', 'personaDataUpdated', 'balanceUpdated', 'walletDataRefreshed'];
-          events.forEach(eventName => {
-            console.log(`📡 Dispatching event: ${eventName}`);
-            const event = new CustomEvent(eventName);
-            window.dispatchEvent(event);
-          });
-        }, 1500);
+        // Trigger immediate data refresh events
+        const events = ['privateDataUpdated', 'personaDataUpdated', 'balanceUpdated', 'walletDataRefreshed'];
+        events.forEach(eventName => {
+          console.log(`📡 Dispatching event: ${eventName}`);
+          const event = new CustomEvent(eventName);
+          window.dispatchEvent(event);
+        });
         
-        // Call the optional onRefresh callback with delay
+        // Call the optional onRefresh callback immediately
         if (onRefresh) {
-          setTimeout(() => {
-            onRefresh();
-          }, 2000);
+          onRefresh();
         }
       } else {
         console.error('❌ Persona data refresh failed for type:', personaType);
@@ -59,6 +58,7 @@ const BlakQubeRefreshButton = ({ onRefresh, personaType = 'qrypto' }: BlakQubeRe
       console.error('❌ Error refreshing persona data:', error);
       toast.error(`Error refreshing ${personaType === 'knyt' ? 'KNYT' : 'Qrypto'} Persona data`);
     } finally {
+      // Always reset the loading state, even if there's an error
       setIsRefreshing(false);
       console.log('=== BLAKQUBE REFRESH END ===');
     }
