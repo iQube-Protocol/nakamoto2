@@ -1,4 +1,3 @@
-
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -37,6 +36,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Helper function to check if current URL is a password reset
+  const isPasswordResetFlow = () => {
+    const urlParams = new URLSearchParams(window.location.search);
+    return window.location.pathname === '/reset-password' || 
+           (urlParams.get('type') === 'recovery' && urlParams.get('access_token'));
+  };
+
   useEffect(() => {
     console.log("Auth provider initialized");
     let mounted = true;
@@ -64,6 +70,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           if (event === 'SIGNED_IN') {
             console.log("User signed in, checking if redirect needed");
             
+            // CRITICAL: Don't redirect if this is a password reset flow
+            if (isPasswordResetFlow()) {
+              console.log("Password reset flow detected, skipping redirect");
+              return;
+            }
+            
             // Only redirect if this is a fresh sign-in (not session restoration)
             // and user is on an unprotected route
             const protectedRoutes = ['/mondai', '/settings', '/learn', '/earn', '/connect', '/profile', '/qubes'];
@@ -73,15 +85,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             // 1. Not initial load (session restoration)
             // 2. User is on root path or sign-in related pages
             // 3. Not already on a protected route
-            // 4. Not on the password reset page (allow password reset flow to complete)
             const unprotectedPaths = ['/', '/signin', '/signup', '/splash'];
             const isOnUnprotectedPath = unprotectedPaths.includes(location.pathname);
-            const isOnPasswordResetPage = location.pathname === '/reset-password';
             
             if (!isInitialLoad && 
                 isOnUnprotectedPath &&
-                !isOnProtectedRoute &&
-                !isOnPasswordResetPage) {
+                !isOnProtectedRoute) {
               console.log("Redirecting to MonDAI after fresh sign-in");
               navigate('/mondai');
             } else {

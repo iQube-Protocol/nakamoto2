@@ -15,6 +15,7 @@ const PasswordReset = () => {
   const [showPassword, setShowPassword] = useState(false);
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
+  const [isValidating, setIsValidating] = useState(true);
   const [isValidToken, setIsValidToken] = useState(false);
   const navigate = useNavigate();
   const [searchParams] = useSearchParams();
@@ -32,9 +33,8 @@ const PasswordReset = () => {
     
     if (accessToken && refreshToken && type === 'recovery') {
       console.log("Valid password reset tokens found, setting session");
-      setIsValidToken(true);
       
-      // Set the session with the tokens from URL
+      // Set the session with the tokens from URL - this is critical for password updates
       supabase.auth.setSession({
         access_token: accessToken,
         refresh_token: refreshToken
@@ -45,7 +45,9 @@ const PasswordReset = () => {
           navigate('/signin');
         } else {
           console.log("Session set successfully for password reset");
+          setIsValidToken(true);
         }
+        setIsValidating(false);
       });
     } else {
       console.log("Missing required tokens or incorrect type, redirecting to signin");
@@ -81,6 +83,9 @@ const PasswordReset = () => {
       } else {
         console.log("Password updated successfully");
         toast.success('Password updated successfully! You can now sign in with your new password.');
+        
+        // Sign out the user after successful password reset to ensure clean state
+        await supabase.auth.signOut();
         navigate('/signin');
       }
     } catch (err) {
@@ -91,8 +96,8 @@ const PasswordReset = () => {
     }
   };
 
-  // Don't render the form until we've validated the token
-  if (!isValidToken) {
+  // Show loading state while validating the token
+  if (isValidating) {
     return (
       <AuthLayout 
         title="Validating Reset Link" 
@@ -103,6 +108,11 @@ const PasswordReset = () => {
         </div>
       </AuthLayout>
     );
+  }
+
+  // Don't render the form if token validation failed
+  if (!isValidToken) {
+    return null; // Will have already redirected to signin
   }
 
   return (
