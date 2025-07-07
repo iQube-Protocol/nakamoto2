@@ -15,11 +15,17 @@ const SignIn = () => {
   const { user } = useAuth();
   const [searchParams] = useSearchParams();
   
-  // Check for email confirmation
+  // Check for email confirmation and password reset
   useEffect(() => {
     const confirmed = searchParams.get('confirmed');
+    const reset = searchParams.get('reset');
+    
     if (confirmed === 'true') {
       toast.success("Email confirmed successfully! You can now sign in.");
+    }
+    
+    if (reset === 'true') {
+      toast.success("Password reset link sent! Please check your email and follow the instructions to reset your password.");
     }
   }, [searchParams]);
   

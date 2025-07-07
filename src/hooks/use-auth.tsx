@@ -18,6 +18,10 @@ interface AuthContextProps {
   }>;
   signInAsGuest: () => void;
   signOut: () => Promise<void>;
+  resetPassword: (email: string) => Promise<{
+    error: Error | null;
+    success: boolean;
+  }>;
   loading: boolean;
 }
 
@@ -186,6 +190,29 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const resetPassword = async (email: string) => {
+    try {
+      const redirectTo = `${window.location.origin}/signin?reset=true`;
+      
+      console.log("Attempting password reset for:", email, "with redirect to:", redirectTo);
+      
+      const { error } = await supabase.auth.resetPasswordForEmail(email, {
+        redirectTo: redirectTo
+      });
+
+      if (error) {
+        console.error('Error sending password reset email:', error.message);
+        return { error, success: false };
+      }
+
+      console.log("Password reset email sent successfully");
+      return { error: null, success: true };
+    } catch (error) {
+      console.error('Unexpected error during password reset:', error);
+      return { error: error as Error, success: false };
+    }
+  };
+
   const signInAsGuest = () => {
     console.log("Signing in as guest");
     localStorage.setItem('guestMode', 'true');
@@ -218,6 +245,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     signUp,
     signInAsGuest,
     signOut,
+    resetPassword,
     loading,
   };
 
