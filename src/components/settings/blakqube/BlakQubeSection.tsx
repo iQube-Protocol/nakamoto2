@@ -9,6 +9,8 @@ import AccessControls from './AccessControls';
 import BlakQubeRefreshButton from '../BlakQubeRefreshButton';
 import KnytBlakQubeBalance from '../knyt/KnytBlakQubeBalance';
 import { getPersonaType } from '@/services/blakqube/database-operations';
+import { verifyDatabaseState } from '@/services/blakqube/database-verification';
+import { Button } from '@/components/ui/button';
 
 interface PrivateData {
   [key: string]: string | string[];
@@ -28,6 +30,8 @@ const BlakQubeSection = ({ privateData, onUpdatePrivateData, metaQube }: BlakQub
     // Debug logging to see the actual identifier value
     console.log("BlakQubeSection - metaQube identifier:", metaQube?.["iQube-Identifier"]);
     console.log("BlakQubeSection - full metaQube:", metaQube);
+    console.log("BlakQubeSection - current privateData:", privateData);
+    console.log("BlakQubeSection - KNYT-COYN-Owned in privateData:", privateData["KNYT-COYN-Owned"]);
     
     // Check if this is KNYT Persona based on the metaQube identifier
     // Support both possible identifier formats
@@ -45,6 +49,24 @@ const BlakQubeSection = ({ privateData, onUpdatePrivateData, metaQube }: BlakQub
       // Trigger a refresh of the private data display
       // This will cause the parent to re-fetch persona data
       console.log('KNYT balance updated, refreshing private data display');
+    };
+
+    // Debug function to verify database state
+    const handleVerifyDatabase = async () => {
+      console.log('🔍 Manual database verification triggered...');
+      const dbState = await verifyDatabaseState();
+      
+      if (dbState) {
+        const message = `
+Database State:
+- Wallet KNYT: ${dbState.walletConnection?.connection_data?.knytTokenBalance?.formatted || 'None'}
+- KNYT Personas: ${dbState.knytPersonas?.length || 0}
+- KNYT-COYN in DB: ${dbState.knytPersonas?.[0]?.["KNYT-COYN-Owned"] || 'None'}
+- Qrypto Personas: ${dbState.qryptoPersonas?.length || 0}
+        `;
+        
+        toast.info(message);
+      }
     };
   
   // Get the appropriate title for the blakQube section based on iQube type
@@ -67,8 +89,16 @@ const BlakQubeSection = ({ privateData, onUpdatePrivateData, metaQube }: BlakQub
 
   return (
     <div>
-      <div className="mb-4">
+      <div className="mb-4 flex gap-2">
         <BlakQubeRefreshButton personaType={personaType} />
+        <Button 
+          variant="outline" 
+          size="sm" 
+          onClick={handleVerifyDatabase}
+          className="text-xs"
+        >
+          Debug DB
+        </Button>
       </div>
       
       {/* KNYT Balance Display for KNYT personas */}

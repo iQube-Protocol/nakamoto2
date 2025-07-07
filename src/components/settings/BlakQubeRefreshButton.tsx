@@ -17,15 +17,14 @@ const BlakQubeRefreshButton = ({ onRefresh, personaType = 'qrypto' }: BlakQubeRe
     setIsRefreshing(true);
     try {
       console.log('=== BLAKQUBE REFRESH START ===');
-      console.log('🔄 Refreshing persona data from connections for type:', personaType);
-      console.log('📋 Refresh button persona type:', personaType);
+      console.log('🔄 Refreshing persona data for type:', personaType);
       
       // First ensure wallet data is updated with KNYT balance
       const { walletConnectionService } = await import('@/services/wallet-connection-service');
       console.log('💰 Updating wallet with KNYT balance...');
       await walletConnectionService.updateWalletWithKnytBalance();
       
-      // Update persona from connections with explicit type logging
+      // Update persona from connections with EXPLICIT type
       console.log('🔄 Calling updatePersonaFromConnections with type:', personaType);
       const success = await blakQubeService.updatePersonaFromConnections(personaType);
       
@@ -33,17 +32,21 @@ const BlakQubeRefreshButton = ({ onRefresh, personaType = 'qrypto' }: BlakQubeRe
         console.log('✅ Persona data refresh successful for type:', personaType);
         toast.success(`${personaType === 'knyt' ? 'KNYT' : 'Qrypto'} Persona data refreshed successfully!`);
         
-        // Trigger comprehensive data refresh events
-        const events = ['privateDataUpdated', 'personaDataUpdated', 'balanceUpdated', 'walletDataRefreshed'];
-        events.forEach(eventName => {
-          console.log(`📡 Dispatching event: ${eventName}`);
-          const event = new CustomEvent(eventName);
-          window.dispatchEvent(event);
-        });
+        // Trigger comprehensive data refresh events with a delay to ensure DB is updated
+        setTimeout(() => {
+          const events = ['privateDataUpdated', 'personaDataUpdated', 'balanceUpdated', 'walletDataRefreshed'];
+          events.forEach(eventName => {
+            console.log(`📡 Dispatching event: ${eventName}`);
+            const event = new CustomEvent(eventName);
+            window.dispatchEvent(event);
+          });
+        }, 500);
         
         // Call the optional onRefresh callback
         if (onRefresh) {
-          onRefresh();
+          setTimeout(() => {
+            onRefresh();
+          }, 1000);
         }
       } else {
         console.error('❌ Persona data refresh failed for type:', personaType);
@@ -67,7 +70,7 @@ const BlakQubeRefreshButton = ({ onRefresh, personaType = 'qrypto' }: BlakQubeRe
       className="gap-2"
     >
       <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-      {isRefreshing ? 'Refreshing...' : 'Refresh Data'}
+      {isRefreshing ? 'Refreshing...' : `Refresh ${personaType === 'knyt' ? 'KNYT' : 'Qrypto'} Data`}
     </Button>
   );
 };

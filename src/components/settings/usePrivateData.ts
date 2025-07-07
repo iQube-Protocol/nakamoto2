@@ -2,18 +2,12 @@
 import { useState, useEffect } from 'react';
 import { MetaQube } from '@/lib/types';
 import { blakQubeService } from '@/services/blakqube-service';
-import { useAuth } from '@/hooks/use-auth';
-import { toast } from 'sonner';
+import { getPersonaType } from '@/services/blakqube/database-operations';
 import { 
   knytPersonaToPrivateData, 
   qryptoPersonaToPrivateData,
-  createDefaultKNYTPersona,
-  createDefaultQryptoPersona,
-  // Legacy functions
-  blakQubeToPrivateData, 
-  createDefaultBlakQube 
+  blakQubeToPrivateData 
 } from '@/services/blakqube/data-transformers';
-import { getPersonaType } from '@/services/blakqube/database-operations';
 import { personaDataSync } from '@/services/persona-data-sync';
 
 interface PrivateData {
@@ -21,128 +15,115 @@ interface PrivateData {
 }
 
 export const usePrivateData = (selectedIQube: MetaQube) => {
-  const { user } = useAuth();
   const [privateData, setPrivateData] = useState<PrivateData>({});
-  const [loading, setLoading] = useState(true);
 
-  // Determine persona type based on the selected iQube
-  const personaType = getPersonaType(selectedIQube["iQube-Identifier"]);
-
-  // Load real persona data from database
-  const loadPersonaData = async () => {
-    if (!user) {
-      setLoading(false);
-      return;
-    }
-
+  const fetchPrivateData = async () => {
     try {
-      console.log('Loading persona data for type:', personaType);
-      const personaData = await blakQubeService.getPersonaData(personaType);
+      console.log('=== FETCHING PRIVATE DATA ===');
+      console.log('📋 Selected iQube:', selectedIQube["iQube-Identifier"]);
       
-      if (personaData) {
-        console.log('Persona data loaded:', personaData);
-        // Convert persona data to privateData format
-        let formattedData: PrivateData;
-        if (personaType === 'knyt') {
-          formattedData = knytPersonaToPrivateData(personaData as any);
-        } else {
-          formattedData = qryptoPersonaToPrivateData(personaData as any);
-        }
-        setPrivateData(formattedData);
-      } else {
-        console.log('No persona data found, using defaults for type:', personaType);
-        // Set default empty data if no persona exists
-        let defaultData;
-        if (personaType === 'knyt') {
-          defaultData = createDefaultKNYTPersona(user.email);
-          const formattedData = knytPersonaToPrivateData(defaultData as any);
-          setPrivateData(formattedData);
-        } else {
-          defaultData = createDefaultQryptoPersona(user.email);
-          const formattedData = qryptoPersonaToPrivateData(defaultData as any);
-          setPrivateData(formattedData);
-        }
-      }
-    } catch (error) {
-      console.error('Error loading persona data:', error);
-      // Fallback to empty data
-      let defaultData;
+      const personaType = getPersonaType(selectedIQube["iQube-Identifier"]);
+      console.log('📋 Determined persona type:', personaType);
+      
       if (personaType === 'knyt') {
-        defaultData = createDefaultKNYTPersona(user?.email);
-        const formattedData = knytPersonaToPrivateData(defaultData as any);
-        setPrivateData(formattedData);
+        console.log('🔍 Fetching KNYT persona data...');
+        const knytPersona = await blakQubeService.getPersonaData('knyt');
+        console.log('📋 Raw KNYT persona from DB:', knytPersona);
+        
+        if (knytPersona) {
+          console.log('💰 KNYT-COYN-Owned from DB:', knytPersona["KNYT-COYN-Owned"]);
+          const transformedData = knytPersonaToPrivateData(knytPersona);
+          console.log('📋 Transformed KNYT data:', transformedData);
+          console.log('💰 KNYT-COYN-Owned after transform:', transformedData["KNYT-COYN-Owned"]);
+          setPrivateData(transformedData);
+        } else {
+          console.log('⚠️ No KNYT persona found in database');
+          setPrivateData({});
+        }
       } else {
-        defaultData = createDefaultQryptoPersona(user?.email);
-        const formattedData = qryptoPersonaToPrivateData(defaultData as any);
-        setPrivateData(formattedData);
+        console.log('🔍 Fetching Qrypto persona data...');
+        const qryptoPersona = await blakQubeService.getPersonaData('qrypto');
+        console.log('📋 Raw Qrypto persona from DB:', qryptoPersona);
+        
+        if (qryptoPersona) {
+          const transformedData = qryptoPersonaToPrivateData(qryptoPersona);
+          console.log('📋 Transformed Qrypto data:', transformedData);
+          setPrivateData(transformedData);
+        } else {
+          console.log('⚠️ No Qrypto persona found in database');
+          setPrivateData({});
+        }
       }
-    } finally {
-      setLoading(false);
+      
+      console.log('=== PRIVATE DATA FETCH COMPLETE ===');
+    } catch (error) {
+      console.error('❌ Error fetching private data:', error);
+      setPrivateData({});
     }
   };
-
-  useEffect(() => {
-    loadPersonaData();
-  }, [user, personaType]);
-
-  // Listen for private data updates from wallet connections
-  useEffect(() => {
-    const handlePrivateDataUpdate = () => {
-      console.log('Private data update event received, reloading persona data...');
-      loadPersonaData();
-    };
-
-    window.addEventListener('privateDataUpdated', handlePrivateDataUpdate);
-    
-    return () => {
-      window.removeEventListener('privateDataUpdated', handlePrivateDataUpdate);
-    };
-  }, [user, personaType]);
 
   const handleUpdatePrivateData = async (newData: PrivateData) => {
-    console.log('Updating private data for persona type:', personaType, newData);
-    
     try {
-      // Update local state immediately for UI responsiveness
-      setPrivateData(newData);
+      console.log('=== UPDATING PRIVATE DATA ===');
+      console.log('📋 New data to save:', newData);
+      console.log('💰 KNYT-COYN-Owned in new data:', newData["KNYT-COYN-Owned"]);
       
-      // Save to database using the new persona service
+      const personaType = getPersonaType(selectedIQube["iQube-Identifier"]);
+      console.log('📋 Saving to persona type:', personaType);
+      
       const success = await blakQubeService.saveManualPersonaData(newData, personaType);
+      console.log('📋 Save result:', success);
       
       if (success) {
-        console.log('Private data saved successfully to database');
-        toast.success(`${personaType === 'knyt' ? 'KNYT' : 'Qrypto'} Persona data saved successfully`);
+        setPrivateData(newData);
+        console.log('✅ Private data updated successfully');
         
-        // Also trigger connection updates to maintain consistency
-        console.log('Triggering connection updates after manual save...');
-        await blakQubeService.updatePersonaFromConnections(personaType);
-        
-        // Trigger a final refresh to ensure data consistency
-        await loadPersonaData();
-        
-        // Notify all components listening for persona data updates
-        personaDataSync.notifyDataUpdated();
+        // Force a fresh fetch to verify the save worked
+        setTimeout(() => {
+          console.log('🔄 Refetching data to verify save...');
+          fetchPrivateData();
+        }, 1000);
       } else {
-        console.error('Failed to save private data to database');
-        toast.error(`Failed to save ${personaType === 'knyt' ? 'KNYT' : 'Qrypto'} Persona data. Please try again.`);
-        
-        // Revert local state on failure
-        await loadPersonaData();
+        console.error('❌ Failed to update private data');
       }
-    } catch (error) {
-      console.error('Error saving private data:', error);
-      toast.error(`Error saving ${personaType === 'knyt' ? 'KNYT' : 'Qrypto'} Persona data. Please try again.`);
       
-      // Revert local state on error
-      await loadPersonaData();
+      console.log('=== PRIVATE DATA UPDATE COMPLETE ===');
+    } catch (error) {
+      console.error('❌ Error updating private data:', error);
     }
   };
+
+  // Initial fetch
+  useEffect(() => {
+    fetchPrivateData();
+  }, [selectedIQube]);
+
+  // Listen for data updates
+  useEffect(() => {
+    const handleDataUpdate = () => {
+      console.log('📡 Received data update event, refetching...');
+      fetchPrivateData();
+    };
+
+    // Listen to multiple event types
+    const events = ['privateDataUpdated', 'personaDataUpdated', 'balanceUpdated', 'walletDataRefreshed'];
+    events.forEach(eventName => {
+      window.addEventListener(eventName, handleDataUpdate);
+    });
+
+    // Also use the persona data sync service
+    const unsubscribe = personaDataSync.subscribe(handleDataUpdate);
+
+    return () => {
+      events.forEach(eventName => {
+        window.removeEventListener(eventName, handleDataUpdate);
+      });
+      unsubscribe();
+    };
+  }, [selectedIQube]);
 
   return {
     privateData,
-    handleUpdatePrivateData,
-    loading,
-    refreshData: loadPersonaData,
-    personaType
+    handleUpdatePrivateData
   };
 };
