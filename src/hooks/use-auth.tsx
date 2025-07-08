@@ -1,4 +1,3 @@
-
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -41,8 +40,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const isPasswordResetFlow = () => {
     const urlParams = new URLSearchParams(window.location.search);
     const hasRecoveryTokens = urlParams.get('type') === 'recovery' && 
-                             urlParams.get('access_token') && 
-                             urlParams.get('refresh_token');
+                             (urlParams.get('access_token') || urlParams.get('refresh_token'));
     const isResetPath = window.location.pathname === '/reset-password';
     
     console.log("Password reset flow check:", {
@@ -162,7 +160,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
     
     return () => {
-      mounted = false; // Fix the memory leak bug
+      mounted = false;
       subscription.unsubscribe();
     };
   }, [navigate, location.pathname]);

@@ -26,7 +26,7 @@ const PasswordReset = () => {
     console.log("PasswordReset page loaded with URL:", window.location.href);
     console.log("Search params:", Object.fromEntries(searchParams.entries()));
     
-    // Immediate token validation - highest priority
+    // Enhanced token validation with better error handling
     const accessToken = searchParams.get('access_token');
     const refreshToken = searchParams.get('refresh_token');
     const type = searchParams.get('type');
@@ -39,10 +39,11 @@ const PasswordReset = () => {
       refreshTokenLength: refreshToken ? refreshToken.length : 0
     });
     
+    // Check if we have the required tokens
     if (accessToken && refreshToken && type === 'recovery') {
-      console.log("Valid password reset tokens found, setting session immediately");
+      console.log("Valid password reset tokens found, setting session");
       
-      // Critical: Set session IMMEDIATELY with the tokens from URL
+      // Set session with the tokens from URL
       supabase.auth.setSession({
         access_token: accessToken,
         refresh_token: refreshToken
@@ -56,7 +57,6 @@ const PasswordReset = () => {
           }, 3000);
         } else {
           console.log("Session set successfully for password reset");
-          console.log("Session data:", data);
           setIsValidToken(true);
           setTokenValidationError(null);
           toast.success('Password reset link validated successfully!');
@@ -68,17 +68,30 @@ const PasswordReset = () => {
         setIsValidating(false);
       });
     } else {
-      console.log("Missing required tokens:", { 
-        accessToken: !!accessToken, 
-        refreshToken: !!refreshToken, 
-        type 
+      // More lenient handling - maybe tokens come in a different way
+      console.log("Tokens not found in URL, checking for existing session...");
+      
+      // Check if we already have a valid session for password reset
+      supabase.auth.getSession().then(({ data: { session }, error }) => {
+        if (error) {
+          console.error("Error getting session:", error);
+        }
+        
+        if (session) {
+          console.log("Found existing session, allowing password reset");
+          setIsValidToken(true);
+          setTokenValidationError(null);
+          toast.success('Session found, you can reset your password');
+        } else {
+          console.log("No session found, this might be an invalid reset link");
+          setTokenValidationError('Invalid or expired password reset link');
+          toast.error('Invalid password reset link. Please request a new one.');
+          setTimeout(() => {
+            navigate('/signin');
+          }, 3000);
+        }
+        setIsValidating(false);
       });
-      setTokenValidationError('Invalid password reset link - missing required parameters');
-      toast.error('Invalid password reset link. Please request a new one.');
-      setTimeout(() => {
-        navigate('/signin');
-      }, 2000);
-      setIsValidating(false);
     }
   }, [searchParams, navigate]);
 
@@ -126,7 +139,6 @@ const PasswordReset = () => {
         // Clear the session and redirect to sign in
         await supabase.auth.signOut();
         
-        // Add a small delay to ensure the success message is seen
         setTimeout(() => {
           navigate('/signin', { replace: true });
         }, 1500);
@@ -167,9 +179,15 @@ const PasswordReset = () => {
             <p className="text-red-600 mb-4">
               {tokenValidationError || 'The password reset link is invalid or has expired.'}
             </p>
-            <p className="text-muted-foreground">
+            <p className="text-muted-foreground mb-4">
               Please request a new password reset from the sign-in page.
             </p>
+            <div className="space-y-2 text-sm text-muted-foreground">
+              <p>Debug info:</p>
+              <p>URL: {window.location.href}</p>
+              <p>Has tokens: {searchParams.get('access_token') ? 'Yes' : 'No'}</p>
+              <p>Type: {searchParams.get('type') || 'None'}</p>
+            </div>
             <Button 
               onClick={() => navigate('/signin')} 
               className="mt-4"
