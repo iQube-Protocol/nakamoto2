@@ -73,6 +73,83 @@ To connect a domain, navigate to Project > Settings > Domains and click Connect 
 
 Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
 
+## Development Lessons Learned
+
+### Password Reset Flow Configuration Issue - 2025-01-08
+**Cycles Required:** 12+ cycles
+**Problem:** Users accessing password reset URLs were being redirected to the sign-in page instead of the password reset form, causing a broken authentication flow.
+
+**Root Cause:** 
+1. **Supabase URL Configuration**: The Site URL and Redirect URLs were not properly configured in Supabase Dashboard
+2. **Missing Authentication Tokens**: Password reset emails were not including the required `access_token`, `refresh_token`, and `type=recovery` parameters in the URL
+3. **Overly Strict Guard Logic**: The `PasswordResetGuard` component was blocking access when tokens weren't present in the URL
+4. **Auth State Management**: Complex authentication state management was causing redirect conflicts during password reset flow
+
+**Solution:** 
+1. **Updated Supabase Configuration**:
+   - Set Site URL to `https://nakamoto.aigentz.me` in Supabase Dashboard
+   - Added `https://nakamoto.aigentz.me/reset-password` to Redirect URLs
+   - Ensured proper email template configuration for token delivery
+
+2. **Relaxed Guard Logic**: Modified `PasswordResetGuard` to be more permissive while still providing security
+3. **Enhanced Error Handling**: Added comprehensive debugging and error messages in `PasswordReset` component
+4. **Fixed Auth State Conflicts**: Prevented authentication redirects during password reset flow with explicit password reset detection
+
+**Key Insights:** 
+- Supabase password reset requires proper URL configuration in the dashboard - this is not optional
+- Password reset tokens should be included in email URLs automatically when configured correctly
+- Guard components should be permissive for critical flows like password reset
+- Authentication state management can conflict with password reset flows if not handled carefully
+
+**Future Reference:** 
+- Always verify Supabase Site URL and Redirect URLs match your deployment domain
+- Test password reset emails in production environment, not just locally
+- Use comprehensive logging for authentication flows to debug issues
+- Consider password reset flow as a special case that may bypass normal authentication guards
+
+### MetaMask KNYT Token Value Integration - 2025-01-08
+**Cycles Required:** 8+ cycles
+**Problem:** Unable to retrieve accurate KNYT token balance from MetaMask-connected wallets, resulting in incorrect or missing token values in user profiles.
+
+**Root Cause:** 
+1. **Token Contract Configuration**: Incorrect or missing KNYT token contract address and ABI configuration
+2. **Network Mismatch**: KNYT token deployed on specific network (Ethereum Mainnet) but application was querying wrong network
+3. **Decimals Handling**: Token balance returned in wei format without proper decimal conversion
+4. **Caching Issues**: Previous incorrect values were being cached, preventing fresh token balance queries
+
+**Solution:** 
+1. **Correct Contract Configuration**:
+   - Updated KNYT token contract address to the verified mainnet address
+   - Implemented proper ERC-20 ABI for balance queries
+   - Added network validation to ensure queries target Ethereum Mainnet
+
+2. **Enhanced Token Service**: 
+   - Created dedicated `knyt-token-service.ts` with comprehensive error handling
+   - Implemented proper decimal conversion (18 decimals for KNYT)
+   - Added balance caching with cache invalidation mechanisms
+   - Integrated with wallet connection service for seamless updates
+
+3. **Wallet Integration**: 
+   - Enhanced `wallet-connection-service.ts` to fetch and store KNYT balances
+   - Added automatic balance refresh on wallet connection
+   - Implemented balance update events for real-time UI updates
+
+**Key Insights:** 
+- ERC-20 token integration requires precise contract address and ABI configuration
+- Token balances must be converted from wei using the correct decimal places
+- Network validation is crucial - tokens exist on specific networks only
+- Caching mechanisms improve performance but require proper invalidation
+- Real-time balance updates enhance user experience significantly
+
+**Future Reference:** 
+- Always verify token contract addresses on the correct network (use Etherscan)
+- Implement decimal conversion: `balance / (10 ** decimals)`
+- Use event-driven updates for real-time balance synchronization
+- Cache token data but provide manual refresh capabilities
+- Test with multiple wallet addresses to ensure consistent behavior
+
+---
+
 ## Email Service Configuration and Troubleshooting
 
 ### Issue Resolution: Large Email Batch Database Queries
