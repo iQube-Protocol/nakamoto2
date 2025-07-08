@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -6,10 +7,14 @@ import { walletConnectionService } from '@/services/wallet-connection-service';
 import { knytTokenService, KNYT_TOKEN_CONFIG } from '@/services/knyt-token-service';
 import { useServiceConnections } from '@/hooks/useServiceConnections';
 import { toast } from 'sonner';
+import { withTimeout, TimeoutError, CircuitBreaker } from '@/utils/async-timeout';
 
 interface KnytBalanceDisplayProps {
   onBalanceUpdate?: () => void;
 }
+
+// Circuit breaker for balance operations
+const balanceCircuitBreaker = new CircuitBreaker(5, 60000); // 5 failures, 1 minute reset
 
 const KnytBalanceDisplay = ({ onBalanceUpdate }: KnytBalanceDisplayProps) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
@@ -19,45 +24,109 @@ const KnytBalanceDisplay = ({ onBalanceUpdate }: KnytBalanceDisplayProps) => {
   const [stableBalance, setStableBalance] = useState<string>('Not available');
   const { connections, connectionData, refreshConnections } = useServiceConnections();
   
-  // Refs to prevent multiple simultaneous refreshes
+  // Refs to prevent multiple simultaneous refreshes and handle operation cleanup
   const refreshInProgress = useRef(false);
   const lastSuccessfulBalance = useRef<string>('Not available');
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const operationIdRef = useRef<string>('');
 
-  // Enhanced refresh balance function with stability logic
+  // Force reset all states
+  const forceResetState = () => {
+    console.log('🔄 Force resetting KnytBalanceDisplay state');
+    setIsRefreshing(false);
+    setIsAddingToken(false);
+    refreshInProgress.current = false;
+    setDebugInfo('');
+    
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+  };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      forceResetState();
+    };
+  }, []);
+
+  // Enhanced refresh balance function with comprehensive timeout and error handling
   const handleRefreshBalance = async () => {
     if (!connections.wallet) {
       toast.error('Please connect your wallet first');
       return;
     }
 
-    if (refreshInProgress.current) {
+    // Check circuit breaker
+    if (!balanceCircuitBreaker.canExecute()) {
+      const status = balanceCircuitBreaker.getStatus();
+      toast.error(`Too many failed refresh attempts (${status.failures}). Please wait before trying again.`);
+      return;
+    }
+
+    if (refreshInProgress.current || isRefreshing) {
       console.log('Refresh already in progress, skipping...');
       return;
     }
+
+    // Create new operation
+    abortControllerRef.current = new AbortController();
+    const operationId = `balance-refresh-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    operationIdRef.current = operationId;
 
     refreshInProgress.current = true;
     setIsRefreshing(true);
     setDebugInfo('Starting balance refresh...');
     
     try {
-      console.log('=== BALANCE REFRESH UI START ===');
+      console.log(`=== BALANCE REFRESH UI START [${operationId}] ===`);
       setDebugInfo('Validating network and updating wallet data...');
       
-      // First update wallet with KNYT balance
-      const updateSuccess = await walletConnectionService.updateWalletWithKnytBalance();
+      // First update wallet with KNYT balance - with timeout
+      const updateSuccess = await withTimeout(
+        walletConnectionService.updateWalletWithKnytBalance(),
+        {
+          timeoutMs: 8000,
+          timeoutMessage: 'Wallet update operation timed out',
+          onTimeout: () => {
+            console.warn('⏰ Wallet update timeout reached');
+            setDebugInfo('⏰ Wallet update timed out');
+          }
+        }
+      );
+      
       console.log('Wallet update success:', updateSuccess);
       setDebugInfo(updateSuccess ? '✅ Wallet data updated' : '❌ Wallet update failed');
       
-      // Then refresh the balance
+      // Then refresh the balance - with timeout
       setDebugInfo('Refreshing balance data...');
-      const refreshSuccess = await walletConnectionService.refreshKnytBalance();
+      const refreshSuccess = await withTimeout(
+        walletConnectionService.refreshKnytBalance(),
+        {
+          timeoutMs: 8000,
+          timeoutMessage: 'Balance refresh operation timed out',
+          onTimeout: () => {
+            console.warn('⏰ Balance refresh timeout reached');
+            setDebugInfo('⏰ Balance refresh timed out');
+          }
+        }
+      );
+      
       console.log('Balance refresh success:', refreshSuccess);
       setDebugInfo(refreshSuccess ? '✅ Balance refreshed' : '❌ Balance refresh failed');
       
       if (updateSuccess || refreshSuccess) {
-        // Refresh connections to get latest data
+        // Refresh connections to get latest data - with timeout
         setDebugInfo('Updating UI with latest data...');
-        await refreshConnections();
+        await withTimeout(
+          refreshConnections(),
+          {
+            timeoutMs: 5000,
+            timeoutMessage: 'UI refresh timed out',
+            onTimeout: () => console.warn('⏰ UI refresh timeout')
+          }
+        );
         
         // Update last refresh time
         setLastRefreshTime(new Date());
@@ -89,26 +158,53 @@ const KnytBalanceDisplay = ({ onBalanceUpdate }: KnytBalanceDisplayProps) => {
         
         setDebugInfo('✅ Balance refresh completed successfully');
         toast.success('KNYT balance refreshed successfully');
+        balanceCircuitBreaker.onSuccess();
       } else {
-        setDebugInfo('❌ Balance refresh failed - check console for details');
-        toast.error('Failed to refresh KNYT balance - check console for details');
+        throw new Error('Both wallet update and balance refresh failed');
       }
     } catch (error) {
       console.error('Error refreshing KNYT balance:', error);
-      setDebugInfo(`❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
-      toast.error('Failed to refresh KNYT balance');
+      balanceCircuitBreaker.onFailure();
+      
+      if (error instanceof TimeoutError) {
+        setDebugInfo(`⏰ ${error.message}`);
+        toast.error('Balance refresh timed out. Please try again.');
+      } else {
+        setDebugInfo(`❌ Error: ${error instanceof Error ? error.message : 'Unknown error'}`);
+        toast.error('Failed to refresh KNYT balance');
+      }
     } finally {
-      setIsRefreshing(false);
-      refreshInProgress.current = false;
+      // Only reset state if this is still the current operation
+      if (operationIdRef.current === operationId) {
+        setIsRefreshing(false);
+        refreshInProgress.current = false;
+        abortControllerRef.current = null;
+      }
+      
       // Clear debug info after a delay
-      setTimeout(() => setDebugInfo(''), 5000);
+      setTimeout(() => {
+        if (operationIdRef.current === operationId) {
+          setDebugInfo('');
+        }
+      }, 5000);
+      
+      console.log(`=== BALANCE REFRESH UI END [${operationId}] ===`);
     }
   };
 
   const handleAddTokenToWallet = async () => {
+    if (isAddingToken) return;
+    
     setIsAddingToken(true);
     try {
-      const success = await knytTokenService.addTokenToWallet();
+      const success = await withTimeout(
+        knytTokenService.addTokenToWallet(),
+        {
+          timeoutMs: 10000,
+          timeoutMessage: 'Add token operation timed out'
+        }
+      );
+      
       if (success) {
         // Refresh balance after adding token
         setTimeout(() => {
@@ -117,6 +213,9 @@ const KnytBalanceDisplay = ({ onBalanceUpdate }: KnytBalanceDisplayProps) => {
       }
     } catch (error) {
       console.error('Error adding token to wallet:', error);
+      if (error instanceof TimeoutError) {
+        toast.error('Add token operation timed out. Please try again.');
+      }
     } finally {
       setIsAddingToken(false);
     }
@@ -124,7 +223,14 @@ const KnytBalanceDisplay = ({ onBalanceUpdate }: KnytBalanceDisplayProps) => {
 
   const handleSwitchNetwork = async () => {
     try {
-      const success = await knytTokenService.switchToMainnet();
+      const success = await withTimeout(
+        knytTokenService.switchToMainnet(),
+        {
+          timeoutMs: 10000,
+          timeoutMessage: 'Network switch timed out'
+        }
+      );
+      
       if (success) {
         // Clear any cached balances when switching networks
         const walletAddress = connectionData.wallet?.address;
@@ -139,6 +245,9 @@ const KnytBalanceDisplay = ({ onBalanceUpdate }: KnytBalanceDisplayProps) => {
       }
     } catch (error) {
       console.error('Error switching network:', error);
+      if (error instanceof TimeoutError) {
+        toast.error('Network switch timed out. Please try again.');
+      }
     }
   };
 

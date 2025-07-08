@@ -1,18 +1,42 @@
-import React, { useState, useEffect } from 'react';
+
+import React, { useState, useEffect, useRef } from 'react';
 import { Button } from '@/components/ui/button';
 import { RefreshCw } from 'lucide-react';
 import { useServiceConnections } from '@/hooks/useServiceConnections';
 import { blakQubeService } from '@/services/blakqube-service';
 import { toast } from 'sonner';
+import { withTimeout, TimeoutError, CircuitBreaker } from '@/utils/async-timeout';
 
 interface KnytBlakQubeBalanceProps {
   onBalanceUpdate?: () => void;
 }
 
+// Circuit breaker for KNYT balance operations
+const knytCircuitBreaker = new CircuitBreaker(3, 30000);
+
 const KnytBlakQubeBalance = ({ onBalanceUpdate }: KnytBlakQubeBalanceProps) => {
   const [isUpdating, setIsUpdating] = useState(false);
   const [displayBalance, setDisplayBalance] = useState<string>('Loading...');
   const { connections, connectionData, refreshConnections } = useServiceConnections();
+  const abortControllerRef = useRef<AbortController | null>(null);
+  const operationIdRef = useRef<string>('');
+
+  // Force reset state function
+  const forceResetState = () => {
+    console.log('🔄 Force resetting KnytBlakQubeBalance state');
+    setIsUpdating(false);
+    if (abortControllerRef.current) {
+      abortControllerRef.current.abort();
+      abortControllerRef.current = null;
+    }
+  };
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      forceResetState();
+    };
+  }, []);
 
   // Get balance from wallet connection data (immediate fallback)
   const getWalletBalance = () => {
@@ -26,16 +50,43 @@ const KnytBlakQubeBalance = ({ onBalanceUpdate }: KnytBlakQubeBalanceProps) => {
   const syncPersonaData = async () => {
     if (!connections.wallet) return false;
     
+    // Check circuit breaker
+    if (!knytCircuitBreaker.canExecute()) {
+      const status = knytCircuitBreaker.getStatus();
+      toast.error(`Too many failed sync attempts (${status.failures}). Please wait before trying again.`);
+      return false;
+    }
+    
+    // Create new operation
+    abortControllerRef.current = new AbortController();
+    const operationId = `sync-${Date.now()}-${Math.random().toString(36).substr(2, 9)}`;
+    operationIdRef.current = operationId;
+    
     setIsUpdating(true);
-    console.log('🔄 Syncing KNYT persona data with wallet connection...');
+    console.log(`🔄 Syncing KNYT persona data with wallet connection... [${operationId}]`);
     
     try {
-      // Force update wallet data first
+      // Force update wallet data first - with timeout
       const { walletConnectionService } = await import('@/services/wallet-connection-service');
-      await walletConnectionService.updateWalletWithKnytBalance();
+      await withTimeout(
+        walletConnectionService.updateWalletWithKnytBalance(),
+        {
+          timeoutMs: 8000,
+          timeoutMessage: 'Wallet KNYT balance update timed out',
+          onTimeout: () => console.warn('⏰ Wallet balance update timeout')
+        }
+      );
       
-      // Update KNYT persona with wallet data
-      const knytSuccess = await blakQubeService.updatePersonaFromConnections('knyt');
+      // Update KNYT persona with wallet data - with timeout
+      const knytSuccess = await withTimeout(
+        blakQubeService.updatePersonaFromConnections('knyt'),
+        {
+          timeoutMs: 10000,
+          timeoutMessage: 'KNYT persona sync timed out',
+          onTimeout: () => console.warn('⏰ KNYT persona sync timeout')
+        }
+      );
+      
       console.log('KNYT persona sync result:', knytSuccess);
       
       if (knytSuccess) {
@@ -56,26 +107,40 @@ const KnytBlakQubeBalance = ({ onBalanceUpdate }: KnytBlakQubeBalanceProps) => {
         }
         
         console.log('✅ KNYT persona data synchronized successfully');
+        knytCircuitBreaker.onSuccess();
         return true;
       }
       
-      console.log('❌ KNYT persona sync failed');
-      return false;
+      throw new Error('KNYT persona sync returned false');
     } catch (error) {
       console.error('❌ Error syncing persona data:', error);
+      knytCircuitBreaker.onFailure();
+      
+      if (error instanceof TimeoutError) {
+        toast.error('KNYT balance sync timed out. Please try again.');
+      } else {
+        toast.error('Failed to synchronize KNYT balance');
+      }
       return false;
     } finally {
-      setIsUpdating(false);
+      // Only reset state if this is still the current operation
+      if (operationIdRef.current === operationId) {
+        setIsUpdating(false);
+        abortControllerRef.current = null;
+      }
     }
   };
 
   // Handle manual refresh
   const handleRefresh = async () => {
+    if (isUpdating) {
+      console.log('Sync already in progress, skipping...');
+      return;
+    }
+    
     const success = await syncPersonaData();
     if (success) {
       toast.success('KNYT balance synchronized with persona data');
-    } else {
-      toast.error('Failed to synchronize KNYT balance');
     }
   };
 
