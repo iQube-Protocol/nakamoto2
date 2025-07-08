@@ -8,6 +8,7 @@ import { toast } from 'sonner';
 import { Key, Eye, EyeOff } from 'lucide-react';
 import { supabase } from '@/integrations/supabase/client';
 import AuthLayout from '@/components/auth/AuthLayout';
+import PasswordResetGuard from '@/components/auth/PasswordResetGuard';
 
 const PasswordReset = () => {
   const [password, setPassword] = useState('');
@@ -22,7 +23,7 @@ const PasswordReset = () => {
   const [searchParams] = useSearchParams();
 
   useEffect(() => {
-    console.log("PasswordReset page loaded with URL params:", window.location.href);
+    console.log("PasswordReset page loaded with URL:", window.location.href);
     console.log("Search params:", Object.fromEntries(searchParams.entries()));
     
     // Immediate token validation - highest priority
@@ -30,11 +31,12 @@ const PasswordReset = () => {
     const refreshToken = searchParams.get('refresh_token');
     const type = searchParams.get('type');
     
-    console.log("Token validation:", { 
+    console.log("Token validation details:", { 
       hasAccessToken: !!accessToken, 
       hasRefreshToken: !!refreshToken, 
       type,
-      tokenLength: accessToken ? accessToken.length : 0
+      tokenLength: accessToken ? accessToken.length : 0,
+      refreshTokenLength: refreshToken ? refreshToken.length : 0
     });
     
     if (accessToken && refreshToken && type === 'recovery') {
@@ -57,6 +59,7 @@ const PasswordReset = () => {
           console.log("Session data:", data);
           setIsValidToken(true);
           setTokenValidationError(null);
+          toast.success('Password reset link validated successfully!');
         }
         setIsValidating(false);
       }).catch((err) => {
@@ -139,106 +142,112 @@ const PasswordReset = () => {
   // Show loading state while validating the token
   if (isValidating) {
     return (
-      <AuthLayout 
-        title="Validating Reset Link" 
-        subtitle="Please wait while we validate your password reset link..."
-      >
-        <div className="flex justify-center py-8">
-          <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-        </div>
-      </AuthLayout>
+      <PasswordResetGuard>
+        <AuthLayout 
+          title="Validating Reset Link" 
+          subtitle="Please wait while we validate your password reset link..."
+        >
+          <div className="flex justify-center py-8">
+            <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+          </div>
+        </AuthLayout>
+      </PasswordResetGuard>
     );
   }
 
   // Show error state if token validation failed
   if (tokenValidationError || !isValidToken) {
     return (
-      <AuthLayout 
-        title="Invalid Reset Link" 
-        subtitle="This password reset link is invalid or has expired"
-      >
-        <div className="text-center py-8">
-          <p className="text-red-600 mb-4">
-            {tokenValidationError || 'The password reset link is invalid or has expired.'}
-          </p>
-          <p className="text-muted-foreground">
-            Please request a new password reset from the sign-in page.
-          </p>
-          <Button 
-            onClick={() => navigate('/signin')} 
-            className="mt-4"
-            variant="outline"
-          >
-            Back to Sign In
-          </Button>
-        </div>
-      </AuthLayout>
+      <PasswordResetGuard>
+        <AuthLayout 
+          title="Invalid Reset Link" 
+          subtitle="This password reset link is invalid or has expired"
+        >
+          <div className="text-center py-8">
+            <p className="text-red-600 mb-4">
+              {tokenValidationError || 'The password reset link is invalid or has expired.'}
+            </p>
+            <p className="text-muted-foreground">
+              Please request a new password reset from the sign-in page.
+            </p>
+            <Button 
+              onClick={() => navigate('/signin')} 
+              className="mt-4"
+              variant="outline"
+            >
+              Back to Sign In
+            </Button>
+          </div>
+        </AuthLayout>
+      </PasswordResetGuard>
     );
   }
 
   return (
-    <AuthLayout 
-      title="Reset Your Password" 
-      subtitle="Enter your new password below"
-    >
-      <form onSubmit={handlePasswordReset} className="space-y-4">
-        <div className="space-y-2">
-          <Label htmlFor="password">New Password</Label>
-          <div className="relative">
-            <Key className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-            <Input
-              id="password"
-              placeholder="Enter new password"
-              type={showPassword ? 'text' : 'password'}
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              className="pl-10"
-              required
-              minLength={6}
-            />
-            <button
-              type="button"
-              onClick={() => setShowPassword(!showPassword)}
-              className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
-              tabIndex={-1}
-            >
-              {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </button>
+    <PasswordResetGuard>
+      <AuthLayout 
+        title="Reset Your Password" 
+        subtitle="Enter your new password below"
+      >
+        <form onSubmit={handlePasswordReset} className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="password">New Password</Label>
+            <div className="relative">
+              <Key className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                id="password"
+                placeholder="Enter new password"
+                type={showPassword ? 'text' : 'password'}
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                className="pl-10"
+                required
+                minLength={6}
+              />
+              <button
+                type="button"
+                onClick={() => setShowPassword(!showPassword)}
+                className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
+                tabIndex={-1}
+              >
+                {showPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
           </div>
-        </div>
-        
-        <div className="space-y-2">
-          <Label htmlFor="confirmPassword">Confirm New Password</Label>
-          <div className="relative">
-            <Key className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-            <Input
-              id="confirmPassword"
-              placeholder="Confirm new password"
-              type={showConfirmPassword ? 'text' : 'password'}
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              className="pl-10"
-              required
-              minLength={6}
-            />
-            <button
-              type="button"
-              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-              className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
-              tabIndex={-1}
-            >
-              {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            </button>
+          
+          <div className="space-y-2">
+            <Label htmlFor="confirmPassword">Confirm New Password</Label>
+            <div className="relative">
+              <Key className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+              <Input
+                id="confirmPassword"
+                placeholder="Confirm new password"
+                type={showConfirmPassword ? 'text' : 'password'}
+                value={confirmPassword}
+                onChange={(e) => setConfirmPassword(e.target.value)}
+                className="pl-10"
+                required
+                minLength={6}
+              />
+              <button
+                type="button"
+                onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                className="absolute right-3 top-3 text-muted-foreground hover:text-foreground"
+                tabIndex={-1}
+              >
+                {showConfirmPassword ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+              </button>
+            </div>
           </div>
-        </div>
-        
-        <div className="pt-2">
-          <Button type="submit" className="w-full" disabled={isLoading}>
-            {isLoading ? 'Updating Password...' : 'Update Password'}
-          </Button>
-        </div>
-      </form>
-    </AuthLayout>
+          
+          <div className="pt-2">
+            <Button type="submit" className="w-full" disabled={isLoading}>
+              {isLoading ? 'Updating Password...' : 'Update Password'}
+            </Button>
+          </div>
+        </form>
+      </AuthLayout>
+    </PasswordResetGuard>
   );
 };
 

@@ -1,3 +1,4 @@
+
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
@@ -33,7 +34,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const [isGuest, setIsGuest] = useState<boolean>(false);
   const [loading, setLoading] = useState(true);
   const [isInitialLoad, setIsInitialLoad] = useState(true);
-  const [isPasswordResetActive, setIsPasswordResetActive] = useState(false);
   const navigate = useNavigate();
   const location = useLocation();
 
@@ -45,15 +45,15 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
                              urlParams.get('refresh_token');
     const isResetPath = window.location.pathname === '/reset-password';
     
+    console.log("Password reset flow check:", {
+      isResetPath,
+      hasRecoveryTokens,
+      currentPath: window.location.pathname,
+      searchParams: Object.fromEntries(urlParams.entries())
+    });
+    
     return Boolean(isResetPath || hasRecoveryTokens);
   };
-
-  // Check for password reset on location changes
-  useEffect(() => {
-    const isReset = isPasswordResetFlow();
-    console.log("Password reset flow check:", isReset, "Current path:", location.pathname);
-    setIsPasswordResetActive(isReset);
-  }, [location]);
 
   useEffect(() => {
     console.log("Auth provider initialized");
@@ -68,11 +68,18 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       return;
     }
     
+    // CRITICAL: Check for password reset flow IMMEDIATELY
+    const isPasswordReset = isPasswordResetFlow();
+    console.log("Initial password reset check:", isPasswordReset);
+    
     // First set up the auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(
       (event, newSession) => {
         console.log("Auth state changed:", event, newSession?.user?.email);
-        console.log("Password reset active:", isPasswordResetActive);
+        
+        // ABSOLUTE PRIORITY: Block ALL redirects if password reset is active
+        const currentPasswordReset = isPasswordResetFlow();
+        console.log("Auth state change - password reset active:", currentPasswordReset);
         
         if (mounted) {
           setSession(newSession);
@@ -80,14 +87,14 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setIsGuest(false);
           setLoading(false);
           
-          // Handle specific auth events with password reset priority
+          // Handle specific auth events with password reset taking ABSOLUTE priority
           if (event === 'SIGNED_IN') {
             console.log("User signed in, checking if redirect needed");
             
-            // CRITICAL: Absolute priority for password reset flow
-            if (isPasswordResetActive || isPasswordResetFlow()) {
-              console.log("Password reset flow active - blocking ALL redirects");
-              return;
+            // CRITICAL: Absolute priority for password reset flow - NO EXCEPTIONS
+            if (currentPasswordReset) {
+              console.log("PASSWORD RESET FLOW ACTIVE - BLOCKING ALL REDIRECTS");
+              return; // Exit immediately, no further processing
             }
             
             // Only redirect if this is a fresh sign-in (not session restoration)
@@ -114,11 +121,12 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             console.log("User signed out, session cleared");
             localStorage.removeItem('guestMode');
             setIsGuest(false);
-            setIsPasswordResetActive(false);
             
             // Don't redirect if we're in password reset flow
-            if (!isPasswordResetFlow()) {
+            if (!currentPasswordReset) {
               navigate('/signin');
+            } else {
+              console.log("Password reset flow active - not redirecting on sign out");
             }
           } else if (event === 'TOKEN_REFRESHED') {
             console.log("Token refreshed successfully");
@@ -154,10 +162,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     });
     
     return () => {
-      mounted = true;
+      mounted = false; // Fix the memory leak bug
       subscription.unsubscribe();
     };
-  }, [navigate, location.pathname, isPasswordResetActive]);
+  }, [navigate, location.pathname]);
 
   const signIn = async (email: string, password: string) => {
     console.log("Attempting sign in for:", email);
@@ -262,7 +270,6 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setUser(null);
       setSession(null);
       setIsGuest(false);
-      setIsPasswordResetActive(false);
       localStorage.removeItem('guestMode');
       navigate('/signin', { replace: true });
     } catch (error) {

@@ -1,3 +1,4 @@
+
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { AuthProvider } from '@/hooks/use-auth';
@@ -24,6 +25,7 @@ import MainLayout from '@/components/layout/MainLayout';
 import InvitationsPage from '@/pages/admin/Invitations';
 import InvitedUserSignup from '@/components/auth/InvitedUserSignup';
 import OAuthCallback from '@/components/settings/OAuthCallback';
+import PasswordResetGuard from '@/components/auth/PasswordResetGuard';
 
 const AppRouter = () => {
   return (
@@ -35,7 +37,11 @@ const AppRouter = () => {
           <Route path="/splash" element={<SplashPage />} />
           <Route path="/signin" element={<SignIn />} />
           <Route path="/signup" element={<SignUpPage />} />
-          <Route path="/reset-password" element={<PasswordReset />} />
+          <Route path="/reset-password" element={
+            <PasswordResetGuard>
+              <PasswordReset />
+            </PasswordResetGuard>
+          } />
           <Route path="/invited-signup" element={<InvitedUserSignup />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/oauth-callback" element={<OAuthCallback />} />
