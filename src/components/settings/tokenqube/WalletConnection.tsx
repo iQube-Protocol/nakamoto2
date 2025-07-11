@@ -2,7 +2,9 @@
 import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
-import { Check, Wallet } from 'lucide-react';
+import { Check, Wallet, RefreshCw } from 'lucide-react';
+import { useServiceConnections } from '@/hooks/useServiceConnections';
+import { walletConnectionService } from '@/services/wallet-connection-service';
 
 interface WalletConnectionProps {
   isConnected: boolean;
@@ -12,14 +14,33 @@ interface WalletConnectionProps {
 }
 
 const WalletConnection = ({ isConnected, onConnectWallet, walletAddress, knytBalance }: WalletConnectionProps) => {
+  const { connections, getWalletAddress, connectionData, refreshConnections } = useServiceConnections();
+  
+  // Use direct connection data instead of props to avoid stale/hardcoded data
+  const actualWalletAddress = getWalletAddress();
+  const actualIsConnected = connections.wallet;
+  const actualKnytBalance = connectionData.wallet?.knytTokenBalance?.formatted || null;
+  
   // Debug logging to track balance updates
   useEffect(() => {
-    console.log('🔍 WalletConnection: Props updated', {
-      isConnected,
-      walletAddress,
-      knytBalance
+    console.log('🔍 WalletConnection: Props vs Actual Data', {
+      propsIsConnected: isConnected,
+      actualIsConnected,
+      propsWalletAddress: walletAddress,
+      actualWalletAddress,
+      propsKnytBalance: knytBalance,
+      actualKnytBalance
     });
-  }, [isConnected, walletAddress, knytBalance]);
+  }, [isConnected, walletAddress, knytBalance, actualIsConnected, actualWalletAddress, actualKnytBalance]);
+  
+  const handleRefreshBalance = async () => {
+    console.log('🔄 Manually refreshing KNYT balance...');
+    const success = await walletConnectionService.refreshKnytBalance();
+    if (success) {
+      // Refresh the connection data in the hook
+      await refreshConnections(false);
+    }
+  };
   
   // Format the address for display (show first 6 and last 4 characters)
   const formatAddress = (address: string) => {
@@ -29,19 +50,32 @@ const WalletConnection = ({ isConnected, onConnectWallet, walletAddress, knytBal
 
   return (
     <div className="space-y-3">
-      <Label className="text-sm">Connected Wallet</Label>
-      {isConnected && walletAddress ? (
+      <div className="flex items-center justify-between">
+        <Label className="text-sm">Connected Wallet</Label>
+        {actualIsConnected && (
+          <Button
+            variant="ghost"
+            size="sm"
+            onClick={handleRefreshBalance}
+            className="h-auto p-1 text-xs"
+          >
+            <RefreshCw className="h-3 w-3 mr-1" />
+            Refresh
+          </Button>
+        )}
+      </div>
+      {actualIsConnected && actualWalletAddress ? (
         <div className="space-y-2">
           <div className="flex items-center p-2 bg-iqube-primary/10 rounded-md border border-iqube-primary/30">
             <Check className="h-4 w-4 mr-2 text-green-500" />
             <div className="flex-1">
               <div className="font-mono text-xs truncate">
-                {formatAddress(walletAddress)}
+                {formatAddress(actualWalletAddress)}
               </div>
-              {knytBalance && (
+              {actualKnytBalance && (
                 <div className="text-xs text-muted-foreground mt-1">
                   <Wallet className="h-3 w-3 inline mr-1" />
-                  {knytBalance}
+                  {actualKnytBalance}
                 </div>
               )}
             </div>

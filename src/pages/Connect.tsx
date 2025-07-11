@@ -44,7 +44,7 @@ const blakQubeData: BlakQube = {
   "YouTube-ID": "",
   "Facebook-ID": "",
   "TikTok-Handle": "",
-  "EVM-Public-Key": "0x71C7656EC7ab88b098defB751B7401B5f6d8976F",
+  "EVM-Public-Key": "",
   "BTC-Public-Key": "bc1qar0srrr7xfkvy5l643lydnw9re59gtzzwf5mdq",
   "ThirdWeb-Public-Key": "",
   "Tokens-of-Interest": ["USDC", "ETH", "PEOPLE", "ENS"],
