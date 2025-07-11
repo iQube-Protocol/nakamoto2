@@ -17,12 +17,30 @@ const OAuthCallback = () => {
   useEffect(() => {
     const handleOAuthCallback = async () => {
       try {
+        // Detect Brave browser for enhanced debugging
+        const isBrave = (navigator as any).brave && typeof (navigator as any).brave.isBrave === 'function';
+        if (isBrave) {
+          console.log('🛡️ Brave: OAuth callback handler started');
+          console.log('🛡️ Brave: Current URL:', window.location.href);
+          console.log('🛡️ Brave: Search params:', searchParams.toString());
+          console.log('🛡️ Brave: localStorage available:', typeof localStorage !== 'undefined');
+          
+          // Check localStorage state
+          const oauthState = localStorage.getItem('oauth_state');
+          const oauthService = localStorage.getItem('oauth_service');
+          console.log('🛡️ Brave: OAuth state in localStorage:', { oauthState, oauthService });
+        }
+        
         const service = searchParams.get('service');
         const success = searchParams.get('success');
         const error = searchParams.get('error');
         const connectionDataParam = searchParams.get('connection_data');
         
         console.log('OAuth callback received:', { service, success, error, hasConnectionData: !!connectionDataParam });
+        
+        if (isBrave) {
+          console.log('🛡️ Brave: Processing OAuth callback for service:', service);
+        }
         
         if (error) {
           console.error('OAuth error:', error);
@@ -49,9 +67,26 @@ const OAuthCallback = () => {
               return;
             }
             
-            // Clean up any existing OAuth state
-            localStorage.removeItem('oauth_state');
-            localStorage.removeItem('oauth_service');
+            // Enhanced cleanup for Brave
+            const isBrave = (navigator as any).brave && typeof (navigator as any).brave.isBrave === 'function';
+            if (isBrave) {
+              console.log('🛡️ Brave: Enhanced OAuth cleanup starting');
+              // Clean up both localStorage and sessionStorage for Brave
+              const keysToClean = ['oauth_state', 'oauth_service', 'oauth_linkedin'];
+              keysToClean.forEach(key => {
+                localStorage.removeItem(key);
+                try {
+                  sessionStorage.removeItem(key);
+                } catch (e) {
+                  console.log('🛡️ Brave: sessionStorage cleanup failed for', key);
+                }
+              });
+              console.log('🛡️ Brave: OAuth cleanup completed');
+            } else {
+              // Clean up any existing OAuth state
+              localStorage.removeItem('oauth_state');
+              localStorage.removeItem('oauth_service');
+            }
             
             // Save the connection to the database with proper error handling
             console.log('Saving connection to database...');
