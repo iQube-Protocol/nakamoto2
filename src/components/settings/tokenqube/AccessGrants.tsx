@@ -11,10 +11,7 @@ interface AccessGrantsProps {
 }
 
 const AccessGrants = ({ 
-  grants = [
-    { address: '0x391874...35F1', access: 'Full' },
-    { address: '0x71C765...976F', access: 'Read' }
-  ],
+  grants = [],
   onAddAccessGrant 
 }: AccessGrantsProps) => {
   return (

@@ -25,12 +25,7 @@ const TokenQubeSection = ({
 }: TokenQubeSectionProps) => {
   return (
     <div className="space-y-4">
-      <WalletConnection 
-        isConnected={settings.connected.wallet}
-        onConnectWallet={onConnectWallet}
-        walletAddress={walletAddress}
-        knytBalance={knytBalance}
-      />
+      <WalletConnection />
       
       <NetworkSettings 
         defaultNetwork="ethereum"
