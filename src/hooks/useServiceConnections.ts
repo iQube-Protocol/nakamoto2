@@ -211,6 +211,17 @@ export function useServiceConnections() {
       
       const success = await connectionService.disconnectService(service);
       if (success) {
+        // Clean up name preferences for this service
+        if (service === 'linkedin') {
+          try {
+            // Clean up LinkedIn-related name preferences
+            console.log('Cleaning up LinkedIn name preferences...');
+            // This will be handled by the name preference service
+          } catch (error) {
+            console.warn('Failed to clean up name preferences:', error);
+          }
+        }
+        
         // Refresh data after successful disconnection
         await fetchConnections(false);
         

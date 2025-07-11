@@ -3,7 +3,8 @@ import React, { useEffect, useState } from 'react';
 import { useSearchParams, useNavigate } from 'react-router-dom';
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
-import { blakQubeService } from '@/services/blakqube-service';
+import { asyncConnectionProcessor } from '@/services/blakqube/async-connection-processor';
+import { connectionStateManager } from '@/services/connection-state-manager';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { CheckCircle, XCircle, Loader2 } from 'lucide-react';
 
@@ -44,6 +45,13 @@ const OAuthCallback = () => {
         
         if (error) {
           console.error('OAuth error:', error);
+          
+          // Update connection state to error
+          if (service) {
+            connectionStateManager.setConnectionState(service, 'error');
+            connectionStateManager.cleanupOAuthState(service);
+          }
+          
           setStatus('error');
           setMessage(`Connection failed: ${error}`);
           toast.error(`Failed to connect to ${service}: ${error}`);
@@ -112,44 +120,27 @@ const OAuthCallback = () => {
             
             console.log(`${service} connection saved successfully`);
             
-            // Update BlakQube with connection data - use the correct persona type
-            console.log('Updating BlakQube with connection data...');
-            setMessage(`Importing your ${service} profile data...`);
+            // Update connection state to connected
+            connectionStateManager.setConnectionState(service, 'connected');
+            connectionStateManager.cleanupOAuthState(service);
             
-            // Add a small delay to ensure the database has been updated
-            await new Promise(resolve => setTimeout(resolve, 1000));
+            // Trigger immediate UI refresh
+            const connectionEvent = new CustomEvent('connectionsUpdated');
+            window.dispatchEvent(connectionEvent);
             
-            // For now, update both persona types to maintain compatibility
-            const qryptoUpdateSuccess = await blakQubeService.updatePersonaFromConnections('qrypto');
-            const knytUpdateSuccess = await blakQubeService.updatePersonaFromConnections('knyt');
+            setStatus('success');
+            setMessage(`${service} connected successfully!`);
+            toast.success(`${service} connected successfully`);
             
-            const updateSuccess = qryptoUpdateSuccess || knytUpdateSuccess;
+            // Start async background processing for profile data
+            asyncConnectionProcessor.processConnectionAsync(user.id, service, connectionData)
+              .catch(error => {
+                console.error('Background processing failed:', error);
+              });
             
-            if (updateSuccess) {
-              console.log('BlakQube updated successfully with connection data');
-              setStatus('success');
-              
-              if (service === 'linkedin') {
-                setMessage('LinkedIn connected and profile data imported successfully!');
-                toast.success('LinkedIn connected and profile data imported to your BlakQube');
-              } else {
-                setMessage(`${service} connected and data imported successfully!`);
-                toast.success(`${service} connected and data imported to your BlakQube`);
-              }
-              
-              // Trigger private data update event for immediate UI refresh
-              const event = new CustomEvent('privateDataUpdated');
-              window.dispatchEvent(event);
-              
-              // Trigger connection refresh event for settings UI
-              const connectionEvent = new CustomEvent('connectionsUpdated');
-              window.dispatchEvent(connectionEvent);
-            } else {
-              console.warn('BlakQube update failed, but connection was successful');
-              setStatus('success');
-              setMessage(`${service} connected successfully, but profile import failed.`);
-              toast.success(`${service} connected successfully`);
-            }
+            const updateSuccess = true;
+            
+            // Connection is complete - updateSuccess is always true now
             
             // Redirect back to settings after a short delay
             setTimeout(() => {

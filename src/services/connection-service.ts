@@ -310,6 +310,7 @@ class ConnectionService {
         return false;
       }
 
+      // Delete connection from database
       const { error } = await supabase
         .from('user_connections')
         .delete()
@@ -323,9 +324,23 @@ class ConnectionService {
         return false;
       }
 
-      // Clean up any OAuth state for this service
+      // Clean up service-specific data
       if (service === 'linkedin') {
         this.cleanupIncompleteOAuth();
+        
+        // Clean up LinkedIn name preferences
+        try {
+          await supabase
+            .from('user_name_preferences')
+            .update({
+              linkedin_first_name: null,
+              linkedin_last_name: null,
+              name_source: 'custom' // Fallback to custom if LinkedIn was the source
+            })
+            .eq('user_id', user.id);
+        } catch (error) {
+          console.warn('Failed to clean up LinkedIn name preferences:', error);
+        }
       }
 
       console.log(`✅ ${service} disconnected successfully`);

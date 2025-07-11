@@ -123,4 +123,156 @@ export class NamePreferenceService {
         return '';
     }
   }
+
+  static async processLinkedInNames(userId: string, firstName: string, lastName: string): Promise<void> {
+    console.log('🏷️ Processing LinkedIn names for user:', userId);
+    console.log('📝 LinkedIn names:', { firstName, lastName });
+    
+    try {
+      // Add timeout protection
+      const timeoutPromise = new Promise((_, reject) => 
+        setTimeout(() => reject(new Error('LinkedIn name processing timeout')), 5000)
+      );
+
+      const processingPromise = this.doProcessLinkedInNames(userId, firstName, lastName);
+      
+      await Promise.race([processingPromise, timeoutPromise]);
+      
+    } catch (error) {
+      console.error('❌ Error processing LinkedIn names:', error);
+      // Don't throw - this is now called asynchronously and shouldn't block OAuth
+    }
+  }
+
+  private static async doProcessLinkedInNames(userId: string, firstName: string, lastName: string): Promise<void> {
+    // Get or create name preferences
+    let namePrefs = await this.getNamePreferences(userId);
+    
+    if (!namePrefs) {
+      console.log('💡 Creating new name preferences for LinkedIn connection');
+      // Create new preferences with LinkedIn data
+      namePrefs = await this.createNamePreferences(userId, {
+        linkedin_first_name: firstName,
+        linkedin_last_name: lastName,
+        name_source: 'linkedin'
+      });
+      
+      if (namePrefs) {
+        console.log('✅ Created name preferences with LinkedIn data');
+        await this.updatePersonaNames(userId, namePrefs);
+      }
+      return;
+    }
+    
+    console.log('📋 Current name preferences:', namePrefs);
+    
+    // Update LinkedIn fields
+    const updatedPrefs = {
+      ...namePrefs,
+      linkedin_first_name: firstName,
+      linkedin_last_name: lastName
+    };
+    
+    // Simplified logic for source switching
+    if (namePrefs.name_source === 'linkedin') {
+      updatedPrefs.name_source = 'linkedin';
+      console.log('💡 Using LinkedIn as name source');
+    } else {
+      console.log('🛡️ Preserving existing name source:', namePrefs.name_source);
+    }
+    
+    // Update preferences in database
+    await this.updateNamePreferences(userId, updatedPrefs);
+    
+    // Update persona names if LinkedIn is the source
+    if (updatedPrefs.name_source === 'linkedin') {
+      await this.updatePersonaNames(userId, updatedPrefs);
+      console.log('✅ Updated persona names with LinkedIn data');
+    }
+  }
+
+  static async getNamePreferences(userId: string): Promise<NamePreference | null> {
+    const { data, error } = await supabase
+      .from('user_name_preferences')
+      .select('*')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (error) {
+      console.error('Error fetching name preferences:', error);
+      return null;
+    }
+
+    return data as NamePreference | null;
+  }
+
+  static async createNamePreferences(userId: string, preferences: Partial<NamePreference>): Promise<NamePreference | null> {
+    const { data, error } = await supabase
+      .from('user_name_preferences')
+      .insert({
+        user_id: userId,
+        persona_type: 'knyt' as const, // Default to knyt for now
+        name_source: 'linkedin' as const, // Default source
+        ...preferences
+      })
+      .select()
+      .single();
+
+    if (error) {
+      console.error('Error creating name preferences:', error);
+      return null;
+    }
+
+    return data as NamePreference;
+  }
+
+  static async updateNamePreferences(userId: string, preferences: Partial<NamePreference>): Promise<void> {
+    const updateData = {
+      user_id: userId,
+      persona_type: preferences.persona_type || 'knyt' as const,
+      name_source: preferences.name_source || 'linkedin' as const,
+      custom_first_name: preferences.custom_first_name,
+      custom_last_name: preferences.custom_last_name,
+      linkedin_first_name: preferences.linkedin_first_name,
+      linkedin_last_name: preferences.linkedin_last_name,
+      invitation_first_name: preferences.invitation_first_name,
+      invitation_last_name: preferences.invitation_last_name,
+      updated_at: new Date().toISOString()
+    };
+
+    const { error } = await supabase
+      .from('user_name_preferences')
+      .upsert(updateData);
+
+    if (error) {
+      console.error('Error updating name preferences:', error);
+      throw error;
+    }
+  }
+
+  static async updatePersonaNames(userId: string, preferences: NamePreference): Promise<void> {
+    const firstName = this.getEffectiveName(preferences);
+    const lastName = preferences.name_source === 'custom' ? preferences.custom_last_name :
+                    preferences.name_source === 'linkedin' ? preferences.linkedin_last_name :
+                    preferences.invitation_last_name;
+
+    // Update both persona types for compatibility
+    await Promise.all([
+      supabase
+        .from('knyt_personas')
+        .update({
+          'First-Name': firstName || '',
+          'Last-Name': lastName || ''
+        })
+        .eq('user_id', userId),
+      
+      supabase
+        .from('qrypto_personas')
+        .update({
+          'First-Name': firstName || '',
+          'Last-Name': lastName || ''
+        })
+        .eq('user_id', userId)
+    ]);
+  }
 }
