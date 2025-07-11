@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
@@ -167,6 +166,11 @@ export function useServiceConnections() {
         }
       } else {
         try {
+          // Clean up any stale OAuth attempts before starting new one
+          if (service === 'linkedin') {
+            connectionService.checkAndCleanStaleOAuth();
+          }
+          
           success = await connectionService.startOAuthFlow(service);
           if (success && service === 'linkedin') {
             // For LinkedIn, the redirect happens immediately, so we don't update state here
@@ -249,6 +253,7 @@ export function useServiceConnections() {
       
       // Clean up any incomplete OAuth attempts on load
       connectionService.cleanupIncompleteOAuth();
+      connectionService.checkAndCleanStaleOAuth();
     }
   }, [user]);
   
@@ -256,6 +261,9 @@ export function useServiceConnections() {
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden && user) {
+        // Clean up stale OAuth attempts when page becomes visible
+        connectionService.checkAndCleanStaleOAuth();
+        
         // Refresh connections when page becomes visible
         setTimeout(() => {
           fetchConnections(false);

@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 import { connectionStateManager } from './connection-state-manager';
@@ -104,20 +103,33 @@ class ConnectionService {
   }
 
   cleanupIncompleteOAuth() {
+    console.log('🧹 Cleaning up OAuth localStorage...');
     // Clean up any OAuth state stored in localStorage
     const keysToRemove = [
       'oauth_state',
       'oauth_code_verifier',
       'oauth_redirect_uri',
-      'oauth_service'
+      'oauth_service',
+      'linkedin_oauth_state',
+      'linkedin_connection_attempt',
+      'supabase.auth.token'
     ];
     
+    let removedKeys = 0;
     keysToRemove.forEach(key => {
-      localStorage.removeItem(key);
+      if (localStorage.getItem(key)) {
+        localStorage.removeItem(key);
+        removedKeys++;
+        console.log(`🗑️ Removed localStorage key: ${key}`);
+      }
     });
+    
+    console.log(`✅ OAuth cleanup complete. Removed ${removedKeys} keys.`);
   }
 
   async startOAuthFlow(service: ServiceType): Promise<boolean> {
+    console.log(`🔄 Starting OAuth flow for ${service}...`);
+    
     if (!connectionStateManager.canAttemptConnection(service)) {
       toast.error(`Too many ${service} connection attempts. Please wait before trying again.`);
       return false;
@@ -128,13 +140,13 @@ class ConnectionService {
       return false;
     }
 
+    // Immediately clean up any residual OAuth state
+    this.cleanupIncompleteOAuth();
+
     connectionStateManager.setConnectionState(service, 'connecting');
     connectionStateManager.recordConnectionAttempt(service);
 
     try {
-      // Clean up any previous OAuth attempts
-      this.cleanupIncompleteOAuth();
-
       // Get current user
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
@@ -148,24 +160,31 @@ class ConnectionService {
         try {
           console.log('🔗 LinkedIn OAuth flow started...');
           
-          // Start connection timeout for LinkedIn
+          // Start connection timeout for LinkedIn (30 seconds)
           connectionStateManager.startConnectionTimeout(service, () => {
+            console.log('⏰ LinkedIn connection timed out, cleaning up...');
             this.cleanupIncompleteOAuth();
             connectionStateManager.setConnectionState(service, 'error');
+            toast.error('LinkedIn connection timed out. Please try again.');
           });
           
-          // Store OAuth state for security
-          const state = Math.random().toString(36).substring(2);
+          // Generate new OAuth state for security
+          const state = Math.random().toString(36).substring(2) + Date.now().toString(36);
+          console.log('🔐 Generated new OAuth state:', state);
+          
+          // Store OAuth state for security verification
           localStorage.setItem('oauth_state', state);
           localStorage.setItem('oauth_service', service);
+          localStorage.setItem('linkedin_connection_attempt', Date.now().toString());
           
           // Call the LinkedIn connection edge function
+          console.log('📡 Calling LinkedIn connection edge function...');
           const { data, error } = await supabase.functions.invoke('connect-linkedin', {
             body: { state }
           });
 
           if (error) {
-            console.error('LinkedIn connection service error:', error);
+            console.error('❌ LinkedIn connection service error:', error);
             toast.error('Failed to initialize LinkedIn connection. Please try again.');
             this.cleanupIncompleteOAuth();
             connectionStateManager.setConnectionState(service, 'error');
@@ -176,18 +195,22 @@ class ConnectionService {
             console.log('🔄 Redirecting to LinkedIn OAuth:', data.authUrl);
             // Clear timeout before redirect (will be handled by OAuth callback)
             connectionStateManager.clearConnectionTimeout(service);
-            // Redirect to LinkedIn OAuth
-            window.location.href = data.authUrl;
+            
+            // Add a small delay to ensure state is saved before redirect
+            setTimeout(() => {
+              window.location.href = data.authUrl;
+            }, 100);
+            
             return true;
           } else {
-            console.error('No auth URL received from LinkedIn service');
+            console.error('❌ No auth URL received from LinkedIn service');
             toast.error('Failed to get LinkedIn authorization URL. Please try again.');
             this.cleanupIncompleteOAuth();
             connectionStateManager.setConnectionState(service, 'error');
             return false;
           }
         } catch (error) {
-          console.error('Error calling LinkedIn connection service:', error);
+          console.error('❌ Error calling LinkedIn connection service:', error);
           toast.error('Failed to connect to LinkedIn service. Please try again.');
           this.cleanupIncompleteOAuth();
           connectionStateManager.setConnectionState(service, 'error');
@@ -201,14 +224,16 @@ class ConnectionService {
       return false;
 
     } catch (error) {
-      console.error(`Error starting OAuth flow for ${service}:`, error);
+      console.error(`❌ Error starting OAuth flow for ${service}:`, error);
       toast.error(`Failed to connect to ${service}. Please try again.`);
+      this.cleanupIncompleteOAuth();
       connectionStateManager.setConnectionState(service, 'error');
       return false;
     }
   }
 
   async disconnectService(service: ServiceType): Promise<boolean> {
+    console.log(`🔌 Disconnecting ${service}...`);
     connectionStateManager.setConnectionState(service, 'disconnecting');
     
     try {
@@ -226,18 +251,23 @@ class ConnectionService {
         .eq('service', service);
 
       if (error) {
-        console.error(`Error disconnecting ${service}:`, error);
+        console.error(`❌ Error disconnecting ${service}:`, error);
         toast.error(`Failed to disconnect ${service}. Please try again.`);
         connectionStateManager.setConnectionState(service, 'error');
         return false;
       }
 
-      // Fix: Show correct disconnect message
+      // Clean up any OAuth state for this service
+      if (service === 'linkedin') {
+        this.cleanupIncompleteOAuth();
+      }
+
+      console.log(`✅ ${service} disconnected successfully`);
       toast.success(`${service} disconnected successfully!`);
       connectionStateManager.setConnectionState(service, 'idle');
       return true;
     } catch (error) {
-      console.error(`Error disconnecting ${service}:`, error);
+      console.error(`❌ Error disconnecting ${service}:`, error);
       toast.error(`Failed to disconnect ${service}. Please try again.`);
       connectionStateManager.setConnectionState(service, 'error');
       return false;
@@ -250,6 +280,22 @@ class ConnectionService {
     connectionStateManager.resetConnectionState(service);
     this.cleanupIncompleteOAuth();
     toast.info(`${service} connection state has been reset.`);
+  }
+
+  // Add method to check and clean stale OAuth attempts
+  checkAndCleanStaleOAuth() {
+    const attempt = localStorage.getItem('linkedin_connection_attempt');
+    if (attempt) {
+      const attemptTime = parseInt(attempt);
+      const now = Date.now();
+      const maxAge = 5 * 60 * 1000; // 5 minutes
+      
+      if (now - attemptTime > maxAge) {
+        console.log('🧹 Cleaning up stale LinkedIn OAuth attempt');
+        this.cleanupIncompleteOAuth();
+        connectionStateManager.resetConnectionState('linkedin');
+      }
+    }
   }
 }
 
