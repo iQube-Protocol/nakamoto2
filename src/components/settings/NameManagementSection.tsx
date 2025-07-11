@@ -20,7 +20,7 @@ export const NameManagementSection: React.FC = () => {
   const [conflictDialog, setConflictDialog] = useState<{
     open: boolean;
     data?: any;
-  }>({ open: false });
+  }>({ open: false, data: undefined });
   const { user } = useAuth();
 
   useEffect(() => {
@@ -138,7 +138,7 @@ export const NameManagementSection: React.FC = () => {
         onOpenChange={(open) => setConflictDialog({ open, data: conflictDialog.data })}
         conflictData={conflictDialog.data}
         onResolved={() => {
-          setConflictDialog({ open: false });
+          setConflictDialog({ open: false, data: undefined });
           loadPersonaNames();
         }}
       />

@@ -17,7 +17,7 @@ import { useToast } from '@/hooks/use-toast';
 interface NameConflictDialogProps {
   open: boolean;
   onOpenChange: (open: boolean) => void;
-  conflictData: NameConflictData;
+  conflictData?: NameConflictData;
   onResolved: () => void;
 }
 
@@ -33,6 +33,8 @@ export const NameConflictDialog: React.FC<NameConflictDialogProps> = ({
   const { toast } = useToast();
 
   const handleSave = async () => {
+    if (!conflictData) return;
+    
     const preference = {
       persona_type: conflictData.personaType,
       name_source: selectedOption,
@@ -62,6 +64,19 @@ export const NameConflictDialog: React.FC<NameConflictDialogProps> = ({
       });
     }
   };
+
+  // Don't render dialog content if conflictData is undefined
+  if (!conflictData) {
+    return (
+      <Dialog open={open} onOpenChange={onOpenChange}>
+        <DialogContent className="sm:max-w-md">
+          <DialogHeader>
+            <DialogTitle>Loading...</DialogTitle>
+          </DialogHeader>
+        </DialogContent>
+      </Dialog>
+    );
+  }
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
