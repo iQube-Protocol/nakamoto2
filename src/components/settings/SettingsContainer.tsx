@@ -17,8 +17,16 @@ interface SettingsContainerProps {
 
 const SettingsContainer = ({ activeQubes, toggleQubeActive, selectedIQube }: SettingsContainerProps) => {
   const { userSettings } = useSettingsData();
-  const { privateData, handleUpdatePrivateData } = usePrivateData(selectedIQube);
+  const { privateData, handleUpdatePrivateData, authError, clearAuthError } = usePrivateData(selectedIQube);
   const { selectIQube } = useSidebarState();
+
+  // Show authentication errors as toasts
+  useEffect(() => {
+    if (authError) {
+      toast.error(authError);
+      clearAuthError();
+    }
+  }, [authError, clearAuthError]);
 
   // When the selected iQube changes, update the sidebar state
   useEffect(() => {

@@ -42,8 +42,13 @@ export const blakQubeService = {
    */
   getPersonaData: async (personaType: 'knyt' | 'qrypto'): Promise<KNYTPersona | QryptoPersona | null> => {
     try {
-      const { data: user } = await supabase.auth.getUser();
-      if (!user.user) return null;
+      const { data: user, error: authError } = await supabase.auth.getUser();
+      if (authError || !user.user) {
+        console.error('❌ Authentication error in getPersonaData:', authError);
+        throw new Error('Authentication required to access persona data');
+      }
+      
+      console.log('✅ Authenticated user in getPersonaData:', user.user.email);
       
       if (personaType === 'knyt') {
         return await fetchKNYTPersonaFromDB(user.user.id);
@@ -52,7 +57,7 @@ export const blakQubeService = {
       }
     } catch (error) {
       console.error('Error in getPersonaData:', error);
-      return null;
+      throw error; // Re-throw to allow caller to handle
     }
   },
 
@@ -78,12 +83,13 @@ export const blakQubeService = {
    */
   saveManualPersonaData: async (data: PrivateData, personaType: 'knyt' | 'qrypto'): Promise<boolean> => {
     try {
-      const { data: user } = await supabase.auth.getUser();
-      if (!user.user) {
-        console.error('User not authenticated');
-        return false;
+      const { data: user, error: authError } = await supabase.auth.getUser();
+      if (authError || !user.user) {
+        console.error('❌ Authentication error in saveManualPersonaData:', authError);
+        throw new Error('Authentication required to save persona data');
       }
       
+      console.log('✅ Authenticated user in saveManualPersonaData:', user.user.email);
       console.log('Saving manual persona data for user:', user.user.id, 'type:', personaType, data);
       
       let success: boolean;
@@ -105,7 +111,7 @@ export const blakQubeService = {
       return success;
     } catch (error) {
       console.error('Error in saveManualPersonaData:', error);
-      return false;
+      throw error; // Re-throw to allow caller to handle
     }
   },
 
