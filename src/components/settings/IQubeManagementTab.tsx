@@ -18,8 +18,6 @@ interface IQubeManagementTabProps {
   onMintIQube: () => void;
   onAddAccessGrant: () => void;
   metaQube: MetaQube;
-  walletAddress: string | null;
-  knytBalance: string | null;
 }
 
 const IQubeManagementTab = ({ 
@@ -29,9 +27,7 @@ const IQubeManagementTab = ({
   onConnectWallet,
   onMintIQube,
   onAddAccessGrant,
-  metaQube,
-  walletAddress,
-  knytBalance
+  metaQube
 }: IQubeManagementTabProps) => {
   const isAgentQube = metaQube["iQube-Type"] === "AgentQube";
   const borderColor = isAgentQube ? "border-t-purple-500" : "border-t-iqube-primary";
@@ -73,8 +69,6 @@ const IQubeManagementTab = ({
             onConnectWallet={onConnectWallet}
             onMintIQube={onMintIQube}
             onAddAccessGrant={onAddAccessGrant}
-            walletAddress={walletAddress}
-            knytBalance={knytBalance}
           />
         </CardContent>
       </Card>

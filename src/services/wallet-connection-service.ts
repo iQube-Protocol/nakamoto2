@@ -262,7 +262,7 @@ export const walletConnectionService = {
         .select('*')
         .eq('user_id', user.id)
         .eq('service', 'wallet')
-        .maybeSingle();
+        .single();
 
       if (!connections || !connections.connection_data) {
         console.log('❌ No wallet connection found');
@@ -369,7 +369,7 @@ export const walletConnectionService = {
         .select('*')
         .eq('user_id', user.id)
         .eq('service', 'wallet')
-        .maybeSingle();
+        .single();
 
       if (!connections || !connections.connection_data) {
         console.log('❌ No wallet connection found');

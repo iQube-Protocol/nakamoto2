@@ -157,21 +157,12 @@ export function useServiceConnections() {
           const qryptoUpdateSuccess = await blakQubeService.updatePersonaFromConnections('qrypto');
           const knytUpdateSuccess = await blakQubeService.updatePersonaFromConnections('knyt');
           
-          // Refresh connections to get the latest data including KNYT balance
+          // Refresh connections to get the latest data
           await fetchConnections(false);
           
-          // Add a small delay and refresh again to ensure KNYT balance is captured
-          setTimeout(async () => {
-            console.log('🔄 Secondary refresh for KNYT balance...');
-            await fetchConnections(false);
-          }, 1000);
-          
-          // Dispatch multiple events to ensure UI updates
-          const events = ['privateDataUpdated', 'walletDataRefreshed', 'balanceUpdated'];
-          events.forEach(eventName => {
-            const event = new CustomEvent(eventName);
-            window.dispatchEvent(event);
-          });
+          // Dispatch custom event
+          const event = new CustomEvent('privateDataUpdated');
+          window.dispatchEvent(event);
         }
       } else {
         try {

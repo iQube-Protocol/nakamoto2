@@ -32,7 +32,7 @@ const SettingsInterface = ({
   onUpdatePrivateData 
 }: SettingsInterfaceProps) => {
   const { theme } = useTheme();
-  const { connections, connectService, disconnectService, toggleConnection, connectionData, getWalletAddress } = useServiceConnections();
+  const { connections, connectService, disconnectService, toggleConnection } = useServiceConnections();
   
   // Sync settings with actual connection state
   const [settings, setSettings] = useState<UserSettings>({
@@ -203,8 +203,6 @@ const SettingsInterface = ({
             onMintIQube={handleMintIQube}
             onAddAccessGrant={handleAddAccessGrant}
             metaQube={metaQube}
-            walletAddress={getWalletAddress()}
-            knytBalance={connectionData.wallet?.knytTokenBalance?.formatted || null}
           />
         </TabsContent>
 
