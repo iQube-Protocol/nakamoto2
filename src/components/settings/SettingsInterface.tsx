@@ -32,7 +32,7 @@ const SettingsInterface = ({
   onUpdatePrivateData 
 }: SettingsInterfaceProps) => {
   const { theme } = useTheme();
-  const { connections, connectService, disconnectService, toggleConnection, connectionData, getWalletAddress, refreshConnections } = useServiceConnections();
+  const { connections, connectService, disconnectService, toggleConnection, connectionData, getWalletAddress } = useServiceConnections();
   
   // Sync settings with actual connection state
   const [settings, setSettings] = useState<UserSettings>({
@@ -97,9 +97,6 @@ const SettingsInterface = ({
         if (success) {
           if (service === 'wallet') {
             console.log('💰 Wallet connected successfully, updating BlakQube...');
-            
-            // Force immediate refresh of connection data and KNYT balance
-            await refreshConnections(false);
             
             // Update BlakQube data after wallet connection
             const updateSuccess = await blakQubeService.updateBlakQubeFromConnections();
