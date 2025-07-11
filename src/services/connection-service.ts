@@ -5,22 +5,6 @@ import { connectionStateManager } from './connection-state-manager';
 export type ServiceType = 'linkedin' | 'twitter' | 'telegram' | 'discord' | 'luma' | 'wallet' | 'facebook' | 'youtube' | 'tiktok' | 'instagram';
 
 class ConnectionService {
-  // Enhanced Brave browser detection
-  private detectBrave(): boolean {
-    const userAgent = navigator.userAgent;
-    const isBraveUA = userAgent.includes('Brave') || userAgent.includes('brave');
-    const hasBraveAPI = (navigator as any).brave && typeof (navigator as any).brave.isBrave === 'function';
-    
-    console.log('🔍 Browser Detection Details:', {
-      userAgent,
-      isBraveUA,
-      hasBraveAPI,
-      finalResult: isBraveUA || hasBraveAPI
-    });
-    
-    return isBraveUA || hasBraveAPI;
-  }
-
   isServiceConnecting(service: ServiceType): boolean {
     const state = connectionStateManager.getConnectionState(service);
     return state === 'connecting' || state === 'disconnecting' || state === 'redirecting';
@@ -146,10 +130,6 @@ class ConnectionService {
   async startOAuthFlow(service: ServiceType): Promise<boolean> {
     console.log(`🔄 Starting OAuth flow for ${service}...`);
     
-    // Enhanced debugging at the start
-    const isBrave = this.detectBrave();
-    console.log(`🚀 OAuth Flow Started - Service: ${service}, Browser: ${isBrave ? 'Brave' : 'Other'}`);
-    
     if (!connectionStateManager.canAttemptConnection(service)) {
       toast.error(`Too many ${service} connection attempts. Please wait before trying again.`);
       return false;
@@ -181,42 +161,14 @@ class ConnectionService {
         try {
           console.log('🔗 LinkedIn OAuth flow started...');
           
+          // Detect Brave browser
+          const isBrave = (navigator as any).brave && typeof (navigator as any).brave.isBrave === 'function';
           if (isBrave) {
             console.log('🛡️ Brave browser detected, using enhanced OAuth handling');
-            console.log('🛡️ Brave Browser Environment Check:', {
-              userAgent: navigator.userAgent,
-              cookiesEnabled: navigator.cookieEnabled,
-              localStorageAvailable: typeof Storage !== 'undefined',
-              sessionStorageAvailable: typeof sessionStorage !== 'undefined',
-              windowLocationOrigin: window.location.origin,
-              currentUrl: window.location.href
-            });
-            
-            // Test storage capabilities for Brave
-            try {
-              localStorage.setItem('brave_test', 'test');
-              localStorage.removeItem('brave_test');
-              console.log('🛡️ Brave: localStorage working');
-            } catch (e) {
-              console.error('🛡️ Brave: localStorage failed', e);
-              toast.error('Brave: Local storage blocked. Please disable Shields for this site.');
-              connectionStateManager.setConnectionState(service, 'error');
-              return false;
-            }
-            
-            try {
-              sessionStorage.setItem('brave_test', 'test');
-              sessionStorage.removeItem('brave_test');
-              console.log('🛡️ Brave: sessionStorage working');
-            } catch (e) {
-              console.error('🛡️ Brave: sessionStorage failed', e);
-            }
           }
           
           // Start connection timeout (extended for Brave)
           const timeoutMs = isBrave ? 45000 : 30000; // 45s for Brave, 30s for others
-          console.log(`⏰ Setting connection timeout: ${timeoutMs}ms`);
-          
           connectionStateManager.startConnectionTimeout(service, () => {
             console.log('⏰ LinkedIn connection timed out, cleaning up...');
             this.cleanupIncompleteOAuth();
@@ -230,23 +182,42 @@ class ConnectionService {
           
           // Generate new OAuth state for security
           const state = Math.random().toString(36).substring(2) + Date.now().toString(36);
-          console.log('🔐 Generated OAuth state:', state);
+          console.log('🔐 Generated new OAuth state:', state);
+          
+          // Enhanced Brave debugging
+          if (isBrave) {
+            console.log('🛡️ Brave Browser OAuth Debug Info:');
+            console.log('- User Agent:', navigator.userAgent);
+            console.log('- Cookies enabled:', navigator.cookieEnabled);
+            console.log('- Local storage available:', typeof Storage !== 'undefined');
+            console.log('- Session storage available:', typeof sessionStorage !== 'undefined');
+            
+            // Test storage capabilities
+            try {
+              localStorage.setItem('brave_test', 'test');
+              localStorage.removeItem('brave_test');
+              console.log('- localStorage: Working');
+            } catch (e) {
+              console.error('- localStorage: Failed', e);
+            }
+            
+            try {
+              sessionStorage.setItem('brave_test', 'test');
+              sessionStorage.removeItem('brave_test');
+              console.log('- sessionStorage: Working');
+            } catch (e) {
+              console.error('- sessionStorage: Failed', e);
+            }
+          }
           
           // Store OAuth state for security verification
           localStorage.setItem('oauth_state', state);
           localStorage.setItem('oauth_service', service);
           localStorage.setItem('linkedin_connection_attempt', Date.now().toString());
           
+          // Store additional state for Brave
           if (isBrave) {
-            console.log('🛡️ Brave: Storing additional OAuth state');
             connectionStateManager.storeOAuthState(service, 'connecting');
-            // Also store in sessionStorage for Brave as backup
-            try {
-              sessionStorage.setItem('oauth_state_backup', state);
-              sessionStorage.setItem('oauth_service_backup', service);
-            } catch (e) {
-              console.warn('🛡️ Brave: Could not store backup state in sessionStorage', e);
-            }
           }
           
           // Call the LinkedIn connection edge function
@@ -267,50 +238,34 @@ class ConnectionService {
             console.log('🔄 Redirecting to LinkedIn OAuth:', data.authUrl);
             
             if (isBrave) {
-              console.log('🛡️ Brave: Testing LinkedIn URL accessibility...');
+              console.log('🛡️ Brave: Attempting OAuth redirect with enhanced logging');
               
-              // Test if URL is accessible before redirecting
+              // Add a delay for Brave to process the state change
+              await new Promise(resolve => setTimeout(resolve, 100));
+              
+              // Check if we can access the URL before redirecting
+              console.log('🛡️ Brave: Testing URL accessibility...');
               try {
-                const testController = new AbortController();
-                setTimeout(() => testController.abort(), 3000);
-                
-                fetch(data.authUrl, { 
-                  method: 'HEAD', 
-                  mode: 'no-cors',
-                  signal: testController.signal 
-                })
+                // Create a test request to see if it's blocked
+                fetch(data.authUrl, { method: 'HEAD', mode: 'no-cors' })
                   .then(() => console.log('🛡️ Brave: LinkedIn URL accessible'))
-                  .catch(e => {
-                    console.log('🛡️ Brave: LinkedIn URL may be blocked:', e);
-                    toast.warning('If connection fails, try disabling Brave Shields for LinkedIn');
-                  });
+                  .catch(e => console.log('🛡️ Brave: LinkedIn URL may be blocked:', e));
               } catch (e) {
                 console.log('🛡️ Brave: URL test failed:', e);
               }
-              
-              // Add longer delay for Brave to process state changes
-              console.log('🛡️ Brave: Adding processing delay before redirect...');
-              await new Promise(resolve => setTimeout(resolve, 300));
             }
             
             // Set to redirecting state and store it persistently
             connectionStateManager.setConnectionState(service, 'redirecting');
             connectionStateManager.storeOAuthState(service, 'redirecting');
-            
             // Clear timeout before redirect (will be handled by OAuth callback)
             connectionStateManager.clearConnectionTimeout(service);
             
-            // Add delay to ensure state is saved before redirect
-            const redirectDelay = isBrave ? 500 : 150;
-            console.log(`🚀 Redirecting to LinkedIn in ${redirectDelay}ms...`);
-            
+            // Add a small delay to ensure state is saved before redirect
             setTimeout(() => {
-              console.log('🌐 Executing redirect to LinkedIn OAuth URL...');
-              if (isBrave) {
-                console.log('🛡️ Brave: Final redirect attempt');
-              }
+              console.log('🚀 Redirecting to LinkedIn OAuth URL...');
               window.location.href = data.authUrl;
-            }, redirectDelay);
+            }, isBrave ? 200 : 100); // Longer delay for Brave
             
             return true;
           } else {
@@ -322,12 +277,7 @@ class ConnectionService {
           }
         } catch (error) {
           console.error('❌ Error calling LinkedIn connection service:', error);
-          if (isBrave) {
-            console.error('🛡️ Brave: LinkedIn OAuth failed:', error);
-            toast.error('LinkedIn connection failed in Brave. Try disabling Shields or use a different browser.');
-          } else {
-            toast.error('Failed to connect to LinkedIn service. Please try again.');
-          }
+          toast.error('Failed to connect to LinkedIn service. Please try again.');
           this.cleanupIncompleteOAuth();
           connectionStateManager.setConnectionState(service, 'error');
           return false;
