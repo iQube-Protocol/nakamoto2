@@ -17,156 +17,131 @@ const OAuthCallback = () => {
   
   useEffect(() => {
     const handleOAuthCallback = async () => {
+      console.log('🚀 OAuth callback handler started');
+      
       try {
-        // Detect Brave browser for enhanced debugging
-        const isBrave = (navigator as any).brave && typeof (navigator as any).brave.isBrave === 'function';
-        if (isBrave) {
-          console.log('🛡️ Brave: OAuth callback handler started');
-          console.log('🛡️ Brave: Current URL:', window.location.href);
-          console.log('🛡️ Brave: Search params:', searchParams.toString());
-          console.log('🛡️ Brave: localStorage available:', typeof localStorage !== 'undefined');
-          
-          // Check localStorage state
-          const oauthState = localStorage.getItem('oauth_state');
-          const oauthService = localStorage.getItem('oauth_service');
-          console.log('🛡️ Brave: OAuth state in localStorage:', { oauthState, oauthService });
-        }
-        
         const service = searchParams.get('service');
         const success = searchParams.get('success');
         const error = searchParams.get('error');
         const connectionDataParam = searchParams.get('connection_data');
         
-        console.log('OAuth callback received:', { service, success, error, hasConnectionData: !!connectionDataParam });
+        console.log('OAuth callback params:', { service, success, error, hasConnectionData: !!connectionDataParam });
         
-        if (isBrave) {
-          console.log('🛡️ Brave: Processing OAuth callback for service:', service);
-        }
-        
+        // Handle OAuth errors first
         if (error) {
           console.error('OAuth error:', error);
-          
-          // Update connection state to error
           if (service) {
             connectionStateManager.setConnectionState(service, 'error');
             connectionStateManager.cleanupOAuthState(service);
           }
-          
           setStatus('error');
           setMessage(`Connection failed: ${error}`);
           toast.error(`Failed to connect to ${service}: ${error}`);
-          setTimeout(() => navigate('/settings?tab=connections'), 3000);
+          setTimeout(() => navigate('/settings?tab=connections'), 2000);
           return;
         }
         
-        if (success === 'true' && service && connectionDataParam) {
-          try {
-            const connectionData = JSON.parse(decodeURIComponent(connectionDataParam));
-            console.log('Parsed connection data:', connectionData);
-            
-            // Get the current user
-            const { data: { user }, error: authError } = await supabase.auth.getUser();
-            if (authError || !user) {
-              console.error('User not authenticated:', authError);
-              setStatus('error');
-              setMessage('Authentication required. Please log in.');
-              toast.error('You must be logged in to connect services.');
-              setTimeout(() => navigate('/'), 3000);
-              return;
-            }
-            
-            // Enhanced cleanup for Brave
-            const isBrave = (navigator as any).brave && typeof (navigator as any).brave.isBrave === 'function';
-            if (isBrave) {
-              console.log('🛡️ Brave: Enhanced OAuth cleanup starting');
-              // Clean up both localStorage and sessionStorage for Brave
-              const keysToClean = ['oauth_state', 'oauth_service', 'oauth_linkedin'];
-              keysToClean.forEach(key => {
-                localStorage.removeItem(key);
-                try {
-                  sessionStorage.removeItem(key);
-                } catch (e) {
-                  console.log('🛡️ Brave: sessionStorage cleanup failed for', key);
-                }
-              });
-              console.log('🛡️ Brave: OAuth cleanup completed');
-            } else {
-              // Clean up any existing OAuth state
-              localStorage.removeItem('oauth_state');
-              localStorage.removeItem('oauth_service');
-            }
-            
-            // Save the connection to the database with proper error handling
-            console.log('Saving connection to database...');
-            const { error: saveError } = await supabase
-              .from('user_connections')
-              .upsert({
-                user_id: user.id,
-                service: service,
-                connected_at: new Date().toISOString(),
-                connection_data: connectionData
-              }, {
-                onConflict: 'user_id,service'
-              });
-            
-            if (saveError) {
-              console.error('Error saving connection:', saveError);
-              setStatus('error');
-              setMessage('Failed to save connection data.');
-              toast.error(`Failed to save ${service} connection: ${saveError.message}`);
-              setTimeout(() => navigate('/settings?tab=connections'), 3000);
-              return;
-            }
-            
-            console.log(`${service} connection saved successfully`);
-            
-            // Update connection state to connected
-            connectionStateManager.setConnectionState(service, 'connected');
-            connectionStateManager.cleanupOAuthState(service);
-            
-            // Trigger immediate UI refresh
-            const connectionEvent = new CustomEvent('connectionsUpdated');
-            window.dispatchEvent(connectionEvent);
-            
-            setStatus('success');
-            setMessage(`${service} connected successfully!`);
-            toast.success(`${service} connected successfully`);
-            
-            // Start async background processing for profile data
-            asyncConnectionProcessor.processConnectionAsync(user.id, service, connectionData)
-              .catch(error => {
-                console.error('Background processing failed:', error);
-              });
-            
-            const updateSuccess = true;
-            
-            // Connection is complete - updateSuccess is always true now
-            
-            // Redirect back to settings after a short delay
-            setTimeout(() => {
-              navigate('/settings?tab=connections');
-            }, 2500);
-            
-          } catch (parseError) {
-            console.error('Error parsing connection data:', parseError);
-            setStatus('error');
-            setMessage('Invalid connection data received.');
-            toast.error('Invalid connection data received.');
-            setTimeout(() => navigate('/settings?tab=connections'), 3000);
-          }
-        } else {
-          console.error('Missing required parameters:', { service, success, connectionDataParam });
+        // Validate required parameters
+        if (success !== 'true' || !service || !connectionDataParam) {
+          console.error('Missing required OAuth parameters');
           setStatus('error');
           setMessage('Invalid callback parameters.');
-          toast.error('Invalid callback parameters.');
-          setTimeout(() => navigate('/settings?tab=connections'), 3000);
+          toast.error('Invalid OAuth callback.');
+          setTimeout(() => navigate('/settings?tab=connections'), 2000);
+          return;
         }
+        
+        // Parse connection data
+        let connectionData;
+        try {
+          connectionData = JSON.parse(decodeURIComponent(connectionDataParam));
+          console.log('✅ Connection data parsed successfully');
+        } catch (parseError) {
+          console.error('❌ Failed to parse connection data:', parseError);
+          setStatus('error');
+          setMessage('Invalid connection data received.');
+          toast.error('Invalid connection data received.');
+          setTimeout(() => navigate('/settings?tab=connections'), 2000);
+          return;
+        }
+        
+        // Verify user authentication
+        const { data: { user }, error: authError } = await supabase.auth.getUser();
+        if (authError || !user) {
+          console.error('❌ User not authenticated:', authError);
+          setStatus('error');
+          setMessage('Authentication required. Please log in.');
+          toast.error('You must be logged in to connect services.');
+          setTimeout(() => navigate('/'), 2000);
+          return;
+        }
+        
+        console.log('✅ User authenticated, saving connection...');
+        
+        // CRITICAL: Save connection to database FIRST (keep it simple and fast)
+        const { error: saveError } = await supabase
+          .from('user_connections')
+          .upsert({
+            user_id: user.id,
+            service: service,
+            connected_at: new Date().toISOString(),
+            connection_data: connectionData
+          }, {
+            onConflict: 'user_id,service'
+          });
+        
+        if (saveError) {
+          console.error('❌ Failed to save connection:', saveError);
+          setStatus('error');
+          setMessage('Failed to save connection data.');
+          toast.error(`Failed to save ${service} connection.`);
+          setTimeout(() => navigate('/settings?tab=connections'), 2000);
+          return;
+        }
+        
+        console.log(`✅ ${service} connection saved to database`);
+        
+        // Update connection state and cleanup OAuth data
+        connectionStateManager.setConnectionState(service, 'connected');
+        connectionStateManager.cleanupOAuthState(service);
+        
+        // Clean up localStorage OAuth state
+        const keysToClean = ['oauth_state', 'oauth_service', 'oauth_linkedin', 'linkedin_connection_attempt'];
+        keysToClean.forEach(key => {
+          localStorage.removeItem(key);
+          try {
+            sessionStorage.removeItem(key);
+          } catch (e) {
+            // Ignore sessionStorage errors
+          }
+        });
+        
+        // Show success immediately
+        setStatus('success');
+        setMessage(`${service} connected successfully!`);
+        toast.success(`${service} connected successfully`);
+        
+        // Trigger UI refresh
+        const connectionEvent = new CustomEvent('connectionsUpdated');
+        window.dispatchEvent(connectionEvent);
+        
+        // Start background processing (completely separate from OAuth success)
+        asyncConnectionProcessor.processConnectionAsync(user.id, service, connectionData)
+          .catch(error => {
+            console.warn('Background processing failed (OAuth still successful):', error);
+          });
+        
+        // Quick redirect back to settings
+        setTimeout(() => {
+          navigate('/settings?tab=connections');
+        }, 1500);
+        
       } catch (error) {
-        console.error('Unexpected error in OAuth callback:', error);
+        console.error('❌ Unexpected error in OAuth callback:', error);
         setStatus('error');
         setMessage('An unexpected error occurred.');
-        toast.error('An unexpected error occurred during connection.');
-        setTimeout(() => navigate('/settings?tab=connections'), 3000);
+        toast.error('An unexpected error occurred.');
+        setTimeout(() => navigate('/settings?tab=connections'), 2000);
       } finally {
         setProcessing(false);
       }

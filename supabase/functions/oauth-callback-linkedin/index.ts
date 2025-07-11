@@ -8,13 +8,18 @@ const SUPABASE_URL = Deno.env.get("SUPABASE_URL") || "";
 const SUPABASE_SERVICE_ROLE_KEY = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") || "";
 
 serve(async (req) => {
+  const startTime = Date.now();
   console.log("=== LinkedIn OAuth Callback Started ===");
+  console.log("Timestamp:", new Date().toISOString());
   console.log("Request method:", req.method);
   console.log("Request URL:", req.url);
+  console.log("User-Agent:", req.headers.get("user-agent"));
+  console.log("Origin:", req.headers.get("origin"));
+  console.log("Referer:", req.headers.get("referer"));
   
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
-    console.log("Handling CORS preflight request");
+    console.log("✅ Handling CORS preflight request");
     return new Response("ok", { headers: corsHeaders });
   }
 
@@ -297,6 +302,15 @@ serve(async (req) => {
 
     console.log("=== Redirecting back to client app ===");
     
+    const processingTime = Date.now() - startTime;
+    console.log(`✅ LinkedIn OAuth processing completed in ${processingTime}ms`);
+    console.log("Profile data summary:", {
+      hasName: !!(firstName && lastName),
+      hasEmail: !!basicProfileData?.email,
+      hasProfileUrl: !!profileUrl,
+      hasHeadline: !!detailedProfileData?.headline
+    });
+    
     // Redirect back to client app with success and connection data
     const redirectUrl = new URL('/oauth-callback', clientOrigin);
     redirectUrl.searchParams.set('service', 'linkedin');
@@ -304,7 +318,8 @@ serve(async (req) => {
     redirectUrl.searchParams.set('state', state || '');
     redirectUrl.searchParams.set('connection_data', encodeURIComponent(JSON.stringify(connectionData)));
     
-    console.log("Redirecting to:", redirectUrl.toString());
+    console.log("🚀 Redirecting to:", redirectUrl.toString());
+    console.log("=== LinkedIn OAuth Callback Completed Successfully ===");
     
     return new Response(null, {
       status: 302,

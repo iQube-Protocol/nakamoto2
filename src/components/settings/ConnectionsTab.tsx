@@ -62,6 +62,7 @@ const ConnectionsTab = ({ settings, onConnectService }: ConnectionsTabProps) => 
             icon={<Linkedin className="h-4 w-4" />}
             connected={settings.connected.linkedin}
             onConnect={() => onConnectService('linkedin')}
+            service="linkedin"
           />
           
           <ServiceConnection
@@ -69,6 +70,7 @@ const ConnectionsTab = ({ settings, onConnectService }: ConnectionsTabProps) => 
             icon={<Wallet className="h-4 w-4" />}
             connected={settings.connected.wallet}
             onConnect={() => onConnectService('wallet')}
+            service="wallet"
           />
           
           <ServiceConnection
@@ -77,6 +79,7 @@ const ConnectionsTab = ({ settings, onConnectService }: ConnectionsTabProps) => 
             connected={settings.connected.twitter}
             onConnect={() => onConnectService('twitter')}
             comingSoon={true}
+            service="twitter"
           />
           
           <ServiceConnection
@@ -85,6 +88,7 @@ const ConnectionsTab = ({ settings, onConnectService }: ConnectionsTabProps) => 
             connected={false}
             onConnect={() => {}}
             comingSoon={true}
+            service="youtube"
           />
           
           <ServiceConnection
@@ -93,6 +97,7 @@ const ConnectionsTab = ({ settings, onConnectService }: ConnectionsTabProps) => 
             connected={false}
             onConnect={() => {}}
             comingSoon={true}
+            service="facebook"
           />
           
           <ServiceConnection
@@ -101,6 +106,7 @@ const ConnectionsTab = ({ settings, onConnectService }: ConnectionsTabProps) => 
             connected={false}
             onConnect={() => {}}
             comingSoon={true}
+            service="tiktok"
           />
           
           <ServiceConnection
@@ -109,6 +115,7 @@ const ConnectionsTab = ({ settings, onConnectService }: ConnectionsTabProps) => 
             connected={settings.connected.instagram}
             onConnect={() => onConnectService('instagram')}
             comingSoon={true}
+            service="instagram"
           />
           
           <ServiceConnection
@@ -117,6 +124,7 @@ const ConnectionsTab = ({ settings, onConnectService }: ConnectionsTabProps) => 
             connected={settings.connected.telegram}
             onConnect={() => onConnectService('telegram')}
             comingSoon={true}
+            service="telegram"
           />
           
           <ServiceConnection
@@ -125,6 +133,7 @@ const ConnectionsTab = ({ settings, onConnectService }: ConnectionsTabProps) => 
             connected={settings.connected.discord}
             onConnect={() => onConnectService('discord')}
             comingSoon={true}
+            service="discord"
           />
           
           <ServiceConnection
@@ -133,6 +142,7 @@ const ConnectionsTab = ({ settings, onConnectService }: ConnectionsTabProps) => 
             connected={settings.connected.luma}
             onConnect={() => onConnectService('luma')}
             comingSoon={true}
+            service="luma"
           />
         </div>
       </CardContent>

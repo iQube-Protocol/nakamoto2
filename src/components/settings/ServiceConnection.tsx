@@ -14,6 +14,7 @@ export interface ServiceConnectionProps {
   isProcessing?: boolean;
   disabled?: boolean;
   comingSoon?: boolean;
+  service: string;
 }
 
 const ServiceConnection = ({
@@ -23,7 +24,8 @@ const ServiceConnection = ({
   onConnect,
   isProcessing = false,
   disabled = false,
-  comingSoon = false
+  comingSoon = false,
+  service
 }: ServiceConnectionProps) => {
   const [connectionState, setConnectionState] = useState<string>('idle');
   const serviceKey = name.toLowerCase().replace(/\s+/g, '').replace('metamask', 'wallet').replace('linkedin', 'linkedin');
@@ -74,7 +76,9 @@ const ServiceConnection = ({
   const hasError = connectionState === 'error';
 
   const handleReset = () => {
+    console.log(`🔄 Manual reset requested for ${serviceKey}`);
     connectionService.resetConnection(serviceKey as any);
+    setConnectionState('idle');
   };
 
   return (

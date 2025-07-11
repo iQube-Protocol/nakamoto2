@@ -5,13 +5,18 @@ import { corsHeaders } from "../_shared/cors.ts";
 const LINKEDIN_CLIENT_ID = Deno.env.get("LINKEDIN_CLIENT_ID") || "";
 
 serve(async (req) => {
+  const startTime = Date.now();
   console.log("=== LinkedIn Connection Request Started ===");
+  console.log("Timestamp:", new Date().toISOString());
   console.log("Request method:", req.method);
   console.log("Request URL:", req.url);
+  console.log("User-Agent:", req.headers.get("user-agent"));
+  console.log("Origin:", req.headers.get("origin"));
+  console.log("Referer:", req.headers.get("referer"));
   
   // Handle CORS preflight
   if (req.method === "OPTIONS") {
-    console.log("Handling CORS preflight request");
+    console.log("✅ Handling CORS preflight request");
     return new Response("ok", { headers: corsHeaders });
   }
 
@@ -74,7 +79,10 @@ serve(async (req) => {
       timestamp: new Date().toISOString()
     };
     
-    console.log("Sending response:", response);
+    const processingTime = Date.now() - startTime;
+    console.log("✅ Sending response:", response);
+    console.log(`Processing time: ${processingTime}ms`);
+    console.log("=== LinkedIn Connection Request Completed ===");
     
     return new Response(
       JSON.stringify(response),

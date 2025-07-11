@@ -57,12 +57,15 @@ class ConnectionStateManager {
   startConnectionTimeout(service: string, onTimeout: () => void) {
     this.clearConnectionTimeout(service);
     
+    // Use longer timeout for LinkedIn OAuth (sometimes slower)
+    const timeoutMs = service === 'linkedin' ? 45000 : this.connectionTimeoutMs;
+    
     const timeoutId = setTimeout(() => {
-      console.log(`⏰ Connection timeout for ${service}`);
+      console.log(`⏰ Connection timeout for ${service} after ${timeoutMs}ms`);
       this.setConnectionState(service, 'error');
+      this.cleanupOAuthState(service);
       onTimeout();
-      toast.error(`${service} connection timed out. Please try again.`);
-    }, this.connectionTimeoutMs);
+    }, timeoutMs);
     
     this.timeouts.set(service, timeoutId);
   }
@@ -79,7 +82,13 @@ class ConnectionStateManager {
     console.log(`🔄 Resetting connection state for ${service}`);
     this.clearConnectionTimeout(service);
     this.connectionAttempts.delete(service);
+    this.cleanupOAuthState(service);
     this.setConnectionState(service, 'idle');
+    
+    // Clean up service-specific localStorage
+    if (service === 'linkedin') {
+      localStorage.removeItem('linkedin_connection_attempt');
+    }
   }
 
   // Store OAuth state persistently across redirects
