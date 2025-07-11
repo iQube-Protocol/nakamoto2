@@ -23,20 +23,20 @@ const WalletConnection = ({ isConnected, onConnectWallet, walletAddress, knytBal
   
   // Format the address for display (show first 6 and last 4 characters)
   const formatAddress = (address: string) => {
-    if (!address) return "0x71C7656EC7...8976F";
+    if (!address) return "";
     return `${address.slice(0, 10)}...${address.slice(-4)}`;
   };
 
   return (
     <div className="space-y-3">
       <Label className="text-sm">Connected Wallet</Label>
-      {isConnected ? (
+      {isConnected && walletAddress ? (
         <div className="space-y-2">
           <div className="flex items-center p-2 bg-iqube-primary/10 rounded-md border border-iqube-primary/30">
             <Check className="h-4 w-4 mr-2 text-green-500" />
             <div className="flex-1">
               <div className="font-mono text-xs truncate">
-                {walletAddress ? formatAddress(walletAddress) : "0x71C7656EC7...8976F"}
+                {formatAddress(walletAddress)}
               </div>
               {knytBalance && (
                 <div className="text-xs text-muted-foreground mt-1">
