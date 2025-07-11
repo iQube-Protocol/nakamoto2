@@ -74,9 +74,15 @@ const ServiceConnection = ({
 
   const isConnecting = connectionState === 'connecting' || connectionState === 'disconnecting' || connectionState === 'redirecting';
   const hasError = connectionState === 'error';
+  const isStuck = connectionState === 'redirecting' || connectionState === 'error';
 
   const handleReset = () => {
     console.log(`🔄 Manual reset requested for ${serviceKey}`);
+    
+    // Force cleanup of all stuck states first
+    connectionStateManager.forceCleanupAllStates();
+    
+    // Then reset the specific service
     connectionService.resetConnection(serviceKey as any);
     setConnectionState('idle');
   };
@@ -102,7 +108,7 @@ const ServiceConnection = ({
         </div>
       </div>
       <div className="flex items-center gap-2">
-        {hasError && (
+        {isStuck && (
           <Button
             size="sm"
             variant="ghost"

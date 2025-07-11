@@ -84,11 +84,6 @@ class ConnectionStateManager {
     this.connectionAttempts.delete(service);
     this.cleanupOAuthState(service);
     this.setConnectionState(service, 'idle');
-    
-    // Clean up service-specific localStorage
-    if (service === 'linkedin') {
-      localStorage.removeItem('linkedin_connection_attempt');
-    }
   }
 
   // Store OAuth state persistently across redirects
@@ -105,12 +100,24 @@ class ConnectionStateManager {
     if (!state || !timestamp) return null;
     
     const age = Date.now() - parseInt(timestamp);
-    const staleThreshold = 5 * 60 * 1000; // 5 minutes
+    // Much shorter threshold for stale state - 2 minutes max
+    const staleThreshold = 2 * 60 * 1000; // 2 minutes
     
     if (age > staleThreshold) {
-      console.log(`🧹 Cleaning stale OAuth state for ${service}`);
+      console.log(`🧹 Cleaning stale OAuth state for ${service} (age: ${Math.round(age/1000)}s)`);
       this.cleanupOAuthState(service);
       return null;
+    }
+    
+    // Additional check: if we're recovering 'redirecting' state, verify it's actually valid
+    if (state === 'redirecting') {
+      // Only allow 'redirecting' state recovery if it's very recent (30 seconds)
+      const redirectThreshold = 30 * 1000; // 30 seconds
+      if (age > redirectThreshold) {
+        console.log(`🧹 Cleaning stale redirecting state for ${service} (age: ${Math.round(age/1000)}s)`);
+        this.cleanupOAuthState(service);
+        return null;
+      }
     }
     
     return state as ConnectionState;
@@ -118,8 +125,17 @@ class ConnectionStateManager {
 
   // Clean up OAuth state
   cleanupOAuthState(service: string) {
+    console.log(`🧹 Cleaning OAuth state for ${service}`);
     localStorage.removeItem(`oauth_state_${service}`);
     localStorage.removeItem(`oauth_timestamp_${service}`);
+    
+    // Also clean up any service-specific OAuth data
+    if (service === 'linkedin') {
+      localStorage.removeItem('linkedin_connection_attempt');
+      localStorage.removeItem('oauth_linkedin');
+      localStorage.removeItem('oauth_state');
+      localStorage.removeItem('oauth_service');
+    }
   }
 
   // Initialize and recover states on page load
@@ -135,16 +151,36 @@ class ConnectionStateManager {
         console.log(`🔄 Recovered OAuth state for ${service}: ${recoveredState}`);
         this.setConnectionState(service, recoveredState);
         
-        // For Brave, add fallback state cleanup after a delay
-        if (isBrave && recoveredState === 'connecting') {
+        // Enhanced cleanup for all browsers, not just Brave
+        if (recoveredState === 'connecting' || recoveredState === 'redirecting') {
+          // Set aggressive cleanup for recovered states
+          const cleanupDelay = isBrave ? 3000 : 5000; // Faster cleanup for Brave
           setTimeout(() => {
             const currentState = this.getConnectionState(service);
-            if (currentState === 'connecting') {
-              console.log(`🛡️ Brave: Cleaning up stale ${service} connecting state`);
-              this.setConnectionState(service, 'error');
+            if (currentState === 'connecting' || currentState === 'redirecting') {
+              console.log(`🧹 Auto-cleaning stuck ${service} state: ${currentState}`);
+              this.setConnectionState(service, 'idle');
+              this.cleanupOAuthState(service);
             }
-          }, 5000);
+          }, cleanupDelay);
         }
+      } else {
+        // No recovered state - ensure service is in idle state
+        this.setConnectionState(service, 'idle');
+      }
+    });
+  }
+
+  // Force cleanup of all stuck states immediately
+  forceCleanupAllStates() {
+    console.log('🧹 Force cleaning all stuck connection states...');
+    const services = ['linkedin', 'wallet', 'twitter', 'telegram', 'discord'];
+    
+    services.forEach(service => {
+      const currentState = this.getConnectionState(service);
+      if (currentState === 'connecting' || currentState === 'redirecting') {
+        console.log(`🧹 Force cleaning stuck ${service} state: ${currentState}`);
+        this.resetConnectionState(service);
       }
     });
   }
@@ -161,12 +197,16 @@ export const connectionStateManager = new ConnectionStateManager();
 
 // Initialize states on page load and cleanup on unload
 if (typeof window !== 'undefined') {
+  // Force cleanup any existing stuck states immediately
+  connectionStateManager.forceCleanupAllStates();
+  
   // Initialize states when the manager is loaded
   connectionStateManager.initializeStates();
   
   // Reset states when page becomes visible (handles tab switching)
   document.addEventListener('visibilitychange', () => {
     if (!document.hidden) {
+      connectionStateManager.forceCleanupAllStates();
       connectionStateManager.initializeStates();
     }
   });
