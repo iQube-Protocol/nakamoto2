@@ -3,31 +3,23 @@ import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Check, Wallet } from 'lucide-react';
-import { useServiceConnections } from '@/hooks/useServiceConnections';
 
 interface WalletConnectionProps {
   isConnected: boolean;
   onConnectWallet: () => void;
+  walletAddress: string | null;
+  knytBalance: string | null;
 }
 
-const WalletConnection = ({ isConnected, onConnectWallet }: WalletConnectionProps) => {
-  const { getWalletAddress, connectionData } = useServiceConnections();
-  
-  // Get the actual wallet address from the connections
-  const walletAddress = getWalletAddress();
-  
-  // Get KNYT balance if available
-  const knytBalance = connectionData.wallet?.knytTokenBalance?.formatted || null;
-  
+const WalletConnection = ({ isConnected, onConnectWallet, walletAddress, knytBalance }: WalletConnectionProps) => {
   // Debug logging to track balance updates
   useEffect(() => {
-    console.log('🔍 WalletConnection: Connection data updated', {
+    console.log('🔍 WalletConnection: Props updated', {
       isConnected,
       walletAddress,
-      knytBalance,
-      fullWalletData: connectionData.wallet
+      knytBalance
     });
-  }, [isConnected, walletAddress, knytBalance, connectionData.wallet]);
+  }, [isConnected, walletAddress, knytBalance]);
   
   // Format the address for display (show first 6 and last 4 characters)
   const formatAddress = (address: string) => {
