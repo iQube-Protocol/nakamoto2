@@ -5,6 +5,7 @@ import { useAuth } from '@/hooks/use-auth';
 import { ServiceType, connectionService } from '@/services/connection-service';
 import { blakQubeService } from '@/services/blakqube-service';
 import { toast } from 'sonner';
+import { connectionStateManager } from '@/services/connection-state-manager';
 
 export interface ServiceConnection {
   service: ServiceType;
@@ -52,11 +53,10 @@ export function useServiceConnections() {
     setError(null);
     
     try {
-      console.log('Fetching user connections...');
+      console.log('🔄 Fetching user connections...');
       
-      // Query user_connections table with timeout
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 10000); // 10 second timeout
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
       
       const { data, error: queryError } = await supabase
         .from('user_connections')
@@ -74,7 +74,7 @@ export function useServiceConnections() {
         return;
       }
       
-      console.log('Raw connection data:', data);
+      console.log('✅ Raw connection data:', data);
       
       // Reset all connections to false first
       const newConnections = {
@@ -110,16 +110,18 @@ export function useServiceConnections() {
           if (Object.keys(newConnections).includes(serviceType)) {
             newConnections[serviceType] = true;
             newConnectionData[serviceType] = connection.connection_data;
-            console.log(`${serviceType} is connected with data:`, connection.connection_data);
+            // Update connection state manager
+            connectionStateManager.setConnectionState(serviceType, 'connected');
+            console.log(`✅ ${serviceType} is connected with data:`, connection.connection_data);
           }
         });
       }
       
-      console.log('Final connections state:', newConnections);
+      console.log('✅ Final connections state:', newConnections);
       setConnections(newConnections);
       setConnectionData(newConnectionData);
     } catch (error) {
-      console.error('Error in fetchConnections:', error);
+      console.error('❌ Error in fetchConnections:', error);
       
       if (error instanceof Error && error.name === 'AbortError') {
         setError('Connection timeout. Please check your internet connection and try again.');
@@ -138,16 +140,9 @@ export function useServiceConnections() {
     return connectionData.wallet?.address || null;
   };
   
-  // Connect a service with improved error handling
+  // Connect a service with optimistic updates
   const connectService = async (service: ServiceType): Promise<boolean> => {
-    // Check if already connecting
-    if (connectionService.isServiceConnecting(service)) {
-      console.log(`${service} connection already in progress`);
-      toast.error(`${service} connection is already in progress. Please wait.`);
-      return false;
-    }
-
-    console.log(`Attempting to connect ${service}...`);
+    console.log(`🔄 Attempting to connect ${service}...`);
     
     try {
       let success = false;
@@ -155,26 +150,30 @@ export function useServiceConnections() {
       if (service === 'wallet') {
         success = await connectionService.connectWallet();
         if (success) {
+          // Optimistic update
+          setConnections(prev => ({ ...prev, [service]: true }));
+          
           // Update BlakQube data after wallet connection
-          console.log('Wallet connected, updating BlakQube...');
+          console.log('💰 Wallet connected, updating BlakQube...');
           const qryptoUpdateSuccess = await blakQubeService.updatePersonaFromConnections('qrypto');
           const knytUpdateSuccess = await blakQubeService.updatePersonaFromConnections('knyt');
           
-          // Refresh connections to get the latest data without page reload
+          // Refresh connections to get the latest data
           await fetchConnections(false);
           
-          // Dispatch custom event to notify other components that private data has been updated
+          // Dispatch custom event
           const event = new CustomEvent('privateDataUpdated');
           window.dispatchEvent(event);
         }
       } else {
         try {
-          // Clean up any incomplete OAuth attempts before starting new one
-          connectionService.cleanupIncompleteOAuth();
-          
           success = await connectionService.startOAuthFlow(service);
+          if (success && service === 'linkedin') {
+            // For LinkedIn, the redirect happens immediately, so we don't update state here
+            console.log('🔗 LinkedIn OAuth redirect initiated...');
+          }
         } catch (error) {
-          console.error(`Error starting OAuth flow for ${service}:`, error);
+          console.error(`❌ Error starting OAuth flow for ${service}:`, error);
           
           if (error instanceof Error) {
             if (error.message.includes('not configured')) {
@@ -193,29 +192,36 @@ export function useServiceConnections() {
       
       return success;
     } catch (error) {
-      console.error(`Error connecting ${service}:`, error);
+      console.error(`❌ Error connecting ${service}:`, error);
       toast.error(`Failed to connect to ${service}. Please try again.`);
       return false;
     }
   };
   
-  // Disconnect a service with improved error handling
+  // Disconnect a service with optimistic updates
   const disconnectService = async (service: ServiceType): Promise<boolean> => {
     try {
+      // Optimistic update - immediately update UI
+      setConnections(prev => ({ ...prev, [service]: false }));
+      setConnectionData(prev => ({ ...prev, [service]: null }));
+      
       const success = await connectionService.disconnectService(service);
       if (success) {
-        setConnections(prev => ({ ...prev, [service]: false }));
-        setConnectionData(prev => ({ ...prev, [service]: null }));
-        // Refresh data after disconnection without page reload
+        // Refresh data after successful disconnection
         await fetchConnections(false);
         
-        // Dispatch custom event to notify other components that private data has been updated
+        // Dispatch custom event
         const event = new CustomEvent('privateDataUpdated');
         window.dispatchEvent(event);
+      } else {
+        // Revert optimistic update on failure
+        await fetchConnections(false);
       }
       return success;
     } catch (error) {
-      console.error(`Error disconnecting ${service}:`, error);
+      console.error(`❌ Error disconnecting ${service}:`, error);
+      // Revert optimistic update on error
+      await fetchConnections(false);
       toast.error(`Failed to disconnect from ${service}. Please try again.`);
       return false;
     }
@@ -232,7 +238,8 @@ export function useServiceConnections() {
   
   // Check if a service is currently being processed
   const isServiceProcessing = (service: ServiceType): boolean => {
-    return connectionService.isServiceConnecting(service);
+    const state = connectionStateManager.getConnectionState(service);
+    return state === 'connecting' || state === 'disconnecting';
   };
   
   // Load connections when user changes
@@ -250,7 +257,6 @@ export function useServiceConnections() {
     const handleVisibilityChange = () => {
       if (!document.hidden && user) {
         // Refresh connections when page becomes visible
-        // This helps recover from OAuth redirects
         setTimeout(() => {
           fetchConnections(false);
         }, 1000);
@@ -264,7 +270,7 @@ export function useServiceConnections() {
   // Listen for connection update events from OAuth callback
   useEffect(() => {
     const handleConnectionsUpdated = () => {
-      console.log('Connections updated event received, refreshing...');
+      console.log('🔄 Connections updated event received, refreshing...');
       fetchConnections(false);
     };
 

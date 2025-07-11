@@ -1,54 +1,65 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
+import { connectionStateManager } from './connection-state-manager';
 
 export type ServiceType = 'linkedin' | 'twitter' | 'telegram' | 'discord' | 'luma' | 'wallet' | 'facebook' | 'youtube' | 'tiktok' | 'instagram';
 
-interface ConnectionState {
-  [key: string]: boolean;
-}
-
 class ConnectionService {
-  private connectingServices: ConnectionState = {};
-
   isServiceConnecting(service: ServiceType): boolean {
-    return this.connectingServices[service] || false;
-  }
-
-  private setServiceConnecting(service: ServiceType, connecting: boolean) {
-    this.connectingServices[service] = connecting;
+    const state = connectionStateManager.getConnectionState(service);
+    return state === 'connecting' || state === 'disconnecting';
   }
 
   async connectWallet(): Promise<boolean> {
-    if (this.isServiceConnecting('wallet')) {
+    const service = 'wallet';
+    
+    if (!connectionStateManager.canAttemptConnection(service)) {
+      toast.error('Too many connection attempts. Please wait before trying again.');
       return false;
     }
 
-    this.setServiceConnecting('wallet', true);
+    if (this.isServiceConnecting(service)) {
+      toast.error('Wallet connection is already in progress. Please wait.');
+      return false;
+    }
+
+    connectionStateManager.setConnectionState(service, 'connecting');
+    connectionStateManager.recordConnectionAttempt(service);
 
     try {
       if (typeof window.ethereum === 'undefined') {
         toast.error('MetaMask is not installed. Please install MetaMask to connect your wallet.');
+        connectionStateManager.setConnectionState(service, 'error');
         return false;
       }
+
+      // Start connection timeout
+      connectionStateManager.startConnectionTimeout(service, () => {
+        connectionStateManager.setConnectionState(service, 'error');
+      });
 
       // Request account access
       const accounts = await window.ethereum.request({
         method: 'eth_requestAccounts',
       });
 
-      if (accounts.length === 0) {
+      connectionStateManager.clearConnectionTimeout(service);
+
+      if (!accounts || accounts.length === 0) {
         toast.error('No accounts found in MetaMask. Please create or import an account.');
+        connectionStateManager.setConnectionState(service, 'error');
         return false;
       }
 
       const address = accounts[0];
-      console.log('Wallet connected:', address);
+      console.log('✅ Wallet connected:', address);
 
       // Get the current user
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         toast.error('You must be logged in to connect your wallet.');
+        connectionStateManager.setConnectionState(service, 'error');
         return false;
       }
 
@@ -67,24 +78,28 @@ class ConnectionService {
       if (error) {
         console.error('Error saving wallet connection:', error);
         toast.error('Failed to save wallet connection. Please try again.');
+        connectionStateManager.setConnectionState(service, 'error');
         return false;
       }
 
+      connectionStateManager.setConnectionState(service, 'connected');
       toast.success('Wallet connected successfully!');
       return true;
     } catch (error: any) {
+      connectionStateManager.clearConnectionTimeout(service);
       console.error('Error connecting wallet:', error);
       
       if (error.code === 4001) {
         toast.error('Wallet connection rejected by user.');
+        connectionStateManager.setConnectionState(service, 'idle');
       } else if (error.code === -32002) {
         toast.error('Wallet connection request already pending. Please check MetaMask.');
+        connectionStateManager.setConnectionState(service, 'error');
       } else {
         toast.error('Failed to connect wallet. Please try again.');
+        connectionStateManager.setConnectionState(service, 'error');
       }
       return false;
-    } finally {
-      this.setServiceConnecting('wallet', false);
     }
   }
 
@@ -103,11 +118,18 @@ class ConnectionService {
   }
 
   async startOAuthFlow(service: ServiceType): Promise<boolean> {
-    if (this.isServiceConnecting(service)) {
+    if (!connectionStateManager.canAttemptConnection(service)) {
+      toast.error(`Too many ${service} connection attempts. Please wait before trying again.`);
       return false;
     }
 
-    this.setServiceConnecting(service, true);
+    if (this.isServiceConnecting(service)) {
+      toast.error(`${service} connection is already in progress. Please wait.`);
+      return false;
+    }
+
+    connectionStateManager.setConnectionState(service, 'connecting');
+    connectionStateManager.recordConnectionAttempt(service);
 
     try {
       // Clean up any previous OAuth attempts
@@ -117,13 +139,20 @@ class ConnectionService {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         toast.error('You must be logged in to connect services.');
+        connectionStateManager.setConnectionState(service, 'error');
         return false;
       }
 
       // Handle LinkedIn OAuth using the custom edge function implementation
       if (service === 'linkedin') {
         try {
-          console.log('LinkedIn OAuth flow started...');
+          console.log('🔗 LinkedIn OAuth flow started...');
+          
+          // Start connection timeout for LinkedIn
+          connectionStateManager.startConnectionTimeout(service, () => {
+            this.cleanupIncompleteOAuth();
+            connectionStateManager.setConnectionState(service, 'error');
+          });
           
           // Store OAuth state for security
           const state = Math.random().toString(36).substring(2);
@@ -139,11 +168,14 @@ class ConnectionService {
             console.error('LinkedIn connection service error:', error);
             toast.error('Failed to initialize LinkedIn connection. Please try again.');
             this.cleanupIncompleteOAuth();
+            connectionStateManager.setConnectionState(service, 'error');
             return false;
           }
 
           if (data?.authUrl) {
-            console.log('Redirecting to LinkedIn OAuth:', data.authUrl);
+            console.log('🔄 Redirecting to LinkedIn OAuth:', data.authUrl);
+            // Clear timeout before redirect (will be handled by OAuth callback)
+            connectionStateManager.clearConnectionTimeout(service);
             // Redirect to LinkedIn OAuth
             window.location.href = data.authUrl;
             return true;
@@ -151,34 +183,39 @@ class ConnectionService {
             console.error('No auth URL received from LinkedIn service');
             toast.error('Failed to get LinkedIn authorization URL. Please try again.');
             this.cleanupIncompleteOAuth();
+            connectionStateManager.setConnectionState(service, 'error');
             return false;
           }
         } catch (error) {
           console.error('Error calling LinkedIn connection service:', error);
           toast.error('Failed to connect to LinkedIn service. Please try again.');
           this.cleanupIncompleteOAuth();
+          connectionStateManager.setConnectionState(service, 'error');
           return false;
         }
       }
 
       // For other services, show "coming soon" for now
+      connectionStateManager.setConnectionState(service, 'idle');
       toast.info(`${service} connection is coming soon!`);
       return false;
 
     } catch (error) {
       console.error(`Error starting OAuth flow for ${service}:`, error);
       toast.error(`Failed to connect to ${service}. Please try again.`);
+      connectionStateManager.setConnectionState(service, 'error');
       return false;
-    } finally {
-      this.setServiceConnecting(service, false);
     }
   }
 
   async disconnectService(service: ServiceType): Promise<boolean> {
+    connectionStateManager.setConnectionState(service, 'disconnecting');
+    
     try {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) {
         toast.error('You must be logged in to disconnect services.');
+        connectionStateManager.setConnectionState(service, 'error');
         return false;
       }
 
@@ -191,16 +228,28 @@ class ConnectionService {
       if (error) {
         console.error(`Error disconnecting ${service}:`, error);
         toast.error(`Failed to disconnect ${service}. Please try again.`);
+        connectionStateManager.setConnectionState(service, 'error');
         return false;
       }
 
+      // Fix: Show correct disconnect message
       toast.success(`${service} disconnected successfully!`);
+      connectionStateManager.setConnectionState(service, 'idle');
       return true;
     } catch (error) {
       console.error(`Error disconnecting ${service}:`, error);
       toast.error(`Failed to disconnect ${service}. Please try again.`);
+      connectionStateManager.setConnectionState(service, 'error');
       return false;
     }
+  }
+
+  // Add manual reset function for stuck connections
+  resetConnection(service: ServiceType) {
+    console.log(`🔄 Manually resetting connection for ${service}`);
+    connectionStateManager.resetConnectionState(service);
+    this.cleanupIncompleteOAuth();
+    toast.info(`${service} connection state has been reset.`);
   }
 }
 

@@ -1,7 +1,11 @@
-import React from 'react';
+
+import React, { useState, useEffect } from 'react';
 import { Button } from '@/components/ui/button';
-import { Loader2 } from 'lucide-react';
+import { Loader2, RefreshCw } from 'lucide-react';
 import { Badge } from '@/components/ui/badge';
+import { connectionStateManager } from '@/services/connection-state-manager';
+import { connectionService } from '@/services/connection-service';
+
 export interface ServiceConnectionProps {
   name: string;
   icon: React.ReactNode;
@@ -11,6 +15,7 @@ export interface ServiceConnectionProps {
   disabled?: boolean;
   comingSoon?: boolean;
 }
+
 const ServiceConnection = ({
   name,
   icon,
@@ -20,25 +25,52 @@ const ServiceConnection = ({
   disabled = false,
   comingSoon = false
 }: ServiceConnectionProps) => {
+  const [connectionState, setConnectionState] = useState<string>('idle');
+  const serviceKey = name.toLowerCase().replace(/\s+/g, '').replace('metamask', '').replace('wallet', 'wallet');
+
+  useEffect(() => {
+    const handleConnectionStateChange = (event: CustomEvent) => {
+      if (event.detail.service === serviceKey || 
+          (serviceKey === 'wallet' && event.detail.service === 'wallet')) {
+        setConnectionState(event.detail.state);
+      }
+    };
+
+    window.addEventListener('connectionStateChanged', handleConnectionStateChange as EventListener);
+    
+    // Set initial state
+    const initialState = connectionStateManager.getConnectionState(serviceKey as any);
+    setConnectionState(initialState);
+
+    return () => {
+      window.removeEventListener('connectionStateChanged', handleConnectionStateChange as EventListener);
+    };
+  }, [serviceKey]);
+
   const getStatusText = () => {
-    if (isProcessing) {
-      return connected ? 'Disconnecting...' : 'Connecting...';
-    }
-    if (comingSoon) {
-      return 'Coming Soon';
-    }
+    if (connectionState === 'connecting') return 'Connecting...';
+    if (connectionState === 'disconnecting') return 'Disconnecting...';
+    if (connectionState === 'error') return 'Connection error';
+    if (comingSoon) return 'Coming Soon';
     return connected ? 'Connected' : 'Not connected';
   };
+
   const getButtonText = () => {
-    if (isProcessing) {
-      return connected ? 'Disconnecting...' : 'Connecting...';
-    }
-    if (comingSoon) {
-      return 'Coming Soon';
-    }
+    if (connectionState === 'connecting') return 'Connecting...';
+    if (connectionState === 'disconnecting') return 'Disconnecting...';
+    if (comingSoon) return 'Coming Soon';
     return connected ? 'Disconnect' : 'Connect';
   };
-  return <div className="flex items-center justify-between p-3 border rounded-md">
+
+  const isConnecting = connectionState === 'connecting' || connectionState === 'disconnecting';
+  const hasError = connectionState === 'error';
+
+  const handleReset = () => {
+    connectionService.resetConnection(serviceKey as any);
+  };
+
+  return (
+    <div className="flex items-center justify-between p-3 border rounded-md">
       <div className="flex items-center">
         <div className="p-2 bg-iqube-primary/20 rounded-md mr-3">
           {icon}
@@ -46,17 +78,42 @@ const ServiceConnection = ({
         <div>
           <div className="flex items-center gap-2">
             <h3 className="text-sm font-medium">{name}</h3>
-            {comingSoon}
+            {hasError && (
+              <Badge variant="destructive" className="text-xs">
+                Error
+              </Badge>
+            )}
           </div>
           <p className="text-xs text-muted-foreground">
             {getStatusText()}
           </p>
         </div>
       </div>
-      <Button size="sm" variant={connected ? "outline" : "default"} onClick={onConnect} disabled={isProcessing || disabled || comingSoon} className={`${connected && !isProcessing ? "" : "bg-iqube-primary hover:bg-iqube-primary/90"} ${disabled || comingSoon ? "opacity-50" : ""}`}>
-        {isProcessing && <Loader2 className="h-3 w-3 animate-spin mr-1" />}
-        {getButtonText()}
-      </Button>
-    </div>;
+      <div className="flex items-center gap-2">
+        {hasError && (
+          <Button
+            size="sm"
+            variant="ghost"
+            onClick={handleReset}
+            className="text-xs"
+          >
+            <RefreshCw className="h-3 w-3 mr-1" />
+            Reset
+          </Button>
+        )}
+        <Button 
+          size="sm" 
+          variant={connected ? "outline" : "default"} 
+          onClick={onConnect} 
+          disabled={isConnecting || disabled || comingSoon}
+          className={`${connected && !isConnecting ? "" : "bg-iqube-primary hover:bg-iqube-primary/90"} ${disabled || comingSoon ? "opacity-50" : ""}`}
+        >
+          {isConnecting && <Loader2 className="h-3 w-3 animate-spin mr-1" />}
+          {getButtonText()}
+        </Button>
+      </div>
+    </div>
+  );
 };
+
 export default ServiceConnection;
