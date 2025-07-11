@@ -2,8 +2,9 @@ import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Pencil, User, Users } from 'lucide-react';
-import { NamePreferenceService, NamePreference } from '@/services/name-preference-service';
+import { NamePreferenceService, NamePreference, NameConflictData } from '@/services/name-preference-service';
 import { NameConflictDialog } from './NameConflictDialog';
 import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/integrations/supabase/client';
@@ -88,8 +89,34 @@ export const NameManagementSection: React.FC = () => {
     return personaType === 'knyt' ? <User className="h-4 w-4" /> : <Users className="h-4 w-4" />;
   };
 
+  const handleEdit = async (persona: PersonaNameInfo) => {
+    if (!user) return;
+
+    // Get invitation data if available
+    const invitationData = await NamePreferenceService.getInvitationData(user.email || '');
+    
+    // Get LinkedIn data from user connections
+    const { data: linkedinConnection } = await supabase
+      .from('user_connections')
+      .select('connection_data')
+      .eq('user_id', user.id)
+      .eq('service', 'linkedin')
+      .maybeSingle();
+
+    const linkedinData = linkedinConnection?.connection_data as any;
+
+    const conflictData: NameConflictData = {
+      personaType: persona.personaType,
+      invitationName: invitationData ? { firstName: invitationData.firstName, lastName: invitationData.lastName } : undefined,
+      linkedinName: linkedinData ? { firstName: linkedinData.firstName, lastName: linkedinData.lastName } : undefined,
+      currentName: { firstName: persona.currentName.firstName, lastName: persona.currentName.lastName }
+    };
+
+    setConflictDialog({ open: true, data: conflictData });
+  };
+
   return (
-    <>
+    <TooltipProvider>
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center gap-2">
@@ -115,10 +142,27 @@ export const NameManagementSection: React.FC = () => {
                 </div>
               </div>
               <div className="flex items-center gap-2">
-                <Badge variant={getSourceBadgeVariant(persona.source)}>
-                  {persona.source === 'default' ? 'System' : persona.source}
-                </Badge>
-                <Button variant="outline" size="sm">
+                {persona.source === 'default' ? (
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Badge variant={getSourceBadgeVariant(persona.source)}>
+                        System
+                      </Badge>
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>No name preference set. Using default persona data.</p>
+                    </TooltipContent>
+                  </Tooltip>
+                ) : (
+                  <Badge variant={getSourceBadgeVariant(persona.source)}>
+                    {persona.source}
+                  </Badge>
+                )}
+                <Button 
+                  variant="outline" 
+                  size="sm"
+                  onClick={() => handleEdit(persona)}
+                >
                   Edit
                 </Button>
               </div>
@@ -142,6 +186,6 @@ export const NameManagementSection: React.FC = () => {
           loadPersonaNames();
         }}
       />
-    </>
+    </TooltipProvider>
   );
 };

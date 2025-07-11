@@ -107,4 +107,20 @@ export class NamePreferenceService {
       lastName: data.persona_data?.['Last-Name'],
     };
   }
+
+  /**
+   * Get the effective first name based on name preference
+   */
+  static getEffectiveName(preference: NamePreference): string {
+    switch (preference.name_source) {
+      case 'custom':
+        return preference.custom_first_name || '';
+      case 'linkedin':
+        return preference.linkedin_first_name || '';
+      case 'invitation':
+        return preference.invitation_first_name || '';
+      default:
+        return '';
+    }
+  }
 }

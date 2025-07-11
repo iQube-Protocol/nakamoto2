@@ -54,7 +54,7 @@ export class PersonaContextService {
     }
 
     // Determine preferred name and overall context
-    const preferredName = this.determinePreferredName(qryptoContext, knytContext);
+    const preferredName = await this.determinePreferredName(qryptoContext, knytContext);
     const isAnonymous = !qryptoContext?.isActive && !knytContext?.isActive;
 
     return {
@@ -199,17 +199,34 @@ export class PersonaContextService {
   }
 
   /**
-   * Determine preferred name for addressing the user
+   * Determine preferred name for addressing the user (uses name preferences when available)
    */
-  private static determinePreferredName(
+  private static async determinePreferredName(
     qryptoContext?: PersonaContext,
     knytContext?: PersonaContext
-  ): string | undefined {
+  ): Promise<string | undefined> {
     // Prefer KNYT ID prefix if available and active
     if (knytContext?.isActive && knytContext.fullPersonaData) {
       const knytId = (knytContext.fullPersonaData as KNYTPersona)['KNYT-ID'];
       if (knytId) {
         return knytId.split('@')[0];
+      }
+    }
+
+    // Use name preferences if available for active persona
+    const { NamePreferenceService } = await import('./name-preference-service');
+    
+    if (knytContext?.isActive) {
+      const knytPreference = await NamePreferenceService.getNamePreference('knyt');
+      if (knytPreference) {
+        return NamePreferenceService.getEffectiveName(knytPreference);
+      }
+    }
+
+    if (qryptoContext?.isActive) {
+      const qryptoPreference = await NamePreferenceService.getNamePreference('qrypto');
+      if (qryptoPreference) {
+        return NamePreferenceService.getEffectiveName(qryptoPreference);
       }
     }
 
