@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useEffect } from 'react';
 import { Button } from '@/components/ui/button';
 import { Label } from '@/components/ui/label';
 import { Check, Wallet } from 'lucide-react';
@@ -18,6 +18,16 @@ const WalletConnection = ({ isConnected, onConnectWallet }: WalletConnectionProp
   
   // Get KNYT balance if available
   const knytBalance = connectionData.wallet?.knytTokenBalance?.formatted || null;
+  
+  // Debug logging to track balance updates
+  useEffect(() => {
+    console.log('🔍 WalletConnection: Connection data updated', {
+      isConnected,
+      walletAddress,
+      knytBalance,
+      fullWalletData: connectionData.wallet
+    });
+  }, [isConnected, walletAddress, knytBalance, connectionData.wallet]);
   
   // Format the address for display (show first 6 and last 4 characters)
   const formatAddress = (address: string) => {
