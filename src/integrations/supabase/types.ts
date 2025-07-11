@@ -584,6 +584,51 @@ export type Database = {
         }
         Relationships: []
       }
+      user_name_preferences: {
+        Row: {
+          created_at: string
+          custom_first_name: string | null
+          custom_last_name: string | null
+          id: string
+          invitation_first_name: string | null
+          invitation_last_name: string | null
+          linkedin_first_name: string | null
+          linkedin_last_name: string | null
+          name_source: string
+          persona_type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          custom_first_name?: string | null
+          custom_last_name?: string | null
+          id?: string
+          invitation_first_name?: string | null
+          invitation_last_name?: string | null
+          linkedin_first_name?: string | null
+          linkedin_last_name?: string | null
+          name_source: string
+          persona_type: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          custom_first_name?: string | null
+          custom_last_name?: string | null
+          id?: string
+          invitation_first_name?: string | null
+          invitation_last_name?: string | null
+          linkedin_first_name?: string | null
+          linkedin_last_name?: string | null
+          name_source?: string
+          persona_type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_sessions: {
         Row: {
           active: boolean

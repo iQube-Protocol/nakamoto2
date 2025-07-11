@@ -23,19 +23,37 @@ export const processLinkedInConnection = (
 
   console.log('Processing LinkedIn connection data:', profile);
 
-  // Extract first name and last name - only if not already set (preserve invitation data)
-  if (profile.firstName && (!persona["First-Name"] || persona["First-Name"] === '')) {
-    persona["First-Name"] = profile.firstName;
-    console.log('Set First-Name from LinkedIn:', profile.firstName);
-  } else if (profile.firstName) {
-    console.log('Skipped First-Name from LinkedIn (already set):', persona["First-Name"]);
-  }
+  // Determine persona type based on the fields present
+  const isKNYTPersona = 'KNYT-ID' in persona;
+  const isQryptoPersona = 'Qrypto-ID' in persona;
+  
+  // For KNYT personas, preserve invitation data and handle conflicts
+  if (isKNYTPersona) {
+    // Only set LinkedIn names if invitation data is not present
+    if (profile.firstName && (!persona["First-Name"] || persona["First-Name"] === '')) {
+      persona["First-Name"] = profile.firstName;
+      console.log('Set First-Name from LinkedIn for KNYT:', profile.firstName);
+    } else if (profile.firstName) {
+      console.log('Preserved invitation First-Name for KNYT:', persona["First-Name"]);
+    }
 
-  if (profile.lastName && (!persona["Last-Name"] || persona["Last-Name"] === '')) {
-    persona["Last-Name"] = profile.lastName;
-    console.log('Set Last-Name from LinkedIn:', profile.lastName);
-  } else if (profile.lastName) {
-    console.log('Skipped Last-Name from LinkedIn (already set):', persona["Last-Name"]);
+    if (profile.lastName && (!persona["Last-Name"] || persona["Last-Name"] === '')) {
+      persona["Last-Name"] = profile.lastName;
+      console.log('Set Last-Name from LinkedIn for KNYT:', profile.lastName);
+    } else if (profile.lastName) {
+      console.log('Preserved invitation Last-Name for KNYT:', persona["Last-Name"]);
+    }
+  } else {
+    // For Qrypto personas, always use LinkedIn names when available
+    if (profile.firstName) {
+      persona["First-Name"] = profile.firstName;
+      console.log('Set First-Name from LinkedIn for Qrypto:', profile.firstName);
+    }
+
+    if (profile.lastName) {
+      persona["Last-Name"] = profile.lastName;
+      console.log('Set Last-Name from LinkedIn for Qrypto:', profile.lastName);
+    }
   }
 
   // Extract LinkedIn ID
