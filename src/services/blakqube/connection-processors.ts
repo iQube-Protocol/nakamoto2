@@ -23,15 +23,19 @@ export const processLinkedInConnection = (
 
   console.log('Processing LinkedIn connection data:', profile);
 
-  // Extract first name and last name
-  if (profile.firstName) {
+  // Extract first name and last name - only if not already set (preserve invitation data)
+  if (profile.firstName && (!persona["First-Name"] || persona["First-Name"] === '')) {
     persona["First-Name"] = profile.firstName;
     console.log('Set First-Name from LinkedIn:', profile.firstName);
+  } else if (profile.firstName) {
+    console.log('Skipped First-Name from LinkedIn (already set):', persona["First-Name"]);
   }
 
-  if (profile.lastName) {
+  if (profile.lastName && (!persona["Last-Name"] || persona["Last-Name"] === '')) {
     persona["Last-Name"] = profile.lastName;
     console.log('Set Last-Name from LinkedIn:', profile.lastName);
+  } else if (profile.lastName) {
+    console.log('Skipped Last-Name from LinkedIn (already set):', persona["Last-Name"]);
   }
 
   // Extract LinkedIn ID
