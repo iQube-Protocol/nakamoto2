@@ -243,7 +243,7 @@ export function useServiceConnections() {
   // Check if a service is currently being processed
   const isServiceProcessing = (service: ServiceType): boolean => {
     const state = connectionStateManager.getConnectionState(service);
-    return state === 'connecting' || state === 'disconnecting';
+    return state === 'connecting' || state === 'disconnecting' || state === 'redirecting';
   };
   
   // Load connections when user changes

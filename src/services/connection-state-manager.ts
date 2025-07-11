@@ -1,7 +1,7 @@
 
 import { toast } from 'sonner';
 
-export type ConnectionState = 'idle' | 'connecting' | 'connected' | 'disconnecting' | 'error';
+export type ConnectionState = 'idle' | 'connecting' | 'connected' | 'disconnecting' | 'error' | 'redirecting';
 
 interface ConnectionAttempt {
   service: string;
@@ -82,6 +82,50 @@ class ConnectionStateManager {
     this.setConnectionState(service, 'idle');
   }
 
+  // Store OAuth state persistently across redirects
+  storeOAuthState(service: string, state: 'redirecting' | 'connecting') {
+    localStorage.setItem(`oauth_state_${service}`, state);
+    localStorage.setItem(`oauth_timestamp_${service}`, Date.now().toString());
+  }
+
+  // Recover OAuth state after redirect
+  recoverOAuthState(service: string): ConnectionState | null {
+    const state = localStorage.getItem(`oauth_state_${service}`);
+    const timestamp = localStorage.getItem(`oauth_timestamp_${service}`);
+    
+    if (!state || !timestamp) return null;
+    
+    const age = Date.now() - parseInt(timestamp);
+    const staleThreshold = 5 * 60 * 1000; // 5 minutes
+    
+    if (age > staleThreshold) {
+      console.log(`🧹 Cleaning stale OAuth state for ${service}`);
+      this.cleanupOAuthState(service);
+      return null;
+    }
+    
+    return state as ConnectionState;
+  }
+
+  // Clean up OAuth state
+  cleanupOAuthState(service: string) {
+    localStorage.removeItem(`oauth_state_${service}`);
+    localStorage.removeItem(`oauth_timestamp_${service}`);
+  }
+
+  // Initialize and recover states on page load
+  initializeStates() {
+    const services = ['linkedin', 'wallet', 'twitter', 'telegram', 'discord'];
+    
+    services.forEach(service => {
+      const recoveredState = this.recoverOAuthState(service);
+      if (recoveredState) {
+        console.log(`🔄 Recovered OAuth state for ${service}: ${recoveredState}`);
+        this.setConnectionState(service, recoveredState);
+      }
+    });
+  }
+
   cleanup() {
     this.timeouts.forEach(timeout => clearTimeout(timeout));
     this.timeouts.clear();
@@ -92,8 +136,18 @@ class ConnectionStateManager {
 
 export const connectionStateManager = new ConnectionStateManager();
 
-// Cleanup on page unload
+// Initialize states on page load and cleanup on unload
 if (typeof window !== 'undefined') {
+  // Initialize states when the manager is loaded
+  connectionStateManager.initializeStates();
+  
+  // Reset states when page becomes visible (handles tab switching)
+  document.addEventListener('visibilitychange', () => {
+    if (!document.hidden) {
+      connectionStateManager.initializeStates();
+    }
+  });
+  
   window.addEventListener('beforeunload', () => {
     connectionStateManager.cleanup();
   });

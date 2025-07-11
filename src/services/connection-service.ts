@@ -7,7 +7,7 @@ export type ServiceType = 'linkedin' | 'twitter' | 'telegram' | 'discord' | 'lum
 class ConnectionService {
   isServiceConnecting(service: ServiceType): boolean {
     const state = connectionStateManager.getConnectionState(service);
-    return state === 'connecting' || state === 'disconnecting';
+    return state === 'connecting' || state === 'disconnecting' || state === 'redirecting';
   }
 
   async connectWallet(): Promise<boolean> {
@@ -142,6 +142,7 @@ class ConnectionService {
 
     // Immediately clean up any residual OAuth state
     this.cleanupIncompleteOAuth();
+    connectionStateManager.cleanupOAuthState(service);
 
     connectionStateManager.setConnectionState(service, 'connecting');
     connectionStateManager.recordConnectionAttempt(service);
@@ -193,6 +194,9 @@ class ConnectionService {
 
           if (data?.authUrl) {
             console.log('🔄 Redirecting to LinkedIn OAuth:', data.authUrl);
+            // Set to redirecting state and store it persistently
+            connectionStateManager.setConnectionState(service, 'redirecting');
+            connectionStateManager.storeOAuthState(service, 'redirecting');
             // Clear timeout before redirect (will be handled by OAuth callback)
             connectionStateManager.clearConnectionTimeout(service);
             

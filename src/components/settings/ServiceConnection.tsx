@@ -26,7 +26,7 @@ const ServiceConnection = ({
   comingSoon = false
 }: ServiceConnectionProps) => {
   const [connectionState, setConnectionState] = useState<string>('idle');
-  const serviceKey = name.toLowerCase().replace(/\s+/g, '').replace('metamask', '').replace('wallet', 'wallet');
+  const serviceKey = name.toLowerCase().replace(/\s+/g, '').replace('metamask', 'wallet').replace('linkedin', 'linkedin');
 
   useEffect(() => {
     const handleConnectionStateChange = (event: CustomEvent) => {
@@ -49,6 +49,7 @@ const ServiceConnection = ({
 
   const getStatusText = () => {
     if (connectionState === 'connecting') return 'Connecting...';
+    if (connectionState === 'redirecting') return 'Redirecting to LinkedIn...';
     if (connectionState === 'disconnecting') return 'Disconnecting...';
     if (connectionState === 'error') return 'Connection error';
     if (comingSoon) return 'Coming Soon';
@@ -57,12 +58,13 @@ const ServiceConnection = ({
 
   const getButtonText = () => {
     if (connectionState === 'connecting') return 'Connecting...';
+    if (connectionState === 'redirecting') return 'Redirecting...';
     if (connectionState === 'disconnecting') return 'Disconnecting...';
     if (comingSoon) return 'Coming Soon';
     return connected ? 'Disconnect' : 'Connect';
   };
 
-  const isConnecting = connectionState === 'connecting' || connectionState === 'disconnecting';
+  const isConnecting = connectionState === 'connecting' || connectionState === 'disconnecting' || connectionState === 'redirecting';
   const hasError = connectionState === 'error';
 
   const handleReset = () => {
