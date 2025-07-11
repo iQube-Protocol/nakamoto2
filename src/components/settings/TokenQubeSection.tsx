@@ -8,20 +8,14 @@ import MintButton from './tokenqube/MintButton';
 
 interface TokenQubeSectionProps {
   settings: UserSettings;
-  onConnectWallet: () => void;
   onMintIQube: () => void;
   onAddAccessGrant: () => void;
-  walletAddress: string | null;
-  knytBalance: string | null;
 }
 
 const TokenQubeSection = ({ 
   settings, 
-  onConnectWallet, 
   onMintIQube,
-  onAddAccessGrant,
-  walletAddress,
-  knytBalance
+  onAddAccessGrant
 }: TokenQubeSectionProps) => {
   return (
     <div className="space-y-4">

@@ -70,11 +70,8 @@ const IQubeManagementTab = ({
         <CardContent>
           <TokenQubeSection 
             settings={settings}
-            onConnectWallet={onConnectWallet}
             onMintIQube={onMintIQube}
             onAddAccessGrant={onAddAccessGrant}
-            walletAddress={walletAddress}
-            knytBalance={knytBalance}
           />
         </CardContent>
       </Card>

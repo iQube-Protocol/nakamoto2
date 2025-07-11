@@ -20,7 +20,7 @@ interface BalanceCache {
 let balanceCache: { [address: string]: BalanceCache } = {};
 let pendingBalanceFetches: { [address: string]: Promise<any> } = {};
 const CACHE_DURATION = 30000; // 30 seconds cache
-const BALANCE_FETCH_TIMEOUT = 60000; // 60 seconds timeout - increased to prevent timeouts
+const BALANCE_FETCH_TIMEOUT = 15000; // 15 seconds timeout
 
 // Fixed ERC-20 ABI for balance checking
 const ERC20_ABI = [
