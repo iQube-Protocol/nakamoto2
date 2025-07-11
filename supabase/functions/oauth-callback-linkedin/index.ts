@@ -24,26 +24,47 @@ serve(async (req) => {
   }
 
   try {
-    // Get the actual client origin from request headers or use fallback
+    // Get the actual client origin from request headers with smart detection
     const referer = req.headers.get("referer");
     const origin = req.headers.get("origin");
     
     let clientOrigin = 'https://nakamoto.aigentz.me'; // Production fallback
     
+    console.log("Detecting client origin from headers:", { referer, origin });
+    
+    // Try to extract origin from referer first (most reliable for OAuth redirects)
     if (referer) {
       try {
         const refererUrl = new URL(referer);
-        clientOrigin = `${refererUrl.protocol}//${refererUrl.host}`;
-        console.log("Using referer as client origin:", clientOrigin);
+        const detectedOrigin = `${refererUrl.protocol}//${refererUrl.host}`;
+        
+        // Check if it's a valid Lovable preview domain or production domain
+        if (detectedOrigin.includes('.lovable.app') || 
+            detectedOrigin.includes('nakamoto.aigentz.me') ||
+            detectedOrigin.includes('localhost')) {
+          clientOrigin = detectedOrigin;
+          console.log("✅ Using referer as client origin:", clientOrigin);
+        } else {
+          console.log("⚠️ Referer origin not recognized, using fallback:", detectedOrigin);
+        }
       } catch (e) {
-        console.log("Failed to parse referer, using fallback");
+        console.log("❌ Failed to parse referer, using fallback:", e.message);
       }
-    } else if (origin) {
-      clientOrigin = origin;
-      console.log("Using origin header as client origin:", clientOrigin);
+    } 
+    
+    // Fallback to origin header if referer didn't work
+    if (origin && clientOrigin === 'https://nakamoto.aigentz.me') {
+      if (origin.includes('.lovable.app') || 
+          origin.includes('nakamoto.aigentz.me') ||
+          origin.includes('localhost')) {
+        clientOrigin = origin;
+        console.log("✅ Using origin header as client origin:", clientOrigin);
+      } else {
+        console.log("⚠️ Origin header not recognized, keeping fallback:", origin);
+      }
     }
     
-    console.log("Final client origin:", clientOrigin);
+    console.log("🎯 Final client origin:", clientOrigin);
     
     // Validate environment variables first
     if (!LINKEDIN_CLIENT_ID || !LINKEDIN_CLIENT_SECRET) {
@@ -348,7 +369,7 @@ serve(async (req) => {
     console.error("=== Unexpected error ===", error);
     console.error("Error stack:", error.stack);
     
-    // Get the actual client origin from request headers or use fallback
+    // Get the actual client origin from request headers with smart detection (error handler)
     const referer = req.headers.get("referer");
     const origin = req.headers.get("origin");
     
@@ -357,11 +378,20 @@ serve(async (req) => {
     if (referer) {
       try {
         const refererUrl = new URL(referer);
-        clientOrigin = `${refererUrl.protocol}//${refererUrl.host}`;
+        const detectedOrigin = `${refererUrl.protocol}//${refererUrl.host}`;
+        
+        // Check if it's a valid domain
+        if (detectedOrigin.includes('.lovable.app') || 
+            detectedOrigin.includes('nakamoto.aigentz.me') ||
+            detectedOrigin.includes('localhost')) {
+          clientOrigin = detectedOrigin;
+        }
       } catch (e) {
         // Use fallback
       }
-    } else if (origin) {
+    } else if (origin && (origin.includes('.lovable.app') || 
+                         origin.includes('nakamoto.aigentz.me') ||
+                         origin.includes('localhost'))) {
       clientOrigin = origin;
     }
     
