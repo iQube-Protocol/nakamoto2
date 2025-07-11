@@ -24,14 +24,33 @@ serve(async (req) => {
   }
 
   try {
+    // Get the actual client origin from request headers or use fallback
+    const referer = req.headers.get("referer");
+    const origin = req.headers.get("origin");
+    
+    let clientOrigin = 'https://nakamoto.aigentz.me'; // Production fallback
+    
+    if (referer) {
+      try {
+        const refererUrl = new URL(referer);
+        clientOrigin = `${refererUrl.protocol}//${refererUrl.host}`;
+        console.log("Using referer as client origin:", clientOrigin);
+      } catch (e) {
+        console.log("Failed to parse referer, using fallback");
+      }
+    } else if (origin) {
+      clientOrigin = origin;
+      console.log("Using origin header as client origin:", clientOrigin);
+    }
+    
+    console.log("Final client origin:", clientOrigin);
+    
     // Validate environment variables first
     if (!LINKEDIN_CLIENT_ID || !LINKEDIN_CLIENT_SECRET) {
       console.error("Missing LinkedIn configuration:", {
         hasClientId: !!LINKEDIN_CLIENT_ID,
         hasClientSecret: !!LINKEDIN_CLIENT_SECRET
       });
-      
-      const clientOrigin = 'https://nakamoto.aigentz.me';
       
       return new Response(
         `<html><body><h1>Configuration Error</h1><p>LinkedIn service not properly configured. Please contact support.</p><script>setTimeout(() => window.location.href = '${clientOrigin}/settings?tab=connections&error=config', 3000)</script></body></html>`,
@@ -55,9 +74,6 @@ serve(async (req) => {
       errorDescription,
       state 
     });
-    
-    const clientOrigin = 'https://nakamoto.aigentz.me';
-    console.log("Client origin for redirects:", clientOrigin);
     
     // Handle LinkedIn OAuth errors
     if (error) {
@@ -332,7 +348,22 @@ serve(async (req) => {
     console.error("=== Unexpected error ===", error);
     console.error("Error stack:", error.stack);
     
-    const clientOrigin = 'https://nakamoto.aigentz.me';
+    // Get the actual client origin from request headers or use fallback
+    const referer = req.headers.get("referer");
+    const origin = req.headers.get("origin");
+    
+    let clientOrigin = 'https://nakamoto.aigentz.me'; // Production fallback
+    
+    if (referer) {
+      try {
+        const refererUrl = new URL(referer);
+        clientOrigin = `${refererUrl.protocol}//${refererUrl.host}`;
+      } catch (e) {
+        // Use fallback
+      }
+    } else if (origin) {
+      clientOrigin = origin;
+    }
     
     return new Response(
       `<html><body><h1>Server Error</h1><p>An unexpected error occurred. Please try again.</p><script>setTimeout(() => window.location.href = '${clientOrigin}/oauth-callback?service=linkedin&error=server_error', 3000)</script></body></html>`,

@@ -18,6 +18,8 @@ const OAuthCallback = () => {
   useEffect(() => {
     const handleOAuthCallback = async () => {
       console.log('🚀 OAuth callback handler started');
+      console.log('🔍 Current URL:', window.location.href);
+      console.log('🔍 All URL params:', Object.fromEntries(searchParams.entries()));
       
       try {
         const service = searchParams.get('service');
@@ -26,6 +28,16 @@ const OAuthCallback = () => {
         const connectionDataParam = searchParams.get('connection_data');
         
         console.log('OAuth callback params:', { service, success, error, hasConnectionData: !!connectionDataParam });
+        
+        // DEBUG: If no parameters, user might have reached this page directly
+        if (!service && !success && !error && !connectionDataParam) {
+          console.log('❌ No OAuth parameters found - user reached callback without proper redirect');
+          setStatus('error');
+          setMessage('No connection data received. The OAuth flow may have been interrupted.');
+          toast.error('OAuth flow was interrupted. Please try connecting again.');
+          setTimeout(() => navigate('/settings?tab=connections'), 2000);
+          return;
+        }
         
         // Handle OAuth errors first
         if (error) {
