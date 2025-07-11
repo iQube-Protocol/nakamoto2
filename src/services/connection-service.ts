@@ -184,41 +184,10 @@ class ConnectionService {
           const state = Math.random().toString(36).substring(2) + Date.now().toString(36);
           console.log('🔐 Generated new OAuth state:', state);
           
-          // Enhanced Brave debugging
-          if (isBrave) {
-            console.log('🛡️ Brave Browser OAuth Debug Info:');
-            console.log('- User Agent:', navigator.userAgent);
-            console.log('- Cookies enabled:', navigator.cookieEnabled);
-            console.log('- Local storage available:', typeof Storage !== 'undefined');
-            console.log('- Session storage available:', typeof sessionStorage !== 'undefined');
-            
-            // Test storage capabilities
-            try {
-              localStorage.setItem('brave_test', 'test');
-              localStorage.removeItem('brave_test');
-              console.log('- localStorage: Working');
-            } catch (e) {
-              console.error('- localStorage: Failed', e);
-            }
-            
-            try {
-              sessionStorage.setItem('brave_test', 'test');
-              sessionStorage.removeItem('brave_test');
-              console.log('- sessionStorage: Working');
-            } catch (e) {
-              console.error('- sessionStorage: Failed', e);
-            }
-          }
-          
           // Store OAuth state for security verification
           localStorage.setItem('oauth_state', state);
           localStorage.setItem('oauth_service', service);
           localStorage.setItem('linkedin_connection_attempt', Date.now().toString());
-          
-          // Store additional state for Brave
-          if (isBrave) {
-            connectionStateManager.storeOAuthState(service, 'connecting');
-          }
           
           // Call the LinkedIn connection edge function
           console.log('📡 Calling LinkedIn connection edge function...');
@@ -236,25 +205,6 @@ class ConnectionService {
 
           if (data?.authUrl) {
             console.log('🔄 Redirecting to LinkedIn OAuth:', data.authUrl);
-            
-            if (isBrave) {
-              console.log('🛡️ Brave: Attempting OAuth redirect with enhanced logging');
-              
-              // Add a delay for Brave to process the state change
-              await new Promise(resolve => setTimeout(resolve, 100));
-              
-              // Check if we can access the URL before redirecting
-              console.log('🛡️ Brave: Testing URL accessibility...');
-              try {
-                // Create a test request to see if it's blocked
-                fetch(data.authUrl, { method: 'HEAD', mode: 'no-cors' })
-                  .then(() => console.log('🛡️ Brave: LinkedIn URL accessible'))
-                  .catch(e => console.log('🛡️ Brave: LinkedIn URL may be blocked:', e));
-              } catch (e) {
-                console.log('🛡️ Brave: URL test failed:', e);
-              }
-            }
-            
             // Set to redirecting state and store it persistently
             connectionStateManager.setConnectionState(service, 'redirecting');
             connectionStateManager.storeOAuthState(service, 'redirecting');
@@ -263,9 +213,8 @@ class ConnectionService {
             
             // Add a small delay to ensure state is saved before redirect
             setTimeout(() => {
-              console.log('🚀 Redirecting to LinkedIn OAuth URL...');
               window.location.href = data.authUrl;
-            }, isBrave ? 200 : 100); // Longer delay for Brave
+            }, 100);
             
             return true;
           } else {
