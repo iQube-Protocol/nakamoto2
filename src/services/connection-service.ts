@@ -161,12 +161,23 @@ class ConnectionService {
         try {
           console.log('🔗 LinkedIn OAuth flow started...');
           
-          // Start connection timeout for LinkedIn (30 seconds)
+          // Detect Brave browser
+          const isBrave = (navigator as any).brave && typeof (navigator as any).brave.isBrave === 'function';
+          if (isBrave) {
+            console.log('🛡️ Brave browser detected, using enhanced OAuth handling');
+          }
+          
+          // Start connection timeout (extended for Brave)
+          const timeoutMs = isBrave ? 45000 : 30000; // 45s for Brave, 30s for others
           connectionStateManager.startConnectionTimeout(service, () => {
             console.log('⏰ LinkedIn connection timed out, cleaning up...');
             this.cleanupIncompleteOAuth();
             connectionStateManager.setConnectionState(service, 'error');
-            toast.error('LinkedIn connection timed out. Please try again.');
+            if (isBrave) {
+              toast.error('LinkedIn connection timed out. Try disabling Brave Shields for this site.');
+            } else {
+              toast.error('LinkedIn connection timed out. Please try again.');
+            }
           });
           
           // Generate new OAuth state for security

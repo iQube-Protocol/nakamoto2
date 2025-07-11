@@ -261,6 +261,20 @@ export function useServiceConnections() {
   useEffect(() => {
     const handleVisibilityChange = () => {
       if (!document.hidden && user) {
+        // Detect Brave browser for enhanced cleanup
+        const isBrave = (navigator as any).brave && typeof (navigator as any).brave.isBrave === 'function';
+        if (isBrave) {
+          console.log('🛡️ Brave browser: Enhanced OAuth cleanup on visibility change');
+          // Force cleanup of any stuck states in Brave
+          Object.keys(connections).forEach(service => {
+            const state = connectionStateManager.getConnectionState(service as ServiceType);
+            if (state === 'connecting' || state === 'redirecting') {
+              console.log(`🛡️ Brave: Resetting stuck ${service} state`);
+              connectionStateManager.setConnectionState(service as ServiceType, 'idle');
+            }
+          });
+        }
+        
         // Clean up stale OAuth attempts when page becomes visible
         connectionService.checkAndCleanStaleOAuth();
         
@@ -273,7 +287,7 @@ export function useServiceConnections() {
     
     document.addEventListener('visibilitychange', handleVisibilityChange);
     return () => document.removeEventListener('visibilitychange', handleVisibilityChange);
-  }, [user]);
+  }, [user, connections]);
 
   // Listen for connection update events from OAuth callback
   useEffect(() => {

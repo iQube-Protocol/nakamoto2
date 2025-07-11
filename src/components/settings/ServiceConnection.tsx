@@ -48,10 +48,16 @@ const ServiceConnection = ({
   }, [serviceKey]);
 
   const getStatusText = () => {
-    if (connectionState === 'connecting') return 'Connecting...';
+    const isBrave = (navigator as any).brave && typeof (navigator as any).brave.isBrave === 'function';
+    
+    if (connectionState === 'connecting') {
+      return isBrave && name === 'LinkedIn' ? 'Connecting... (disable Shields if stuck)' : 'Connecting...';
+    }
     if (connectionState === 'redirecting') return 'Redirecting to LinkedIn...';
     if (connectionState === 'disconnecting') return 'Disconnecting...';
-    if (connectionState === 'error') return 'Connection error';
+    if (connectionState === 'error') {
+      return isBrave && name === 'LinkedIn' ? 'Failed (try disabling Brave Shields)' : 'Connection error';
+    }
     if (comingSoon) return 'Coming Soon';
     return connected ? 'Connected' : 'Not connected';
   };

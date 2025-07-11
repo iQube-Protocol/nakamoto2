@@ -115,6 +115,9 @@ class ConnectionStateManager {
 
   // Initialize and recover states on page load
   initializeStates() {
+    // Detect Brave browser for enhanced state recovery
+    const isBrave = (navigator as any).brave && typeof (navigator as any).brave.isBrave === 'function';
+    
     const services = ['linkedin', 'wallet', 'twitter', 'telegram', 'discord'];
     
     services.forEach(service => {
@@ -122,6 +125,17 @@ class ConnectionStateManager {
       if (recoveredState) {
         console.log(`🔄 Recovered OAuth state for ${service}: ${recoveredState}`);
         this.setConnectionState(service, recoveredState);
+        
+        // For Brave, add fallback state cleanup after a delay
+        if (isBrave && recoveredState === 'connecting') {
+          setTimeout(() => {
+            const currentState = this.getConnectionState(service);
+            if (currentState === 'connecting') {
+              console.log(`🛡️ Brave: Cleaning up stale ${service} connecting state`);
+              this.setConnectionState(service, 'error');
+            }
+          }, 5000);
+        }
       }
     });
   }
