@@ -27,7 +27,15 @@ export const NameConflictDialog: React.FC<NameConflictDialogProps> = ({
   conflictData,
   onResolved,
 }) => {
-  const [selectedOption, setSelectedOption] = useState<'invitation' | 'linkedin' | 'custom'>('invitation');
+  // Set default option based on persona type
+  const getDefaultOption = () => {
+    if (conflictData?.personaType === 'qrypto') {
+      return 'linkedin'; // Qrypto defaults to LinkedIn
+    }
+    return 'invitation'; // KNYT defaults to invitation
+  };
+  
+  const [selectedOption, setSelectedOption] = useState<'invitation' | 'linkedin' | 'custom'>(getDefaultOption());
   const [customFirstName, setCustomFirstName] = useState('');
   const [customLastName, setCustomLastName] = useState('');
   const { toast } = useToast();
@@ -48,18 +56,19 @@ export const NameConflictDialog: React.FC<NameConflictDialogProps> = ({
       }),
     };
 
-    const success = await NamePreferenceService.saveNamePreference(preference);
+    const result = await NamePreferenceService.saveNamePreference(preference);
     
-    if (success) {
+    if (result.success) {
       toast({
         title: "Name preference saved",
         description: `Your ${conflictData.personaType.toUpperCase()} profile name has been updated.`,
       });
       onResolved();
+      onOpenChange(false);
     } else {
       toast({
         title: "Error",
-        description: "Failed to save name preference. Please try again.",
+        description: result.error || "Failed to save name preference. Please try again.",
         variant: "destructive",
       });
     }
@@ -82,10 +91,12 @@ export const NameConflictDialog: React.FC<NameConflictDialogProps> = ({
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>Name Conflict Detected</DialogTitle>
+          <DialogTitle>Name Management</DialogTitle>
           <DialogDescription>
-            Your LinkedIn name differs from your invitation data for your {conflictData.personaType.toUpperCase()} profile. 
-            Please choose which name to use.
+            {conflictData.personaType === 'knyt' 
+              ? `Your LinkedIn name differs from your invitation data for your ${conflictData.personaType.toUpperCase()} profile. Choose which name to use.`
+              : `Choose the name source for your ${conflictData.personaType.toUpperCase()} profile.`
+            }
           </DialogDescription>
         </DialogHeader>
 
