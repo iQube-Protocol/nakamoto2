@@ -43,34 +43,57 @@ export class NamePreferenceService {
     if (!user) return { success: false, error: 'User not authenticated' };
 
     try {
-      const upsertData = {
-        user_id: user.id,
-        persona_type: preference.persona_type!,
-        name_source: preference.name_source!,
-        custom_first_name: preference.custom_first_name || null,
-        custom_last_name: preference.custom_last_name || null,
-        linkedin_first_name: preference.linkedin_first_name || null,
-        linkedin_last_name: preference.linkedin_last_name || null,
-        invitation_first_name: preference.invitation_first_name || null,
-        invitation_last_name: preference.invitation_last_name || null,
-        updated_at: new Date().toISOString(),
-      };
+      // First check if preference exists
+      const existingPref = await this.getNamePreference(preference.persona_type!);
+      
+      if (existingPref) {
+        // Update existing preference
+        const { error } = await supabase
+          .from('user_name_preferences')
+          .update({
+            name_source: preference.name_source!,
+            custom_first_name: preference.custom_first_name || null,
+            custom_last_name: preference.custom_last_name || null,
+            linkedin_first_name: preference.linkedin_first_name || null,
+            linkedin_last_name: preference.linkedin_last_name || null,
+            invitation_first_name: preference.invitation_first_name || null,
+            invitation_last_name: preference.invitation_last_name || null,
+            updated_at: new Date().toISOString(),
+          })
+          .eq('user_id', user.id)
+          .eq('persona_type', preference.persona_type!);
 
-      const { error } = await supabase
-        .from('user_name_preferences')
-        .upsert(upsertData, {
-          onConflict: 'user_id,persona_type'
-        });
+        if (error) {
+          console.error('Error updating name preference:', error);
+          return { success: false, error: error.message };
+        }
+      } else {
+        // Create new preference
+        const { error } = await supabase
+          .from('user_name_preferences')
+          .insert({
+            user_id: user.id,
+            persona_type: preference.persona_type!,
+            name_source: preference.name_source!,
+            custom_first_name: preference.custom_first_name || null,
+            custom_last_name: preference.custom_last_name || null,
+            linkedin_first_name: preference.linkedin_first_name || null,
+            linkedin_last_name: preference.linkedin_last_name || null,
+            invitation_first_name: preference.invitation_first_name || null,
+            invitation_last_name: preference.invitation_last_name || null,
+          });
 
-      if (error) {
-        console.error('Error saving name preference:', error);
-        return { success: false, error: error.message };
+        if (error) {
+          console.error('Error creating name preference:', error);
+          return { success: false, error: error.message };
+        }
       }
 
       // Update the corresponding persona table
-      const newPreference = { ...preference, user_id: user.id } as NamePreference;
-      await this.updatePersonaNames(user.id, newPreference);
+      const updatedPreference = { ...preference, user_id: user.id } as NamePreference;
+      await this.updatePersonaNames(user.id, updatedPreference);
 
+      console.log('✅ Successfully saved name preference for', preference.persona_type);
       return { success: true };
     } catch (error: any) {
       console.error('Error saving name preference:', error);
@@ -214,7 +237,11 @@ export class NamePreferenceService {
       
       if (namePrefs) {
         console.log(`✅ Created ${personaType} name preferences with source: ${defaultSource}`);
-        await this.updatePersonaNames(userId, namePrefs);
+        // Only update persona names for Qrypto (which defaults to linkedin)
+        // For KNYT, names should come from invitation data
+        if (personaType === 'qrypto') {
+          await this.updatePersonaNames(userId, namePrefs);
+        }
       }
       return;
     }
@@ -228,22 +255,26 @@ export class NamePreferenceService {
       linkedin_last_name: lastName
     };
     
-    // For KNYT: preserve existing source unless it was already LinkedIn
-    // For Qrypto: switch to LinkedIn source
+    // For KNYT: preserve existing source, DO NOT update persona names automatically
+    // For Qrypto: switch to LinkedIn source and update names
     if (personaType === 'qrypto' && namePrefs.name_source !== 'custom') {
       updatedPrefs.name_source = 'linkedin';
       console.log(`💡 ${personaType}: Switching to LinkedIn as name source`);
+      
+      // Update preferences in database
+      await this.updateNamePreferences(userId, updatedPrefs);
+      
+      // Update persona names for Qrypto
+      await this.updatePersonaNames(userId, updatedPrefs);
+      console.log(`✅ Updated ${personaType} persona names`);
     } else if (personaType === 'knyt') {
-      // Keep existing source for KNYT - user will be prompted via conflict dialog if needed
-      console.log(`🛡️ ${personaType}: Preserving existing name source: ${namePrefs.name_source}`);
+      // Keep existing source for KNYT - only store LinkedIn data, don't apply it
+      console.log(`🛡️ ${personaType}: Preserving existing name source: ${namePrefs.name_source}, storing LinkedIn data`);
+      
+      // Update preferences in database (but don't update persona names)
+      await this.updateNamePreferences(userId, updatedPrefs);
+      console.log(`✅ Stored LinkedIn data for ${personaType} but preserved existing names`);
     }
-    
-    // Update preferences in database
-    await this.updateNamePreferences(userId, updatedPrefs);
-    
-    // Update persona names based on the effective source
-    await this.updatePersonaNames(userId, updatedPrefs);
-    console.log(`✅ Updated ${personaType} persona names`);
   }
 
   static async getNamePreferences(userId: string): Promise<NamePreference | null> {
