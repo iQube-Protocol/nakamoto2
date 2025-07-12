@@ -6,7 +6,9 @@ import { getPersonaType } from '@/services/blakqube/database-operations';
 import { 
   knytPersonaToPrivateData, 
   qryptoPersonaToPrivateData,
-  blakQubeToPrivateData 
+  blakQubeToPrivateData,
+  createDefaultKNYTPersona,
+  createDefaultQryptoPersona
 } from '@/services/blakqube/data-transformers';
 import { personaDataSync } from '@/services/persona-data-sync';
 import { supabase } from '@/integrations/supabase/client';
@@ -51,8 +53,11 @@ export const usePrivateData = (selectedIQube: MetaQube) => {
           console.log('💰 KNYT-COYN-Owned after transform:', transformedData["KNYT-COYN-Owned"]);
           setPrivateData(transformedData);
         } else {
-          console.log('⚠️ No KNYT persona found in database');
-          setPrivateData({});
+          console.log('⚠️ No KNYT persona found in database, creating empty template');
+          // Show empty KNYT persona schema for users to fill
+          const defaultKnytPersona = createDefaultKNYTPersona(authData.user.email);
+          const emptyKnytData = knytPersonaToPrivateData(defaultKnytPersona as KNYTPersona);
+          setPrivateData(emptyKnytData);
         }
       } else {
         console.log('🔍 Fetching Qrypto persona data...');
@@ -64,8 +69,11 @@ export const usePrivateData = (selectedIQube: MetaQube) => {
           console.log('📋 Transformed Qrypto data:', transformedData);
           setPrivateData(transformedData);
         } else {
-          console.log('⚠️ No Qrypto persona found in database');
-          setPrivateData({});
+          console.log('⚠️ No Qrypto persona found in database, creating empty template');
+          // Show empty Qrypto persona schema for users to fill
+          const defaultQryptoPersona = createDefaultQryptoPersona(authData.user.email);
+          const emptyQryptoData = qryptoPersonaToPrivateData(defaultQryptoPersona as QryptoPersona);
+          setPrivateData(emptyQryptoData);
         }
       }
       
