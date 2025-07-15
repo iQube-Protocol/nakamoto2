@@ -10,8 +10,8 @@ import AgentInputBar from '../AgentInputBar';
 import { AgentMessage } from '@/lib/types';
 
 interface SimplifiedAgentTabsProps {
-  activeTab: 'chat' | 'knowledge';
-  setActiveTab: (tab: 'chat' | 'knowledge') => void;
+  activeTab: 'chat' | 'knowledge' | 'media';
+  setActiveTab: (tab: 'chat' | 'knowledge' | 'media') => void;
   messages: AgentMessage[];
   inputValue: string;
   isProcessing: boolean;
@@ -50,12 +50,13 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps> = ({
   const knowledgeBaseAgentType = agentType === 'mondai' ? 'learn' : agentType;
 
   return (
-    <Tabs value={activeTab} onValueChange={v => setActiveTab(v as 'chat' | 'knowledge')} className="flex-1 flex flex-col h-full">
+    <Tabs value={activeTab} onValueChange={v => setActiveTab(v as 'chat' | 'knowledge' | 'media')} className="flex-1 flex flex-col h-full">
       <div className="border-b px-4">
         <div className="flex items-center justify-between">
           <TabsList className="h-10">
             <TabsTrigger value="chat" className="data-[state=active]:bg-qrypto-primary/20">Chat</TabsTrigger>
             <TabsTrigger value="knowledge" className="data-[state=active]:bg-qrypto-primary/20">Knowledge Base</TabsTrigger>
+            <TabsTrigger value="media" className="data-[state=active]:bg-qrypto-primary/20">Media</TabsTrigger>
           </TabsList>
           
           {/* Show Dual Knowledge Base header only when knowledge tab is active and agent is mondai */}
@@ -94,6 +95,18 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps> = ({
           ) : (
             <KnowledgeBase agentType={knowledgeBaseAgentType} />
           )}
+        </TabsContent>
+
+        <TabsContent value="media" className="h-full m-0 p-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col flex-1">
+          <div className="h-full w-full">
+            <iframe 
+              src="https://www.sizzleperks.com/embed/hqusgMObjXJ9" 
+              width="100%" 
+              height="100%" 
+              style={{ height: '100vh', maxHeight: '100%', width: '100vw', maxWidth: '100%' }}
+              className="border-0"
+            />
+          </div>
         </TabsContent>
       </div>
 

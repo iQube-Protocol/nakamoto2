@@ -33,14 +33,14 @@ const SimplifiedAgentInterface = ({
   const getInitialTab = () => {
     if (typeof window !== 'undefined') {
       const savedTab = localStorage.getItem(`${agentType}-active-tab`);
-      if (savedTab && ['chat', 'knowledge'].includes(savedTab)) {
-        return savedTab as 'chat' | 'knowledge';
+      if (savedTab && ['chat', 'knowledge', 'media'].includes(savedTab)) {
+        return savedTab as 'chat' | 'knowledge' | 'media';
       }
     }
     return 'chat';
   };
   
-  const [activeTab, setActiveTab] = useState<'chat' | 'knowledge'>(getInitialTab());
+  const [activeTab, setActiveTab] = useState<'chat' | 'knowledge' | 'media'>(getInitialTab());
   
   // Save active tab to localStorage whenever it changes
   useEffect(() => {
