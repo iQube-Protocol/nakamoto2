@@ -130,7 +130,7 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps> = ({
           )}
         </TabsContent>
 
-        <TabsContent value="media" className="h-full m-0 p-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col flex-1">
+        <TabsContent value="media" className="h-full m-0 p-4 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col flex-1">
           <div className="h-full w-full">
             <iframe 
               src="https://www.sizzleperks.com/embed/hqusgMObjXJ9" 
