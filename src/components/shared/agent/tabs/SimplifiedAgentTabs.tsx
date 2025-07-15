@@ -1,8 +1,10 @@
 
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Info } from 'lucide-react';
+import { Info, ChevronDown } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
+import { Button } from '@/components/ui/button';
+import { cn } from '@/lib/utils';
 import ChatTab from './ChatTab';
 import KnowledgeBase from '../KnowledgeBase';
 import IQubesKnowledgeBase from '@/components/mondai/iQubesKnowledgeBase';
@@ -40,6 +42,16 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps> = ({
   handlePlayAudio,
   handleKeyDown
 }) => {
+  // State for tabs menu collapse - default to collapsed when media tab is active
+  const [tabsCollapsed, setTabsCollapsed] = useState(activeTab === 'media');
+
+  // Update collapse state when activeTab changes to media
+  useEffect(() => {
+    if (activeTab === 'media') {
+      setTabsCollapsed(true);
+    }
+  }, [activeTab]);
+
   // Function to handle tab switching after form submission
   const handleAfterSubmit = () => {
     // Always switch to chat tab when a message is sent
@@ -53,28 +65,49 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps> = ({
     <Tabs value={activeTab} onValueChange={v => setActiveTab(v as 'chat' | 'knowledge' | 'media')} className="flex-1 flex flex-col h-full">
       <div className="border-b px-4">
         <div className="flex items-center justify-between">
-          <TabsList className="h-10">
-            <TabsTrigger value="chat" className="data-[state=active]:bg-qrypto-primary/20">Chat</TabsTrigger>
-            <TabsTrigger value="knowledge" className="data-[state=active]:bg-qrypto-primary/20">Knowledge Base</TabsTrigger>
-            <TabsTrigger value="media" className="data-[state=active]:bg-qrypto-primary/20">Media</TabsTrigger>
-          </TabsList>
-          
-          {/* Show Dual Knowledge Base header only when knowledge tab is active and agent is mondai */}
-          {activeTab === 'knowledge' && agentType === 'mondai' && (
-            <div className="flex items-center gap-2">
-              <h2 className="text-sm font-medium">Dual Base</h2>
-              <TooltipProvider>
-                <Tooltip>
-                  <TooltipTrigger asChild>
-                    <Info className="h-4 w-4 text-gray-400 cursor-help" />
-                  </TooltipTrigger>
-                  <TooltipContent>
-                    <p>Explore both iQubes technical knowledge and COYN economic framework</p>
-                  </TooltipContent>
-                </Tooltip>
-              </TooltipProvider>
+          {!tabsCollapsed ? (
+            <TabsList className="h-10">
+              <TabsTrigger value="chat" className="data-[state=active]:bg-qrypto-primary/20">Chat</TabsTrigger>
+              <TabsTrigger value="knowledge" className="data-[state=active]:bg-qrypto-primary/20">Knowledge Base</TabsTrigger>
+              <TabsTrigger value="media" className="data-[state=active]:bg-qrypto-primary/20">Media</TabsTrigger>
+            </TabsList>
+          ) : (
+            <div className="h-10 flex items-center">
+              <span className="text-sm font-medium capitalize">{activeTab}</span>
             </div>
           )}
+          
+          <div className="flex items-center gap-2">
+            {/* Show Dual Knowledge Base header only when knowledge tab is active and agent is mondai */}
+            {activeTab === 'knowledge' && agentType === 'mondai' && !tabsCollapsed && (
+              <div className="flex items-center gap-2">
+                <h2 className="text-sm font-medium">Dual Base</h2>
+                <TooltipProvider>
+                  <Tooltip>
+                    <TooltipTrigger asChild>
+                      <Info className="h-4 w-4 text-gray-400 cursor-help" />
+                    </TooltipTrigger>
+                    <TooltipContent>
+                      <p>Explore both iQubes technical knowledge and COYN economic framework</p>
+                    </TooltipContent>
+                  </Tooltip>
+                </TooltipProvider>
+              </div>
+            )}
+            
+            {/* Collapse button */}
+            <Button
+              variant="ghost"
+              size="icon"
+              onClick={() => setTabsCollapsed(!tabsCollapsed)}
+              className="h-8 w-8"
+            >
+              <ChevronDown className={cn(
+                "h-4 w-4 transition-transform",
+                tabsCollapsed && "transform rotate-180"
+              )} />
+            </Button>
+          </div>
         </div>
       </div>
 
