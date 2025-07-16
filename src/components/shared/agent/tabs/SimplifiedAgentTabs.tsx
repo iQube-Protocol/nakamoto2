@@ -66,10 +66,10 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps> = ({
       <div className="border-b px-4">
         <div className="flex items-center justify-between">
           {!tabsCollapsed ? (
-            <TabsList className="h-10">
-              <TabsTrigger value="chat" className="data-[state=active]:bg-qrypto-primary/20">Chat</TabsTrigger>
-              <TabsTrigger value="knowledge" className="data-[state=active]:bg-qrypto-primary/20">Knowledge</TabsTrigger>
-              <TabsTrigger value="media" className="data-[state=active]:bg-qrypto-primary/20">Media</TabsTrigger>
+            <TabsList className="h-10 gap-0">
+              <TabsTrigger value="chat" className="data-[state=active]:bg-qrypto-primary/20 px-3">Chat</TabsTrigger>
+              <TabsTrigger value="knowledge" className="data-[state=active]:bg-qrypto-primary/20 px-3">Knowledge</TabsTrigger>
+              <TabsTrigger value="media" className="data-[state=active]:bg-qrypto-primary/20 px-3">Media</TabsTrigger>
             </TabsList>
           ) : (
             <div className="h-10 flex items-center">
@@ -79,7 +79,7 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps> = ({
             </div>
           )}
           
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-6">
             {/* Show Dual Knowledge Base header only when knowledge tab is active and agent is mondai */}
             {activeTab === 'knowledge' && agentType === 'mondai' && !tabsCollapsed && (
               <div className="flex items-center gap-2">
@@ -132,14 +132,14 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps> = ({
           )}
         </TabsContent>
 
-        <TabsContent value="media" className="h-full m-0 p-4 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col flex-1">
+        <TabsContent value="media" className="h-full m-0 p-4 md:p-4 p-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col flex-1">
           <div className="h-full w-full">
             <iframe 
               src="https://www.sizzleperks.com/embed/hqusgMObjXJ9" 
               width="100%" 
               height="100%" 
               style={{ height: '100vh', maxHeight: '100%', width: '100vw', maxWidth: '100%' }}
-              className="border-0"
+              className="border-0 md:rounded-md"
             />
           </div>
         </TabsContent>
