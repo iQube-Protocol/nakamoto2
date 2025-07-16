@@ -1,7 +1,7 @@
 
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
-import { Info, ChevronDown } from 'lucide-react';
+import { Info, ChevronDown, MessageSquare, BookOpen, Play } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
@@ -73,7 +73,9 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps> = ({
             </TabsList>
           ) : (
             <div className="h-10 flex items-center">
-              <span className="text-sm font-medium capitalize">{activeTab}</span>
+              {activeTab === 'chat' && <MessageSquare className="h-4 w-4" />}
+              {activeTab === 'knowledge' && <BookOpen className="h-4 w-4" />}
+              {activeTab === 'media' && <Play className="h-4 w-4" />}
             </div>
           )}
           
