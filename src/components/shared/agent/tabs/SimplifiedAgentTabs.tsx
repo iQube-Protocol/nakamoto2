@@ -83,7 +83,7 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps> = ({
             {/* Show Dual Knowledge Base header only when knowledge tab is active and agent is mondai */}
             {activeTab === 'knowledge' && agentType === 'mondai' && !tabsCollapsed && (
               <div className="flex items-center gap-2">
-                <h2 className="text-sm font-medium">Dual Base</h2>
+                <h2 className="text-sm font-medium">Dual</h2>
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
