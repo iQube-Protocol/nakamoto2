@@ -30,14 +30,31 @@ const PrivateDataForm = ({
   isReadOnlyField
 }: PrivateDataFormProps) => {
   
+  // Define the character mapping for KNYT episodes
+  const episodeCharacterMap = {
+    0: 'Deji',
+    1: 'Sentinel', 
+    2: 'Director',
+    3: 'Spartacus',
+    4: 'Nimrod',
+    5: 'Sage',
+    6: 'Courier',
+    7: 'General',
+    8: 'Count Roth',
+    9: '2Sun',
+    10: 'KnytRush',
+    11: 'Tyrantus',
+    12: 'Kn0w1'
+  };
+
   // Define the KNYT fields that should use dropdown radio selectors
   const knytDropdownFields = {
     'Paper-Comics-Owned': Array.from({length: 13}, (_, i) => `Episode #${i}`),
     'Motion-Comics-Owned': Array.from({length: 13}, (_, i) => `Episode #${i}`),
     'Digital-Comics-Owned': Array.from({length: 13}, (_, i) => `Episode #${i}`),
-    'KNYT-Posters-Owned': Array.from({length: 13}, (_, i) => `#${i}`),
-    'Characters-Owned': Array.from({length: 13}, (_, i) => `#${i}`),
-    'KNYT-Cards-Owned': Array.from({length: 13}, (_, i) => `Episode #${i}`)
+    'KNYT-Posters-Owned': Array.from({length: 13}, (_, i) => `#${i} ${episodeCharacterMap[i as keyof typeof episodeCharacterMap]}`),
+    'Characters-Owned': Array.from({length: 13}, (_, i) => `#${i} ${episodeCharacterMap[i as keyof typeof episodeCharacterMap]}`),
+    'KNYT-Cards-Owned': Array.from({length: 13}, (_, i) => episodeCharacterMap[i as keyof typeof episodeCharacterMap])
   };
 
   const isKNYTDropdownField = (key: string) => {
