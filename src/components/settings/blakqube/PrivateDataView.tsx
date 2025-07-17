@@ -43,8 +43,8 @@ const PrivateDataView = ({
                     <TooltipTrigger asChild>
                       <span className="mr-1.5 cursor-help">{displayValue}</span>
                     </TooltipTrigger>
-                    <TooltipContent side="left" className="max-w-[300px] p-2">
-                      <p className="text-sm break-words">{fullValue}</p>
+                    <TooltipContent side="left" className="max-w-[500px] p-3 z-50">
+                      <div className="text-sm break-words whitespace-pre-wrap">{fullValue}</div>
                     </TooltipContent>
                   </Tooltip>
                 ) : (
