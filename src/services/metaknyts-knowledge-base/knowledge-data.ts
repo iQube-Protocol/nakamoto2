@@ -248,6 +248,80 @@ Once you've successfully added $KNYT COYN to your wallet, you can:
     connections: ['proof-of-state']
   },
   {
+    id: 'knyt-episode-character-guide',
+    title: 'KNYT Episode and Character Guide',
+    content: `# 🎭 KNYT Episode and Character Guide
+
+Complete reference for all KNYT episodes, featuring the iconic characters from the metaKnyts universe. Each episode introduces unique characters and storylines that contribute to the overarching narrative.
+
+## 📺 Episode Guide
+
+| Issue # | Episode Title | Character | Description |
+|---------|---------------|-----------|-------------|
+| #0 | Gen 0/1 | **Deji** | The origin story introducing KnowOne (Deji), the primary protagonist |
+| #1 | All is 1 No 1 is All | **Sentinel** | Guardian character embodying unity and protection |
+| #2 | Genesis Block | **Director** | Leadership figure overseeing the blockchain revolution |
+| #3 | Phi-Hacks | **Spartacus** | Revolutionary fighter challenging the system |
+| #4 | Fall of Sliphaven | **Nimrod** | Powerful character involved in the city's downfall |
+| #5 | Earth City Zen | **Sage** | Wise character bringing balance and knowledge |
+| #6 | The Emissary | **Courier** | Messenger character connecting different realms |
+| #7 | 4 the Love of Onyé | **General** | Military strategist leading the resistance |
+| #8 | metaVision | **Count Roth** | Aristocratic character with mysterious agenda |
+| #9 | 2Sun's Rising | **2Sun** | Dual-natured character representing duality |
+| #10 | The Prince | **KnytRush** | Royal character with accelerated abilities |
+| #11 | The Queen | **Tyrantus** | Regal antagonist with tyrannical tendencies |
+| #12 | The OriGene Qube | **Kn0w1** | Ultimate character embodying original knowledge |
+
+## 🎨 Character Categories
+
+**Heroes & Protagonists:**
+- #0 Deji (KnowOne) - Primary protagonist
+- #1 Sentinel - Guardian protector
+- #2 Director - Revolutionary leader
+- #3 Spartacus - Freedom fighter
+- #5 Sage - Wisdom keeper
+- #6 Courier - Dimensional messenger
+- #7 General - Military commander
+
+**Complex Characters:**
+- #4 Nimrod - Destructive force
+- #8 Count Roth - Aristocratic schemer
+- #9 2Sun - Dual nature entity
+- #10 KnytRush - Royal speedster
+
+**Antagonistic Forces:**
+- #11 Tyrantus - Tyrannical ruler
+- #12 Kn0w1 - Original knowledge corrupted
+
+## 🎯 Collectible Format
+
+When referencing KNYT collectibles (Posters, Cards, Characters), use the format:
+- **#0 Deji** for Episode 0 featuring Deji
+- **#1 Sentinel** for Episode 1 featuring Sentinel
+- And so forth...
+
+This format provides clear episode identification while highlighting the featured character for each collectible item in the metaKnyts ecosystem.
+
+## 🌟 Narrative Significance
+
+Each character represents different aspects of the metaKnyts philosophy:
+- **Technology vs. Humanity** (Deji/KnowOne)
+- **Protection vs. Freedom** (Sentinel)
+- **Leadership vs. Authority** (Director vs. Tyrantus)
+- **Revolution vs. Order** (Spartacus vs. General)
+- **Wisdom vs. Knowledge** (Sage vs. Kn0w1)
+- **Communication vs. Isolation** (Courier)
+- **Balance vs. Extremes** (2Sun)
+
+These characters collectively tell the story of the struggle between centralized control (FANG/BAT) and decentralized freedom (mẹtaKnyts).`,
+    section: 'Character Guide',
+    category: 'characters',
+    keywords: ['KNYT episodes', 'character guide', 'Deji', 'Sentinel', 'Director', 'Spartacus', 'collectibles', 'episode titles', 'metaKnyts characters'],
+    timestamp: new Date().toISOString(),
+    source: 'metaKnyts Character Database',
+    connections: ['metaknyts-protagonists', 'knowone-protagonist-origin']
+  },
+  {
     id: 'tesla-turing-historical-connections',
     title: 'Historical Pioneers: Tesla and Turing Legacy',
     content: `The mẹtaKnyts possess secret knowledge about universal free energy tied to Nicola Tesla's theories. Tesla belonged to a secret order that serves as a forebearer to the mẹtaKnyts. The saga revisits historical events through new perspectives, connecting mẹtaKnyts to past pioneers like Tesla and Turing, establishing a lineage of technological revolutionaries working toward Metaiye - their vision of tech-topia with decentralized AI.`,
