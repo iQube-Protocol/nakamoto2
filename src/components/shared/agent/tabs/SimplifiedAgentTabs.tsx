@@ -9,6 +9,7 @@ import KnowledgeBase from '../KnowledgeBase';
 import IQubesKnowledgeBase from '@/components/mondai/iQubesKnowledgeBase';
 import AgentInputBar from '../AgentInputBar';
 import { AgentMessage } from '@/lib/types';
+import { useIsMobile } from '@/hooks/use-mobile';
 
 interface SimplifiedAgentTabsProps {
   activeTab: 'chat' | 'knowledge' | 'media';
@@ -41,6 +42,7 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps> = ({
   handlePlayAudio,
   handleKeyDown
 }) => {
+  const isMobile = useIsMobile();
   // State for tabs menu collapse - default to collapsed when media tab is active
   const [tabsCollapsed, setTabsCollapsed] = useState(activeTab === 'media');
 
@@ -114,11 +116,11 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps> = ({
               allow="camera; microphone; display-capture; fullscreen"
               allowFullScreen
               style={{
-                height: '100vh',
+                height: isMobile ? '150vh' : '100vh',
                 maxHeight: '100%',
                 width: '100vw',
                 maxWidth: '100%'
-              }} 
+              }}
               className="border-0 md:rounded-md" 
             />
           </div>
