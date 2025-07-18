@@ -9,6 +9,7 @@ import KnowledgeBase from '../KnowledgeBase';
 import IQubesKnowledgeBase from '@/components/mondai/iQubesKnowledgeBase';
 import AgentInputBar from '../AgentInputBar';
 import { AgentMessage } from '@/lib/types';
+
 interface SimplifiedAgentTabsProps {
   activeTab: 'chat' | 'knowledge' | 'media';
   setActiveTab: (tab: 'chat' | 'knowledge' | 'media') => void;
@@ -24,6 +25,7 @@ interface SimplifiedAgentTabsProps {
   handlePlayAudio: (messageId: string) => void;
   handleKeyDown?: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
 }
+
 const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps> = ({
   activeTab,
   setActiveTab,
@@ -105,12 +107,20 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps> = ({
 
         <TabsContent value="media" className="h-full m-0 p-4 md:p-4 p-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col flex-1">
           <div className="h-full w-full">
-            <iframe src="https://www.sizzleperks.com/embed/hqusgMObjXJ9" width="100%" height="100%" style={{
-            height: '100vh',
-            maxHeight: '100%',
-            width: '100vw',
-            maxWidth: '100%'
-          }} className="border-0 md:rounded-md" />
+            <iframe 
+              src="https://www.sizzleperks.com/embed/hqusgMObjXJ9" 
+              width="100%" 
+              height="100%" 
+              allow="camera; microphone; display-capture; fullscreen"
+              allowFullScreen
+              style={{
+                height: '100vh',
+                maxHeight: '100%',
+                width: '100vw',
+                maxWidth: '100%'
+              }} 
+              className="border-0 md:rounded-md" 
+            />
           </div>
         </TabsContent>
       </div>
@@ -121,4 +131,5 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps> = ({
       </div>
     </Tabs>;
 };
+
 export default SimplifiedAgentTabs;
