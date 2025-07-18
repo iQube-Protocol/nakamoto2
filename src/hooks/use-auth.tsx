@@ -1,8 +1,11 @@
+
 import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, useLocation } from 'react-router-dom';
 import { toast } from 'sonner';
+import { sessionManager } from '@/services/session-manager';
+import { detectBrowser, shouldShowBraveWarning, getBraveCompatibilityInstructions } from '@/utils/browserDetection';
 
 interface AuthContextProps {
   session: Session | null;
@@ -23,6 +26,7 @@ interface AuthContextProps {
     success: boolean;
   }>;
   loading: boolean;
+  refreshSession: () => Promise<boolean>;
 }
 
 const AuthContext = createContext<AuthContextProps | undefined>(undefined);
@@ -53,6 +57,26 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return Boolean(isResetPath || hasRecoveryTokens);
   };
 
+  // Show Brave browser warning if needed
+  const showBraveWarningIfNeeded = () => {
+    if (shouldShowBraveWarning()) {
+      const instructions = getBraveCompatibilityInstructions();
+      toast.info('Brave Browser Detected', {
+        description: 'For best experience, consider adjusting Brave Shield settings if you encounter issues.',
+        duration: 8000,
+        action: {
+          label: 'Show Instructions',
+          onClick: () => {
+            toast.info('Brave Setup Instructions', {
+              description: instructions.join('\n• '),
+              duration: 15000
+            });
+          }
+        }
+      });
+    }
+  };
+
   useEffect(() => {
     console.log("Auth provider initialized");
     let mounted = true;
@@ -65,6 +89,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setIsInitialLoad(false);
       return;
     }
+    
+    // Show Brave warning if needed
+    showBraveWarningIfNeeded();
     
     // CRITICAL: Check for password reset flow IMMEDIATELY
     const isPasswordReset = isPasswordResetFlow();
@@ -84,6 +111,16 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setUser(newSession?.user ?? null);
           setIsGuest(false);
           setLoading(false);
+          
+          // Start session monitoring when user signs in
+          if (event === 'SIGNED_IN' && newSession) {
+            sessionManager.startSessionMonitoring();
+          }
+          
+          // Stop session monitoring when user signs out
+          if (event === 'SIGNED_OUT') {
+            sessionManager.stopSessionMonitoring();
+          }
           
           // Handle specific auth events with password reset taking ABSOLUTE priority
           if (event === 'SIGNED_IN') {
@@ -144,12 +181,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     supabase.auth.getSession().then(({ data, error }) => {
       if (error) {
         console.error("Error getting session:", error);
+        // Handle session errors with browser-specific guidance
+        if (detectBrowser().isBrave) {
+          toast.error('Session Error in Brave Browser', {
+            description: 'Try disabling Brave Shield for this site.',
+            duration: 8000
+          });
+        }
       } else {
         console.log("Got session:", data.session ? `Yes for ${data.session.user.email}` : "No");
         if (mounted) {
           setSession(data.session);
           setUser(data.session?.user ?? null);
           setLoading(false);
+          
+          // Start session monitoring if user is already signed in
+          if (data.session) {
+            sessionManager.startSessionMonitoring();
+          }
           
           // Mark initial load as complete after session check
           setTimeout(() => {
@@ -162,6 +211,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     return () => {
       mounted = false;
       subscription.unsubscribe();
+      sessionManager.stopSessionMonitoring();
     };
   }, [navigate, location.pathname]);
 
@@ -175,6 +225,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
       if (error) {
         console.error('Error signing in:', error.message);
+        
+        // Show browser-specific error messages
+        if (detectBrowser().isBrave && error.message.includes('session')) {
+          toast.error('Brave Browser Authentication Issue', {
+            description: 'Please check your Brave Shield settings and try again.',
+            action: {
+              label: 'Instructions',
+              onClick: () => {
+                const instructions = getBraveCompatibilityInstructions();
+                toast.info('Brave Setup Instructions', {
+                  description: instructions.join('\n• '),
+                  duration: 15000
+                });
+              }
+            }
+          });
+        }
+        
         return { error, success: false };
       }
 
@@ -183,6 +251,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setSession(data.session);
       setIsGuest(false);
       localStorage.removeItem('guestMode');
+      
+      // Start session monitoring
+      sessionManager.startSessionMonitoring();
+      
       return { error: null, success: true };
     } catch (error) {
       console.error('Unexpected error during sign in:', error);
@@ -264,6 +336,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signOut = async () => {
     console.log("Signing out");
     try {
+      // Stop session monitoring
+      sessionManager.stopSessionMonitoring();
+      
       await supabase.auth.signOut();
       setUser(null);
       setSession(null);
@@ -276,6 +351,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     }
   };
 
+  const refreshSession = async (): Promise<boolean> => {
+    console.log("🔄 Auth: Manual session refresh requested");
+    return await sessionManager.forceRefreshSession();
+  };
+
   const value = {
     session,
     user,
@@ -286,6 +366,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     signOut,
     resetPassword,
     loading,
+    refreshSession,
   };
 
   return (

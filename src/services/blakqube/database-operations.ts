@@ -1,28 +1,52 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { KNYTPersona, QryptoPersona, BlakQube } from '@/lib/types';
+import { sessionManager } from '@/services/session-manager';
+import { toast } from 'sonner';
 
 // Determine which persona type to fetch based on the MetaQube identifier
 export const getPersonaType = (metaQubeIdentifier: string): 'knyt' | 'qrypto' => {
   return metaQubeIdentifier === "KNYT Persona iQube" || metaQubeIdentifier === "KNYT Persona" ? 'knyt' : 'qrypto';
 };
 
-export const fetchKNYTPersonaFromDB = async (userId: string): Promise<KNYTPersona | null> => {
+/**
+ * Enhanced session validation wrapper for database operations
+ */
+async function withSessionValidation<T>(
+  operation: () => Promise<T>,
+  operationName: string
+): Promise<T> {
   try {
+    // Validate session before performing operation
+    const { isValid, error } = await sessionManager.validateSession();
+    
+    if (!isValid) {
+      console.error(`❌ ${operationName}: Session validation failed:`, error);
+      
+      // Try to refresh session once
+      const refreshSuccess = await sessionManager.forceRefreshSession();
+      if (!refreshSuccess) {
+        throw new Error(`Authentication required to ${operationName.toLowerCase()}`);
+      }
+      
+      // Retry validation after refresh
+      const { isValid: retryValid } = await sessionManager.validateSession();
+      if (!retryValid) {
+        throw new Error(`Authentication required to ${operationName.toLowerCase()}`);
+      }
+    }
+
+    // Perform the operation
+    return await operation();
+  } catch (error) {
+    console.error(`❌ Error in ${operationName}:`, error);
+    throw error;
+  }
+}
+
+export const fetchKNYTPersonaFromDB = async (userId: string): Promise<KNYTPersona | null> => {
+  return withSessionValidation(async () => {
     console.log('Fetching KNYT Persona data for user:', userId);
-    
-    // Verify authentication context before database operation
-    const { data: authData, error: authError } = await supabase.auth.getUser();
-    if (authError || !authData.user) {
-      console.error('❌ Authentication required for database access:', authError);
-      throw new Error('Authentication required to access KNYT persona data');
-    }
-    
-    // Ensure user can only access their own data
-    if (authData.user.id !== userId) {
-      console.error('❌ Access denied: User attempting to access different user data');
-      throw new Error('Access denied: You can only access your own data');
-    }
     
     const { data, error } = await (supabase as any)
       .from('knyt_personas')
@@ -41,28 +65,12 @@ export const fetchKNYTPersonaFromDB = async (userId: string): Promise<KNYTPerson
     
     console.log('KNYT Persona data fetched:', data);
     return data as KNYTPersona;
-  } catch (error) {
-    console.error('Error in fetchKNYTPersonaFromDB:', error);
-    throw error; // Re-throw to allow caller to handle
-  }
+  }, 'fetchKNYTPersonaFromDB');
 };
 
 export const fetchQryptoPersonaFromDB = async (userId: string): Promise<QryptoPersona | null> => {
-  try {
+  return withSessionValidation(async () => {
     console.log('Fetching Qrypto Persona data for user:', userId);
-    
-    // Verify authentication context before database operation
-    const { data: authData, error: authError } = await supabase.auth.getUser();
-    if (authError || !authData.user) {
-      console.error('❌ Authentication required for database access:', authError);
-      throw new Error('Authentication required to access Qrypto persona data');
-    }
-    
-    // Ensure user can only access their own data
-    if (authData.user.id !== userId) {
-      console.error('❌ Access denied: User attempting to access different user data');
-      throw new Error('Access denied: You can only access your own data');
-    }
     
     const { data, error } = await (supabase as any)
       .from('qrypto_personas')
@@ -81,10 +89,7 @@ export const fetchQryptoPersonaFromDB = async (userId: string): Promise<QryptoPe
     
     console.log('Qrypto Persona data fetched:', data);
     return data as QryptoPersona;
-  } catch (error) {
-    console.error('Error in fetchQryptoPersonaFromDB:', error);
-    throw error; // Re-throw to allow caller to handle
-  }
+  }, 'fetchQryptoPersonaFromDB');
 };
 
 // Legacy function for backward compatibility
@@ -150,24 +155,11 @@ export const saveKNYTPersonaToDB = async (
   userId: string,
   personaData: Partial<KNYTPersona>
 ): Promise<boolean> => {
-  try {
+  return withSessionValidation(async () => {
     console.log('=== SAVING KNYT PERSONA TO DB ===');
     console.log('📋 User ID:', userId);
     console.log('📋 Persona data to save:', personaData);
     console.log('💰 KNYT-COYN-Owned in data:', personaData["KNYT-COYN-Owned"]);
-    
-    // Verify authentication context before database operation
-    const { data: authData, error: authError } = await supabase.auth.getUser();
-    if (authError || !authData.user) {
-      console.error('❌ Authentication required for database save:', authError);
-      throw new Error('Authentication required to save KNYT persona data');
-    }
-    
-    // Ensure user can only save their own data
-    if (authData.user.id !== userId) {
-      console.error('❌ Access denied: User attempting to save data for different user');
-      throw new Error('Access denied: You can only save your own data');
-    }
     
     // First try to update existing record
     const { data: updateResult, error: updateError } = await (supabase as any)
@@ -232,32 +224,15 @@ export const saveKNYTPersonaToDB = async (
     console.log('✅ KNYT Persona data saved successfully');
     console.log('=== KNYT PERSONA SAVE COMPLETE ===');
     return true;
-  } catch (error) {
-    console.error('❌ Error in saveKNYTPersonaToDB:', error);
-    console.log('=== KNYT PERSONA SAVE FAILED ===');
-    return false;
-  }
+  }, 'saveKNYTPersonaToDB');
 };
 
 export const saveQryptoPersonaToDB = async (
   userId: string,
   personaData: Partial<QryptoPersona>
 ): Promise<boolean> => {
-  try {
+  return withSessionValidation(async () => {
     console.log('Saving Qrypto Persona data for user:', userId, personaData);
-    
-    // Verify authentication context before database operation
-    const { data: authData, error: authError } = await supabase.auth.getUser();
-    if (authError || !authData.user) {
-      console.error('❌ Authentication required for database save:', authError);
-      throw new Error('Authentication required to save Qrypto persona data');
-    }
-    
-    // Ensure user can only save their own data
-    if (authData.user.id !== userId) {
-      console.error('❌ Access denied: User attempting to save data for different user');
-      throw new Error('Access denied: You can only save your own data');
-    }
     
     // First try to update existing record
     const { data: updateResult, error: updateError } = await (supabase as any)
@@ -299,10 +274,7 @@ export const saveQryptoPersonaToDB = async (
     
     console.log('Qrypto Persona data saved successfully');
     return true;
-  } catch (error) {
-    console.error('Error in saveQryptoPersonaToDB:', error);
-    return false;
-  }
+  }, 'saveQryptoPersonaToDB');
 };
 
 // Legacy function for backward compatibility
@@ -323,7 +295,7 @@ export const saveBlakQubeToDB = async (
 };
 
 export const fetchUserConnections = async (userId: string) => {
-  try {
+  return withSessionValidation(async () => {
     const { data: connections, error: connectionsError } = await (supabase as any)
       .from('user_connections')
       .select('service, connection_data')
@@ -336,8 +308,5 @@ export const fetchUserConnections = async (userId: string) => {
     
     console.log('User connections:', connections);
     return connections;
-  } catch (error) {
-    console.error('Error in fetchUserConnections:', error);
-    return null;
-  }
+  }, 'fetchUserConnections');
 };

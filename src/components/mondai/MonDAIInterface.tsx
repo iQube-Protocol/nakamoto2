@@ -3,6 +3,7 @@ import React, { useEffect } from 'react';
 import { AgentInterface } from '@/components/shared/agent';
 import { useMondAI } from '@/hooks/use-mondai';
 import MonDAIHeader from './MonDAIHeader';
+import { SessionStatusIndicator } from './SessionStatusIndicator';
 import { useKBAIConnection } from '@/hooks/mondai/useKBAIConnection';
 import { sonnerToast as toast } from '@/hooks/use-toast';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -85,13 +86,16 @@ const MonDAIInterface: React.FC = () => {
     <div className="container py-6 max-w-7xl mx-auto h-full agent-interface">
       <div className="grid gap-6 h-full">
         <div className="flex flex-col h-full">
-          <MonDAIHeader
-            isRetrying={isRetrying}
-            connectionStatus={connectionStatus}
-            serverConfig={serverConfig}
-            onConfigUpdate={handleConfigUpdate}
-            onRetryConnection={handleManualRetry}
-          />
+          <div className="flex items-center justify-between mb-4">
+            <MonDAIHeader
+              isRetrying={isRetrying}
+              connectionStatus={connectionStatus}
+              serverConfig={serverConfig}
+              onConfigUpdate={handleConfigUpdate}
+              onRetryConnection={handleManualRetry}
+            />
+            <SessionStatusIndicator />
+          </div>
           
           <AgentInterface
             title="Aigent Nakamoto"
