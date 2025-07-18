@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Info, ChevronDown, MessageSquare, BookOpen, Play } from 'lucide-react';
@@ -10,7 +9,6 @@ import KnowledgeBase from '../KnowledgeBase';
 import IQubesKnowledgeBase from '@/components/mondai/iQubesKnowledgeBase';
 import AgentInputBar from '../AgentInputBar';
 import { AgentMessage } from '@/lib/types';
-
 interface SimplifiedAgentTabsProps {
   activeTab: 'chat' | 'knowledge' | 'media';
   setActiveTab: (tab: 'chat' | 'knowledge' | 'media') => void;
@@ -26,7 +24,6 @@ interface SimplifiedAgentTabsProps {
   handlePlayAudio: (messageId: string) => void;
   handleKeyDown?: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
 }
-
 const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps> = ({
   activeTab,
   setActiveTab,
@@ -60,30 +57,23 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps> = ({
 
   // Convert 'mondai' to 'learn' for KnowledgeBase component
   const knowledgeBaseAgentType = agentType === 'mondai' ? 'learn' : agentType;
-
-  return (
-    <Tabs value={activeTab} onValueChange={v => setActiveTab(v as 'chat' | 'knowledge' | 'media')} className="flex-1 flex flex-col h-full">
+  return <Tabs value={activeTab} onValueChange={v => setActiveTab(v as 'chat' | 'knowledge' | 'media')} className="flex-1 flex flex-col h-full">
       <div className="border-b px-4">
         <div className="flex items-center justify-between">
-          {!tabsCollapsed ? (
-            <TabsList className="h-10 gap-0">
+          {!tabsCollapsed ? <TabsList className="h-10 gap-0">
               <TabsTrigger value="chat" className="data-[state=active]:bg-qrypto-primary/20 px-3">Chat</TabsTrigger>
               <TabsTrigger value="knowledge" className="data-[state=active]:bg-qrypto-primary/20 px-3">Knowledge</TabsTrigger>
               <TabsTrigger value="media" className="data-[state=active]:bg-qrypto-primary/20 px-3">Media</TabsTrigger>
-            </TabsList>
-          ) : (
-            <div className="h-10 flex items-center">
+            </TabsList> : <div className="h-10 flex items-center">
               {activeTab === 'chat' && <MessageSquare className="h-4 w-4" />}
               {activeTab === 'knowledge' && <BookOpen className="h-4 w-4" />}
               {activeTab === 'media' && <Play className="h-4 w-4" />}
-            </div>
-          )}
+            </div>}
           
           <div className="flex items-center gap-6">
             {/* Show Dual Knowledge Base header only when knowledge tab is active and agent is mondai */}
-            {activeTab === 'knowledge' && agentType === 'mondai' && !tabsCollapsed && (
-              <div className="flex items-center gap-2">
-                <h2 className="text-sm font-medium">Dual</h2>
+            {activeTab === 'knowledge' && agentType === 'mondai' && !tabsCollapsed && <div className="flex items-center gap-2">
+                
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -94,20 +84,11 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps> = ({
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
-              </div>
-            )}
+              </div>}
             
             {/* Collapse button */}
-            <Button
-              variant="ghost"
-              size="icon"
-              onClick={() => setTabsCollapsed(!tabsCollapsed)}
-              className="h-8 w-8"
-            >
-              <ChevronDown className={cn(
-                "h-4 w-4 transition-transform",
-                tabsCollapsed && "transform rotate-180"
-              )} />
+            <Button variant="ghost" size="icon" onClick={() => setTabsCollapsed(!tabsCollapsed)} className="h-8 w-8">
+              <ChevronDown className={cn("h-4 w-4 transition-transform", tabsCollapsed && "transform rotate-180")} />
             </Button>
           </div>
         </div>
@@ -115,50 +96,29 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps> = ({
 
       <div className="flex-1 overflow-hidden flex flex-col">
         <TabsContent value="chat" className="h-full m-0 p-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col flex-1">
-          <ChatTab 
-            messages={messages} 
-            playing={playing} 
-            agentType={agentType} 
-            messagesEndRef={messagesEndRef} 
-            handlePlayAudio={handlePlayAudio} 
-          />
+          <ChatTab messages={messages} playing={playing} agentType={agentType} messagesEndRef={messagesEndRef} handlePlayAudio={handlePlayAudio} />
         </TabsContent>
 
         <TabsContent value="knowledge" className="h-full m-0 p-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col flex-1">
-          {agentType === 'mondai' ? (
-            <IQubesKnowledgeBase />
-          ) : (
-            <KnowledgeBase agentType={knowledgeBaseAgentType} />
-          )}
+          {agentType === 'mondai' ? <IQubesKnowledgeBase /> : <KnowledgeBase agentType={knowledgeBaseAgentType} />}
         </TabsContent>
 
         <TabsContent value="media" className="h-full m-0 p-4 md:p-4 p-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col flex-1">
           <div className="h-full w-full">
-            <iframe 
-              src="https://www.sizzleperks.com/embed/hqusgMObjXJ9" 
-              width="100%" 
-              height="100%" 
-              style={{ height: '100vh', maxHeight: '100%', width: '100vw', maxWidth: '100%' }}
-              className="border-0 md:rounded-md"
-            />
+            <iframe src="https://www.sizzleperks.com/embed/hqusgMObjXJ9" width="100%" height="100%" style={{
+            height: '100vh',
+            maxHeight: '100%',
+            width: '100vw',
+            maxWidth: '100%'
+          }} className="border-0 md:rounded-md" />
           </div>
         </TabsContent>
       </div>
 
       {/* Input bar moved outside of tabs, always visible with improved mobile support */}
       <div className="mt-auto">
-        <AgentInputBar 
-          inputValue={inputValue} 
-          handleInputChange={handleInputChange} 
-          handleSubmit={handleSubmit}
-          isProcessing={isProcessing} 
-          agentType={agentType} 
-          handleKeyDown={handleKeyDown}
-          onAfterSubmit={handleAfterSubmit}
-        />
+        <AgentInputBar inputValue={inputValue} handleInputChange={handleInputChange} handleSubmit={handleSubmit} isProcessing={isProcessing} agentType={agentType} handleKeyDown={handleKeyDown} onAfterSubmit={handleAfterSubmit} />
       </div>
-    </Tabs>
-  );
+    </Tabs>;
 };
-
 export default SimplifiedAgentTabs;
