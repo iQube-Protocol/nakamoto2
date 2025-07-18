@@ -116,9 +116,9 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps> = ({
               allow="camera; microphone; display-capture; fullscreen"
               allowFullScreen
               style={{
-                height: isMobile ? '150vh' : '100vh',
+                height: isMobile ? '120vh' : '100vh',
                 maxHeight: '100%',
-                width: '100vw',
+                width: '100%',
                 maxWidth: '100%'
               }}
               className="border-0 md:rounded-md" 
