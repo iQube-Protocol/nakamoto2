@@ -65,9 +65,9 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps> = ({
               <TabsTrigger value="knowledge" className="data-[state=active]:bg-qrypto-primary/20 px-3">Knowledge</TabsTrigger>
               <TabsTrigger value="media" className="data-[state=active]:bg-qrypto-primary/20 px-3">Media</TabsTrigger>
             </TabsList> : <div className="h-10 flex items-center">
-              {activeTab === 'chat' && <MessageSquare className="h-4 w-4" />}
-              {activeTab === 'knowledge' && <BookOpen className="h-4 w-4" />}
-              {activeTab === 'media' && <Play className="h-4 w-4" />}
+              {activeTab === 'chat' && <MessageSquare className="h-4 w-4 cursor-pointer hover:text-qrypto-primary" onClick={() => setTabsCollapsed(false)} />}
+              {activeTab === 'knowledge' && <BookOpen className="h-4 w-4 cursor-pointer hover:text-qrypto-primary" onClick={() => setTabsCollapsed(false)} />}
+              {activeTab === 'media' && <Play className="h-4 w-4 cursor-pointer hover:text-qrypto-primary" onClick={() => setTabsCollapsed(false)} />}
             </div>}
           
           <div className="flex items-center gap-6">
