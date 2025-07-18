@@ -77,7 +77,7 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps> = ({
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
-                      <Info className="h-4 w-4 text-gray-400 cursor-help" />
+                      <div className="h-5 w-5 text-gray-400 cursor-help flex items-center justify-center text-sm font-medium">2</div>
                     </TooltipTrigger>
                     <TooltipContent>
                       <p>Explore both iQubes technical knowledge and COYN economic framework</p>
