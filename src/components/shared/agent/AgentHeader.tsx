@@ -1,7 +1,7 @@
 
 import React, { useEffect } from 'react';
 import { Bot, Loader2 } from 'lucide-react';
-import DotScore from './DotScore';
+import DotScore from '../DotScore';
 import ScoreTooltip from '../ScoreTooltips';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useVeniceAgent } from '@/hooks/use-venice-agent';
