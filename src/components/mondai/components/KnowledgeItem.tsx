@@ -36,10 +36,10 @@ const KnowledgeItem = ({
   const visibleKeywords = item.keywords.slice(0, 3);
   const remainingKeywords = item.keywords.length - 3;
 
-  // Use different colors based on knowledge base
+  // Use different colors based on knowledge base with increased transparency
   const baseColor = knowledgeBase === 'iQubes' ? 'blue' : 'orange';
-  const keywordBgColor = knowledgeBase === 'iQubes' ? 'bg-blue-100 text-blue-800 hover:bg-blue-200' : 'bg-orange-100 text-orange-800 hover:bg-orange-200';
-  const connectionBgColor = knowledgeBase === 'iQubes' ? 'bg-rose-100 text-rose-800 border-rose-300' : 'bg-purple-100 text-purple-800 border-purple-300';
+  const keywordBgColor = knowledgeBase === 'iQubes' ? 'bg-blue-100/65 text-blue-800 hover:bg-blue-200/65' : 'bg-orange-100/65 text-orange-800 hover:bg-orange-200/65';
+  const connectionBgColor = knowledgeBase === 'iQubes' ? 'bg-rose-100/65 text-rose-800 border-rose-300/65' : 'bg-purple-100/65 text-purple-800 border-purple-300/65';
   return <Card className="hover:shadow-lg transition-all duration-200 cursor-pointer hover:scale-[1.02] knowledge-content" onClick={() => onItemClick(item)}>
       <CardHeader className="pb-2">
         <div className="flex items-start justify-between">
@@ -73,14 +73,14 @@ const KnowledgeItem = ({
               {item.connections.slice(0, 2).map((connection: string) => <Badge key={connection} variant="outline" className={`text-xs rounded-md px-2 py-1 ${connectionBgColor} transition-colors`}>
                   {connection}
                 </Badge>)}
-              {item.connections.length > 2 && <Badge variant="outline" className="text-xs rounded-md px-2 py-1 bg-gray-100 text-gray-600 border-gray-300">
+              {item.connections.length > 2 && <Badge variant="outline" className="text-xs rounded-md px-2 py-1 bg-gray-100/65 text-gray-600 border-gray-300/65">
                   +{item.connections.length - 2}
                 </Badge>}
             </div>
           </div>}
         
         <div className="flex justify-between items-center">
-          <Badge variant="outline" className={`text-xs rounded-md px-2 py-1 ${knowledgeBase === 'iQubes' ? 'bg-blue-100 text-blue-800 border-blue-300' : 'bg-orange-100 text-orange-800 border-orange-300'}`}>
+          <Badge variant="outline" className={`text-xs rounded-md px-2 py-1 ${knowledgeBase === 'iQubes' ? 'bg-blue-100/65 text-blue-800 border-blue-300/65' : 'bg-orange-100/65 text-orange-800 border-orange-300/65'}`}>
             {knowledgeBase}
           </Badge>
           <Button variant="ghost" size="sm" className={`h-6 px-2 transition-colors ${knowledgeBase === 'iQubes' ? 'text-blue-600 hover:text-blue-800 hover:bg-blue-50' : 'text-orange-600 hover:text-orange-800 hover:bg-orange-50'}`}>
