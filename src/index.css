@@ -119,8 +119,10 @@
     contain: layout style paint;
   }
   
-  .agent-interface * {
-    /* Optimize repaints only for elements that need it */
+  /* Apply backface-visibility only to specific animated elements if needed */
+  .agent-interface .animate-spin,
+  .agent-interface .animate-pulse,
+  .agent-interface .animate-bounce {
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
   }
