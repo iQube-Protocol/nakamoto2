@@ -1,5 +1,4 @@
-
-import { useState, useEffect, createContext, useContext, ReactNode } from 'react';
+import { useState, useEffect, createContext, useContext, ReactNode, useCallback, useRef } from 'react';
 import { Session, User } from '@supabase/supabase-js';
 import { supabase } from '@/integrations/supabase/client';
 import { useNavigate, useLocation } from 'react-router-dom';
@@ -40,6 +39,11 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Debouncing refs to prevent rapid successive auth state changes
+  const authStateTimeoutRef = useRef<NodeJS.Timeout | null>(null);
+  const lastAuthEventRef = useRef<{ event: string; timestamp: number } | null>(null);
+  const isProcessingAuthChange = useRef(false);
+
   // Enhanced helper function to detect password reset flow
   const isPasswordResetFlow = () => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -58,7 +62,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   };
 
   // Show Brave browser warning if needed
-  const showBraveWarningIfNeeded = () => {
+  const showBraveWarningIfNeeded = useCallback(() => {
     if (shouldShowBraveWarning()) {
       const instructions = getBraveCompatibilityInstructions();
       toast.info('Brave Browser Detected', {
@@ -75,7 +79,117 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
         }
       });
     }
-  };
+  }, []);
+
+  // Debounced auth state change handler
+  const handleAuthStateChange = useCallback((event: string, newSession: Session | null) => {
+    // Prevent processing if already processing
+    if (isProcessingAuthChange.current) {
+      console.log('🔄 Auth: Skipping auth state change - already processing');
+      return;
+    }
+
+    // Debounce rapid successive changes
+    const now = Date.now();
+    if (lastAuthEventRef.current && 
+        lastAuthEventRef.current.event === event && 
+        (now - lastAuthEventRef.current.timestamp) < 1000) {
+      console.log('🔄 Auth: Debouncing rapid auth state change:', event);
+      return;
+    }
+
+    lastAuthEventRef.current = { event, timestamp: now };
+
+    // Clear any pending timeout
+    if (authStateTimeoutRef.current) {
+      clearTimeout(authStateTimeoutRef.current);
+    }
+
+    // Process the auth state change with a small delay to batch rapid changes
+    authStateTimeoutRef.current = setTimeout(() => {
+      isProcessingAuthChange.current = true;
+      
+      try {
+        console.log("Auth state changed:", event, newSession?.user?.email);
+        
+        // ABSOLUTE PRIORITY: Block ALL redirects if password reset is active
+        const currentPasswordReset = isPasswordResetFlow();
+        console.log("Auth state change - password reset active:", currentPasswordReset);
+        
+        setSession(newSession);
+        setUser(newSession?.user ?? null);
+        setIsGuest(false);
+        setLoading(false);
+        
+        // Handle session monitoring lifecycle with debouncing
+        if (event === 'SIGNED_IN' && newSession) {
+          // Debounce session monitoring start
+          setTimeout(() => {
+            sessionManager.startSessionMonitoring();
+          }, 500);
+        }
+        
+        if (event === 'SIGNED_OUT') {
+          sessionManager.stopSessionMonitoring();
+          sessionManager.clearCache(); // Clear session cache
+        }
+        
+        // Handle specific auth events with password reset taking ABSOLUTE priority
+        if (event === 'SIGNED_IN') {
+          console.log("User signed in, checking if redirect needed");
+          
+          // CRITICAL: Absolute priority for password reset flow - NO EXCEPTIONS
+          if (currentPasswordReset) {
+            console.log("PASSWORD RESET FLOW ACTIVE - BLOCKING ALL REDIRECTS");
+            return; // Exit immediately, no further processing
+          }
+          
+          // Only redirect if this is a fresh sign-in (not session restoration)
+          // and user is on an unprotected route
+          const protectedRoutes = ['/mondai', '/settings', '/learn', '/earn', '/connect', '/profile', '/qubes'];
+          const isOnProtectedRoute = protectedRoutes.some(route => location.pathname.startsWith(route));
+          
+          // Only redirect if:
+          // 1. Not initial load (session restoration)
+          // 2. User is on root path or sign-in related pages
+          // 3. Not already on a protected route
+          const unprotectedPaths = ['/', '/signin', '/signup', '/splash'];
+          const isOnUnprotectedPath = unprotectedPaths.includes(location.pathname);
+          
+          if (!isInitialLoad && 
+              isOnUnprotectedPath &&
+              !isOnProtectedRoute) {
+            console.log("Redirecting to MonDAI after fresh sign-in");
+            setTimeout(() => navigate('/mondai'), 100); // Small delay to ensure state is settled
+          } else {
+            console.log("Skipping redirect - user already on valid route:", location.pathname);
+          }
+        } else if (event === 'SIGNED_OUT') {
+          console.log("User signed out, session cleared");
+          localStorage.removeItem('guestMode');
+          setIsGuest(false);
+          
+          // Don't redirect if we're in password reset flow
+          if (!currentPasswordReset) {
+            setTimeout(() => navigate('/signin'), 100); // Small delay
+          } else {
+            console.log("Password reset flow active - not redirecting on sign out");
+          }
+        } else if (event === 'TOKEN_REFRESHED') {
+          console.log("Token refreshed successfully");
+        } else if (event === 'USER_UPDATED') {
+          console.log("User updated");
+        }
+        
+        // Mark that initial load is complete
+        if (isInitialLoad) {
+          setIsInitialLoad(false);
+        }
+      } finally {
+        isProcessingAuthChange.current = false;
+      }
+    }, 100); // 100ms debounce delay
+  }, [navigate, location.pathname, isInitialLoad]);
 
   useEffect(() => {
     console.log("Auth provider initialized");
@@ -97,85 +211,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     const isPasswordReset = isPasswordResetFlow();
     console.log("Initial password reset check:", isPasswordReset);
     
-    // First set up the auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, newSession) => {
-        console.log("Auth state changed:", event, newSession?.user?.email);
-        
-        // ABSOLUTE PRIORITY: Block ALL redirects if password reset is active
-        const currentPasswordReset = isPasswordResetFlow();
-        console.log("Auth state change - password reset active:", currentPasswordReset);
-        
-        if (mounted) {
-          setSession(newSession);
-          setUser(newSession?.user ?? null);
-          setIsGuest(false);
-          setLoading(false);
-          
-          // Start session monitoring when user signs in
-          if (event === 'SIGNED_IN' && newSession) {
-            sessionManager.startSessionMonitoring();
-          }
-          
-          // Stop session monitoring when user signs out
-          if (event === 'SIGNED_OUT') {
-            sessionManager.stopSessionMonitoring();
-          }
-          
-          // Handle specific auth events with password reset taking ABSOLUTE priority
-          if (event === 'SIGNED_IN') {
-            console.log("User signed in, checking if redirect needed");
-            
-            // CRITICAL: Absolute priority for password reset flow - NO EXCEPTIONS
-            if (currentPasswordReset) {
-              console.log("PASSWORD RESET FLOW ACTIVE - BLOCKING ALL REDIRECTS");
-              return; // Exit immediately, no further processing
-            }
-            
-            // Only redirect if this is a fresh sign-in (not session restoration)
-            // and user is on an unprotected route
-            const protectedRoutes = ['/mondai', '/settings', '/learn', '/earn', '/connect', '/profile', '/qubes'];
-            const isOnProtectedRoute = protectedRoutes.some(route => location.pathname.startsWith(route));
-            
-            // Only redirect if:
-            // 1. Not initial load (session restoration)
-            // 2. User is on root path or sign-in related pages
-            // 3. Not already on a protected route
-            const unprotectedPaths = ['/', '/signin', '/signup', '/splash'];
-            const isOnUnprotectedPath = unprotectedPaths.includes(location.pathname);
-            
-            if (!isInitialLoad && 
-                isOnUnprotectedPath &&
-                !isOnProtectedRoute) {
-              console.log("Redirecting to MonDAI after fresh sign-in");
-              navigate('/mondai');
-            } else {
-              console.log("Skipping redirect - user already on valid route:", location.pathname);
-            }
-          } else if (event === 'SIGNED_OUT') {
-            console.log("User signed out, session cleared");
-            localStorage.removeItem('guestMode');
-            setIsGuest(false);
-            
-            // Don't redirect if we're in password reset flow
-            if (!currentPasswordReset) {
-              navigate('/signin');
-            } else {
-              console.log("Password reset flow active - not redirecting on sign out");
-            }
-          } else if (event === 'TOKEN_REFRESHED') {
-            console.log("Token refreshed successfully");
-          } else if (event === 'USER_UPDATED') {
-            console.log("User updated");
-          }
-          
-          // Mark that initial load is complete
-          if (isInitialLoad) {
-            setIsInitialLoad(false);
-          }
-        }
-      }
-    );
+    // First set up the auth state listener with debouncing
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(handleAuthStateChange);
 
     // Then check for existing session
     supabase.auth.getSession().then(({ data, error }) => {
@@ -195,15 +232,17 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
           setUser(data.session?.user ?? null);
           setLoading(false);
           
-          // Start session monitoring if user is already signed in
+          // Start session monitoring if user is already signed in (with delay)
           if (data.session) {
-            sessionManager.startSessionMonitoring();
+            setTimeout(() => {
+              sessionManager.startSessionMonitoring();
+            }, 1000);
           }
           
           // Mark initial load as complete after session check
           setTimeout(() => {
             setIsInitialLoad(false);
-          }, 100);
+          }, 200);
         }
       }
     });
@@ -212,8 +251,13 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       mounted = false;
       subscription.unsubscribe();
       sessionManager.stopSessionMonitoring();
+      
+      // Clear debounce timeout
+      if (authStateTimeoutRef.current) {
+        clearTimeout(authStateTimeoutRef.current);
+      }
     };
-  }, [navigate, location.pathname]);
+  }, [handleAuthStateChange, showBraveWarningIfNeeded]);
 
   const signIn = async (email: string, password: string) => {
     console.log("Attempting sign in for:", email);
@@ -252,8 +296,10 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
       setIsGuest(false);
       localStorage.removeItem('guestMode');
       
-      // Start session monitoring
-      sessionManager.startSessionMonitoring();
+      // Start session monitoring with delay
+      setTimeout(() => {
+        sessionManager.startSessionMonitoring();
+      }, 500);
       
       return { error: null, success: true };
     } catch (error) {
@@ -336,15 +382,20 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const signOut = async () => {
     console.log("Signing out");
     try {
-      // Stop session monitoring
+      // Stop session monitoring and clear cache
       sessionManager.stopSessionMonitoring();
+      sessionManager.clearCache();
       
       await supabase.auth.signOut();
       setUser(null);
       setSession(null);
       setIsGuest(false);
       localStorage.removeItem('guestMode');
-      navigate('/signin', { replace: true });
+      
+      // Small delay before redirect
+      setTimeout(() => {
+        navigate('/signin', { replace: true });
+      }, 100);
     } catch (error) {
       console.error("Error during sign out:", error);
       toast.error("Error signing out. Please try again.");
