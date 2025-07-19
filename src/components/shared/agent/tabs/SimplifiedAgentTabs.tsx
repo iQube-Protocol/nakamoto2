@@ -189,8 +189,9 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps> = ({
               onError={handleIframeError}
               className={cn(
                 "border-0 md:rounded-md w-full",
-                isMobile ? "h-[120vh]" : "h-[100vh]"
+                isMobile ? "h-[calc(100vh-120px)]" : "h-[calc(100vh-80px)]"
               )}
+              style={{ marginBottom: isMobile ? '100px' : '60px' }}
             />
           </div>
         </TabsContent>
