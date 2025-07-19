@@ -1,13 +1,15 @@
 
-import { useConversationId } from './useConversationId';
+import { useState, useEffect, useRef, useCallback, useMemo } from 'react';
+import { AgentMessage } from '@/lib/types';
+import { useAuth } from '@/hooks/use-auth';
+import { useUserInteractionsOptimized } from '@/hooks/use-user-interactions-optimized';
 import { useMessageHistory } from './useMessageHistory';
 import { useMessageSubmit } from './useMessageSubmit';
-import { useScrollToBottom } from './useScrollToBottom';
 import { useMessageInput } from './useMessageInput';
-import { useAudioControl } from './useAudioControl';
 import { useMessageState } from './useMessageState';
-import { AgentMessage } from '@/lib/types';
-import { useEffect } from 'react';
+import { useAudioControl } from './useAudioControl';
+import { useScrollToBottom } from './useScrollToBottom';
+import { useConversationId } from './useConversationId';
 
 interface UseAgentMessagesProps {
   agentType: 'learn' | 'earn' | 'connect' | 'mondai';
@@ -22,37 +24,31 @@ export const useAgentMessages = ({
   conversationId: externalConversationId,
   onMessageSubmit
 }: UseAgentMessagesProps) => {
-  // Use message state hook
-  const { messages, setMessages } = useMessageState(initialMessages);
+  const { user } = useAuth();
+  const { refreshInteractions } = useUserInteractionsOptimized(
+    agentType === 'mondai' ? 'learn' : agentType
+  );
   
-  // Use smaller hooks to manage different aspects of functionality
-  const {
-    inputValue, 
-    setInputValue,
-    isProcessing, 
-    setIsProcessing,
-    handleInputChange,
-    handleKeyDown
-  } = useMessageInput();
+  // Memoize initial messages to prevent unnecessary re-renders
+  const memoizedInitialMessages = useMemo(() => initialMessages, [initialMessages]);
   
-  const {
-    playing,
-    handlePlayAudio
-  } = useAudioControl();
-  
+  // State management hooks
+  const { messages, setMessages, isProcessing, setIsProcessing } = useMessageState(memoizedInitialMessages);
+  const { inputValue, setInputValue, handleInputChange, handleKeyDown } = useMessageInput();
+  const { playing, handlePlayAudio } = useAudioControl();
+  const { messagesEndRef } = useScrollToBottom(messages);
   const { conversationId } = useConversationId(externalConversationId);
   
-  // For backend interactions, map 'mondai' to 'learn'
-  const backendAgentType = agentType === 'mondai' ? 'learn' : agentType;
-  
-  const { refreshInteractions } = useMessageHistory(
-    backendAgentType, // Use 'learn' for 'mondai' when accessing backend services
-    initialMessages,
+  // Message history hook (only for non-mondai agents)
+  useMessageHistory(
+    agentType === 'mondai' ? 'learn' : agentType,
+    memoizedInitialMessages,
     setMessages
   );
   
+  // Message submission hook with memoized callback
   const { handleSubmit } = useMessageSubmit(
-    agentType, // Keep the original UI type for frontend display
+    agentType === 'mondai' ? 'learn' : agentType,
     conversationId,
     setMessages,
     setIsProcessing,
@@ -60,20 +56,9 @@ export const useAgentMessages = ({
     refreshInteractions,
     onMessageSubmit
   );
-  
-  const messagesEndRef = useScrollToBottom(messages);
 
-  // Handler for keyboard events (Enter key press)
-  const handleTextareaKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    handleKeyDown(e, handleSubmit);
-  };
-
-  // Effect to scroll to bottom when messages change
-  useEffect(() => {
-    if (messagesEndRef.current) {
-      messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });
-    }
-  }, [messages]);
+  // Memoized handle submit to prevent unnecessary re-renders
+  const memoizedHandleSubmit = useCallback(handleSubmit, [handleSubmit]);
 
   return {
     messages,
@@ -84,8 +69,8 @@ export const useAgentMessages = ({
     messagesEndRef,
     conversationId,
     handleInputChange,
-    handleSubmit,
+    handleSubmit: memoizedHandleSubmit,
     handlePlayAudio,
-    handleKeyDown: handleTextareaKeyDown
+    handleKeyDown
   };
 };

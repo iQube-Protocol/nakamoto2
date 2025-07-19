@@ -1,127 +1,79 @@
 
-import React, { useEffect, useMemo } from 'react';
-import ScoreTooltip from '../ScoreTooltips';
-import { MetaQube } from '@/lib/types';
-import { useVeniceAgent } from '@/hooks/use-venice-agent';
-import { agentQubeData } from '@/components/settings/AgentQubeData';
+import React from 'react';
+import { Badge } from '@/components/ui/badge';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 
 interface ReliabilityIndicatorProps {
-  isProcessing?: boolean;
-  metaQube?: MetaQube;
+  score?: number;
+  level?: 'high' | 'medium' | 'low';
+  showTooltip?: boolean;
 }
 
-const ReliabilityIndicator = ({ isProcessing = false, metaQube }: ReliabilityIndicatorProps) => {
-  const { veniceActivated } = useVeniceAgent();
-  
-  console.log('🔄 ReliabilityIndicator: Component rendered with Venice state:', veniceActivated);
-  
-  // Use useMemo to ensure calculations update when Venice state changes
-  const { effectiveMetaQube, trust, reliability } = useMemo(() => {
-    console.log('⚡ ReliabilityIndicator: useMemo recalculating with Venice state:', veniceActivated);
-    
-    // Use the appropriate agent data based on Venice activation status
-    const effective = metaQube || (veniceActivated ? agentQubeData.nakamotoWithVenice : agentQubeData.nakamotoBase);
-    
-    // Calculate trust and reliability from metaQube data
-    const trustScore = Math.round(((effective["Accuracy-Score"] + effective["Verifiability-Score"]) / 2) * 10) / 10;
-    const reliabilityScore = Math.round(((effective["Accuracy-Score"] + effective["Verifiability-Score"] + (10 - effective["Risk-Score"])) / 3) * 10) / 10;
-    
-    console.log('📊 ReliabilityIndicator: Calculated scores - Trust:', trustScore, 'Reliability:', reliabilityScore);
-    console.log('🔧 ReliabilityIndicator: Using agent data:', veniceActivated ? 'nakamotoWithVenice' : 'nakamotoBase');
-    console.log('📋 ReliabilityIndicator: Agent data values:', effective);
-    
-    return {
-      effectiveMetaQube: effective,
-      trust: trustScore,
-      reliability: reliabilityScore
-    };
-  }, [veniceActivated, metaQube]);
+const ReliabilityIndicator = React.memo(({ 
+  score, 
+  level, 
+  showTooltip = true 
+}: ReliabilityIndicatorProps) => {
+  // Memoize the reliability calculation
+  const reliability = React.useMemo(() => {
+    if (level) return level;
+    if (typeof score === 'number') {
+      if (score >= 0.8) return 'high';
+      if (score >= 0.6) return 'medium';
+      return 'low';
+    }
+    return 'medium';
+  }, [score, level]);
 
-  // Debug logging to track state changes
-  useEffect(() => {
-    console.log('🎯 ReliabilityIndicator: useEffect triggered - Venice:', veniceActivated);
-    console.log('🎯 ReliabilityIndicator: Final Trust score:', trust);
-    console.log('🎯 ReliabilityIndicator: Final Reliability score:', reliability);
-  }, [veniceActivated, trust, reliability]);
+  // Memoize the display values
+  const { color, text, description } = React.useMemo(() => {
+    switch (reliability) {
+      case 'high':
+        return {
+          color: 'bg-green-500',
+          text: 'High Reliability',
+          description: 'This response is based on verified information and has high confidence.'
+        };
+      case 'medium':
+        return {
+          color: 'bg-yellow-500',
+          text: 'Medium Reliability',
+          description: 'This response has moderate confidence. Consider verifying important details.'
+        };
+      case 'low':
+        return {
+          color: 'bg-red-500',
+          text: 'Low Reliability',
+          description: 'This response has low confidence. Please verify the information independently.'
+        };
+    }
+  }, [reliability]);
 
-  // Add a render counter to see if component is actually re-rendering
-  useEffect(() => {
-    console.log('🏁 ReliabilityIndicator: Component mounted/updated at', new Date().toLocaleTimeString());
-  });
+  const indicator = (
+    <Badge variant="outline" className="text-xs">
+      <div className={`w-2 h-2 rounded-full ${color} mr-1`} />
+      {text}
+    </Badge>
+  );
 
-  const getTrustColor = (score: number) => {
-    return score >= 7 
-      ? "bg-green-500/60" 
-      : score >= 4 
-        ? "bg-yellow-500/60" 
-        : "bg-red-500/60";
-  };
-
-  const getReliabilityColor = (score: number) => {
-    return score >= 7 
-      ? "bg-purple-500/60" 
-      : score >= 4 
-        ? "bg-yellow-500/60" 
-        : "bg-red-500/60";
-  };
-
-  // Function to get animation class based on processing state
-  const getAnimationClass = (index: number) => {
-    if (!isProcessing) return "";
-    
-    // Apply staggered animation based on dot index
-    return "animate-pulse transition-all duration-700";
-  };
-
-  // Convert 1-10 scores to 1-5 dots
-  const trustDots = Math.ceil(trust / 2);
-  const reliabilityDots = Math.ceil(reliability / 2);
-
-  console.log('🎨 ReliabilityIndicator: Rendering with trustDots:', trustDots, 'reliabilityDots:', reliabilityDots, 'Venice:', veniceActivated);
+  if (!showTooltip) {
+    return indicator;
+  }
 
   return (
-    <div className="flex items-center gap-6 bg-muted/30 p-2 rounded-md">
-      <div className="flex flex-col items-center">
-        <div className="text-xs text-muted-foreground mb-1">
-          {isProcessing ? "Thinking..." : "Reliability"}
-        </div>
-        <ScoreTooltip type="reliability" score={reliability}>
-          <div className="flex items-center cursor-help">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div 
-                key={i}
-                className={`w-1.5 h-1.5 rounded-full mx-0.5 ${i < reliabilityDots ? getReliabilityColor(reliability) : 'bg-muted'} ${getAnimationClass(i)}`}
-                style={{ 
-                  animationDelay: isProcessing ? `${i * 0.15}s` : '0s',
-                  transition: 'all 300ms ease-in-out'
-                }}
-              />
-            ))}
-          </div>
-        </ScoreTooltip>
-      </div>
-      
-      <div className="flex flex-col items-center">
-        <div className="text-xs text-muted-foreground mb-1">
-          {isProcessing ? "Thinking..." : "Trust"}
-        </div>
-        <ScoreTooltip type="trust" score={trust}>
-          <div className="flex items-center cursor-help">
-            {Array.from({ length: 5 }).map((_, i) => (
-              <div 
-                key={i}
-                className={`w-1.5 h-1.5 rounded-full mx-0.5 ${i < trustDots ? getTrustColor(trust) : 'bg-muted'} ${getAnimationClass(i)}`}
-                style={{ 
-                  animationDelay: isProcessing ? `${i * 0.15}s` : '0s',
-                  transition: 'all 300ms ease-in-out'
-                }}
-              />
-            ))}
-          </div>
-        </ScoreTooltip>
-      </div>
-    </div>
+    <TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          {indicator}
+        </TooltipTrigger>
+        <TooltipContent>
+          <p>{description}</p>
+        </TooltipContent>
+      </Tooltip>
+    </TooltipProvider>
   );
-};
+});
+
+ReliabilityIndicator.displayName = 'ReliabilityIndicator';
 
 export default ReliabilityIndicator;
