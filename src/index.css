@@ -74,23 +74,17 @@
 /* Performance optimizations */
 @layer base {
   /* Optimize scroll performance */
-  * {
-    /* Use transform3d for hardware acceleration */
-    -webkit-transform: translateZ(0);
-    transform: translateZ(0);
+  html {
+    scroll-behavior: smooth;
+    -webkit-overflow-scrolling: touch;
   }
   
-  /* Optimize animations with will-change hints */
+  /* Apply hardware acceleration only to animated elements */
   .animate-spin,
   .animate-pulse,
   .animate-bounce {
     will-change: transform;
-  }
-  
-  /* Fix scroll-linked positioning effects */
-  .scroll-smooth {
-    scroll-behavior: smooth;
-    -webkit-overflow-scrolling: touch;
+    transform: translateZ(0);
   }
   
   /* Optimize text rendering */
@@ -126,7 +120,7 @@
   }
   
   .agent-interface * {
-    /* Optimize repaints */
+    /* Optimize repaints only for elements that need it */
     backface-visibility: hidden;
     -webkit-backface-visibility: hidden;
   }
@@ -141,6 +135,8 @@
       hsl(var(--muted)) 75%);
     background-size: 200% 100%;
     animation: loading 1.5s infinite;
+    /* Apply hardware acceleration only to loading elements */
+    transform: translateZ(0);
   }
   
   @keyframes loading {
