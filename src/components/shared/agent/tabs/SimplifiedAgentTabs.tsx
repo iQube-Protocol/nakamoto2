@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Info, ChevronDown, MessageSquare, BookOpen, Play, Loader2 } from 'lucide-react';
@@ -138,12 +137,12 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps> = ({
         </TabsContent>
 
         <TabsContent value="media" className="h-full m-0 p-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col flex-1 relative">
-          <div className="h-full w-full relative overflow-hidden">
+          <div className="h-full w-full relative overflow-hidden pb-20">
             {/* Loading spinner */}
             {isIframeLoading && (
               <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm z-10">
                 <div className="flex flex-col items-center gap-3">
-                  <Loader2 className="h-8 w-8 animate-spin text-primary" />
+                  <Loader2 className="h-8 w-8 animate-spin text-qrypto-primary" />
                   <p className="text-sm text-muted-foreground">Loading Avatar Creator...</p>
                 </div>
               </div>
@@ -187,11 +186,7 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps> = ({
               allowFullScreen
               onLoad={handleIframeLoad}
               onError={handleIframeError}
-              className={cn(
-                "border-0 md:rounded-md w-full",
-                isMobile ? "h-[calc(100vh-120px)]" : "h-[calc(100vh-80px)]"
-              )}
-              style={{ marginBottom: isMobile ? '100px' : '60px' }}
+              className="border-0 md:rounded-md w-full h-full"
             />
           </div>
         </TabsContent>
