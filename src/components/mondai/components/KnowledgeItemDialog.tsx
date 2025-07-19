@@ -29,7 +29,7 @@ const KnowledgeItemDialog = ({
             {selectedItem?.keywords && selectedItem.keywords.length > 0 && <div className="mb-4 mt-6 p-3 border-l-4 border-blue-400 rounded-r-lg bg-zinc-700">
                 <h4 className="font-medium mb-2 text-indigo-400">Related Keywords:</h4>
                 <div className="flex flex-wrap gap-1">
-                  {selectedItem.keywords.map((keyword: string) => <Badge key={keyword} variant="secondary" className="text-xs bg-blue-100 text-blue-800 hover:bg-blue-200">
+                  {selectedItem.keywords.map((keyword: string) => <Badge key={keyword} variant="secondary" className="text-xs bg-blue-100/30 text-slate-200 hover:bg-blue-200/40 font-normal">
                       {keyword}
                     </Badge>)}
                 </div>
@@ -37,7 +37,7 @@ const KnowledgeItemDialog = ({
             {selectedItem?.connections && selectedItem.connections.length > 0 && <div className="mt-4 p-3 bg-green-50 border-l-4 border-green-400 rounded-r-lg">
                 <h4 className="font-medium mb-2 text-green-800">Connected Concepts:</h4>
                 <div className="flex flex-wrap gap-1">
-                  {selectedItem.connections.map((connection: string) => <Badge key={connection} variant="outline" className="text-xs bg-green-100 text-green-800 border-green-300 hover:bg-green-200">
+                  {selectedItem.connections.map((connection: string) => <Badge key={connection} variant="outline" className="text-xs bg-green-100/30 text-slate-200 border-green-300/40 hover:bg-green-200/40 font-normal">
                       {connection}
                     </Badge>)}
                 </div>
