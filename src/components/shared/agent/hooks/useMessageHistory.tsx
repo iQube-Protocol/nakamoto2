@@ -1,77 +1,33 @@
 
-import { useState, useEffect, useMemo, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 import { AgentMessage } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
-import { useUserInteractionsOptimized } from '@/hooks/use-user-interactions-optimized';
+import { useUserInteractions } from '@/hooks/use-user-interactions';
 
 /**
  * Hook to load and manage message history with enhanced conversational styling
  */
 export const useMessageHistory = (
-  agentType: 'learn' | 'earn' | 'connect',
+  agentType: 'learn' | 'earn' | 'connect', // We'll handle 'mondai' separately in useAgentMessages.tsx
   initialMessages: AgentMessage[] = [],
   setMessages: React.Dispatch<React.SetStateAction<AgentMessage[]>>
 ) => {
   const [isHistoryLoaded, setIsHistoryLoaded] = useState(false);
   const { user } = useAuth();
-  const { interactions, refreshInteractions } = useUserInteractionsOptimized(agentType);
+  const { interactions, refreshInteractions } = useUserInteractions(agentType);
   
-  // Memoize the content processing function to avoid recreating it
-  const processHistoricContent = useCallback((content: string, agentType: string) => {
+  // Process historic content with conversational styling
+  const processHistoricContent = (content: string, agentType: string) => {
+    // Apply the same conversational guidelines to historic responses
     return content
+      // Add theme class for styling
       .replace(/^(.*?)$/gm, (match) => {
         if (match.trim()) {
           return `<div class="historic-response ${agentType}-theme">${match}</div>`;
         }
         return match;
       });
-  }, []);
-  
-  // Memoize the historical messages processing
-  const processedHistoricalMessages = useMemo(() => {
-    if (!interactions || interactions.length === 0) {
-      return [];
-    }
-
-    const historicalMessages: AgentMessage[] = [];
-    
-    interactions.forEach((interaction) => {
-      // Create user message from the query
-      if (interaction.query && interaction.query.trim()) {
-        historicalMessages.push({
-          id: `${interaction.id}-user`,
-          sender: 'user',
-          message: interaction.query,
-          timestamp: interaction.created_at,
-        });
-      }
-      
-      // Create agent message from the response with enhanced styling
-      if (interaction.response && interaction.response.trim()) {
-        const processedResponse = processHistoricContent(interaction.response, agentType);
-        
-        historicalMessages.push({
-          id: `${interaction.id}-agent`,
-          sender: 'agent',
-          message: processedResponse,
-          timestamp: interaction.created_at,
-          metadata: {
-            ...interaction.metadata,
-            historicResponse: true,
-            agentTheme: agentType,
-            enhancedStyling: true
-          }
-        });
-      }
-    });
-    
-    // Sort messages by timestamp to ensure proper chronological order
-    historicalMessages.sort((a, b) => 
-      new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-    );
-    
-    return historicalMessages;
-  }, [interactions, agentType, processHistoricContent]);
+  };
   
   // Load message history from database when component mounts
   useEffect(() => {
@@ -84,11 +40,53 @@ export const useMessageHistory = (
         // Refresh interactions to get the latest data
         await refreshInteractions();
         
-        if (processedHistoricalMessages.length > 0) {
-          console.log(`Loaded ${processedHistoricalMessages.length} historical messages for ${agentType} with enhanced styling`);
+        if (interactions && interactions.length > 0) {
+          // Transform database records into message format - create BOTH user and agent messages
+          const historicalMessages: AgentMessage[] = [];
           
-          // Combine with initial welcome message
-          setMessages([...initialMessages, ...processedHistoricalMessages]);
+          interactions.forEach((interaction) => {
+            // Create user message from the query
+            if (interaction.query && interaction.query.trim()) {
+              historicalMessages.push({
+                id: `${interaction.id}-user`,
+                sender: 'user',
+                message: interaction.query,
+                timestamp: interaction.created_at,
+              });
+            }
+            
+            // Create agent message from the response with enhanced styling
+            if (interaction.response && interaction.response.trim()) {
+              // Process the response content for better conversational display
+              const processedResponse = processHistoricContent(interaction.response, agentType);
+              
+              historicalMessages.push({
+                id: `${interaction.id}-agent`,
+                sender: 'agent',
+                message: processedResponse,
+                timestamp: interaction.created_at,
+                metadata: {
+                  ...interaction.metadata,
+                  historicResponse: true,
+                  agentTheme: agentType,
+                  enhancedStyling: true
+                }
+              });
+            }
+          });
+          
+          // Sort messages by timestamp to ensure proper chronological order
+          historicalMessages.sort((a, b) => 
+            new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
+          );
+          
+          console.log(`Loaded ${historicalMessages.length} historical messages (${interactions.length} interactions) for ${agentType} with enhanced styling`);
+          
+          // Only set messages if we have historical data and haven't loaded before
+          if (historicalMessages.length > 0) {
+            // Combine with initial welcome message
+            setMessages([...initialMessages, ...historicalMessages]);
+          }
         } else {
           console.log(`No historical messages found for ${agentType}`);
         }
@@ -96,15 +94,14 @@ export const useMessageHistory = (
         setIsHistoryLoaded(true);
       } catch (error) {
         console.error('Error loading conversation history:', error);
-        setIsHistoryLoaded(true);
       }
     };
 
     loadConversationHistory();
-  }, [agentType, user, isHistoryLoaded, refreshInteractions, initialMessages, processedHistoricalMessages, setMessages]);
+  }, [agentType, user, interactions, initialMessages, isHistoryLoaded, refreshInteractions, setMessages]);
 
   return { 
     isHistoryLoaded,
-    refreshInteractions: useCallback(() => refreshInteractions(), [refreshInteractions])
+    refreshInteractions
   };
 };

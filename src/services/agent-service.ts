@@ -1,4 +1,3 @@
-
 import { storeUserInteraction } from './user-interaction-service';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -8,13 +7,6 @@ export interface ConversationContextOptions {
   agentType: "learn" | "earn" | "connect" | "mondai";
 }
 
-// Helper function to conditionally log in development
-const devLog = (message: string, ...args: any[]) => {
-  if (process.env.NODE_ENV === 'development') {
-    console.log(message, ...args);
-  }
-};
-
 export const processAgentInteraction = async (
   query: string,
   agentType: 'learn' | 'earn' | 'connect',
@@ -22,7 +14,7 @@ export const processAgentInteraction = async (
   metadata: any = null
 ) => {
   try {
-    devLog(`==== PROCESSING ${agentType} AGENT INTERACTION ====`);
+    console.log(`==== PROCESSING ${agentType} AGENT INTERACTION ====`);
     
     // Get the current user session to ensure we have a user_id
     const { data: { session } } = await supabase.auth.getSession();
@@ -37,7 +29,7 @@ export const processAgentInteraction = async (
     }
     
     const userId = session.user.id;
-    devLog(`Agent interaction: Processing for user ID ${userId}`);
+    console.log(`Agent interaction: Processing for user ID ${userId}`);
     
     // Store the interaction in the database using the service method
     const result = await storeUserInteraction({
@@ -52,7 +44,7 @@ export const processAgentInteraction = async (
       console.error('Failed to store interaction:', result.error);
       
       // Try direct database insert as fallback
-      devLog('Attempting direct database insert as fallback...');
+      console.log('Attempting direct database insert as fallback...');
       const { data: directData, error: directError } = await (supabase as any)
         .from('user_interactions')
         .insert({
@@ -68,7 +60,7 @@ export const processAgentInteraction = async (
         console.error('Direct DB insert also failed:', directError);
         toast.error('Failed to save your conversation history');
       } else {
-        devLog('Direct DB insert succeeded with ID:', directData?.[0]?.id);
+        console.log('Direct DB insert succeeded with ID:', directData?.[0]?.id);
         return {
           success: true,
           response: agentResponse,
@@ -76,7 +68,7 @@ export const processAgentInteraction = async (
         };
       }
     } else {
-      devLog('Interaction stored successfully with ID:', result.data?.id);
+      console.log('Interaction stored successfully with ID:', result.data?.id);
       return {
         success: true,
         response: agentResponse,

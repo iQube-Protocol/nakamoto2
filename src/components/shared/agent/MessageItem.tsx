@@ -3,7 +3,10 @@ import React from 'react';
 import { AgentMessage } from '@/lib/types';
 import MessageContent from './message/MessageContent';
 import MessageMetadata from './message/MessageMetadata';
-import AudioPlayback from './message/AudioPlayback';
+import AgentRecommendations from './message/AgentRecommendations';
+import AgentActivationModal from './AgentActivationModal';
+import { useAgentRecommendations } from './hooks/useAgentRecommendations';
+import { useAgentActivation } from './hooks/useAgentActivation';
 
 interface MessageItemProps {
   message: AgentMessage;
@@ -11,36 +14,65 @@ interface MessageItemProps {
   onPlayAudio: (messageId: string) => void;
 }
 
-const MessageItem = React.memo(({ message, isPlaying, onPlayAudio }: MessageItemProps) => {
-  const isUser = message.sender === 'user';
-  const isSystem = message.sender === 'system';
-  
+const MessageItem = ({ message, isPlaying, onPlayAudio }: MessageItemProps) => {
+  const { recommendations, dismissRecommendation } = useAgentRecommendations(message);
+  const {
+    showActivationModal,
+    selectedAgent,
+    metisActive,
+    handleActivateAgent,
+    handleConfirmPayment,
+    handleActivationComplete,
+    closeActivationModal
+  } = useAgentActivation();
+
+  // Add special styling for system messages
+  const getMessageClass = () => {
+    if (message.sender === 'user') return 'user-message';
+    if (message.sender === 'system') return 'system-message';
+    return 'agent-message';
+  };
+
   return (
-    <div className={`message-item ${isUser ? 'user-message' : isSystem ? 'system-message' : 'agent-message'}`}>
-      <div className="message-content-wrapper">
-        <MessageContent content={message.message} sender={message.sender} />
-        {!isUser && !isSystem && (
-          <div className="message-controls">
-            <AudioPlayback
-              messageId={message.id}
-              isPlaying={isPlaying}
-              onPlayAudio={onPlayAudio}
-            />
+    <div className={getMessageClass()}>
+      <div className="flex">
+        <div className="flex-1">
+          <MessageMetadata 
+            message={message}
+            metisActive={metisActive}
+            isPlaying={isPlaying}
+            onPlayAudio={onPlayAudio}
+          />
+          
+          {/* Apply formatted message content */}
+          <div className={`prose prose-sm max-w-none ${message.sender === 'system' ? 'text-amber-700' : ''}`}>
+            <MessageContent content={message.message} sender={message.sender} />
           </div>
-        )}
+          
+          {/* Agent Recommendations */}
+          <AgentRecommendations
+            showMetisRecommendation={recommendations.showMetisRecommendation}
+            showVeniceRecommendation={recommendations.showVeniceRecommendation}
+            showQryptoRecommendation={recommendations.showQryptoRecommendation}
+            showKNYTRecommendation={recommendations.showKNYTRecommendation}
+            onActivateAgent={handleActivateAgent}
+            onDismissRecommendation={dismissRecommendation}
+          />
+        </div>
       </div>
-      {message.metadata && (
-        <MessageMetadata 
-          message={message} 
-          metisActive={false} 
-          isPlaying={isPlaying} 
-          onPlayAudio={onPlayAudio} 
+      
+      {selectedAgent && (
+        <AgentActivationModal
+          isOpen={showActivationModal}
+          onClose={closeActivationModal}
+          agentName={selectedAgent.name}
+          fee={selectedAgent.fee}
+          onConfirmPayment={handleConfirmPayment}
+          onComplete={handleActivationComplete}
         />
       )}
     </div>
   );
-});
-
-MessageItem.displayName = 'MessageItem';
+};
 
 export default MessageItem;
