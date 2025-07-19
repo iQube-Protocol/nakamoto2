@@ -45,7 +45,6 @@ const AgentHeader = ({ title, description, isProcessing }: AgentHeaderProps) => 
         </ScoreTooltip>
       </div>
       <ReliabilityIndicator 
-        isProcessing={isProcessing} 
         key={`reliability-${veniceActivated}`}
       />
     </div>

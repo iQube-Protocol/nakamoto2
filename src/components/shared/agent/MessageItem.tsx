@@ -18,18 +18,25 @@ const MessageItem = React.memo(({ message, isPlaying, onPlayAudio }: MessageItem
   return (
     <div className={`message-item ${isUser ? 'user-message' : isSystem ? 'system-message' : 'agent-message'}`}>
       <div className="message-content-wrapper">
-        <MessageContent message={message} />
+        <MessageContent content={message.message} sender={message.sender} />
         {!isUser && !isSystem && (
           <div className="message-controls">
             <AudioPlayback
-              message={message}
+              messageId={message.id}
               isPlaying={isPlaying}
               onPlayAudio={onPlayAudio}
             />
           </div>
         )}
       </div>
-      {message.metadata && <MessageMetadata metadata={message.metadata} />}
+      {message.metadata && (
+        <MessageMetadata 
+          message={message} 
+          metisActive={false} 
+          isPlaying={isPlaying} 
+          onPlayAudio={onPlayAudio} 
+        />
+      )}
     </div>
   );
 });

@@ -33,10 +33,10 @@ export const useAgentMessages = ({
   const memoizedInitialMessages = useMemo(() => initialMessages, [initialMessages]);
   
   // State management hooks
-  const { messages, setMessages, isProcessing, setIsProcessing } = useMessageState(memoizedInitialMessages);
-  const { inputValue, setInputValue, handleInputChange, handleKeyDown } = useMessageInput();
+  const { messages, setMessages } = useMessageState(memoizedInitialMessages);
+  const { inputValue, setInputValue, isProcessing, setIsProcessing, handleInputChange, handleKeyDown } = useMessageInput();
   const { playing, handlePlayAudio } = useAudioControl();
-  const { messagesEndRef } = useScrollToBottom(messages);
+  const messagesEndRef = useScrollToBottom(messages);
   const { conversationId } = useConversationId(externalConversationId);
   
   // Message history hook (only for non-mondai agents)
@@ -53,7 +53,7 @@ export const useAgentMessages = ({
     setMessages,
     setIsProcessing,
     setInputValue,
-    refreshInteractions,
+    () => refreshInteractions().then(() => {}),
     onMessageSubmit
   );
 
