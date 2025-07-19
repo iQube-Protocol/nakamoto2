@@ -137,7 +137,7 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps> = ({
         </TabsContent>
 
         <TabsContent value="media" className="h-full m-0 p-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col flex-1 relative">
-          <div className="h-full w-full relative overflow-hidden pb-20">
+          <div className="h-full w-full relative overflow-hidden">
             {/* Loading spinner */}
             {isIframeLoading && (
               <div className="absolute inset-0 flex items-center justify-center bg-background/80 backdrop-blur-sm z-10">
