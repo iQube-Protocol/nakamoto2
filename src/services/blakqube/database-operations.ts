@@ -1,248 +1,128 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { KNYTPersona, QryptoPersona, BlakQube } from '@/lib/types';
-import { sessionManager } from '@/services/session-manager';
-import { toast } from 'sonner';
-
-// Cache for recently fetched persona data
-const personaCache = new Map<string, { data: any; timestamp: number; type: 'knyt' | 'qrypto' }>();
-const CACHE_DURATION = 60000; // 1 minute cache
-
-// Request deduplication
-const pendingRequests = new Map<string, Promise<any>>();
 
 // Determine which persona type to fetch based on the MetaQube identifier
 export const getPersonaType = (metaQubeIdentifier: string): 'knyt' | 'qrypto' => {
   return metaQubeIdentifier === "KNYT Persona iQube" || metaQubeIdentifier === "KNYT Persona" ? 'knyt' : 'qrypto';
 };
 
-/**
- * Optimized session validation wrapper - only validates once per batch of operations
- */
-async function withOptimizedSessionValidation<T>(
-  operation: () => Promise<T>,
-  operationName: string,
-  skipValidation: boolean = false
-): Promise<T> {
-  try {
-    // Skip validation if requested (for batched operations)
-    if (!skipValidation) {
-      const { isValid, error } = await sessionManager.validateSession();
-      
-      if (!isValid) {
-        console.error(`❌ ${operationName}: Session validation failed:`, error);
-        
-        // Try to refresh session once
-        const refreshSuccess = await sessionManager.forceRefreshSession();
-        if (!refreshSuccess) {
-          throw new Error(`Authentication required to ${operationName.toLowerCase()}`);
-        }
-      }
-    }
-
-    // Perform the operation
-    return await operation();
-  } catch (error) {
-    console.error(`❌ Error in ${operationName}:`, error);
-    throw error;
-  }
-}
-
-/**
- * Get cached persona data if available and fresh
- */
-function getCachedPersona(userId: string, type: 'knyt' | 'qrypto'): any | null {
-  const cacheKey = `${userId}-${type}`;
-  const cached = personaCache.get(cacheKey);
-  
-  if (cached && (Date.now() - cached.timestamp) < CACHE_DURATION && cached.type === type) {
-    console.log(`📋 Using cached ${type} persona for user:`, userId);
-    return cached.data;
-  }
-  
-  return null;
-}
-
-/**
- * Cache persona data
- */
-function cachePersona(userId: string, type: 'knyt' | 'qrypto', data: any): void {
-  const cacheKey = `${userId}-${type}`;
-  personaCache.set(cacheKey, {
-    data,
-    timestamp: Date.now(),
-    type
-  });
-}
-
-/**
- * Deduplicate requests to prevent multiple simultaneous fetches
- */
-function deduplicateRequest<T>(key: string, requestFn: () => Promise<T>): Promise<T> {
-  if (pendingRequests.has(key)) {
-    console.log(`🔄 Deduplicating request for key: ${key}`);
-    return pendingRequests.get(key)!;
-  }
-
-  const promise = requestFn().finally(() => {
-    pendingRequests.delete(key);
-  });
-
-  pendingRequests.set(key, promise);
-  return promise;
-}
-
 export const fetchKNYTPersonaFromDB = async (userId: string): Promise<KNYTPersona | null> => {
-  // Check cache first
-  const cached = getCachedPersona(userId, 'knyt');
-  if (cached) return cached;
-
-  // Deduplicate concurrent requests
-  const requestKey = `knyt-${userId}`;
-  return deduplicateRequest(requestKey, async () => {
-    return withOptimizedSessionValidation(async () => {
-      console.log('Fetching KNYT Persona data for user:', userId);
-      
-      const { data, error } = await (supabase as any)
-        .from('knyt_personas')
-        .select('*')
-        .eq('user_id', userId)
-        .single();
-      
-      if (error && error.code !== 'PGRST116') { // PGRST116 = not found
-        console.error('Error fetching KNYT Persona data:', error);
-        if (error.message?.includes('row-level security') || error.message?.includes('policy')) {
-          throw new Error('Access denied: Row-level security policy violation');
-        }
-        return null;
+  try {
+    console.log('Fetching KNYT Persona data for user:', userId);
+    
+    // Verify authentication context before database operation
+    const { data: authData, error: authError } = await supabase.auth.getUser();
+    if (authError || !authData.user) {
+      console.error('❌ Authentication required for database access:', authError);
+      throw new Error('Authentication required to access KNYT persona data');
+    }
+    
+    // Ensure user can only access their own data
+    if (authData.user.id !== userId) {
+      console.error('❌ Access denied: User attempting to access different user data');
+      throw new Error('Access denied: You can only access your own data');
+    }
+    
+    const { data, error } = await (supabase as any)
+      .from('knyt_personas')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+    
+    if (error && error.code !== 'PGRST116') { // PGRST116 = not found
+      console.error('Error fetching KNYT Persona data:', error);
+      // Check for RLS policy violations
+      if (error.message?.includes('row-level security') || error.message?.includes('policy')) {
+        throw new Error('Access denied: Row-level security policy violation');
       }
-      
-      console.log('KNYT Persona data fetched:', data);
-      
-      // Cache the result
-      if (data) {
-        cachePersona(userId, 'knyt', data);
-      }
-      
-      return data as KNYTPersona;
-    }, 'fetchKNYTPersonaFromDB');
-  });
+      return null;
+    }
+    
+    console.log('KNYT Persona data fetched:', data);
+    return data as KNYTPersona;
+  } catch (error) {
+    console.error('Error in fetchKNYTPersonaFromDB:', error);
+    throw error; // Re-throw to allow caller to handle
+  }
 };
 
 export const fetchQryptoPersonaFromDB = async (userId: string): Promise<QryptoPersona | null> => {
-  // Check cache first
-  const cached = getCachedPersona(userId, 'qrypto');
-  if (cached) return cached;
-
-  // Deduplicate concurrent requests
-  const requestKey = `qrypto-${userId}`;
-  return deduplicateRequest(requestKey, async () => {
-    return withOptimizedSessionValidation(async () => {
-      console.log('Fetching Qrypto Persona data for user:', userId);
-      
-      const { data, error } = await (supabase as any)
-        .from('qrypto_personas')
-        .select('*')
-        .eq('user_id', userId)
-        .single();
-      
-      if (error && error.code !== 'PGRST116') { // PGRST116 = not found
-        console.error('Error fetching Qrypto Persona data:', error);
-        if (error.message?.includes('row-level security') || error.message?.includes('policy')) {
-          throw new Error('Access denied: Row-level security policy violation');
-        }
-        return null;
-      }
-      
-      console.log('Qrypto Persona data fetched:', data);
-      
-      // Cache the result
-      if (data) {
-        cachePersona(userId, 'qrypto', data);
-      }
-      
-      return data as QryptoPersona;
-    }, 'fetchQryptoPersonaFromDB');
-  });
-};
-
-/**
- * Batch fetch both personas efficiently
- */
-export const fetchBothPersonas = async (userId: string): Promise<{ knyt: KNYTPersona | null; qrypto: QryptoPersona | null }> => {
-  return withOptimizedSessionValidation(async () => {
-    console.log('Batch fetching both personas for user:', userId);
+  try {
+    console.log('Fetching Qrypto Persona data for user:', userId);
     
-    // Check cache first
-    const cachedKnyt = getCachedPersona(userId, 'knyt');
-    const cachedQrypto = getCachedPersona(userId, 'qrypto');
-    
-    // Only fetch what's not cached
-    const promises: Promise<any>[] = [];
-    
-    if (!cachedKnyt) {
-      promises.push(
-        (supabase as any)
-          .from('knyt_personas')
-          .select('*')
-          .eq('user_id', userId)
-          .single()
-          .then((result: any) => ({ type: 'knyt', ...result }))
-      );
+    // Verify authentication context before database operation
+    const { data: authData, error: authError } = await supabase.auth.getUser();
+    if (authError || !authData.user) {
+      console.error('❌ Authentication required for database access:', authError);
+      throw new Error('Authentication required to access Qrypto persona data');
     }
     
-    if (!cachedQrypto) {
-      promises.push(
-        (supabase as any)
-          .from('qrypto_personas')
-          .select('*')
-          .eq('user_id', userId)
-          .single()
-          .then((result: any) => ({ type: 'qrypto', ...result }))
-      );
+    // Ensure user can only access their own data
+    if (authData.user.id !== userId) {
+      console.error('❌ Access denied: User attempting to access different user data');
+      throw new Error('Access denied: You can only access your own data');
     }
     
-    // Execute remaining fetches in parallel
-    const results = await Promise.allSettled(promises);
+    const { data, error } = await (supabase as any)
+      .from('qrypto_personas')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
     
-    let knytData = cachedKnyt;
-    let qryptoData = cachedQrypto;
-    
-    results.forEach(result => {
-      if (result.status === 'fulfilled' && result.value.data) {
-        if (result.value.type === 'knyt') {
-          knytData = result.value.data;
-          cachePersona(userId, 'knyt', knytData);
-        } else if (result.value.type === 'qrypto') {
-          qryptoData = result.value.data;
-          cachePersona(userId, 'qrypto', qryptoData);
-        }
+    if (error && error.code !== 'PGRST116') { // PGRST116 = not found
+      console.error('Error fetching Qrypto Persona data:', error);
+      // Check for RLS policy violations
+      if (error.message?.includes('row-level security') || error.message?.includes('policy')) {
+        throw new Error('Access denied: Row-level security policy violation');
       }
-    });
+      return null;
+    }
     
-    return { knyt: knytData, qrypto: qryptoData };
-  }, 'fetchBothPersonas');
+    console.log('Qrypto Persona data fetched:', data);
+    return data as QryptoPersona;
+  } catch (error) {
+    console.error('Error in fetchQryptoPersonaFromDB:', error);
+    throw error; // Re-throw to allow caller to handle
+  }
 };
 
 // Legacy function for backward compatibility
 export const fetchBlakQubeFromDB = async (userId: string): Promise<BlakQube | null> => {
   console.warn('fetchBlakQubeFromDB is deprecated. Use fetchKNYTPersonaFromDB or fetchQryptoPersonaFromDB instead.');
   
-  // Use the new batch fetch function
-  const { knyt, qrypto } = await fetchBothPersonas(userId);
+  // Try to fetch from the old blak_qubes table first (if it still exists)
+  try {
+    const { data, error } = await (supabase as any)
+      .from('blak_qubes')
+      .select('*')
+      .eq('user_id', userId)
+      .single();
+    
+    if (data) {
+      return data as BlakQube;
+    }
+  } catch (error) {
+    console.log('Old blak_qubes table not accessible, trying new tables');
+  }
   
-  if (knyt) {
+  // Fallback: try to construct from new tables
+  const knytPersona = await fetchKNYTPersonaFromDB(userId);
+  if (knytPersona) {
+    // Convert KNYT persona to legacy format with all required BlakQube fields
     return {
-      ...knyt,
+      ...knytPersona,
       "Wallets-of-Interest": [], // KNYT doesn't have this field
       "GitHub-Handle": "", // KNYT doesn't have this field
       "Qrypto-ID": "" // KNYT personas don't have Qrypto-ID
     } as BlakQube;
   }
   
-  if (qrypto) {
+  const qryptoPersona = await fetchQryptoPersonaFromDB(userId);
+  if (qryptoPersona) {
+    // Convert Qrypto persona to legacy format with all required BlakQube fields
     return {
-      ...qrypto,
+      ...qryptoPersona,
       "KNYT-ID": "",
       "Phone-Number": "",
       "Age": "",
@@ -270,15 +150,24 @@ export const saveKNYTPersonaToDB = async (
   userId: string,
   personaData: Partial<KNYTPersona>
 ): Promise<boolean> => {
-  return withOptimizedSessionValidation(async () => {
+  try {
     console.log('=== SAVING KNYT PERSONA TO DB ===');
     console.log('📋 User ID:', userId);
     console.log('📋 Persona data to save:', personaData);
     console.log('💰 KNYT-COYN-Owned in data:', personaData["KNYT-COYN-Owned"]);
     
-    // Clear cache for this user
-    const cacheKey = `${userId}-knyt`;
-    personaCache.delete(cacheKey);
+    // Verify authentication context before database operation
+    const { data: authData, error: authError } = await supabase.auth.getUser();
+    if (authError || !authData.user) {
+      console.error('❌ Authentication required for database save:', authError);
+      throw new Error('Authentication required to save KNYT persona data');
+    }
+    
+    // Ensure user can only save their own data
+    if (authData.user.id !== userId) {
+      console.error('❌ Access denied: User attempting to save data for different user');
+      throw new Error('Access denied: You can only save your own data');
+    }
     
     // First try to update existing record
     const { data: updateResult, error: updateError } = await (supabase as any)
@@ -310,6 +199,7 @@ export const saveKNYTPersonaToDB = async (
       
       if (insertError) {
         console.error('❌ Error inserting new KNYT Persona data:', insertError);
+        // Check for RLS policy violations
         if (insertError.message?.includes('row-level security') || insertError.message?.includes('policy')) {
           throw new Error('Access denied: Row-level security policy violation on insert');
         }
@@ -317,6 +207,7 @@ export const saveKNYTPersonaToDB = async (
       }
     } else if (updateError) {
       console.error('❌ Error updating KNYT Persona data:', updateError);
+      // Check for RLS policy violations
       if (updateError.message?.includes('row-level security') || updateError.message?.includes('policy')) {
         throw new Error('Access denied: Row-level security policy violation on update');
       }
@@ -336,27 +227,37 @@ export const saveKNYTPersonaToDB = async (
     } else {
       console.log('✅ Verified saved KNYT Persona data:', verifyData);
       console.log('💰 Verified KNYT-COYN-Owned:', verifyData?.["KNYT-COYN-Owned"]);
-      
-      // Cache the verified data
-      cachePersona(userId, 'knyt', verifyData);
     }
     
     console.log('✅ KNYT Persona data saved successfully');
     console.log('=== KNYT PERSONA SAVE COMPLETE ===');
     return true;
-  }, 'saveKNYTPersonaToDB');
+  } catch (error) {
+    console.error('❌ Error in saveKNYTPersonaToDB:', error);
+    console.log('=== KNYT PERSONA SAVE FAILED ===');
+    return false;
+  }
 };
 
 export const saveQryptoPersonaToDB = async (
   userId: string,
   personaData: Partial<QryptoPersona>
 ): Promise<boolean> => {
-  return withOptimizedSessionValidation(async () => {
+  try {
     console.log('Saving Qrypto Persona data for user:', userId, personaData);
     
-    // Clear cache for this user
-    const cacheKey = `${userId}-qrypto`;
-    personaCache.delete(cacheKey);
+    // Verify authentication context before database operation
+    const { data: authData, error: authError } = await supabase.auth.getUser();
+    if (authError || !authData.user) {
+      console.error('❌ Authentication required for database save:', authError);
+      throw new Error('Authentication required to save Qrypto persona data');
+    }
+    
+    // Ensure user can only save their own data
+    if (authData.user.id !== userId) {
+      console.error('❌ Access denied: User attempting to save data for different user');
+      throw new Error('Access denied: You can only save your own data');
+    }
     
     // First try to update existing record
     const { data: updateResult, error: updateError } = await (supabase as any)
@@ -381,6 +282,7 @@ export const saveQryptoPersonaToDB = async (
       
       if (insertError) {
         console.error('Error inserting new Qrypto Persona data:', insertError);
+        // Check for RLS policy violations
         if (insertError.message?.includes('row-level security') || insertError.message?.includes('policy')) {
           throw new Error('Access denied: Row-level security policy violation on insert');
         }
@@ -388,6 +290,7 @@ export const saveQryptoPersonaToDB = async (
       }
     } else if (updateError) {
       console.error('Error updating Qrypto Persona data:', updateError);
+      // Check for RLS policy violations
       if (updateError.message?.includes('row-level security') || updateError.message?.includes('policy')) {
         throw new Error('Access denied: Row-level security policy violation on update');
       }
@@ -396,7 +299,10 @@ export const saveQryptoPersonaToDB = async (
     
     console.log('Qrypto Persona data saved successfully');
     return true;
-  }, 'saveQryptoPersonaToDB');
+  } catch (error) {
+    console.error('Error in saveQryptoPersonaToDB:', error);
+    return false;
+  }
 };
 
 // Legacy function for backward compatibility
@@ -417,7 +323,7 @@ export const saveBlakQubeToDB = async (
 };
 
 export const fetchUserConnections = async (userId: string) => {
-  return withOptimizedSessionValidation(async () => {
+  try {
     const { data: connections, error: connectionsError } = await (supabase as any)
       .from('user_connections')
       .select('service, connection_data')
@@ -430,5 +336,8 @@ export const fetchUserConnections = async (userId: string) => {
     
     console.log('User connections:', connections);
     return connections;
-  }, 'fetchUserConnections');
+  } catch (error) {
+    console.error('Error in fetchUserConnections:', error);
+    return null;
+  }
 };
