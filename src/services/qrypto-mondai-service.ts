@@ -25,14 +25,26 @@ interface MonDAIResponse {
   };
 }
 
-// Enhanced search terms for better knowledge base matching
-const enhanceSearchQuery = (message: string): string[] => {
+// Enhanced search terms with better topic isolation
+const enhanceSearchQuery = (message: string, conversationThemes: string[] = []): string[] => {
   const baseTerm = message.toLowerCase();
   const enhancedTerms = [baseTerm];
   
-  // Add specific wallet-related enhancement terms
+  console.log(`🔍 MonDAI Search: Enhancing query "${message}" with conversation themes: [${conversationThemes.join(', ')}]`);
+  
+  // Only add metaKnyts terms if the conversation is already about metaKnyts or explicitly mentions it
+  const isMetaKnytsContext = conversationThemes.includes('metaKnyts') || 
+                             conversationThemes.includes('KNYT COYN') ||
+                             baseTerm.includes('metaknyts') || 
+                             baseTerm.includes('knyt');
+  
+  // Only add specific enhancement terms if contextually relevant
   if (baseTerm.includes('wallet') || baseTerm.includes('add') || baseTerm.includes('token')) {
-    enhancedTerms.push('knyt coyn', 'wallet setup', 'contract address', 'metamask', 'coinbase wallet');
+    if (isMetaKnytsContext) {
+      enhancedTerms.push('knyt coyn', 'wallet setup', 'contract address', 'metamask', 'coinbase wallet');
+    } else {
+      enhancedTerms.push('wallet setup', 'metamask', 'coinbase wallet');
+    }
   }
   
   if (baseTerm.includes('knyt') || baseTerm.includes('coyn')) {
@@ -43,6 +55,15 @@ const enhanceSearchQuery = (message: string): string[] => {
     enhancedTerms.push('cryptocomic', 'blockchain gaming', 'nft', 'ecosystem');
   }
   
+  // Don't enhance with unrelated topics
+  if (baseTerm.includes('rune') && !isMetaKnytsContext) {
+    console.log(`🔍 MonDAI Search: Query is about runes, avoiding metaKnyts enhancement`);
+    // Only add rune-specific terms
+    enhancedTerms.push('bitcoin rune', 'btc rune', 'rune protocol');
+    return enhancedTerms.slice(0, 3); // Limit to avoid cross-contamination
+  }
+  
+  console.log(`🔍 MonDAI Search: Enhanced terms: [${enhancedTerms.join(', ')}]`);
   return enhancedTerms;
 };
 
@@ -57,18 +78,21 @@ export async function generateAigentNakamotoResponse(
     
     // Generate conversation ID if not provided
     const currentConversationId = conversationId || crypto.randomUUID();
+    console.log(`🔄 MonDAI: Using conversation ID: ${currentConversationId}`);
     
     // Get conversation memory
     let conversationMemory;
     let memoryContext = '';
+    let conversationThemes: string[] = [];
     
     if (conversationId) {
       try {
         console.log(`🧠 MonDAI: Retrieving conversation memory for ID: ${conversationId}`);
         conversationMemory = await mondaiConversationService.getConversationMemory(conversationId);
         memoryContext = mondaiConversationService.formatMemoryForContext(conversationMemory);
+        conversationThemes = conversationMemory.sessionContext.themes;
         console.log(`🧠 MonDAI: Memory retrieved with ${conversationMemory.recentHistory.length} recent exchanges`);
-        console.log(`🎯 MonDAI: Session themes: ${conversationMemory.sessionContext.themes.join(', ')}`);
+        console.log(`🎯 MonDAI: Session themes: ${conversationThemes.join(', ')}`);
       } catch (error) {
         console.warn('🧠 MonDAI: Failed to retrieve conversation memory:', error);
         conversationMemory = null;
@@ -78,8 +102,8 @@ export async function generateAigentNakamotoResponse(
     // Get metaKnyts knowledge base
     const metaKnytsKB = MetaKnytsKnowledgeBase.getInstance();
     
-    // Enhanced search with multiple terms
-    const searchTerms = enhanceSearchQuery(message);
+    // Enhanced search with conversation context
+    const searchTerms = enhanceSearchQuery(message, conversationThemes);
     console.log(`🔍 MonDAI: Enhanced search terms:`, searchTerms);
     
     let metaKnytsResults: any[] = [];
@@ -111,6 +135,11 @@ export async function generateAigentNakamotoResponse(
       metaKnytsContext = `
 ### metaKnyts Knowledge Base Results
 
+**IMPORTANT CONTEXT AWARENESS:**
+- Current conversation themes: ${conversationThemes.join(', ') || 'None established'}
+- Only use metaKnyts knowledge if relevant to the user's question or conversation context
+- Do not force connections between unrelated topics
+
 **IMPORTANT VISUAL CONTENT PRESERVATION INSTRUCTIONS:**
 - ALWAYS preserve and include ALL mermaid diagrams exactly as written in the knowledge base
 - ALWAYS preserve and include ALL image references and visual guides 
@@ -131,7 +160,7 @@ ${item.content.includes('![') ? '⚠️ CONTAINS IMAGES - MUST PRESERVE ALL IMAG
 `
 ).join('\n')}
 
-**REMINDER: Include ALL visual content (mermaid diagrams, images, code blocks) from the above knowledge base entries in your response.**
+**REMINDER: Only reference this knowledge base if directly relevant to the user's question or established conversation context.**
 `;
     }
     
@@ -218,6 +247,7 @@ ${item.content.includes('![') ? '⚠️ CONTAINS IMAGES - MUST PRESERVE ALL IMAG
     // Update conversation memory after successful response
     if (conversationId) {
       try {
+        console.log(`🧠 MonDAI: Updating conversation memory for ${currentConversationId}`);
         await mondaiConversationService.updateSessionContext(
           currentConversationId, 
           message, 

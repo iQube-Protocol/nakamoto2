@@ -11,15 +11,17 @@ export const useMondAI = () => {
 
   const handleAIMessage = useCallback(async (message: string): Promise<AgentMessage> => {
     try {
-      console.log(`🔄 MonDAI: Processing message with Venice ${veniceActivated ? 'ENABLED' : 'DISABLED'}`);
-      console.log(`🔧 MonDAI: Venice state in useMondAI:`, veniceActivated);
+      console.log(`🔄 MonDAI Hook: Processing message with Venice ${veniceActivated ? 'ENABLED' : 'DISABLED'}`);
+      console.log(`🔧 MonDAI Hook: Venice state in useMondAI:`, veniceActivated);
       
       // Generate conversation ID on first message if not already set
       let currentConversationId = conversationId;
       if (!currentConversationId) {
         currentConversationId = crypto.randomUUID();
         setConversationId(currentConversationId);
-        console.log(`🆕 MonDAI: Generated new conversation ID: ${currentConversationId}`);
+        console.log(`🆕 MonDAI Hook: Generated new conversation ID: ${currentConversationId}`);
+      } else {
+        console.log(`🔄 MonDAI Hook: Using existing conversation ID: ${currentConversationId}`);
       }
       
       const response = await generateAigentNakamotoResponse(
@@ -30,18 +32,19 @@ export const useMondAI = () => {
       
       // Ensure conversation ID is consistent
       if (response.conversationId !== currentConversationId) {
-        console.warn(`⚠️ MonDAI: Conversation ID mismatch. Expected: ${currentConversationId}, Got: ${response.conversationId}`);
+        console.warn(`⚠️ MonDAI Hook: Conversation ID mismatch. Expected: ${currentConversationId}, Got: ${response.conversationId}`);
         setConversationId(response.conversationId);
       }
 
-      console.log(`✅ MonDAI: Response received from ${response.metadata.aiProvider || (veniceActivated ? 'Venice AI' : 'OpenAI')}`);
+      console.log(`✅ MonDAI Hook: Response received from ${response.metadata.aiProvider || (veniceActivated ? 'Venice AI' : 'OpenAI')}`);
       
       if (response.metadata.personaContextUsed) {
-        console.log(`🧠 MonDAI: Personalized response for ${response.metadata.preferredName || 'user'}`);
+        console.log(`🧠 MonDAI Hook: Personalized response for ${response.metadata.preferredName || 'user'}`);
       }
 
       if (response.metadata.conversationMemoryUsed) {
-        console.log(`🧠 MonDAI: Used conversation memory with themes: ${response.metadata.memoryThemes?.join(', ') || 'none'}`);
+        console.log(`🧠 MonDAI Hook: Used conversation memory with themes: ${response.metadata.memoryThemes?.join(', ') || 'none'}`);
+        console.log(`🧠 MonDAI Hook: Memory included ${response.metadata.recentExchangeCount || 0} recent exchanges`);
       }
 
       return {
@@ -52,7 +55,7 @@ export const useMondAI = () => {
         metadata: response.metadata
       };
     } catch (error) {
-      console.error('Error in MonDAI handleAIMessage:', error);
+      console.error('❌ MonDAI Hook: Error in handleAIMessage:', error);
       throw error;
     }
   }, [conversationId, veniceActivated]);
@@ -63,9 +66,10 @@ export const useMondAI = () => {
 
   // Reset conversation (useful for starting fresh conversations)
   const resetConversation = useCallback(() => {
+    const oldConversationId = conversationId;
     setConversationId(null);
-    console.log('🔄 MonDAI: Conversation reset');
-  }, []);
+    console.log(`🔄 MonDAI Hook: Conversation reset from ${oldConversationId} to fresh start`);
+  }, [conversationId]);
 
   return {
     conversationId,

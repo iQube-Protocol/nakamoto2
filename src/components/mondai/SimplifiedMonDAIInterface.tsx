@@ -27,6 +27,8 @@ const SimplifiedMonDAIInterface: React.FC = React.memo(() => {
     const aiProvider = veniceActivated ? "Venice AI" : "OpenAI";
     const memoryStatus = conversationId ? "🧠 **Memory Active** - I can remember our conversation" : "💭 **New Session** - Starting fresh";
     
+    console.log(`🎯 MonDAI Interface: Creating welcome message with memory status: ${memoryStatus}`);
+    
     return {
       id: "1",
       sender: "agent" as const,
@@ -39,10 +41,11 @@ I can help you with:
 • **Narrative elements**: mẹtaKnyts characters (KnowOne, Satoshi Nakamoto, FANG Gang, BAT Pack)
 • **Worldbuilding**: Terra/Digitterra dual reality framework  
 • **Philosophy**: Clean Data principles, decentralized AI governance
+• **Bitcoin & Crypto**: Runes, protocols, blockchain technology
 
 ${conversationId ? "I'll remember our conversation context and can reference our previous discussions naturally." : ""}
 
-Try asking about "metaKnyts", "KnowOne", "Terra and Digitterra", or any crypto/Web3 concept. I'll provide insights from both technical and narrative perspectives with proper citations.
+Try asking about "metaKnyts", "KnowOne", "Terra and Digitterra", "Bitcoin Runes", or any crypto/Web3 concept. I'll provide insights from both technical and narrative perspectives with proper citations.
 
 What would you like to explore today?`,
       timestamp: new Date().toISOString(),
@@ -64,6 +67,8 @@ What would you like to explore today?`,
     if (!interactions || interactions.length === 0) {
       return [];
     }
+
+    console.log(`🎯 MonDAI Interface: Processing ${interactions.length} historical interactions`);
 
     const historicalMessages: AgentMessage[] = [];
     
@@ -91,9 +96,12 @@ What would you like to explore today?`,
     });
     
     // Sort messages by timestamp - memoized to prevent repeated sorting
-    return historicalMessages.sort((a, b) => 
+    const sortedMessages = historicalMessages.sort((a, b) => 
       new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
     );
+    
+    console.log(`🎯 MonDAI Interface: Processed ${sortedMessages.length} historical messages`);
+    return sortedMessages;
   }, [interactions]);
 
   // Add Venice state debugging (only in development)
@@ -110,28 +118,22 @@ What would you like to explore today?`,
       if (!user || isHistoryLoaded) return;
       
       try {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('Loading MonDAI conversation history...');
-        }
+        console.log('🎯 MonDAI Interface: Loading conversation history...');
 
         if (processedHistoricalMessages.length > 0) {
-          if (process.env.NODE_ENV === 'development') {
-            console.log(`Loaded ${processedHistoricalMessages.length} historical messages for MonDAI`);
-          }
+          console.log(`🎯 MonDAI Interface: Loaded ${processedHistoricalMessages.length} historical messages for MonDAI`);
           
           // Start with welcome message, then add history
           setInitialMessages([welcomeMessage, ...processedHistoricalMessages]);
         } else {
           // If no history, just set the welcome message
-          if (process.env.NODE_ENV === 'development') {
-            console.log('No historical messages found for MonDAI');
-          }
+          console.log('🎯 MonDAI Interface: No historical messages found for MonDAI');
           setInitialMessages([welcomeMessage]);
         }
         
         setIsHistoryLoaded(true);
       } catch (error) {
-        console.error('Error loading conversation history:', error);
+        console.error('❌ MonDAI Interface: Error loading conversation history:', error);
         setInitialMessages([welcomeMessage]);
         setIsHistoryLoaded(true);
       }
@@ -145,6 +147,14 @@ What would you like to explore today?`,
     return refreshInteractions();
   }, [refreshInteractions]);
 
+  // Enhanced reset conversation with better logging
+  const handleResetConversation = useCallback(() => {
+    console.log('🔄 MonDAI Interface: User requested conversation reset');
+    resetConversation();
+    // Optionally refresh the page to clear all state
+    // window.location.reload();
+  }, [resetConversation]);
+
   return (
     <div className="h-screen flex flex-col">
       <SimplifiedAgentInterface
@@ -157,7 +167,7 @@ What would you like to explore today?`,
         additionalActions={
           conversationId ? (
             <button
-              onClick={resetConversation}
+              onClick={handleResetConversation}
               className="text-xs text-muted-foreground hover:text-foreground transition-colors"
               title="Start a new conversation (clears memory)"
             >

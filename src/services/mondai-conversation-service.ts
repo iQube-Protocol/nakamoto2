@@ -40,18 +40,22 @@ export class MonDAIConversationService {
    * Retrieve conversation memory for a given conversation ID
    */
   async getConversationMemory(conversationId: string): Promise<ConversationMemory> {
+    console.log(`🧠 MonDAI Memory: Retrieving memory for conversation ${conversationId}`);
+    
     // Check cache first
     if (this.memoryCache.has(conversationId)) {
       const cached = this.memoryCache.get(conversationId)!;
       // Return cached if recent (less than 5 minutes old)
       const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
       if (cached.sessionContext.lastInteraction > fiveMinutesAgo) {
+        console.log(`🧠 MonDAI Memory: Using cached memory with ${cached.recentHistory.length} exchanges`);
         return cached;
       }
     }
 
     const memory = await this.buildConversationMemory(conversationId);
     this.memoryCache.set(conversationId, memory);
+    console.log(`🧠 MonDAI Memory: Built fresh memory with ${memory.recentHistory.length} exchanges`);
     return memory;
   }
 
@@ -59,14 +63,21 @@ export class MonDAIConversationService {
    * Build comprehensive conversation memory from database
    */
   private async buildConversationMemory(conversationId: string): Promise<ConversationMemory> {
+    console.log(`🧠 MonDAI Memory: Building memory for conversation ${conversationId}`);
+    
     // Get recent interactions
     const recentHistory = await this.getRecentHistory(conversationId);
+    console.log(`🧠 MonDAI Memory: Found ${recentHistory.length} recent interactions`);
     
     // Build session context
     const sessionContext = await this.buildSessionContext(conversationId, recentHistory);
+    console.log(`🧠 MonDAI Memory: Session themes: ${sessionContext.themes.join(', ')}`);
     
     // Get long-term summary if available
     const longTermSummary = await this.getLongTermSummary(conversationId);
+    if (longTermSummary) {
+      console.log(`🧠 MonDAI Memory: Found long-term summary`);
+    }
 
     return {
       recentHistory,
@@ -76,24 +87,82 @@ export class MonDAIConversationService {
   }
 
   /**
-   * Get recent conversation history (sliding window)
+   * Get recent conversation history with improved query logic
    */
   private async getRecentHistory(conversationId: string): Promise<ConversationExchange[]> {
     try {
-      const { data: interactions, error } = await supabase
+      console.log(`🧠 MonDAI Memory: Querying recent history for conversation ${conversationId}`);
+      
+      // Try multiple query strategies to find the conversation
+      let interactions: any[] = [];
+      
+      // Strategy 1: Look for conversationId in metadata JSON
+      const { data: metadataQuery, error: metadataError } = await supabase
         .from('user_interactions')
         .select('id, query, response, created_at, metadata')
-        .eq('interaction_type', 'learn') // MonDAI uses 'learn' type
-        .or(`metadata->conversationId.eq."${conversationId}",metadata->>conversationId.eq.${conversationId}`)
+        .eq('interaction_type', 'learn')
+        .contains('metadata', { conversationId })
         .order('created_at', { ascending: false })
         .limit(this.MEMORY_WINDOW_SIZE);
 
-      if (error) {
-        console.error('Error fetching recent history:', error);
-        return [];
+      if (!metadataError && metadataQuery && metadataQuery.length > 0) {
+        interactions = metadataQuery;
+        console.log(`🧠 MonDAI Memory: Found ${interactions.length} interactions via metadata JSON query`);
+      } else {
+        console.log(`🧠 MonDAI Memory: Metadata JSON query failed or returned no results:`, metadataError);
+        
+        // Strategy 2: Look for conversationId as a string in metadata
+        const { data: stringQuery, error: stringError } = await supabase
+          .from('user_interactions')
+          .select('id, query, response, created_at, metadata')
+          .eq('interaction_type', 'learn')
+          .like('metadata', `%${conversationId}%`)
+          .order('created_at', { ascending: false })
+          .limit(this.MEMORY_WINDOW_SIZE);
+
+        if (!stringError && stringQuery && stringQuery.length > 0) {
+          interactions = stringQuery;
+          console.log(`🧠 MonDAI Memory: Found ${interactions.length} interactions via string search`);
+        } else {
+          console.log(`🧠 MonDAI Memory: String search also failed:`, stringError);
+          
+          // Strategy 3: Get most recent interactions for this user as fallback
+          const { data: fallbackQuery, error: fallbackError } = await supabase
+            .from('user_interactions')
+            .select('id, query, response, created_at, metadata')
+            .eq('interaction_type', 'learn')
+            .order('created_at', { ascending: false })
+            .limit(this.MEMORY_WINDOW_SIZE);
+
+          if (!fallbackError && fallbackQuery) {
+            // Filter for this conversation ID in JavaScript
+            interactions = fallbackQuery.filter(interaction => {
+              if (!interaction.metadata) return false;
+              
+              try {
+                const metadata = typeof interaction.metadata === 'string' 
+                  ? JSON.parse(interaction.metadata) 
+                  : interaction.metadata;
+                
+                return metadata.conversationId === conversationId ||
+                       metadata.conversationId === `"${conversationId}"` ||
+                       JSON.stringify(interaction.metadata).includes(conversationId);
+              } catch (e) {
+                return JSON.stringify(interaction.metadata).includes(conversationId);
+              }
+            });
+            
+            console.log(`🧠 MonDAI Memory: Found ${interactions.length} interactions via fallback filtering`);
+          }
+        }
       }
 
-      return (interactions || []).reverse().map(interaction => ({
+      // Log metadata structure for debugging
+      if (interactions.length > 0) {
+        console.log(`🧠 MonDAI Memory: Sample metadata structure:`, interactions[0].metadata);
+      }
+
+      return interactions.reverse().map(interaction => ({
         id: interaction.id,
         userMessage: interaction.query,
         agentResponse: interaction.response,
@@ -101,13 +170,13 @@ export class MonDAIConversationService {
         metadata: interaction.metadata
       }));
     } catch (error) {
-      console.error('Error in getRecentHistory:', error);
+      console.error('🧠 MonDAI Memory: Error in getRecentHistory:', error);
       return [];
     }
   }
 
   /**
-   * Build session context from recent interactions
+   * Build session context from recent interactions with improved topic detection
    */
   private async buildSessionContext(
     conversationId: string, 
@@ -124,6 +193,8 @@ export class MonDAIConversationService {
       ? recentHistory[recentHistory.length - 1].timestamp 
       : new Date().toISOString();
 
+    console.log(`🧠 MonDAI Memory: Session context - Themes: [${themes.join(', ')}], Preferences: ${JSON.stringify(userPreferences)}`);
+
     return {
       conversationId,
       themes,
@@ -134,7 +205,7 @@ export class MonDAIConversationService {
   }
 
   /**
-   * Extract conversation themes from recent history
+   * Extract conversation themes with better topic isolation
    */
   private extractThemes(history: ConversationExchange[]): string[] {
     const themes = new Set<string>();
@@ -142,15 +213,31 @@ export class MonDAIConversationService {
     history.forEach(exchange => {
       const text = (exchange.userMessage + ' ' + exchange.agentResponse).toLowerCase();
       
-      // Detect common crypto/Web3 themes
-      if (text.includes('knyt') || text.includes('coyn')) themes.add('KNYT COYN');
-      if (text.includes('metaknyts') || text.includes('comic')) themes.add('metaKnyts');
-      if (text.includes('wallet') || text.includes('metamask')) themes.add('Wallet Setup');
-      if (text.includes('token') || text.includes('contract')) themes.add('Tokenomics');
-      if (text.includes('blockchain') || text.includes('ethereum')) themes.add('Blockchain');
-      if (text.includes('defi') || text.includes('protocol')) themes.add('DeFi');
-      if (text.includes('nft') || text.includes('character')) themes.add('NFTs');
-      if (text.includes('crypto') || text.includes('bitcoin')) themes.add('Cryptocurrency');
+      // Detect specific topics more precisely
+      if (text.includes('rune') || text.includes('bitcoin rune') || text.includes('btc rune')) {
+        themes.add('Bitcoin Runes');
+      }
+      if (text.includes('knyt') && text.includes('coyn')) {
+        themes.add('KNYT COYN');
+      }
+      if (text.includes('metaknyts') || text.includes('meta knyts')) {
+        themes.add('metaKnyts');
+      }
+      if (text.includes('wallet') && (text.includes('metamask') || text.includes('setup'))) {
+        themes.add('Wallet Setup');
+      }
+      if (text.includes('token') && text.includes('contract')) {
+        themes.add('Smart Contracts');
+      }
+      if (text.includes('blockchain') || text.includes('ethereum')) {
+        themes.add('Blockchain');
+      }
+      if (text.includes('defi') || text.includes('protocol')) {
+        themes.add('DeFi');
+      }
+      if (text.includes('nft') && !text.includes('knyt')) {
+        themes.add('NFTs');
+      }
     });
 
     return Array.from(themes);
@@ -194,6 +281,7 @@ export class MonDAIConversationService {
         .from('conversation_summaries')
         .select('summary_text')
         .eq('conversation_type', 'learn')
+        .like('summary_text', `%${conversationId}%`)
         .order('created_at', { ascending: false })
         .limit(1);
 
@@ -203,25 +291,28 @@ export class MonDAIConversationService {
 
       return summaries[0].summary_text;
     } catch (error) {
-      console.error('Error fetching long-term summary:', error);
+      console.error('🧠 MonDAI Memory: Error fetching long-term summary:', error);
       return undefined;
     }
   }
 
   /**
-   * Format memory for AI context (with length limits)
+   * Format memory for AI context with topic awareness
    */
   formatMemoryForContext(memory: ConversationMemory): string {
     let context = '';
+    console.log(`🧠 MonDAI Memory: Formatting context with ${memory.recentHistory.length} exchanges`);
 
     // Add long-term summary if available
     if (memory.longTermSummary) {
       context += `\n### Previous Conversation Summary\n${memory.longTermSummary}\n`;
     }
 
-    // Add session context
+    // Add session context with clear topic boundaries
     if (memory.sessionContext.themes.length > 0) {
-      context += `\n### Current Session Themes\n${memory.sessionContext.themes.join(', ')}\n`;
+      context += `\n### Current Session Topics\n`;
+      context += `The user has been discussing: ${memory.sessionContext.themes.join(', ')}\n`;
+      context += `Continue to focus on these topics unless the user explicitly changes the subject.\n`;
     }
 
     // Add user preferences
@@ -232,14 +323,18 @@ export class MonDAIConversationService {
       });
     }
 
-    // Add recent conversation history
+    // Add recent conversation history with topic context
     if (memory.recentHistory.length > 0) {
       context += `\n### Recent Conversation History\n`;
+      context += `The following exchanges are from the same conversation session:\n`;
+      
       memory.recentHistory.forEach((exchange, index) => {
         const timestamp = new Date(exchange.timestamp).toLocaleTimeString();
         context += `[${timestamp}] User: ${exchange.userMessage}\n`;
         context += `[${timestamp}] Assistant: ${this.truncateResponse(exchange.agentResponse)}\n\n`;
       });
+      
+      context += `Continue this conversation naturally, building on the established context.\n`;
     }
 
     // Truncate if too long
@@ -247,6 +342,7 @@ export class MonDAIConversationService {
       context = context.substring(0, this.MAX_CONTEXT_LENGTH) + '...\n[Context truncated for length]';
     }
 
+    console.log(`🧠 MonDAI Memory: Generated context with ${context.length} characters`);
     return context;
   }
 
@@ -259,9 +355,46 @@ export class MonDAIConversationService {
   }
 
   /**
+   * Store conversation exchange with proper metadata
+   */
+  async storeConversationExchange(
+    conversationId: string,
+    userMessage: string,
+    agentResponse: string
+  ): Promise<void> {
+    try {
+      console.log(`🧠 MonDAI Memory: Storing exchange for conversation ${conversationId}`);
+      
+      const { error } = await supabase
+        .from('user_interactions')
+        .insert({
+          interaction_type: 'learn',
+          query: userMessage,
+          response: agentResponse,
+          metadata: {
+            conversationId,
+            timestamp: new Date().toISOString(),
+            agentType: 'mondai'
+          }
+        });
+
+      if (error) {
+        console.error('🧠 MonDAI Memory: Error storing conversation exchange:', error);
+      } else {
+        console.log(`🧠 MonDAI Memory: Successfully stored exchange`);
+        // Clear cache to force refresh on next request
+        this.memoryCache.delete(conversationId);
+      }
+    } catch (error) {
+      console.error('🧠 MonDAI Memory: Exception storing conversation exchange:', error);
+    }
+  }
+
+  /**
    * Clear memory cache (useful for testing or memory cleanup)
    */
   clearCache(): void {
+    console.log('🧠 MonDAI Memory: Clearing cache');
     this.memoryCache.clear();
   }
 
@@ -269,6 +402,11 @@ export class MonDAIConversationService {
    * Update session context after new interaction
    */
   async updateSessionContext(conversationId: string, userMessage: string, agentResponse: string): Promise<void> {
+    console.log(`🧠 MonDAI Memory: Updating session context for conversation ${conversationId}`);
+    
+    // Store the exchange first
+    await this.storeConversationExchange(conversationId, userMessage, agentResponse);
+    
     // Remove from cache to force refresh on next request
     this.memoryCache.delete(conversationId);
   }
