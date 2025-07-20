@@ -190,7 +190,9 @@ export const useMessageSubmit = (
           } else {
             console.log('Successfully stored interaction in database');
             // Use query invalidation instead of manual refresh for better performance
-            queryClient.invalidateQueries(['user-interactions', user.id, agentType === 'mondai' ? 'learn' : agentType]);
+            queryClient.invalidateQueries({ 
+              queryKey: ['user-interactions', user.id, agentType === 'mondai' ? 'learn' : agentType] 
+            });
           }
         } catch (error) {
           console.error('Error storing interaction:', error);

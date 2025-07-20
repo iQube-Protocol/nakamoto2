@@ -36,12 +36,8 @@ export const useUserInteractionsOptimized = (
     },
     enabled: !!user,
     staleTime: 5 * 60 * 1000, // 5 minutes
-    cacheTime: 10 * 60 * 1000, // 10 minutes
-    refetchOnWindowFocus: false,
-    onError: (err) => {
-      console.error('Error fetching interactions:', err);
-      toast.error('Failed to load your interaction history');
-    }
+    gcTime: 10 * 60 * 1000, // 10 minutes
+    refetchOnWindowFocus: false
   });
 
   const saveInteraction = async (data: any) => {
@@ -55,14 +51,16 @@ export const useUserInteractionsOptimized = (
     
     if (result.success) {
       // Invalidate and refetch the query
-      queryClient.invalidateQueries(['user-interactions', user?.id, interactionType]);
+      queryClient.invalidateQueries({ 
+        queryKey: ['user-interactions', user?.id, interactionType] 
+      });
     }
     
     return result;
   };
 
-  const refreshInteractions = async () => {
-    return refetch();
+  const refreshInteractions = async (): Promise<void> => {
+    await refetch();
   };
 
   const createTestInteraction = async (type?: 'learn' | 'earn' | 'connect') => {

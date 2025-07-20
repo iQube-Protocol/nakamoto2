@@ -1,10 +1,10 @@
 import React from 'react';
 
 interface ReliabilityIndicatorProps {
-  // Props remain exactly the same for compatibility
+  isProcessing?: boolean;
 }
 
-const ReliabilityIndicatorMemo: React.FC<ReliabilityIndicatorProps> = React.memo(() => {
+const ReliabilityIndicatorMemo: React.FC<ReliabilityIndicatorProps> = React.memo(({ isProcessing }) => {
   // Keep exact same logic and appearance
   const reliability = 'Medium'; // This matches the current display
   

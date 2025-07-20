@@ -23,14 +23,18 @@ const MessageItemMemo: React.FC<MessageItemProps> = React.memo(({ message, isPla
         {!isUser && onPlayAudio && (
           <AudioPlayback
             messageId={message.id}
-            content={message.message}
             isPlaying={isPlaying}
             onPlayAudio={onPlayAudio}
           />
         )}
         
         {message.metadata && (
-          <MessageMetadata metadata={message.metadata} />
+          <MessageMetadata 
+            message={message} 
+            metisActive={false} 
+            isPlaying={isPlaying || false} 
+            onPlayAudio={onPlayAudio || (() => {})} 
+          />
         )}
       </div>
     </div>
