@@ -1,3 +1,5 @@
+// Keep original hook for backward compatibility, but use optimized version internally
+export { useUserInteractionsOptimized as useUserInteractions } from './useUserInteractionsOptimized';
 
 import { useEffect, useState, useCallback } from 'react';
 import { getUserInteractions, storeUserInteraction, InteractionData } from '@/services/user-interaction-service';
@@ -5,7 +7,7 @@ import { useAuth } from './use-auth';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
-export const useUserInteractions = (
+export const useUserInteractionsOriginal = (
   interactionType?: 'learn' | 'earn' | 'connect'
 ) => {
   const [interactions, setInteractions] = useState<any[]>([]);

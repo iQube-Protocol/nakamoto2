@@ -1,4 +1,4 @@
-
+import { useQueryClient } from '@tanstack/react-query';
 import { useMCP } from '@/hooks/use-mcp';
 import { useAuth } from '@/hooks/use-auth';
 import { AgentMessage } from '@/lib/types';
@@ -19,6 +19,7 @@ export const useMessageSubmit = (
 ) => {
   const { user } = useAuth();
   const { client: mcpClient } = useMCP();
+  const queryClient = useQueryClient();
   
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -188,6 +189,8 @@ export const useMessageSubmit = (
             });
           } else {
             console.log('Successfully stored interaction in database');
+            // Use query invalidation instead of manual refresh for better performance
+            queryClient.invalidateQueries(['user-interactions', user.id, agentType === 'mondai' ? 'learn' : agentType]);
           }
         } catch (error) {
           console.error('Error storing interaction:', error);
