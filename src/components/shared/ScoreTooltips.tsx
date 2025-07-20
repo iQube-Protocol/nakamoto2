@@ -56,6 +56,15 @@ const ScoreTooltip = ({ type, score, children }: ScoreTooltipProps) => {
             </div>
           </div>
         );
+      case 'reliability':
+        return (
+          <div className="space-y-1">
+            <div className="font-semibold">Reliability Score: {score}/10</div>
+            <div className="text-xs">
+              Measures the overall reliability and consistency of the agent. Higher scores indicate more reliable performance.
+            </div>
+          </div>
+        );
       case 'dataQube':
         return (
           <div className="space-y-1">
@@ -98,15 +107,6 @@ const ScoreTooltip = ({ type, score, children }: ScoreTooltipProps) => {
             <div className="font-semibold">Attach Files</div>
             <div className="text-xs">
               Click to attach files or documents to your message for context and analysis.
-            </div>
-          </div>
-        );
-      case 'reliability':
-        return (
-          <div className="space-y-1">
-            <div className="font-semibold">Reliability Score: {score}/10</div>
-            <div className="text-xs">
-              Measures the overall reliability and consistency of the data or response. Higher scores indicate more reliable information.
             </div>
           </div>
         );

@@ -1,8 +1,8 @@
 
-import React, { useEffect } from 'react';
+import React, { useEffect, useMemo } from 'react';
 import { Bot, Loader2 } from 'lucide-react';
-import ReliabilityIndicator from './ReliabilityIndicator';
-import ScoreTooltip from '../ScoreTooltips';
+import DotScore from '@/components/shared/DotScore';
+import ScoreTooltip from '@/components/shared/ScoreTooltips';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useVeniceAgent } from '@/hooks/use-venice-agent';
 
@@ -28,6 +28,20 @@ const AgentHeader = ({ title, description, isProcessing }: AgentHeaderProps) => 
   // Use shortened name on mobile for Aigent Nakamoto
   const displayTitle = isMobile && title === "Aigent Nakamoto" ? "Nakamoto" : title;
   
+  // Calculate Trust and Reliability scores based on Venice activation and processing state
+  const { trustScore, reliabilityScore } = useMemo(() => {
+    const baseScore = veniceActivated ? 7.5 : 5.0;
+    const processingPenalty = isProcessing ? 0.5 : 0;
+    
+    const trust = Math.min(10, Math.max(1, baseScore - processingPenalty));
+    const reliability = Math.min(10, Math.max(1, baseScore + (veniceActivated ? 1.0 : 0) - processingPenalty));
+    
+    return {
+      trustScore: Math.round(trust * 10) / 10,
+      reliabilityScore: Math.round(reliability * 10) / 10
+    };
+  }, [veniceActivated, isProcessing]);
+  
   return (
     <div className="p-4 border-b flex justify-between items-start">
       <div>
@@ -44,10 +58,18 @@ const AgentHeader = ({ title, description, isProcessing }: AgentHeaderProps) => 
           </h2>
         </ScoreTooltip>
       </div>
-      <ReliabilityIndicator 
-        isProcessing={isProcessing} 
-        key={`reliability-${veniceActivated}`}
-      />
+      <div className="flex items-center gap-4">
+        <DotScore 
+          value={trustScore} 
+          label="Trust" 
+          type="trust"
+        />
+        <DotScore 
+          value={reliabilityScore} 
+          label="Reliability" 
+          type="reliability"
+        />
+      </div>
     </div>
   );
 };
