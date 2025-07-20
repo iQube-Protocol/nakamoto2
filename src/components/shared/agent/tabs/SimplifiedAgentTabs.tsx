@@ -1,3 +1,4 @@
+
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Info, ChevronDown, MessageSquare, BookOpen, Play } from 'lucide-react';
@@ -45,11 +46,14 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps> = ({
   const isMobile = useIsMobile();
   // State for tabs menu collapse - default to collapsed when media tab is active
   const [tabsCollapsed, setTabsCollapsed] = useState(activeTab === 'media');
+  // Track if media iframe has been initialized to prevent unnecessary renders
+  const [mediaInitialized, setMediaInitialized] = useState(false);
 
   // Update collapse state when activeTab changes to media
   useEffect(() => {
     if (activeTab === 'media') {
       setTabsCollapsed(true);
+      setMediaInitialized(true);
     }
   }, [activeTab]);
 
@@ -61,23 +65,29 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps> = ({
 
   // Convert 'mondai' to 'learn' for KnowledgeBase component
   const knowledgeBaseAgentType = agentType === 'mondai' ? 'learn' : agentType;
-  return <Tabs value={activeTab} onValueChange={v => setActiveTab(v as 'chat' | 'knowledge' | 'media')} className="flex-1 flex flex-col h-full">
+
+  return (
+    <Tabs value={activeTab} onValueChange={v => setActiveTab(v as 'chat' | 'knowledge' | 'media')} className="flex-1 flex flex-col h-full">
       <div className="border-b px-4">
         <div className="flex items-center justify-between">
-          {!tabsCollapsed ? <TabsList className="h-10 gap-0">
+          {!tabsCollapsed ? (
+            <TabsList className="h-10 gap-0">
               <TabsTrigger value="chat" className="data-[state=active]:bg-qrypto-primary/20 px-3">Chat</TabsTrigger>
               <TabsTrigger value="knowledge" className="data-[state=active]:bg-qrypto-primary/20 px-3">Knowledge</TabsTrigger>
               <TabsTrigger value="media" className="data-[state=active]:bg-qrypto-primary/20 px-3">Media</TabsTrigger>
-            </TabsList> : <div className="h-10 flex items-center">
+            </TabsList>
+          ) : (
+            <div className="h-10 flex items-center">
               {activeTab === 'chat' && <MessageSquare className="h-4 w-4 cursor-pointer hover:text-qrypto-primary" onClick={() => setTabsCollapsed(false)} />}
               {activeTab === 'knowledge' && <BookOpen className="h-4 w-4 cursor-pointer hover:text-qrypto-primary" onClick={() => setTabsCollapsed(false)} />}
               {activeTab === 'media' && <Play className="h-4 w-4 cursor-pointer hover:text-qrypto-primary" onClick={() => setTabsCollapsed(false)} />}
-            </div>}
+            </div>
+          )}
           
           <div className="flex items-center gap-6">
             {/* Show Dual Knowledge Base header only when knowledge tab is active and agent is mondai */}
-            {activeTab === 'knowledge' && agentType === 'mondai' && !tabsCollapsed && <div className="flex items-center gap-2">
-                
+            {activeTab === 'knowledge' && agentType === 'mondai' && !tabsCollapsed && (
+              <div className="flex items-center gap-2">
                 <TooltipProvider>
                   <Tooltip>
                     <TooltipTrigger asChild>
@@ -88,7 +98,8 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps> = ({
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
-              </div>}
+              </div>
+            )}
             
             {/* Collapse button */}
             <Button variant="ghost" size="icon" onClick={() => setTabsCollapsed(!tabsCollapsed)} className="h-8 w-8">
@@ -98,7 +109,7 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps> = ({
         </div>
       </div>
 
-      <div className="flex-1 overflow-hidden flex flex-col">
+      <div className="flex-1 overflow-hidden flex flex-col relative">
         <TabsContent value="chat" className="h-full m-0 p-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col flex-1">
           <ChatTab messages={messages} playing={playing} agentType={agentType} messagesEndRef={messagesEndRef} handlePlayAudio={handlePlayAudio} />
         </TabsContent>
@@ -125,13 +136,57 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps> = ({
             />
           </div>
         </TabsContent>
+
+        {/* Persistent iframe for media tab - always mounted but visibility controlled */}
+        {(mediaInitialized || activeTab === 'media') && (
+          <div 
+            className={cn(
+              "absolute inset-0 z-10",
+              activeTab === 'media' ? 'block' : 'hidden'
+            )}
+            style={{ 
+              top: 0,
+              left: 0,
+              right: 0,
+              bottom: 0,
+              padding: isMobile ? '0' : '1rem'
+            }}
+          >
+            <div className="h-full w-full">
+              <iframe 
+                src="https://www.sizzleperks.com/embed/hqusgMObjXJ9" 
+                width="100%" 
+                height="100%" 
+                allow="camera; microphone; display-capture; fullscreen"
+                allowFullScreen
+                style={{
+                  height: isMobile ? '120vh' : '100vh',
+                  maxHeight: '100%',
+                  width: '100%',
+                  maxWidth: '100%'
+                }}
+                className="border-0 md:rounded-md"
+                aria-hidden={activeTab !== 'media'}
+              />
+            </div>
+          </div>
+        )}
       </div>
 
       {/* Input bar moved outside of tabs, always visible with improved mobile support */}
       <div className="mt-auto">
-        <AgentInputBar inputValue={inputValue} handleInputChange={handleInputChange} handleSubmit={handleSubmit} isProcessing={isProcessing} agentType={agentType} handleKeyDown={handleKeyDown} onAfterSubmit={handleAfterSubmit} />
+        <AgentInputBar 
+          inputValue={inputValue} 
+          handleInputChange={handleInputChange} 
+          handleSubmit={handleSubmit} 
+          isProcessing={isProcessing} 
+          agentType={agentType} 
+          handleKeyDown={handleKeyDown} 
+          onAfterSubmit={handleAfterSubmit} 
+        />
       </div>
-    </Tabs>;
+    </Tabs>
+  );
 };
 
 export default SimplifiedAgentTabs;
