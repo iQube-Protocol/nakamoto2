@@ -365,9 +365,13 @@ export class MonDAIConversationService {
     try {
       console.log(`🧠 MonDAI Memory: Storing exchange for conversation ${conversationId}`);
       
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
       const { error } = await supabase
         .from('user_interactions')
         .insert({
+          user_id: user.id,
           interaction_type: 'learn',
           query: userMessage,
           response: agentResponse,
