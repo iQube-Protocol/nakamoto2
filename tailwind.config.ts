@@ -135,13 +135,56 @@ export default {
 					'0%': { backgroundPosition: '0% 50%' },
 					'50%': { backgroundPosition: '100% 50%' },
 					'100%': { backgroundPosition: '0% 50%' }
+				},
+				'dot-wave': {
+					'0%': { 
+						transform: 'scale(1)', 
+						opacity: '1',
+						boxShadow: '0 0 0 0 rgba(139, 92, 246, 0.4)'
+					},
+					'25%': { 
+						transform: 'scale(1.15)', 
+						opacity: '0.9',
+						boxShadow: '0 0 0 2px rgba(139, 92, 246, 0.6)'
+					},
+					'50%': { 
+						transform: 'scale(1.2)', 
+						opacity: '0.8',
+						boxShadow: '0 0 0 3px rgba(139, 92, 246, 0.4)'
+					},
+					'75%': { 
+						transform: 'scale(1.1)', 
+						opacity: '0.9',
+						boxShadow: '0 0 0 1px rgba(139, 92, 246, 0.3)'
+					},
+					'100%': { 
+						transform: 'scale(1)', 
+						opacity: '1',
+						boxShadow: '0 0 0 0 rgba(139, 92, 246, 0)'
+					}
+				},
+				'shimmer-pass': {
+					'0%': { 
+						opacity: '0',
+						transform: 'translateX(-100%)'
+					},
+					'50%': { 
+						opacity: '1',
+						transform: 'translateX(0%)'
+					},
+					'100%': { 
+						opacity: '0',
+						transform: 'translateX(100%)'
+					}
 				}
 			},
 			animation: {
 				'accordion-down': 'accordion-down 0.2s ease-out',
 				'accordion-up': 'accordion-up 0.2s ease-out',
 				'pulse-slow': 'pulse-slow 3s ease-in-out infinite',
-				'gradient-flow': 'gradient-flow 8s ease infinite'
+				'gradient-flow': 'gradient-flow 8s ease infinite',
+				'dot-wave': 'dot-wave 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite',
+				'shimmer-pass': 'shimmer-pass 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite'
 			}
 		}
 	},

@@ -43,6 +43,14 @@ const DotScore = ({ value, label, type, isProcessing = false }: DotScoreProps) =
     }
   };
   
+  const getProcessingAnimationClass = (index: number) => {
+    if (!isProcessing) return '';
+    
+    // Create staggered animation delays for wave effect
+    const delay = index * 200; // 200ms delay between each dot
+    return `animate-dot-wave`;
+  };
+  
   return (
     <div className="flex flex-col items-center">
       <span className="text-xs text-muted-foreground mb-1">{label}</span>
@@ -52,11 +60,24 @@ const DotScore = ({ value, label, type, isProcessing = false }: DotScoreProps) =
             <div
               key={i}
               className={cn(
-                "w-1.5 h-1.5 rounded-full transition-all duration-300",
+                "w-1.5 h-1.5 rounded-full transition-all duration-300 relative",
                 i < dotCount ? getScoreColor() : "bg-gray-400",
-                isProcessing && i < dotCount && "animate-pulse"
+                isProcessing && getProcessingAnimationClass(i)
               )}
-            />
+              style={{
+                animationDelay: isProcessing ? `${i * 200}ms` : '0ms'
+              }}
+            >
+              {/* Shimmer overlay for processing animation */}
+              {isProcessing && (
+                <div 
+                  className="absolute inset-0 rounded-full bg-white/30 animate-shimmer-pass"
+                  style={{
+                    animationDelay: `${i * 200}ms`
+                  }}
+                />
+              )}
+            </div>
           ))}
         </div>
       </ScoreTooltip>
