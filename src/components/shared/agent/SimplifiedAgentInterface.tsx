@@ -17,6 +17,7 @@ interface SimplifiedAgentInterfaceProps {
   onMessageSubmit?: (message: string) => Promise<AgentMessage>;
   onDocumentAdded?: () => void;
   documentContextUpdated?: number;
+  additionalActions?: React.ReactNode;
 }
 
 const SimplifiedAgentInterface = ({
@@ -28,6 +29,7 @@ const SimplifiedAgentInterface = ({
   onMessageSubmit,
   onDocumentAdded,
   documentContextUpdated = 0,
+  additionalActions,
 }: SimplifiedAgentInterfaceProps) => {
   // Get active tab from localStorage or default to 'chat'
   const getInitialTab = () => {
@@ -71,7 +73,8 @@ const SimplifiedAgentInterface = ({
       <AgentHeader 
         title={title} 
         description={description} 
-        isProcessing={isProcessing} 
+        isProcessing={isProcessing}
+        additionalActions={additionalActions}
       />
 
       <div className="flex-1 overflow-hidden">

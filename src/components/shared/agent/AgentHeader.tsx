@@ -10,9 +10,10 @@ interface AgentHeaderProps {
   title: string;
   description: string;
   isProcessing: boolean;
+  additionalActions?: React.ReactNode;
 }
 
-const AgentHeader = ({ title, description, isProcessing }: AgentHeaderProps) => {
+const AgentHeader = ({ title, description, isProcessing, additionalActions }: AgentHeaderProps) => {
   const isMobile = useIsMobile();
   const { veniceActivated } = useVeniceAgent();
   
@@ -58,19 +59,26 @@ const AgentHeader = ({ title, description, isProcessing }: AgentHeaderProps) => 
           </h2>
         </ScoreTooltip>
       </div>
-      <div className="flex items-center gap-4 bg-muted/20 rounded-lg px-3 py-2">
-        <DotScore 
-          value={reliabilityScore} 
-          label="Reliability" 
-          type="reliability"
-          isProcessing={isProcessing}
-        />
-        <DotScore 
-          value={trustScore} 
-          label="Trust" 
-          type="trust"
-          isProcessing={isProcessing}
-        />
+      <div className="flex items-center gap-4">
+        {additionalActions && (
+          <div className="mr-4">
+            {additionalActions}
+          </div>
+        )}
+        <div className="flex items-center gap-4 bg-muted/20 rounded-lg px-3 py-2">
+          <DotScore 
+            value={reliabilityScore} 
+            label="Reliability" 
+            type="reliability"
+            isProcessing={isProcessing}
+          />
+          <DotScore 
+            value={trustScore} 
+            label="Trust" 
+            type="trust"
+            isProcessing={isProcessing}
+          />
+        </div>
       </div>
     </div>
   );
