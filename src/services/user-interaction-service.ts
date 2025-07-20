@@ -1,17 +1,15 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface InteractionData {
   query: string;
   response: string;
-  interactionType: 'learn' | 'earn' | 'connect';
+  interactionType: 'learn' | 'earn' | 'connect' | 'mondai';
   metadata?: any;
-  user_id?: string; // Make user_id optional in the interface as we'll handle it internally
+  user_id?: string;
 }
 
 export const storeUserInteraction = async (data: InteractionData) => {
   try {
-    // Get current user from auth context or session if not provided explicitly
     if (!data.user_id) {
       const { data: { session } } = await supabase.auth.getSession();
       data.user_id = session?.user?.id;
@@ -24,7 +22,6 @@ export const storeUserInteraction = async (data: InteractionData) => {
 
     console.log('Storing interaction for user:', data.user_id, 'type:', data.interactionType);
 
-    // Insert the interaction into the database with type assertion
     const { error, data: insertedData } = await (supabase as any)
       .from('user_interactions')
       .insert({
@@ -49,14 +46,12 @@ export const storeUserInteraction = async (data: InteractionData) => {
   }
 };
 
-// Revised getUserInteractions function with improved database access
 export const getUserInteractions = async (
-  interactionType?: 'learn' | 'earn' | 'connect',
+  interactionType?: 'learn' | 'earn' | 'connect' | 'mondai',
   limit = 50, 
   offset = 0
 ) => {
   try {
-    // Get current user from auth context or session
     const { data: { session } } = await supabase.auth.getSession();
     const user_id = session?.user?.id;
     
@@ -67,7 +62,6 @@ export const getUserInteractions = async (
 
     console.log('DB QUERY: Fetching interactions for user:', user_id, 'type:', interactionType || 'all');
 
-    // Build the query based on whether we're filtering by interaction type
     let query = (supabase as any)
       .from('user_interactions')
       .select('*')
@@ -107,7 +101,6 @@ export const getUserInteractions = async (
 
 export const startUserSession = async () => {
   try {
-    // Get current user from auth context or session
     const { data: { session } } = await supabase.auth.getSession();
     const user_id = session?.user?.id;
     
@@ -144,7 +137,6 @@ export const startUserSession = async () => {
 
 export const endUserSession = async (sessionId: string) => {
   try {
-    // Get current user from auth context or session
     const { data: { session } } = await supabase.auth.getSession();
     const user_id = session?.user?.id;
     

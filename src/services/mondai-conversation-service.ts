@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 
 export interface ConversationMemory {
@@ -93,71 +92,77 @@ export class MonDAIConversationService {
     try {
       console.log(`🧠 MonDAI Memory: Querying recent history for conversation ${conversationId}`);
       
-      // Try multiple query strategies to find the conversation
       let interactions: any[] = [];
       
-      // Strategy 1: Look for conversationId in metadata JSON
-      const { data: metadataQuery, error: metadataError } = await supabase
+      // Strategy 1: Query MonDAI interactions first (new correct way)
+      const { data: mondaiQuery, error: mondaiError } = await supabase
         .from('user_interactions')
         .select('id, query, response, created_at, metadata')
-        .eq('interaction_type', 'learn')
+        .eq('interaction_type', 'mondai')
         .contains('metadata', { conversationId })
         .order('created_at', { ascending: false })
         .limit(this.MEMORY_WINDOW_SIZE);
 
-      if (!metadataError && metadataQuery && metadataQuery.length > 0) {
-        interactions = metadataQuery;
-        console.log(`🧠 MonDAI Memory: Found ${interactions.length} interactions via metadata JSON query`);
+      if (!mondaiError && mondaiQuery && mondaiQuery.length > 0) {
+        interactions = mondaiQuery;
+        console.log(`🧠 MonDAI Memory: Found ${interactions.length} MonDAI interactions`);
       } else {
-        console.log(`🧠 MonDAI Memory: Metadata JSON query failed or returned no results:`, metadataError);
-        
-        // Strategy 2: Look for conversationId as a string in metadata
-        const { data: stringQuery, error: stringError } = await supabase
+        // Strategy 2: Fallback to learn interactions for backward compatibility
+        const { data: learnQuery, error: learnError } = await supabase
           .from('user_interactions')
           .select('id, query, response, created_at, metadata')
           .eq('interaction_type', 'learn')
+          .contains('metadata', { conversationId })
+          .order('created_at', { ascending: false })
+          .limit(this.MEMORY_WINDOW_SIZE);
+
+        if (!learnError && learnQuery && learnQuery.length > 0) {
+          // Filter for MonDAI agent interactions
+          interactions = learnQuery.filter(interaction => {
+            try {
+              const metadata = typeof interaction.metadata === 'string' 
+                ? JSON.parse(interaction.metadata) 
+                : interaction.metadata;
+              return metadata.agentType === 'mondai';
+            } catch (e) {
+              return false;
+            }
+          });
+          console.log(`🧠 MonDAI Memory: Found ${interactions.length} legacy MonDAI interactions in learn type`);
+        }
+      }
+
+      if (interactions.length === 0) {
+        // Strategy 3: String search fallback
+        const { data: fallbackQuery, error: fallbackError } = await supabase
+          .from('user_interactions')
+          .select('id, query, response, created_at, metadata')
+          .or('interaction_type.eq.mondai,interaction_type.eq.learn')
           .like('metadata', `%${conversationId}%`)
           .order('created_at', { ascending: false })
           .limit(this.MEMORY_WINDOW_SIZE);
 
-        if (!stringError && stringQuery && stringQuery.length > 0) {
-          interactions = stringQuery;
-          console.log(`🧠 MonDAI Memory: Found ${interactions.length} interactions via string search`);
-        } else {
-          console.log(`🧠 MonDAI Memory: String search also failed:`, stringError);
-          
-          // Strategy 3: Get most recent interactions for this user as fallback
-          const { data: fallbackQuery, error: fallbackError } = await supabase
-            .from('user_interactions')
-            .select('id, query, response, created_at, metadata')
-            .eq('interaction_type', 'learn')
-            .order('created_at', { ascending: false })
-            .limit(this.MEMORY_WINDOW_SIZE);
-
-          if (!fallbackError && fallbackQuery) {
-            // Filter for this conversation ID in JavaScript
-            interactions = fallbackQuery.filter(interaction => {
-              if (!interaction.metadata) return false;
-              
-              try {
-                const metadata = typeof interaction.metadata === 'string' 
-                  ? JSON.parse(interaction.metadata) 
-                  : interaction.metadata;
-                
-                return metadata.conversationId === conversationId ||
-                       metadata.conversationId === `"${conversationId}"` ||
-                       JSON.stringify(interaction.metadata).includes(conversationId);
-              } catch (e) {
-                return JSON.stringify(interaction.metadata).includes(conversationId);
-              }
-            });
+        if (!fallbackError && fallbackQuery) {
+          interactions = fallbackQuery.filter(interaction => {
+            if (!interaction.metadata) return false;
             
-            console.log(`🧠 MonDAI Memory: Found ${interactions.length} interactions via fallback filtering`);
-          }
+            try {
+              const metadata = typeof interaction.metadata === 'string' 
+                ? JSON.parse(interaction.metadata) 
+                : interaction.metadata;
+              
+              return metadata.conversationId === conversationId ||
+                     metadata.conversationId === `"${conversationId}"` ||
+                     JSON.stringify(interaction.metadata).includes(conversationId);
+            } catch (e) {
+              return JSON.stringify(interaction.metadata).includes(conversationId);
+            }
+          });
+          
+          console.log(`🧠 MonDAI Memory: Found ${interactions.length} interactions via fallback filtering`);
         }
       }
 
-      // Log metadata structure for debugging
       if (interactions.length > 0) {
         console.log(`🧠 MonDAI Memory: Sample metadata structure:`, interactions[0].metadata);
       }
@@ -355,6 +360,198 @@ export class MonDAIConversationService {
   }
 
   /**
+   * Store conversation exchange with proper metadata - NOW USING MONDAI TYPE
+   */
+  async storeConversationExchange(
+    conversationId: string,
+    userMessage: string,
+    agentResponse: string
+  ): Promise<void> {
+    try {
+      console.log(`🧠 MonDAI Memory: Storing exchange for conversation ${conversationId}`);
+      
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error('User not authenticated');
+
+      const { error } = await supabase
+        .from('user_interactions')
+        .insert({
+          user_id: user.id,
+          interaction_type: 'mondai', // Changed from 'learn' to 'mondai'
+          query: userMessage,
+          response: agentResponse,
+          metadata: {
+            conversationId,
+            timestamp: new Date().toISOString(),
+            agentType: 'mondai'
+          }
+        });
+
+      if (error) {
+        console.error('🧠 MonDAI Memory: Error storing conversation exchange:', error);
+      } else {
+        console.log(`🧠 MonDAI Memory: Successfully stored exchange`);
+        this.memoryCache.delete(conversationId);
+      }
+    } catch (error) {
+      console.error('🧠 MonDAI Memory: Exception storing conversation exchange:', error);
+    }
+  }
+
+  /**
+   * Get recent conversation history with improved query logic - NOW SUPPORTS BOTH LEARN AND MONDAI
+   */
+  private async getRecentHistory(conversationId: string): Promise<ConversationExchange[]> {
+    try {
+      console.log(`🧠 MonDAI Memory: Querying recent history for conversation ${conversationId}`);
+      
+      let interactions: any[] = [];
+      
+      // Strategy 1: Query MonDAI interactions first (new correct way)
+      const { data: mondaiQuery, error: mondaiError } = await supabase
+        .from('user_interactions')
+        .select('id, query, response, created_at, metadata')
+        .eq('interaction_type', 'mondai')
+        .contains('metadata', { conversationId })
+        .order('created_at', { ascending: false })
+        .limit(this.MEMORY_WINDOW_SIZE);
+
+      if (!mondaiError && mondaiQuery && mondaiQuery.length > 0) {
+        interactions = mondaiQuery;
+        console.log(`🧠 MonDAI Memory: Found ${interactions.length} MonDAI interactions`);
+      } else {
+        // Strategy 2: Fallback to learn interactions for backward compatibility
+        const { data: learnQuery, error: learnError } = await supabase
+          .from('user_interactions')
+          .select('id, query, response, created_at, metadata')
+          .eq('interaction_type', 'learn')
+          .contains('metadata', { conversationId })
+          .order('created_at', { ascending: false })
+          .limit(this.MEMORY_WINDOW_SIZE);
+
+        if (!learnError && learnQuery && learnQuery.length > 0) {
+          // Filter for MonDAI agent interactions
+          interactions = learnQuery.filter(interaction => {
+            try {
+              const metadata = typeof interaction.metadata === 'string' 
+                ? JSON.parse(interaction.metadata) 
+                : interaction.metadata;
+              return metadata.agentType === 'mondai';
+            } catch (e) {
+              return false;
+            }
+          });
+          console.log(`🧠 MonDAI Memory: Found ${interactions.length} legacy MonDAI interactions in learn type`);
+        }
+      }
+
+      if (interactions.length === 0) {
+        // Strategy 3: String search fallback
+        const { data: fallbackQuery, error: fallbackError } = await supabase
+          .from('user_interactions')
+          .select('id, query, response, created_at, metadata')
+          .or('interaction_type.eq.mondai,interaction_type.eq.learn')
+          .like('metadata', `%${conversationId}%`)
+          .order('created_at', { ascending: false })
+          .limit(this.MEMORY_WINDOW_SIZE);
+
+        if (!fallbackError && fallbackQuery) {
+          interactions = fallbackQuery.filter(interaction => {
+            if (!interaction.metadata) return false;
+            
+            try {
+              const metadata = typeof interaction.metadata === 'string' 
+                ? JSON.parse(interaction.metadata) 
+                : interaction.metadata;
+              
+              return metadata.conversationId === conversationId ||
+                     metadata.conversationId === `"${conversationId}"` ||
+                     JSON.stringify(interaction.metadata).includes(conversationId);
+            } catch (e) {
+              return JSON.stringify(interaction.metadata).includes(conversationId);
+            }
+          });
+          
+          console.log(`🧠 MonDAI Memory: Found ${interactions.length} interactions via fallback filtering`);
+        }
+      }
+
+      if (interactions.length > 0) {
+        console.log(`🧠 MonDAI Memory: Sample metadata structure:`, interactions[0].metadata);
+      }
+
+      return interactions.reverse().map(interaction => ({
+        id: interaction.id,
+        userMessage: interaction.query,
+        agentResponse: interaction.response,
+        timestamp: interaction.created_at,
+        metadata: interaction.metadata
+      }));
+    } catch (error) {
+      console.error('🧠 MonDAI Memory: Error in getRecentHistory:', error);
+      return [];
+    }
+  }
+
+  /**
+   * Format memory for AI context with topic awareness
+   */
+  formatMemoryForContext(memory: ConversationMemory): string {
+    let context = '';
+    console.log(`🧠 MonDAI Memory: Formatting context with ${memory.recentHistory.length} exchanges`);
+
+    // Add long-term summary if available
+    if (memory.longTermSummary) {
+      context += `\n### Previous Conversation Summary\n${memory.longTermSummary}\n`;
+    }
+
+    // Add session context with clear topic boundaries
+    if (memory.sessionContext.themes.length > 0) {
+      context += `\n### Current Session Topics\n`;
+      context += `The user has been discussing: ${memory.sessionContext.themes.join(', ')}\n`;
+      context += `Continue to focus on these topics unless the user explicitly changes the subject.\n`;
+    }
+
+    // Add user preferences
+    if (Object.keys(memory.sessionContext.userPreferences).length > 0) {
+      context += `\n### User Preferences\n`;
+      Object.entries(memory.sessionContext.userPreferences).forEach(([key, value]) => {
+        context += `- ${key}: ${value}\n`;
+      });
+    }
+
+    // Add recent conversation history with topic context
+    if (memory.recentHistory.length > 0) {
+      context += `\n### Recent Conversation History\n`;
+      context += `The following exchanges are from the same conversation session:\n`;
+      
+      memory.recentHistory.forEach((exchange, index) => {
+        const timestamp = new Date(exchange.timestamp).toLocaleTimeString();
+        context += `[${timestamp}] User: ${exchange.userMessage}\n`;
+        context += `[${timestamp}] Assistant: ${this.truncateResponse(exchange.agentResponse)}\n\n`;
+      });
+      
+      context += `Continue this conversation naturally, building on the established context.\n`;
+    }
+
+    // Truncate if too long
+    if (context.length > this.MAX_CONTEXT_LENGTH) {
+      context = context.substring(0, this.MAX_CONTEXT_LENGTH) + '...\n[Context truncated for length]';
+    }
+
+    console.log(`🧠 MonDAI Memory: Generated context with ${context.length} characters`);
+    return context;
+  }
+
+  /**
+   * Truncate long responses for context
+   */
+  private truncateResponse(response: string, maxLength: number = 200): string {
+    if (response.length <= maxLength) return response;
+    return response.substring(0, maxLength) + '...';
+  }
+
+  /**
    * Store conversation exchange with proper metadata
    */
   async storeConversationExchange(
@@ -372,7 +569,7 @@ export class MonDAIConversationService {
         .from('user_interactions')
         .insert({
           user_id: user.id,
-          interaction_type: 'learn',
+          interaction_type: 'mondai',
           query: userMessage,
           response: agentResponse,
           metadata: {
