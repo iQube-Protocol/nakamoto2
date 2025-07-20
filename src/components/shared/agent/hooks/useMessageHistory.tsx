@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { AgentMessage } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
@@ -14,7 +13,7 @@ export const useMessageHistory = (
 ) => {
   const [isHistoryLoaded, setIsHistoryLoaded] = useState(false);
   const { user } = useAuth();
-  const { interactions, refreshInteractions } = useUserInteractions(agentType);
+  const { interactions, refreshInteractions } = useUserInteractions(agentType as any);
   
   const processHistoricContent = (content: string, agentType: string) => {
     return content

@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useKnowledgeBase } from '@/hooks/mcp/useKnowledgeBase';
 import { MetaKnytsKnowledgeBase } from '@/services/metaknyts-knowledge-base/MetaKnytsKnowledgeBase';
 import { PersonaContextService } from '@/services/persona-context-service';
-import { mondaiConversationService } from './mondai-conversation-service';
+import { MonDAIConversationService } from './mondai-conversation-service';
 
 interface MonDAIResponse {
   conversationId: string;
@@ -88,8 +88,9 @@ export async function generateAigentNakamotoResponse(
     if (conversationId) {
       try {
         console.log(`🧠 MonDAI: Retrieving conversation memory for ID: ${conversationId}`);
-        conversationMemory = await mondaiConversationService.getConversationMemory(conversationId);
-        memoryContext = mondaiConversationService.formatMemoryForContext(conversationMemory);
+        const service = MonDAIConversationService.getInstance();
+        conversationMemory = await service.getConversationMemory(conversationId);
+        memoryContext = service.formatMemoryForContext(conversationMemory);
         conversationThemes = conversationMemory.sessionContext.themes;
         console.log(`🧠 MonDAI: Memory retrieved with ${conversationMemory.recentHistory.length} recent exchanges`);
         console.log(`🎯 MonDAI: Session themes: ${conversationThemes.join(', ')}`);
@@ -248,7 +249,8 @@ ${item.content.includes('![') ? '⚠️ CONTAINS IMAGES - MUST PRESERVE ALL IMAG
     if (conversationId) {
       try {
         console.log(`🧠 MonDAI: Updating conversation memory for ${currentConversationId}`);
-        await mondaiConversationService.updateSessionContext(
+        const service = MonDAIConversationService.getInstance();
+        await service.storeConversationExchange(
           currentConversationId, 
           message, 
           data.message

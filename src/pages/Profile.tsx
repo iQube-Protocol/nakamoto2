@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState } from 'react';
 import { useAuth } from '@/hooks/use-auth';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
@@ -21,7 +20,7 @@ const Profile = () => {
   const {
     interactions,
     refreshInteractions
-  } = useUserInteractions(activeTab);
+  } = useUserInteractions(activeTab as any);
 
   useEffect(() => {
     refreshInteractions();
