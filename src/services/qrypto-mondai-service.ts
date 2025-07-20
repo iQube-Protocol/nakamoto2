@@ -1,7 +1,7 @@
 
 import { supabase } from '@/integrations/supabase/client';
 import { useKnowledgeBase } from '@/hooks/mcp/useKnowledgeBase';
-import { MetaKnytsKnowledgeBase } from '@/services/metaknyts-knowledge-base/MetaKnytsKnowledgeBase';
+import { COYNKnowledgeBase } from '@/services/coyn-knowledge-base';
 import { PersonaContextService } from '@/services/persona-context-service';
 import { MonDAIConversationService } from './mondai-conversation-service';
 
@@ -100,45 +100,57 @@ export async function generateAigentNakamotoResponse(
       }
     }
     
-    // Get metaKnyts knowledge base
-    const metaKnytsKB = MetaKnytsKnowledgeBase.getInstance();
+    // Get COYN knowledge base (primary fallback)
+    const coynKB = COYNKnowledgeBase.getInstance();
     
-    // Enhanced search with conversation context
-    const searchTerms = enhanceSearchQuery(message, conversationThemes);
-    console.log(`🔍 MonDAI: Enhanced search terms:`, searchTerms);
+    // Only use knowledge base search if no conversation memory or for specific knowledge requests
+    let knowledgeResults: any[] = [];
+    const needsKnowledgeSearch = !conversationMemory || 
+                                 message.toLowerCase().includes('how to') || 
+                                 message.toLowerCase().includes('what is') ||
+                                 message.toLowerCase().includes('explain') ||
+                                 conversationMemory.recentHistory.length === 0;
     
-    let metaKnytsResults: any[] = [];
-    
-    // Search with each enhanced term and combine results
-    for (const term of searchTerms) {
-      const results = metaKnytsKB.searchKnowledge(term);
-      metaKnytsResults = [...metaKnytsResults, ...results];
+    if (needsKnowledgeSearch) {
+      console.log(`🔍 MonDAI: Using knowledge search because: ${!conversationMemory ? 'no memory' : 'knowledge request detected'}`);
+      
+      // Enhanced search with conversation context
+      const searchTerms = enhanceSearchQuery(message, conversationThemes);
+      console.log(`🔍 MonDAI: Enhanced search terms:`, searchTerms);
+      
+      // Search COYN knowledge base first
+      for (const term of searchTerms) {
+        const results = coynKB.searchKnowledge(term);
+        knowledgeResults = [...knowledgeResults, ...results];
+      }
+      
+      // Remove duplicates based on ID
+      knowledgeResults = knowledgeResults.filter((item, index, self) => 
+        index === self.findIndex(t => t.id === item.id)
+      );
+      
+      console.log(`🔍 MonDAI: Found ${knowledgeResults.length} COYN knowledge items after enhanced search`);
+    } else {
+      console.log(`🧠 MonDAI: Prioritizing conversation memory over knowledge search`);
     }
     
-    // Remove duplicates based on ID
-    metaKnytsResults = metaKnytsResults.filter((item, index, self) => 
-      index === self.findIndex(t => t.id === item.id)
-    );
-    
-    console.log(`🔍 MonDAI: Found ${metaKnytsResults.length} metaKnyts knowledge items after enhanced search`);
-    
     // Log specific items found for debugging
-    metaKnytsResults.forEach((item, index) => {
-      console.log(`📚 MetaKnyts Item ${index + 1}: ${item.title} (ID: ${item.id})`);
+    knowledgeResults.forEach((item, index) => {
+      console.log(`📚 Knowledge Item ${index + 1}: ${item.title} (ID: ${item.id})`);
       if (item.content.includes('mermaid') || item.content.includes('```')) {
         console.log(`🎨 Visual content detected in: ${item.title}`);
       }
     });
     
-    // Build enhanced metaKnyts knowledge context with explicit visual preservation instructions
-    let metaKnytsContext = '';
-    if (metaKnytsResults.length > 0) {
-      metaKnytsContext = `
-### metaKnyts Knowledge Base Results
+    // Build enhanced knowledge context with explicit visual preservation instructions
+    let knowledgeContext = '';
+    if (knowledgeResults.length > 0) {
+      knowledgeContext = `
+### COYN Knowledge Base Results
 
 **IMPORTANT CONTEXT AWARENESS:**
 - Current conversation themes: ${conversationThemes.join(', ') || 'None established'}
-- Only use metaKnyts knowledge if relevant to the user's question or conversation context
+- Only use knowledge base information if relevant to the user's question or conversation context
 - Do not force connections between unrelated topics
 
 **IMPORTANT VISUAL CONTENT PRESERVATION INSTRUCTIONS:**
@@ -147,9 +159,9 @@ export async function generateAigentNakamotoResponse(
 - NEVER summarize or omit visual content - include complete mermaid code blocks
 - When providing wallet setup guides, ALWAYS include the visual diagram and step-by-step images
 
-${metaKnytsResults.slice(0, 5).map((item, index) => 
+${knowledgeResults.slice(0, 5).map((item, index) => 
   `
-[metaKnyts Entry ${index + 1}]
+[Knowledge Entry ${index + 1}]
 Title: ${item.title}
 Section: ${item.section}
 Category: ${item.category}
@@ -192,7 +204,7 @@ ${item.content.includes('![') ? '⚠️ CONTAINS IMAGES - MUST PRESERVE ALL IMAG
         message,
         conversationId: currentConversationId,
         knowledgeItems: kbaiKnowledgeItems,
-        qryptoKnowledgeContext: metaKnytsContext,
+        qryptoKnowledgeContext: knowledgeContext,
         conversationMemory: memoryContext,
         useVenice,
         personaContext: conversationContext,
@@ -208,14 +220,14 @@ ${item.content.includes('![') ? '⚠️ CONTAINS IMAGES - MUST PRESERVE ALL IMAG
     // Validate response for visual content
     const responseHasMermaid = data.message.includes('```mermaid');
     const responseHasImages = data.message.includes('![') || data.message.includes('src=');
-    const knowledgeHadVisuals = metaKnytsResults.some(item => 
+    const knowledgeHadVisuals = knowledgeResults.some(item => 
       item.content.includes('mermaid') || item.content.includes('![')
     );
     
     if (knowledgeHadVisuals && !responseHasMermaid && !responseHasImages) {
       console.warn('⚠️ MonDAI: Visual content was in knowledge base but missing from response');
       console.log('🔍 MonDAI: Knowledge items with visuals:', 
-        metaKnytsResults.filter(item => 
+        knowledgeResults.filter(item => 
           item.content.includes('mermaid') || item.content.includes('![')
         ).map(item => item.title)
       );
@@ -226,11 +238,11 @@ ${item.content.includes('![') ? '⚠️ CONTAINS IMAGES - MUST PRESERVE ALL IMAG
     console.log(`🎨 MonDAI: Visual content in response - Mermaid: ${responseHasMermaid}, Images: ${responseHasImages}`);
     
     // Enhance metadata with memory information
-    if (metaKnytsResults.length > 0) {
-      data.metadata.metaKnytsItemsFound = metaKnytsResults.length;
-      data.metadata.knowledgeSource = data.metadata.knowledgeSource.includes('metaKnyts') 
+    if (knowledgeResults.length > 0) {
+      data.metadata.coynItemsFound = knowledgeResults.length;
+      data.metadata.knowledgeSource = data.metadata.knowledgeSource.includes('COYN') 
         ? data.metadata.knowledgeSource 
-        : `metaKnyts Knowledge Base + ${data.metadata.knowledgeSource}`;
+        : `COYN Knowledge Base + ${data.metadata.knowledgeSource}`;
       
       // Enhanced visual content detection
       data.metadata.visualsProvided = responseHasMermaid || responseHasImages;
