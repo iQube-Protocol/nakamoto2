@@ -58,16 +58,16 @@ const AgentHeader = ({ title, description, isProcessing }: AgentHeaderProps) => 
           </h2>
         </ScoreTooltip>
       </div>
-      <div className="flex items-center gap-4">
-        <DotScore 
-          value={trustScore} 
-          label="Trust" 
-          type="trust"
-        />
+      <div className="flex items-center gap-4 bg-muted/20 rounded-lg px-3 py-2">
         <DotScore 
           value={reliabilityScore} 
           label="Reliability" 
           type="reliability"
+        />
+        <DotScore 
+          value={trustScore} 
+          label="Trust" 
+          type="trust"
         />
       </div>
     </div>
