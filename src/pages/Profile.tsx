@@ -91,7 +91,7 @@ const Profile = () => {
                 Learn
               </button>
               <button onClick={() => setActiveTab('mondai')} className={`px-3 py-1 rounded transition-colors ${activeTab === 'mondai' ? 'bg-qrypto-primary text-white' : 'bg-muted hover:bg-muted/80'}`}>
-                MonDAI
+                Nakamoto
               </button>
               <button onClick={() => setActiveTab('earn')} className={`px-3 py-1 rounded transition-colors ${activeTab === 'earn' ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'}`}>
                 Earn
