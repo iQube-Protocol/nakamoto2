@@ -89,6 +89,20 @@ const DiagramErrorHandler: React.FC<DiagramErrorHandlerProps> = ({ error, code, 
     onRetry(simple);
   };
   
+  // Don't render error UI for syntax errors - auto-fix instead
+  if (errorMessage.includes('Syntax error') || errorMessage.includes('Parse error')) {
+    // Auto-fix the diagram immediately without showing error to user
+    React.useEffect(() => {
+      handleAutoFix();
+    }, []);
+    
+    return (
+      <div className="p-2 rounded border border-yellow-200 bg-yellow-50 mt-2 text-xs text-yellow-600">
+        <span>Optimizing diagram...</span>
+      </div>
+    );
+  }
+
   return (
     <div className="p-3 rounded border border-red-300 bg-red-50 mt-2" data-testid="diagram-error">
       <div className="flex items-start">
