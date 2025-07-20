@@ -85,6 +85,12 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
   
   // Render diagram when code changes or component mounts
   useEffect(() => {
+    if (!currentCode || currentCode.trim() === '') {
+      setError(new Error("Empty diagram code"));
+      setIsLoading(false);
+      return;
+    }
+
     let isMounted = true;
     let timeoutId: number | null = null;
     
@@ -100,10 +106,15 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
           setError(new Error("Rendering timeout - diagram may be too complex"));
           setIsLoading(false);
         }
-      }, 5000);
+      }, 8000); // Reduced timeout for better UX
       
       try {
         console.log(`Rendering diagram (ID: ${id}) with code:`, currentCode);
+        
+        // Basic validation to catch obvious syntax errors
+        if (!currentCode.match(/^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph)/i)) {
+          throw new Error("Invalid diagram type or syntax");
+        }
         
         // Get mermaid instance
         const mermaid = await getMermaid();
@@ -245,15 +256,21 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
     );
   }
   
-  // Display error state
+  // Display error state with fallback content
   if (error) {
     return (
-      <DiagramErrorHandler 
-        error={error}
-        code={currentCode}
-        id={id}
-        onRetry={handleRetry}
-      />
+      <div className="my-4">
+        <DiagramErrorHandler 
+          error={error}
+          code={currentCode}
+          id={id}
+          onRetry={handleRetry}
+        />
+        {/* Fallback content to prevent complete failure */}
+        <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-700">
+          <strong>Diagram Preview Unavailable:</strong> The content contains a diagram that couldn't be rendered. Please use the error handler above to troubleshoot.
+        </div>
+      </div>
     );
   }
   
@@ -262,7 +279,7 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
     return (
       <div className="my-4 p-3 bg-gray-50 rounded border border-gray-300">
         <p className="text-xs font-medium mb-1">Diagram code:</p>
-        <pre className="text-xs overflow-auto p-2 bg-gray-100 rounded">{currentCode}</pre>
+        <pre className="text-xs overflow-auto p-2 bg-gray-100 rounded max-h-40">{currentCode}</pre>
         <button 
           type="button"
           className="mt-2 text-xs border border-blue-300 rounded px-2 py-1 hover:bg-blue-50"

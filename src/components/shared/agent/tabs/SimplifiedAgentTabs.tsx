@@ -118,27 +118,12 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps> = ({
           {agentType === 'mondai' ? <IQubesKnowledgeBase /> : <KnowledgeBase agentType={knowledgeBaseAgentType} />}
         </TabsContent>
 
-        <TabsContent value="media" className="h-full m-0 p-4 md:p-4 p-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col flex-1">
-          <div className="h-full w-full">
-            <iframe 
-              src="https://www.sizzleperks.com/embed/hqusgMObjXJ9" 
-              width="100%" 
-              height="100%" 
-              allow="camera; microphone; display-capture; fullscreen"
-              allowFullScreen
-              style={{
-                height: isMobile ? '120vh' : '100vh',
-                maxHeight: '100%',
-                width: '100%',
-                maxWidth: '100%'
-              }}
-              className="border-0 md:rounded-md" 
-            />
-          </div>
+        <TabsContent value="media" className="h-full m-0 p-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col flex-1">
+          {/* Empty content - iframe is handled by persistent container below */}
         </TabsContent>
 
         {/* Persistent iframe for media tab - always mounted but visibility controlled */}
-        {(mediaInitialized || activeTab === 'media') && (
+        {mediaInitialized && (
           <div 
             className={cn(
               "absolute inset-0 z-10",
@@ -163,9 +148,11 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps> = ({
                   height: isMobile ? '120vh' : '100vh',
                   maxHeight: '100%',
                   width: '100%',
-                  maxWidth: '100%'
+                  maxWidth: '100%',
+                  border: 'none',
+                  outline: 'none'
                 }}
-                className="border-0 md:rounded-md"
+                className="border-0"
                 aria-hidden={activeTab !== 'media'}
               />
             </div>
