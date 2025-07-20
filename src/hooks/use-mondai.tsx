@@ -14,14 +14,23 @@ export const useMondAI = () => {
       console.log(`🔄 MonDAI: Processing message with Venice ${veniceActivated ? 'ENABLED' : 'DISABLED'}`);
       console.log(`🔧 MonDAI: Venice state in useMondAI:`, veniceActivated);
       
+      // Generate conversation ID on first message if not already set
+      let currentConversationId = conversationId;
+      if (!currentConversationId) {
+        currentConversationId = crypto.randomUUID();
+        setConversationId(currentConversationId);
+        console.log(`🆕 MonDAI: Generated new conversation ID: ${currentConversationId}`);
+      }
+      
       const response = await generateAigentNakamotoResponse(
         message, 
-        conversationId,
+        currentConversationId,
         veniceActivated // Pass Venice toggle state
       );
       
-      // Update conversation ID if it was generated
-      if (!conversationId) {
+      // Ensure conversation ID is consistent
+      if (response.conversationId !== currentConversationId) {
+        console.warn(`⚠️ MonDAI: Conversation ID mismatch. Expected: ${currentConversationId}, Got: ${response.conversationId}`);
         setConversationId(response.conversationId);
       }
 
@@ -29,6 +38,10 @@ export const useMondAI = () => {
       
       if (response.metadata.personaContextUsed) {
         console.log(`🧠 MonDAI: Personalized response for ${response.metadata.preferredName || 'user'}`);
+      }
+
+      if (response.metadata.conversationMemoryUsed) {
+        console.log(`🧠 MonDAI: Used conversation memory with themes: ${response.metadata.memoryThemes?.join(', ') || 'none'}`);
       }
 
       return {
@@ -48,10 +61,17 @@ export const useMondAI = () => {
     setDocumentUpdates(prev => prev + 1);
   }, []);
 
+  // Reset conversation (useful for starting fresh conversations)
+  const resetConversation = useCallback(() => {
+    setConversationId(null);
+    console.log('🔄 MonDAI: Conversation reset');
+  }, []);
+
   return {
     conversationId,
     documentUpdates,
     handleAIMessage,
     handleDocumentContextUpdated,
+    resetConversation,
   };
 };

@@ -3,6 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { useKnowledgeBase } from '@/hooks/mcp/useKnowledgeBase';
 import { MetaKnytsKnowledgeBase } from '@/services/metaknyts-knowledge-base/MetaKnytsKnowledgeBase';
 import { PersonaContextService } from '@/services/persona-context-service';
+import { mondaiConversationService } from './mondai-conversation-service';
 
 interface MonDAIResponse {
   conversationId: string;
@@ -18,6 +19,8 @@ interface MonDAIResponse {
     aiProvider?: string;
     personaContextUsed?: boolean;
     preferredName?: string;
+    conversationMemoryUsed?: boolean;
+    memoryThemes?: string[];
     [key: string]: any;
   };
 }
@@ -51,6 +54,26 @@ export async function generateAigentNakamotoResponse(
   try {
     console.log(`🔄 MonDAI: Processing message with Venice ${useVenice ? 'ENABLED' : 'DISABLED'}`);
     console.log(`🔍 MonDAI: Original query: "${message}"`);
+    
+    // Generate conversation ID if not provided
+    const currentConversationId = conversationId || crypto.randomUUID();
+    
+    // Get conversation memory
+    let conversationMemory;
+    let memoryContext = '';
+    
+    if (conversationId) {
+      try {
+        console.log(`🧠 MonDAI: Retrieving conversation memory for ID: ${conversationId}`);
+        conversationMemory = await mondaiConversationService.getConversationMemory(conversationId);
+        memoryContext = mondaiConversationService.formatMemoryForContext(conversationMemory);
+        console.log(`🧠 MonDAI: Memory retrieved with ${conversationMemory.recentHistory.length} recent exchanges`);
+        console.log(`🎯 MonDAI: Session themes: ${conversationMemory.sessionContext.themes.join(', ')}`);
+      } catch (error) {
+        console.warn('🧠 MonDAI: Failed to retrieve conversation memory:', error);
+        conversationMemory = null;
+      }
+    }
     
     // Get metaKnyts knowledge base
     const metaKnytsKB = MetaKnytsKnowledgeBase.getInstance();
@@ -133,13 +156,14 @@ ${item.content.includes('![') ? '⚠️ CONTAINS IMAGES - MUST PRESERVE ALL IMAG
       console.log(`👤 MonDAI: Preferred name: ${conversationContext.preferredName}`);
     }
     
-    // Call the edge function
+    // Call the edge function with conversation memory
     const { data, error } = await supabase.functions.invoke('mondai-ai', {
       body: {
         message,
-        conversationId,
+        conversationId: currentConversationId,
         knowledgeItems: kbaiKnowledgeItems,
         qryptoKnowledgeContext: metaKnytsContext,
+        conversationMemory: memoryContext,
         useVenice,
         personaContext: conversationContext,
         contextualPrompt
@@ -171,6 +195,7 @@ ${item.content.includes('![') ? '⚠️ CONTAINS IMAGES - MUST PRESERVE ALL IMAG
     console.log(`📊 MonDAI: Knowledge sources used: ${data.metadata.knowledgeSource}`);
     console.log(`🎨 MonDAI: Visual content in response - Mermaid: ${responseHasMermaid}, Images: ${responseHasImages}`);
     
+    // Enhance metadata with memory information
     if (metaKnytsResults.length > 0) {
       data.metadata.metaKnytsItemsFound = metaKnytsResults.length;
       data.metadata.knowledgeSource = data.metadata.knowledgeSource.includes('metaKnyts') 
@@ -181,6 +206,26 @@ ${item.content.includes('![') ? '⚠️ CONTAINS IMAGES - MUST PRESERVE ALL IMAG
       data.metadata.visualsProvided = responseHasMermaid || responseHasImages;
       data.metadata.mermaidDiagramIncluded = responseHasMermaid;
       data.metadata.imagesIncluded = responseHasImages;
+    }
+
+    // Add memory metadata
+    if (conversationMemory) {
+      data.metadata.conversationMemoryUsed = true;
+      data.metadata.memoryThemes = conversationMemory.sessionContext.themes;
+      data.metadata.recentExchangeCount = conversationMemory.recentHistory.length;
+    }
+
+    // Update conversation memory after successful response
+    if (conversationId) {
+      try {
+        await mondaiConversationService.updateSessionContext(
+          currentConversationId, 
+          message, 
+          data.message
+        );
+      } catch (error) {
+        console.warn('🧠 MonDAI: Failed to update session context:', error);
+      }
     }
 
     return data;
