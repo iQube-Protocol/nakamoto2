@@ -63,11 +63,13 @@ const AgentHeader = ({ title, description, isProcessing }: AgentHeaderProps) => 
           value={reliabilityScore} 
           label="Reliability" 
           type="reliability"
+          isProcessing={isProcessing}
         />
         <DotScore 
           value={trustScore} 
           label="Trust" 
           type="trust"
+          isProcessing={isProcessing}
         />
       </div>
     </div>

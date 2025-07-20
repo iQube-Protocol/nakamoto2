@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Info, ChevronDown, MessageSquare, BookOpen, Play } from 'lucide-react';
@@ -11,6 +10,7 @@ import IQubesKnowledgeBase from '@/components/mondai/iQubesKnowledgeBase';
 import AgentInputBar from '../AgentInputBar';
 import { AgentMessage } from '@/lib/types';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { iframeSessionManager } from '@/services/iframe-session-manager';
 
 interface SimplifiedAgentTabsProps {
   activeTab: 'chat' | 'knowledge' | 'media';
@@ -46,16 +46,20 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps> = ({
   const isMobile = useIsMobile();
   // State for tabs menu collapse - default to collapsed when media tab is active
   const [tabsCollapsed, setTabsCollapsed] = useState(activeTab === 'media');
-  // Track if media iframe has been initialized to prevent unnecessary renders
-  const [mediaInitialized, setMediaInitialized] = useState(false);
+  // Use global iframe session manager instead of local state
+  const [mediaInitialized, setMediaInitialized] = useState(iframeSessionManager.isMediaInitialized());
 
   // Update collapse state when activeTab changes to media
   useEffect(() => {
     if (activeTab === 'media') {
       setTabsCollapsed(true);
-      setMediaInitialized(true);
+      // Update global state when media tab is accessed
+      if (!mediaInitialized) {
+        iframeSessionManager.setMediaInitialized(true);
+        setMediaInitialized(true);
+      }
     }
-  }, [activeTab]);
+  }, [activeTab, mediaInitialized]);
 
   // Function to handle tab switching after form submission
   const handleAfterSubmit = () => {
@@ -122,7 +126,7 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps> = ({
           {/* Empty content - iframe is handled by persistent container below */}
         </TabsContent>
 
-        {/* Persistent iframe for media tab - always mounted but visibility controlled */}
+        {/* Persistent iframe for media tab - always mounted but visibility controlled using global state */}
         {mediaInitialized && (
           <div 
             className={cn(

@@ -7,9 +7,10 @@ interface DotScoreProps {
   value: number;
   label: string;
   type: 'risk' | 'sensitivity' | 'trust' | 'accuracy' | 'verifiability' | 'reliability';
+  isProcessing?: boolean;
 }
 
-const DotScore = ({ value, label, type }: DotScoreProps) => {
+const DotScore = ({ value, label, type, isProcessing = false }: DotScoreProps) => {
   const dotCount = Math.ceil(value / 2);
   const maxDots = 5;
   
@@ -51,8 +52,9 @@ const DotScore = ({ value, label, type }: DotScoreProps) => {
             <div
               key={i}
               className={cn(
-                "w-1.5 h-1.5 rounded-full",
-                i < dotCount ? getScoreColor() : "bg-gray-400"
+                "w-1.5 h-1.5 rounded-full transition-all duration-300",
+                i < dotCount ? getScoreColor() : "bg-gray-400",
+                isProcessing && i < dotCount && "animate-pulse"
               )}
             />
           ))}
