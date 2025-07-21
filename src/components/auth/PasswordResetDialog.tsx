@@ -26,19 +26,35 @@ const PasswordResetDialog = ({ open, onOpenChange }: PasswordResetDialogProps) =
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     if (!email.trim()) {
       toast.error('Please enter your email address');
       return;
     }
 
+    // Additional client-side email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+
     setIsLoading(true);
+    
     try {
-      const { error, success } = await resetPassword(email);
+      console.log('Password reset dialog - attempting reset for:', email.trim());
+      
+      const { error, success } = await resetPassword(email.trim());
+      
       if (success) {
         toast.success('Password reset email sent! Check your inbox for instructions.');
         onOpenChange(false);
         setEmail('');
+        
+        // Log successful reset request
+        console.log('Password reset email sent successfully to:', email.trim());
       } else if (error) {
+        console.error('Password reset failed:', error.message);
         toast.error(`Failed to send reset email: ${error.message}`);
       }
     } catch (err) {
@@ -71,6 +87,7 @@ const PasswordResetDialog = ({ open, onOpenChange }: PasswordResetDialogProps) =
                 onChange={(e) => setEmail(e.target.value)}
                 className="pl-10"
                 required
+                disabled={isLoading}
               />
             </div>
           </div>
