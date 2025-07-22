@@ -5,6 +5,7 @@ import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
 import AgentHeader from './AgentHeader';
 import SimplifiedAgentTabs from './tabs/SimplifiedAgentTabs';
+import AgentActivationModal from './AgentActivationModal';
 import { useAgentMessagesWithRecommendations } from './hooks/useAgentMessagesWithRecommendations';
 import './styles/agent-interface.css';
 
@@ -64,7 +65,8 @@ const SimplifiedAgentInterface = ({
     recommendations,
     dismissRecommendation,
     hideRecommendation,
-    onActivateAgent
+    onActivateAgent,
+    agentActivation
   } = useAgentMessagesWithRecommendations({
     agentType,
     initialMessages,
@@ -102,6 +104,16 @@ const SimplifiedAgentInterface = ({
           onActivateAgent={onActivateAgent}
         />
       </div>
+
+      {/* Agent Activation Modal */}
+      <AgentActivationModal
+        isOpen={agentActivation.showActivationModal}
+        onClose={agentActivation.closeActivationModal}
+        agentName={agentActivation.selectedAgent?.name || ''}
+        fee={agentActivation.selectedAgent?.fee || 0}
+        onConfirmPayment={agentActivation.handleConfirmPayment}
+        onComplete={agentActivation.handleActivationComplete}
+      />
     </Card>
   );
 };

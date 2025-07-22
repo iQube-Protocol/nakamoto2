@@ -3,11 +3,7 @@ import { useState, useEffect, useRef } from 'react';
 import { AgentMessage } from '@/lib/types';
 import { useAgentMessages } from './useAgentMessages';
 import { useAgentRecommendations } from './useAgentRecommendations';
-import { useKNYTPersona } from '@/hooks/use-knyt-persona';
-import { useQryptoPersona } from '@/hooks/use-qrypto-persona';
-import { useMetisAgent } from '@/hooks/use-metis-agent';
-import { useVeniceAgent } from '@/hooks/use-venice-agent';
-import { toast } from 'sonner';
+import { useAgentActivation } from './useAgentActivation';
 
 interface UseAgentMessagesWithRecommendationsProps {
   agentType: 'learn' | 'earn' | 'connect' | 'mondai';
@@ -31,11 +27,8 @@ export const useAgentMessagesWithRecommendations = ({
     onMessageSubmit
   });
 
-  // Get persona hooks
-  const { activateKNYTPersona } = useKNYTPersona();
-  const { activateQryptoPersona } = useQryptoPersona();
-  const { activateMetis } = useMetisAgent();
-  const { activateVenice } = useVeniceAgent();
+  // Use the agent activation hook instead of individual persona hooks
+  const agentActivation = useAgentActivation();
 
   // Track the last user message for recommendations
   useEffect(() => {
@@ -56,30 +49,10 @@ export const useAgentMessagesWithRecommendations = ({
     timestamp: new Date().toISOString()
   });
 
-  // Handle agent activation
+  // Handle agent activation using the proper activation flow
   const handleActivateAgent = (agentName: string, fee: number, description: string) => {
-    console.log(`Activating agent: ${agentName}`);
-    
-    switch (agentName) {
-      case 'KNYT Persona':
-        activateKNYTPersona();
-        toast.success('KNYT Persona activated successfully! You now have access to KNYT ecosystem features.');
-        break;
-      case 'Qrypto Persona':
-        activateQryptoPersona();
-        toast.success('Qrypto Persona activated! Your AI interactions are now personalized.');
-        break;
-      case 'Metis':
-        activateMetis();
-        toast.success('Metis agent activated! Enhanced crypto security analysis is now available.');
-        break;
-      case 'Venice':
-        activateVenice();
-        toast.success('Venice agent activated! Privacy-focused AI interactions are now enabled.');
-        break;
-      default:
-        console.warn(`Unknown agent: ${agentName}`);
-    }
+    console.log(`Activating agent through modal: ${agentName}`);
+    agentActivation.handleActivateAgent(agentName, fee, description);
   };
 
   return {
@@ -87,6 +60,8 @@ export const useAgentMessagesWithRecommendations = ({
     recommendations: recommendations.recommendations,
     dismissRecommendation: recommendations.dismissRecommendation,
     hideRecommendation: recommendations.hideRecommendation,
-    onActivateAgent: handleActivateAgent
+    onActivateAgent: handleActivateAgent,
+    // Expose agent activation modal properties
+    agentActivation
   };
 };
