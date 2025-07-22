@@ -133,13 +133,17 @@ What would you like to explore today?`,
     }
   }, [veniceActivated, conversationId]);
   
-  // Optimized conversation history loading with proper dependencies
   useEffect(() => {
     const loadConversationHistory = () => {
-      if (!user || isHistoryLoaded) return;
+      if (!user || isHistoryLoaded) {
+        console.log('🎯 MonDAI Interface: Skipping history load - user:', !!user, 'isHistoryLoaded:', isHistoryLoaded);
+        return;
+      }
       
       try {
         console.log('🎯 MonDAI Interface: Loading conversation history...');
+        console.log('🎯 MonDAI Interface: processedHistoricalMessages length:', processedHistoricalMessages.length);
+        console.log('🎯 MonDAI Interface: processedHistoricalMessages:', processedHistoricalMessages);
 
         if (processedHistoricalMessages.length > 0) {
           console.log(`🎯 MonDAI Interface: Loaded ${processedHistoricalMessages.length} historical messages for MonDAI`);

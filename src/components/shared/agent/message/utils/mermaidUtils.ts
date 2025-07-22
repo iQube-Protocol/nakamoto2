@@ -146,18 +146,21 @@ export const setupRenderTimeout = (): (() => void) => {
 
 // Special sanitization for diagrams with PS parse errors (parenthesis issues)
 export const sanitizeMermaidCode = (code: string): string => {
-  console.log("Sanitizing problematic diagram code");
+  console.log("🔧 MERMAID DEBUG: Starting sanitization of code:", code);
   
   try {
     // First strip any SHOW_CODE prefix
     let sanitized = code.replace(/^SHOW_CODE_/, '').trim();
+    console.log("🔧 MERMAID DEBUG: After SHOW_CODE removal:", sanitized);
     
     // Get the diagram type - preserve it for later
     const typeMatch = sanitized.match(/^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph)\s+([A-Z]{2})?/i);
     const diagramType = typeMatch ? typeMatch[0] : 'graph TD';
+    console.log("🔧 MERMAID DEBUG: Detected diagram type:", diagramType);
     
     // Apply the comprehensive text sanitization
     sanitized = sanitizeMermaidText(sanitized);
+    console.log("🔧 MERMAID DEBUG: After text sanitization:", sanitized);
     
     // Ensure we have a valid diagram type at the start
     if (!sanitized.match(/^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph)/i)) {
@@ -166,14 +169,14 @@ export const sanitizeMermaidCode = (code: string): string => {
     
     // Final validation - if still problematic, create fallback
     if (sanitized.length < 10 || !sanitized.includes('-->')) {
-      console.log("Creating fallback diagram due to insufficient content");
+      console.log("🔧 MERMAID DEBUG: Creating fallback diagram due to insufficient content");
       return `${diagramType}\n    A[Start] --> B[End]`;
     }
     
-    console.log("Sanitized mermaid code:", sanitized);
+    console.log("🔧 MERMAID DEBUG: Final sanitized code:", sanitized);
     return sanitized;
   } catch (err) {
-    console.error('Error sanitizing mermaid code:', err);
+    console.error('🔧 MERMAID DEBUG: Error sanitizing mermaid code:', err);
     return 'graph TD\n    A[Error_Fixed] --> B[Safe_Diagram]';
   }
 };
