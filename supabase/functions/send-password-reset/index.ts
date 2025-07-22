@@ -36,10 +36,28 @@ const handler = async (req: Request): Promise<Response> => {
     const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    // Check if user exists
-    const { data: userData, error: userError } = await supabase.auth.admin.getUserByEmail(email);
+    // Check if user exists using listUsers with email filter
+    const { data: usersData, error: userError } = await supabase.auth.admin.listUsers({
+      page: 1,
+      perPage: 1
+    });
     
-    if (userError || !userData.user) {
+    // Find user by email
+    const userExists = usersData?.users?.some(user => user.email === email);
+    
+    if (userError) {
+      console.error('Error checking user:', userError);
+      // Don't reveal if user exists or not for security
+      return new Response(
+        JSON.stringify({ message: 'If an account with this email exists, you will receive a password reset link.' }),
+        { 
+          status: 200, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+    
+    if (!userExists) {
       console.log('User not found:', email);
       // Don't reveal if user exists or not for security
       return new Response(
