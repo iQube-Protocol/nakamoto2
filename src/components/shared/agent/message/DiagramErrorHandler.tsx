@@ -32,6 +32,16 @@ const DiagramErrorHandler: React.FC<DiagramErrorHandlerProps> = ({ error, code, 
     return null;
   }, [errorMessage, code]);
 
+  // Check if this is a syntax error that needs auto-fixing
+  const isSyntaxError = errorMessage.includes('Syntax error') || errorMessage.includes('Parse error');
+  
+  // Auto-fix effect - must be at top level, not conditional
+  React.useEffect(() => {
+    if (isSyntaxError) {
+      handleAutoFix();
+    }
+  }, [isSyntaxError]);
+
   const handleRetry = () => {
     // Simple retry with current code
     onRetry(code);
@@ -90,12 +100,7 @@ const DiagramErrorHandler: React.FC<DiagramErrorHandlerProps> = ({ error, code, 
   };
   
   // Don't render error UI for syntax errors - auto-fix instead
-  if (errorMessage.includes('Syntax error') || errorMessage.includes('Parse error')) {
-    // Auto-fix the diagram immediately without showing error to user
-    React.useEffect(() => {
-      handleAutoFix();
-    }, []);
-    
+  if (isSyntaxError) {
     return (
       <div className="p-2 rounded border border-yellow-200 bg-yellow-50 mt-2 text-xs text-yellow-600">
         <span>Optimizing diagram...</span>
