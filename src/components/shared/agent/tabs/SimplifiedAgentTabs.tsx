@@ -26,6 +26,14 @@ interface SimplifiedAgentTabsProps {
   handleSubmit: (e: React.FormEvent) => void;
   handlePlayAudio: (messageId: string) => void;
   handleKeyDown?: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
+  recommendations?: {
+    showMetisRecommendation: boolean;
+    showVeniceRecommendation: boolean;
+    showQryptoRecommendation: boolean;
+    showKNYTRecommendation: boolean;
+  };
+  dismissRecommendation?: (agentName: string) => void;
+  hideRecommendation?: (agentName: string) => void;
 }
 
 const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps> = ({
@@ -41,7 +49,10 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps> = ({
   handleInputChange,
   handleSubmit,
   handlePlayAudio,
-  handleKeyDown
+  handleKeyDown,
+  recommendations,
+  dismissRecommendation,
+  hideRecommendation
 }) => {
   const isMobile = useIsMobile();
   // State for tabs menu collapse - default to collapsed when media tab is active
@@ -115,7 +126,15 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps> = ({
 
       <div className="flex-1 overflow-hidden flex flex-col relative">
         <TabsContent value="chat" className="h-full m-0 p-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col flex-1">
-          <ChatTab messages={messages} playing={playing} agentType={agentType} messagesEndRef={messagesEndRef} handlePlayAudio={handlePlayAudio} />
+          <ChatTab 
+            messages={messages} 
+            playing={playing} 
+            agentType={agentType} 
+            messagesEndRef={messagesEndRef} 
+            handlePlayAudio={handlePlayAudio}
+            recommendations={recommendations}
+            onDismissRecommendation={dismissRecommendation}
+          />
         </TabsContent>
 
         <TabsContent value="knowledge" className="h-full m-0 p-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col flex-1">

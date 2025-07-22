@@ -5,7 +5,7 @@ import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
 import AgentHeader from './AgentHeader';
 import SimplifiedAgentTabs from './tabs/SimplifiedAgentTabs';
-import { useAgentMessages } from './hooks/useAgentMessages';
+import { useAgentMessagesWithRecommendations } from './hooks/useAgentMessagesWithRecommendations';
 import './styles/agent-interface.css';
 
 interface SimplifiedAgentInterfaceProps {
@@ -60,8 +60,11 @@ const SimplifiedAgentInterface = ({
     handleInputChange,
     handleSubmit,
     handlePlayAudio,
-    handleKeyDown
-  } = useAgentMessages({
+    handleKeyDown,
+    recommendations,
+    dismissRecommendation,
+    hideRecommendation
+  } = useAgentMessagesWithRecommendations({
     agentType,
     initialMessages,
     conversationId: externalConversationId,
@@ -92,6 +95,9 @@ const SimplifiedAgentInterface = ({
           handleSubmit={handleSubmit}
           handlePlayAudio={handlePlayAudio}
           handleKeyDown={handleKeyDown}
+          recommendations={recommendations}
+          dismissRecommendation={dismissRecommendation}
+          hideRecommendation={hideRecommendation}
         />
       </div>
     </Card>
