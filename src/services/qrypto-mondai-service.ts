@@ -1,4 +1,3 @@
-
 import { supabase } from '@/integrations/supabase/client';
 import { useKnowledgeBase } from '@/hooks/mcp/useKnowledgeBase';
 import { COYNKnowledgeBase } from '@/services/coyn-knowledge-base';
@@ -21,6 +20,7 @@ interface MonDAIResponse {
     preferredName?: string;
     conversationMemoryUsed?: boolean;
     memoryThemes?: string[];
+    isAnonymous?: boolean;
     [key: string]: any;
   };
 }
@@ -189,13 +189,24 @@ ${item.content.includes('![') ? '⚠️ CONTAINS IMAGES - MUST PRESERVE ALL IMAG
       // Fallback will be handled by the edge function
     }
     
-    // Get persona context using the service
+    // Get persona context using the service with enhanced debugging
+    console.log('👤 MonDAI: Retrieving persona context...');
     const conversationContext = await PersonaContextService.getConversationContext();
-    const contextualPrompt = PersonaContextService.generateContextualPrompt(conversationContext, message);
-    
-    console.log(`📝 MonDAI: Using persona context - Anonymous: ${conversationContext.isAnonymous}`);
-    if (conversationContext.preferredName) {
-      console.log(`👤 MonDAI: Preferred name: ${conversationContext.preferredName}`);
+    console.log('👤 MonDAI: Persona context retrieved:', {
+      isAnonymous: conversationContext.isAnonymous,
+      preferredName: conversationContext.preferredName,
+      hasQryptoContext: !!conversationContext.qryptoContext,
+      hasKnytContext: !!conversationContext.knytContext
+    });
+
+    // Only generate contextual prompt if not anonymous
+    let contextualPrompt = '';
+    if (!conversationContext.isAnonymous) {
+      contextualPrompt = PersonaContextService.generateContextualPrompt(conversationContext, message);
+      console.log('👤 MonDAI: Generated contextual prompt for personalized interaction');
+    } else {
+      contextualPrompt = PersonaContextService.generateContextualPrompt(conversationContext, message);
+      console.log('👤 MonDAI: Using anonymous interaction prompt');
     }
     
     // Call the edge function with conversation memory
@@ -236,8 +247,9 @@ ${item.content.includes('![') ? '⚠️ CONTAINS IMAGES - MUST PRESERVE ALL IMAG
     console.log(`✅ MonDAI: Response generated successfully`);
     console.log(`📊 MonDAI: Knowledge sources used: ${data.metadata.knowledgeSource}`);
     console.log(`🎨 MonDAI: Visual content in response - Mermaid: ${responseHasMermaid}, Images: ${responseHasImages}`);
+    console.log(`👤 MonDAI: Response anonymity status: ${conversationContext.isAnonymous ? 'Anonymous' : 'Personalized'}`);
     
-    // Enhance metadata with memory information
+    // Enhance metadata with memory information and persona context
     if (knowledgeResults.length > 0) {
       data.metadata.coynItemsFound = knowledgeResults.length;
       data.metadata.knowledgeSource = data.metadata.knowledgeSource.includes('COYN') 
@@ -255,6 +267,13 @@ ${item.content.includes('![') ? '⚠️ CONTAINS IMAGES - MUST PRESERVE ALL IMAG
       data.metadata.conversationMemoryUsed = true;
       data.metadata.memoryThemes = conversationMemory.sessionContext.themes;
       data.metadata.recentExchangeCount = conversationMemory.recentHistory.length;
+    }
+
+    // Add persona context metadata
+    data.metadata.personaContextUsed = !conversationContext.isAnonymous;
+    data.metadata.isAnonymous = conversationContext.isAnonymous;
+    if (conversationContext.preferredName && !conversationContext.isAnonymous) {
+      data.metadata.preferredName = conversationContext.preferredName;
     }
 
     // Update conversation memory after successful response

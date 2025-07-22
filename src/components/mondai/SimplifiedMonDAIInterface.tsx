@@ -1,4 +1,3 @@
-
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { SimplifiedAgentInterface } from '@/components/shared/agent';
 import { useMondAI } from '@/hooks/use-mondai';
@@ -22,12 +21,33 @@ const SimplifiedMonDAIInterface: React.FC = React.memo(() => {
   // Use optimized hook for better performance
   const { interactions, refreshInteractions } = useUserInteractionsOptimized('learn');
   
+  // Debug persona activation state on component mount and route access
+  useEffect(() => {
+    console.log('🎯 MonDAI Interface: Component mounted, checking persona activation state...');
+    const qryptoActivated = localStorage.getItem('qrypto-persona-activated') === 'true';
+    const knytActivated = localStorage.getItem('knyt-persona-activated') === 'true';
+    
+    console.log('🎯 MonDAI Interface: Persona activation status:', {
+      qryptoActivated,
+      knytActivated,
+      shouldBeAnonymous: !qryptoActivated && !knytActivated
+    });
+
+    // Clear any stale persona activation if both are false but user is still being addressed by name
+    if (!qryptoActivated && !knytActivated) {
+      console.log('🧹 MonDAI Interface: Ensuring clean anonymous state...');
+      // Force clean state
+      localStorage.setItem('qrypto-persona-activated', 'false');
+      localStorage.setItem('knyt-persona-activated', 'false');
+    }
+  }, []);
+  
   // Memoize the welcome message to prevent recreation on every render
   const welcomeMessage = useMemo(() => {
     const aiProvider = veniceActivated ? "Venice AI" : "OpenAI";
     const memoryStatus = conversationId ? "🧠 **Memory Active** - I can remember our conversation" : "💭 **New Session** - Starting fresh";
     
-    console.log(`🎯 MonDAI Interface: Creating welcome message with memory status: ${memoryStatus}`);
+    console.log(`🎯 MonDAI Interface: Creating welcome message with anonymous guarantee`);
     
     return {
       id: "1",
@@ -57,7 +77,8 @@ What would you like to explore today?`,
         metaKnytsItemsFound: 0,
         citations: [],
         aiProvider: veniceActivated ? "Venice AI" : "OpenAI",
-        conversationMemoryUsed: !!conversationId
+        conversationMemoryUsed: !!conversationId,
+        isAnonymous: true // Force anonymous mode in welcome message
       }
     };
   }, [veniceActivated, conversationId]);
@@ -147,12 +168,20 @@ What would you like to explore today?`,
     return refreshInteractions();
   }, [refreshInteractions]);
 
-  // Enhanced reset conversation with better logging
+  // Enhanced reset conversation with persona state cleanup
   const handleResetConversation = useCallback(() => {
     console.log('🔄 MonDAI Interface: User requested conversation reset');
+    console.log('🧹 MonDAI Interface: Cleaning persona activation state to ensure anonymous mode');
+    
+    // Ensure clean anonymous state
+    localStorage.setItem('qrypto-persona-activated', 'false');
+    localStorage.setItem('knyt-persona-activated', 'false');
+    
+    // Dispatch deactivation events to ensure all components update
+    window.dispatchEvent(new CustomEvent('qryptoPersonaDeactivated'));
+    window.dispatchEvent(new CustomEvent('knytPersonaDeactivated'));
+    
     resetConversation();
-    // Optionally refresh the page to clear all state
-    // window.location.reload();
   }, [resetConversation]);
 
   return (
@@ -169,7 +198,7 @@ What would you like to explore today?`,
             <button
               onClick={handleResetConversation}
               className="text-xs text-muted-foreground hover:text-foreground transition-colors"
-              title="Start a new conversation (clears memory)"
+              title="Start a new conversation (clears memory and ensures anonymous mode)"
             >
               🔄 Reset Memory
             </button>

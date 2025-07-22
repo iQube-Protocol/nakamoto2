@@ -1,4 +1,3 @@
-
 import { QryptoPersona, KNYTPersona } from '@/lib/types';
 import { blakQubeService } from '@/services/blakqube-service';
 import { useQryptoPersona } from '@/hooks/use-qrypto-persona';
@@ -30,32 +29,76 @@ export class PersonaContextService {
    * Get comprehensive conversation context from active personas
    */
   static async getConversationContext(): Promise<ConversationContext> {
+    console.log('🔍 PersonaContextService: Starting context retrieval...');
+    
     // Check if personas are activated (client-side state)
     const qryptoActivated = localStorage.getItem('qrypto-persona-activated') === 'true';
     const knytActivated = localStorage.getItem('knyt-persona-activated') === 'true';
+
+    console.log('🔍 PersonaContextService: Activation status from localStorage:', {
+      qryptoActivated,
+      knytActivated
+    });
+
+    // If no personas are active, return anonymous context immediately
+    if (!qryptoActivated && !knytActivated) {
+      console.log('✅ PersonaContextService: No personas activated - returning anonymous context');
+      return {
+        isAnonymous: true
+      };
+    }
 
     let qryptoContext: PersonaContext | undefined;
     let knytContext: PersonaContext | undefined;
 
     // Get Qrypto context if activated
     if (qryptoActivated) {
-      const qryptoPersona = await blakQubeService.getPersonaData('qrypto') as QryptoPersona;
-      if (qryptoPersona) {
-        qryptoContext = this.buildQryptoContext(qryptoPersona);
+      console.log('🔍 PersonaContextService: Retrieving Qrypto persona data...');
+      try {
+        const qryptoPersona = await blakQubeService.getPersonaData('qrypto') as QryptoPersona;
+        if (qryptoPersona) {
+          console.log('✅ PersonaContextService: Qrypto persona data retrieved:', {
+            id: qryptoPersona['Qrypto-ID'],
+            firstName: qryptoPersona['First-Name']
+          });
+          qryptoContext = this.buildQryptoContext(qryptoPersona);
+        } else {
+          console.log('⚠️ PersonaContextService: No Qrypto persona data found');
+        }
+      } catch (error) {
+        console.error('❌ PersonaContextService: Error retrieving Qrypto persona:', error);
       }
     }
 
     // Get KNYT context if activated
     if (knytActivated) {
-      const knytPersona = await blakQubeService.getPersonaData('knyt') as KNYTPersona;
-      if (knytPersona) {
-        knytContext = this.buildKNYTContext(knytPersona);
+      console.log('🔍 PersonaContextService: Retrieving KNYT persona data...');
+      try {
+        const knytPersona = await blakQubeService.getPersonaData('knyt') as KNYTPersona;
+        if (knytPersona) {
+          console.log('✅ PersonaContextService: KNYT persona data retrieved:', {
+            id: knytPersona['KNYT-ID'],
+            firstName: knytPersona['First-Name']
+          });
+          knytContext = this.buildKNYTContext(knytPersona);
+        } else {
+          console.log('⚠️ PersonaContextService: No KNYT persona data found');
+        }
+      } catch (error) {
+        console.error('❌ PersonaContextService: Error retrieving KNYT persona:', error);
       }
     }
 
     // Determine preferred name and overall context
     const preferredName = await this.determinePreferredName(qryptoContext, knytContext);
     const isAnonymous = !qryptoContext?.isActive && !knytContext?.isActive;
+
+    console.log('🎯 PersonaContextService: Final context determined:', {
+      hasQryptoContext: !!qryptoContext,
+      hasKnytContext: !!knytContext,
+      preferredName,
+      isAnonymous
+    });
 
     return {
       qryptoContext,
@@ -199,48 +242,76 @@ export class PersonaContextService {
   }
 
   /**
-   * Determine preferred name for addressing the user (uses name preferences when available)
+   * Determine preferred name for addressing the user (only if personas are active)
    */
   private static async determinePreferredName(
     qryptoContext?: PersonaContext,
     knytContext?: PersonaContext
   ): Promise<string | undefined> {
+    console.log('🎯 PersonaContextService: Determining preferred name...', {
+      qryptoActive: qryptoContext?.isActive,
+      knytActive: knytContext?.isActive
+    });
+
+    // Only return a name if at least one persona is actually active
+    if (!qryptoContext?.isActive && !knytContext?.isActive) {
+      console.log('🎯 PersonaContextService: No active personas - returning undefined for anonymous mode');
+      return undefined;
+    }
+
     // Prefer KNYT ID prefix if available and active
     if (knytContext?.isActive && knytContext.fullPersonaData) {
       const knytId = (knytContext.fullPersonaData as KNYTPersona)['KNYT-ID'];
       if (knytId) {
-        return knytId.split('@')[0];
+        const preferredName = knytId.split('@')[0];
+        console.log('🎯 PersonaContextService: Using KNYT ID prefix:', preferredName);
+        return preferredName;
       }
     }
 
     // Use name preferences if available for active persona
-    const { NamePreferenceService } = await import('./name-preference-service');
-    
-    if (knytContext?.isActive) {
-      const knytPreference = await NamePreferenceService.getNamePreference('knyt');
-      if (knytPreference) {
-        return NamePreferenceService.getEffectiveName(knytPreference);
+    try {
+      const { NamePreferenceService } = await import('./name-preference-service');
+      
+      if (knytContext?.isActive) {
+        const knytPreference = await NamePreferenceService.getNamePreference('knyt');
+        if (knytPreference) {
+          const effectiveName = NamePreferenceService.getEffectiveName(knytPreference);
+          console.log('🎯 PersonaContextService: Using KNYT name preference:', effectiveName);
+          return effectiveName;
+        }
       }
-    }
 
-    if (qryptoContext?.isActive) {
-      const qryptoPreference = await NamePreferenceService.getNamePreference('qrypto');
-      if (qryptoPreference) {
-        return NamePreferenceService.getEffectiveName(qryptoPreference);
+      if (qryptoContext?.isActive) {
+        const qryptoPreference = await NamePreferenceService.getNamePreference('qrypto');
+        if (qryptoPreference) {
+          const effectiveName = NamePreferenceService.getEffectiveName(qryptoPreference);
+          console.log('🎯 PersonaContextService: Using Qrypto name preference:', effectiveName);
+          return effectiveName;
+        }
       }
+    } catch (error) {
+      console.warn('⚠️ PersonaContextService: Error loading name preferences:', error);
     }
 
     // Fall back to first name from either persona
     if (knytContext?.isActive && knytContext.fullPersonaData) {
       const firstName = (knytContext.fullPersonaData as KNYTPersona)['First-Name'];
-      if (firstName) return firstName;
+      if (firstName) {
+        console.log('🎯 PersonaContextService: Using KNYT first name:', firstName);
+        return firstName;
+      }
     }
 
     if (qryptoContext?.isActive && qryptoContext.fullPersonaData) {
       const firstName = (qryptoContext.fullPersonaData as QryptoPersona)['First-Name'];
-      if (firstName) return firstName;
+      if (firstName) {
+        console.log('🎯 PersonaContextService: Using Qrypto first name:', firstName);
+        return firstName;
+      }
     }
 
+    console.log('🎯 PersonaContextService: No suitable name found - returning undefined');
     return undefined;
   }
 
@@ -297,15 +368,23 @@ export class PersonaContextService {
     context: ConversationContext,
     conversationTopic?: string
   ): string {
+    console.log('📝 PersonaContextService: Generating contextual prompt...', {
+      isAnonymous: context.isAnonymous,
+      hasPreferredName: !!context.preferredName,
+      conversationTopic
+    });
+
     if (context.isAnonymous) {
-      return "The user is interacting anonymously. Do not make assumptions about their background, preferences, or experience level.";
+      console.log('📝 PersonaContextService: Using anonymous prompt');
+      return "The user is interacting anonymously. Do not make assumptions about their background, preferences, or experience level. Do not address them by name.";
     }
 
     const promptParts = [];
 
-    // Add preferred name
-    if (context.preferredName) {
+    // Add preferred name only if we have one and personas are active
+    if (context.preferredName && (!context.isAnonymous)) {
       promptParts.push(`Address the user as "${context.preferredName}".`);
+      console.log('📝 PersonaContextService: Added preferred name to prompt:', context.preferredName);
     }
 
     // Add relevant context based on conversation topic
@@ -313,6 +392,7 @@ export class PersonaContextService {
       const relevantContext = this.selectRelevantContext(context, conversationTopic);
       if (relevantContext) {
         promptParts.push(relevantContext);
+        console.log('📝 PersonaContextService: Added topic-specific context');
       }
     } else {
       // General context
@@ -336,9 +416,14 @@ export class PersonaContextService {
       promptParts.push(`User experience level: ${experienceLevel}. ${levelGuidance[experienceLevel]}`);
     }
 
-    promptParts.push("Tailor your response naturally to their context without explicitly mentioning that you're using their profile information.");
+    if (promptParts.length > 0) {
+      promptParts.push("Tailor your response naturally to their context without explicitly mentioning that you're using their profile information.");
+    }
 
-    return promptParts.join(' ');
+    const finalPrompt = promptParts.join(' ');
+    console.log('📝 PersonaContextService: Final contextual prompt generated:', finalPrompt);
+    
+    return finalPrompt;
   }
 
   /**
