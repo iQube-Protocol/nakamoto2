@@ -37,10 +37,10 @@ export const useAgentMessagesWithRecommendations = ({
     }
   }, [agentMessages.messages, lastUserMessage]);
 
-  // Use recommendations hook with the last user message
+  // Use recommendations hook with the last user message - only if we have one
   const recommendations = useAgentRecommendations(lastUserMessage || {
     id: 'temp',
-    sender: 'user',
+    sender: 'agent', // Changed to 'agent' so it won't trigger recommendation logic
     message: '',
     timestamp: new Date().toISOString()
   });

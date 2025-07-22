@@ -29,8 +29,11 @@ export const useAgentRecommendations = (message: AgentMessage) => {
 
   // Check for trigger words in user messages
   useEffect(() => {
+    console.log('useAgentRecommendations: Processing message:', { sender: message.sender, message: message.message });
+    
     if (message.sender === 'user') {
       const lowerMessage = message.message.toLowerCase();
+      console.log('useAgentRecommendations: Analyzing user message for triggers:', lowerMessage);
       
       // Metis trigger words: crypto-risk related
       const hasMetisTrigger = 
@@ -70,8 +73,18 @@ export const useAgentRecommendations = (message: AgentMessage) => {
       }
 
       if (hasKNYTTrigger && !knytPersonaActivated) {
+        console.log('useAgentRecommendations: KNYT trigger detected, showing recommendation');
         setTimeout(() => setRecommendations(prev => ({ ...prev, showKNYTRecommendation: true })), 1000);
       }
+
+      if (hasQryptoTrigger && !qryptoPersonaActivated) {
+        console.log('useAgentRecommendations: Qrypto trigger detected, showing recommendation');
+      }
+
+      console.log('useAgentRecommendations: Trigger analysis:', {
+        hasMetisTrigger, hasVeniceTrigger, hasQryptoTrigger, hasKNYTTrigger,
+        metisActivated, veniceActivated, qryptoPersonaActivated, knytPersonaActivated
+      });
     }
   }, [message, metisActivated, veniceActivated, qryptoPersonaActivated, knytPersonaActivated]);
 
