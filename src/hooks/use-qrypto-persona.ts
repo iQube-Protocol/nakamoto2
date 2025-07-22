@@ -1,59 +1,70 @@
 
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect } from 'react';
 
-interface QryptoPersonaState {
-  qryptoPersonaActivated: boolean;
-  activateQryptoPersona: () => void;
-  deactivateQryptoPersona: () => void;
-  toggleQryptoPersona: () => void;
-}
+const QRYPTO_STORAGE_KEY = 'qrypto-persona-activated';
 
-const STORAGE_KEY = 'qrypto-persona-activated';
-
-export const useQryptoPersona = (): QryptoPersonaState => {
-  // Initialize from localStorage, defaulting to false (inactive)
-  const [qryptoPersonaActivated, setQryptoPersonaActivated] = useState<boolean>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      return saved !== null ? JSON.parse(saved) : false;
-    } catch (error) {
-      console.error('Error reading Qrypto Persona state from localStorage:', error);
-      return false;
-    }
+export const useQryptoPersona = () => {
+  const [qryptoPersonaActivated, setQryptoPersonaActivated] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    const stored = localStorage.getItem(QRYPTO_STORAGE_KEY);
+    console.log('🔷 Qrypto Persona Hook: Initial state from localStorage:', stored);
+    return stored === 'true';
   });
 
-  // Save to localStorage whenever state changes
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(qryptoPersonaActivated));
-      
-      // Dispatch events for persona context updates
-      if (qryptoPersonaActivated) {
-        window.dispatchEvent(new CustomEvent('qryptoPersonaActivated'));
-      } else {
-        window.dispatchEvent(new CustomEvent('qryptoPersonaDeactivated'));
-      }
-    } catch (error) {
-      console.error('Error saving Qrypto Persona state to localStorage:', error);
-    }
-  }, [qryptoPersonaActivated]);
-
-  const activateQryptoPersona = useCallback(() => {
+  const activateQryptoPersona = () => {
+    console.log('🟢 Qrypto Persona: Activating');
     setQryptoPersonaActivated(true);
-  }, []);
+    localStorage.setItem(QRYPTO_STORAGE_KEY, 'true');
+    
+    // Dispatch event for other components
+    window.dispatchEvent(new CustomEvent('qryptoPersonaActivated'));
+  };
 
-  const deactivateQryptoPersona = useCallback(() => {
+  const deactivateQryptoPersona = () => {
+    console.log('🔴 Qrypto Persona: Deactivating');
     setQryptoPersonaActivated(false);
+    localStorage.setItem(QRYPTO_STORAGE_KEY, 'false');
+    
+    // Dispatch event for other components
+    window.dispatchEvent(new CustomEvent('qryptoPersonaDeactivated'));
+  };
+
+  // Listen for storage changes and custom events
+  useEffect(() => {
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === QRYPTO_STORAGE_KEY) {
+        const newValue = e.newValue === 'true';
+        console.log('💾 Qrypto Persona: Storage change detected, new value:', newValue);
+        setQryptoPersonaActivated(newValue);
+      }
+    };
+
+    const handleCustomEvent = () => {
+      const stored = localStorage.getItem(QRYPTO_STORAGE_KEY);
+      const isActivated = stored === 'true';
+      console.log('📡 Qrypto Persona: Custom event received, localStorage value:', stored);
+      setQryptoPersonaActivated(isActivated);
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('qryptoPersonaActivated', handleCustomEvent);
+    window.addEventListener('qryptoPersonaDeactivated', handleCustomEvent);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('qryptoPersonaActivated', handleCustomEvent);
+      window.removeEventListener('qryptoPersonaDeactivated', handleCustomEvent);
+    };
   }, []);
 
-  const toggleQryptoPersona = useCallback(() => {
-    setQryptoPersonaActivated(prev => !prev);
-  }, []);
+  // Debug logging for state changes
+  useEffect(() => {
+    console.log('🎯 Qrypto Persona: State updated - activated:', qryptoPersonaActivated);
+  }, [qryptoPersonaActivated]);
 
   return {
     qryptoPersonaActivated,
     activateQryptoPersona,
-    deactivateQryptoPersona,
-    toggleQryptoPersona
+    deactivateQryptoPersona
   };
 };

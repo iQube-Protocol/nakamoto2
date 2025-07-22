@@ -1,76 +1,70 @@
 
-import { useState, useEffect, useCallback } from 'react';
-import { walletConnectionService } from '@/services/wallet-connection-service';
+import { useState, useEffect } from 'react';
 
-interface KNYTPersonaState {
-  knytPersonaActivated: boolean;
-  knytPersonaVisible: boolean;
-  activateKNYTPersona: () => void;
-  deactivateKNYTPersona: () => void;
-  toggleKNYTPersona: () => void;
-  hideKNYTPersona: () => void;
-}
+const KNYT_STORAGE_KEY = 'knyt-persona-activated';
 
-const STORAGE_KEY = 'knyt-persona-activated';
-
-export const useKNYTPersona = (): KNYTPersonaState => {
-  // Initialize from localStorage, defaulting to false (inactive)
-  const [knytPersonaActivated, setKNYTPersonaActivated] = useState<boolean>(() => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY);
-      return saved !== null ? JSON.parse(saved) : false;
-    } catch (error) {
-      console.error('Error reading KNYT Persona state from localStorage:', error);
-      return false;
-    }
+export const useKNYTPersona = () => {
+  const [knytPersonaActivated, setKnytPersonaActivated] = useState(() => {
+    if (typeof window === 'undefined') return false;
+    const stored = localStorage.getItem(KNYT_STORAGE_KEY);
+    console.log('🟪 KNYT Persona Hook: Initial state from localStorage:', stored);
+    return stored === 'true';
   });
 
-  const [knytPersonaVisible, setKNYTPersonaVisible] = useState<boolean>(true);
+  const activateKNYTPersona = () => {
+    console.log('🟢 KNYT Persona: Activating');
+    setKnytPersonaActivated(true);
+    localStorage.setItem(KNYT_STORAGE_KEY, 'true');
+    
+    // Dispatch event for other components
+    window.dispatchEvent(new CustomEvent('knytPersonaActivated'));
+  };
 
-  // Save to localStorage whenever state changes
+  const deactivateKNYTPersona = () => {
+    console.log('🔴 KNYT Persona: Deactivating');
+    setKnytPersonaActivated(false);
+    localStorage.setItem(KNYT_STORAGE_KEY, 'false');
+    
+    // Dispatch event for other components
+    window.dispatchEvent(new CustomEvent('knytPersonaDeactivated'));
+  };
+
+  // Listen for storage changes and custom events
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(knytPersonaActivated));
-      
-      // Dispatch events for persona context updates
-      if (knytPersonaActivated) {
-        window.dispatchEvent(new CustomEvent('knytPersonaActivated'));
-        
-        // Trigger KNYT balance refresh when persona is activated
-        console.log('KNYT Persona activated, refreshing token balance...');
-        walletConnectionService.refreshKnytBalance().catch(error => {
-          console.error('Error refreshing KNYT balance on activation:', error);
-        });
-      } else {
-        window.dispatchEvent(new CustomEvent('knytPersonaDeactivated'));
+    const handleStorageChange = (e: StorageEvent) => {
+      if (e.key === KNYT_STORAGE_KEY) {
+        const newValue = e.newValue === 'true';
+        console.log('💾 KNYT Persona: Storage change detected, new value:', newValue);
+        setKnytPersonaActivated(newValue);
       }
-    } catch (error) {
-      console.error('Error saving KNYT Persona state to localStorage:', error);
-    }
+    };
+
+    const handleCustomEvent = () => {
+      const stored = localStorage.getItem(KNYT_STORAGE_KEY);
+      const isActivated = stored === 'true';
+      console.log('📡 KNYT Persona: Custom event received, localStorage value:', stored);
+      setKnytPersonaActivated(isActivated);
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    window.addEventListener('knytPersonaActivated', handleCustomEvent);
+    window.addEventListener('knytPersonaDeactivated', handleCustomEvent);
+    
+    return () => {
+      window.removeEventListener('storage', handleStorageChange);
+      window.removeEventListener('knytPersonaActivated', handleCustomEvent);
+      window.removeEventListener('knytPersonaDeactivated', handleCustomEvent);
+    };
+  }, []);
+
+  // Debug logging for state changes
+  useEffect(() => {
+    console.log('🎯 KNYT Persona: State updated - activated:', knytPersonaActivated);
   }, [knytPersonaActivated]);
-
-  const activateKNYTPersona = useCallback(() => {
-    setKNYTPersonaActivated(true);
-  }, []);
-
-  const deactivateKNYTPersona = useCallback(() => {
-    setKNYTPersonaActivated(false);
-  }, []);
-
-  const toggleKNYTPersona = useCallback(() => {
-    setKNYTPersonaActivated(prev => !prev);
-  }, []);
-
-  const hideKNYTPersona = useCallback(() => {
-    setKNYTPersonaVisible(false);
-  }, []);
 
   return {
     knytPersonaActivated,
-    knytPersonaVisible,
     activateKNYTPersona,
-    deactivateKNYTPersona,
-    toggleKNYTPersona,
-    hideKNYTPersona
+    deactivateKNYTPersona
   };
 };
