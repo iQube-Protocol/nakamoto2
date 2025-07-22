@@ -45,6 +45,12 @@ export const useMessageSubmit = (
     setInputValue('');
     setIsProcessing(true);
 
+    // Dispatch agent recommendation event for trigger word analysis
+    const agentRecommendationEvent = new CustomEvent('agentRecommendation', {
+      detail: { message, agentType }
+    });
+    window.dispatchEvent(agentRecommendationEvent);
+
     let hasDocuments = false;
     let documentsInfo: string[] = [];
     
@@ -143,7 +149,7 @@ export const useMessageSubmit = (
             responseText = `I'm your Connection Agent. Based on your interests in your iQube, I found ${Math.floor(Math.random() * 10) + 1} community members with similar interests in ${Math.random() > 0.5 ? 'DeFi' : 'NFTs'}. Would you like me to introduce you?`;
             break;
           case 'mondai':
-            responseText = `I'm MonDAI (Aigent Nakamoto). I can help you with crypto questions and metaKnyts lore. What would you like to explore?`;
+            responseText = `I'm MonDAI (Aigent Nakamoto). I can help you with crypto questions and metaKnyts lore. What would you explore?`;
             break;
         }
 
