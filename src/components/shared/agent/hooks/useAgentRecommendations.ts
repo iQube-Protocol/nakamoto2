@@ -31,6 +31,7 @@ export const useAgentRecommendations = (message: AgentMessage | null) => {
   useEffect(() => {
     // Only process if we have a message and it's from a user
     if (!message || message.sender !== 'user') {
+      console.log('useAgentRecommendations: Skipping - no message or not user message:', { message: message?.message, sender: message?.sender });
       return;
     }
 
@@ -38,6 +39,13 @@ export const useAgentRecommendations = (message: AgentMessage | null) => {
     
     const lowerMessage = message.message.toLowerCase();
     console.log('useAgentRecommendations: Analyzing user message for triggers:', lowerMessage);
+    
+    console.log('useAgentRecommendations: Current activation states:', {
+      metisActivated,
+      veniceActivated,
+      qryptoPersonaActivated,
+      knytPersonaActivated
+    });
     
     // Metis trigger words: crypto-risk related
     const hasMetisTrigger = 
