@@ -1,6 +1,6 @@
-
 import React, { useState, useEffect, useRef } from 'react';
 import DiagramErrorHandler from './DiagramErrorHandler';
+import MermaidErrorBoundary from './MermaidErrorBoundary';
 import { useTheme } from '@/contexts/ThemeContext';
 
 // Store mermaid instance globally to avoid reinitialization
@@ -60,7 +60,7 @@ const getMermaid = async () => {
       mermaidInstance = instance;
       return instance;
     }).catch(err => {
-      console.error("Failed to initialize mermaid:", err);
+      console.error("🔧 MERMAID: Failed to initialize mermaid:", err);
       mermaidPromise = null;
       throw err;
     });
@@ -74,7 +74,7 @@ interface MermaidDiagramProps {
   id: string;
 }
 
-const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
+const MermaidDiagramInternal = ({ code, id }: MermaidDiagramProps) => {
   const [svg, setSvg] = useState<string | null>(null);
   const [error, setError] = useState<Error | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -86,6 +86,7 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
   // Render diagram when code changes or component mounts
   useEffect(() => {
     if (!currentCode || currentCode.trim() === '') {
+      console.error("🔧 MERMAID: Empty diagram code provided");
       setError(new Error("Empty diagram code"));
       setIsLoading(false);
       return;
@@ -97,19 +98,21 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
     const renderDiagram = async () => {
       if (showCodeView) return;
       
+      console.log(`🔧 MERMAID: Starting render for diagram ${id}`);
       setIsLoading(true);
       setError(null);
       
       // Set a timeout to prevent hanging
       timeoutId = window.setTimeout(() => {
         if (isMounted) {
+          console.error(`🔧 MERMAID: Timeout rendering diagram ${id}`);
           setError(new Error("Rendering timeout - diagram may be too complex"));
           setIsLoading(false);
         }
-      }, 8000); // Reduced timeout for better UX
+      }, 6000); // Reduced timeout for better UX
       
       try {
-        console.log(`Rendering diagram (ID: ${id}) with code:`, currentCode);
+        console.log(`🔧 MERMAID: Rendering diagram (ID: ${id}) with code:`, currentCode);
         
         // Basic validation to catch obvious syntax errors
         if (!currentCode.match(/^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph)/i)) {
@@ -126,11 +129,12 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
         const { svg } = await mermaid.render(uniqueId, currentCode);
         
         if (isMounted) {
+          console.log(`🔧 MERMAID: Successfully rendered diagram ${id}`);
           setSvg(svg);
           setIsLoading(false);
         }
       } catch (err) {
-        console.error("Mermaid rendering error:", err);
+        console.error("🔧 MERMAID: Rendering error for diagram", id, ":", err);
         
         if (isMounted) {
           setError(err instanceof Error ? err : new Error(String(err)));
@@ -223,14 +227,17 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
             arrow.style.fill = '#7E69AB';
           }
         });
+        
+        console.log(`🔧 MERMAID: Applied styling to diagram ${id}`);
       }
     } catch (err) {
-      console.error("Error inserting SVG:", err);
+      console.error("🔧 MERMAID: Error inserting SVG:", err);
       setError(err instanceof Error ? err : new Error(String(err)));
     }
-  }, [svg, isLoading, theme]);
+  }, [svg, isLoading, theme, id]);
   
   const handleRetry = (codeToRender: string) => {
+    console.log(`🔧 MERMAID: Retry requested for diagram ${id}`);
     if (codeToRender.startsWith("SHOW_CODE_")) {
       setShowCodeView(true);
       setCurrentCode(codeToRender.replace("SHOW_CODE_", ""));
@@ -268,7 +275,7 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
         />
         {/* Fallback content to prevent complete failure */}
         <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-700">
-          <strong>Diagram Preview Unavailable:</strong> The content contains a diagram that couldn't be rendered. Please use the error handler above to troubleshoot.
+          <strong>Diagram Preview Unavailable:</strong> The content contains a diagram that couldn't be rendered. The conversation continues normally.
         </div>
       </div>
     );
@@ -299,6 +306,14 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
         theme === 'light' ? 'bg-[#F9F5EB] border-amber-100' : 'bg-[#FAF7ED] border-amber-100'
       }`}
     />
+  );
+};
+
+const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
+  return (
+    <MermaidErrorBoundary>
+      <MermaidDiagramInternal code={code} id={id} />
+    </MermaidErrorBoundary>
   );
 };
 
