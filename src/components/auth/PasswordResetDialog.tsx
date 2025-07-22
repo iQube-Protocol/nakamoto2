@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Mail } from 'lucide-react';
 import { toast } from 'sonner';
-import { useAuth } from '@/hooks/use-auth';
+import { supabase } from '@/integrations/supabase/client';
 
 interface PasswordResetDialogProps {
   open: boolean;
@@ -22,7 +22,6 @@ interface PasswordResetDialogProps {
 const PasswordResetDialog = ({ open, onOpenChange }: PasswordResetDialogProps) => {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { resetPassword } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -44,18 +43,18 @@ const PasswordResetDialog = ({ open, onOpenChange }: PasswordResetDialogProps) =
     try {
       console.log('Password reset dialog - attempting reset for:', email.trim());
       
-      const { error, success } = await resetPassword(email.trim());
+      const { data, error } = await supabase.functions.invoke('send-password-reset', {
+        body: { email: email.trim() }
+      });
       
-      if (success) {
+      if (error) {
+        console.error('Password reset failed:', error);
+        toast.error('Failed to send reset email. Please try again.');
+      } else {
         toast.success('Password reset email sent! Check your inbox for instructions.');
         onOpenChange(false);
         setEmail('');
-        
-        // Log successful reset request
         console.log('Password reset email sent successfully to:', email.trim());
-      } else if (error) {
-        console.error('Password reset failed:', error.message);
-        toast.error(`Failed to send reset email: ${error.message}`);
       }
     } catch (err) {
       console.error('Password reset error:', err);
