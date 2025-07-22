@@ -89,6 +89,12 @@ export const useAgentRecommendations = (message: AgentMessage) => {
         hasMetisTrigger, hasVeniceTrigger, hasQryptoTrigger, hasKNYTTrigger,
         metisActivated, veniceActivated, qryptoPersonaActivated, knytPersonaActivated
       });
+
+      console.log('useAgentRecommendations: Final logic check - KNYT:', {
+        hasKNYTTrigger,
+        knytPersonaActivated,
+        willShow: hasKNYTTrigger && !knytPersonaActivated
+      });
     }
   }, [message, metisActivated, veniceActivated, qryptoPersonaActivated, knytPersonaActivated]);
 
