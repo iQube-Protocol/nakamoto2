@@ -74,7 +74,11 @@ export const useAgentRecommendations = (message: AgentMessage) => {
 
       if (hasKNYTTrigger && !knytPersonaActivated) {
         console.log('useAgentRecommendations: KNYT trigger detected, showing recommendation');
-        setTimeout(() => setRecommendations(prev => ({ ...prev, showKNYTRecommendation: true })), 1000);
+        console.log('useAgentRecommendations: KNYT state:', { hasKNYTTrigger, knytPersonaActivated });
+        setTimeout(() => {
+          console.log('useAgentRecommendations: Setting KNYT recommendation to true');
+          setRecommendations(prev => ({ ...prev, showKNYTRecommendation: true }));
+        }, 1000);
       }
 
       if (hasQryptoTrigger && !qryptoPersonaActivated) {
