@@ -75,6 +75,116 @@ Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-trick
 
 ## Development Lessons Learned
 
+### Agent Recommendation System Complete Overhaul - 2025-07-22
+**Cycles Required:** 15+ cycles
+**Problem:** Critical failures in agent recommendation and activation system causing multiple issues:
+- "custom" prompt not triggering Qrypto Persona activation
+- Activation flow bypassing payment and going straight to "purchase complete"
+- AI addressing user by Persona ID even when persona not activated
+- Stale localStorage context causing inconsistent state
+- Recommendation logic based on entire conversation history instead of latest message
+- Multiple agents being recommended simultaneously
+- Venice showing recommendations when already activated
+
+**Root Cause:** Multiple interconnected system failures:
+1. **Inconsistent localStorage Keys**: Different components using different keys (`qrypto-persona-activated` vs `qrypto-persona-activated`)
+2. **Flawed Recommendation Logic**: `useAgentRecommendations` processing entire conversation context instead of just the most recent user message
+3. **Stale State Management**: localStorage values persisting across sessions without proper cleanup
+4. **Broken Activation Flow**: Duplicate activation logic in multiple components causing race conditions
+5. **Inadequate Anonymous Mode**: PersonaContextService not properly detecting when no personas are active
+6. **Mermaid Syntax Errors**: Aggressive auto-fixing causing rendering failures
+
+**Solution:** Comprehensive system redesign with centralized state management:
+
+1. **Fixed localStorage State Management:**
+   - Updated `useQryptoPersona.ts` and `useKNYTPersona.ts` with consistent keys
+   - Added proper event dispatching with consistent event names
+   - Implemented state cleanup and debugging
+
+2. **Refactored Recommendation System (`useAgentRecommendations.ts`):**
+   - Modified to process ONLY the most recent user message for triggers
+   - Fixed "custom" trigger detection for Qrypto Persona
+   - Fixed "deji" and "metaKnyts" triggers for KNYT Persona
+   - Implemented priority system: KNYT > Venice > Qrypto > Metis
+   - Prevented recommendations for already activated agents
+   - Added comprehensive logging for debugging
+
+3. **Consolidated Activation Flow (`AgentActivationModal.tsx`):**
+   - Ensured proper payment flow progression: verification → fee → processing → complete
+   - Fixed free activation handling
+   - Removed duplicate activation logic
+   - Added proper error handling and loading states
+
+4. **Enhanced Anonymous Mode (`persona-context-service.ts`):**
+   - Accurate detection when no personas are truly active
+   - Proper anonymous context when localStorage shows inactive personas
+   - Clear distinction between activated and inactive states
+
+5. **Centralized State Management (`useAgentActivation.ts`):**
+   - Consistent localStorage keys across all components
+   - Proper event dispatching and state synchronization
+   - Comprehensive debugging and logging
+
+6. **Fixed Mermaid Syntax Processing:**
+   - Enhanced `sanitizeMermaidCode` with aggressive text cleaning
+   - Improved handling of quotes, special characters, and syntax errors
+   - Better fallback mechanisms for problematic diagrams
+
+**Key Insights:**
+- State management across multiple hooks requires strict key consistency
+- Recommendation systems should be stateless and process only current context
+- Payment flows need linear progression without shortcuts
+- Anonymous mode detection requires checking all persona states
+- Mermaid syntax errors need aggressive sanitization
+- localStorage debugging is critical for persistent state issues
+
+**Future Reference:**
+- Always use consistent localStorage keys: `qrypto-persona-activated`, `knyt-persona-activated`, etc.
+- Test recommendation triggers with exact phrases: "custom" → Qrypto, "deji"/"metaKnyts" → KNYT
+- Verify payment flow steps: verification → fee → processing → complete
+- Check persona activation state in DevTools localStorage
+- Use browser DevTools to monitor event dispatching
+- Test anonymous mode by clearing all localStorage
+- For Mermaid errors, check console logs for specific syntax issues
+
+**Testing Commands:**
+```bash
+# Test recommendation triggers
+"custom" → Should trigger Qrypto Persona recommendation
+"deji" or "metaKnyts" → Should trigger KNYT Persona recommendation
+
+# Test localStorage consistency
+localStorage.getItem('qrypto-persona-activated')
+localStorage.getItem('knyt-persona-activated')
+
+# Test payment flow
+Verify sequence: verification → fee → processing → complete
+
+# Test anonymous mode
+Clear localStorage and verify no persona context is used
+```
+
+**Files Modified:**
+- `src/hooks/use-qrypto-persona.ts`
+- `src/hooks/use-knyt-persona.ts` 
+- `src/components/shared/agent/hooks/useAgentRecommendations.ts`
+- `src/components/shared/agent/AgentActivationModal.tsx`
+- `src/services/persona-context-service.ts`
+- `src/components/shared/agent/hooks/useAgentActivation.ts`
+- `src/components/shared/agent/message/utils/mermaidUtils.ts`
+- `src/components/settings/IQubeActivationManager.tsx`
+- `src/hooks/use-sidebar-logic.ts`
+
+**Key Takeaways:**
+- Always implement centralized state management for complex systems
+- Test edge cases thoroughly, especially state persistence
+- Design recommendation systems to be context-aware but not context-dependent
+- Implement comprehensive logging for debugging complex state issues
+- Plan activation flows as linear state machines
+- Handle syntax errors with multiple fallback strategies
+
+---
+
 ### Invited User Signup Race Conditions and Data Integrity - 2025-07-21
 **Cycles Required:** 12 cycles
 **Problem:** Invited users were signing up successfully but missing their persona data, causing incomplete registrations and broken user experiences.

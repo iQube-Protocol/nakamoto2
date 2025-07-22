@@ -137,71 +137,58 @@ export const sanitizeMermaidCode = (code: string): string => {
     const typeMatch = sanitized.match(/^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph)\s+([A-Z]{2})?/i);
     const diagramType = typeMatch ? typeMatch[0] : 'graph TD';
     
-    // CRITICAL FIX: Handle quoted text in node labels - this is causing the STR token error
-    if (code.includes('"') || code.includes("'")) {
-      console.log("Fixing quoted text in node labels");
-      // Remove all quotes and replace problematic characters
-      sanitized = sanitized
-        .replace(/\[([^[\]]*)"([^"]*)"([^[\]]*)\]/g, (match, before, quoted, after) => {
-          const safeText = quoted
-            .replace(/\s+/g, '_')
-            .replace(/[^\w]/g, '_')
-            .replace(/_+/g, '_')
-            .replace(/^_|_$/g, '');
-          return `[${before}${safeText}${after}]`;
-        })
-        .replace(/\[([^[\]]*)'([^']*)'([^[\]]*)\]/g, (match, before, quoted, after) => {
-          const safeText = quoted
-            .replace(/\s+/g, '_')
-            .replace(/[^\w]/g, '_')
-            .replace(/_+/g, '_')
-            .replace(/^_|_$/g, '');
-          return `[${before}${safeText}${after}]`;
-        });
-    }
+    // ENHANCED CRITICAL FIX: Handle all text within square brackets more aggressively
+    console.log("Applying comprehensive text sanitization");
     
-    // For PS errors specifically - handle other problematic characters
-    if (code.includes("e.g.,") || code.includes("(") || code.includes(")")) {
-      // Replace all nodes with parentheses with safer versions
-      sanitized = sanitized.replace(/\[([^\]]*)(\(|\))([^\]]*)\]/g, (match, before, paren, after) => {
-        return `[${before}${after}]`;
-      });
+    // Remove all quotes and special characters from node labels
+    sanitized = sanitized.replace(/\[([^\]]+)\]/g, (match, content) => {
+      // Clean the content inside brackets completely
+      const cleanContent = content
+        .replace(/['"]/g, '') // Remove all quotes
+        .replace(/[()]/g, '') // Remove parentheses
+        .replace(/[,;]/g, '_') // Replace commas and semicolons
+        .replace(/\s+/g, '_') // Replace spaces with underscores
+        .replace(/[^\w_]/g, '_') // Replace any other special chars
+        .replace(/_+/g, '_') // Collapse multiple underscores
+        .replace(/^_|_$/g, '') // Remove leading/trailing underscores
+        .substring(0, 30); // Limit length to avoid overflow
       
-      // Replace all nodes with commas with safer versions
-      sanitized = sanitized.replace(/\[([^\]]*),([^\]]*)\]/g, (match, before, after) => {
-        return `[${before}_and_${after}]`;
+      return `[${cleanContent || 'Node'}]`; // Fallback to 'Node' if empty
+    });
+    
+    // Fix arrow syntax issues
+    sanitized = sanitized
+      .replace(/--\s*-+/g, '-->')
+      .replace(/--(?!>)/g, '-->')
+      .replace(/\s*-+\s*>/g, ' -->');
+    
+    // Remove any remaining problematic characters outside of brackets
+    sanitized = sanitized
+      .replace(/['"]/g, '') // Remove stray quotes
+      .replace(/%.*/g, '') // Remove comments
+      .replace(/;/g, ''); // Remove semicolons
+    
+    // Clean up whitespace and ensure proper line structure
+    const lines = sanitized.split('\n');
+    const cleanLines = lines
+      .map(line => line.trim())
+      .filter(line => line.length > 0)
+      .map(line => {
+        // Ensure arrows are properly spaced
+        return line.replace(/(\w+)(\s*-->?\s*)(\w+)/g, '$1 --> $3');
       });
-      
-      // Replace "e.g.," which often causes parse errors
-      sanitized = sanitized.replace(/e\.g\.,/g, 'eg');
-    }
     
-    // Handle NODE_STRING errors (like the one in the user's message)
-    if (code.includes('NODE_STRING')) {
-      // Remove % characters which can cause issues
-      sanitized = sanitized.replace(/%.*/g, '');
-      
-      // Fix unquoted labels or invalid node references
-      const lines = sanitized.split('\n');
-      const fixedLines = lines.map(line => {
-        // If line contains --> but no node definition, remove any stray text after -->
-        if (line.includes('-->') && !line.includes('[') && !line.match(/-->\s*[A-Za-z0-9_]+$/)) {
-          return line.replace(/-->\s*[A-Za-z0-9_]+.*$/, '-->');
-        }
-        return line;
-      });
-      sanitized = fixedLines.join('\n');
-    }
+    sanitized = cleanLines.join('\n');
     
-    // If a parse error is still likely, create a very simple diagram
-    if (sanitized.includes('Parse error') || sanitized.includes('Syntax error')) {
-      console.log("Creating fallback simple diagram due to syntax errors");
-      return `${diagramType}\n    A[Simplified_Diagram] --> B[Due_to_Parse_Error]`;
-    }
-    
-    // Ensure we still have a valid diagram type
+    // Ensure we have a valid diagram type at the start
     if (!sanitized.match(/^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph)/i)) {
       sanitized = `${diagramType}\n${sanitized}`;
+    }
+    
+    // Final validation - if still problematic, create fallback
+    if (sanitized.length < 10 || !sanitized.includes('-->')) {
+      console.log("Creating fallback diagram due to insufficient content");
+      return `${diagramType}\n    A[Start] --> B[End]`;
     }
     
     console.log("Sanitized mermaid code:", sanitized);
