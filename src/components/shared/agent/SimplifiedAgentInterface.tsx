@@ -63,7 +63,8 @@ const SimplifiedAgentInterface = ({
     handleKeyDown,
     recommendations,
     dismissRecommendation,
-    hideRecommendation
+    hideRecommendation,
+    onActivateAgent
   } = useAgentMessagesWithRecommendations({
     agentType,
     initialMessages,
@@ -98,6 +99,7 @@ const SimplifiedAgentInterface = ({
           recommendations={recommendations}
           dismissRecommendation={dismissRecommendation}
           hideRecommendation={hideRecommendation}
+          onActivateAgent={onActivateAgent}
         />
       </div>
     </Card>

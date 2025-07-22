@@ -36,7 +36,9 @@ interface SimplifiedAgentTabsProps {
   hideRecommendation?: (agentName: string) => void;
 }
 
-const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps> = ({
+const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps & {
+  onActivateAgent?: (agentName: string, fee: number, description: string) => void;
+}> = ({
   activeTab,
   setActiveTab,
   messages,
@@ -52,7 +54,8 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps> = ({
   handleKeyDown,
   recommendations,
   dismissRecommendation,
-  hideRecommendation
+  hideRecommendation,
+  onActivateAgent
 }) => {
   const isMobile = useIsMobile();
   // State for tabs menu collapse - default to collapsed when media tab is active
@@ -133,6 +136,7 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps> = ({
             messagesEndRef={messagesEndRef} 
             handlePlayAudio={handlePlayAudio}
             recommendations={recommendations}
+            onActivateAgent={onActivateAgent}
             onDismissRecommendation={dismissRecommendation}
           />
         </TabsContent>

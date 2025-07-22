@@ -3,6 +3,11 @@ import { useState, useEffect, useRef } from 'react';
 import { AgentMessage } from '@/lib/types';
 import { useAgentMessages } from './useAgentMessages';
 import { useAgentRecommendations } from './useAgentRecommendations';
+import { useKNYTPersona } from '@/hooks/use-knyt-persona';
+import { useQryptoPersona } from '@/hooks/use-qrypto-persona';
+import { useMetisAgent } from '@/hooks/use-metis-agent';
+import { useVeniceAgent } from '@/hooks/use-venice-agent';
+import { toast } from 'sonner';
 
 interface UseAgentMessagesWithRecommendationsProps {
   agentType: 'learn' | 'earn' | 'connect' | 'mondai';
@@ -26,6 +31,12 @@ export const useAgentMessagesWithRecommendations = ({
     onMessageSubmit
   });
 
+  // Get persona hooks
+  const { activateKNYTPersona } = useKNYTPersona();
+  const { activateQryptoPersona } = useQryptoPersona();
+  const { activateMetis } = useMetisAgent();
+  const { activateVenice } = useVeniceAgent();
+
   // Track the last user message for recommendations
   useEffect(() => {
     const userMessages = agentMessages.messages.filter(msg => msg.sender === 'user');
@@ -45,10 +56,37 @@ export const useAgentMessagesWithRecommendations = ({
     timestamp: new Date().toISOString()
   });
 
+  // Handle agent activation
+  const handleActivateAgent = (agentName: string, fee: number, description: string) => {
+    console.log(`Activating agent: ${agentName}`);
+    
+    switch (agentName) {
+      case 'KNYT Persona':
+        activateKNYTPersona();
+        toast.success('KNYT Persona activated successfully! You now have access to KNYT ecosystem features.');
+        break;
+      case 'Qrypto Persona':
+        activateQryptoPersona();
+        toast.success('Qrypto Persona activated! Your AI interactions are now personalized.');
+        break;
+      case 'Metis':
+        activateMetis();
+        toast.success('Metis agent activated! Enhanced crypto security analysis is now available.');
+        break;
+      case 'Venice':
+        activateVenice();
+        toast.success('Venice agent activated! Privacy-focused AI interactions are now enabled.');
+        break;
+      default:
+        console.warn(`Unknown agent: ${agentName}`);
+    }
+  };
+
   return {
     ...agentMessages,
     recommendations: recommendations.recommendations,
     dismissRecommendation: recommendations.dismissRecommendation,
-    hideRecommendation: recommendations.hideRecommendation
+    hideRecommendation: recommendations.hideRecommendation,
+    onActivateAgent: handleActivateAgent
   };
 };
