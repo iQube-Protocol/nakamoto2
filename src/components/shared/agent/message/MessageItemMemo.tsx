@@ -4,29 +4,17 @@ import { AgentMessage } from '@/lib/types';
 import MessageContent from './MessageContent';
 import AudioPlayback from './AudioPlayback';
 import MessageMetadata from './MessageMetadata';
-import AgentRecommendations from './AgentRecommendations';
 
 interface MessageItemProps {
   message: AgentMessage;
   isPlaying?: boolean;
   onPlayAudio?: (messageId: string) => void;
-  recommendations?: {
-    showMetisRecommendation: boolean;
-    showVeniceRecommendation: boolean;
-    showQryptoRecommendation: boolean;
-    showKNYTRecommendation: boolean;
-  };
-  onActivateAgent?: (agentName: string, fee: number, description: string) => void;
-  onDismissRecommendation?: (agentName: string) => void;
 }
 
 const MessageItemMemo: React.FC<MessageItemProps> = React.memo(({ 
   message, 
   isPlaying = false, 
-  onPlayAudio,
-  recommendations,
-  onActivateAgent,
-  onDismissRecommendation
+  onPlayAudio
 }) => {
   const isUser = message.sender === 'user';
   const isSystem = message.sender === 'system';
@@ -53,18 +41,6 @@ const MessageItemMemo: React.FC<MessageItemProps> = React.memo(({
           />
         )}
       </div>
-
-      {/* Show recommendations after agent responses */}
-      {!isUser && !isSystem && recommendations && onActivateAgent && onDismissRecommendation && (
-        <AgentRecommendations
-          showMetisRecommendation={recommendations.showMetisRecommendation}
-          showVeniceRecommendation={recommendations.showVeniceRecommendation}
-          showQryptoRecommendation={recommendations.showQryptoRecommendation}
-          showKNYTRecommendation={recommendations.showKNYTRecommendation}
-          onActivateAgent={onActivateAgent}
-          onDismissRecommendation={onDismissRecommendation}
-        />
-      )}
     </div>
   );
 });
