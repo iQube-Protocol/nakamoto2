@@ -27,7 +27,7 @@ export const useAgentMessagesWithRecommendations = ({
     onMessageSubmit
   });
 
-  // Use the agent activation hook instead of individual persona hooks
+  // Use the agent activation hook
   const agentActivation = useAgentActivation();
 
   // Track the last user message for recommendations
@@ -41,13 +41,8 @@ export const useAgentMessagesWithRecommendations = ({
     }
   }, [agentMessages.messages, lastUserMessage]);
 
-  // Use recommendations hook with the last user message - only if we have one
-  const recommendations = useAgentRecommendations(lastUserMessage || {
-    id: 'temp',
-    sender: 'agent', // Changed to 'agent' so it won't trigger recommendation logic
-    message: '',
-    timestamp: new Date().toISOString()
-  });
+  // Use recommendations hook with the actual last user message (or null if no user messages yet)
+  const recommendations = useAgentRecommendations(lastUserMessage);
 
   // Handle agent activation using the proper activation flow
   const handleActivateAgent = (agentName: string, fee: number, description: string) => {
