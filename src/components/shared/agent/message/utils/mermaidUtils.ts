@@ -21,38 +21,8 @@ export const processCode = (inputCode: string): string => {
       result = `graph TD\n    ${result.replace(/\n/g, '\n    ')}`;
     }
     
-    // Fix quoted text in node labels - this is the main issue
-    result = result
-      // Replace quoted text in brackets with safe alternatives
-      .replace(/\[([^[\]]*)"([^"]*)"([^[\]]*)\]/g, (match, before, quoted, after) => {
-        const safeText = quoted.replace(/\s+/g, '_');
-        return `[${before}${safeText}${after}]`;
-      })
-      // Handle single quotes as well
-      .replace(/\[([^[\]]*)'([^']*)'([^[\]]*)\]/g, (match, before, quoted, after) => {
-        const safeText = quoted.replace(/\s+/g, '_');
-        return `[${before}${safeText}${after}]`;
-      })
-      // Remove extra spaces around arrows and brackets
-      .replace(/([A-Za-z0-9_]+)\s*\[/g, '$1[')
-      .replace(/\s+\]/g, ']')
-      .replace(/([A-Za-z0-9_\]]+)\s+-->/g, '$1-->')
-      .replace(/--\s+->/g, '-->')
-      .replace(/--\s+/g, '-->')
-      // Fix parentheses and commas in node labels
-      .replace(/\[([^\]]*?)(\(|\))([^\]]*?)\]/g, (match, before, paren, after) => {
-        return `[${before}_${after}]`;
-      })
-      .replace(/\[([^\]]*?)e\.g\.,([^\]]*?)\]/g, (match, before, after) => {
-        return `[${before}_e.g._${after}]`;
-      })
-      .replace(/\[([^\]]*?),([^\]]*?)\]/g, (match, before, after) => {
-        return `[${before}_${after}]`;
-      })
-      // Remove % characters and trailing comments which cause parse errors
-      .replace(/(%.*?)($|\n)/g, '$2')
-      // Fix invalid statements with NODE_STRING errors
-      .replace(/\s+\w+\s*-->/g, ' -->');
+    // Enhanced text sanitization
+    result = sanitizeMermaidText(result);
       
     console.log("Processed mermaid code:", result);
     return result;
@@ -60,6 +30,85 @@ export const processCode = (inputCode: string): string => {
     console.error('Error processing mermaid code:', err);
     // Return a minimal valid diagram
     return 'graph TD\n    A[Error] --> B[Try_Again]';
+  }
+};
+
+// Comprehensive text sanitization function
+const sanitizeMermaidText = (code: string): string => {
+  console.log("Sanitizing mermaid text comprehensively");
+  
+  try {
+    let sanitized = code;
+    
+    // Step 1: Fix quoted text in node labels (primary issue)
+    sanitized = sanitized.replace(/\[([^\]]*?["'].*?["'][^\]]*?)\]/g, (match, content) => {
+      // Clean all quotes and special characters from node labels
+      const cleanContent = content
+        .replace(/["']/g, '') // Remove all quotes
+        .replace(/[()]/g, '') // Remove parentheses
+        .replace(/[,;:]/g, '_') // Replace punctuation with underscores
+        .replace(/\s+/g, '_') // Replace spaces with underscores
+        .replace(/[^\w_-]/g, '_') // Replace special chars with underscores
+        .replace(/_+/g, '_') // Collapse multiple underscores
+        .replace(/^_|_$/g, '') // Remove leading/trailing underscores
+        .substring(0, 25); // Limit length
+      
+      return `[${cleanContent || 'Node'}]`;
+    });
+    
+    // Step 2: Handle any remaining problematic brackets
+    sanitized = sanitized.replace(/\[([^\]]*)\]/g, (match, content) => {
+      if (content.includes('"') || content.includes("'") || content.includes(',') || content.includes('(') || content.includes(')')) {
+        const cleanContent = content
+          .replace(/["']/g, '')
+          .replace(/[()]/g, '')
+          .replace(/[,;:]/g, '_')
+          .replace(/\s+/g, '_')
+          .replace(/[^\w_-]/g, '_')
+          .replace(/_+/g, '_')
+          .replace(/^_|_$/g, '')
+          .substring(0, 25);
+        
+        return `[${cleanContent || 'Node'}]`;
+      }
+      return match;
+    });
+    
+    // Step 3: Fix arrow syntax
+    sanitized = sanitized
+      .replace(/--\s*-+/g, '-->')
+      .replace(/--(?!>)/g, '-->')
+      .replace(/\s*-+\s*>/g, ' -->');
+    
+    // Step 4: Remove problematic characters outside of brackets
+    sanitized = sanitized
+      .replace(/['"]/g, '') // Remove stray quotes
+      .replace(/%.*/g, '') // Remove comments
+      .replace(/;/g, ''); // Remove semicolons
+    
+    // Step 5: Clean up whitespace and ensure proper line structure
+    const lines = sanitized.split('\n');
+    const cleanLines = lines
+      .map(line => line.trim())
+      .filter(line => line.length > 0)
+      .map(line => {
+        // Ensure arrows are properly spaced and formatted
+        return line.replace(/(\w+)(\s*-->?\s*)(\w+)/g, '$1 --> $3');
+      });
+    
+    sanitized = cleanLines.join('\n');
+    
+    // Step 6: Final validation
+    if (sanitized.length < 10 || !sanitized.includes('-->')) {
+      console.log("Creating fallback diagram due to insufficient content");
+      return 'graph TD\n    A[Start] --> B[End]';
+    }
+    
+    console.log("Text sanitization complete:", sanitized);
+    return sanitized;
+  } catch (err) {
+    console.error('Error in text sanitization:', err);
+    return 'graph TD\n    A[Error_Fixed] --> B[Safe_Diagram]';
   }
 };
 
@@ -75,38 +124,8 @@ export const attemptAutoFix = (originalCode: string): string => {
       fixedCode = 'graph TD\n' + fixedCode;
     }
     
-    // Fix 2: Handle quoted text in node labels - PRIMARY FIX
-    fixedCode = fixedCode
-      // Remove all quotes from node labels and replace spaces with underscores
-      .replace(/\[([^[\]]*)"([^"]*)"([^[\]]*)\]/g, (match, before, quoted, after) => {
-        const safeText = quoted.replace(/\s+/g, '_').replace(/[^\w\s]/g, '_');
-        return `[${before}${safeText}${after}]`;
-      })
-      .replace(/\[([^[\]]*)'([^']*)'([^[\]]*)\]/g, (match, before, quoted, after) => {
-        const safeText = quoted.replace(/\s+/g, '_').replace(/[^\w\s]/g, '_');
-        return `[${before}${safeText}${after}]`;
-      })
-      // Fix arrow syntax
-      .replace(/--\s*-+/g, '-->')
-      .replace(/--(?!>)/g, '-->')
-      .replace(/\s*-+\s*>/g, ' -->')
-      // Handle special characters and parentheses in labels
-      .replace(/\[([^\]]*?)\(([^\]]*?)\)([^\]]*?)\]/g, (match, before, inside, after) => {
-        return `[${before}_${inside}_${after}]`;
-      })
-      // Fix "e.g.," notation which causes comma parsing issues
-      .replace(/\[([^\]]*?)e\.g\.,([^\]]*?)\]/g, (match, before, after) => {
-        return `[${before}e.g._${after}]`;
-      })
-      // Replace all commas in node labels
-      .replace(/\[([^\]]*?),([^\]]*?)\]/g, (match, before, after) => {
-        return `[${before}_${after}]`;
-      })
-      // Remove % characters and comments that cause parse errors
-      .replace(/(%.*?)($|\n)/g, '$2')
-      // Fix NODE_STRING errors by removing invalid node references
-      .replace(/(\w+\s+)(\w+)(\s*-->)/g, '$1$3')
-      .replace(/-->(\s*)(\w+)(\s*[^[])/g, '-->$1$3');
+    // Fix 2: Apply comprehensive text sanitization
+    fixedCode = sanitizeMermaidText(fixedCode);
     
     console.log("Auto-fixed mermaid code:", fixedCode);
     return fixedCode;
@@ -137,48 +156,8 @@ export const sanitizeMermaidCode = (code: string): string => {
     const typeMatch = sanitized.match(/^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph)\s+([A-Z]{2})?/i);
     const diagramType = typeMatch ? typeMatch[0] : 'graph TD';
     
-    // ENHANCED CRITICAL FIX: Handle all text within square brackets more aggressively
-    console.log("Applying comprehensive text sanitization");
-    
-    // Remove all quotes and special characters from node labels
-    sanitized = sanitized.replace(/\[([^\]]+)\]/g, (match, content) => {
-      // Clean the content inside brackets completely
-      const cleanContent = content
-        .replace(/['"]/g, '') // Remove all quotes
-        .replace(/[()]/g, '') // Remove parentheses
-        .replace(/[,;]/g, '_') // Replace commas and semicolons
-        .replace(/\s+/g, '_') // Replace spaces with underscores
-        .replace(/[^\w_]/g, '_') // Replace any other special chars
-        .replace(/_+/g, '_') // Collapse multiple underscores
-        .replace(/^_|_$/g, '') // Remove leading/trailing underscores
-        .substring(0, 30); // Limit length to avoid overflow
-      
-      return `[${cleanContent || 'Node'}]`; // Fallback to 'Node' if empty
-    });
-    
-    // Fix arrow syntax issues
-    sanitized = sanitized
-      .replace(/--\s*-+/g, '-->')
-      .replace(/--(?!>)/g, '-->')
-      .replace(/\s*-+\s*>/g, ' -->');
-    
-    // Remove any remaining problematic characters outside of brackets
-    sanitized = sanitized
-      .replace(/['"]/g, '') // Remove stray quotes
-      .replace(/%.*/g, '') // Remove comments
-      .replace(/;/g, ''); // Remove semicolons
-    
-    // Clean up whitespace and ensure proper line structure
-    const lines = sanitized.split('\n');
-    const cleanLines = lines
-      .map(line => line.trim())
-      .filter(line => line.length > 0)
-      .map(line => {
-        // Ensure arrows are properly spaced
-        return line.replace(/(\w+)(\s*-->?\s*)(\w+)/g, '$1 --> $3');
-      });
-    
-    sanitized = cleanLines.join('\n');
+    // Apply the comprehensive text sanitization
+    sanitized = sanitizeMermaidText(sanitized);
     
     // Ensure we have a valid diagram type at the start
     if (!sanitized.match(/^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph)/i)) {
