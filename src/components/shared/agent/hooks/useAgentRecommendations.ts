@@ -14,6 +14,8 @@ interface AgentRecommendationState {
 }
 
 export const useAgentRecommendations = (message: AgentMessage | null) => {
+  console.log('useAgentRecommendations: Hook called with message:', message ? { id: message.id, sender: message.sender, message: message.message } : null);
+  
   const [recommendations, setRecommendations] = useState<AgentRecommendationState>({
     showMetisRecommendation: false,
     showVeniceRecommendation: false,
@@ -29,6 +31,8 @@ export const useAgentRecommendations = (message: AgentMessage | null) => {
 
   // Check for trigger words in user messages
   useEffect(() => {
+    console.log('useAgentRecommendations: useEffect triggered with message:', message ? { sender: message.sender, message: message.message } : null);
+    
     // Only process if we have a message and it's from a user
     if (!message || message.sender !== 'user') {
       console.log('useAgentRecommendations: Skipping - no message or not user message:', { message: message?.message, sender: message?.sender });
@@ -71,16 +75,24 @@ export const useAgentRecommendations = (message: AgentMessage | null) => {
     const knytTriggers = ['metaknyts', 'metaiye', 'knowone', 'kn0w1', 'deji', 'fang', 'bat', 'digiterra', 'metaterm', 'terra', 'qryptopia', 'knyt'];
     const hasKNYTTrigger = knytTriggers.some(trigger => lowerMessage.includes(trigger));
     
+    console.log('useAgentRecommendations: Trigger analysis:', {
+      hasMetisTrigger, hasVeniceTrigger, hasQryptoTrigger, hasKNYTTrigger,
+      metisActivated, veniceActivated, qryptoPersonaActivated, knytPersonaActivated
+    });
+
     // Show recommendations with delay, but only if not already activated
     if (hasMetisTrigger && !metisActivated) {
+      console.log('useAgentRecommendations: Setting Metis recommendation');
       setTimeout(() => setRecommendations(prev => ({ ...prev, showMetisRecommendation: true })), 1000);
     }
     
     if (hasVeniceTrigger && !veniceActivated) {
+      console.log('useAgentRecommendations: Setting Venice recommendation');
       setTimeout(() => setRecommendations(prev => ({ ...prev, showVeniceRecommendation: true })), 1000);
     }
     
     if (hasQryptoTrigger && !qryptoPersonaActivated) {
+      console.log('useAgentRecommendations: Setting Qrypto recommendation');
       setTimeout(() => setRecommendations(prev => ({ ...prev, showQryptoRecommendation: true })), 1000);
     }
 
@@ -93,11 +105,6 @@ export const useAgentRecommendations = (message: AgentMessage | null) => {
       }, 1000);
     }
 
-    console.log('useAgentRecommendations: Trigger analysis:', {
-      hasMetisTrigger, hasVeniceTrigger, hasQryptoTrigger, hasKNYTTrigger,
-      metisActivated, veniceActivated, qryptoPersonaActivated, knytPersonaActivated
-    });
-
     console.log('useAgentRecommendations: Final logic check - KNYT:', {
       hasKNYTTrigger,
       knytPersonaActivated,
@@ -105,7 +112,13 @@ export const useAgentRecommendations = (message: AgentMessage | null) => {
     });
   }, [message, metisActivated, veniceActivated, qryptoPersonaActivated, knytPersonaActivated]);
 
+  // Debug recommendations state changes
+  useEffect(() => {
+    console.log('useAgentRecommendations: Recommendations state changed:', recommendations);
+  }, [recommendations]);
+
   const dismissRecommendation = (agentName: string) => {
+    console.log('useAgentRecommendations: Dismissing recommendation:', agentName);
     if (agentName === 'Metis') setRecommendations(prev => ({ ...prev, showMetisRecommendation: false }));
     if (agentName === 'Venice') setRecommendations(prev => ({ ...prev, showVeniceRecommendation: false }));
     if (agentName === 'Qrypto Persona') setRecommendations(prev => ({ ...prev, showQryptoRecommendation: false }));
