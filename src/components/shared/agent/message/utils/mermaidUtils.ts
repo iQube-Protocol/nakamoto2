@@ -144,39 +144,76 @@ export const setupRenderTimeout = (): (() => void) => {
   return () => clearTimeout(timeoutId);
 };
 
-// Special sanitization for diagrams with PS parse errors (parenthesis issues)
+// Enhanced sanitization function that's comprehensive and robust
 export const sanitizeMermaidCode = (code: string): string => {
-  console.log("🔧 MERMAID DEBUG: Starting sanitization of code:", code);
-  
   try {
-    // First strip any SHOW_CODE prefix
-    let sanitized = code.replace(/^SHOW_CODE_/, '').trim();
-    console.log("🔧 MERMAID DEBUG: After SHOW_CODE removal:", sanitized);
+    console.log("🔧 SANITIZE: Starting sanitization of:", code.substring(0, 50));
     
-    // Get the diagram type - preserve it for later
-    const typeMatch = sanitized.match(/^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph)\s+([A-Z]{2})?/i);
-    const diagramType = typeMatch ? typeMatch[0] : 'graph TD';
-    console.log("🔧 MERMAID DEBUG: Detected diagram type:", diagramType);
+    // Remove any markdown formatting remnants
+    let cleanCode = code.replace(/^```(?:mermaid)?\s*/i, '').replace(/```\s*$/, '').trim();
     
-    // Apply the comprehensive text sanitization
-    sanitized = sanitizeMermaidText(sanitized);
-    console.log("🔧 MERMAID DEBUG: After text sanitization:", sanitized);
+    // Remove any XML/HTML tags that might be present
+    cleanCode = cleanCode.replace(/<[^>]*>/g, '');
     
-    // Ensure we have a valid diagram type at the start
-    if (!sanitized.match(/^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph)/i)) {
-      sanitized = `${diagramType}\n${sanitized}`;
+    // Extract the diagram type (if present) and preserve it
+    const typeMatch = cleanCode.match(/^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph)\s/i);
+    const diagramType = typeMatch ? typeMatch[1] : null;
+    
+    // If no type is found, assume it's a graph
+    if (!diagramType && !cleanCode.startsWith('graph') && !cleanCode.startsWith('flowchart')) {
+      cleanCode = `graph TD\n${cleanCode}`;
     }
     
-    // Final validation - if still problematic, create fallback
-    if (sanitized.length < 10 || !sanitized.includes('-->')) {
-      console.log("🔧 MERMAID DEBUG: Creating fallback diagram due to insufficient content");
-      return `${diagramType}\n    A[Start] --> B[End]`;
+    // Apply comprehensive text sanitization
+    cleanCode = sanitizeMermaidText(cleanCode);
+    
+    // Additional validation: ensure we don't have problematic patterns
+    const problematicPatterns = [
+      /[<>]/g,  // Remove any remaining angle brackets
+      /["']{3,}/g,  // Remove triple quotes or more
+      /\n{3,}/g,  // Collapse multiple newlines
+    ];
+    
+    problematicPatterns.forEach(pattern => {
+      if (pattern.source.includes('<>')) {
+        cleanCode = cleanCode.replace(pattern, '');
+      } else if (pattern.source.includes('{"\'"}')) {
+        cleanCode = cleanCode.replace(pattern, '"');
+      } else if (pattern.source.includes('\\n')) {
+        cleanCode = cleanCode.replace(pattern, '\n\n');
+      }
+    });
+    
+    // Validate that we have a valid diagram type
+    const validTypes = ['graph', 'flowchart', 'sequenceDiagram', 'classDiagram', 'stateDiagram', 'erDiagram', 'journey', 'gantt', 'pie', 'gitGraph'];
+    const hasValidType = validTypes.some(type => cleanCode.toLowerCase().startsWith(type.toLowerCase()));
+    
+    if (!hasValidType) {
+      console.log("🔧 SANITIZE: No valid type found, creating simple graph");
+      return `graph TD
+    A[Start] --> B[Process]
+    B --> C[End]
+    
+    classDef default fill:#f9f9f9,stroke:#333,stroke-width:2px;`;
     }
     
-    console.log("🔧 MERMAID DEBUG: Final sanitized code:", sanitized);
-    return sanitized;
-  } catch (err) {
-    console.error('🔧 MERMAID DEBUG: Error sanitizing mermaid code:', err);
-    return 'graph TD\n    A[Error_Fixed] --> B[Safe_Diagram]';
+    // Final validation: ensure minimum content
+    if (cleanCode.length < 10) {
+      console.log("🔧 SANITIZE: Code too short, using fallback");
+      return `graph TD
+    A[Content] --> B[Processed]
+    
+    classDef default fill:#f9f9f9,stroke:#333,stroke-width:2px;`;
+    }
+    
+    console.log("🔧 SANITIZE: Sanitization complete:", cleanCode.substring(0, 100));
+    return cleanCode;
+  } catch (error) {
+    console.error("🔧 SANITIZE: Error during sanitization:", error);
+    // Return a guaranteed-to-work simple diagram
+    return `graph TD
+    A[Start] --> B[End]
+    
+    classDef default fill:#f9f9f9,stroke:#333,stroke-width:2px;`;
   }
 };

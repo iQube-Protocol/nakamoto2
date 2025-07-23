@@ -134,9 +134,31 @@ const MermaidDiagramInternal = ({ code, id }: MermaidDiagramProps) => {
           setIsLoading(false);
         }
       } catch (err) {
-        console.error("🔧 MERMAID: Rendering error for diagram", id, ":", err);
+        console.error("🔧 MERMAID: Render failed for code:", currentCode.substring(0, 100));
+        console.error("🔧 MERMAID: Error details:", err);
         
-        if (isMounted) {
+        // If it's a syntax error, try to auto-fix and re-render
+        const errorMessage = err instanceof Error ? err.message : String(err);
+        if (isMounted && errorMessage.toLowerCase().includes('syntax error')) {
+          console.log('🔧 MERMAID: Attempting auto-fix for syntax error');
+          try {
+            const { sanitizeMermaidCode } = await import('./utils/mermaidUtils');
+            const fixedCode = sanitizeMermaidCode(currentCode);
+            console.log('🔧 MERMAID: Retry with fixed code:', fixedCode.substring(0, 100));
+            
+            // Get mermaid instance for retry
+            const mermaidRetry = await getMermaid();
+            const retryUniqueId = `mermaid-${id}-retry-${Date.now()}`;
+            const retryResult = await mermaidRetry.render(retryUniqueId, fixedCode);
+            setSvg(retryResult.svg);
+            setIsLoading(false);
+            console.log('🔧 MERMAID: Auto-fix successful');
+          } catch (retryErr) {
+            console.error('🔧 MERMAID: Auto-fix also failed:', retryErr);
+            setError(err instanceof Error ? err : new Error(String(err)));
+            setIsLoading(false);
+          }
+        } else if (isMounted) {
           setError(err instanceof Error ? err : new Error(String(err)));
           setIsLoading(false);
         }

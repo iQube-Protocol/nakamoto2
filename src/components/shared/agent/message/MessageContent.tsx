@@ -4,6 +4,7 @@ import React from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import MermaidDiagram from './MermaidDiagram';
+import { sanitizeMermaidCode } from './utils/mermaidUtils';
 
 interface MessageContentProps {
   content: string;
@@ -112,12 +113,16 @@ const MessageContent = ({ content, sender }: MessageContentProps) => {
         const language = firstLineBreak > 0 ? part.substring(0, firstLineBreak).trim() : '';
         const code = firstLineBreak > 0 ? part.substring(firstLineBreak + 1) : part;
         
-        // Handle Mermaid diagrams
+        // Handle Mermaid diagrams with robust sanitization
         if (language === 'mermaid') {
+          console.log('🔧 MESSAGECONTENT: Raw mermaid code:', code.substring(0, 100));
+          const sanitizedCode = sanitizeMermaidCode(code);
+          console.log('🔧 MESSAGECONTENT: Sanitized mermaid code:', sanitizedCode.substring(0, 100));
+          
           return (
             <MermaidDiagram 
               key={`mermaid-${i}-${Date.now()}`} 
-              code={code} 
+              code={sanitizedCode} 
               id={`mermaid-${i}-${Date.now()}`}
             />
           );
