@@ -39,11 +39,11 @@ const MessageList = ({
     showKNYTRecommendation: false,
   });
 
-  // Trigger words for each agent
+  // Trigger words for each agent (matching useAgentRecommendations.ts)
   const triggerWords = {
-    venice: ['privacy', 'censorship', 'surveillance', 'freedom', 'liberty', 'decentralized', 'anonymous'],
-    qrypto: ['personalize', 'customize', 'preferences', 'personal', 'tailor', 'individual'],
-    knyt: ['metaknyts', 'KNYT Wallet', 'token', 'wallet', 'crypto', 'blockchain', 'metaknyt']
+    venice: ['privacy', 'censorship'],
+    qrypto: ['personalize', 'personalise', 'customize', 'custom'],
+    knyt: ['metaknyts', 'metaiye', 'knowone', 'kn0w1', 'deji', 'fang', 'bat', 'digiterra', 'metaterm', 'terra', 'qryptopia', 'knyt']
   };
 
   // Check for trigger words in user messages
