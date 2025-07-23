@@ -115,11 +115,16 @@ const MessageList = ({
       <ScrollArea className="h-full">
         <div className="p-4 pb-2 space-y-4">
           {messages.map((msg, index) => {
-            // Show recommendations on agent messages that come after trigger
-            const showRecommendationsOnThis = msg.sender !== 'user' && 
-                                            msg.sender !== 'system' && 
-                                            index > 0 && 
-                                            messages[index - 1].sender === 'user';
+            // Show recommendations only on the last agent message when recommendations are active
+            const isLastAgentMessage = msg.sender !== 'user' && 
+                                     msg.sender !== 'system' && 
+                                     index === messages.length - 1;
+            
+            const hasActiveRecommendations = recommendations.showVeniceRecommendation || 
+                                           recommendations.showQryptoRecommendation || 
+                                           recommendations.showKNYTRecommendation;
+            
+            const showRecommendationsOnThis = isLastAgentMessage && hasActiveRecommendations;
             
             return (
               <MessageItem 
