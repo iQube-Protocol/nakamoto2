@@ -327,19 +327,16 @@ export const walletConnectionService = {
         console.log('Qrypto persona update success:', qryptoSuccess);
         
         if (knytSuccess || qryptoSuccess) {
-          // Dispatch comprehensive events
-          const events = ['privateDataUpdated', 'personaDataUpdated', 'balanceUpdated', 'walletDataRefreshed'];
-          events.forEach(eventName => {
-            const event = new CustomEvent(eventName, {
-              detail: {
-                balance: tokenBalance.formatted,
-                address: walletAddress,
-                timestamp: tokenBalance.timestamp
-              }
-            });
-            console.log(`📡 Dispatching event: ${eventName}`);
-            window.dispatchEvent(event);
+          // Dispatch only essential events to prevent loops
+          const event = new CustomEvent('balanceUpdated', {
+            detail: {
+              balance: tokenBalance.formatted,
+              address: walletAddress,
+              timestamp: tokenBalance.timestamp
+            }
           });
+          console.log(`📡 Dispatching single balance update event`);
+          window.dispatchEvent(event);
         }
       } catch (updateError) {
         console.error('❌ Error updating persona data:', updateError);
@@ -431,19 +428,16 @@ export const walletConnectionService = {
         console.log('Qrypto persona update success:', qryptoSuccess);
         
         if (knytSuccess || qryptoSuccess) {
-          // Dispatch comprehensive events
-          const events = ['privateDataUpdated', 'personaDataUpdated', 'balanceUpdated', 'walletDataRefreshed'];
-          events.forEach(eventName => {
-            const event = new CustomEvent(eventName, { 
-              detail: { 
-                balance: tokenBalance.formatted,
-                address: walletAddress,
-                timestamp: tokenBalance.timestamp
-              }
-            });
-            console.log(`📡 Dispatching event: ${eventName}`);
-            window.dispatchEvent(event);
+          // Dispatch only essential events to prevent loops
+          const event = new CustomEvent('balanceUpdated', { 
+            detail: { 
+              balance: tokenBalance.formatted,
+              address: walletAddress,
+              timestamp: tokenBalance.timestamp
+            }
           });
+          console.log(`📡 Dispatching single balance update event`);
+          window.dispatchEvent(event);
           
           console.log('✅ Persona data updated and events dispatched');
         }

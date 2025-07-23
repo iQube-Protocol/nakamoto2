@@ -155,6 +155,18 @@ export const sanitizeMermaidCode = (code: string): string => {
     // Remove any XML/HTML tags that might be present
     cleanCode = cleanCode.replace(/<[^>]*>/g, '');
     
+    // Handle problematic Unicode characters that cause syntax errors
+    cleanCode = cleanCode
+      .replace(/[""]/g, '"')  // Replace smart quotes
+      .replace(/['']/g, "'")  // Replace smart apostrophes
+      .replace(/–/g, "-")     // Replace en dash
+      .replace(/—/g, "-")     // Replace em dash
+      .replace(/…/g, "...")   // Replace ellipsis
+      .replace(/\u00A0/g, " ") // Replace non-breaking space
+      .replace(/[\u2000-\u206F]/g, " ") // Replace various Unicode spaces
+      .replace(/[\u2E00-\u2E7F]/g, "") // Remove supplemental punctuation
+      .replace(/[^\x00-\x7F]/g, ''); // Remove all remaining non-ASCII characters
+    
     // Extract the diagram type (if present) and preserve it
     const typeMatch = cleanCode.match(/^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph)\s/i);
     const diagramType = typeMatch ? typeMatch[1] : null;
@@ -172,6 +184,7 @@ export const sanitizeMermaidCode = (code: string): string => {
       /[<>]/g,  // Remove any remaining angle brackets
       /["']{3,}/g,  // Remove triple quotes or more
       /\n{3,}/g,  // Collapse multiple newlines
+      /undefined|null/gi, // Remove undefined/null text
     ];
     
     problematicPatterns.forEach(pattern => {
@@ -181,6 +194,8 @@ export const sanitizeMermaidCode = (code: string): string => {
         cleanCode = cleanCode.replace(pattern, '"');
       } else if (pattern.source.includes('\\n')) {
         cleanCode = cleanCode.replace(pattern, '\n\n');
+      } else if (pattern.source.includes('undefined|null')) {
+        cleanCode = cleanCode.replace(pattern, '');
       }
     });
     
@@ -188,8 +203,8 @@ export const sanitizeMermaidCode = (code: string): string => {
     const validTypes = ['graph', 'flowchart', 'sequenceDiagram', 'classDiagram', 'stateDiagram', 'erDiagram', 'journey', 'gantt', 'pie', 'gitGraph'];
     const hasValidType = validTypes.some(type => cleanCode.toLowerCase().startsWith(type.toLowerCase()));
     
-    if (!hasValidType) {
-      console.log("🔧 SANITIZE: No valid type found, creating simple graph");
+    if (!hasValidType || cleanCode.length < 15) {
+      console.log("🔧 SANITIZE: Invalid or too short, creating simple graph");
       return `graph TD
     A[Start] --> B[Process]
     B --> C[End]

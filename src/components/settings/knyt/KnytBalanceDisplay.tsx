@@ -295,16 +295,12 @@ const KnytBalanceDisplay = ({ onBalanceUpdate }: KnytBalanceDisplayProps) => {
       refreshConnections();
     };
 
+    // Only listen to essential balance events to prevent loops
     window.addEventListener('balanceUpdated', handleBalanceUpdate);
-    window.addEventListener('personaDataUpdated', handlePersonaUpdate);
-    window.addEventListener('privateDataUpdated', handleBalanceUpdate);
-    window.addEventListener('walletDataRefreshed', handleBalanceUpdate);
 
     return () => {
+      // Clean up balance event listener
       window.removeEventListener('balanceUpdated', handleBalanceUpdate);
-      window.removeEventListener('personaDataUpdated', handlePersonaUpdate);
-      window.removeEventListener('privateDataUpdated', handleBalanceUpdate);
-      window.removeEventListener('walletDataRefreshed', handleBalanceUpdate);
     };
   }, [refreshConnections]);
 
