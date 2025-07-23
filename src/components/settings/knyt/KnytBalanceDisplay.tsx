@@ -149,12 +149,8 @@ const KnytBalanceDisplay = ({ onBalanceUpdate }: KnytBalanceDisplayProps) => {
           onBalanceUpdate();
         }
         
-        // Dispatch comprehensive events
-        const events = ['privateDataUpdated', 'personaDataUpdated', 'balanceUpdated'];
-        events.forEach(eventName => {
-          const event = new CustomEvent(eventName);
-          window.dispatchEvent(event);
-        });
+        // Removed excessive event dispatching to prevent infinite loops
+        // Events are now handled through direct service calls
         
         setDebugInfo('✅ Balance refresh completed successfully');
         toast.success('KNYT balance refreshed successfully');
@@ -301,12 +297,11 @@ const KnytBalanceDisplay = ({ onBalanceUpdate }: KnytBalanceDisplayProps) => {
       }, 500); // 500ms debounce
     };
 
-    // Only listen to essential balance events to prevent loops
-    window.addEventListener('balanceUpdated', handleBalanceUpdate);
-
+    // Removed infinite loop causing event listener
+    // Balance updates are now handled through direct state management
+    
     return () => {
-      // Clean up balance event listener and debounce timer
-      window.removeEventListener('balanceUpdated', handleBalanceUpdate);
+      // Clean up debounce timer only
       if (debouncedRefreshRef.current) {
         clearTimeout(debouncedRefreshRef.current);
       }

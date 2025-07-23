@@ -52,10 +52,10 @@ export function useServiceConnections() {
   const fetchConnections = async (showLoading = true) => {
     if (!user) return;
     
-    // Prevent duplicate calls within 1 second
+    // Circuit breaker - prevent excessive API calls
     const now = Date.now();
-    if (now - fetchCacheRef.current.timestamp < 1000) {
-      console.log('🚫 Skipping duplicate fetchConnections call (too recent)');
+    if (now - fetchCacheRef.current.timestamp < 2000) {
+      console.log('🚫 Skipping duplicate fetchConnections call - circuit breaker active');
       return fetchCacheRef.current.promise || Promise.resolve();
     }
     

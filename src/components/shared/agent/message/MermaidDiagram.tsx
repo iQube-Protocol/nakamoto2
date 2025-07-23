@@ -39,7 +39,7 @@ const getMermaid = async () => {
           tertiaryColor: '#FDE1D3', // Changed to beige background
           
           // Adjustments for text
-          fontSize: '84px', // Keep the large font size
+          fontSize: '16px', // Keep the large font size
           fontFamily: 'Inter, system-ui, sans-serif',
           
           // Node styling - changed to white background
@@ -220,7 +220,7 @@ const MermaidDiagramInternal = ({ code, id }: MermaidDiagramProps) => {
         const labels = svgElement.querySelectorAll('.nodeLabel, .edgeLabel');
         labels.forEach((label: Element) => {
           if (label instanceof HTMLElement) {
-            label.style.fontSize = '78px'; // Keep the large font size
+            label.style.fontSize = '16px'; // Fixed font size to normal readable size
             label.style.fontWeight = '400'; // Normal weight instead of bold
             // Make labels wrap at a reasonable width
             if (label.classList.contains('nodeLabel')) {

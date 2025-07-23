@@ -437,22 +437,13 @@ export const walletConnectionService = {
         if (knytSuccess || qryptoSuccess) {
           // Only dispatch if balance actually changed to prevent loops
           const lastDispatchedBalance = sessionStorage.getItem('lastDispatchedBalance');
+          // Only dispatch if balance actually changed to prevent infinite loops
           if (lastDispatchedBalance !== tokenBalance.formatted) {
             sessionStorage.setItem('lastDispatchedBalance', tokenBalance.formatted);
-            
-            const event = new CustomEvent('balanceUpdated', { 
-              detail: { 
-                balance: tokenBalance.formatted,
-                address: walletAddress,
-                timestamp: tokenBalance.timestamp
-              }
-            });
-            console.log(`📡 Dispatching balance update event (balance changed)`);
-            window.dispatchEvent(event);
-            
-            console.log('✅ Persona data updated and events dispatched');
+            console.log(`📡 Balance changed: ${lastDispatchedBalance} → ${tokenBalance.formatted}`);
+            console.log('✅ Persona data updated - no event dispatching to prevent loops');
           } else {
-            console.log(`🚫 Skipping duplicate balance event dispatch`);
+            console.log(`🚫 Balance unchanged, no update needed`);
           }
         }
       } catch (updateError) {
