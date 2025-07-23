@@ -8,7 +8,7 @@ interface SelectedAgent {
   description: string;
 }
 
-export const useAgentActivation = () => {
+export const useAgentActivation = (onDismissRecommendation?: (agentName: string) => void) => {
   const { toast } = useToast();
   const [showActivationModal, setShowActivationModal] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState<SelectedAgent | null>(null);
@@ -43,12 +43,34 @@ export const useAgentActivation = () => {
         } 
       }));
     }
+
+    if (selectedAgent?.name === 'Venice') {
+      // Dispatch event to activate Venice
+      window.dispatchEvent(new CustomEvent('veniceStateChanged', { 
+        detail: { active: true } 
+      }));
+    }
+
+    if (selectedAgent?.name === 'Qrypto Persona') {
+      // Dispatch event to activate Qrypto Persona
+      window.dispatchEvent(new CustomEvent('iqubeToggle', { 
+        detail: { 
+          iqubeId: "Qrypto Persona", 
+          active: true 
+        } 
+      }));
+    }
     
     toast({
       title: `${selectedAgent?.name} Agent Activated`,
       description: `You now have access to ${selectedAgent?.name} capabilities.`,
       variant: "default",
     });
+
+    // Dismiss the recommendation after activation
+    if (onDismissRecommendation && selectedAgent?.name) {
+      onDismissRecommendation(selectedAgent.name);
+    }
     
     setSelectedAgent(null);
   };

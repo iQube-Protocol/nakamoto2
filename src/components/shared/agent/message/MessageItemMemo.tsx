@@ -41,7 +41,7 @@ const MessageItemMemo: React.FC<MessageItemProps> = React.memo(({
     handleConfirmPayment, 
     handleActivationComplete, 
     closeActivationModal 
-  } = useAgentActivation();
+  } = useAgentActivation(onDismissRecommendation);
   
   return (
     <div className={`message-item ${isUser ? 'user-message' : isSystem ? 'system-message' : 'agent-message'}`}>
