@@ -1,6 +1,6 @@
+
 import React, { useState, useEffect, useRef } from 'react';
 import DiagramErrorHandler from './DiagramErrorHandler';
-import MermaidErrorBoundary from './MermaidErrorBoundary';
 import { useTheme } from '@/contexts/ThemeContext';
 
 // Store mermaid instance globally to avoid reinitialization
@@ -39,7 +39,7 @@ const getMermaid = async () => {
           tertiaryColor: '#FDE1D3', // Changed to beige background
           
           // Adjustments for text
-          fontSize: '16px', // Keep the large font size
+          fontSize: '84px', // Keep the large font size
           fontFamily: 'Inter, system-ui, sans-serif',
           
           // Node styling - changed to white background
@@ -60,7 +60,7 @@ const getMermaid = async () => {
       mermaidInstance = instance;
       return instance;
     }).catch(err => {
-      console.error("🔧 MERMAID: Failed to initialize mermaid:", err);
+      console.error("Failed to initialize mermaid:", err);
       mermaidPromise = null;
       throw err;
     });
@@ -74,7 +74,7 @@ interface MermaidDiagramProps {
   id: string;
 }
 
-const MermaidDiagramInternal = ({ code, id }: MermaidDiagramProps) => {
+const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
   const [svg, setSvg] = useState<string | null>(null);
   const [error, setError] = useState<Error | null>(null);
   const [isLoading, setIsLoading] = useState(true);
@@ -86,7 +86,6 @@ const MermaidDiagramInternal = ({ code, id }: MermaidDiagramProps) => {
   // Render diagram when code changes or component mounts
   useEffect(() => {
     if (!currentCode || currentCode.trim() === '') {
-      console.error("🔧 MERMAID: Empty diagram code provided");
       setError(new Error("Empty diagram code"));
       setIsLoading(false);
       return;
@@ -98,21 +97,19 @@ const MermaidDiagramInternal = ({ code, id }: MermaidDiagramProps) => {
     const renderDiagram = async () => {
       if (showCodeView) return;
       
-      console.log(`🔧 MERMAID: Starting render for diagram ${id}`);
       setIsLoading(true);
       setError(null);
       
       // Set a timeout to prevent hanging
       timeoutId = window.setTimeout(() => {
         if (isMounted) {
-          console.error(`🔧 MERMAID: Timeout rendering diagram ${id}`);
           setError(new Error("Rendering timeout - diagram may be too complex"));
           setIsLoading(false);
         }
-      }, 6000); // Reduced timeout for better UX
+      }, 8000); // Reduced timeout for better UX
       
       try {
-        console.log(`🔧 MERMAID: Rendering diagram (ID: ${id}) with code:`, currentCode);
+        console.log(`Rendering diagram (ID: ${id}) with code:`, currentCode);
         
         // Basic validation to catch obvious syntax errors
         if (!currentCode.match(/^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph)/i)) {
@@ -129,50 +126,13 @@ const MermaidDiagramInternal = ({ code, id }: MermaidDiagramProps) => {
         const { svg } = await mermaid.render(uniqueId, currentCode);
         
         if (isMounted) {
-          console.log(`🔧 MERMAID: Successfully rendered diagram ${id}`);
           setSvg(svg);
           setIsLoading(false);
         }
       } catch (err) {
-        console.error("🔧 MERMAID: Render failed for code:", currentCode.substring(0, 100));
-        console.error("🔧 MERMAID: Error details:", err);
+        console.error("Mermaid rendering error:", err);
         
-        // If it's a syntax error, try progressive fallback rendering
-        const errorMessage = err instanceof Error ? err.message : String(err);
-        if (isMounted && (errorMessage.toLowerCase().includes('syntax error') || 
-                         errorMessage.toLowerCase().includes('parse') ||
-                         errorMessage.toLowerCase().includes('unexpected'))) {
-          console.log('🔧 MERMAID: Syntax/Parse error detected, using guaranteed safe fallback');
-          try {
-            // Use an absolutely guaranteed safe diagram with minimal syntax
-            const ultraSafeDiagram = `graph TD
-    A["Diagram Content"] --> B["Processed Successfully"]
-    B --> C["Display Ready"]
-    
-    classDef default fill:#f9f9f9,stroke:#333,stroke-width:2px,color:#000;`;
-            
-            // Get mermaid instance for fallback with timeout
-            const mermaidFallback = await getMermaid();
-            const fallbackUniqueId = `mermaid-safe-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
-            
-            // Add timeout for fallback render too
-            const fallbackTimeout = setTimeout(() => {
-              throw new Error('Fallback render timeout');
-            }, 3000);
-            
-            const fallbackResult = await mermaidFallback.render(fallbackUniqueId, ultraSafeDiagram);
-            clearTimeout(fallbackTimeout);
-            
-            setSvg(fallbackResult.svg);
-            setIsLoading(false);
-            console.log('🔧 MERMAID: Ultra-safe fallback successful');
-          } catch (fallbackErr) {
-            console.error('🔧 MERMAID: Even ultra-safe fallback failed:', fallbackErr);
-            // Last resort - show error but continue gracefully
-            setError(new Error('Diagram rendering unavailable - content continues below'));
-            setIsLoading(false);
-          }
-        } else if (isMounted) {
+        if (isMounted) {
           setError(err instanceof Error ? err : new Error(String(err)));
           setIsLoading(false);
         }
@@ -220,7 +180,7 @@ const MermaidDiagramInternal = ({ code, id }: MermaidDiagramProps) => {
         const labels = svgElement.querySelectorAll('.nodeLabel, .edgeLabel');
         labels.forEach((label: Element) => {
           if (label instanceof HTMLElement) {
-            label.style.fontSize = '16px'; // Fixed font size to normal readable size
+            label.style.fontSize = '78px'; // Keep the large font size
             label.style.fontWeight = '400'; // Normal weight instead of bold
             // Make labels wrap at a reasonable width
             if (label.classList.contains('nodeLabel')) {
@@ -263,17 +223,14 @@ const MermaidDiagramInternal = ({ code, id }: MermaidDiagramProps) => {
             arrow.style.fill = '#7E69AB';
           }
         });
-        
-        console.log(`🔧 MERMAID: Applied styling to diagram ${id}`);
       }
     } catch (err) {
-      console.error("🔧 MERMAID: Error inserting SVG:", err);
+      console.error("Error inserting SVG:", err);
       setError(err instanceof Error ? err : new Error(String(err)));
     }
-  }, [svg, isLoading, theme, id]);
+  }, [svg, isLoading, theme]);
   
   const handleRetry = (codeToRender: string) => {
-    console.log(`🔧 MERMAID: Retry requested for diagram ${id}`);
     if (codeToRender.startsWith("SHOW_CODE_")) {
       setShowCodeView(true);
       setCurrentCode(codeToRender.replace("SHOW_CODE_", ""));
@@ -311,7 +268,7 @@ const MermaidDiagramInternal = ({ code, id }: MermaidDiagramProps) => {
         />
         {/* Fallback content to prevent complete failure */}
         <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-700">
-          <strong>Diagram Preview Unavailable:</strong> The content contains a diagram that couldn't be rendered. The conversation continues normally.
+          <strong>Diagram Preview Unavailable:</strong> The content contains a diagram that couldn't be rendered. Please use the error handler above to troubleshoot.
         </div>
       </div>
     );
@@ -342,14 +299,6 @@ const MermaidDiagramInternal = ({ code, id }: MermaidDiagramProps) => {
         theme === 'light' ? 'bg-[#F9F5EB] border-amber-100' : 'bg-[#FAF7ED] border-amber-100'
       }`}
     />
-  );
-};
-
-const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
-  return (
-    <MermaidErrorBoundary>
-      <MermaidDiagramInternal code={code} id={id} />
-    </MermaidErrorBoundary>
   );
 };
 

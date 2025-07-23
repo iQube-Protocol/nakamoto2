@@ -15,7 +15,7 @@ export const useSidebarLogic = () => {
   const { metisActivated, metisVisible, activateMetis, hideMetis } = useMetisAgent();
   const { qryptoPersonaActivated, activateQryptoPersona, deactivateQryptoPersona } = useQryptoPersona();
   const { veniceActivated, veniceVisible, activateVenice, deactivateVenice, hideVenice } = useVeniceAgent();
-  const { knytPersonaActivated, activateKNYTPersona, deactivateKNYTPersona } = useKNYTPersona();
+  const { knytPersonaActivated, activateKNYTPersona, deactivateKNYTPersona, hideKNYTPersona } = useKNYTPersona();
   const { 
     collapsed, 
     iQubesOpen, 

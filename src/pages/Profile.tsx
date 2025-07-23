@@ -13,15 +13,17 @@ const Profile = () => {
   const {
     user
   } = useAuth();
-  const [activeTab, setActiveTab] = useState<'learn' | 'earn' | 'connect' | 'mondai'>('learn');
+  const [activeTab, setActiveTab] = useState<'learn' | 'earn' | 'connect'>('learn');
   const [selectedResponse, setSelectedResponse] = useState<any>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
+  // Get user interactions for the active tab
   const {
     interactions,
     refreshInteractions
-  } = useUserInteractions(activeTab as any);
+  } = useUserInteractions(activeTab);
 
+  // Ensure we refresh the data when the tab changes
   useEffect(() => {
     refreshInteractions();
   }, [activeTab, refreshInteractions]);
@@ -36,9 +38,12 @@ const Profile = () => {
     setSelectedResponse(null);
   };
 
+  // Process historic content for preview display
   const processHistoricPreview = (content: string) => {
     return content
+    // Remove markdown formatting for preview
     .replace(/\*\*([^*]+)\*\*/g, '$1').replace(/^\* /gm, '• ').replace(/^- /gm, '• ').replace(/^### (.+)$/gm, '$1:').replace(/^## (.+)$/gm, '$1:').replace(/^# (.+)$/gm, '$1:')
+    // Clean up and truncate
     .replace(/\n\n+/g, ' ').trim();
   };
   
@@ -82,16 +87,13 @@ const Profile = () => {
           </CardContent>
         </Card>
 
-        {/* Interaction history section with MonDAI tab added */}
+        {/* Interaction history section with enhanced styling */}
         <Card>
           <CardHeader className="pb-2">
             <CardTitle className="font-medium text-lg">History</CardTitle>
             <div className="flex space-x-2">
               <button onClick={() => setActiveTab('learn')} className={`px-3 py-1 rounded transition-colors ${activeTab === 'learn' ? 'bg-qrypto-primary text-white' : 'bg-muted hover:bg-muted/80'}`}>
                 Learn
-              </button>
-              <button onClick={() => setActiveTab('mondai')} className={`px-3 py-1 rounded transition-colors ${activeTab === 'mondai' ? 'bg-qrypto-primary text-white' : 'bg-muted hover:bg-muted/80'}`}>
-                Nakamoto
               </button>
               <button onClick={() => setActiveTab('earn')} className={`px-3 py-1 rounded transition-colors ${activeTab === 'earn' ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'}`}>
                 Earn
@@ -134,6 +136,7 @@ const Profile = () => {
                             </div>}
                         </div>
                         
+                        {/* Enhanced preview with conversational styling */}
                         <div className="text-sm conversational-content">
                           {interaction.response.length > 300 ? <div>
                               <p className="text-foreground leading-relaxed">
@@ -149,9 +152,9 @@ const Profile = () => {
                         </div>
                       </div>}
                   </div>) : <div className="text-center p-6">
-                    <p>No {activeTab === 'learn' ? 'Learn/MonDAI' : activeTab === 'mondai' ? 'MonDAI' : activeTab} conversations found.</p>
+                    <p>No {activeTab === 'learn' ? 'Learn/MonDAI' : activeTab} conversations found.</p>
                     <p className="text-sm text-muted-foreground mt-2">
-                      Start a conversation with the {activeTab === 'learn' ? 'Learn or MonDAI' : activeTab === 'mondai' ? 'MonDAI' : activeTab} agent to see your history here.
+                      Start a conversation with the {activeTab === 'learn' ? 'Learn or MonDAI' : activeTab} agent to see your history here.
                     </p>
                   </div>}
               </div>

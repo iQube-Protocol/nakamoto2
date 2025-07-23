@@ -192,8 +192,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const signUp = async (email: string, password: string, firstName?: string, lastName?: string) => {
     try {
-      // Use consistent domain for redirect
-      const redirectTo = 'https://nakamoto.aigentz.me/signin?confirmed=true';
+      // Get the current site URL for redirection - use the current origin
+      const redirectTo = `${window.location.origin}/signin?confirmed=true`;
       
       console.log("Attempting sign up for:", email, "with redirect to:", redirectTo);
       
@@ -230,51 +230,24 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
 
   const resetPassword = async (email: string) => {
     try {
-      // Use consistent, hardcoded domain instead of window.location.origin
-      const redirectTo = 'https://nakamoto.aigentz.me/reset-password';
+      // Use the current origin to construct the redirect URL
+      const redirectTo = `${window.location.origin}/reset-password`;
       
       console.log("Attempting password reset for:", email, "with redirect to:", redirectTo);
-      
-      // Validate email format before attempting reset
-      const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-      if (!emailRegex.test(email)) {
-        const validationError = new Error('Please enter a valid email address');
-        console.error('Invalid email format:', email);
-        return { error: validationError, success: false };
-      }
       
       const { error } = await supabase.auth.resetPasswordForEmail(email, {
         redirectTo: redirectTo
       });
 
       if (error) {
-        console.error('Error sending password reset email:', error.message, error);
-        
-        // Provide more specific error messages
-        let userFriendlyMessage = error.message;
-        if (error.message.includes('rate limit')) {
-          userFriendlyMessage = 'Too many reset attempts. Please wait a few minutes before trying again.';
-        } else if (error.message.includes('not found') || error.message.includes('invalid')) {
-          userFriendlyMessage = 'No account found with this email address.';
-        }
-        
-        const enhancedError = new Error(userFriendlyMessage);
-        return { error: enhancedError, success: false };
+        console.error('Error sending password reset email:', error.message);
+        return { error, success: false };
       }
 
-      console.log("Password reset email sent successfully to:", email);
+      console.log("Password reset email sent successfully");
       return { error: null, success: true };
     } catch (error) {
       console.error('Unexpected error during password reset:', error);
-      
-      // Log additional details for debugging
-      console.error('Password reset debug info:', {
-        email,
-        currentOrigin: window.location.origin,
-        userAgent: navigator.userAgent,
-        timestamp: new Date().toISOString()
-      });
-      
       return { error: error as Error, success: false };
     }
   };

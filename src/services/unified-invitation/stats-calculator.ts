@@ -3,13 +3,13 @@ import type { UnifiedInvitationStats } from './types';
 
 export class StatsCalculator {
   static async calculateUnifiedStats(): Promise<UnifiedInvitationStats> {
-    console.log('StatsCalculator: Calculating unified stats with actual persona counts...');
+    console.log('StatsCalculator: Calculating unified stats with corrected logic...');
     
     try {
-      // Get all invitation data 
+      // Get all invitation data without any limit to ensure we get everything
       const { data: allInvitations, error, count } = await supabase
         .from('invited_users')
-        .select('email, email_sent, signup_completed, persona_type, invited_at', { count: 'exact' })
+        .select('email_sent, signup_completed, invited_at', { count: 'exact' })
         .order('invited_at', { ascending: false });
 
       if (error) {
@@ -17,25 +17,18 @@ export class StatsCalculator {
         throw error;
       }
 
-      // Use direct database counts for actual signups - these are the REAL numbers
-      // Based on our direct queries: 118 knyt + 0 qrypto = 118 total actual signups
-      const knytSignups = 118; // Users who have KNYT personas created
-      const qryptoSignups = 0; // Users who have Qrypto personas created
-      const actualSignupsCompleted = knytSignups + qryptoSignups;
-
-      console.log('StatsCalculator: Actual persona counts:', {
-        totalInvitations: count || 0,
-        knytSignups,
-        qryptoSignups,
-        actualSignupsCompleted
+      console.log('StatsCalculator: Raw query results:', {
+        dataLength: allInvitations?.length || 0,
+        exactCount: count,
+        sampleData: allInvitations?.slice(0, 3)
       });
 
       // Use the exact count from Supabase to ensure accuracy
       const totalCreated = count || 0;
       const emailsSent = allInvitations?.filter(inv => inv.email_sent === true).length || 0;
       const emailsPending = allInvitations?.filter(inv => inv.email_sent === false).length || 0;
-      const signupsCompleted = actualSignupsCompleted; // Use actual persona count instead of signup_completed flag
-      const awaitingSignup = emailsSent - actualSignupsCompleted; // People who got emails but haven't actually completed signup
+      const signupsCompleted = allInvitations?.filter(inv => inv.signup_completed === true).length || 0;
+      const awaitingSignup = allInvitations?.filter(inv => inv.email_sent === true && inv.signup_completed === false).length || 0;
       const conversionRate = emailsSent > 0 ? (signupsCompleted / emailsSent) * 100 : 0;
 
       const stats: UnifiedInvitationStats = {

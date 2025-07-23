@@ -22,13 +22,6 @@ const AgentRecommendations = ({
 }: AgentRecommendationsProps) => {
   const { toast } = useToast();
 
-  console.log('AgentRecommendations: Received props:', {
-    showMetisRecommendation,
-    showVeniceRecommendation, 
-    showQryptoRecommendation,
-    showKNYTRecommendation
-  });
-
   const handleDismissRecommendation = (agentName: string) => {
     onDismissRecommendation(agentName);
     

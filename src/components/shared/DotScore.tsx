@@ -67,7 +67,17 @@ const DotScore = ({ value, label, type, isProcessing = false }: DotScoreProps) =
               style={{
                 animationDelay: isProcessing ? `${i * 200}ms` : '0ms'
               }}
-            />
+            >
+              {/* Shimmer overlay for processing animation */}
+              {isProcessing && (
+                <div 
+                  className="absolute inset-0 rounded-full bg-white/30 animate-shimmer-pass"
+                  style={{
+                    animationDelay: `${i * 200}ms`
+                  }}
+                />
+              )}
+            </div>
           ))}
         </div>
       </ScoreTooltip>

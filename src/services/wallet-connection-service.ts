@@ -327,23 +327,19 @@ export const walletConnectionService = {
         console.log('Qrypto persona update success:', qryptoSuccess);
         
         if (knytSuccess || qryptoSuccess) {
-          // Only dispatch if balance actually changed to prevent loops
-          const lastDispatchedBalance = sessionStorage.getItem('lastDispatchedBalance');
-          if (lastDispatchedBalance !== tokenBalance.formatted) {
-            sessionStorage.setItem('lastDispatchedBalance', tokenBalance.formatted);
-            
-            const event = new CustomEvent('balanceUpdated', {
+          // Dispatch comprehensive events
+          const events = ['privateDataUpdated', 'personaDataUpdated', 'balanceUpdated', 'walletDataRefreshed'];
+          events.forEach(eventName => {
+            const event = new CustomEvent(eventName, {
               detail: {
                 balance: tokenBalance.formatted,
                 address: walletAddress,
                 timestamp: tokenBalance.timestamp
               }
             });
-            console.log(`📡 Dispatching balance update event (balance changed)`);
+            console.log(`📡 Dispatching event: ${eventName}`);
             window.dispatchEvent(event);
-          } else {
-            console.log(`🚫 Skipping duplicate balance event dispatch`);
-          }
+          });
         }
       } catch (updateError) {
         console.error('❌ Error updating persona data:', updateError);
@@ -435,16 +431,21 @@ export const walletConnectionService = {
         console.log('Qrypto persona update success:', qryptoSuccess);
         
         if (knytSuccess || qryptoSuccess) {
-          // Only dispatch if balance actually changed to prevent loops
-          const lastDispatchedBalance = sessionStorage.getItem('lastDispatchedBalance');
-          // Only dispatch if balance actually changed to prevent infinite loops
-          if (lastDispatchedBalance !== tokenBalance.formatted) {
-            sessionStorage.setItem('lastDispatchedBalance', tokenBalance.formatted);
-            console.log(`📡 Balance changed: ${lastDispatchedBalance} → ${tokenBalance.formatted}`);
-            console.log('✅ Persona data updated - no event dispatching to prevent loops');
-          } else {
-            console.log(`🚫 Balance unchanged, no update needed`);
-          }
+          // Dispatch comprehensive events
+          const events = ['privateDataUpdated', 'personaDataUpdated', 'balanceUpdated', 'walletDataRefreshed'];
+          events.forEach(eventName => {
+            const event = new CustomEvent(eventName, { 
+              detail: { 
+                balance: tokenBalance.formatted,
+                address: walletAddress,
+                timestamp: tokenBalance.timestamp
+              }
+            });
+            console.log(`📡 Dispatching event: ${eventName}`);
+            window.dispatchEvent(event);
+          });
+          
+          console.log('✅ Persona data updated and events dispatched');
         }
       } catch (updateError) {
         console.error('❌ Error updating persona data:', updateError);

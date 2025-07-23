@@ -1,8 +1,8 @@
+
 import { supabase } from '@/integrations/supabase/client';
 import { useKnowledgeBase } from '@/hooks/mcp/useKnowledgeBase';
-import { COYNKnowledgeBase } from '@/services/coyn-knowledge-base';
+import { MetaKnytsKnowledgeBase } from '@/services/metaknyts-knowledge-base/MetaKnytsKnowledgeBase';
 import { PersonaContextService } from '@/services/persona-context-service';
-import { MonDAIConversationService } from './mondai-conversation-service';
 
 interface MonDAIResponse {
   conversationId: string;
@@ -18,33 +18,18 @@ interface MonDAIResponse {
     aiProvider?: string;
     personaContextUsed?: boolean;
     preferredName?: string;
-    conversationMemoryUsed?: boolean;
-    memoryThemes?: string[];
-    isAnonymous?: boolean;
     [key: string]: any;
   };
 }
 
-// Enhanced search terms with better topic isolation
-const enhanceSearchQuery = (message: string, conversationThemes: string[] = []): string[] => {
+// Enhanced search terms for better knowledge base matching
+const enhanceSearchQuery = (message: string): string[] => {
   const baseTerm = message.toLowerCase();
   const enhancedTerms = [baseTerm];
   
-  console.log(`🔍 MonDAI Search: Enhancing query "${message}" with conversation themes: [${conversationThemes.join(', ')}]`);
-  
-  // Only add metaKnyts terms if the conversation is already about metaKnyts or explicitly mentions it
-  const isMetaKnytsContext = conversationThemes.includes('metaKnyts') || 
-                             conversationThemes.includes('KNYT COYN') ||
-                             baseTerm.includes('metaknyts') || 
-                             baseTerm.includes('knyt');
-  
-  // Only add specific enhancement terms if contextually relevant
+  // Add specific wallet-related enhancement terms
   if (baseTerm.includes('wallet') || baseTerm.includes('add') || baseTerm.includes('token')) {
-    if (isMetaKnytsContext) {
-      enhancedTerms.push('knyt coyn', 'wallet setup', 'contract address', 'metamask', 'coinbase wallet');
-    } else {
-      enhancedTerms.push('wallet setup', 'metamask', 'coinbase wallet');
-    }
+    enhancedTerms.push('knyt coyn', 'wallet setup', 'contract address', 'metamask', 'coinbase wallet');
   }
   
   if (baseTerm.includes('knyt') || baseTerm.includes('coyn')) {
@@ -55,15 +40,6 @@ const enhanceSearchQuery = (message: string, conversationThemes: string[] = []):
     enhancedTerms.push('cryptocomic', 'blockchain gaming', 'nft', 'ecosystem');
   }
   
-  // Don't enhance with unrelated topics
-  if (baseTerm.includes('rune') && !isMetaKnytsContext) {
-    console.log(`🔍 MonDAI Search: Query is about runes, avoiding metaKnyts enhancement`);
-    // Only add rune-specific terms
-    enhancedTerms.push('bitcoin rune', 'btc rune', 'rune protocol');
-    return enhancedTerms.slice(0, 3); // Limit to avoid cross-contamination
-  }
-  
-  console.log(`🔍 MonDAI Search: Enhanced terms: [${enhancedTerms.join(', ')}]`);
   return enhancedTerms;
 };
 
@@ -76,82 +52,41 @@ export async function generateAigentNakamotoResponse(
     console.log(`🔄 MonDAI: Processing message with Venice ${useVenice ? 'ENABLED' : 'DISABLED'}`);
     console.log(`🔍 MonDAI: Original query: "${message}"`);
     
-    // Generate conversation ID if not provided
-    const currentConversationId = conversationId || crypto.randomUUID();
-    console.log(`🔄 MonDAI: Using conversation ID: ${currentConversationId}`);
+    // Get metaKnyts knowledge base
+    const metaKnytsKB = MetaKnytsKnowledgeBase.getInstance();
     
-    // Get conversation memory
-    let conversationMemory;
-    let memoryContext = '';
-    let conversationThemes: string[] = [];
+    // Enhanced search with multiple terms
+    const searchTerms = enhanceSearchQuery(message);
+    console.log(`🔍 MonDAI: Enhanced search terms:`, searchTerms);
     
-    if (conversationId) {
-      try {
-        console.log(`🧠 MonDAI: Retrieving conversation memory for ID: ${conversationId}`);
-        const service = MonDAIConversationService.getInstance();
-        conversationMemory = await service.getConversationMemory(conversationId);
-        memoryContext = service.formatMemoryForContext(conversationMemory);
-        conversationThemes = conversationMemory.sessionContext.themes;
-        console.log(`🧠 MonDAI: Memory retrieved with ${conversationMemory.recentHistory.length} recent exchanges`);
-        console.log(`🎯 MonDAI: Session themes: ${conversationThemes.join(', ')}`);
-      } catch (error) {
-        console.warn('🧠 MonDAI: Failed to retrieve conversation memory:', error);
-        conversationMemory = null;
-      }
+    let metaKnytsResults: any[] = [];
+    
+    // Search with each enhanced term and combine results
+    for (const term of searchTerms) {
+      const results = metaKnytsKB.searchKnowledge(term);
+      metaKnytsResults = [...metaKnytsResults, ...results];
     }
     
-    // Get COYN knowledge base (primary fallback)
-    const coynKB = COYNKnowledgeBase.getInstance();
+    // Remove duplicates based on ID
+    metaKnytsResults = metaKnytsResults.filter((item, index, self) => 
+      index === self.findIndex(t => t.id === item.id)
+    );
     
-    // Only use knowledge base search if no conversation memory or for specific knowledge requests
-    let knowledgeResults: any[] = [];
-    const needsKnowledgeSearch = !conversationMemory || 
-                                 message.toLowerCase().includes('how to') || 
-                                 message.toLowerCase().includes('what is') ||
-                                 message.toLowerCase().includes('explain') ||
-                                 conversationMemory.recentHistory.length === 0;
-    
-    if (needsKnowledgeSearch) {
-      console.log(`🔍 MonDAI: Using knowledge search because: ${!conversationMemory ? 'no memory' : 'knowledge request detected'}`);
-      
-      // Enhanced search with conversation context
-      const searchTerms = enhanceSearchQuery(message, conversationThemes);
-      console.log(`🔍 MonDAI: Enhanced search terms:`, searchTerms);
-      
-      // Search COYN knowledge base first
-      for (const term of searchTerms) {
-        const results = coynKB.searchKnowledge(term);
-        knowledgeResults = [...knowledgeResults, ...results];
-      }
-      
-      // Remove duplicates based on ID
-      knowledgeResults = knowledgeResults.filter((item, index, self) => 
-        index === self.findIndex(t => t.id === item.id)
-      );
-      
-      console.log(`🔍 MonDAI: Found ${knowledgeResults.length} COYN knowledge items after enhanced search`);
-    } else {
-      console.log(`🧠 MonDAI: Prioritizing conversation memory over knowledge search`);
-    }
+    console.log(`🔍 MonDAI: Found ${metaKnytsResults.length} metaKnyts knowledge items after enhanced search`);
     
     // Log specific items found for debugging
-    knowledgeResults.forEach((item, index) => {
-      console.log(`📚 Knowledge Item ${index + 1}: ${item.title} (ID: ${item.id})`);
+    metaKnytsResults.forEach((item, index) => {
+      console.log(`📚 MetaKnyts Item ${index + 1}: ${item.title} (ID: ${item.id})`);
       if (item.content.includes('mermaid') || item.content.includes('```')) {
         console.log(`🎨 Visual content detected in: ${item.title}`);
       }
     });
     
-    // Build enhanced knowledge context with explicit visual preservation instructions
-    let knowledgeContext = '';
-    if (knowledgeResults.length > 0) {
-      knowledgeContext = `
-### COYN Knowledge Base Results
-
-**IMPORTANT CONTEXT AWARENESS:**
-- Current conversation themes: ${conversationThemes.join(', ') || 'None established'}
-- Only use knowledge base information if relevant to the user's question or conversation context
-- Do not force connections between unrelated topics
+    // Build enhanced metaKnyts knowledge context with explicit visual preservation instructions
+    let metaKnytsContext = '';
+    if (metaKnytsResults.length > 0) {
+      metaKnytsContext = `
+### metaKnyts Knowledge Base Results
 
 **IMPORTANT VISUAL CONTENT PRESERVATION INSTRUCTIONS:**
 - ALWAYS preserve and include ALL mermaid diagrams exactly as written in the knowledge base
@@ -159,9 +94,9 @@ export async function generateAigentNakamotoResponse(
 - NEVER summarize or omit visual content - include complete mermaid code blocks
 - When providing wallet setup guides, ALWAYS include the visual diagram and step-by-step images
 
-${knowledgeResults.slice(0, 5).map((item, index) => 
+${metaKnytsResults.slice(0, 5).map((item, index) => 
   `
-[Knowledge Entry ${index + 1}]
+[metaKnyts Entry ${index + 1}]
 Title: ${item.title}
 Section: ${item.section}
 Category: ${item.category}
@@ -173,7 +108,7 @@ ${item.content.includes('![') ? '⚠️ CONTAINS IMAGES - MUST PRESERVE ALL IMAG
 `
 ).join('\n')}
 
-**REMINDER: Only reference this knowledge base if directly relevant to the user's question or established conversation context.**
+**REMINDER: Include ALL visual content (mermaid diagrams, images, code blocks) from the above knowledge base entries in your response.**
 `;
     }
     
@@ -189,34 +124,22 @@ ${item.content.includes('![') ? '⚠️ CONTAINS IMAGES - MUST PRESERVE ALL IMAG
       // Fallback will be handled by the edge function
     }
     
-    // Get persona context using the service with enhanced debugging
-    console.log('👤 MonDAI: Retrieving persona context...');
+    // Get persona context using the service
     const conversationContext = await PersonaContextService.getConversationContext();
-    console.log('👤 MonDAI: Persona context retrieved:', {
-      isAnonymous: conversationContext.isAnonymous,
-      preferredName: conversationContext.preferredName,
-      hasQryptoContext: !!conversationContext.qryptoContext,
-      hasKnytContext: !!conversationContext.knytContext
-    });
-
-    // Only generate contextual prompt if not anonymous
-    let contextualPrompt = '';
-    if (!conversationContext.isAnonymous) {
-      contextualPrompt = PersonaContextService.generateContextualPrompt(conversationContext, message);
-      console.log('👤 MonDAI: Generated contextual prompt for personalized interaction');
-    } else {
-      contextualPrompt = PersonaContextService.generateContextualPrompt(conversationContext, message);
-      console.log('👤 MonDAI: Using anonymous interaction prompt');
+    const contextualPrompt = PersonaContextService.generateContextualPrompt(conversationContext, message);
+    
+    console.log(`📝 MonDAI: Using persona context - Anonymous: ${conversationContext.isAnonymous}`);
+    if (conversationContext.preferredName) {
+      console.log(`👤 MonDAI: Preferred name: ${conversationContext.preferredName}`);
     }
     
-    // Call the edge function with conversation memory
+    // Call the edge function
     const { data, error } = await supabase.functions.invoke('mondai-ai', {
       body: {
         message,
-        conversationId: currentConversationId,
+        conversationId,
         knowledgeItems: kbaiKnowledgeItems,
-        qryptoKnowledgeContext: knowledgeContext,
-        conversationMemory: memoryContext,
+        qryptoKnowledgeContext: metaKnytsContext,
         useVenice,
         personaContext: conversationContext,
         contextualPrompt
@@ -231,14 +154,14 @@ ${item.content.includes('![') ? '⚠️ CONTAINS IMAGES - MUST PRESERVE ALL IMAG
     // Validate response for visual content
     const responseHasMermaid = data.message.includes('```mermaid');
     const responseHasImages = data.message.includes('![') || data.message.includes('src=');
-    const knowledgeHadVisuals = knowledgeResults.some(item => 
+    const knowledgeHadVisuals = metaKnytsResults.some(item => 
       item.content.includes('mermaid') || item.content.includes('![')
     );
     
     if (knowledgeHadVisuals && !responseHasMermaid && !responseHasImages) {
       console.warn('⚠️ MonDAI: Visual content was in knowledge base but missing from response');
       console.log('🔍 MonDAI: Knowledge items with visuals:', 
-        knowledgeResults.filter(item => 
+        metaKnytsResults.filter(item => 
           item.content.includes('mermaid') || item.content.includes('![')
         ).map(item => item.title)
       );
@@ -247,48 +170,17 @@ ${item.content.includes('![') ? '⚠️ CONTAINS IMAGES - MUST PRESERVE ALL IMAG
     console.log(`✅ MonDAI: Response generated successfully`);
     console.log(`📊 MonDAI: Knowledge sources used: ${data.metadata.knowledgeSource}`);
     console.log(`🎨 MonDAI: Visual content in response - Mermaid: ${responseHasMermaid}, Images: ${responseHasImages}`);
-    console.log(`👤 MonDAI: Response anonymity status: ${conversationContext.isAnonymous ? 'Anonymous' : 'Personalized'}`);
     
-    // Enhance metadata with memory information and persona context
-    if (knowledgeResults.length > 0) {
-      data.metadata.coynItemsFound = knowledgeResults.length;
-      data.metadata.knowledgeSource = data.metadata.knowledgeSource.includes('COYN') 
+    if (metaKnytsResults.length > 0) {
+      data.metadata.metaKnytsItemsFound = metaKnytsResults.length;
+      data.metadata.knowledgeSource = data.metadata.knowledgeSource.includes('metaKnyts') 
         ? data.metadata.knowledgeSource 
-        : `COYN Knowledge Base + ${data.metadata.knowledgeSource}`;
+        : `metaKnyts Knowledge Base + ${data.metadata.knowledgeSource}`;
       
       // Enhanced visual content detection
       data.metadata.visualsProvided = responseHasMermaid || responseHasImages;
       data.metadata.mermaidDiagramIncluded = responseHasMermaid;
       data.metadata.imagesIncluded = responseHasImages;
-    }
-
-    // Add memory metadata
-    if (conversationMemory) {
-      data.metadata.conversationMemoryUsed = true;
-      data.metadata.memoryThemes = conversationMemory.sessionContext.themes;
-      data.metadata.recentExchangeCount = conversationMemory.recentHistory.length;
-    }
-
-    // Add persona context metadata
-    data.metadata.personaContextUsed = !conversationContext.isAnonymous;
-    data.metadata.isAnonymous = conversationContext.isAnonymous;
-    if (conversationContext.preferredName && !conversationContext.isAnonymous) {
-      data.metadata.preferredName = conversationContext.preferredName;
-    }
-
-    // Update conversation memory after successful response
-    if (conversationId) {
-      try {
-        console.log(`🧠 MonDAI: Updating conversation memory for ${currentConversationId}`);
-        const service = MonDAIConversationService.getInstance();
-        await service.storeConversationExchange(
-          currentConversationId, 
-          message, 
-          data.message
-        );
-      } catch (error) {
-        console.warn('🧠 MonDAI: Failed to update session context:', error);
-      }
     }
 
     return data;

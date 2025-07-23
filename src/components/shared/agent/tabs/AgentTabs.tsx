@@ -21,16 +21,8 @@ interface AgentTabsProps {
   handleSubmit: (e: React.FormEvent) => void;
   handlePlayAudio: (messageId: string) => void;
   handleDocumentAdded: () => void;
-  documentUpdates?: number;
+  documentUpdates?: number; // Track document updates
   handleKeyDown?: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
-  recommendations?: {
-    showMetisRecommendation: boolean;
-    showVeniceRecommendation: boolean;
-    showQryptoRecommendation: boolean;
-    showKNYTRecommendation: boolean;
-  };
-  onActivateAgent?: (agentName: string, fee: number, description: string) => void;
-  onDismissRecommendation?: (agentName: string) => void;
 }
 
 const AgentTabs: React.FC<AgentTabsProps> = ({
@@ -48,10 +40,7 @@ const AgentTabs: React.FC<AgentTabsProps> = ({
   handlePlayAudio,
   handleDocumentAdded,
   documentUpdates = 0,
-  handleKeyDown,
-  recommendations,
-  onActivateAgent,
-  onDismissRecommendation
+  handleKeyDown
 }) => {
   // Function to handle form submission and switch to chat tab
   const handleFormSubmit = (e: React.FormEvent) => {
@@ -85,9 +74,6 @@ const AgentTabs: React.FC<AgentTabsProps> = ({
             agentType={agentType}
             messagesEndRef={messagesEndRef}
             handlePlayAudio={handlePlayAudio}
-            recommendations={recommendations}
-            onActivateAgent={onActivateAgent}
-            onDismissRecommendation={onDismissRecommendation}
           />
         </TabsContent>
         

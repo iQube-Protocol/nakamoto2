@@ -149,8 +149,12 @@ const KnytBalanceDisplay = ({ onBalanceUpdate }: KnytBalanceDisplayProps) => {
           onBalanceUpdate();
         }
         
-        // Removed excessive event dispatching to prevent infinite loops
-        // Events are now handled through direct service calls
+        // Dispatch comprehensive events
+        const events = ['privateDataUpdated', 'personaDataUpdated', 'balanceUpdated'];
+        events.forEach(eventName => {
+          const event = new CustomEvent(eventName);
+          window.dispatchEvent(event);
+        });
         
         setDebugInfo('✅ Balance refresh completed successfully');
         toast.success('KNYT balance refreshed successfully');
@@ -271,10 +275,7 @@ const KnytBalanceDisplay = ({ onBalanceUpdate }: KnytBalanceDisplayProps) => {
     }
   }, [connectionData.wallet?.knytTokenBalance]);
 
-  // Debounced refresh function to prevent infinite loops
-  const debouncedRefreshRef = useRef<NodeJS.Timeout | null>(null);
-  
-  // Listen for balance update events with enhanced logging and debouncing
+  // Listen for balance update events with enhanced logging
   useEffect(() => {
     const handleBalanceUpdate = (event: any) => {
       console.log('Balance update event received:', event.detail);
@@ -286,25 +287,24 @@ const KnytBalanceDisplay = ({ onBalanceUpdate }: KnytBalanceDisplayProps) => {
         setStableBalance(newBalance);
       }
       
-      // Debounce refreshConnections to prevent infinite loops
-      if (debouncedRefreshRef.current) {
-        clearTimeout(debouncedRefreshRef.current);
-      }
-      
-      debouncedRefreshRef.current = setTimeout(() => {
-        console.log('🔄 Debounced refresh triggered');
-        refreshConnections();
-      }, 500); // 500ms debounce
+      refreshConnections();
     };
 
-    // Removed infinite loop causing event listener
-    // Balance updates are now handled through direct state management
-    
+    const handlePersonaUpdate = (event: any) => {
+      console.log('Persona update event received:', event.detail);
+      refreshConnections();
+    };
+
+    window.addEventListener('balanceUpdated', handleBalanceUpdate);
+    window.addEventListener('personaDataUpdated', handlePersonaUpdate);
+    window.addEventListener('privateDataUpdated', handleBalanceUpdate);
+    window.addEventListener('walletDataRefreshed', handleBalanceUpdate);
+
     return () => {
-      // Clean up debounce timer only
-      if (debouncedRefreshRef.current) {
-        clearTimeout(debouncedRefreshRef.current);
-      }
+      window.removeEventListener('balanceUpdated', handleBalanceUpdate);
+      window.removeEventListener('personaDataUpdated', handlePersonaUpdate);
+      window.removeEventListener('privateDataUpdated', handleBalanceUpdate);
+      window.removeEventListener('walletDataRefreshed', handleBalanceUpdate);
     };
   }, [refreshConnections]);
 

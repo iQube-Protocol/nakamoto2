@@ -1,4 +1,3 @@
-
 import React from 'react';
 import { AgentMessage } from '@/lib/types';
 import MessageContent from './MessageContent';
@@ -11,11 +10,8 @@ interface MessageItemProps {
   onPlayAudio?: (messageId: string) => void;
 }
 
-const MessageItemMemo: React.FC<MessageItemProps> = React.memo(({ 
-  message, 
-  isPlaying = false, 
-  onPlayAudio
-}) => {
+const MessageItemMemo: React.FC<MessageItemProps> = React.memo(({ message, isPlaying = false, onPlayAudio }) => {
+  // Keep exact same structure and functionality
   const isUser = message.sender === 'user';
   const isSystem = message.sender === 'system';
   

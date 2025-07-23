@@ -2,7 +2,6 @@
 import React from 'react';
 import { AlertCircle, CheckCircle, Lightbulb } from 'lucide-react';
 import MermaidDiagram from './MermaidDiagram';
-import { sanitizeMermaidCode } from './utils/mermaidUtils';
 
 // Component to format a code block
 export const CodeBlock = ({ code, language }: { code: string; language?: string }) => {
@@ -81,6 +80,52 @@ export const Definition = ({ term, definition }: { term: string; definition: str
   </div>
 );
 
+// Enhanced sanitization function for mermaid code
+const sanitizeMermaidCode = (code: string): string => {
+  // First, check for chart type and add if missing
+  let sanitized = code.trim();
+  
+  // Add graph directive if missing
+  if (!sanitized.match(/^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph)/i)) {
+    sanitized = `graph TD\n${sanitized}`;
+  }
+  
+  // Fix common syntax issues
+  sanitized = sanitized
+    // Replace problematic quotes 
+    .replace(/'/g, '"')
+    // Replace parentheses in node labels with spaces
+    .replace(/\[([^\]]*?)\(([^\]]*?)\)([^\]]*?)\]/g, (match, before, middle, after) => {
+      return `[${before} ${middle} ${after}]`;
+    })
+    // Replace any remaining parenthesis in nodes
+    .replace(/\[([^\]]*?)\(([^\]]*?)\]/g, (match, before) => `[${before} -`)
+    .replace(/\[([^\]]*?)\)([^\]]*?)\]/g, (match, before, after) => `[${before} - ${after}]`)
+    // Fix arrow syntax
+    .replace(/--\s*>/g, "-->")
+    // Fix spacing issues in node definitions
+    .replace(/([A-Za-z0-9_]+)\s*\[/g, '$1[')
+    .replace(/\s+\]/g, ']')
+    .replace(/([A-Za-z0-9_\]]+)\s+-->/g, '$1-->')
+    // Add quotes around problematic labels
+    .replace(/\[([^\]"']*[,;:].*?)\]/g, (match, content) => {
+      if (!content.includes('"') && !content.includes("'")) {
+        return `["${content}"]`;
+      }
+      return match;
+    })
+    // Ensure line breaks are properly formatted
+    .replace(/\r\n/g, '\n')
+    // Limit node label length for better rendering
+    .replace(/\[([^\]]{50,})\]/g, (match, content) => {
+      // Split long node text to multiple lines
+      const lines = content.match(/.{1,30}(\s|$)/g) || [content]; // Increased character limit per line
+      return `["${lines.join('<br>')}"]`;
+    });
+    
+  return sanitized;
+};
+
 // Create a refined simple diagram when all else fails
 const createSimpleDiagram = (title: string = "Diagram"): string => {
   return `graph TD
@@ -94,33 +139,32 @@ const createSimpleDiagram = (title: string = "Diagram"): string => {
     class B primary;`;
 };
 
-// Enhanced function to extract and format mermaid diagrams with comprehensive error handling
+// Enhanced function to extract and format mermaid diagrams with improved error handling
 export const extractMermaidDiagram = (paragraph: string, pIndex: number): JSX.Element | null => {
   try {
-    console.log(`🔧 EXTRACT: Processing paragraph ${pIndex}:`, paragraph.substring(0, 100));
-    
     // Better regex to capture mermaid code blocks with various prefixes
     const mermaidRegex = /```(?:mermaid|graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph)?\s*([\s\S]*?)```/i;
     const match = paragraph.match(mermaidRegex);
     
     if (match && match[1]) {
       let mermaidCode = match[1].trim();
-      console.log(`🔧 EXTRACT: Raw mermaid code found:`, mermaidCode);
       
-      // Use the robust sanitization function from utils
+      // Pre-sanitize the code to avoid common parsing errors
       mermaidCode = sanitizeMermaidCode(mermaidCode);
-      console.log(`🔧 EXTRACT: Sanitized code:`, mermaidCode);
       
-      // If sanitization results in a very short code, create a simple fallback
-      if (mermaidCode.length < 20 || mermaidCode.includes('Error_Fixed')) {
-        console.log("🔧 EXTRACT: Creating simple fallback due to sanitization issues");
-        mermaidCode = createSimpleDiagram("Simplified View");
+      // If code is too complex or likely problematic, simplify it
+      if (mermaidCode.length > 500 || 
+          mermaidCode.includes('(') || 
+          mermaidCode.includes(')') ||
+          mermaidCode.includes(',')) {
+        console.log("Simplifying complex diagram");
+        mermaidCode = createSimpleDiagram("Simplified Diagram");
       }
       
       // Create a unique ID for this diagram
       const diagramId = `mermaid-diagram-${pIndex}-${Math.random().toString(36).substring(2, 9)}`;
       
-      console.log(`🔧 EXTRACT: Final mermaid code for rendering:`, mermaidCode);
+      console.log("Extracted & sanitized mermaid code:", mermaidCode);
       
       return (
         <div key={diagramId} className="my-6">
@@ -128,14 +172,12 @@ export const extractMermaidDiagram = (paragraph: string, pIndex: number): JSX.El
         </div>
       );
     }
-    
-    console.log(`🔧 EXTRACT: No mermaid code found in paragraph ${pIndex}`);
   } catch (error) {
-    console.error('🔧 EXTRACT: Error extracting mermaid diagram:', error);
+    console.error('Error extracting mermaid diagram:', error);
     
-    // Fallback to a very simple diagram when extraction fails completely
+    // Fallback to a very simple diagram when extraction fails
     const diagramId = `fallback-diagram-${pIndex}-${Math.random().toString(36).substring(2, 9)}`;
-    const simpleDiagram = createSimpleDiagram("Error Recovery");
+    const simpleDiagram = createSimpleDiagram("Fallback Diagram");
     
     return (
       <div key={diagramId} className="my-6">

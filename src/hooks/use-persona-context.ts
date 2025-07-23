@@ -12,16 +12,10 @@ export function usePersonaContext() {
   const refreshContext = async () => {
     setIsLoading(true);
     try {
-      console.log('🔄 usePersonaContext: Refreshing context...');
       const newContext = await PersonaContextService.getConversationContext();
-      console.log('✅ usePersonaContext: Context refreshed:', {
-        isAnonymous: newContext.isAnonymous,
-        preferredName: newContext.preferredName
-      });
       setContext(newContext);
     } catch (error) {
-      console.error('❌ usePersonaContext: Error loading persona context:', error);
-      // Ensure we fall back to anonymous context on error
+      console.error('Error loading persona context:', error);
       setContext({ isAnonymous: true });
     } finally {
       setIsLoading(false);
@@ -33,7 +27,7 @@ export function usePersonaContext() {
 
     // Listen for persona activation/deactivation events
     const handlePersonaChange = () => {
-      console.log('🔄 usePersonaContext: Persona activation state changed, refreshing context');
+      console.log('Persona activation state changed, refreshing context');
       refreshContext();
     };
 

@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 import { useAuth } from '@/hooks/use-auth';
 import { ServiceType, connectionService } from '@/services/connection-service';
@@ -42,118 +42,96 @@ export function useServiceConnections() {
   const [error, setError] = useState<string | null>(null);
   const { user } = useAuth();
   
-  // Cache to prevent duplicate fetch calls
-  const fetchCacheRef = useRef<{ timestamp: number; promise: Promise<void> | null }>({
-    timestamp: 0,
-    promise: null
-  });
-
-  // Debounced fetch function to prevent infinite loops
+  // Fetch connection status for all services
   const fetchConnections = async (showLoading = true) => {
     if (!user) return;
     
-    // Circuit breaker - prevent excessive API calls
-    const now = Date.now();
-    if (now - fetchCacheRef.current.timestamp < 2000) {
-      console.log('🚫 Skipping duplicate fetchConnections call - circuit breaker active');
-      return fetchCacheRef.current.promise || Promise.resolve();
+    if (showLoading) {
+      setLoading(true);
     }
+    setError(null);
     
-    fetchCacheRef.current.timestamp = now;
-    
-    const fetchPromise = (async () => {
-      if (showLoading) {
-        setLoading(true);
-      }
-      setError(null);
+    try {
+      console.log('🔄 Fetching user connections...');
       
-      try {
-        console.log('🔄 Fetching user connections...');
-        
-        const controller = new AbortController();
-        const timeoutId = setTimeout(() => controller.abort(), 10000);
-        
-        const { data, error: queryError } = await supabase
-          .from('user_connections')
-          .select('service, connected_at, connection_data')
-          .eq('user_id', user.id);
-        
-        clearTimeout(timeoutId);
-        
-        if (queryError) {
-          console.error('Error fetching connections:', queryError);
-          setError('Failed to load your connections. Please try again later.');
-          if (showLoading) {
-            setLoading(false);
-          }
-          return;
-        }
-        
-        console.log('✅ Raw connection data:', data);
-        
-        // Reset all connections to false first
-        const newConnections = {
-          linkedin: false,
-          twitter: false,
-          telegram: false,
-          discord: false,
-          luma: false,
-          wallet: false,
-          facebook: false,
-          youtube: false,
-          tiktok: false,
-          instagram: false
-        };
-
-        const newConnectionData = {
-          linkedin: null,
-          twitter: null,
-          telegram: null,
-          discord: null,
-          luma: null,
-          wallet: null,
-          facebook: null,
-          youtube: null,
-          tiktok: null,
-          instagram: null
-        };
-        
-        // Update connections based on database results
-        if (data) {
-          data.forEach((connection: any) => {
-            const serviceType = connection.service as ServiceType;
-            if (Object.keys(newConnections).includes(serviceType)) {
-              newConnections[serviceType] = true;
-              newConnectionData[serviceType] = connection.connection_data;
-              // Update connection state manager
-              connectionStateManager.setConnectionState(serviceType, 'connected');
-              console.log(`✅ ${serviceType} is connected with data:`, connection.connection_data);
-            }
-          });
-        }
-        
-        console.log('✅ Final connections state:', newConnections);
-        setConnections(newConnections);
-        setConnectionData(newConnectionData);
-      } catch (error) {
-        console.error('❌ Error in fetchConnections:', error);
-        
-        if (error instanceof Error && error.name === 'AbortError') {
-          setError('Connection timeout. Please check your internet connection and try again.');
-        } else {
-          setError('An unexpected error occurred while loading your connections.');
-        }
-      } finally {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 10000);
+      
+      const { data, error: queryError } = await supabase
+        .from('user_connections')
+        .select('service, connected_at, connection_data')
+        .eq('user_id', user.id);
+      
+      clearTimeout(timeoutId);
+      
+      if (queryError) {
+        console.error('Error fetching connections:', queryError);
+        setError('Failed to load your connections. Please try again later.');
         if (showLoading) {
           setLoading(false);
         }
-        // Clear the cache after completion
-        fetchCacheRef.current.promise = null;
+        return;
       }
-    })();
-    
-    fetchCacheRef.current.promise = fetchPromise;
-    return fetchPromise;
+      
+      console.log('✅ Raw connection data:', data);
+      
+      // Reset all connections to false first
+      const newConnections = {
+        linkedin: false,
+        twitter: false,
+        telegram: false,
+        discord: false,
+        luma: false,
+        wallet: false,
+        facebook: false,
+        youtube: false,
+        tiktok: false,
+        instagram: false
+      };
+
+      const newConnectionData = {
+        linkedin: null,
+        twitter: null,
+        telegram: null,
+        discord: null,
+        luma: null,
+        wallet: null,
+        facebook: null,
+        youtube: null,
+        tiktok: null,
+        instagram: null
+      };
+      
+      // Update connections based on database results
+      if (data) {
+        data.forEach((connection: any) => {
+          const serviceType = connection.service as ServiceType;
+          if (Object.keys(newConnections).includes(serviceType)) {
+            newConnections[serviceType] = true;
+            newConnectionData[serviceType] = connection.connection_data;
+            // Update connection state manager
+            connectionStateManager.setConnectionState(serviceType, 'connected');
+            console.log(`✅ ${serviceType} is connected with data:`, connection.connection_data);
+          }
+        });
+      }
+      
+      console.log('✅ Final connections state:', newConnections);
+      setConnections(newConnections);
+      setConnectionData(newConnectionData);
+    } catch (error) {
+      console.error('❌ Error in fetchConnections:', error);
+      
+      if (error instanceof Error && error.name === 'AbortError') {
+        setError('Connection timeout. Please check your internet connection and try again.');
+      } else {
+        setError('An unexpected error occurred while loading your connections.');
+      }
+    } finally {
+      if (showLoading) {
+        setLoading(false);
+      }
+    }
   };
   
   // Get wallet address from connection data

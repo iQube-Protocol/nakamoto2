@@ -22,8 +22,10 @@ export const useAgentMessages = ({
   conversationId: externalConversationId,
   onMessageSubmit
 }: UseAgentMessagesProps) => {
+  // Use message state hook
   const { messages, setMessages } = useMessageState(initialMessages);
   
+  // Use smaller hooks to manage different aspects of functionality
   const {
     inputValue, 
     setInputValue,
@@ -40,14 +42,17 @@ export const useAgentMessages = ({
   
   const { conversationId } = useConversationId(externalConversationId);
   
+  // For backend interactions, map 'mondai' to 'learn'
+  const backendAgentType = agentType === 'mondai' ? 'learn' : agentType;
+  
   const { refreshInteractions } = useMessageHistory(
-    agentType, // Now properly supports 'mondai' as a valid type
+    backendAgentType, // Use 'learn' for 'mondai' when accessing backend services
     initialMessages,
     setMessages
   );
   
   const { handleSubmit } = useMessageSubmit(
-    agentType, // Now properly supports 'mondai' as a valid type
+    agentType, // Keep the original UI type for frontend display
     conversationId,
     setMessages,
     setIsProcessing,
@@ -58,10 +63,12 @@ export const useAgentMessages = ({
   
   const messagesEndRef = useScrollToBottom(messages);
 
+  // Handler for keyboard events (Enter key press)
   const handleTextareaKeyDown = (e: React.KeyboardEvent<HTMLTextAreaElement>) => {
     handleKeyDown(e, handleSubmit);
   };
 
+  // Effect to scroll to bottom when messages change
   useEffect(() => {
     if (messagesEndRef.current) {
       messagesEndRef.current.scrollIntoView({ behavior: 'smooth' });

@@ -5,14 +5,12 @@ const VENICE_STORAGE_KEY = 'venice_activated';
 
 export const useVeniceAgent = () => {
   const [veniceActivated, setVeniceActivated] = useState(() => {
-    if (typeof window === 'undefined') return false;
     const stored = localStorage.getItem(VENICE_STORAGE_KEY);
     console.log('🏗️ Venice Hook: Initial state from localStorage:', stored);
     return stored === 'true';
   });
 
   const [veniceVisible, setVeniceVisible] = useState(() => {
-    if (typeof window === 'undefined') return false;
     const stored = localStorage.getItem(VENICE_STORAGE_KEY);
     return stored === 'true';
   });
@@ -71,19 +69,6 @@ export const useVeniceAgent = () => {
       setVeniceVisible(e.detail.visible);
     };
 
-    // Check localStorage on mount in case it changed while component was unmounted
-    const checkStorageState = () => {
-      const stored = localStorage.getItem(VENICE_STORAGE_KEY);
-      const isActivated = stored === 'true';
-      if (isActivated !== veniceActivated) {
-        console.log('🔄 Venice: Syncing state with localStorage:', isActivated);
-        setVeniceActivated(isActivated);
-        setVeniceVisible(isActivated);
-      }
-    };
-
-    checkStorageState();
-
     window.addEventListener('storage', handleStorageChange);
     window.addEventListener('veniceStateChanged', handleVeniceStateChange as EventListener);
     
@@ -91,7 +76,7 @@ export const useVeniceAgent = () => {
       window.removeEventListener('storage', handleStorageChange);
       window.removeEventListener('veniceStateChanged', handleVeniceStateChange as EventListener);
     };
-  }, [veniceActivated]);
+  }, []);
 
   // Debug logging for state changes
   useEffect(() => {

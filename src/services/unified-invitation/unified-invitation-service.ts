@@ -22,7 +22,7 @@ class UnifiedInvitationService {
       return this.cacheManager.getCache(cacheKey);
     }
 
-    console.log('UnifiedInvitationService: Fetching fresh stats with actual persona counts...');
+    console.log('UnifiedInvitationService: Fetching fresh stats...');
     
     const stats = await StatsCalculator.calculateUnifiedStats();
     this.cacheManager.setCache(cacheKey, stats);
