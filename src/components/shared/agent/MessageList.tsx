@@ -53,38 +53,50 @@ const MessageList = ({
     const lastMessage = messages[messages.length - 1];
     if (lastMessage.sender !== 'user') return;
 
+    // Reset all recommendations first
+    setRecommendations({
+      showVeniceRecommendation: false,
+      showQryptoRecommendation: false,
+      showKNYTRecommendation: false,
+    });
+
     const messageText = lastMessage.message.toLowerCase();
     
     // Check for Venice triggers
     if (!veniceActivated && triggerWords.venice.some(word => messageText.includes(word))) {
       setTimeout(() => {
-        setRecommendations(prev => ({
-          ...prev,
+        setRecommendations({
           showVeniceRecommendation: true,
+          showQryptoRecommendation: false,
+          showKNYTRecommendation: false,
           triggeredByMessageId: lastMessage.id
-        }));
+        });
       }, 1000);
+      return;
     }
 
     // Check for Qrypto triggers
     if (!qryptoPersonaActivated && triggerWords.qrypto.some(word => messageText.includes(word))) {
       setTimeout(() => {
-        setRecommendations(prev => ({
-          ...prev,
+        setRecommendations({
+          showVeniceRecommendation: false,
           showQryptoRecommendation: true,
+          showKNYTRecommendation: false,
           triggeredByMessageId: lastMessage.id
-        }));
+        });
       }, 1000);
+      return;
     }
 
     // Check for KNYT triggers
     if (!knytPersonaActivated && triggerWords.knyt.some(word => messageText.includes(word))) {
       setTimeout(() => {
-        setRecommendations(prev => ({
-          ...prev,
+        setRecommendations({
+          showVeniceRecommendation: false,
+          showQryptoRecommendation: false,
           showKNYTRecommendation: true,
           triggeredByMessageId: lastMessage.id
-        }));
+        });
       }, 1000);
     }
   }, [messages, veniceActivated, qryptoPersonaActivated, knytPersonaActivated]);
