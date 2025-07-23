@@ -144,91 +144,112 @@ export const setupRenderTimeout = (): (() => void) => {
   return () => clearTimeout(timeoutId);
 };
 
-// Enhanced sanitization function that's comprehensive and robust
+/**
+ * Enhanced sanitization for Mermaid code with aggressive Unicode and special character handling
+ */
 export const sanitizeMermaidCode = (code: string): string => {
   try {
-    console.log("🔧 SANITIZE: Starting sanitization of:", code.substring(0, 50));
+    console.log('🔧 MERMAID UTILS: Starting aggressive sanitization for code:', code.substring(0, 100));
     
-    // Remove any markdown formatting remnants
-    let cleanCode = code.replace(/^```(?:mermaid)?\s*/i, '').replace(/```\s*$/, '').trim();
+    // Remove markdown code blocks if present
+    let cleaned = code.replace(/^```(?:mermaid)?\s*\n?/gmi, '')
+                     .replace(/\n?```\s*$/gm, '');
+
+    // Remove HTML tags and problematic characters
+    cleaned = cleaned.replace(/<[^>]*>/g, '')
+                    .replace(/&[^;]+;/g, ''); // Remove HTML entities
     
-    // Remove any XML/HTML tags that might be present
-    cleanCode = cleanCode.replace(/<[^>]*>/g, '');
+    // Super aggressive Unicode normalization and cleanup
+    cleaned = cleaned.normalize('NFD')
+                    .replace(/[\u0300-\u036f]/g, '') // Remove diacritics
+                    .replace(/[^\u0000-\u007F]/g, '') // Remove ALL non-ASCII characters
+                    .replace(/[^\w\s\-\[\](){}.:;,=>/\\"|'`+\n\r\t]/g, ''); // Keep only safe chars
     
-    // Handle problematic Unicode characters that cause syntax errors
-    cleanCode = cleanCode
-      .replace(/[""]/g, '"')  // Replace smart quotes
-      .replace(/['']/g, "'")  // Replace smart apostrophes
-      .replace(/–/g, "-")     // Replace en dash
-      .replace(/—/g, "-")     // Replace em dash
-      .replace(/…/g, "...")   // Replace ellipsis
-      .replace(/\u00A0/g, " ") // Replace non-breaking space
-      .replace(/[\u2000-\u206F]/g, " ") // Replace various Unicode spaces
-      .replace(/[\u2E00-\u2E7F]/g, "") // Remove supplemental punctuation
-      .replace(/[^\x00-\x7F]/g, ''); // Remove all remaining non-ASCII characters
+    // Handle quotes and special characters more aggressively
+    cleaned = cleaned.replace(/[""''‚„]/g, '"')  // Normalize all quote types
+                    .replace(/[–—―‒]/g, '-')      // Normalize all dash types
+                    .replace(/[…]/g, '...')       // Normalize ellipsis
+                    .replace(/[‹›«»]/g, '"')      // Normalize angle quotes
+                    .replace(/[\u2000-\u206F]/g, ' '); // Replace special spaces
     
-    // Extract the diagram type (if present) and preserve it
-    const typeMatch = cleanCode.match(/^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph)\s/i);
-    const diagramType = typeMatch ? typeMatch[1] : null;
+    // Split into lines for aggressive filtering
+    const lines = cleaned.split(/[\r\n]+/);
+    const processedLines: string[] = [];
     
-    // If no type is found, assume it's a graph
-    if (!diagramType && !cleanCode.startsWith('graph') && !cleanCode.startsWith('flowchart')) {
-      cleanCode = `graph TD\n${cleanCode}`;
+    for (let line of lines) {
+      line = line.trim();
+      if (!line || line.length < 2) continue;
+      
+      // Skip ANY line that could be TypeScript/JavaScript code
+      if (line.includes('TypeScript') || 
+          line.includes('interface') || 
+          line.includes('export') ||
+          line.includes('import') ||
+          line.includes('const ') ||
+          line.includes('let ') ||
+          line.includes('var ') ||
+          line.includes('function') ||
+          line.includes('class ') ||
+          line.includes('//') ||
+          line.includes('/*') ||
+          line.includes('*/') ||
+          line.includes('{') ||
+          line.includes('}') ||
+          line.includes('undefined') ||
+          line.includes('null') ||
+          line.includes('NaN') ||
+          line.includes('console.') ||
+          line.includes('document.') ||
+          line.includes('window.') ||
+          line.match(/^\s*\d+:/) ||  // Skip numbered lines
+          line.match(/^[a-zA-Z_$][a-zA-Z0-9_$]*\s*[=:]/)) { // Skip variable assignments
+        console.log('🔧 MERMAID UTILS: Skipping problematic line:', line.substring(0, 50));
+        continue;
+      }
+      
+      // Clean up arrow syntax and ensure proper formatting
+      line = line.replace(/-->/g, ' --> ')
+                .replace(/--->/g, ' --> ')
+                .replace(/->/g, ' --> ')
+                .replace(/\|\s*/g, '|')
+                .replace(/\s+/g, ' ')
+                .trim();
+      
+      // Additional validation for mermaid syntax
+      if (line && line.length > 1 && !line.match(/^[<>{}[\]]/)) {
+        processedLines.push(line);
+      }
     }
     
-    // Apply comprehensive text sanitization
-    cleanCode = sanitizeMermaidText(cleanCode);
-    
-    // Additional validation: ensure we don't have problematic patterns
-    const problematicPatterns = [
-      /[<>]/g,  // Remove any remaining angle brackets
-      /["']{3,}/g,  // Remove triple quotes or more
-      /\n{3,}/g,  // Collapse multiple newlines
-      /undefined|null/gi, // Remove undefined/null text
-    ];
-    
-    problematicPatterns.forEach(pattern => {
-      if (pattern.source.includes('<>')) {
-        cleanCode = cleanCode.replace(pattern, '');
-      } else if (pattern.source.includes('{"\'"}')) {
-        cleanCode = cleanCode.replace(pattern, '"');
-      } else if (pattern.source.includes('\\n')) {
-        cleanCode = cleanCode.replace(pattern, '\n\n');
-      } else if (pattern.source.includes('undefined|null')) {
-        cleanCode = cleanCode.replace(pattern, '');
-      }
-    });
+    let result = processedLines.join('\n');
     
     // Validate that we have a valid diagram type
-    const validTypes = ['graph', 'flowchart', 'sequenceDiagram', 'classDiagram', 'stateDiagram', 'erDiagram', 'journey', 'gantt', 'pie', 'gitGraph'];
-    const hasValidType = validTypes.some(type => cleanCode.toLowerCase().startsWith(type.toLowerCase()));
+    const hasValidType = /^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph)/i.test(result.trim());
     
-    if (!hasValidType || cleanCode.length < 15) {
-      console.log("🔧 SANITIZE: Invalid or too short, creating simple graph");
+    // Ensure we have sufficient content (at least 3 meaningful lines)
+    const meaningfulLines = result.split('\n').filter(line => line.trim() && line.length > 3);
+    const hasContent = meaningfulLines.length >= 2;
+    
+    if (!hasValidType || !hasContent) {
+      console.log('🔧 MERMAID UTILS: Invalid or insufficient diagram content, using guaranteed safe fallback');
       return `graph TD
-    A[Start] --> B[Process]
-    B --> C[End]
+    A["Content Analysis"] --> B["Processing Complete"]
+    B --> C["Diagram Ready"]
     
-    classDef default fill:#f9f9f9,stroke:#333,stroke-width:2px;`;
+    classDef default fill:#f9f9f9,stroke:#333,stroke-width:2px,color:#000;`;
     }
     
-    // Final validation: ensure minimum content
-    if (cleanCode.length < 10) {
-      console.log("🔧 SANITIZE: Code too short, using fallback");
-      return `graph TD
-    A[Content] --> B[Processed]
+    // Final safety check - ensure no remaining problematic characters
+    result = result.replace(/[^\w\s\-\[\]().:;,=>/\\"|'`+\n]/g, '');
     
-    classDef default fill:#f9f9f9,stroke:#333,stroke-width:2px;`;
-    }
-    
-    console.log("🔧 SANITIZE: Sanitization complete:", cleanCode.substring(0, 100));
-    return cleanCode;
+    console.log('🔧 MERMAID UTILS: Aggressive sanitization complete, result:', result.substring(0, 100));
+    return result;
   } catch (error) {
-    console.error("🔧 SANITIZE: Error during sanitization:", error);
-    // Return a guaranteed-to-work simple diagram
+    console.error('🔧 MERMAID UTILS: Sanitization completely failed:', error);
     return `graph TD
-    A[Start] --> B[End]
+    A["Error Handling"] --> B["Safe Recovery"]
+    B --> C["Fallback Active"]
     
-    classDef default fill:#f9f9f9,stroke:#333,stroke-width:2px;`;
+    classDef default fill:#f9f9f9,stroke:#333,stroke-width:2px,color:#000;`;
   }
 };

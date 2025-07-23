@@ -275,7 +275,10 @@ const KnytBalanceDisplay = ({ onBalanceUpdate }: KnytBalanceDisplayProps) => {
     }
   }, [connectionData.wallet?.knytTokenBalance]);
 
-  // Listen for balance update events with enhanced logging
+  // Debounced refresh function to prevent infinite loops
+  const debouncedRefreshRef = useRef<NodeJS.Timeout | null>(null);
+  
+  // Listen for balance update events with enhanced logging and debouncing
   useEffect(() => {
     const handleBalanceUpdate = (event: any) => {
       console.log('Balance update event received:', event.detail);
@@ -287,20 +290,26 @@ const KnytBalanceDisplay = ({ onBalanceUpdate }: KnytBalanceDisplayProps) => {
         setStableBalance(newBalance);
       }
       
-      refreshConnections();
-    };
-
-    const handlePersonaUpdate = (event: any) => {
-      console.log('Persona update event received:', event.detail);
-      refreshConnections();
+      // Debounce refreshConnections to prevent infinite loops
+      if (debouncedRefreshRef.current) {
+        clearTimeout(debouncedRefreshRef.current);
+      }
+      
+      debouncedRefreshRef.current = setTimeout(() => {
+        console.log('🔄 Debounced refresh triggered');
+        refreshConnections();
+      }, 500); // 500ms debounce
     };
 
     // Only listen to essential balance events to prevent loops
     window.addEventListener('balanceUpdated', handleBalanceUpdate);
 
     return () => {
-      // Clean up balance event listener
+      // Clean up balance event listener and debounce timer
       window.removeEventListener('balanceUpdated', handleBalanceUpdate);
+      if (debouncedRefreshRef.current) {
+        clearTimeout(debouncedRefreshRef.current);
+      }
     };
   }, [refreshConnections]);
 
