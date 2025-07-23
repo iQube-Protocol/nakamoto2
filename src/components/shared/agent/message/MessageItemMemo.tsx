@@ -4,23 +4,36 @@ import MessageContent from './MessageContent';
 import AudioPlayback from './AudioPlayback';
 import MessageMetadata from './MessageMetadata';
 import AgentRecommendations from './AgentRecommendations';
-import { useAgentRecommendations } from '../hooks/useAgentRecommendations';
 import { useAgentActivation } from '../hooks/useAgentActivation';
 import AgentActivationModal from '../AgentActivationModal';
+
+interface RecommendationState {
+  showVeniceRecommendation: boolean;
+  showQryptoRecommendation: boolean;
+  showKNYTRecommendation: boolean;
+  triggeredByMessageId?: string;
+}
 
 interface MessageItemProps {
   message: AgentMessage;
   isPlaying?: boolean;
   onPlayAudio?: (messageId: string) => void;
+  recommendations?: RecommendationState;
+  onDismissRecommendation?: (agentName: string) => void;
 }
 
-const MessageItemMemo: React.FC<MessageItemProps> = React.memo(({ message, isPlaying = false, onPlayAudio }) => {
+const MessageItemMemo: React.FC<MessageItemProps> = React.memo(({ 
+  message, 
+  isPlaying = false, 
+  onPlayAudio, 
+  recommendations,
+  onDismissRecommendation 
+}) => {
   // Keep exact same structure and functionality
   const isUser = message.sender === 'user';
   const isSystem = message.sender === 'system';
   
-  // Agent recommendation logic - only for user messages to trigger recommendations
-  const recommendations = useAgentRecommendations(message);
+  // Agent activation logic
   const { 
     handleActivateAgent, 
     showActivationModal, 
@@ -53,14 +66,14 @@ const MessageItemMemo: React.FC<MessageItemProps> = React.memo(({ message, isPla
         )}
         
         {/* Show agent recommendations after agent messages when triggered by user messages */}
-        {!isUser && !isSystem && (
+        {!isUser && !isSystem && recommendations && onDismissRecommendation && (
           <AgentRecommendations
             showMetisRecommendation={false} // Exclude Metis from auto-activation as per requirements
-            showVeniceRecommendation={recommendations.recommendations.showVeniceRecommendation}
-            showQryptoRecommendation={recommendations.recommendations.showQryptoRecommendation}
-            showKNYTRecommendation={recommendations.recommendations.showKNYTRecommendation}
+            showVeniceRecommendation={recommendations.showVeniceRecommendation}
+            showQryptoRecommendation={recommendations.showQryptoRecommendation}
+            showKNYTRecommendation={recommendations.showKNYTRecommendation}
             onActivateAgent={handleActivateAgent}
-            onDismissRecommendation={recommendations.dismissRecommendation}
+            onDismissRecommendation={onDismissRecommendation}
           />
         )}
       </div>
