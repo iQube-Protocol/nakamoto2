@@ -5,7 +5,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import ChatTab from './ChatTab';
-import KnowledgeBase from '../KnowledgeBase';
+
 import IQubesKnowledgeBase from '@/components/mondai/iQubesKnowledgeBase';
 import AgentInputBar from '../AgentInputBar';
 import { AgentMessage } from '@/lib/types';
@@ -67,8 +67,6 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps> = ({
     setActiveTab('chat');
   };
 
-  // Convert 'mondai' to 'learn' for KnowledgeBase component
-  const knowledgeBaseAgentType = agentType === 'mondai' ? 'learn' : agentType;
 
   return (
     <Tabs value={activeTab} onValueChange={v => setActiveTab(v as 'chat' | 'knowledge' | 'media')} className="flex-1 flex flex-col h-full">
@@ -119,7 +117,7 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps> = ({
         </TabsContent>
 
         <TabsContent value="knowledge" className="h-full m-0 p-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col flex-1">
-          {agentType === 'mondai' ? <IQubesKnowledgeBase /> : <KnowledgeBase agentType={knowledgeBaseAgentType} />}
+          {agentType === 'mondai' ? <IQubesKnowledgeBase /> : <div className="p-4">Knowledge base not available for this agent type.</div>}
         </TabsContent>
 
         <TabsContent value="media" className="h-full m-0 p-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col flex-1">

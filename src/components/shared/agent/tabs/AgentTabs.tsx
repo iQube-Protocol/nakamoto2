@@ -3,13 +3,13 @@ import React from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import ChatTab from './ChatTab';
 import DocumentContext from '../DocumentContext';
-import KnowledgeBase from '../KnowledgeBase';
+
 import AgentInputBar from '../AgentInputBar';
 import { AgentMessage } from '@/lib/types';
 
 interface AgentTabsProps {
-  activeTab: 'chat' | 'knowledge' | 'documents';
-  setActiveTab: (tab: 'chat' | 'knowledge' | 'documents') => void;
+  activeTab: 'chat' | 'documents';
+  setActiveTab: (tab: 'chat' | 'documents') => void;
   messages: AgentMessage[];
   inputValue: string;
   isProcessing: boolean;
@@ -49,20 +49,17 @@ const AgentTabs: React.FC<AgentTabsProps> = ({
     setActiveTab('chat');
   };
 
-  // Convert 'mondai' to 'learn' for KnowledgeBase component
-  const knowledgeBaseAgentType = agentType === 'mondai' ? 'learn' : agentType;
 
   return (
     <Tabs 
       value={activeTab} 
-      onValueChange={(v) => setActiveTab(v as 'chat' | 'knowledge' | 'documents')}
+      onValueChange={(v) => setActiveTab(v as 'chat' | 'documents')}
       className="flex-1 flex flex-col h-full"
     >
       <div className="border-b px-4">
         <TabsList className="h-10">
           <TabsTrigger value="chat" className="data-[state=active]:bg-iqube-primary/20">Chat</TabsTrigger>
           <TabsTrigger value="documents" className="data-[state=active]:bg-iqube-primary/20">Tool</TabsTrigger>
-          <TabsTrigger value="knowledge" className="data-[state=active]:bg-iqube-primary/20">Knowledge Base</TabsTrigger>
         </TabsList>
       </div>
 
@@ -85,9 +82,6 @@ const AgentTabs: React.FC<AgentTabsProps> = ({
           />
         </TabsContent>
 
-        <TabsContent value="knowledge" className="h-full m-0 p-4 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col flex-1">
-          <KnowledgeBase agentType={knowledgeBaseAgentType} />
-        </TabsContent>
       </div>
 
       {/* Input bar moved outside of tabs, always visible */}

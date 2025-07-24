@@ -1,7 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { useKnowledgeBase } from '@/hooks/mcp/useKnowledgeBase';
-import { MetaKnytsKnowledgeBase } from '@/services/metaknyts-knowledge-base/MetaKnytsKnowledgeBase';
+import { MonDAIKnowledgeRouter } from '@/services/mondai-knowledge-router';
 import { PersonaContextService } from '@/services/persona-context-service';
 
 interface MonDAIResponse {
@@ -22,26 +21,8 @@ interface MonDAIResponse {
   };
 }
 
-// Enhanced search terms for better knowledge base matching
-const enhanceSearchQuery = (message: string): string[] => {
-  const baseTerm = message.toLowerCase();
-  const enhancedTerms = [baseTerm];
-  
-  // Add specific wallet-related enhancement terms
-  if (baseTerm.includes('wallet') || baseTerm.includes('add') || baseTerm.includes('token')) {
-    enhancedTerms.push('knyt coyn', 'wallet setup', 'contract address', 'metamask', 'coinbase wallet');
-  }
-  
-  if (baseTerm.includes('knyt') || baseTerm.includes('coyn')) {
-    enhancedTerms.push('wallet setup', 'add token', 'contract', 'ethereum', 'metamask');
-  }
-  
-  if (baseTerm.includes('metaknyts')) {
-    enhancedTerms.push('cryptocomic', 'blockchain gaming', 'nft', 'ecosystem');
-  }
-  
-  return enhancedTerms;
-};
+// Knowledge router for smart KB selection
+const knowledgeRouter = MonDAIKnowledgeRouter.getInstance();
 
 export async function generateAigentNakamotoResponse(
   message: string,
@@ -52,41 +33,28 @@ export async function generateAigentNakamotoResponse(
     console.log(`🔄 MonDAI: Processing message with Venice ${useVenice ? 'ENABLED' : 'DISABLED'}`);
     console.log(`🔍 MonDAI: Original query: "${message}"`);
     
-    // Get metaKnyts knowledge base
-    const metaKnytsKB = MetaKnytsKnowledgeBase.getInstance();
+    // Use smart knowledge routing instead of hardcoded metaKnyts
+    const knowledgeRoute = knowledgeRouter.routeQuery(message);
     
-    // Enhanced search with multiple terms
-    const searchTerms = enhanceSearchQuery(message);
-    console.log(`🔍 MonDAI: Enhanced search terms:`, searchTerms);
-    
-    let metaKnytsResults: any[] = [];
-    
-    // Search with each enhanced term and combine results
-    for (const term of searchTerms) {
-      const results = metaKnytsKB.searchKnowledge(term);
-      metaKnytsResults = [...metaKnytsResults, ...results];
-    }
-    
-    // Remove duplicates based on ID
-    metaKnytsResults = metaKnytsResults.filter((item, index, self) => 
-      index === self.findIndex(t => t.id === item.id)
-    );
-    
-    console.log(`🔍 MonDAI: Found ${metaKnytsResults.length} metaKnyts knowledge items after enhanced search`);
+    console.log(`🧠 MonDAI: Knowledge routing result:`, {
+      primarySource: knowledgeRoute.primarySource,
+      sourcesUsed: knowledgeRoute.sourcesUsed,
+      totalFound: knowledgeRoute.totalFound
+    });
     
     // Log specific items found for debugging
-    metaKnytsResults.forEach((item, index) => {
-      console.log(`📚 MetaKnyts Item ${index + 1}: ${item.title} (ID: ${item.id})`);
+    knowledgeRoute.results.forEach((item, index) => {
+      console.log(`📚 KB Item ${index + 1}: ${item.title} (Source: ${item.source})`);
       if (item.content.includes('mermaid') || item.content.includes('```')) {
         console.log(`🎨 Visual content detected in: ${item.title}`);
       }
     });
     
-    // Build enhanced metaKnyts knowledge context with explicit visual preservation instructions
-    let metaKnytsContext = '';
-    if (metaKnytsResults.length > 0) {
-      metaKnytsContext = `
-### metaKnyts Knowledge Base Results
+    // Build knowledge context with explicit visual preservation instructions
+    let knowledgeContext = '';
+    if (knowledgeRoute.results.length > 0) {
+      knowledgeContext = `
+### Knowledge Base Results (Source: ${knowledgeRoute.primarySource})
 
 **IMPORTANT VISUAL CONTENT PRESERVATION INSTRUCTIONS:**
 - ALWAYS preserve and include ALL mermaid diagrams exactly as written in the knowledge base
@@ -94,15 +62,14 @@ export async function generateAigentNakamotoResponse(
 - NEVER summarize or omit visual content - include complete mermaid code blocks
 - When providing wallet setup guides, ALWAYS include the visual diagram and step-by-step images
 
-${metaKnytsResults.slice(0, 5).map((item, index) => 
+${knowledgeRoute.results.map((item, index) => 
   `
-[metaKnyts Entry ${index + 1}]
+[Knowledge Entry ${index + 1}] (${item.source})
 Title: ${item.title}
-Section: ${item.section}
+${item.section ? `Section: ${item.section}` : ''}
 Category: ${item.category}
 Content: ${item.content}
 Keywords: ${item.keywords.join(', ')}
-Source: ${item.source}
 ${item.content.includes('mermaid') ? '⚠️ CONTAINS MERMAID DIAGRAM - MUST PRESERVE EXACTLY' : ''}
 ${item.content.includes('![') ? '⚠️ CONTAINS IMAGES - MUST PRESERVE ALL IMAGE REFERENCES' : ''}
 `
@@ -110,18 +77,6 @@ ${item.content.includes('![') ? '⚠️ CONTAINS IMAGES - MUST PRESERVE ALL IMAG
 
 **REMINDER: Include ALL visual content (mermaid diagrams, images, code blocks) from the above knowledge base entries in your response.**
 `;
-    }
-    
-    // Get KBAI knowledge items as fallback/supplement
-    let kbaiKnowledgeItems: any[] = [];
-    try {
-      // Try to get from KBAI service
-      const { fetchKnowledgeItems } = useKnowledgeBase();
-      kbaiKnowledgeItems = await fetchKnowledgeItems();
-      console.log(`🔍 MonDAI: Found ${kbaiKnowledgeItems.length} KBAI knowledge items`);
-    } catch (error) {
-      console.log('📚 MonDAI: KBAI service not available, using fallback');
-      // Fallback will be handled by the edge function
     }
     
     // Get persona context using the service
@@ -138,11 +93,16 @@ ${item.content.includes('![') ? '⚠️ CONTAINS IMAGES - MUST PRESERVE ALL IMAG
       body: {
         message,
         conversationId,
-        knowledgeItems: kbaiKnowledgeItems,
-        qryptoKnowledgeContext: metaKnytsContext,
+        knowledgeItems: [], // No longer using KBAI
+        qryptoKnowledgeContext: knowledgeContext,
         useVenice,
         personaContext: conversationContext,
-        contextualPrompt
+        contextualPrompt,
+        knowledgeRoute: {
+          primarySource: knowledgeRoute.primarySource,
+          sourcesUsed: knowledgeRoute.sourcesUsed,
+          totalFound: knowledgeRoute.totalFound
+        }
       }
     });
 
@@ -154,28 +114,33 @@ ${item.content.includes('![') ? '⚠️ CONTAINS IMAGES - MUST PRESERVE ALL IMAG
     // Validate response for visual content
     const responseHasMermaid = data.message.includes('```mermaid');
     const responseHasImages = data.message.includes('![') || data.message.includes('src=');
-    const knowledgeHadVisuals = metaKnytsResults.some(item => 
+    const knowledgeHadVisuals = knowledgeRoute.results.some(item => 
       item.content.includes('mermaid') || item.content.includes('![')
     );
     
     if (knowledgeHadVisuals && !responseHasMermaid && !responseHasImages) {
       console.warn('⚠️ MonDAI: Visual content was in knowledge base but missing from response');
       console.log('🔍 MonDAI: Knowledge items with visuals:', 
-        metaKnytsResults.filter(item => 
+        knowledgeRoute.results.filter(item => 
           item.content.includes('mermaid') || item.content.includes('![')
         ).map(item => item.title)
       );
     }
 
     console.log(`✅ MonDAI: Response generated successfully`);
-    console.log(`📊 MonDAI: Knowledge sources used: ${data.metadata.knowledgeSource}`);
+    console.log(`📊 MonDAI: Knowledge sources used: ${knowledgeRoute.primarySource}`);
     console.log(`🎨 MonDAI: Visual content in response - Mermaid: ${responseHasMermaid}, Images: ${responseHasImages}`);
     
-    if (metaKnytsResults.length > 0) {
-      data.metadata.metaKnytsItemsFound = metaKnytsResults.length;
-      data.metadata.knowledgeSource = data.metadata.knowledgeSource.includes('metaKnyts') 
-        ? data.metadata.knowledgeSource 
-        : `metaKnyts Knowledge Base + ${data.metadata.knowledgeSource}`;
+    if (knowledgeRoute.results.length > 0) {
+      // Update metadata with smart routing information
+      data.metadata.knowledgeSource = knowledgeRoute.primarySource;
+      data.metadata.sourcesUsed = knowledgeRoute.sourcesUsed;
+      data.metadata.totalKnowledgeItems = knowledgeRoute.totalFound;
+      
+      // Source-specific counts
+      data.metadata.iQubesItemsFound = knowledgeRoute.results.filter(r => r.source.includes('iQubes')).length;
+      data.metadata.coynItemsFound = knowledgeRoute.results.filter(r => r.source.includes('COYN')).length;
+      data.metadata.metaKnytsItemsFound = knowledgeRoute.results.filter(r => r.source.includes('metaKnyts')).length;
       
       // Enhanced visual content detection
       data.metadata.visualsProvided = responseHasMermaid || responseHasImages;
