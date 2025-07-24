@@ -35,7 +35,7 @@ const MetadataBadge = ({ metadata }: MetadataBadgeProps) => {
     if (!metadata.modelUsed) return null;
     
     if (veniceActivated) {
-      return `Venice • ${metadata.modelUsed}`;
+      return metadata.modelUsed; // Just show the Venice model name (e.g., "venice-uncensored")
     } else {
       return `OpenAI • ${metadata.modelUsed}`;
     }
@@ -81,4 +81,3 @@ const MetadataBadge = ({ metadata }: MetadataBadgeProps) => {
 };
 
 export default MetadataBadge;
-
