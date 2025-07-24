@@ -14,14 +14,14 @@ interface KNYTPersonaState {
 const STORAGE_KEY = 'knyt-persona-activated';
 
 export const useKNYTPersona = (): KNYTPersonaState => {
-  // Initialize from localStorage, defaulting to true
+  // Initialize from localStorage, defaulting to false (inactive)
   const [knytPersonaActivated, setKNYTPersonaActivated] = useState<boolean>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
-      return saved !== null ? JSON.parse(saved) : true;
+      return saved !== null ? JSON.parse(saved) : false;
     } catch (error) {
       console.error('Error reading KNYT Persona state from localStorage:', error);
-      return true;
+      return false;
     }
   });
 

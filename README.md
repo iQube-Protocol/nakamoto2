@@ -75,6 +75,58 @@ Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-trick
 
 ## Development Lessons Learned
 
+### Invited User Signup Race Conditions and Data Integrity - 2025-07-21
+**Cycles Required:** 12 cycles
+**Problem:** Invited users were signing up successfully but missing their persona data, causing incomplete registrations and broken user experiences.
+**Root Cause:** Multiple critical issues in the database layer:
+- Race condition between `handle_new_user_personas()` and `handle_invited_user_signup()` triggers
+- Faulty logic in persona existence checks using CASE statements in NOT EXISTS clauses
+- Missing error handling and logging in trigger functions
+- No monitoring or recovery mechanisms for failed signup completions
+
+**Solution:** 
+1. **Fixed Race Condition:** Modified `handle_new_user_personas()` to check for ANY invitation record existence (regardless of status) before creating default personas
+2. **Simplified Logic:** Replaced complex CASE statements with straightforward OR conditions in `recover_incomplete_invited_signups()`
+3. **Added Error Handling:** Implemented try-catch blocks with detailed error logging in all triggers
+4. **Created Recovery Function:** Built `recover_incomplete_invited_signups()` to identify and fix broken signups from the last 7 days
+5. **Added Monitoring:** Created `invitation_signup_stats` view for ongoing monitoring of signup success rates
+
+**Key Insights:**
+- Database triggers executing simultaneously can cause race conditions - always check for ANY related records, not just specific states
+- Complex SQL logic (CASE in NOT EXISTS) is error-prone and should be simplified to OR/AND conditions
+- Every database operation that affects user signup flow MUST have error handling and logging
+- Recovery functions are essential for data integrity issues that affect user experience
+- Monitoring views help catch problems before they affect too many users
+
+**Future Reference:**
+- When modifying user signup flows, test with concurrent signups to catch race conditions
+- Always implement both prevention (proper trigger logic) AND recovery (cleanup functions) for critical user flows
+- Use `SELECT EXISTS()` with simple conditions rather than complex CASE statements in triggers
+- Monitor invitation completion rates regularly using the `invitation_signup_stats` view
+- Run `SELECT * FROM public.recover_incomplete_invited_signups();` after any signup flow changes to catch broken records
+
+**Files Modified:**
+- `supabase/migrations/20250721123323-682bd7d0-f99e-4303-8490-ba67f6eebf51.sql` - Main fixes
+- `supabase/migrations/20250721123535-649eeb8c-3b92-4150-9dbb-bf62e4d06a06.sql` - Simplified recovery function
+- `src/services/data-reconciliation/persona-reconciler.ts` - Application-level reconciliation
+
+**Testing Commands:**
+```sql
+-- Check for incomplete signups
+SELECT * FROM public.recover_incomplete_invited_signups();
+
+-- Monitor signup statistics  
+SELECT * FROM public.invitation_signup_stats WHERE invitation_date >= current_date - interval '7 days';
+
+-- Check for users without personas
+SELECT au.email, iu.persona_type, iu.signup_completed 
+FROM auth.users au 
+JOIN public.invited_users iu ON au.email = iu.email 
+WHERE iu.signup_completed = false;
+```
+
+---
+
 ### Password Reset Flow Configuration Issue - 2025-01-08
 **Cycles Required:** 12+ cycles
 **Problem:** Users accessing password reset URLs were being redirected to the sign-in page instead of the password reset form, causing a broken authentication flow.

@@ -183,7 +183,7 @@ export default {
 				'accordion-up': 'accordion-up 0.2s ease-out',
 				'pulse-slow': 'pulse-slow 3s ease-in-out infinite',
 				'gradient-flow': 'gradient-flow 8s ease infinite',
-				'dot-wave': 'dot-wave 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite',
+				'dot-wave': 'dot-wave 2.5s cubic-bezier(0.4, 0, 0.2, 1) infinite',
 				'shimmer-pass': 'shimmer-pass 1.5s cubic-bezier(0.4, 0, 0.2, 1) infinite'
 			}
 		}

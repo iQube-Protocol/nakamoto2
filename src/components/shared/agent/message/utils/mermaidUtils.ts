@@ -21,19 +21,30 @@ export const processCode = (inputCode: string): string => {
       result = `graph TD\n    ${result.replace(/\n/g, '\n    ')}`;
     }
     
-    // Fix common syntax issues - especially parentheses which cause most errors
+    // Fix quoted text in node labels - this is the main issue
     result = result
-      .replace(/([A-Za-z0-9_]+)\s*\[/g, '$1[') // Remove spaces before [
-      .replace(/\s+\]/g, ']') // Remove spaces before ]
-      .replace(/([A-Za-z0-9_\]]+)\s+-->/g, '$1-->') // Remove spaces before -->
-      .replace(/--\s+->/g, '-->') // Fix broken arrows
-      .replace(/--\s+/g, '-->') // Fix dashed lines to arrows
-      // Replace parentheses and commas in node labels - CRITICAL FIX
+      // Replace quoted text in brackets with safe alternatives
+      .replace(/\[([^[\]]*)"([^"]*)"([^[\]]*)\]/g, (match, before, quoted, after) => {
+        const safeText = quoted.replace(/\s+/g, '_');
+        return `[${before}${safeText}${after}]`;
+      })
+      // Handle single quotes as well
+      .replace(/\[([^[\]]*)'([^']*)'([^[\]]*)\]/g, (match, before, quoted, after) => {
+        const safeText = quoted.replace(/\s+/g, '_');
+        return `[${before}${safeText}${after}]`;
+      })
+      // Remove extra spaces around arrows and brackets
+      .replace(/([A-Za-z0-9_]+)\s*\[/g, '$1[')
+      .replace(/\s+\]/g, ']')
+      .replace(/([A-Za-z0-9_\]]+)\s+-->/g, '$1-->')
+      .replace(/--\s+->/g, '-->')
+      .replace(/--\s+/g, '-->')
+      // Fix parentheses and commas in node labels
       .replace(/\[([^\]]*?)(\(|\))([^\]]*?)\]/g, (match, before, paren, after) => {
-        return `[${before}${paren === '(' ? '_' : '_'}${after}]`;
+        return `[${before}_${after}]`;
       })
       .replace(/\[([^\]]*?)e\.g\.,([^\]]*?)\]/g, (match, before, after) => {
-        return `[${before}e.g.${after}]`;
+        return `[${before}_e.g._${after}]`;
       })
       .replace(/\[([^\]]*?),([^\]]*?)\]/g, (match, before, after) => {
         return `[${before}_${after}]`;
@@ -48,7 +59,7 @@ export const processCode = (inputCode: string): string => {
   } catch (err) {
     console.error('Error processing mermaid code:', err);
     // Return a minimal valid diagram
-    return 'graph TD\n    A[Error] --> B[Try Again]';
+    return 'graph TD\n    A[Error] --> B[Try_Again]';
   }
 };
 
@@ -64,29 +75,33 @@ export const attemptAutoFix = (originalCode: string): string => {
       fixedCode = 'graph TD\n' + fixedCode;
     }
     
-    // Fix 2: Fix arrow syntax
+    // Fix 2: Handle quoted text in node labels - PRIMARY FIX
     fixedCode = fixedCode
+      // Remove all quotes from node labels and replace spaces with underscores
+      .replace(/\[([^[\]]*)"([^"]*)"([^[\]]*)\]/g, (match, before, quoted, after) => {
+        const safeText = quoted.replace(/\s+/g, '_').replace(/[^\w\s]/g, '_');
+        return `[${before}${safeText}${after}]`;
+      })
+      .replace(/\[([^[\]]*)'([^']*)'([^[\]]*)\]/g, (match, before, quoted, after) => {
+        const safeText = quoted.replace(/\s+/g, '_').replace(/[^\w\s]/g, '_');
+        return `[${before}${safeText}${after}]`;
+      })
+      // Fix arrow syntax
       .replace(/--\s*-+/g, '-->')
       .replace(/--(?!>)/g, '-->')
-      .replace(/\s*-+\s*>/g, ' -->');
-    
-    // Fix 3: Handle special characters and parentheses in labels which often cause issues
-    fixedCode = fixedCode
-      // Remove ALL parentheses from node labels - they cause most parsing errors
+      .replace(/\s*-+\s*>/g, ' -->')
+      // Handle special characters and parentheses in labels
       .replace(/\[([^\]]*?)\(([^\]]*?)\)([^\]]*?)\]/g, (match, before, inside, after) => {
         return `[${before}_${inside}_${after}]`;
       })
       // Fix "e.g.," notation which causes comma parsing issues
       .replace(/\[([^\]]*?)e\.g\.,([^\]]*?)\]/g, (match, before, after) => {
-        return `[${before}e.g.${after}]`;
+        return `[${before}e.g._${after}]`;
       })
       // Replace all commas in node labels
       .replace(/\[([^\]]*?),([^\]]*?)\]/g, (match, before, after) => {
         return `[${before}_${after}]`;
       })
-      // Extra safety for parenthesis issues
-      .replace(/\[\s*([^\]]*)\s*\(/, '[${1}_')
-      .replace(/\)\s*([^\]]*)\s*\]/, '_$1]')
       // Remove % characters and comments that cause parse errors
       .replace(/(%.*?)($|\n)/g, '$2')
       // Fix NODE_STRING errors by removing invalid node references
@@ -97,7 +112,7 @@ export const attemptAutoFix = (originalCode: string): string => {
     return fixedCode;
   } catch (error) {
     console.error('Error during auto-fix:', error);
-    return `graph TD\n    A[Auto-Fix] --> B[Failed]\n    B --> C[Basic Graph]`;
+    return `graph TD\n    A[Auto_Fix_Failed] --> B[Using_Simple_Graph]`;
   }
 };
 
@@ -122,7 +137,30 @@ export const sanitizeMermaidCode = (code: string): string => {
     const typeMatch = sanitized.match(/^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph)\s+([A-Z]{2})?/i);
     const diagramType = typeMatch ? typeMatch[0] : 'graph TD';
     
-    // For PS errors specifically
+    // CRITICAL FIX: Handle quoted text in node labels - this is causing the STR token error
+    if (code.includes('"') || code.includes("'")) {
+      console.log("Fixing quoted text in node labels");
+      // Remove all quotes and replace problematic characters
+      sanitized = sanitized
+        .replace(/\[([^[\]]*)"([^"]*)"([^[\]]*)\]/g, (match, before, quoted, after) => {
+          const safeText = quoted
+            .replace(/\s+/g, '_')
+            .replace(/[^\w]/g, '_')
+            .replace(/_+/g, '_')
+            .replace(/^_|_$/g, '');
+          return `[${before}${safeText}${after}]`;
+        })
+        .replace(/\[([^[\]]*)'([^']*)'([^[\]]*)\]/g, (match, before, quoted, after) => {
+          const safeText = quoted
+            .replace(/\s+/g, '_')
+            .replace(/[^\w]/g, '_')
+            .replace(/_+/g, '_')
+            .replace(/^_|_$/g, '');
+          return `[${before}${safeText}${after}]`;
+        });
+    }
+    
+    // For PS errors specifically - handle other problematic characters
     if (code.includes("e.g.,") || code.includes("(") || code.includes(")")) {
       // Replace all nodes with parentheses with safer versions
       sanitized = sanitized.replace(/\[([^\]]*)(\(|\))([^\]]*)\]/g, (match, before, paren, after) => {
@@ -131,7 +169,7 @@ export const sanitizeMermaidCode = (code: string): string => {
       
       // Replace all nodes with commas with safer versions
       sanitized = sanitized.replace(/\[([^\]]*),([^\]]*)\]/g, (match, before, after) => {
-        return `[${before} and ${after}]`;
+        return `[${before}_and_${after}]`;
       });
       
       // Replace "e.g.," which often causes parse errors
@@ -158,7 +196,7 @@ export const sanitizeMermaidCode = (code: string): string => {
     // If a parse error is still likely, create a very simple diagram
     if (sanitized.includes('Parse error') || sanitized.includes('Syntax error')) {
       console.log("Creating fallback simple diagram due to syntax errors");
-      return `${diagramType}\n    A[Simplified Diagram] --> B[Due to Parse Error]`;
+      return `${diagramType}\n    A[Simplified_Diagram] --> B[Due_to_Parse_Error]`;
     }
     
     // Ensure we still have a valid diagram type
@@ -170,6 +208,6 @@ export const sanitizeMermaidCode = (code: string): string => {
     return sanitized;
   } catch (err) {
     console.error('Error sanitizing mermaid code:', err);
-    return 'graph TD\n    A[Error] --> B[Fixed Diagram]';
+    return 'graph TD\n    A[Error_Fixed] --> B[Safe_Diagram]';
   }
 };

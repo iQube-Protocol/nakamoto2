@@ -5,7 +5,8 @@ import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
 import AgentHeader from './AgentHeader';
 import SimplifiedAgentTabs from './tabs/SimplifiedAgentTabs';
-import { useAgentMessages } from './hooks/useAgentMessages';
+import AgentActivationModal from './AgentActivationModal';
+import { useAgentMessagesWithRecommendations } from './hooks/useAgentMessagesWithRecommendations';
 import './styles/agent-interface.css';
 
 interface SimplifiedAgentInterfaceProps {
@@ -17,6 +18,7 @@ interface SimplifiedAgentInterfaceProps {
   onMessageSubmit?: (message: string) => Promise<AgentMessage>;
   onDocumentAdded?: () => void;
   documentContextUpdated?: number;
+  additionalActions?: React.ReactNode;
 }
 
 const SimplifiedAgentInterface = ({
@@ -28,6 +30,7 @@ const SimplifiedAgentInterface = ({
   onMessageSubmit,
   onDocumentAdded,
   documentContextUpdated = 0,
+  additionalActions,
 }: SimplifiedAgentInterfaceProps) => {
   // Get active tab from localStorage or default to 'chat'
   const getInitialTab = () => {
@@ -58,8 +61,13 @@ const SimplifiedAgentInterface = ({
     handleInputChange,
     handleSubmit,
     handlePlayAudio,
-    handleKeyDown
-  } = useAgentMessages({
+    handleKeyDown,
+    recommendations,
+    dismissRecommendation,
+    hideRecommendation,
+    onActivateAgent,
+    agentActivation
+  } = useAgentMessagesWithRecommendations({
     agentType,
     initialMessages,
     conversationId: externalConversationId,
@@ -71,7 +79,8 @@ const SimplifiedAgentInterface = ({
       <AgentHeader 
         title={title} 
         description={description} 
-        isProcessing={isProcessing} 
+        isProcessing={isProcessing}
+        additionalActions={additionalActions}
       />
 
       <div className="flex-1 overflow-hidden">
@@ -89,8 +98,22 @@ const SimplifiedAgentInterface = ({
           handleSubmit={handleSubmit}
           handlePlayAudio={handlePlayAudio}
           handleKeyDown={handleKeyDown}
+          recommendations={recommendations}
+          dismissRecommendation={dismissRecommendation}
+          hideRecommendation={hideRecommendation}
+          onActivateAgent={onActivateAgent}
         />
       </div>
+
+      {/* Agent Activation Modal */}
+      <AgentActivationModal
+        isOpen={agentActivation.showActivationModal}
+        onClose={agentActivation.closeActivationModal}
+        agentName={agentActivation.selectedAgent?.name || ''}
+        fee={agentActivation.selectedAgent?.fee || 0}
+        onConfirmPayment={agentActivation.handleConfirmPayment}
+        onComplete={agentActivation.handleActivationComplete}
+      />
     </Card>
   );
 };

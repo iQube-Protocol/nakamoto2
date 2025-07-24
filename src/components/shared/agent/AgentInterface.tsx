@@ -5,8 +5,12 @@ import { Card } from '@/components/ui/card';
 import { toast } from 'sonner';
 import AgentHeader from './AgentHeader';
 import AgentTabs from './tabs/AgentTabs';
-import { useAgentMessages } from './hooks/useAgentMessages';
-import './styles/agent-interface.css'; // We'll create this file for styles
+import { useAgentMessagesWithRecommendations } from './hooks/useAgentMessagesWithRecommendations';
+import { useMetisAgent } from '@/hooks/use-metis-agent';
+import { useQryptoPersona } from '@/hooks/use-qrypto-persona';
+import { useVeniceAgent } from '@/hooks/use-venice-agent';
+import { useKNYTPersona } from '@/hooks/use-knyt-persona';
+import './styles/agent-interface.css';
 
 interface AgentInterfaceProps {
   title: string;
@@ -16,7 +20,7 @@ interface AgentInterfaceProps {
   initialMessages?: AgentMessage[];
   onMessageSubmit?: (message: string) => Promise<AgentMessage>;
   onDocumentAdded?: () => void;
-  documentContextUpdated?: number; // Counter to track document context updates
+  documentContextUpdated?: number;
 }
 
 const AgentInterface = ({
@@ -33,14 +37,14 @@ const AgentInterface = ({
   const getInitialTab = () => {
     if (typeof window !== 'undefined') {
       const savedTab = localStorage.getItem(`${agentType}-active-tab`);
-      if (savedTab && ['chat', 'documents'].includes(savedTab)) {
-        return savedTab as 'chat' | 'documents';
+      if (savedTab && ['chat', 'knowledge', 'documents'].includes(savedTab)) {
+        return savedTab as 'chat' | 'knowledge' | 'documents';
       }
     }
     return 'chat';
   };
   
-  const [activeTab, setActiveTab] = useState<'chat' | 'documents'>(getInitialTab());
+  const [activeTab, setActiveTab] = useState<'chat' | 'knowledge' | 'documents'>(getInitialTab());
   const [documentUpdates, setDocumentUpdates] = useState<number>(0);
   
   // Save active tab to localStorage whenever it changes
@@ -59,13 +63,21 @@ const AgentInterface = ({
     handleInputChange,
     handleSubmit,
     handlePlayAudio,
-    handleKeyDown
-  } = useAgentMessages({
+    handleKeyDown,
+    recommendations,
+    dismissRecommendation
+  } = useAgentMessagesWithRecommendations({
     agentType,
     initialMessages,
     conversationId: externalConversationId,
     onMessageSubmit
   });
+
+  // Get agent activation hooks
+  const { activateMetis } = useMetisAgent();
+  const { activateQryptoPersona } = useQryptoPersona();
+  const { activateVenice } = useVeniceAgent();
+  const { activateKNYTPersona } = useKNYTPersona();
 
   // Handle document context updates from parent component
   useEffect(() => {
@@ -116,6 +128,40 @@ const AgentInterface = ({
     setActiveTab('chat');
   };
 
+  const handleActivateAgent = (agentName: string, fee: number, description: string) => {
+    switch (agentName) {
+      case 'Metis':
+        activateMetis();
+        toast.success(`${agentName} activated successfully!`, {
+          description: `${description} (Fee: ${fee} Satoshi)`
+        });
+        break;
+      case 'Venice':
+        activateVenice();
+        toast.success(`${agentName} activated successfully!`, {
+          description: `${description} (Fee: ${fee} Satoshi)`
+        });
+        break;
+      case 'Qrypto Persona':
+        activateQryptoPersona();
+        toast.success(`${agentName} activated successfully!`, {
+          description: `${description} (Fee: ${fee} Satoshi)`
+        });
+        break;
+      case 'KNYT Persona':
+        activateKNYTPersona();
+        toast.success(`${agentName} activated successfully!`, {
+          description: `${description} ${fee === 0 ? '(Free + 2,800 Satoshi reward!)' : `(Fee: ${fee} Satoshi)`}`
+        });
+        break;
+      default:
+        toast.success(`${agentName} activated successfully!`);
+    }
+    
+    // Hide the recommendation after activation
+    dismissRecommendation(agentName);
+  };
+
   return (
     <Card className="flex flex-col h-full overflow-hidden">
       <AgentHeader 
@@ -140,6 +186,9 @@ const AgentInterface = ({
         handleDocumentAdded={handleDocumentAdded}
         documentUpdates={documentUpdates}
         handleKeyDown={handleKeyDown}
+        recommendations={recommendations}
+        onActivateAgent={handleActivateAgent}
+        onDismissRecommendation={dismissRecommendation}
       />
     </Card>
   );

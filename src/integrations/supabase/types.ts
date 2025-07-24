@@ -658,7 +658,18 @@ export type Database = {
       }
     }
     Views: {
-      [_ in never]: never
+      invitation_signup_stats: {
+        Row: {
+          completed_signups: number | null
+          conversion_rate_percent: number | null
+          emails_sent: number | null
+          invitation_date: string | null
+          pending_signups: number | null
+          persona_type: string | null
+          total_invitations: number | null
+        }
+        Relationships: []
+      }
     }
     Functions: {
       increment_send_attempts: {
@@ -668,6 +679,16 @@ export type Database = {
       is_admin_user: {
         Args: Record<PropertyKey, never>
         Returns: boolean
+      }
+      recover_incomplete_invited_signups: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          user_email: string
+          invitation_id: string
+          user_id: string
+          persona_type: string
+          recovery_status: string
+        }[]
       }
     }
     Enums: {

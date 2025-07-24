@@ -9,7 +9,7 @@ export interface ConversationContextOptions {
 
 export const processAgentInteraction = async (
   query: string,
-  agentType: 'learn' | 'earn' | 'connect',
+  agentType: 'learn' | 'earn' | 'connect' | 'mondai',
   agentResponse: string,
   metadata: any = null
 ) => {

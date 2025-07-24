@@ -12,7 +12,7 @@ import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Mail } from 'lucide-react';
 import { toast } from 'sonner';
-import { useAuth } from '@/hooks/use-auth';
+import { supabase } from '@/integrations/supabase/client';
 
 interface PasswordResetDialogProps {
   open: boolean;
@@ -22,24 +22,39 @@ interface PasswordResetDialogProps {
 const PasswordResetDialog = ({ open, onOpenChange }: PasswordResetDialogProps) => {
   const [email, setEmail] = useState('');
   const [isLoading, setIsLoading] = useState(false);
-  const { resetPassword } = useAuth();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    
     if (!email.trim()) {
       toast.error('Please enter your email address');
       return;
     }
 
+    // Additional client-side email validation
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email.trim())) {
+      toast.error('Please enter a valid email address');
+      return;
+    }
+
     setIsLoading(true);
+    
     try {
-      const { error, success } = await resetPassword(email);
-      if (success) {
+      console.log('Password reset dialog - attempting reset for:', email.trim());
+      
+      const { data, error } = await supabase.functions.invoke('send-password-reset', {
+        body: { email: email.trim() }
+      });
+      
+      if (error) {
+        console.error('Password reset failed:', error);
+        toast.error('Failed to send reset email. Please try again.');
+      } else {
         toast.success('Password reset email sent! Check your inbox for instructions.');
         onOpenChange(false);
         setEmail('');
-      } else if (error) {
-        toast.error(`Failed to send reset email: ${error.message}`);
+        console.log('Password reset email sent successfully to:', email.trim());
       }
     } catch (err) {
       console.error('Password reset error:', err);
@@ -71,6 +86,7 @@ const PasswordResetDialog = ({ open, onOpenChange }: PasswordResetDialogProps) =
                 onChange={(e) => setEmail(e.target.value)}
                 className="pl-10"
                 required
+                disabled={isLoading}
               />
             </div>
           </div>

@@ -5,7 +5,7 @@ import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/comp
 import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import ChatTab from './ChatTab';
-
+import KnowledgeBase from '../KnowledgeBase';
 import IQubesKnowledgeBase from '@/components/mondai/iQubesKnowledgeBase';
 import AgentInputBar from '../AgentInputBar';
 import { AgentMessage } from '@/lib/types';
@@ -26,9 +26,19 @@ interface SimplifiedAgentTabsProps {
   handleSubmit: (e: React.FormEvent) => void;
   handlePlayAudio: (messageId: string) => void;
   handleKeyDown?: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
+  recommendations?: {
+    showMetisRecommendation: boolean;
+    showVeniceRecommendation: boolean;
+    showQryptoRecommendation: boolean;
+    showKNYTRecommendation: boolean;
+  };
+  dismissRecommendation?: (agentName: string) => void;
+  hideRecommendation?: (agentName: string) => void;
 }
 
-const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps> = ({
+const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps & {
+  onActivateAgent?: (agentName: string, fee: number, description: string) => void;
+}> = ({
   activeTab,
   setActiveTab,
   messages,
@@ -41,7 +51,11 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps> = ({
   handleInputChange,
   handleSubmit,
   handlePlayAudio,
-  handleKeyDown
+  handleKeyDown,
+  recommendations,
+  dismissRecommendation,
+  hideRecommendation,
+  onActivateAgent
 }) => {
   const isMobile = useIsMobile();
   // State for tabs menu collapse - default to collapsed when media tab is active
@@ -67,6 +81,8 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps> = ({
     setActiveTab('chat');
   };
 
+  // Convert 'mondai' to 'learn' for KnowledgeBase component
+  const knowledgeBaseAgentType = agentType === 'mondai' ? 'learn' : agentType;
 
   return (
     <Tabs value={activeTab} onValueChange={v => setActiveTab(v as 'chat' | 'knowledge' | 'media')} className="flex-1 flex flex-col h-full">
@@ -113,11 +129,20 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps> = ({
 
       <div className="flex-1 overflow-hidden flex flex-col relative">
         <TabsContent value="chat" className="h-full m-0 p-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col flex-1">
-          <ChatTab messages={messages} playing={playing} agentType={agentType} messagesEndRef={messagesEndRef} handlePlayAudio={handlePlayAudio} />
+          <ChatTab 
+            messages={messages} 
+            playing={playing} 
+            agentType={agentType} 
+            messagesEndRef={messagesEndRef} 
+            handlePlayAudio={handlePlayAudio}
+            recommendations={recommendations}
+            onActivateAgent={onActivateAgent}
+            onDismissRecommendation={dismissRecommendation}
+          />
         </TabsContent>
 
         <TabsContent value="knowledge" className="h-full m-0 p-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col flex-1">
-          {agentType === 'mondai' ? <IQubesKnowledgeBase /> : <div className="p-4">Knowledge base not available for this agent type.</div>}
+          {agentType === 'mondai' ? <IQubesKnowledgeBase /> : <KnowledgeBase agentType={knowledgeBaseAgentType} />}
         </TabsContent>
 
         <TabsContent value="media" className="h-full m-0 p-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col flex-1">

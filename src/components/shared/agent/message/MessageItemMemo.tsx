@@ -1,47 +1,35 @@
+
 import React from 'react';
 import { AgentMessage } from '@/lib/types';
 import MessageContent from './MessageContent';
 import AudioPlayback from './AudioPlayback';
 import MessageMetadata from './MessageMetadata';
 import AgentRecommendations from './AgentRecommendations';
-import { useAgentActivation } from '../hooks/useAgentActivation';
-import AgentActivationModal from '../AgentActivationModal';
-
-interface RecommendationState {
-  showVeniceRecommendation: boolean;
-  showQryptoRecommendation: boolean;
-  showKNYTRecommendation: boolean;
-  triggeredByMessageId?: string;
-}
 
 interface MessageItemProps {
   message: AgentMessage;
   isPlaying?: boolean;
   onPlayAudio?: (messageId: string) => void;
-  recommendations?: RecommendationState;
+  recommendations?: {
+    showMetisRecommendation: boolean;
+    showVeniceRecommendation: boolean;
+    showQryptoRecommendation: boolean;
+    showKNYTRecommendation: boolean;
+  };
+  onActivateAgent?: (agentName: string, fee: number, description: string) => void;
   onDismissRecommendation?: (agentName: string) => void;
 }
 
 const MessageItemMemo: React.FC<MessageItemProps> = React.memo(({ 
   message, 
   isPlaying = false, 
-  onPlayAudio, 
+  onPlayAudio,
   recommendations,
-  onDismissRecommendation 
+  onActivateAgent,
+  onDismissRecommendation
 }) => {
-  // Keep exact same structure and functionality
   const isUser = message.sender === 'user';
   const isSystem = message.sender === 'system';
-  
-  // Agent activation logic
-  const { 
-    handleActivateAgent, 
-    showActivationModal, 
-    selectedAgent, 
-    handleConfirmPayment, 
-    handleActivationComplete, 
-    closeActivationModal 
-  } = useAgentActivation(onDismissRecommendation);
   
   return (
     <div className={`message-item ${isUser ? 'user-message' : isSystem ? 'system-message' : 'agent-message'}`}>
@@ -64,29 +52,17 @@ const MessageItemMemo: React.FC<MessageItemProps> = React.memo(({
             onPlayAudio={onPlayAudio || (() => {})} 
           />
         )}
-        
-        {/* Show agent recommendations after agent messages when triggered by user messages */}
-        {!isUser && !isSystem && recommendations && onDismissRecommendation && (
-          <AgentRecommendations
-            showMetisRecommendation={false} // Exclude Metis from auto-activation as per requirements
-            showVeniceRecommendation={recommendations.showVeniceRecommendation}
-            showQryptoRecommendation={recommendations.showQryptoRecommendation}
-            showKNYTRecommendation={recommendations.showKNYTRecommendation}
-            onActivateAgent={handleActivateAgent}
-            onDismissRecommendation={onDismissRecommendation}
-          />
-        )}
       </div>
-      
-      {/* Agent Activation Modal */}
-      {showActivationModal && selectedAgent && (
-        <AgentActivationModal
-          isOpen={showActivationModal}
-          onClose={closeActivationModal}
-          agentName={selectedAgent.name}
-          fee={selectedAgent.fee}
-          onConfirmPayment={handleConfirmPayment}
-          onComplete={handleActivationComplete}
+
+      {/* Show recommendations after agent responses */}
+      {!isUser && !isSystem && recommendations && onActivateAgent && onDismissRecommendation && (
+        <AgentRecommendations
+          showMetisRecommendation={recommendations.showMetisRecommendation}
+          showVeniceRecommendation={recommendations.showVeniceRecommendation}
+          showQryptoRecommendation={recommendations.showQryptoRecommendation}
+          showKNYTRecommendation={recommendations.showKNYTRecommendation}
+          onActivateAgent={onActivateAgent}
+          onDismissRecommendation={onDismissRecommendation}
         />
       )}
     </div>

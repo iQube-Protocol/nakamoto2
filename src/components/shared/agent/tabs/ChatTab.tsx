@@ -1,5 +1,5 @@
 
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect } from 'react';
 import { AgentMessage } from '@/lib/types';
 import MessageList from '../MessageList';
 import EmptyConversation from '../EmptyConversation';
@@ -10,6 +10,14 @@ interface ChatTabProps {
   agentType: 'learn' | 'earn' | 'connect' | 'mondai';
   messagesEndRef: React.RefObject<HTMLDivElement>;
   handlePlayAudio: (messageId: string) => void;
+  recommendations?: {
+    showMetisRecommendation: boolean;
+    showVeniceRecommendation: boolean;
+    showQryptoRecommendation: boolean;
+    showKNYTRecommendation: boolean;
+  };
+  onActivateAgent?: (agentName: string, fee: number, description: string) => void;
+  onDismissRecommendation?: (agentName: string) => void;
 }
 
 const ChatTab: React.FC<ChatTabProps> = ({
@@ -17,7 +25,10 @@ const ChatTab: React.FC<ChatTabProps> = ({
   playing,
   agentType,
   messagesEndRef,
-  handlePlayAudio
+  handlePlayAudio,
+  recommendations,
+  onActivateAgent,
+  onDismissRecommendation
 }) => {
   // Effect to scroll to the latest message whenever messages change or on initial load
   useEffect(() => {
@@ -40,10 +51,13 @@ const ChatTab: React.FC<ChatTabProps> = ({
       ) : (
         <MessageList 
           messages={sortedMessages} 
-          isProcessing={false} // This is now controlled at the parent level
+          isProcessing={false} 
           playing={playing} 
           onPlayAudio={handlePlayAudio} 
           messagesEndRef={messagesEndRef}
+          recommendations={recommendations}
+          onActivateAgent={onActivateAgent}
+          onDismissRecommendation={onDismissRecommendation}
         />
       )}
     </div>

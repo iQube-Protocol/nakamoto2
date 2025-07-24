@@ -1,4 +1,3 @@
-
 import { useState, useEffect } from 'react';
 import { AgentMessage } from '@/lib/types';
 import { useAuth } from '@/hooks/use-auth';
@@ -8,19 +7,16 @@ import { useUserInteractions } from '@/hooks/use-user-interactions';
  * Hook to load and manage message history with enhanced conversational styling
  */
 export const useMessageHistory = (
-  agentType: 'learn' | 'earn' | 'connect', // We'll handle 'mondai' separately in useAgentMessages.tsx
+  agentType: 'learn' | 'earn' | 'connect' | 'mondai',
   initialMessages: AgentMessage[] = [],
   setMessages: React.Dispatch<React.SetStateAction<AgentMessage[]>>
 ) => {
   const [isHistoryLoaded, setIsHistoryLoaded] = useState(false);
   const { user } = useAuth();
-  const { interactions, refreshInteractions } = useUserInteractions(agentType);
+  const { interactions, refreshInteractions } = useUserInteractions(agentType as any);
   
-  // Process historic content with conversational styling
   const processHistoricContent = (content: string, agentType: string) => {
-    // Apply the same conversational guidelines to historic responses
     return content
-      // Add theme class for styling
       .replace(/^(.*?)$/gm, (match) => {
         if (match.trim()) {
           return `<div class="historic-response ${agentType}-theme">${match}</div>`;
@@ -29,7 +25,6 @@ export const useMessageHistory = (
       });
   };
   
-  // Load message history from database when component mounts
   useEffect(() => {
     const loadConversationHistory = async () => {
       if (!user || isHistoryLoaded) return;
@@ -37,15 +32,12 @@ export const useMessageHistory = (
       try {
         console.log(`Loading ${agentType} conversation history with enhanced styling...`);
         
-        // Refresh interactions to get the latest data
         await refreshInteractions();
         
         if (interactions && interactions.length > 0) {
-          // Transform database records into message format - create BOTH user and agent messages
           const historicalMessages: AgentMessage[] = [];
           
           interactions.forEach((interaction) => {
-            // Create user message from the query
             if (interaction.query && interaction.query.trim()) {
               historicalMessages.push({
                 id: `${interaction.id}-user`,
@@ -55,9 +47,7 @@ export const useMessageHistory = (
               });
             }
             
-            // Create agent message from the response with enhanced styling
             if (interaction.response && interaction.response.trim()) {
-              // Process the response content for better conversational display
               const processedResponse = processHistoricContent(interaction.response, agentType);
               
               historicalMessages.push({
@@ -75,16 +65,13 @@ export const useMessageHistory = (
             }
           });
           
-          // Sort messages by timestamp to ensure proper chronological order
           historicalMessages.sort((a, b) => 
             new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
           );
           
           console.log(`Loaded ${historicalMessages.length} historical messages (${interactions.length} interactions) for ${agentType} with enhanced styling`);
           
-          // Only set messages if we have historical data and haven't loaded before
           if (historicalMessages.length > 0) {
-            // Combine with initial welcome message
             setMessages([...initialMessages, ...historicalMessages]);
           }
         } else {

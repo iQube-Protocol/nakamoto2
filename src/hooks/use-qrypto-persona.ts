@@ -11,14 +11,14 @@ interface QryptoPersonaState {
 const STORAGE_KEY = 'qrypto-persona-activated';
 
 export const useQryptoPersona = (): QryptoPersonaState => {
-  // Initialize from localStorage, defaulting to true
+  // Initialize from localStorage, defaulting to false (inactive)
   const [qryptoPersonaActivated, setQryptoPersonaActivated] = useState<boolean>(() => {
     try {
       const saved = localStorage.getItem(STORAGE_KEY);
-      return saved !== null ? JSON.parse(saved) : true;
+      return saved !== null ? JSON.parse(saved) : false;
     } catch (error) {
       console.error('Error reading Qrypto Persona state from localStorage:', error);
-      return true;
+      return false;
     }
   });
 
