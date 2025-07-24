@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Info, ChevronDown, MessageSquare, BookOpen, Play } from 'lucide-react';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
@@ -58,10 +58,28 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps & {
   onActivateAgent
 }) => {
   const isMobile = useIsMobile();
+  const iframeRef = useRef<HTMLIFrameElement>(null);
   // State for tabs menu collapse - default to collapsed when media tab is active
   const [tabsCollapsed, setTabsCollapsed] = useState(activeTab === 'media');
   // Use global iframe session manager instead of local state
   const [mediaInitialized, setMediaInitialized] = useState(iframeSessionManager.isMediaInitialized());
+  const [sessionRecovering, setSessionRecovering] = useState(false);
+
+  // Setup iframe ref with session manager
+  useEffect(() => {
+    if (iframeRef.current && mediaInitialized) {
+      iframeSessionManager.setIframeRef(iframeRef.current);
+      
+      // Request auth state if we think we have session
+      if (iframeSessionManager.hasAuthState()) {
+        setSessionRecovering(true);
+        setTimeout(() => {
+          iframeSessionManager.requestAuthState();
+          setSessionRecovering(false);
+        }, 2000);
+      }
+    }
+  }, [mediaInitialized]);
 
   // Update collapse state when activeTab changes to media
   useEffect(() => {
@@ -164,8 +182,14 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps & {
               padding: isMobile ? '0' : '1rem'
             }}
           >
-            <div className="h-full w-full">
+            <div className="h-full w-full relative">
+              {sessionRecovering && (
+                <div className="absolute inset-0 bg-background/80 flex items-center justify-center z-20">
+                  <div className="text-sm text-muted-foreground">Restoring session...</div>
+                </div>
+              )}
               <iframe 
+                ref={iframeRef}
                 src="https://www.sizzleperks.com/embed/hqusgMObjXJ9" 
                 width="100%" 
                 height="100%" 
