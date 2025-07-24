@@ -50,6 +50,19 @@ export const useQryptoPersona = (): QryptoPersonaState => {
     setQryptoPersonaActivated(prev => !prev);
   }, []);
 
+  // Listen for activation events from modal
+  useEffect(() => {
+    const handleQryptoActivation = () => {
+      setQryptoPersonaActivated(true);
+    };
+
+    window.addEventListener('qryptoPersonaActivated', handleQryptoActivation);
+    
+    return () => {
+      window.removeEventListener('qryptoPersonaActivated', handleQryptoActivation);
+    };
+  }, []);
+
   return {
     qryptoPersonaActivated,
     activateQryptoPersona,
