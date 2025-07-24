@@ -27,7 +27,6 @@ interface SimplifiedAgentTabsProps {
   handlePlayAudio: (messageId: string) => void;
   handleKeyDown?: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
   recommendations?: {
-    showMetisRecommendation: boolean;
     showVeniceRecommendation: boolean;
     showQryptoRecommendation: boolean;
     showKNYTRecommendation: boolean;

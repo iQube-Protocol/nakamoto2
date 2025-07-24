@@ -11,7 +11,6 @@ interface MessageListProps {
   onPlayAudio: (messageId: string) => void;
   messagesEndRef: React.RefObject<HTMLDivElement>;
   recommendations?: {
-    showMetisRecommendation: boolean;
     showVeniceRecommendation: boolean;
     showQryptoRecommendation: boolean;
     showKNYTRecommendation: boolean;

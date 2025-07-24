@@ -11,7 +11,6 @@ interface ChatTabProps {
   messagesEndRef: React.RefObject<HTMLDivElement>;
   handlePlayAudio: (messageId: string) => void;
   recommendations?: {
-    showMetisRecommendation: boolean;
     showVeniceRecommendation: boolean;
     showQryptoRecommendation: boolean;
     showKNYTRecommendation: boolean;

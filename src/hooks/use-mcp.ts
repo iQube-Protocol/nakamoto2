@@ -19,14 +19,12 @@ export function useMCP() {
     if (user) {
       const initClient = () => {
         const mcpClient = getMCPClient({
-          // Check for metisActive status from localStorage
-          metisActive: localStorage.getItem('metisActive') === 'true'
         });
         
         setClient(mcpClient);
         setIsInitialized(true);
         
-        console.log('MCP client initialized with metisActive:', localStorage.getItem('metisActive') === 'true');
+        console.log('MCP client initialized');
       };
       
       initClient();

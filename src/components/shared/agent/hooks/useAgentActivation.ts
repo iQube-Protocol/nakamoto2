@@ -12,7 +12,6 @@ interface SelectedAgent {
 const AGENT_FEES = {
   'KNYT Persona': 0, // Free with reward
   'Qrypto Persona': 200, // One-time payment
-  'Metis': 500, // Monthly subscription
   'Venice': 800, // Monthly subscription
 };
 
@@ -20,7 +19,6 @@ export const useAgentActivation = () => {
   const { toast } = useToast();
   const [showActivationModal, setShowActivationModal] = useState(false);
   const [selectedAgent, setSelectedAgent] = useState<SelectedAgent | null>(null);
-  const [metisActive, setMetisActive] = useState(false);
 
   const handleActivateAgent = (agentName: string, fee?: number, description: string = '') => {
     // Use predefined fees if not provided
@@ -44,12 +42,6 @@ export const useAgentActivation = () => {
   };
 
   const handleActivationComplete = () => {
-    if (selectedAgent?.name === 'Metis') {
-      setMetisActive(true);
-      localStorage.setItem('metisActive', 'true');
-      window.dispatchEvent(new CustomEvent('metisActivated'));
-    }
-
     if (selectedAgent?.name === 'KNYT Persona') {
       localStorage.setItem('knyt-persona-activated', 'true');
       window.dispatchEvent(new CustomEvent('knytPersonaActivated'));
@@ -84,7 +76,6 @@ export const useAgentActivation = () => {
   return {
     showActivationModal,
     selectedAgent,
-    metisActive,
     handleActivateAgent,
     handleConfirmPayment,
     handleActivationComplete,

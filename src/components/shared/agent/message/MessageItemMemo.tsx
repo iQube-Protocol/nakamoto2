@@ -11,7 +11,6 @@ interface MessageItemProps {
   isPlaying?: boolean;
   onPlayAudio?: (messageId: string) => void;
   recommendations?: {
-    showMetisRecommendation: boolean;
     showVeniceRecommendation: boolean;
     showQryptoRecommendation: boolean;
     showKNYTRecommendation: boolean;
@@ -57,7 +56,6 @@ const MessageItemMemo: React.FC<MessageItemProps> = React.memo(({
       {/* Show recommendations after agent responses */}
       {!isUser && !isSystem && recommendations && onActivateAgent && onDismissRecommendation && (
         <AgentRecommendations
-          showMetisRecommendation={recommendations.showMetisRecommendation}
           showVeniceRecommendation={recommendations.showVeniceRecommendation}
           showQryptoRecommendation={recommendations.showQryptoRecommendation}
           showKNYTRecommendation={recommendations.showKNYTRecommendation}

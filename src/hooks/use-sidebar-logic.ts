@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
-import { useMetisAgent } from '@/hooks/use-metis-agent';
+
 import { useQryptoPersona } from '@/hooks/use-qrypto-persona';
 import { useVeniceAgent } from '@/hooks/use-venice-agent';
 import { useKNYTPersona } from '@/hooks/use-knyt-persona';
@@ -12,7 +12,7 @@ import { useAuth } from '@/hooks/use-auth';
 export const useSidebarLogic = () => {
   const location = useLocation();
   const navigate = useNavigate();
-  const { metisActivated, metisVisible, activateMetis, hideMetis } = useMetisAgent();
+  
   const { qryptoPersonaActivated, activateQryptoPersona, deactivateQryptoPersona } = useQryptoPersona();
   const { veniceActivated, veniceVisible, activateVenice, deactivateVenice, hideVenice } = useVeniceAgent();
   const { knytPersonaActivated, activateKNYTPersona, deactivateKNYTPersona, hideKNYTPersona } = useKNYTPersona();
@@ -34,7 +34,7 @@ export const useSidebarLogic = () => {
       "Qrypto Persona": qryptoPersonaActivated,
       "KNYT Persona": knytPersonaActivated,
       "Venice": veniceActivated,
-      "Metis": metisActivated,
+      
     };
   });
 
@@ -45,9 +45,9 @@ export const useSidebarLogic = () => {
       "Qrypto Persona": qryptoPersonaActivated,
       "KNYT Persona": knytPersonaActivated,
       "Venice": veniceActivated,
-      "Metis": metisActivated
+      
     }));
-  }, [qryptoPersonaActivated, knytPersonaActivated, veniceActivated, metisActivated]);
+  }, [qryptoPersonaActivated, knytPersonaActivated, veniceActivated]);
 
   // Listen for agent activation events from AgentActivationModal
   useEffect(() => {
@@ -81,24 +81,16 @@ export const useSidebarLogic = () => {
       }
     };
 
-    const handleMetisActivated = (e: CustomEvent) => {
-      console.log('Metis activated event received');
-      activateMetis();
-      setActiveIQubes(prev => ({...prev, "Metis": true}));
-    };
-
     window.addEventListener('qryptoPersonaStateChanged', handleQryptoPersonaStateChanged as EventListener);
     window.addEventListener('knytPersonaStateChanged', handleKNYTPersonaStateChanged as EventListener);
     window.addEventListener('veniceStateChanged', handleVeniceStateChanged as EventListener);
-    window.addEventListener('metisActivated', handleMetisActivated as EventListener);
     
     return () => {
       window.removeEventListener('qryptoPersonaStateChanged', handleQryptoPersonaStateChanged as EventListener);
       window.removeEventListener('knytPersonaStateChanged', handleKNYTPersonaStateChanged as EventListener);
       window.removeEventListener('veniceStateChanged', handleVeniceStateChanged as EventListener);
-      window.removeEventListener('metisActivated', handleMetisActivated as EventListener);
     };
-  }, [activateQryptoPersona, activateKNYTPersona, activateVenice, activateMetis]);
+  }, [activateQryptoPersona, activateKNYTPersona, activateVenice]);
 
   // Listen for iQube toggle events from Settings page
   useEffect(() => {
@@ -108,13 +100,7 @@ export const useSidebarLogic = () => {
         setActiveIQubes(prev => ({...prev, [iqubeId]: active}));
         
         // Special handling for each iQube type
-        if (iqubeId === "Metis") {
-          if (active && !metisActivated) {
-            activateMetis();
-          } else if (!active && metisVisible) {
-            hideMetis();
-          }
-        } else if (iqubeId === "Qrypto Persona") {
+        if (iqubeId === "Qrypto Persona") {
           if (active) {
             activateQryptoPersona();
           } else {
@@ -141,7 +127,7 @@ export const useSidebarLogic = () => {
     return () => {
       window.removeEventListener('iqubeToggle', handleIQubeToggle as EventListener);
     };
-  }, [metisActivated, metisVisible, activateMetis, hideMetis, activateQryptoPersona, deactivateQryptoPersona, knytPersonaActivated, activateKNYTPersona, deactivateKNYTPersona, veniceActivated, activateVenice, deactivateVenice]);
+  }, [activateQryptoPersona, deactivateQryptoPersona, knytPersonaActivated, activateKNYTPersona, deactivateKNYTPersona, veniceActivated, activateVenice, deactivateVenice]);
 
   const handleIQubeClick = (iqubeId: string) => {
     console.log("iQube clicked:", iqubeId);
@@ -161,22 +147,6 @@ export const useSidebarLogic = () => {
     window.dispatchEvent(event);
   };
 
-  const handleCloseMetisIQube = (e: React.MouseEvent<HTMLButtonElement>) => {
-    e.stopPropagation();
-    hideMetis();
-    setActiveIQubes(prev => ({...prev, "Metis": false}));
-    
-    // Dispatch event to update Settings page
-    const event = new CustomEvent('iqubeToggle', { 
-      detail: { 
-        iqubeId: "Metis", 
-        active: false 
-      } 
-    });
-    window.dispatchEvent(event);
-    
-    console.log("Metis iQube closed from sidebar");
-  };
 
   const toggleIQubeActive = (e: React.MouseEvent<HTMLDivElement>, qubeName: string) => {
     e.stopPropagation(); // Prevent the click from triggering the parent element
@@ -185,13 +155,7 @@ export const useSidebarLogic = () => {
     setActiveIQubes(prev => ({...prev, [qubeName]: newActiveState}));
     
     // Use the appropriate hook methods for each iQube type
-    if (qubeName === "Metis") {
-      if (newActiveState) {
-        activateMetis();
-      } else {
-        hideMetis();
-      }
-    } else if (qubeName === "Qrypto Persona") {
+    if (qubeName === "Qrypto Persona") {
       if (newActiveState) {
         activateQryptoPersona();
       } else {
@@ -246,7 +210,7 @@ export const useSidebarLogic = () => {
     toggleIQubesMenu,
     handleIQubeClick,
     toggleIQubeActive,
-    handleCloseMetisIQube,
+    
     handleSignOut
   };
 };

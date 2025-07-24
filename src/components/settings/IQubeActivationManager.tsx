@@ -1,7 +1,6 @@
 
 import React, { useEffect } from 'react';
 import { toast } from 'sonner';
-import { useMetisAgent } from '@/hooks/use-metis-agent';
 import { useQryptoPersona } from '@/hooks/use-qrypto-persona';
 import { useVeniceAgent } from '@/hooks/use-venice-agent';
 import { useKNYTPersona } from '@/hooks/use-knyt-persona';
@@ -15,7 +14,6 @@ const IQubeActivationManager = ({
   activeQubes, 
   setActiveQubes 
 }: IQubeActivationManagerProps) => {
-  const { metisActivated, metisVisible, activateMetis, hideMetis } = useMetisAgent();
   const { qryptoPersonaActivated, activateQryptoPersona, deactivateQryptoPersona } = useQryptoPersona();
   const { veniceActivated, veniceVisible, activateVenice, deactivateVenice, hideVenice } = useVeniceAgent();
   const { knytPersonaActivated, activateKNYTPersona, deactivateKNYTPersona, hideKNYTPersona } = useKNYTPersona();
@@ -24,12 +22,11 @@ const IQubeActivationManager = ({
   useEffect(() => {
     setActiveQubes(prev => ({
       ...prev, 
-      "Metis": metisActivated,
       "Qrypto Persona": qryptoPersonaActivated,
       "Venice": veniceActivated,
       "KNYT Persona": knytPersonaActivated
     }));
-  }, [metisActivated, qryptoPersonaActivated, veniceActivated, knytPersonaActivated, setActiveQubes]);
+  }, [qryptoPersonaActivated, veniceActivated, knytPersonaActivated, setActiveQubes]);
 
   // Listen for iQube activation/deactivation events from sidebar
   useEffect(() => {
@@ -39,15 +36,7 @@ const IQubeActivationManager = ({
         setActiveQubes(prev => ({...prev, [iqubeId]: active}));
         
         // Special handling for each iQube type
-        if (iqubeId === "Metis") {
-          if (active && !metisActivated) {
-            activateMetis();
-            toast.info(`Metis activated`);
-          } else if (!active && metisVisible) {
-            hideMetis();
-            toast.info(`Metis deactivated`);
-          }
-        } else if (iqubeId === "Qrypto Persona") {
+        if (iqubeId === "Qrypto Persona") {
           if (active && !qryptoPersonaActivated) {
             activateQryptoPersona();
             toast.info(`Qrypto Persona activated`);
@@ -82,7 +71,7 @@ const IQubeActivationManager = ({
     return () => {
       window.removeEventListener('iqubeToggle', handleIQubeToggle as EventListener);
     };
-  }, [metisActivated, metisVisible, activateMetis, hideMetis, qryptoPersonaActivated, activateQryptoPersona, deactivateQryptoPersona, veniceActivated, activateVenice, deactivateVenice, knytPersonaActivated, activateKNYTPersona, deactivateKNYTPersona, setActiveQubes]);
+  }, [qryptoPersonaActivated, activateQryptoPersona, deactivateQryptoPersona, veniceActivated, activateVenice, deactivateVenice, knytPersonaActivated, activateKNYTPersona, deactivateKNYTPersona, setActiveQubes]);
 
   return null; // This is a logic-only component, no UI
 };

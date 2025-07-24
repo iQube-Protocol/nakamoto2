@@ -51,10 +51,10 @@ const AgentActivationModal = ({
     switch (agentName) {
       case 'Venice':
         return 'Venice ModelQube';
-      case 'Metis':
-        return 'Metis AgentQube';
       case 'Qrypto Persona':
         return 'Qrypto Persona DataQube';
+      case 'KNYT Persona':
+        return 'KNYT Persona DataQube';
       default:
         return `${agentName} Agent`;
     }
@@ -79,12 +79,7 @@ const AgentActivationModal = ({
           setCurrentStep('complete');
           
           // Handle activation for different agents
-          if (agentName === 'Metis') {
-            localStorage.setItem('metisActive', 'true');
-            const activationEvent = new Event('metisActivated');
-            window.dispatchEvent(activationEvent);
-            console.log('Dispatched metisActivated event');
-          } else if (agentName === 'Venice') {
+          if (agentName === 'Venice') {
             localStorage.setItem('venice_activated', 'true');
             window.dispatchEvent(new CustomEvent('veniceStateChanged', { 
               detail: { activated: true, visible: true } 
@@ -92,10 +87,12 @@ const AgentActivationModal = ({
             console.log('Dispatched veniceStateChanged event');
           } else if (agentName === 'Qrypto Persona') {
             localStorage.setItem('qrypto-persona-activated', 'true');
-            window.dispatchEvent(new CustomEvent('qryptoPersonaStateChanged', { 
-              detail: { activated: true } 
-            }));
-            console.log('Dispatched qryptoPersonaStateChanged event');
+            window.dispatchEvent(new CustomEvent('qryptoPersonaActivated'));
+            console.log('Dispatched qryptoPersonaActivated event');
+          } else if (agentName === 'KNYT Persona') {
+            localStorage.setItem('knyt-persona-activated', 'true');
+            window.dispatchEvent(new CustomEvent('knytPersonaActivated'));
+            console.log('Dispatched knytPersonaActivated event');
           }
         }, 3500);
       } else {

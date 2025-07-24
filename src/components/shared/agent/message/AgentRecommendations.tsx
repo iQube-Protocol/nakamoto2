@@ -4,7 +4,6 @@ import AgentRecommendation from '../AgentRecommendation';
 import { useToast } from '@/components/ui/use-toast';
 
 interface AgentRecommendationsProps {
-  showMetisRecommendation: boolean;
   showVeniceRecommendation: boolean;
   showQryptoRecommendation: boolean;
   showKNYTRecommendation: boolean;
@@ -13,7 +12,6 @@ interface AgentRecommendationsProps {
 }
 
 const AgentRecommendations = ({
-  showMetisRecommendation,
   showVeniceRecommendation,
   showQryptoRecommendation,
   showKNYTRecommendation,
@@ -23,7 +21,6 @@ const AgentRecommendations = ({
   const { toast } = useToast();
 
   console.log('AgentRecommendations: Received props:', {
-    showMetisRecommendation,
     showVeniceRecommendation, 
     showQryptoRecommendation,
     showKNYTRecommendation
@@ -41,18 +38,6 @@ const AgentRecommendations = ({
 
   return (
     <>
-      {showMetisRecommendation && (
-        <div className="mt-4">
-          <AgentRecommendation
-            agentName="Metis"
-            description="An algorithm that evaluates risks associated with wallets and tokens for enhanced security analysis."
-            fee={500}
-            onActivate={() => onActivateAgent('Metis', 500, 'An algorithm that evaluates risks associated with wallets and tokens for enhanced security analysis.')}
-            onDismiss={() => handleDismissRecommendation('Metis')}
-          />
-        </div>
-      )}
-      
       {showVeniceRecommendation && (
         <div className="mt-4">
           <AgentRecommendation
