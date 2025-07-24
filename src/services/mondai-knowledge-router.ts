@@ -1,6 +1,7 @@
 import { COYNKnowledgeBase } from '@/services/coyn-knowledge-base';
 import { iQubesKnowledgeBase } from '@/services/iqubes-knowledge-base';
 import { QryptoKnowledgeBase } from '@/services/qrypto-knowledge-base';
+import { MetaKnytsKnowledgeBase } from '@/services/metaknyts-knowledge-base';
 
 interface KnowledgeResult {
   id: string;
@@ -17,6 +18,7 @@ interface KnowledgeSearchResult {
   results: KnowledgeResult[];
   sources: string[];
   totalItems: number;
+  shouldUseLLMFallback?: boolean;
 }
 
 /**
@@ -28,11 +30,13 @@ export class MonDAIKnowledgeRouter {
   private coynKB: COYNKnowledgeBase;
   private iQubesKB: iQubesKnowledgeBase;
   private qryptoKB: QryptoKnowledgeBase;
+  private metaKnytsKB: MetaKnytsKnowledgeBase;
 
   private constructor() {
     this.coynKB = COYNKnowledgeBase.getInstance();
     this.iQubesKB = iQubesKnowledgeBase.getInstance();
     this.qryptoKB = QryptoKnowledgeBase.getInstance();
+    this.metaKnytsKB = MetaKnytsKnowledgeBase.getInstance();
   }
 
   public static getInstance(): MonDAIKnowledgeRouter {
@@ -49,7 +53,8 @@ export class MonDAIKnowledgeRouter {
     iqube: boolean;
     coyn: boolean;
     qrypto: boolean;
-    priority: 'iqube' | 'coyn' | 'qrypto' | 'general';
+    metaknyts: boolean;
+    priority: 'iqube' | 'coyn' | 'qrypto' | 'metaknyts' | 'general';
   } {
     const lowerMessage = message.toLowerCase();
     
@@ -71,23 +76,33 @@ export class MonDAIKnowledgeRouter {
       'consensus', 'blockchain', 'mining', 'proof of work', 'proof of stake',
       'tokenomics', 'defi', 'smart contract', 'gas fees'
     ];
+    
+    // metaKnyts-specific terms
+    const metaKnytsTerms = [
+      'bitcoin', 'btc', 'satoshi', 'nakamoto', 'ordinals', 'runes', 'inscriptions',
+      'mythology', 'lore', 'metaknyts', 'knyt', 'folklore', 'legend', 'tale',
+      'story', 'narrative', 'character', 'myth'
+    ];
 
     const hasIQubeTerms = iQubeTerms.some(term => lowerMessage.includes(term));
     const hasCoynTerms = coynTerms.some(term => lowerMessage.includes(term));
     const hasQryptoTerms = qryptoTerms.some(term => lowerMessage.includes(term));
+    const hasMetaKnytsTerms = metaKnytsTerms.some(term => lowerMessage.includes(term));
 
     // Determine priority based on specificity
-    let priority: 'iqube' | 'coyn' | 'qrypto' | 'general' = 'general';
+    let priority: 'iqube' | 'coyn' | 'qrypto' | 'metaknyts' | 'general' = 'general';
     if (hasIQubeTerms) priority = 'iqube';
     else if (hasCoynTerms) priority = 'coyn';
     else if (hasQryptoTerms) priority = 'qrypto';
+    else if (hasMetaKnytsTerms) priority = 'metaknyts';
 
-    console.log(`🎯 Knowledge Router: Query intent detected - iQube: ${hasIQubeTerms}, COYN: ${hasCoynTerms}, Qrypto: ${hasQryptoTerms}, Priority: ${priority}`);
+    console.log(`🎯 Knowledge Router: Query intent detected - iQube: ${hasIQubeTerms}, COYN: ${hasCoynTerms}, Qrypto: ${hasQryptoTerms}, metaKnyts: ${hasMetaKnytsTerms}, Priority: ${priority}`);
 
     return {
       iqube: hasIQubeTerms,
       coyn: hasCoynTerms || priority === 'general', // Always search COYN as fallback
       qrypto: hasQryptoTerms,
+      metaknyts: hasMetaKnytsTerms,
       priority
     };
   }
@@ -135,15 +150,41 @@ export class MonDAIKnowledgeRouter {
       if (allResults.some(r => r.source.includes('Qrypto'))) sources.push('Qrypto Knowledge Base');
     }
 
+    // Search metaKnyts KB if relevant or as tertiary fallback
+    if (intent.metaknyts || intent.priority === 'metaknyts' || allResults.length === 0) {
+      console.log(`📚 Knowledge Router: Searching metaKnyts KB`);
+      for (const term of searchTerms) {
+        const metaKnytsResults = this.metaKnytsKB.searchKnowledge(term);
+        allResults.push(...metaKnytsResults.map(item => ({
+          id: item.id,
+          title: item.title,
+          content: item.content,
+          section: item.section,
+          category: item.category,
+          keywords: item.keywords,
+          timestamp: item.timestamp,
+          source: 'metaKnyts Knowledge Base'
+        })));
+      }
+      if (allResults.some(r => r.source.includes('metaKnyts'))) sources.push('metaKnyts Knowledge Base');
+    }
+
     // Remove duplicates and sort by relevance
     const uniqueResults = this.deduplicateAndRank(allResults, searchTerms);
     
+    // Determine if LLM fallback should be used (no relevant results found)
+    const shouldUseLLMFallback = uniqueResults.length === 0;
+    
     console.log(`✅ Knowledge Router: Found ${uniqueResults.length} items from sources: ${sources.join(', ')}`);
+    if (shouldUseLLMFallback) {
+      console.log(`🤖 Knowledge Router: No KB results found - LLM fallback recommended`);
+    }
     
     return {
       results: uniqueResults,
       sources,
-      totalItems: uniqueResults.length
+      totalItems: uniqueResults.length,
+      shouldUseLLMFallback
     };
   }
 

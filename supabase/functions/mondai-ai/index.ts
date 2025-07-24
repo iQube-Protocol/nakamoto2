@@ -50,8 +50,9 @@ Your knowledge resources are prioritized as follows:
 1. **Primary**: iQube knowledge base (core technology and infrastructure)
 2. **Secondary**: COYN knowledge base (protocol framework and implementations)
 3. **Tertiary**: metaKnyts knowledge base (for mythology, lore, bitcoin folklore, and fictional narratives)
+4. **Fallback**: LLM general knowledge when no relevant KB content is found
 
-**CRITICAL**: Always consult the relevant knowledge bases for your responses. Do not rely solely on this system prompt.
+**CRITICAL**: Always consult the relevant knowledge bases for your responses first. When no relevant knowledge base content is found, you may use your general knowledge while clearly indicating the source of information.
 
 For COYN-related queries:
 - Always reference the COYN KB for accurate information
@@ -407,13 +408,13 @@ async function processMonDAIInteraction(
   const aiProvider = useVenice ? "Venice AI (Uncensored)" : "OpenAI";
   
   // Determine knowledge source
-  let knowledgeSource = "General Knowledge";
+  let knowledgeSource = "LLM General Knowledge";
   if (qryptoKnowledgeContext && knowledgeItems.length > 0) {
-    knowledgeSource = "metaKnyts Knowledge Base + KBAI Knowledge Base";
+    knowledgeSource = "metaKnyts KB + MonDAI Knowledge Router";
   } else if (qryptoKnowledgeContext) {
     knowledgeSource = "metaKnyts Knowledge Base";
   } else if (knowledgeItems.length > 0) {
-    knowledgeSource = "KBAI Knowledge Base";
+    knowledgeSource = "MonDAI Knowledge Router";
   }
 
   // Add conversation memory to knowledge source if used
