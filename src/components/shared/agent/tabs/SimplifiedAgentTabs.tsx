@@ -10,6 +10,7 @@ import IQubesKnowledgeBase from '@/components/mondai/iQubesKnowledgeBase';
 import AgentInputBar from '../AgentInputBar';
 import { AgentMessage } from '@/lib/types';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useIframePersistence } from '@/hooks/use-iframe-persistence';
 import { iframeSessionManager } from '@/services/iframe-session-manager';
 
 interface SimplifiedAgentTabsProps {
@@ -58,40 +59,46 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps & {
   onActivateAgent
 }) => {
   const isMobile = useIsMobile();
-  const iframeRef = useRef<HTMLIFrameElement>(null);
   // State for tabs menu collapse - default to collapsed when media tab is active
   const [tabsCollapsed, setTabsCollapsed] = useState(activeTab === 'media');
-  // Use global iframe session manager instead of local state
   const [mediaInitialized, setMediaInitialized] = useState(iframeSessionManager.isMediaInitialized());
   const [sessionRecovering, setSessionRecovering] = useState(false);
 
-  // Setup iframe ref with session manager
-  useEffect(() => {
-    if (iframeRef.current && mediaInitialized) {
-      iframeSessionManager.setIframeRef(iframeRef.current);
-      
-      // Request auth state if we think we have session
-      if (iframeSessionManager.hasAuthState()) {
-        setSessionRecovering(true);
-        setTimeout(() => {
-          iframeSessionManager.requestAuthState();
-          setSessionRecovering(false);
-        }, 2000);
-      }
+  // Use iframe persistence hook
+  const { containerRef, iframe, isRestored } = useIframePersistence({
+    iframeId: 'qrypto-media-iframe',
+    src: 'https://www.sizzleperks.com/embed/hqusgMObjXJ9',
+    onIframeReady: (iframe) => {
+      console.log('SimplifiedAgentTabs: Iframe ready', { isRestored });
+      setMediaInitialized(true);
+      iframeSessionManager.setMediaInitialized(true);
     }
-  }, [mediaInitialized]);
+  });
+
+  // Handle session recovery for restored iframes
+  useEffect(() => {
+    if (isRestored && iframe && iframeSessionManager.hasAuthState()) {
+      console.log('SimplifiedAgentTabs: Attempting session recovery for restored iframe');
+      setSessionRecovering(true);
+      setTimeout(() => {
+        iframeSessionManager.requestAuthState();
+        setSessionRecovering(false);
+      }, 2000);
+    }
+  }, [isRestored, iframe]);
 
   // Update collapse state when activeTab changes to media
   useEffect(() => {
     if (activeTab === 'media') {
       setTabsCollapsed(true);
-      // Update global state when media tab is accessed
-      if (!mediaInitialized) {
-        iframeSessionManager.setMediaInitialized(true);
+      // Initialize media when tab is first accessed
+      if (!mediaInitialized && iframe) {
+        console.log('SimplifiedAgentTabs: Media tab accessed, initializing');
         setMediaInitialized(true);
+        iframeSessionManager.setMediaInitialized(true);
       }
     }
-  }, [activeTab, mediaInitialized]);
+  }, [activeTab, mediaInitialized, iframe]);
 
   // Function to handle tab switching after form submission
   const handleAfterSubmit = () => {
@@ -164,51 +171,25 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps & {
         </TabsContent>
 
         <TabsContent value="media" className="h-full m-0 p-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col flex-1">
-          {/* Empty content - iframe is handled by persistent container below */}
-        </TabsContent>
-
-        {/* Persistent iframe for media tab - always mounted but visibility controlled using global state */}
-        {mediaInitialized && (
           <div 
-            className={cn(
-              "absolute inset-0 z-10",
-              activeTab === 'media' ? 'block' : 'hidden'
-            )}
+            ref={containerRef}
+            className="flex-1 bg-background overflow-hidden relative"
             style={{ 
-              top: 0,
-              left: 0,
-              right: 0,
-              bottom: 0,
               padding: isMobile ? '0' : '1rem'
             }}
           >
-            <div className="h-full w-full relative">
-              {sessionRecovering && (
-                <div className="absolute inset-0 bg-background/80 flex items-center justify-center z-20">
-                  <div className="text-sm text-muted-foreground">Restoring session...</div>
-                </div>
-              )}
-              <iframe 
-                ref={iframeRef}
-                src="https://www.sizzleperks.com/embed/hqusgMObjXJ9" 
-                width="100%" 
-                height="100%" 
-                allow="camera; microphone; display-capture; fullscreen"
-                allowFullScreen
-                style={{
-                  height: isMobile ? '120vh' : '100vh',
-                  maxHeight: '100%',
-                  width: '100%',
-                  maxWidth: '100%',
-                  border: 'none',
-                  outline: 'none'
-                }}
-                className="border-0"
-                aria-hidden={activeTab !== 'media'}
-              />
-            </div>
+            {sessionRecovering && (
+              <div className="absolute inset-0 bg-background/80 flex items-center justify-center z-20">
+                <div className="text-sm text-muted-foreground">Restoring session...</div>
+              </div>
+            )}
+            {!iframe && (
+              <div className="flex-1 flex items-center justify-center bg-muted/50 rounded-lg">
+                <p className="text-muted-foreground">Loading media content...</p>
+              </div>
+            )}
           </div>
-        )}
+        </TabsContent>
       </div>
 
       {/* Input bar moved outside of tabs, always visible with improved mobile support */}

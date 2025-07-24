@@ -103,15 +103,26 @@ class IframeSessionManager {
       return;
     }
 
-    if (this.authState && this.iframeRef) {
-      console.log('IframeSessionManager: Attempting to restore auth state');
+    if (this.authState && this.iframeRef && this.iframeRef.contentWindow) {
+      console.log('IframeSessionManager: Attempting to restore auth state', this.authState);
       this.sessionRecoveryAttempts++;
       
-      // Send auth state to iframe
-      this.iframeRef.contentWindow?.postMessage({
-        type: 'RESTORE_AUTH_STATE',
-        data: this.authState
-      }, 'https://www.sizzleperks.com');
+      try {
+        // Send auth state to iframe with retry mechanism
+        this.iframeRef.contentWindow.postMessage({
+          type: 'RESTORE_AUTH_STATE',
+          data: this.authState
+        }, 'https://www.sizzleperks.com');
+
+        // Also request current auth state as a fallback
+        setTimeout(() => {
+          this.requestAuthState();
+        }, 2000);
+      } catch (error) {
+        console.error('IframeSessionManager: Error during session recovery:', error);
+      }
+    } else {
+      console.warn('IframeSessionManager: Cannot attempt recovery - missing iframe or auth state');
     }
   }
 
@@ -129,10 +140,37 @@ class IframeSessionManager {
     
     // Attempt to restore session when iframe is set
     if (iframe && this.authState) {
-      setTimeout(() => {
+      // Wait for iframe to be fully ready before attempting recovery
+      this.waitForIframeReady(iframe).then(() => {
         this.attemptSessionRecovery();
-      }, 1000); // Small delay to ensure iframe is fully loaded
+      });
     }
+  }
+
+  private async waitForIframeReady(iframe: HTMLIFrameElement): Promise<void> {
+    return new Promise((resolve) => {
+      if (iframe.contentWindow && iframe.contentDocument?.readyState === 'complete') {
+        console.log('IframeSessionManager: Iframe already ready');
+        setTimeout(resolve, 500); // Small delay for any final initialization
+        return;
+      }
+
+      const checkReady = () => {
+        if (iframe.contentWindow && iframe.contentDocument?.readyState === 'complete') {
+          console.log('IframeSessionManager: Iframe ready after waiting');
+          setTimeout(resolve, 500);
+        } else {
+          setTimeout(checkReady, 100);
+        }
+      };
+
+      iframe.addEventListener('load', () => {
+        console.log('IframeSessionManager: Iframe load event fired');
+        setTimeout(resolve, 1000);
+      }, { once: true });
+
+      checkReady();
+    });
   }
 
   getAuthState(): any {
