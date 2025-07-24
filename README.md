@@ -75,56 +75,6 @@ Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-trick
 
 ## Development Lessons Learned
 
-### Infinite Loop and Performance Issues Fix - 2025-01-24
-**Cycles Required:** 8+ cycles
-**Problem:** The app was experiencing infinite loops with continuous API calls, slow inference times, incorrect badge display, and poor user experience due to repeated auth checks and database queries.
-
-**Root Cause:** Multiple components were triggering unnecessary re-renders and API calls:
-- Profile page using non-optimized hooks causing continuous interaction fetches
-- Connection state manager with aggressive state recovery
-- Auth hook making too many user session checks
-- Missing circuit breakers for failing API calls (406 errors)
-- Lack of request debouncing and error boundaries
-
-**Solution:** Comprehensive optimization approach:
-1. **Fixed Infinite Loops:**
-   - Created `useAuthOptimized` hook with debouncing to prevent unnecessary auth checks
-   - Updated Profile page to use `useUserInteractionsOptimized` with better caching
-   - Optimized connection state manager with faster cleanup (2s instead of 5s)
-   - Added circuit breaker pattern for failing API calls
-
-2. **Fixed Badge Display:**
-   - Corrected MetadataBadge to show "Venice - Uncensored" instead of "Venice-Uncensored"
-   - Ensured provider-based display (OpenAI vs Venice) from message metadata
-
-3. **Improved Performance:**
-   - Added request caching with 5-minute staleTime and 10-minute gcTime
-   - Implemented circuit breakers to prevent retry storms on 406 errors
-   - Added error boundaries to prevent cascading failures
-   - Optimized query client to not retry auth/406 errors
-
-4. **Enhanced Stability:**
-   - Added loading states with `LoadingSpinner` component
-   - Wrapped app with `ErrorBoundary` for graceful error handling
-   - Added console cleanup to reduce development noise
-   - Implemented proper request timeouts and retry logic
-
-**Key Insights:**
-- React Query optimization is critical for preventing infinite loops
-- Circuit breakers are essential for handling expected API failures (406 errors)
-- Debouncing auth checks prevents unnecessary re-renders
-- Error boundaries provide graceful degradation
-- Connection state management needs aggressive cleanup for browser navigation
-
-**Future Reference:**
-- Use `useAuthOptimized` instead of `useAuth` for components that might cause loops
-- Always wrap API calls with circuit breakers using `withCircuitBreaker`
-- Set up proper staleTime/gcTime for React Query to prevent excessive requests
-- Add error boundaries around critical components
-- Use proper loading states to prevent UI freezing
-
----
-
 ### Password Reset Flow Configuration Issue - 2025-01-08
 **Cycles Required:** 12+ cycles
 **Problem:** Users accessing password reset URLs were being redirected to the sign-in page instead of the password reset form, causing a broken authentication flow.
