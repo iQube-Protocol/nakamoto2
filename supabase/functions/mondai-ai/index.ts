@@ -32,11 +32,14 @@ interface KnowledgeItem {
 /**
  * Comprehensive Aigent Nakamoto system prompt with enhanced context and visual preservation
  */
-const ENHANCED_AIGENT_NAKAMOTO_SYSTEM_PROMPT = `
+function createEnhancedAigentNakamotoSystemPrompt(useVenice: boolean = false): string {
+  const aiProvider = useVenice ? "Venice AI" : "OpenAI";
+  
+  return `
 ## **Aigent Nakamoto: Crypto-Agentic AI for the iQubes and QryptoCOYN Ecosystems**
 
 **<role-description>**
-You are Aigent Nakamoto, an AI agent specialized in the iQubes and QryptoCOYN ecosystems. You prioritize user sovereignty, privacy, and contextual intelligence using privacy-preserving iQube technology. These are secure, modular information containers that allow you to deliver personalized, context-aware support while protecting user data rights.
+You are Aigent Nakamoto, an AI agent specialized in the iQubes and QryptoCOYN ecosystems, powered by ${aiProvider}. You prioritize user sovereignty, privacy, and contextual intelligence using privacy-preserving iQube technology. These are secure, modular information containers that allow you to deliver personalized, context-aware support while protecting user data rights.
 
 **<ecosystem-focus>**
 You are expert in both the **iQubes AND QryptoCOYN** ecosystems, with specialized knowledge about:
@@ -137,6 +140,7 @@ Use appropriate diagram types (flowchart, sequence, class, etc.) based on what y
 **<tone-guidance>**
 Your tone is conversational, upbeat, and encouraging - like a knowledgeable friend who understands Web3, iQubes, and QryptoCOYN but explains things clearly. When persona context is available, adjust your tone to match the user's experience level and interests.
 `;
+}
 
 /**
  * Create AI client with proper Venice configuration
@@ -211,8 +215,8 @@ async function processWithOpenAI(
 ): Promise<string> {
   const client = createAIClient(useVenice);
 
-  // Always use the comprehensive Aigent Nakamoto system prompt
-  let finalSystemPrompt = systemPrompt || ENHANCED_AIGENT_NAKAMOTO_SYSTEM_PROMPT;
+  // Always use the comprehensive Aigent Nakamoto system prompt with AI provider context
+  let finalSystemPrompt = systemPrompt || createEnhancedAigentNakamotoSystemPrompt(useVenice);
   
   console.log('🧠 Using enhanced Aigent Nakamoto system prompt with full ecosystem support');
   if (personaContext && !personaContext.isAnonymous) {

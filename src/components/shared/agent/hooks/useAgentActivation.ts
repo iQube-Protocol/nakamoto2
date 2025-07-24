@@ -47,7 +47,7 @@ export const useAgentActivation = (onDismissRecommendation?: (agentName: string)
     if (selectedAgent?.name === 'Venice') {
       // Dispatch event to activate Venice
       window.dispatchEvent(new CustomEvent('veniceStateChanged', { 
-        detail: { active: true } 
+        detail: { activated: true, visible: true } 
       }));
     }
 
