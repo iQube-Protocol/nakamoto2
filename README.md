@@ -310,3 +310,264 @@ If you encounter similar "Bad Request" errors with large database queries:
 6. **Monitor edge function logs**: Use Supabase's logging for real-time debugging
 
 This solution ensures the email invitation system can handle large-scale operations while maintaining reliability and providing detailed feedback for debugging.
+
+---
+
+### COYN Protocol System Enhancement and iQube Agent Framework - 2025-07-24
+**Cycles Required:** 3 cycles
+**Problem:** System needed enhanced understanding of COYN protocol framework and better integration of metaKnyts knowledge base while maintaining existing iQube/COYN functionality.
+
+**Root Cause:** System prompt lacked comprehensive understanding of:
+- COYN protocol as framework for data-as-asset backed cryptocurrencies
+- Knowledge base hierarchy and when to use each KB
+- Natural integration between real-world implementations (iQube/COYN) and mythology (metaKnyts)
+- Proper utilization of existing knowledge bases vs system prompt fabrication
+
+**Solution:**
+1. **Enhanced COYN Protocol Definition**: Added comprehensive explanation of COYN as framework enabling data to be priced as quantifiable assets using iQube's Proof-of-Risk and Proof-of-Price consensus systems
+2. **Established KB Hierarchy**: Implemented clear priority system (iQube > COYN > metaKnyts) with specific use cases for each
+3. **Improved KB Utilization**: Added explicit instructions to always consult relevant KBs rather than relying solely on system prompt
+4. **Natural Language Guidelines**: Enabled contextual use of plurals (iQubes/COYNs) while maintaining singular identity
+5. **Logos/Mythos Integration**: Established philosophy where iQube/COYN are real-world "logos" and metaKnyts provides the "mythos"
+
+**Key Insights:**
+- System prompts should guide KB usage rather than replace KB content
+- Knowledge base hierarchy prevents context confusion and ensures appropriate responses
+- The COYN acronym (Currency of Your Network) should be emphasized when contextually appropriate
+- metaKnyts responses should be grounded in actual KB content, not fabricated
+- Natural integration between technical implementations and mythological frameworks enhances user experience
+
+**Future Reference:**
+- Always emphasize that COYN stands for "Currency of Your Network" when introducing the concept
+- Use metaKnyts KB as PRIMARY resource for mythology/lore queries - never fabricate characters or themes
+- Draw from comprehensive knowledge bases rather than making assumptions
+- Maintain the hierarchy: technical queries → iQube KB, protocol queries → COYN KB, mythology → metaKnyts KB
+- Enable natural language flow while preserving core identity and technical accuracy
+
+**Files Modified:**
+- `supabase/functions/mondai-ai/index.ts` - Enhanced system prompt with COYN protocol understanding and KB hierarchy
+
+---
+
+## Adding New iQube Agents: Complete Implementation Guide
+
+### Overview
+This section provides a comprehensive guide for adding new iQube agents that follow the established activation model used by Venice, Qrypto Persona, and KNYT Persona agents.
+
+### Core Architecture Components
+
+#### 1. Agent Hook Pattern
+Each iQube agent requires a dedicated hook following this naming convention: `use-[agent-name]-agent.ts`
+
+**Required Hook Structure:**
+```typescript
+// src/hooks/use-[agent-name]-agent.ts
+import { useState, useEffect, useCallback } from 'react';
+
+interface [AgentName]State {
+  [agentName]Activated: boolean;
+  [agentName]Visible: boolean;
+  activate[AgentName]: () => void;
+  deactivate[AgentName]: () => void;
+  hide[AgentName]: () => void;
+}
+
+export function use[AgentName]Agent(): [AgentName]State {
+  const STORAGE_KEY = '[agentName]Active';
+  const [agentActivated, setAgentActivated] = useState(false);
+  const [agentVisible, setAgentVisible] = useState(false);
+
+  // Initialize from localStorage
+  useEffect(() => {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored === 'true') {
+      setAgentActivated(true);
+      setAgentVisible(true);
+    }
+  }, []);
+
+  // Save to localStorage and dispatch events
+  const activateAgent = useCallback(() => {
+    setAgentActivated(true);
+    setAgentVisible(true);
+    localStorage.setItem(STORAGE_KEY, 'true');
+    
+    const event = new Event('[agentName]Activated');
+    window.dispatchEvent(event);
+  }, []);
+
+  const deactivateAgent = useCallback(() => {
+    setAgentActivated(false);
+    setAgentVisible(false);
+    localStorage.setItem(STORAGE_KEY, 'false');
+    
+    const event = new Event('[agentName]Deactivated');
+    window.dispatchEvent(event);
+  }, []);
+
+  const hideAgent = useCallback(() => {
+    setAgentVisible(false);
+    setAgentActivated(false);
+    localStorage.setItem(STORAGE_KEY, 'false');
+    
+    const event = new Event('[agentName]StateChanged');
+    window.dispatchEvent(event);
+  }, []);
+
+  return {
+    [agentName]Activated: agentActivated,
+    [agentName]Visible: agentVisible,
+    activate[AgentName]: activateAgent,
+    deactivate[AgentName]: deactivateAgent,
+    hide[AgentName]: hideAgent
+  };
+}
+```
+
+#### 2. Integration with IQubeActivationManager
+Update `src/components/settings/IQubeActivationManager.tsx`:
+
+```typescript
+// Add import for new hook
+import { use[AgentName]Agent } from '@/hooks/use-[agent-name]-agent';
+
+// Add hook usage in component
+const { 
+  [agentName]Activated, 
+  activate[AgentName], 
+  deactivate[AgentName] 
+} = use[AgentName]Agent();
+
+// Add to state synchronization effect
+useEffect(() => {
+  setActiveQubes(prev => ({
+    ...prev,
+    "[Agent Display Name]": [agentName]Activated,
+    // ... other agents
+  }));
+}, [[agentName]Activated, /* other dependencies */]);
+
+// Add to toggle handler
+const handleIQubeToggle = (event: any) => {
+  // ... existing logic
+  
+  if (targetQubeId === "[Agent Display Name]") {
+    if (isActivating) {
+      activate[AgentName]();
+      toast.success("[Agent Display Name] activated successfully!");
+    } else {
+      deactivate[AgentName]();
+      toast.success("[Agent Display Name] deactivated successfully!");
+    }
+  }
+  
+  // ... rest of handler
+};
+```
+
+#### 3. Integration with AgentRecommendationHandler
+Update `src/components/settings/AgentRecommendationHandler.tsx`:
+
+```typescript
+// Add event handler
+const handle[AgentName]Activation = () => {
+  setActiveQubes(prev => ({ ...prev, "[Agent Display Name]": true }));
+};
+
+// Add event listener in useEffect
+useEffect(() => {
+  // ... existing listeners
+  window.addEventListener('[agentName]Activated', handle[AgentName]Activation);
+  
+  return () => {
+    // ... existing cleanup
+    window.removeEventListener('[agentName]Activated', handle[AgentName]Activation);
+  };
+}, [setActiveQubes]);
+```
+
+#### 4. Agent Activation Modal Integration
+Update `src/components/shared/agent/AgentActivationModal.tsx`:
+
+```typescript
+// Add to getAgentTitle function
+const getAgentTitle = (agentName: string) => {
+  switch (agentName) {
+    // ... existing cases
+    case '[agent-name]':
+      return '[Agent Display Name]';
+    default:
+      return agentName;
+  }
+};
+
+// Add to handleConfirmPayment function for event dispatch
+if (agentName === '[agent-name]') {
+  const activationEvent = new Event('[agentName]StateChanged');
+  window.dispatchEvent(activationEvent);
+}
+```
+
+#### 5. Agent Knowledge Base Integration
+If the agent requires a dedicated knowledge base:
+
+**Create Knowledge Base Service:**
+```typescript
+// src/services/[agent-name]-knowledge-base/[AgentName]KnowledgeBase.ts
+// src/services/[agent-name]-knowledge-base/knowledge-data.ts
+// src/services/[agent-name]-knowledge-base/types.ts
+// src/services/[agent-name]-knowledge-base/index.ts
+```
+
+**Update MonDAI Knowledge Router:**
+```typescript
+// src/services/mondai-knowledge-router.ts
+import { [AgentName]KnowledgeBase } from '@/services/[agent-name]-knowledge-base';
+
+// Add to router logic
+if (query.toLowerCase().includes('[agent-trigger-word]')) {
+  return [AgentName]KnowledgeBase.searchKnowledge(query);
+}
+```
+
+**Update System Prompt:**
+```typescript
+// supabase/functions/mondai-ai/index.ts
+// Add to knowledge base hierarchy and usage instructions
+```
+
+### Implementation Checklist
+
+When adding a new iQube agent, ensure you complete:
+
+- [ ] Create agent-specific hook (`use-[agent-name]-agent.ts`)
+- [ ] Update `IQubeActivationManager.tsx` with new hook integration
+- [ ] Update `AgentRecommendationHandler.tsx` with event listeners
+- [ ] Update `AgentActivationModal.tsx` with agent-specific logic
+- [ ] Create knowledge base service (if needed)
+- [ ] Update `mondai-knowledge-router.ts` (if knowledge base added)
+- [ ] Update system prompt in `mondai-ai/index.ts` (if knowledge base added)
+- [ ] Test activation/deactivation flow
+- [ ] Test localStorage persistence
+- [ ] Test event propagation between components
+- [ ] Verify widget appears in settings interface
+- [ ] Test knowledge base integration (if applicable)
+
+### Testing Strategy
+
+1. **Activation Flow**: Test agent activation through settings interface
+2. **Persistence**: Verify state persists across browser sessions
+3. **Event Handling**: Confirm all components respond to activation events
+4. **Knowledge Integration**: Test knowledge base queries (if applicable)
+5. **Cross-Browser**: Verify localStorage compatibility
+6. **Error Handling**: Test edge cases and error scenarios
+
+### Common Patterns to Follow
+
+1. **Event Names**: Use camelCase for consistency (`agentNameActivated`, `agentNameDeactivated`)
+2. **Storage Keys**: Use descriptive keys (`agentNameActive`)
+3. **State Management**: Always sync localStorage with component state
+4. **Error Boundaries**: Implement graceful fallbacks for activation failures
+5. **User Feedback**: Provide toast notifications for activation state changes
+
+This framework ensures new iQube agents integrate seamlessly with the existing ecosystem while maintaining consistency and reliability.
