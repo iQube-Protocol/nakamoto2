@@ -21,7 +21,7 @@ const Sidebar = () => {
     toggleIQubesMenu: sidebarLogic.toggleIQubesMenu,
     handleIQubeClick: sidebarLogic.handleIQubeClick,
     toggleIQubeActive: sidebarLogic.toggleIQubeActive,
-    handleCloseMetisIQube: sidebarLogic.handleCloseMetisIQube,
+    
     handleSignOut: sidebarLogic.handleSignOut,
     toggleMobileSidebar: sidebarLogic.toggleMobileSidebar
   };

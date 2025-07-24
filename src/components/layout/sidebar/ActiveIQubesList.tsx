@@ -57,16 +57,6 @@ const ActiveIQubesList: React.FC<ActiveIQubesListProps> = ({
         </div>
       );
     }
-    if (qubeName === "Metis") {
-      return (
-        <div className="space-y-1">
-          <div className="font-semibold">Metis Agent</div>
-          <div className="text-xs">
-            An algorithm that evaluates risks associated with wallets and tokens.
-          </div>
-        </div>
-      );
-    }
     return null;
   };
   
@@ -164,44 +154,6 @@ const ActiveIQubesList: React.FC<ActiveIQubesListProps> = ({
           </TooltipProvider>
         )}
         
-        {activeQubes["Metis"] && (
-          <TooltipProvider>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <div
-                  className={cn(
-                    "flex items-center justify-between rounded-md p-2 text-sm hover:bg-accent/30 cursor-pointer group",
-                    collapsed ? "justify-center" : ""
-                  )}
-                  onClick={() => {
-                    onIQubeClick("Metis");
-                    if (isMobile && toggleMobileSidebar) {
-                      toggleMobileSidebar();
-                    }
-                  }}
-                >
-                  <div className="flex items-center">
-                    <Bot className={cn("h-5 w-5 text-purple-500", collapsed ? "" : "mr-2")} />
-                    {!collapsed && <span>Metis</span>}
-                  </div>
-                  {!collapsed && onCloseIQube && (
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      className="h-5 w-5 opacity-0 group-hover:opacity-100"
-                      onClick={(e) => onCloseIQube(e, "Metis")}
-                    >
-                      <ChevronLeft size={14} />
-                    </Button>
-                  )}
-                </div>
-              </TooltipTrigger>
-              <TooltipContent side={collapsed ? "right" : "top"} align="center">
-                {getTooltipContent("Metis")}
-              </TooltipContent>
-            </Tooltip>
-          </TooltipProvider>
-        )}
       </div>
     </div>
   );

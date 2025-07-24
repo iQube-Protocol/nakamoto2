@@ -81,12 +81,6 @@ export const nakamotoQubeData = {
   active: true
 };
 
-export const metisQubeData = {
-  id: 'metis',
-  name: 'Metis AI',
-  type: 'Assistant',
-  href: '/settings',
-};
 
 export const veniceQubeData = {
   id: 'venice',

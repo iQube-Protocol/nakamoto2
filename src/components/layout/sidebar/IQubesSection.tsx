@@ -42,9 +42,6 @@ const IQubesSection: React.FC<IQubesSectionProps> = ({
     if (qubeName === "Venice") {
       return <Brain className="h-4 w-4 text-green-500" />;
     }
-    if (qubeName === "Metis") {
-      return <Bot className="h-4 w-4 text-purple-500" />;
-    }
     if (qubeName === "KNYT Persona") {
       return <Database className="h-4 w-4 text-purple-500" />;
     }
@@ -101,16 +98,6 @@ const IQubesSection: React.FC<IQubesSectionProps> = ({
           <div className="font-semibold">Venice Model</div>
           <div className="text-xs">
             AI model service that protects privacy and prevents censorship.
-          </div>
-        </div>
-      );
-    }
-    if (qubeName === "Metis") {
-      return (
-        <div className="space-y-1">
-          <div className="font-semibold">Metis Agent</div>
-          <div className="text-xs">
-            An algorithm that evaluates risks associated with wallets and tokens.
           </div>
         </div>
       );
