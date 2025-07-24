@@ -1,7 +1,6 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { useKnowledgeBase } from '@/hooks/mcp/useKnowledgeBase';
-import { COYNKnowledgeBase } from '@/services/coyn-knowledge-base';
+import { MonDAIKnowledgeRouter } from '@/services/mondai-knowledge-router';
 import { PersonaContextService } from '@/services/persona-context-service';
 import { MonDAIConversationService } from './mondai-conversation-service';
 
@@ -100,11 +99,11 @@ export async function generateAigentNakamotoResponse(
       }
     }
     
-    // Get COYN knowledge base (primary fallback)
-    const coynKB = COYNKnowledgeBase.getInstance();
+    // Get smart knowledge router
+    const knowledgeRouter = MonDAIKnowledgeRouter.getInstance();
     
     // Only use knowledge base search if no conversation memory or for specific knowledge requests
-    let knowledgeResults: any[] = [];
+    let knowledgeSearchResult = { results: [], sources: [], totalItems: 0 };
     const needsKnowledgeSearch = !conversationMemory || 
                                  message.toLowerCase().includes('how to') || 
                                  message.toLowerCase().includes('what is') ||
@@ -114,25 +113,14 @@ export async function generateAigentNakamotoResponse(
     if (needsKnowledgeSearch) {
       console.log(`🔍 MonDAI: Using knowledge search because: ${!conversationMemory ? 'no memory' : 'knowledge request detected'}`);
       
-      // Enhanced search with conversation context
-      const searchTerms = enhanceSearchQuery(message, conversationThemes);
-      console.log(`🔍 MonDAI: Enhanced search terms:`, searchTerms);
-      
-      // Search COYN knowledge base first
-      for (const term of searchTerms) {
-        const results = coynKB.searchKnowledge(term);
-        knowledgeResults = [...knowledgeResults, ...results];
-      }
-      
-      // Remove duplicates based on ID
-      knowledgeResults = knowledgeResults.filter((item, index, self) => 
-        index === self.findIndex(t => t.id === item.id)
-      );
-      
-      console.log(`🔍 MonDAI: Found ${knowledgeResults.length} COYN knowledge items after enhanced search`);
+      // Smart knowledge base search with intent detection
+      knowledgeSearchResult = knowledgeRouter.searchKnowledge(message, conversationThemes);
+      console.log(`🔍 MonDAI: Found ${knowledgeSearchResult.totalItems} items from: ${knowledgeSearchResult.sources.join(', ')}`);
     } else {
       console.log(`🧠 MonDAI: Prioritizing conversation memory over knowledge search`);
     }
+    
+    const knowledgeResults = knowledgeSearchResult.results;
     
     // Log specific items found for debugging
     knowledgeResults.forEach((item, index) => {
@@ -146,7 +134,8 @@ export async function generateAigentNakamotoResponse(
     let knowledgeContext = '';
     if (knowledgeResults.length > 0) {
       knowledgeContext = `
-### COYN Knowledge Base Results
+### Multi-Knowledge Base Search Results
+Sources: ${knowledgeSearchResult.sources.join(', ')}
 
 **IMPORTANT CONTEXT AWARENESS:**
 - Current conversation themes: ${conversationThemes.join(', ') || 'None established'}
@@ -177,17 +166,7 @@ ${item.content.includes('![') ? '⚠️ CONTAINS IMAGES - MUST PRESERVE ALL IMAG
 `;
     }
     
-    // Get KBAI knowledge items as fallback/supplement
-    let kbaiKnowledgeItems: any[] = [];
-    try {
-      // Try to get from KBAI service
-      const { fetchKnowledgeItems } = useKnowledgeBase();
-      kbaiKnowledgeItems = await fetchKnowledgeItems();
-      console.log(`🔍 MonDAI: Found ${kbaiKnowledgeItems.length} KBAI knowledge items`);
-    } catch (error) {
-      console.log('📚 MonDAI: KBAI service not available, using fallback');
-      // Fallback will be handled by the edge function
-    }
+    // No longer using KBAI - knowledge is handled by smart router
     
     // Get persona context using the service
     const conversationContext = await PersonaContextService.getConversationContext();
@@ -203,7 +182,7 @@ ${item.content.includes('![') ? '⚠️ CONTAINS IMAGES - MUST PRESERVE ALL IMAG
       body: {
         message,
         conversationId: currentConversationId,
-        knowledgeItems: kbaiKnowledgeItems,
+        knowledgeItems: [], // No longer using KBAI
         qryptoKnowledgeContext: knowledgeContext,
         conversationMemory: memoryContext,
         useVenice,
@@ -239,10 +218,10 @@ ${item.content.includes('![') ? '⚠️ CONTAINS IMAGES - MUST PRESERVE ALL IMAG
     
     // Enhance metadata with memory information
     if (knowledgeResults.length > 0) {
-      data.metadata.coynItemsFound = knowledgeResults.length;
-      data.metadata.knowledgeSource = data.metadata.knowledgeSource.includes('COYN') 
-        ? data.metadata.knowledgeSource 
-        : `COYN Knowledge Base + ${data.metadata.knowledgeSource}`;
+      data.metadata.knowledgeItemsFound = knowledgeResults.length;
+      data.metadata.knowledgeSource = knowledgeSearchResult.sources.length > 0 
+        ? knowledgeSearchResult.sources.join(' + ')
+        : data.metadata.knowledgeSource;
       
       // Enhanced visual content detection
       data.metadata.visualsProvided = responseHasMermaid || responseHasImages;
