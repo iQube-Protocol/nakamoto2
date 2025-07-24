@@ -27,24 +27,6 @@ export const useKNYTPersona = (): KNYTPersonaState => {
 
   const [knytPersonaVisible, setKNYTPersonaVisible] = useState<boolean>(true);
 
-  // Listen for activation events from AgentActivationModal
-  useEffect(() => {
-    const handleActivationEvent = (e: CustomEvent) => {
-      console.log('🎯 KNYT Persona: Activation event received:', e.detail);
-      const { activated } = e.detail || {};
-      if (activated) {
-        console.log('🟢 KNYT Persona: Activating via event');
-        setKNYTPersonaActivated(true);
-      }
-    };
-
-    window.addEventListener('knytPersonaStateChanged', handleActivationEvent as EventListener);
-    
-    return () => {
-      window.removeEventListener('knytPersonaStateChanged', handleActivationEvent as EventListener);
-    };
-  }, []);
-
   // Save to localStorage whenever state changes
   useEffect(() => {
     try {
@@ -52,7 +34,6 @@ export const useKNYTPersona = (): KNYTPersonaState => {
       
       // Dispatch events for persona context updates
       if (knytPersonaActivated) {
-        console.log('🟢 KNYT Persona: State activated, dispatching event');
         window.dispatchEvent(new CustomEvent('knytPersonaActivated'));
         
         // Trigger KNYT balance refresh when persona is activated
@@ -61,7 +42,6 @@ export const useKNYTPersona = (): KNYTPersonaState => {
           console.error('Error refreshing KNYT balance on activation:', error);
         });
       } else {
-        console.log('🔴 KNYT Persona: State deactivated, dispatching event');
         window.dispatchEvent(new CustomEvent('knytPersonaDeactivated'));
       }
     } catch (error) {

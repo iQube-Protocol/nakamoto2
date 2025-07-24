@@ -69,14 +69,8 @@ export const useAgentRecommendations = (message: AgentMessage | null) => {
       lowerMessage.includes('profile') ||
       lowerMessage.includes('preferences');
 
-    // KNYT Persona trigger words - improved with more common terms
-    const knytTriggers = [
-      // Original specific terms
-      'metaknyts', 'metaiye', 'knowone', 'kn0w1', 'deji', 'fang', 'bat', 'digiterra', 'metaterm', 'terra', 'qryptopia', 'knyt',
-      // More common terms users might type
-      'token', 'reward', 'ecosystem', 'community', 'badge', 'achievement', 'level', 'profile', 'reputation',
-      'earn', 'earning', 'points', 'loyalty', 'member', 'membership', 'status', 'tier', 'unlock', 'unlocking'
-    ];
+    // KNYT Persona trigger words
+    const knytTriggers = ['metaknyts', 'metaiye', 'knowone', 'kn0w1', 'deji', 'fang', 'bat', 'digiterra', 'metaterm', 'terra', 'qryptopia', 'knyt'];
     const hasKNYTTrigger = knytTriggers.some(trigger => lowerMessage.includes(trigger));
     
     console.log('useAgentRecommendations: Trigger analysis:', {

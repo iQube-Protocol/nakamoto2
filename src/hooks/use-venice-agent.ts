@@ -51,7 +51,7 @@ export const useVeniceAgent = () => {
     }));
   };
 
-  // Listen for storage changes from other tabs and activation events
+  // Listen for storage changes from other tabs
   useEffect(() => {
     const handleStorageChange = (e: StorageEvent) => {
       if (e.key === VENICE_STORAGE_KEY) {
@@ -65,15 +65,8 @@ export const useVeniceAgent = () => {
     // Listen for custom Venice state changes
     const handleVeniceStateChange = (e: CustomEvent) => {
       console.log('📡 Venice: Custom event received:', e.detail);
-      const { activated, visible } = e.detail || {};
-      if (activated !== undefined) {
-        console.log('🎯 Venice: Updating activation state:', activated);
-        setVeniceActivated(activated);
-      }
-      if (visible !== undefined) {
-        console.log('🎯 Venice: Updating visibility state:', visible);
-        setVeniceVisible(visible);
-      }
+      setVeniceActivated(e.detail.activated);
+      setVeniceVisible(e.detail.visible);
     };
 
     window.addEventListener('storage', handleStorageChange);
