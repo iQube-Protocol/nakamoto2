@@ -22,6 +22,24 @@ export const useQryptoPersona = (): QryptoPersonaState => {
     }
   });
 
+  // Listen for activation events from AgentActivationModal
+  useEffect(() => {
+    const handleActivationEvent = (e: CustomEvent) => {
+      console.log('🎯 Qrypto Persona: Activation event received:', e.detail);
+      const { activated } = e.detail || {};
+      if (activated) {
+        console.log('🟢 Qrypto Persona: Activating via event');
+        setQryptoPersonaActivated(true);
+      }
+    };
+
+    window.addEventListener('qryptoPersonaStateChanged', handleActivationEvent as EventListener);
+    
+    return () => {
+      window.removeEventListener('qryptoPersonaStateChanged', handleActivationEvent as EventListener);
+    };
+  }, []);
+
   // Save to localStorage whenever state changes
   useEffect(() => {
     try {
@@ -29,8 +47,10 @@ export const useQryptoPersona = (): QryptoPersonaState => {
       
       // Dispatch events for persona context updates
       if (qryptoPersonaActivated) {
+        console.log('🟢 Qrypto Persona: State activated, dispatching event');
         window.dispatchEvent(new CustomEvent('qryptoPersonaActivated'));
       } else {
+        console.log('🔴 Qrypto Persona: State deactivated, dispatching event');
         window.dispatchEvent(new CustomEvent('qryptoPersonaDeactivated'));
       }
     } catch (error) {
