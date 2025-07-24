@@ -10,6 +10,7 @@ import {
 import ScoreTooltip from '../../ScoreTooltips';
 import { Cpu, Brain } from 'lucide-react';
 import MetisAgentBadge from './MetisAgentBadge';
+import { useVeniceAgent } from '@/hooks/use-venice-agent';
 
 interface MetadataBadgeProps {
   metadata: {
@@ -18,7 +19,6 @@ interface MetadataBadgeProps {
     contextRetained?: boolean;
     metisActive?: boolean;
     iqubeType?: 'DataQube' | 'AgentQube';
-    aiProvider?: string;
     [key: string]: any;
   } | null;
 }
@@ -26,22 +26,18 @@ interface MetadataBadgeProps {
 const MetadataBadge = ({ metadata }: MetadataBadgeProps) => {
   if (!metadata) return null;
   
+  const { veniceActivated } = useVeniceAgent();
   const isMetisActive = metadata.metisActive === true;
   const iqubeType = metadata.iqubeType || 'DataQube';
   
-  // Determine the AI provider and model display based on metadata from when message was generated
+  // Determine the AI provider and model display
   const getProviderAndModel = () => {
     if (!metadata.modelUsed) return null;
     
-    // Use the aiProvider from metadata if available, otherwise infer from modelUsed
-    const aiProvider = metadata.aiProvider;
-    
-    if (aiProvider?.includes('Venice')) {
-      return metadata.modelUsed; // Show just the Venice model name (e.g., "venice-uncensored")
+    if (veniceActivated) {
+      return metadata.modelUsed; // Just show the Venice model name (e.g., "venice-uncensored")
     } else {
-      // For OpenAI, show "OpenAI • model-name"
-      const modelDisplay = metadata.modelUsed === 'gpt-4o-mini' ? 'GPT-4o Mini' : metadata.modelUsed;
-      return `OpenAI • ${modelDisplay}`;
+      return `OpenAI • ${metadata.modelUsed}`;
     }
   };
   
