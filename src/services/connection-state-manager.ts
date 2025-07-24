@@ -153,8 +153,8 @@ class ConnectionStateManager {
         
         // Enhanced cleanup for all browsers, not just Brave
         if (recoveredState === 'connecting' || recoveredState === 'redirecting') {
-          // Set aggressive cleanup for recovered states
-          const cleanupDelay = isBrave ? 3000 : 5000; // Faster cleanup for Brave
+          // Set aggressive cleanup for recovered states - much faster
+          const cleanupDelay = 2000; // 2 seconds max
           setTimeout(() => {
             const currentState = this.getConnectionState(service);
             if (currentState === 'connecting' || currentState === 'redirecting') {

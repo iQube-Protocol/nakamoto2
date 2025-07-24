@@ -4,7 +4,7 @@ import { SimplifiedAgentInterface } from '@/components/shared/agent';
 import { useMondAI } from '@/hooks/use-mondai';
 import { AgentMessage } from '@/lib/types';
 import { useUserInteractionsOptimized } from '@/hooks/useUserInteractionsOptimized';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuthOptimized } from '@/hooks/useAuthOptimized';
 import { useVeniceAgent } from '@/hooks/use-venice-agent';
 
 const SimplifiedMonDAIInterfaceOptimized: React.FC = React.memo(() => {
@@ -13,7 +13,7 @@ const SimplifiedMonDAIInterfaceOptimized: React.FC = React.memo(() => {
     handleAIMessage,
   } = useMondAI();
   
-  const { user } = useAuth();
+  const { user } = useAuthOptimized();
   const { veniceActivated } = useVeniceAgent();
   const [initialMessages, setInitialMessages] = useState<AgentMessage[]>([]);
   const [isHistoryLoaded, setIsHistoryLoaded] = useState(false);
@@ -95,41 +95,37 @@ What would you like to explore today?`,
     }
   }, [veniceActivated]);
   
-  // Optimized conversation history loading with proper dependencies
+  // Optimized conversation history loading with stable dependencies
   useEffect(() => {
-    const loadConversationHistory = () => {
-      if (!user || isHistoryLoaded) return;
-      
-      try {
-        if (process.env.NODE_ENV === 'development') {
-          console.log('Loading MonDAI conversation history...');
-        }
+    if (!user?.id || isHistoryLoaded) return;
+    
+    try {
+      if (process.env.NODE_ENV === 'development') {
+        console.log('Loading MonDAI conversation history...');
+      }
 
-        if (processedHistoricalMessages.length > 0) {
-          if (process.env.NODE_ENV === 'development') {
-            console.log(`Loaded ${processedHistoricalMessages.length} historical messages for MonDAI`);
-          }
-          
-          // Start with welcome message, then add history
-          setInitialMessages([welcomeMessage, ...processedHistoricalMessages]);
-        } else {
-          // If no history, just set the welcome message
-          if (process.env.NODE_ENV === 'development') {
-            console.log('No historical messages found for MonDAI');
-          }
-          setInitialMessages([welcomeMessage]);
+      if (processedHistoricalMessages.length > 0) {
+        if (process.env.NODE_ENV === 'development') {
+          console.log(`Loaded ${processedHistoricalMessages.length} historical messages for MonDAI`);
         }
         
-        setIsHistoryLoaded(true);
-      } catch (error) {
-        console.error('Error loading conversation history:', error);
+        // Start with welcome message, then add history
+        setInitialMessages([welcomeMessage, ...processedHistoricalMessages]);
+      } else {
+        // If no history, just set the welcome message
+        if (process.env.NODE_ENV === 'development') {
+          console.log('No historical messages found for MonDAI');
+        }
         setInitialMessages([welcomeMessage]);
-        setIsHistoryLoaded(true);
       }
-    };
-
-    loadConversationHistory();
-  }, [user, processedHistoricalMessages, welcomeMessage, isHistoryLoaded]);
+      
+      setIsHistoryLoaded(true);
+    } catch (error) {
+      console.error('Error loading conversation history:', error);
+      setInitialMessages([welcomeMessage]);
+      setIsHistoryLoaded(true);
+    }
+  }, [user?.id, processedHistoricalMessages.length, isHistoryLoaded]); // Use length instead of full array
 
   // Memoized refresh function to prevent unnecessary recreations
   const memoizedRefreshInteractions = useCallback(() => {

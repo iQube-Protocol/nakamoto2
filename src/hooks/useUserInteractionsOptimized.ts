@@ -1,12 +1,13 @@
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { getUserInteractions } from '@/services/user-interaction-service';
-import { useAuth } from './use-auth';
+import { useAuthOptimized } from './useAuthOptimized';
 import { toast } from 'sonner';
+import { withCircuitBreaker } from '@/utils/circuitBreaker';
 
 export const useUserInteractionsOptimized = (
   interactionType?: 'learn' | 'earn' | 'connect'
 ) => {
-  const { user } = useAuth();
+  const { user } = useAuthOptimized();
   const queryClient = useQueryClient();
 
   const {
@@ -24,7 +25,10 @@ export const useUserInteractionsOptimized = (
       
       console.log(`Fetching interactions for user: ${user.id}, type: ${interactionType || 'all'}`);
       
-      const { data, error: fetchError } = await getUserInteractions(interactionType);
+      const { data, error: fetchError } = await withCircuitBreaker(
+        `user-interactions-${interactionType || 'all'}`,
+        () => getUserInteractions(interactionType)
+      );
       
       if (fetchError) {
         console.error('Error fetching interactions:', fetchError);
@@ -37,7 +41,15 @@ export const useUserInteractionsOptimized = (
     enabled: !!user,
     staleTime: 5 * 60 * 1000, // 5 minutes
     gcTime: 10 * 60 * 1000, // 10 minutes
-    refetchOnWindowFocus: false
+    refetchOnWindowFocus: false,
+    refetchOnMount: false, // Prevent refetch on mount if data exists
+    retry: (failureCount, error) => {
+      // Only retry on specific errors, not 406 errors
+      if (error && typeof error === 'object' && 'status' in error && error.status === 406) {
+        return false;
+      }
+      return failureCount < 2;
+    }
   });
 
   const saveInteraction = async (data: any) => {

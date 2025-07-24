@@ -37,12 +37,12 @@ const MetadataBadge = ({ metadata }: MetadataBadgeProps) => {
     const aiProvider = metadata.aiProvider;
     
     if (aiProvider?.includes('Venice')) {
-      // Format Venice model name with proper capitalization
+      // Format Venice model name with proper capitalization  
       const formattedModel = metadata.modelUsed
         .split('-')
         .map(word => word.charAt(0).toUpperCase() + word.slice(1))
-        .join('-');
-      return formattedModel; // Show as "Venice-Uncensored"
+        .join(' - '); // Use " - " separator for better readability
+      return formattedModel; // Show as "Venice - Uncensored"
     } else {
       // For OpenAI, show "OpenAI • model-name"
       const modelDisplay = metadata.modelUsed === 'gpt-4o-mini' ? 'GPT-4o Mini' : metadata.modelUsed;

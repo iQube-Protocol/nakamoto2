@@ -1,32 +1,29 @@
 import React, { useEffect, useState } from 'react';
-import { useAuth } from '@/hooks/use-auth';
+import { useAuthOptimized } from '@/hooks/useAuthOptimized';
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
-import { useUserInteractions } from '@/hooks/use-user-interactions';
+import { useUserInteractionsOptimized } from '@/hooks/useUserInteractionsOptimized';
 import { getRelativeTime } from '@/lib/utils';
 import ResponseDialog from '@/components/profile/ResponseDialog';
 import MessageContent from '@/components/shared/agent/message/MessageContent';
+import ErrorBoundary from '@/components/shared/ErrorBoundary';
+import LoadingSpinner from '@/components/shared/LoadingSpinner';
 
 const Profile = () => {
   const {
     user
-  } = useAuth();
+  } = useAuthOptimized();
   const [activeTab, setActiveTab] = useState<'learn' | 'earn' | 'connect'>('learn');
   const [selectedResponse, setSelectedResponse] = useState<any>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
-  // Get user interactions for the active tab
+  // Get user interactions for the active tab - use optimized version
   const {
     interactions,
-    refreshInteractions
-  } = useUserInteractions(activeTab);
-
-  // Ensure we refresh the data when the tab changes
-  useEffect(() => {
-    refreshInteractions();
-  }, [activeTab, refreshInteractions]);
+    loading: interactionsLoading
+  } = useUserInteractionsOptimized(activeTab);
   
   const handleResponseClick = (interaction: any) => {
     setSelectedResponse(interaction);
@@ -48,8 +45,18 @@ const Profile = () => {
   };
   
   if (!user) return null;
+
+  if (interactionsLoading) {
+    return (
+      <div className="container py-6">
+        <LoadingSpinner message="Loading profile..." />
+      </div>
+    );
+  }
   
-  return <div className="container py-6">
+  return (
+    <ErrorBoundary>
+      <div className="container py-6">
       <div className="grid gap-6">
         {/* Compressed user info section */}
         <Card>
@@ -163,8 +170,10 @@ const Profile = () => {
         </Card>
       </div>
 
-      <ResponseDialog selectedResponse={selectedResponse} isOpen={isDialogOpen} onClose={handleDialogClose} />
-    </div>;
+        <ResponseDialog selectedResponse={selectedResponse} isOpen={isDialogOpen} onClose={handleDialogClose} />
+      </div>
+    </ErrorBoundary>
+  );
 };
 
 export default Profile;
