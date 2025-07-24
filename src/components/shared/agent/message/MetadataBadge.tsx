@@ -10,6 +10,7 @@ import {
 import ScoreTooltip from '../../ScoreTooltips';
 import { Cpu, Brain } from 'lucide-react';
 import MetisAgentBadge from './MetisAgentBadge';
+import { useVeniceAgent } from '@/hooks/use-venice-agent';
 
 interface MetadataBadgeProps {
   metadata: {
@@ -25,8 +26,22 @@ interface MetadataBadgeProps {
 const MetadataBadge = ({ metadata }: MetadataBadgeProps) => {
   if (!metadata) return null;
   
+  const { veniceActivated } = useVeniceAgent();
   const isMetisActive = metadata.metisActive === true;
   const iqubeType = metadata.iqubeType || 'DataQube';
+  
+  // Determine the AI provider and model display
+  const getProviderAndModel = () => {
+    if (!metadata.modelUsed) return null;
+    
+    if (veniceActivated) {
+      return `Venice • ${metadata.modelUsed}`;
+    } else {
+      return `OpenAI • ${metadata.modelUsed}`;
+    }
+  };
+  
+  const displayText = getProviderAndModel();
   
   return (
     <TooltipProvider>
@@ -36,7 +51,7 @@ const MetadataBadge = ({ metadata }: MetadataBadgeProps) => {
             <Badge variant="outline" className="text-[10px] mr-1 py-0 h-4">
               <span className="text-muted-foreground">MCP v{metadata.version || '1.0'}</span>
             </Badge>
-            {metadata.modelUsed && (
+            {displayText && (
               <ScoreTooltip type={iqubeType === 'AgentQube' ? 'agentQube' : 'dataQube'}>
                 <Badge variant="secondary" className="text-[10px] py-0 h-4 flex items-center">
                   {iqubeType === 'AgentQube' ? (
@@ -44,7 +59,7 @@ const MetadataBadge = ({ metadata }: MetadataBadgeProps) => {
                   ) : (
                     <Cpu className="h-3 w-3 mr-1" />
                   )}
-                  {metadata.modelUsed}
+                  {displayText}
                 </Badge>
               </ScoreTooltip>
             )}
