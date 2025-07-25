@@ -10,6 +10,28 @@ interface PasswordResetRequest {
   email: string;
 }
 
+// Rate limiting storage (in-memory for simplicity)
+const rateLimitMap = new Map<string, { count: number; resetTime: number }>();
+const RATE_LIMIT_WINDOW = 15 * 60 * 1000; // 15 minutes
+const MAX_ATTEMPTS = 3; // Max 3 attempts per 15 minutes
+
+function isRateLimited(email: string): boolean {
+  const now = Date.now();
+  const record = rateLimitMap.get(email);
+  
+  if (!record || now > record.resetTime) {
+    rateLimitMap.set(email, { count: 1, resetTime: now + RATE_LIMIT_WINDOW });
+    return false;
+  }
+  
+  if (record.count >= MAX_ATTEMPTS) {
+    return true;
+  }
+  
+  record.count++;
+  return false;
+}
+
 const handler = async (req: Request): Promise<Response> => {
   // Handle CORS preflight requests
   if (req.method === 'OPTIONS') {
@@ -24,6 +46,31 @@ const handler = async (req: Request): Promise<Response> => {
         JSON.stringify({ error: 'Email is required' }),
         { 
           status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    // Validate email format
+    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+    if (!emailRegex.test(email)) {
+      return new Response(
+        JSON.stringify({ error: 'Invalid email format' }),
+        { 
+          status: 400, 
+          headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
+        }
+      );
+    }
+
+    // Check rate limiting
+    if (isRateLimited(email)) {
+      return new Response(
+        JSON.stringify({ 
+          error: 'Too many password reset attempts. Please try again later.' 
+        }),
+        { 
+          status: 429, 
           headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
         }
       );
@@ -70,8 +117,7 @@ const handler = async (req: Request): Promise<Response> => {
     console.error('Error in password reset function:', error);
     return new Response(
       JSON.stringify({ 
-        error: 'An error occurred while processing your request. Please try again.',
-        details: error.message 
+        error: 'An error occurred while processing your request. Please try again.'
       }),
       { 
         status: 500, 

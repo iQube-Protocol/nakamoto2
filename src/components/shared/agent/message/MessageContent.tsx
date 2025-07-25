@@ -3,6 +3,7 @@
 import React from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
+import DOMPurify from 'dompurify';
 import MermaidDiagram from './MermaidDiagram';
 
 interface MessageContentProps {
@@ -138,7 +139,7 @@ const MessageContent = ({ content, sender }: MessageContentProps) => {
     }).flat();
   }, [content, processUserFriendlyContent]);
 
-  // Memoized inline formatting processor
+  // Memoized inline formatting processor with XSS protection
   const processInlineFormatting = React.useCallback((text: string) => {
     let processedText = text;
     
@@ -147,7 +148,14 @@ const MessageContent = ({ content, sender }: MessageContentProps) => {
       processedText = processedText.replace(regex, `<span class="key-term">${term}</span>`);
     });
     
-    return <span dangerouslySetInnerHTML={{ __html: processedText }} />;
+    // Sanitize HTML to prevent XSS attacks
+    const sanitizedHtml = DOMPurify.sanitize(processedText, {
+      ALLOWED_TAGS: ['span'],
+      ALLOWED_ATTR: ['class'],
+      ALLOW_DATA_ATTR: false
+    });
+    
+    return <span dangerouslySetInnerHTML={{ __html: sanitizedHtml }} />;
   }, []);
 
   // Create React elements for the processed content with memoization

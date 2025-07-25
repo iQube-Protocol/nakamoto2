@@ -1,5 +1,6 @@
 
 import React, { useState, useEffect, useRef } from 'react';
+import DOMPurify from 'dompurify';
 import DiagramErrorHandler from './DiagramErrorHandler';
 import { useTheme } from '@/contexts/ThemeContext';
 
@@ -157,7 +158,14 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
     if (!svg || !containerRef.current || isLoading) return;
     
     try {
-      containerRef.current.innerHTML = svg;
+      // Sanitize SVG content to prevent XSS attacks
+      const sanitizedSvg = DOMPurify.sanitize(svg, {
+        USE_PROFILES: { svg: true },
+        ALLOWED_TAGS: ['svg', 'g', 'path', 'rect', 'circle', 'ellipse', 'polygon', 'text', 'tspan', 'defs', 'marker', 'foreignObject', 'div', 'span'],
+        ALLOWED_ATTR: ['width', 'height', 'viewBox', 'fill', 'stroke', 'stroke-width', 'transform', 'd', 'x', 'y', 'cx', 'cy', 'r', 'rx', 'ry', 'points', 'class', 'id', 'style'],
+        ALLOW_DATA_ATTR: false
+      });
+      containerRef.current.innerHTML = sanitizedSvg;
       
       // Make SVG responsive and apply refined styling
       const svgElement = containerRef.current.querySelector('svg');
