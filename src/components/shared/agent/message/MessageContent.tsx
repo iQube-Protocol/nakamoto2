@@ -139,20 +139,37 @@ const MessageContent = ({ content, sender }: MessageContentProps) => {
     }).flat();
   }, [content, processUserFriendlyContent]);
 
-  // Memoized inline formatting processor with XSS protection
+  // Enhanced inline formatting processor with security hardening
   const processInlineFormatting = React.useCallback((text: string) => {
-    let processedText = text;
+    // Input validation
+    if (!text || typeof text !== 'string') {
+      return <span></span>;
+    }
     
+    // Escape dangerous characters before processing
+    let processedText = text
+      .replace(/&/g, '&amp;')
+      .replace(/</g, '&lt;')
+      .replace(/>/g, '&gt;')
+      .replace(/"/g, '&quot;')
+      .replace(/'/g, '&#x27;');
+    
+    // Apply key term highlighting with escaped content
     KEY_TERMS.forEach(term => {
-      const regex = new RegExp(`\\b${term}\\b`, 'gi');
+      const escapedTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+      const regex = new RegExp(`\\b${escapedTerm}\\b`, 'gi');
       processedText = processedText.replace(regex, `<span class="key-term">${term}</span>`);
     });
     
-    // Sanitize HTML to prevent XSS attacks
+    // Enhanced sanitization with strict security settings
     const sanitizedHtml = DOMPurify.sanitize(processedText, {
       ALLOWED_TAGS: ['span'],
       ALLOWED_ATTR: ['class'],
-      ALLOW_DATA_ATTR: false
+      ALLOW_DATA_ATTR: false,
+      FORBID_CONTENTS: ['script', 'style'],
+      FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed'],
+      FORBID_ATTR: ['onclick', 'onload', 'onerror', 'onmouseover', 'style'],
+      USE_PROFILES: { html: false }
     });
     
     return <span dangerouslySetInnerHTML={{ __html: sanitizedHtml }} />;

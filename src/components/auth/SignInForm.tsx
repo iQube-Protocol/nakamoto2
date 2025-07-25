@@ -9,6 +9,7 @@ import { toast } from 'sonner';
 import { Mail, Key, Eye, EyeOff } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
 import PasswordResetDialog from './PasswordResetDialog';
+import { validateEmail, checkRateLimit } from '@/utils/inputValidation';
 
 const SignInForm = () => {
   const [email, setEmail] = useState('');
@@ -21,6 +22,27 @@ const SignInForm = () => {
 
   const handleSignIn = async (e: React.FormEvent) => {
     e.preventDefault();
+    
+    // Enhanced validation
+    if (!email || !password) {
+      toast.error("Please fill in all fields");
+      return;
+    }
+
+    // Validate email format
+    const emailValidation = validateEmail(email);
+    if (!emailValidation.isValid) {
+      toast.error(emailValidation.error || "Invalid email format");
+      return;
+    }
+
+    // Rate limiting check
+    const rateLimit = checkRateLimit(`signin_${email}`, 5, 300000);
+    if (!rateLimit.allowed) {
+      toast.error("Too many sign-in attempts. Please try again later.");
+      return;
+    }
+
     setIsLoading(true);
     try {
       const { error, success } = await signIn(email, password);
