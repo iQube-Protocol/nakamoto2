@@ -169,7 +169,7 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
         textElements.forEach((text: Element) => {
           if (text instanceof SVGElement) {
             text.style.fill = '#1f2937'; // Dark text for visibility
-            text.style.fontSize = '15px';
+            text.style.fontSize = '14px';
             text.style.fontFamily = 'Inter, system-ui, sans-serif';
             text.style.fontWeight = '500';
           }
@@ -180,10 +180,10 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
         nodes.forEach((node: Element) => {
           if (node instanceof SVGElement) {
             node.style.fill = '#ffffff';
-            node.style.stroke = '#7c3aed';
+            node.style.stroke = '#8b5cf6';
             node.style.strokeWidth = '2px';
-            node.style.rx = '8';
-            node.style.ry = '8';
+            node.style.rx = '6';
+            node.style.ry = '6';
           }
         });
         
@@ -191,7 +191,7 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
         const edges = svgElement.querySelectorAll('.edgePath path');
         edges.forEach((edge: Element) => {
           if (edge instanceof SVGElement) {
-            edge.style.stroke = '#7c3aed';
+            edge.style.stroke = '#8b5cf6';
             edge.style.strokeWidth = '2px';
           }
         });
@@ -203,8 +203,8 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
             const paths = marker.querySelectorAll('path');
             paths.forEach((path: Element) => {
               if (path instanceof SVGElement) {
-                path.style.fill = '#7c3aed';
-                path.style.stroke = '#7c3aed';
+                path.style.fill = '#8b5cf6';
+                path.style.stroke = '#8b5cf6';
               }
             });
           }
