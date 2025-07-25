@@ -89,17 +89,24 @@ const DiagramErrorHandler: React.FC<DiagramErrorHandlerProps> = ({ error, code, 
     onRetry(simple);
   };
   
-  // Auto-fix common syntax errors immediately without showing error UI
-  if (errorMessage.includes('Syntax error') || 
+  // Only auto-fix once to prevent loops
+  const [hasAttemptedFix, setHasAttemptedFix] = React.useState(false);
+  
+  React.useEffect(() => {
+    if (!hasAttemptedFix && (
+      errorMessage.includes('Syntax error') || 
       errorMessage.includes('Parse error') || 
       errorMessage.includes('NODE_STRING') ||
-      errorMessage.includes('STR')) {
-    
-    React.useEffect(() => {
+      errorMessage.includes('STR')
+    )) {
+      setHasAttemptedFix(true);
       console.log("Auto-fixing diagram with syntax error:", errorMessage);
       handleAutoFix();
-    }, [errorMessage]);
-    
+    }
+  }, [errorMessage, hasAttemptedFix]);
+  
+  // Show auto-fixing indicator only if currently fixing
+  if (isFixing && !hasAttemptedFix) {
     return (
       <div className="p-3 rounded-lg border border-blue-200 bg-blue-50 mt-2 flex items-center gap-2">
         <RefreshCw className="h-4 w-4 text-blue-600 animate-spin" />

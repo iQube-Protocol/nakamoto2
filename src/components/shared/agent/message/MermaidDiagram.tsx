@@ -16,46 +16,46 @@ const getMermaid = async () => {
     mermaidPromise = import('mermaid').then(m => {
       const instance = m.default;
       
-      // Configure mermaid with improved styling settings
+      // Configure mermaid with simplified, reliable settings
       instance.initialize({
         startOnLoad: false,
         theme: 'neutral',
-        securityLevel: 'loose', // Allow all rendering
+        securityLevel: 'strict', // Use strict for consistent behavior
         fontFamily: 'Inter, system-ui, sans-serif',
-        fontSize: 84, // Keep the large font size for legibility
+        fontSize: 16, // Standard readable font size
         flowchart: {
           htmlLabels: true,
-          curve: 'basis', // Smoother curves
-          diagramPadding: 12, // Slightly more padding
-          nodeSpacing: 35, // Increased spacing between nodes
-          rankSpacing: 45, // Increased spacing between ranks
+          curve: 'basis',
+          diagramPadding: 16,
+          nodeSpacing: 50,
+          rankSpacing: 50,
         },
         themeVariables: {
-          // Use a refined color palette with better contrast
-          primaryColor: '#9B87F5', // Lighter purple for better text visibility
-          primaryTextColor: '#1A1F2C', // Darker text for contrast
-          primaryBorderColor: '#7E69AB', // Border color
-          lineColor: '#7E69AB', // Line color for connections
-          secondaryColor: '#D6BCFA', // Light purple for secondary elements
-          tertiaryColor: '#FDE1D3', // Changed to beige background
+          // Simplified color scheme for better consistency
+          primaryColor: '#ffffff',
+          primaryTextColor: '#1f2937',
+          primaryBorderColor: '#6b7280',
+          lineColor: '#6b7280',
+          secondaryColor: '#f3f4f6',
+          tertiaryColor: '#ffffff',
           
-          // Adjustments for text
-          fontSize: '84px', // Keep the large font size
+          // Standard text settings
+          fontSize: '16px',
           fontFamily: 'Inter, system-ui, sans-serif',
           
-          // Node styling - changed to white background
-          nodeBorder: '1px',
-          mainBkg: '#FFFFFF', // White background for nodes 
-          nodeBkg: '#FFFFFF', // White background for nodes
+          // Node styling
+          nodeBorder: '2px',
+          mainBkg: '#ffffff',
+          nodeBkg: '#ffffff',
           
-          // Edge styling
-          edgeLabelBackground: '#FFFFFF', // White background for edge labels
+          // Clean edge styling
+          edgeLabelBackground: '#ffffff',
           
-          // Label styling
-          labelBackground: '#FFFFFF', // White background
-          labelBorderRadius: '8px', // More rounded corners
+          // Simple label styling
+          labelBackground: '#ffffff',
+          labelBorderRadius: '4px',
         },
-        logLevel: 'fatal', // Only show fatal errors, reduce noise
+        logLevel: 'error',
       });
       
       mermaidInstance = instance;
@@ -112,11 +112,8 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
       try {
         console.log(`Rendering diagram (ID: ${id}) with code:`, currentCode);
         
-        // Enhanced validation using our validation utility
-        const validation = await import('./utils/mermaidUtils').then(m => m.validateMermaidSyntax(currentCode));
-        if (!validation.isValid) {
-          throw new Error(`Syntax validation failed: ${validation.errors.join(', ')}`);
-        }
+        // Process and validate the code
+        const processedCode = await import('./utils/mermaidUtils').then(m => m.processCode(currentCode));
         
         // Get mermaid instance
         const mermaid = await getMermaid();
@@ -124,8 +121,8 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
         // Create a unique ID for this render
         const uniqueId = `mermaid-${id}-${Date.now()}`;
         
-        // Render to SVG string
-        const { svg } = await mermaid.render(uniqueId, currentCode);
+        // Render to SVG string using processed code
+        const { svg } = await mermaid.render(uniqueId, processedCode);
         
         if (isMounted) {
           setSvg(svg);
@@ -171,65 +168,62 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
       // Make SVG responsive and apply refined styling
       const svgElement = containerRef.current.querySelector('svg');
       if (svgElement) {
-        // Set size constraints
+        // Set responsive size constraints
         svgElement.setAttribute('width', '100%');
         svgElement.setAttribute('height', 'auto');
         svgElement.style.maxWidth = '100%';
-        svgElement.style.maxHeight = '650px'; // Fixed height for better visibility
+        svgElement.style.maxHeight = '500px';
         svgElement.style.fontFamily = 'Inter, system-ui, sans-serif';
         
-        // Apply different background based on theme
-        // Use cream color (#FAF7ED) in dark mode instead of orange
-        const backgroundColor = theme === 'light' ? '#F9F5EB' : '#FAF7ED';
-        svgElement.style.backgroundColor = backgroundColor;
-        svgElement.style.borderRadius = '12px';
+        // Apply clean background styling
+        svgElement.style.backgroundColor = '#ffffff';
+        svgElement.style.borderRadius = '8px';
         svgElement.style.padding = '16px';
+        svgElement.style.border = '1px solid #e5e7eb';
         
-        // Additional styling improvements for labels
-        const labels = svgElement.querySelectorAll('.nodeLabel, .edgeLabel');
-        labels.forEach((label: Element) => {
-          if (label instanceof HTMLElement) {
-            label.style.fontSize = '78px'; // Keep the large font size
-            label.style.fontWeight = '400'; // Normal weight instead of bold
-            // Make labels wrap at a reasonable width
-            if (label.classList.contains('nodeLabel')) {
-              label.style.maxWidth = '350px'; // Wider nodes for better text fit with larger font
-              label.style.whiteSpace = 'normal';
-              label.style.lineHeight = '1.5';
-              label.style.padding = '16px'; // Increased padding for more space
-              label.style.color = '#1A1F2C'; // Ensure text color is dark for contrast
-            }
+        // Ensure text visibility with proper styling
+        const textElements = svgElement.querySelectorAll('text, tspan');
+        textElements.forEach((text: Element) => {
+          if (text instanceof SVGElement) {
+            text.style.fill = '#1f2937'; // Dark text for visibility
+            text.style.fontSize = '14px';
+            text.style.fontFamily = 'Inter, system-ui, sans-serif';
+            text.style.fontWeight = '500';
           }
         });
         
-        // Style node shapes with more elegant appearance
+        // Style nodes for consistency
         const nodes = svgElement.querySelectorAll('.node rect, .node circle, .node ellipse, .node polygon');
         nodes.forEach((node: Element) => {
           if (node instanceof SVGElement) {
-            node.style.rx = '12'; // More rounded corners for elegance
-            node.style.ry = '12'; // More rounded corners for elegance
-            node.style.filter = 'drop-shadow(0 3px 5px rgba(0, 0, 0, 0.1))'; // Enhanced subtle shadow
-            node.style.stroke = '#7E69AB'; // Consistent border color
-            node.style.strokeWidth = '4px'; // Refined border thickness
-            node.style.fill = '#FFFFFF'; // Ensure white fill for nodes
+            node.style.fill = '#ffffff';
+            node.style.stroke = '#6b7280';
+            node.style.strokeWidth = '2px';
+            node.style.rx = '6';
+            node.style.ry = '6';
           }
         });
         
-        // Make edges more elegant
+        // Style edges for clarity
         const edges = svgElement.querySelectorAll('.edgePath path');
         edges.forEach((edge: Element) => {
           if (edge instanceof SVGElement) {
-            edge.style.strokeWidth = '5px'; // Refined line thickness
-            edge.style.stroke = '#7E69AB'; // Consistent edge color
+            edge.style.stroke = '#6b7280';
+            edge.style.strokeWidth = '2px';
           }
         });
         
-        // Add styling to arrow markers
-        const arrowHeads = svgElement.querySelectorAll('.marker');
-        arrowHeads.forEach((arrow: Element) => {
-          if (arrow instanceof SVGElement) {
-            arrow.style.stroke = '#7E69AB';
-            arrow.style.fill = '#7E69AB';
+        // Style arrow markers
+        const markers = svgElement.querySelectorAll('marker');
+        markers.forEach((marker: Element) => {
+          if (marker instanceof SVGElement) {
+            const paths = marker.querySelectorAll('path');
+            paths.forEach((path: Element) => {
+              if (path instanceof SVGElement) {
+                path.style.fill = '#6b7280';
+                path.style.stroke = '#6b7280';
+              }
+            });
           }
         });
       }
@@ -304,9 +298,7 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
   return (
     <div 
       ref={containerRef}
-      className={`flex justify-center overflow-x-auto p-4 rounded-xl min-h-[100px] border shadow-sm ${
-        theme === 'light' ? 'bg-[#F9F5EB] border-amber-100' : 'bg-[#FAF7ED] border-amber-100'
-      }`}
+      className="flex justify-center overflow-x-auto p-4 rounded-lg min-h-[100px] bg-white border border-gray-200 shadow-sm"
     />
   );
 };

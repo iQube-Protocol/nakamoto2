@@ -86,8 +86,6 @@ export const validateMermaidSyntax = (code: string): { isValid: boolean; errors:
 // Process the code to fix common Mermaid syntax issues
 export const processCode = (inputCode: string): string => {
   try {
-    console.log("Processing mermaid code:", inputCode);
-    
     // Remove "SHOW_CODE_" prefix if present
     let result = inputCode.replace(/^SHOW_CODE_/, '').trim();
     
@@ -95,52 +93,51 @@ export const processCode = (inputCode: string): string => {
     if (!result) {
       return 'graph TD\n    A[Start] --> B[End]';
     }
+
+    // Security check first
+    const securityCheck = validateMermaidSecurity(result);
+    if (!securityCheck.isValid) {
+      console.warn('Security validation failed:', securityCheck.errors);
+      return 'graph TD\n    A[Security_Error] --> B[Content_Blocked]';
+    }
     
     // Add graph directive if missing
     if (!result.match(/^(sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph|graph|flowchart)/i)) {
-      console.log("Adding graph TD directive to code");
       result = `graph TD\n    ${result.replace(/\n/g, '\n    ')}`;
     }
     
-    // Fix quoted text in node labels - this is the main issue
+    // Fix problematic characters in node labels
     result = result
-      // Replace quoted text in brackets with safe alternatives
+      // Fix quoted text in node labels
       .replace(/\[([^[\]]*)"([^"]*)"([^[\]]*)\]/g, (match, before, quoted, after) => {
-        const safeText = quoted.replace(/\s+/g, '_');
+        const safeText = quoted.replace(/[^\w\s]/g, '').replace(/\s+/g, '_');
         return `[${before}${safeText}${after}]`;
       })
-      // Handle single quotes as well
       .replace(/\[([^[\]]*)'([^']*)'([^[\]]*)\]/g, (match, before, quoted, after) => {
-        const safeText = quoted.replace(/\s+/g, '_');
+        const safeText = quoted.replace(/[^\w\s]/g, '').replace(/\s+/g, '_');
         return `[${before}${safeText}${after}]`;
       })
-      // Remove extra spaces around arrows and brackets
-      .replace(/([A-Za-z0-9_]+)\s*\[/g, '$1[')
-      .replace(/\s+\]/g, ']')
-      .replace(/([A-Za-z0-9_\]]+)\s+-->/g, '$1-->')
-      .replace(/--\s+->/g, '-->')
-      .replace(/--\s+/g, '-->')
-      // Fix parentheses and commas in node labels
-      .replace(/\[([^\]]*?)(\(|\))([^\]]*?)\]/g, (match, before, paren, after) => {
-        return `[${before}_${after}]`;
+      // Fix parentheses in node labels
+      .replace(/\[([^\]]*?)\(([^)]*?)\)([^\]]*?)\]/g, (match, before, inside, after) => {
+        return `[${before.trim()}_${inside.replace(/[^\w\s]/g, '').replace(/\s+/g, '_')}_${after.trim()}]`;
       })
-      .replace(/\[([^\]]*?)e\.g\.,([^\]]*?)\]/g, (match, before, after) => {
-        return `[${before}_e.g._${after}]`;
-      })
+      // Fix commas in node labels
       .replace(/\[([^\]]*?),([^\]]*?)\]/g, (match, before, after) => {
-        return `[${before}_${after}]`;
+        return `[${before.trim()}_${after.trim()}]`;
       })
-      // Remove % characters and trailing comments which cause parse errors
-      .replace(/(%.*?)($|\n)/g, '$2')
-      // Fix invalid statements with NODE_STRING errors
-      .replace(/\s+\w+\s*-->/g, ' -->');
+      // Clean arrow syntax
+      .replace(/--\s*-*/g, '-->')
+      .replace(/\s*-+\s*>/g, '-->')
+      // Remove problematic characters
+      .replace(/(%.*?)(\n|$)/g, '$2')
+      // Clean whitespace
+      .replace(/\s+/g, ' ')
+      .trim();
       
-    console.log("Processed mermaid code:", result);
     return result;
   } catch (err) {
     console.error('Error processing mermaid code:', err);
-    // Return a minimal valid diagram
-    return 'graph TD\n    A[Error] --> B[Try_Again]';
+    return 'graph TD\n    A[Processing_Error] --> B[Using_Fallback]';
   }
 };
 
