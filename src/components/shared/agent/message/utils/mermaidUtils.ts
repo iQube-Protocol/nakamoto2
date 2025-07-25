@@ -2,9 +2,55 @@
 // Import mermaid with a safer approach to avoid SSR issues
 import mermaid from 'mermaid';
 
+// Security validation for Mermaid diagrams
+export const validateMermaidSecurity = (code: string): { isValid: boolean; errors: string[] } => {
+  const errors: string[] = [];
+  
+  // Check for potential XSS patterns
+  const xssPatterns = [
+    /<script[^>]*>/i,
+    /javascript:/i,
+    /on\w+\s*=/i,
+    /<iframe[^>]*>/i,
+    /data:text\/html/i,
+    /vbscript:/i
+  ];
+  
+  for (const pattern of xssPatterns) {
+    if (pattern.test(code)) {
+      errors.push("Potentially dangerous script content detected");
+      break;
+    }
+  }
+  
+  // Check for excessive length (DoS prevention)
+  if (code.length > 50000) {
+    errors.push("Diagram code exceeds maximum allowed length");
+  }
+  
+  // Check for excessive complexity (DoS prevention)
+  const nodeCount = (code.match(/\w+\[/g) || []).length;
+  const edgeCount = (code.match(/-->/g) || []).length;
+  
+  if (nodeCount > 200 || edgeCount > 300) {
+    errors.push("Diagram complexity exceeds safe limits");
+  }
+  
+  return {
+    isValid: errors.length === 0,
+    errors
+  };
+};
+
 // Pre-validate mermaid code for common syntax issues
 export const validateMermaidSyntax = (code: string): { isValid: boolean; errors: string[] } => {
   const errors: string[] = [];
+  
+  // First check security
+  const securityValidation = validateMermaidSecurity(code);
+  if (!securityValidation.isValid) {
+    errors.push(...securityValidation.errors);
+  }
   
   // Check for basic diagram type
   if (!code.match(/^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph)/i)) {
@@ -171,6 +217,22 @@ export const sanitizeMermaidCode = (code: string): string => {
       return 'graph TD\n    A[Start] --> B[End]';
     }
     
+    // Security sanitization first
+    sanitized = sanitized
+      // Remove script tags and dangerous patterns
+      .replace(/<script[^>]*>.*?<\/script>/gi, '')
+      .replace(/<iframe[^>]*>.*?<\/iframe>/gi, '')
+      .replace(/javascript:/gi, '')
+      .replace(/data:text\/html/gi, '')
+      .replace(/vbscript:/gi, '')
+      .replace(/on\w+\s*=/gi, '');
+    
+    // Length check
+    if (sanitized.length > 50000) {
+      console.warn("Diagram code too long, truncating");
+      sanitized = sanitized.substring(0, 50000);
+    }
+    
     // Preserve diagram type
     const typeMatch = sanitized.match(/^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph)\s+([A-Z]{2})?/i);
     const diagramType = typeMatch ? typeMatch[0] : 'graph TD';
@@ -213,6 +275,15 @@ export const sanitizeMermaidCode = (code: string): string => {
       // Clean up extra whitespace
       .replace(/\s+/g, ' ')
       .trim();
+    
+    // Complexity check
+    const nodeCount = (sanitized.match(/\w+\[/g) || []).length;
+    const edgeCount = (sanitized.match(/-->/g) || []).length;
+    
+    if (nodeCount > 200 || edgeCount > 300) {
+      console.warn("Diagram too complex, using simplified version");
+      return `${diagramType}\n    A[Complex_Diagram] --> B[Simplified_For_Safety]`;
+    }
     
     // Handle specific error patterns
     if (sanitized.includes('Parse error') || sanitized.includes('Syntax error') || sanitized.includes('NODE_STRING')) {

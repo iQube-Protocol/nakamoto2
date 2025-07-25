@@ -13,6 +13,7 @@ import { Label } from '@/components/ui/label';
 import { Mail } from 'lucide-react';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
+import { validateEmail, checkRateLimit } from '@/utils/inputValidation';
 
 interface PasswordResetDialogProps {
   open: boolean;
@@ -26,35 +27,39 @@ const PasswordResetDialog = ({ open, onOpenChange }: PasswordResetDialogProps) =
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     
-    if (!email.trim()) {
-      toast.error('Please enter your email address');
+    const trimmedEmail = email.trim();
+    
+    // Validate email format
+    const emailValidation = validateEmail(trimmedEmail);
+    if (!emailValidation.isValid) {
+      toast.error(emailValidation.error || 'Please enter a valid email address');
       return;
     }
 
-    // Additional client-side email validation
-    const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
-    if (!emailRegex.test(email.trim())) {
-      toast.error('Please enter a valid email address');
+    // Check rate limiting
+    const rateLimit = checkRateLimit(`password-reset-${trimmedEmail}`, 3, 300000); // 3 attempts per 5 minutes
+    if (!rateLimit.allowed) {
+      const resetTime = new Date(rateLimit.resetTime).toLocaleTimeString();
+      toast.error(`Too many attempts. Try again at ${resetTime}`);
       return;
     }
 
     setIsLoading(true);
     
     try {
-      console.log('Password reset dialog - attempting reset for:', email.trim());
-      
-      const { data, error } = await supabase.functions.invoke('send-password-reset', {
-        body: { email: email.trim() }
+      // Use the secure password reset function
+      const { data, error } = await supabase.functions.invoke('send-password-reset-secure', {
+        body: { email: trimmedEmail }
       });
       
       if (error) {
         console.error('Password reset failed:', error);
         toast.error('Failed to send reset email. Please try again.');
       } else {
-        toast.success('Password reset email sent! Check your inbox for instructions.');
+        // Always show success message to prevent email enumeration
+        toast.success('If your email is registered, you will receive a password reset link.');
         onOpenChange(false);
         setEmail('');
-        console.log('Password reset email sent successfully to:', email.trim());
       }
     } catch (err) {
       console.error('Password reset error:', err);

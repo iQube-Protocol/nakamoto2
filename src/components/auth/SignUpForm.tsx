@@ -6,6 +6,7 @@ import { Label } from '@/components/ui/label';
 import { toast } from 'sonner';
 import { Mail, Key, Eye, EyeOff, UserPlus } from 'lucide-react';
 import { useAuth } from '@/hooks/use-auth';
+import { validateEmail, validatePassword, sanitizeTextInput, checkRateLimit } from '@/utils/inputValidation';
 
 interface SignUpFormProps {
   onSuccessfulSignUp: (email: string) => void;
@@ -24,8 +25,35 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onSuccessfulSignUp }) => {
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
     
+    // Sanitize inputs
+    const sanitizedFirstName = sanitizeTextInput(firstName, 50);
+    const sanitizedLastName = sanitizeTextInput(lastName, 50);
+    const trimmedEmail = email.trim();
+    
+    // Validate email
+    const emailValidation = validateEmail(trimmedEmail);
+    if (!emailValidation.isValid) {
+      toast.error(emailValidation.error || 'Please enter a valid email address');
+      return;
+    }
+    
+    // Validate password
+    const passwordValidation = validatePassword(password);
+    if (!passwordValidation.isValid) {
+      toast.error(passwordValidation.error || 'Password does not meet requirements');
+      return;
+    }
+    
     if (password !== confirmPassword) {
       toast.error("Passwords don't match");
+      return;
+    }
+    
+    // Check rate limiting
+    const rateLimit = checkRateLimit(`signup-${trimmedEmail}`, 5, 900000); // 5 attempts per 15 minutes
+    if (!rateLimit.allowed) {
+      const resetTime = new Date(rateLimit.resetTime).toLocaleTimeString();
+      toast.error(`Too many signup attempts. Try again at ${resetTime}`);
       return;
     }
     
@@ -33,15 +61,15 @@ const SignUpForm: React.FC<SignUpFormProps> = ({ onSuccessfulSignUp }) => {
     
     try {
       const { error, success } = await signUp(
-        email, 
+        trimmedEmail, 
         password,
-        firstName,
-        lastName
+        sanitizedFirstName,
+        sanitizedLastName
       );
       
       if (success) {
         toast.success('Account created successfully! Please check your email to confirm your registration.');
-        onSuccessfulSignUp(email);
+        onSuccessfulSignUp(trimmedEmail);
       } else if (error) {
         toast.error(`Registration failed: ${error.message}`);
       }
