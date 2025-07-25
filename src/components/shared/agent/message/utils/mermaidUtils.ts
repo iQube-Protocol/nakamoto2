@@ -2,6 +2,41 @@
 // Import mermaid with a safer approach to avoid SSR issues
 import mermaid from 'mermaid';
 
+// Pre-validate mermaid code for common syntax issues
+export const validateMermaidSyntax = (code: string): { isValid: boolean; errors: string[] } => {
+  const errors: string[] = [];
+  
+  // Check for basic diagram type
+  if (!code.match(/^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph)/i)) {
+    errors.push("Missing or invalid diagram type declaration");
+  }
+  
+  // Check for problematic quoted text in node labels
+  if (code.match(/\[[^\]]*"[^"]*"[^\]]*\]/)) {
+    errors.push("Quoted text in node labels can cause parsing errors");
+  }
+  
+  // Check for problematic parentheses in node labels
+  if (code.match(/\[[^\]]*\([^)]*\)[^\]]*\]/)) {
+    errors.push("Parentheses in node labels can cause parsing errors");
+  }
+  
+  // Check for problematic commas in node labels
+  if (code.match(/\[[^\]]*,[^\]]*\]/)) {
+    errors.push("Commas in node labels can cause parsing errors");
+  }
+  
+  // Check for invalid arrow syntax
+  if (code.match(/--(?!>)/)) {
+    errors.push("Invalid arrow syntax detected");
+  }
+  
+  return {
+    isValid: errors.length === 0,
+    errors
+  };
+};
+
 // Process the code to fix common Mermaid syntax issues
 export const processCode = (inputCode: string): string => {
   try {
@@ -125,89 +160,99 @@ export const setupRenderTimeout = (): (() => void) => {
   return () => clearTimeout(timeoutId);
 };
 
-// Special sanitization for diagrams with PS parse errors (parenthesis issues)
+// Enhanced sanitization for diagrams with complex syntax issues
 export const sanitizeMermaidCode = (code: string): string => {
-  console.log("Sanitizing problematic diagram code");
+  console.log("Performing enhanced sanitization on diagram code");
   
   try {
-    // First strip any SHOW_CODE prefix
     let sanitized = code.replace(/^SHOW_CODE_/, '').trim();
     
-    // Get the diagram type - preserve it for later
+    if (!sanitized) {
+      return 'graph TD\n    A[Start] --> B[End]';
+    }
+    
+    // Preserve diagram type
     const typeMatch = sanitized.match(/^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph)\s+([A-Z]{2})?/i);
     const diagramType = typeMatch ? typeMatch[0] : 'graph TD';
     
-    // CRITICAL FIX: Handle quoted text in node labels - this is causing the STR token error
-    if (code.includes('"') || code.includes("'")) {
-      console.log("Fixing quoted text in node labels");
-      // Remove all quotes and replace problematic characters
-      sanitized = sanitized
-        .replace(/\[([^[\]]*)"([^"]*)"([^[\]]*)\]/g, (match, before, quoted, after) => {
-          const safeText = quoted
-            .replace(/\s+/g, '_')
-            .replace(/[^\w]/g, '_')
-            .replace(/_+/g, '_')
-            .replace(/^_|_$/g, '');
-          return `[${before}${safeText}${after}]`;
-        })
-        .replace(/\[([^[\]]*)'([^']*)'([^[\]]*)\]/g, (match, before, quoted, after) => {
-          const safeText = quoted
-            .replace(/\s+/g, '_')
-            .replace(/[^\w]/g, '_')
-            .replace(/_+/g, '_')
-            .replace(/^_|_$/g, '');
-          return `[${before}${safeText}${after}]`;
-        });
+    // PRIORITY FIX: Handle all problematic characters in node labels
+    sanitized = sanitized
+      // Fix quoted text - most common cause of parse errors
+      .replace(/\[([^[\]]*)"([^"]*)"([^[\]]*)\]/g, (match, before, quoted, after) => {
+        const safeText = quoted
+          .replace(/[^\w\s]/g, '_') // Replace all special chars with underscore
+          .replace(/\s+/g, '_') // Replace spaces with underscore
+          .replace(/_+/g, '_') // Collapse multiple underscores
+          .replace(/^_|_$/g, ''); // Remove leading/trailing underscores
+        return `[${before}${safeText}${after}]`;
+      })
+      .replace(/\[([^[\]]*)'([^']*)'([^[\]]*)\]/g, (match, before, quoted, after) => {
+        const safeText = quoted
+          .replace(/[^\w\s]/g, '_')
+          .replace(/\s+/g, '_')
+          .replace(/_+/g, '_')
+          .replace(/^_|_$/g, '');
+        return `[${before}${safeText}${after}]`;
+      })
+      // Fix parentheses in labels
+      .replace(/\[([^\]]*)(\(|\))([^\]]*)\]/g, (match, before, paren, after) => {
+        return `[${before.trim()}_${after.trim()}]`;
+      })
+      // Fix commas in labels 
+      .replace(/\[([^\]]*),([^\]]*)\]/g, (match, before, after) => {
+        return `[${before.trim()}_${after.trim()}]`;
+      })
+      // Fix periods and abbreviations
+      .replace(/\[([^\]]*)\s*e\.g\.,?\s*([^\]]*)\]/g, '[eg_$2]')
+      .replace(/\[([^\]]*)\s*etc\.\s*([^\]]*)\]/g, '[$1_etc_$2]')
+      // Remove % comments that cause issues
+      .replace(/%.*/g, '')
+      // Fix arrow syntax issues
+      .replace(/--\s*-+(?!>)/g, '-->')
+      .replace(/--(?!>)/g, '-->')
+      // Clean up extra whitespace
+      .replace(/\s+/g, ' ')
+      .trim();
+    
+    // Handle specific error patterns
+    if (sanitized.includes('Parse error') || sanitized.includes('Syntax error') || sanitized.includes('NODE_STRING')) {
+      console.log("Creating safe fallback diagram");
+      return `${diagramType}\n    A[Diagram_Content] --> B[Successfully_Rendered]`;
     }
     
-    // For PS errors specifically - handle other problematic characters
-    if (code.includes("e.g.,") || code.includes("(") || code.includes(")")) {
-      // Replace all nodes with parentheses with safer versions
-      sanitized = sanitized.replace(/\[([^\]]*)(\(|\))([^\]]*)\]/g, (match, before, paren, after) => {
-        return `[${before}${after}]`;
-      });
-      
-      // Replace all nodes with commas with safer versions
-      sanitized = sanitized.replace(/\[([^\]]*),([^\]]*)\]/g, (match, before, after) => {
-        return `[${before}_and_${after}]`;
-      });
-      
-      // Replace "e.g.," which often causes parse errors
-      sanitized = sanitized.replace(/e\.g\.,/g, 'eg');
+    // Validate basic structure
+    const lines = sanitized.split('\n').filter(line => line.trim());
+    if (lines.length < 2) {
+      return `${diagramType}\n    A[Simple] --> B[Diagram]`;
     }
     
-    // Handle NODE_STRING errors (like the one in the user's message)
-    if (code.includes('NODE_STRING')) {
-      // Remove % characters which can cause issues
-      sanitized = sanitized.replace(/%.*/g, '');
-      
-      // Fix unquoted labels or invalid node references
-      const lines = sanitized.split('\n');
-      const fixedLines = lines.map(line => {
-        // If line contains --> but no node definition, remove any stray text after -->
-        if (line.includes('-->') && !line.includes('[') && !line.match(/-->\s*[A-Za-z0-9_]+$/)) {
-          return line.replace(/-->\s*[A-Za-z0-9_]+.*$/, '-->');
-        }
-        return line;
-      });
-      sanitized = fixedLines.join('\n');
-    }
-    
-    // If a parse error is still likely, create a very simple diagram
-    if (sanitized.includes('Parse error') || sanitized.includes('Syntax error')) {
-      console.log("Creating fallback simple diagram due to syntax errors");
-      return `${diagramType}\n    A[Simplified_Diagram] --> B[Due_to_Parse_Error]`;
-    }
-    
-    // Ensure we still have a valid diagram type
+    // Ensure diagram type is present
     if (!sanitized.match(/^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph)/i)) {
       sanitized = `${diagramType}\n${sanitized}`;
     }
     
-    console.log("Sanitized mermaid code:", sanitized);
+    console.log("Enhanced sanitization complete:", sanitized);
     return sanitized;
+    
   } catch (err) {
-    console.error('Error sanitizing mermaid code:', err);
-    return 'graph TD\n    A[Error_Fixed] --> B[Safe_Diagram]';
+    console.error('Error during enhanced sanitization:', err);
+    return 'graph TD\n    A[Sanitization_Error] --> B[Using_Safe_Fallback]';
   }
+};
+
+// Create user-friendly error messages
+export const getUserFriendlyErrorMessage = (error: string): string => {
+  if (error.includes('Parse error') || error.includes('Syntax error')) {
+    return "The diagram has a syntax issue. We'll try to fix it automatically.";
+  }
+  if (error.includes('NODE_STRING')) {
+    return "There's an issue with node labels in the diagram.";
+  }
+  if (error.includes('timeout') || error.includes('Timeout')) {
+    return "The diagram is taking too long to render. Try a simpler version.";
+  }
+  if (error.includes('STR')) {
+    return "There's an issue with text formatting in the diagram.";
+  }
+  return "Unable to render the diagram. Please try the auto-fix option.";
 };

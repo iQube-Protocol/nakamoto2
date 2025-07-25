@@ -1,7 +1,7 @@
 
 import React, { useState } from 'react';
-import { attemptAutoFix, sanitizeMermaidCode } from './utils/mermaidUtils';
-import { AlertCircle } from 'lucide-react';
+import { attemptAutoFix, sanitizeMermaidCode, getUserFriendlyErrorMessage, validateMermaidSyntax } from './utils/mermaidUtils';
+import { AlertCircle, RefreshCw } from 'lucide-react';
 
 interface DiagramErrorHandlerProps {
   error: Error | string;
@@ -89,28 +89,44 @@ const DiagramErrorHandler: React.FC<DiagramErrorHandlerProps> = ({ error, code, 
     onRetry(simple);
   };
   
-  // Don't render error UI for syntax errors - auto-fix instead
-  if (errorMessage.includes('Syntax error') || errorMessage.includes('Parse error')) {
-    // Auto-fix the diagram immediately without showing error to user
+  // Auto-fix common syntax errors immediately without showing error UI
+  if (errorMessage.includes('Syntax error') || 
+      errorMessage.includes('Parse error') || 
+      errorMessage.includes('NODE_STRING') ||
+      errorMessage.includes('STR')) {
+    
     React.useEffect(() => {
+      console.log("Auto-fixing diagram with syntax error:", errorMessage);
       handleAutoFix();
-    }, []);
+    }, [errorMessage]);
     
     return (
-      <div className="p-2 rounded border border-yellow-200 bg-yellow-50 mt-2 text-xs text-yellow-600">
-        <span>Optimizing diagram...</span>
+      <div className="p-3 rounded-lg border border-blue-200 bg-blue-50 mt-2 flex items-center gap-2">
+        <RefreshCw className="h-4 w-4 text-blue-600 animate-spin" />
+        <span className="text-sm text-blue-700">Auto-fixing diagram syntax...</span>
       </div>
     );
   }
 
+  // Get user-friendly error message
+  const friendlyMessage = getUserFriendlyErrorMessage(errorMessage);
+  
   return (
-    <div className="p-3 rounded border border-red-300 bg-red-50 mt-2" data-testid="diagram-error">
+    <div className="p-4 rounded-lg border border-red-200 bg-red-50 mt-2" data-testid="diagram-error">
       <div className="flex items-start">
-        <AlertCircle className="h-5 w-5 mr-2 flex-shrink-0 text-red-500" />
-        <div>
-          <p className="text-red-600 text-sm font-medium">Error rendering diagram:</p>
-          <p className="text-red-500 text-xs mt-1">{errorMessage}</p>
-          {errorHint}
+        <AlertCircle className="h-5 w-5 mr-3 flex-shrink-0 text-red-500" />
+        <div className="flex-1">
+          <p className="text-red-700 text-sm font-medium">Diagram Rendering Issue</p>
+          <p className="text-red-600 text-sm mt-1">{friendlyMessage}</p>
+          <details className="mt-2">
+            <summary className="text-xs text-red-500 cursor-pointer hover:text-red-700">
+              Show technical details
+            </summary>
+            <p className="text-xs text-red-500 mt-1 font-mono bg-red-100 p-2 rounded">
+              {errorMessage}
+            </p>
+            {errorHint}
+          </details>
         </div>
       </div>
       

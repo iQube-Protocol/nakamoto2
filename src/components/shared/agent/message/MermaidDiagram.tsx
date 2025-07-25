@@ -112,9 +112,10 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
       try {
         console.log(`Rendering diagram (ID: ${id}) with code:`, currentCode);
         
-        // Basic validation to catch obvious syntax errors
-        if (!currentCode.match(/^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph)/i)) {
-          throw new Error("Invalid diagram type or syntax");
+        // Enhanced validation using our validation utility
+        const validation = await import('./utils/mermaidUtils').then(m => m.validateMermaidSyntax(currentCode));
+        if (!validation.isValid) {
+          throw new Error(`Syntax validation failed: ${validation.errors.join(', ')}`);
         }
         
         // Get mermaid instance
