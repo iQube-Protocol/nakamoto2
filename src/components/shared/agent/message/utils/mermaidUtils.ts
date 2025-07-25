@@ -102,9 +102,12 @@ export const processCode = (inputCode: string): string => {
     cleanedCode = 'graph TD\n' + cleanedCode;
   }
 
-  // Light cleanup only - preserve valid Mermaid syntax
+  // CRITICAL FIX: Preserve line breaks - don't collapse newlines
   cleanedCode = cleanedCode
-    .replace(/\s+/g, ' ') // Normalize whitespace only
+    .replace(/\r\n/g, '\n')           // Normalize line endings
+    .replace(/\r/g, '\n')             // Convert remaining \r to \n
+    .replace(/[ \t]+/g, ' ')          // Only collapse spaces/tabs, preserve newlines
+    .replace(/[ \t]*\n[ \t]*/g, '\n') // Clean up whitespace around newlines
     .trim();
 
   return cleanedCode;
@@ -117,43 +120,35 @@ export const attemptAutoFix = (originalCode: string): string => {
   try {
     let fixedCode = originalCode.replace(/^SHOW_CODE_/, '');
     
+    // Validate the code first - if it's already valid, don't fix it
+    const validation = validateMermaidSyntax(fixedCode);
+    if (validation.isValid) {
+      console.log("Code is already valid, no fixes needed");
+      return fixedCode;
+    }
+    
     // Fix 1: Ensure proper graph type declaration
     if (!fixedCode.match(/^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph)/i)) {
       fixedCode = 'graph TD\n' + fixedCode;
     }
     
-    // Fix 2: Handle quoted text in node labels - PRIMARY FIX
+    // Fix 2: TARGETED fixes for specific syntax issues
     fixedCode = fixedCode
-      // Remove all quotes from node labels and replace spaces with underscores
+      // Fix quotes in node labels - be more conservative
       .replace(/\[([^[\]]*)"([^"]*)"([^[\]]*)\]/g, (match, before, quoted, after) => {
-        const safeText = quoted.replace(/\s+/g, '_').replace(/[^\w\s]/g, '_');
+        const safeText = quoted.replace(/"/g, '');
         return `[${before}${safeText}${after}]`;
       })
       .replace(/\[([^[\]]*)'([^']*)'([^[\]]*)\]/g, (match, before, quoted, after) => {
-        const safeText = quoted.replace(/\s+/g, '_').replace(/[^\w\s]/g, '_');
+        const safeText = quoted.replace(/'/g, '');
         return `[${before}${safeText}${after}]`;
       })
-      // Fix arrow syntax
-      .replace(/--\s*-+/g, '-->')
+      // Fix problematic characters in node labels only when necessary
+      .replace(/\[([^\]]*?),([^\]]*?)\]/g, '[text]')
+      .replace(/\[([^\]]*?)\(([^\]]*?)\)([^\]]*?)\]/g, '[text]')
+      // Fix arrow syntax issues
       .replace(/--(?!>)/g, '-->')
-      .replace(/\s*-+\s*>/g, ' -->')
-      // Handle special characters and parentheses in labels
-      .replace(/\[([^\]]*?)\(([^\]]*?)\)([^\]]*?)\]/g, (match, before, inside, after) => {
-        return `[${before}_${inside}_${after}]`;
-      })
-      // Fix "e.g.," notation which causes comma parsing issues
-      .replace(/\[([^\]]*?)e\.g\.,([^\]]*?)\]/g, (match, before, after) => {
-        return `[${before}e.g._${after}]`;
-      })
-      // Replace all commas in node labels
-      .replace(/\[([^\]]*?),([^\]]*?)\]/g, (match, before, after) => {
-        return `[${before}_${after}]`;
-      })
-      // Remove % characters and comments that cause parse errors
-      .replace(/(%.*?)($|\n)/g, '$2')
-      // Fix NODE_STRING errors by removing invalid node references
-      .replace(/(\w+\s+)(\w+)(\s*-->)/g, '$1$3')
-      .replace(/-->(\s*)(\w+)(\s*[^[])/g, '-->$1$3');
+      .replace(/\s*-+\s*>/g, ' -->');
     
     console.log("Auto-fixed mermaid code:", fixedCode);
     return fixedCode;

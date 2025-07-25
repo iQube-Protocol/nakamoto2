@@ -89,23 +89,27 @@ const DiagramErrorHandler: React.FC<DiagramErrorHandlerProps> = ({ error, code, 
     onRetry(simple);
   };
   
-  // Track auto-fix attempts to prevent loops
-  const [autoFixAttempts, setAutoFixAttempts] = React.useState(0);
+  // Track auto-fix attempts per diagram ID to prevent loops
+  const [autoFixAttempts, setAutoFixAttempts] = React.useState(() => new Map<string, number>());
   const maxAutoFixAttempts = 1;
   
+  const currentAttempts = autoFixAttempts.get(id) || 0;
+  
   React.useEffect(() => {
-    if (autoFixAttempts < maxAutoFixAttempts && (
+    if (currentAttempts < maxAutoFixAttempts && (
       errorMessage.includes('Syntax error') || 
-      errorMessage.includes('Parse error')
+      errorMessage.includes('Parse error') ||
+      errorMessage.includes('NODE_STRING') ||
+      errorMessage.includes('Expecting')
     )) {
-      setAutoFixAttempts(prev => prev + 1);
-      console.log("Auto-fixing diagram with syntax error (attempt", autoFixAttempts + 1, "):", errorMessage);
+      setAutoFixAttempts(prev => new Map(prev).set(id, currentAttempts + 1));
+      console.log("Auto-fixing diagram with syntax error (attempt", currentAttempts + 1, "):", errorMessage);
       handleAutoFix();
     }
-  }, [errorMessage, autoFixAttempts]);
+  }, [errorMessage, currentAttempts, id]);
   
   // Show auto-fixing indicator only if currently fixing
-  if (isFixing && autoFixAttempts <= maxAutoFixAttempts) {
+  if (isFixing && currentAttempts <= maxAutoFixAttempts) {
     return (
       <div className="p-3 rounded-lg border border-blue-200 bg-blue-50 mt-2 flex items-center gap-2">
         <RefreshCw className="h-4 w-4 text-blue-600 animate-spin" />

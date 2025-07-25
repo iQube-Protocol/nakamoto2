@@ -16,32 +16,30 @@ const getMermaid = async () => {
     mermaidPromise = import('mermaid').then(m => {
       const instance = m.default;
       
-      // Configure mermaid with stable, compatible settings
-      instance.initialize({
-        startOnLoad: false,
-        theme: 'default',
-        securityLevel: 'loose', // Use loose for better compatibility
-        fontFamily: 'system-ui, sans-serif',
-        fontSize: 14, // Standard readable font size
-        flowchart: {
-          htmlLabels: true,
-          useMaxWidth: true
-        },
-        themeVariables: {
-          primaryColor: '#0f172a',
-          primaryTextColor: '#ffffff',
-          primaryBorderColor: '#334155',
-          lineColor: '#64748b',
-          secondaryColor: '#f1f5f9',
-          tertiaryColor: '#e2e8f0',
-          background: '#ffffff',
-          mainBkg: '#ffffff',
-          secondaryBkg: '#f8fafc',
-          fontFamily: 'system-ui, sans-serif',
-          fontSize: '14px'
-        },
-        logLevel: 'error',
-      });
+        // Configure mermaid with stable, proven settings
+        instance.initialize({
+          startOnLoad: false,
+          theme: 'neutral',
+          securityLevel: 'loose', // Essential for compatibility
+          fontFamily: 'Arial, sans-serif',
+          fontSize: 14,
+          flowchart: {
+            htmlLabels: false, // Disable HTML labels to prevent parsing issues
+            useMaxWidth: true,
+            curve: 'basis'
+          },
+          sequence: {
+            useMaxWidth: true
+          },
+          journey: {
+            useMaxWidth: true
+          },
+          themeVariables: {
+            fontFamily: 'Arial, sans-serif',
+            fontSize: '14px'
+          },
+          logLevel: 'error'
+        });
       
       mermaidInstance = instance;
       return instance;
