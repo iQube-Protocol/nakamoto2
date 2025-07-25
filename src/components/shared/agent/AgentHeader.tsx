@@ -50,12 +50,6 @@ const AgentHeader = ({ title, description, isProcessing, additionalActions }: Ag
           <h2 className="text-xl font-semibold flex items-center cursor-help">
             <Bot className="mr-2 h-5 w-5 text-qrypto-accent" />
             {displayTitle}
-            {isProcessing && (
-              <span className="ml-2 flex items-center text-xs text-muted-foreground">
-                <Loader2 className="h-3 w-3 mr-1 animate-spin" />
-                Processing...
-              </span>
-            )}
           </h2>
         </ScoreTooltip>
       </div>

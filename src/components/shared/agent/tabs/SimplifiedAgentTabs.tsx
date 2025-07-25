@@ -119,7 +119,7 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps & {
             </div>
           )}
           
-          <div className="flex items-center gap-6">
+          <div className="flex items-center gap-3">
             {/* Show Dual Knowledge Base header only when knowledge tab is active and agent is mondai */}
             {activeTab === 'knowledge' && agentType === 'mondai' && !tabsCollapsed && (
               <div className="flex items-center gap-2">
@@ -133,6 +133,17 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps & {
                     </TooltipContent>
                   </Tooltip>
                 </TooltipProvider>
+              </div>
+            )}
+            
+            {/* Processing indicator */}
+            {isProcessing && (
+              <div className="relative">
+                <div className="w-5 h-5 rounded-full border-2 border-qrypto-primary/20 relative overflow-hidden">
+                  <div className="absolute inset-0 rounded-full border-2 border-transparent border-t-qrypto-primary animate-spin"></div>
+                  <div className="absolute inset-1 rounded-full bg-qrypto-primary/30 animate-pulse"></div>
+                  <div className="absolute inset-2 rounded-full bg-qrypto-primary/60 animate-ping"></div>
+                </div>
               </div>
             )}
             
