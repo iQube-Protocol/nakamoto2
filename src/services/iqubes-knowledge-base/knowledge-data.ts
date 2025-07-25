@@ -2,6 +2,45 @@ import { iQubesKnowledgeItem } from './types';
 
 export const IQUBES_KNOWLEDGE_DATA: iQubesKnowledgeItem[] = [
   {
+    id: 'iqube-ontology-structure',
+    title: 'iQube Ontology and Structural Hierarchy',
+    content: `The iQube Protocol establishes a clear ontological hierarchy where iQubes serve as the foundational data primitive, containing three essential subdivisions that work together to provide comprehensive data management:
+
+**iQube (Top-Level Primitive):**
+iQubes are the core data containers of the protocol, representing complete information assets with built-in security, metadata, and access control. Each iQube encapsulates a complete data lifecycle within a single, transferable primitive.
+
+**Three Essential Subdivisions within each iQube:**
+
+**1. metaQubes:**
+- Handle provenance and quality metadata
+- Store usage rights and risk profiles  
+- Provide discovery and verification points for AI agents
+- Contain compliance states and regulatory information
+- Enable transparent auditing and data lineage tracking
+
+**2. blakQubes:**
+- Contain encrypted data payloads (raw or structured data)
+- Provide privacy-preserving storage with advanced encryption
+- Store the actual sensitive information assets
+- Maintain confidentiality through cryptographic protection
+- Ensure data integrity through tamper-proof mechanisms
+
+**3. tokenQubes:**
+- Manage access control and decryption keys
+- Enforce dynamic, risk-aware access permissions
+- Handle value exchange and economic transactions
+- Implement smart contract-enabled governance
+- Enable secure key distribution based on risk assessments
+
+**Structural Relationships:**
+All three subdivisions are cryptographically entangled within each iQube, ensuring that metadata (metaQube), encrypted data (blakQube), and access control (tokenQube) work together as a cohesive unit. This design allows iQubes to be transferred across networks while maintaining their complete functionality and security properties.`,
+    section: 'Core Architecture',
+    category: 'architecture',
+    keywords: ['iqube', 'ontology', 'metaqube', 'blakqube', 'tokenqube', 'subdivisions', 'hierarchy', 'data primitive', 'structure'],
+    timestamp: new Date().toISOString(),
+    source: 'iQube Protocol Architecture Documentation'
+  },
+  {
     id: 'iqube-scoring-system',
     title: 'iQube Scoring System & Logic',
     content: `The iQube Protocol uses a comprehensive 1-10 scoring system to evaluate data quality, risk, and trustworthiness across all information containers. This scoring framework ensures consistent evaluation and risk assessment for AI agents and data consumers.
@@ -63,7 +102,7 @@ This scoring system enables AI agents to make informed decisions about data usag
     title: 'iQube Protocol Executive Summary',
     content: `The emergence of agentic AI—a new class of autonomous, goal-oriented systems—has created an urgent need for reliable, verifiable, and secure information assets. Current data systems are too centralized, too opaque, and too rigid to handle the complexity of AI systems that must act independently, adaptively, and ethically.
 
-The iQube Protocol is a groundbreaking solution designed to containerize data and intelligence into decentralized, cryptographically entangled primitives. By combining metaQubes (on-chain metadata), blakQubes (encrypted payloads), and tokenQubes (access and decryption keys), the protocol creates a trustless and verifiable information environment that meets the demands of agentic AI.
+The iQube Protocol is a groundbreaking solution designed to containerize data and intelligence into decentralized, cryptographically entangled primitives. Each iQube contains three subdivisions: metaQubes (provenance, quality metadata, usage rights, and risk profiles), blakQubes (encrypted data payloads), and tokenQubes (access and decryption keys), creating a trustless and verifiable information environment that meets the demands of agentic AI.
 
 The protocol bridges the trust gap in agentic AI by providing a cryptographically verifiable information container system that addresses the fundamental limitations of centralized and opaque data infrastructures. The dual-network architecture consists of an open permissionless network that hosts metaQubes and a private permissioned network that manages blakQubes, cryptographically entangled using hash functions and zero-knowledge proofs.
 
@@ -115,15 +154,17 @@ By synthesizing these principles, the iQube Protocol creates a secure, composabl
   {
     id: 'iqube-three-primitives',
     title: 'iQube Three Cryptographic Primitives',
-    content: `At the core of the iQube Protocol lies a modular and composable container system built from three cryptographic primitives:
+    content: `At the core of the iQube Protocol lies iQubes - modular and composable data containers with three essential subdivisions:
 
-**metaQubes:** These are transparent, on-chain metadata containers that store information about data provenance, quality, usage rights, risk profiles, and compliance states. Each metaQube serves as a discovery and verification point for AI agents, providing them with a snapshot of the data asset's lineage and risk status before accessing the underlying content.
+iQubes are the foundational data primitive of the protocol, containing three essential subdivisions:
 
-**blakQubes:** These containers hold the encrypted payloads—raw or structured data—that represent the private, sensitive information asset. blakQubes are stored on a private permissioned network, ensuring confidentiality. They are cryptographically entangled with their corresponding metaQubes and tokenQubes.
+**metaQubes:** These subdivisions handle provenance and quality metadata, usage rights, and risk profiles. Each metaQube serves as a discovery and verification point for AI agents, providing them with comprehensive metadata about the data asset's lineage, compliance states, and risk status before accessing the underlying content.
 
-**tokenQubes:** These smart contract-enabled primitives govern access and decryption rights to blakQubes. They enforce dynamic, risk-aware key releases based on real-time risk scoring and identity states. The tokenQube design ensures that data consumers can only decrypt data if they meet the risk and identity conditions specified in the metaQube.
+**blakQubes:** These subdivisions hold the encrypted data payloads—raw or structured data—that represent the private, sensitive information asset. blakQubes are stored on a private permissioned network, ensuring confidentiality. They are cryptographically entangled with their corresponding metaQubes and tokenQubes within the same iQube.
 
-This modular and entangled design allows iQubes to be transferred across networks, embedded in AI services, and integrated into composable workflows while maintaining verifiable risk, provenance, and usage rights.`,
+**tokenQubes:** These subdivisions contain access and decryption keys, governed by smart contract-enabled primitives. They enforce dynamic, risk-aware key releases based on real-time risk scoring and identity states. The tokenQube design ensures that data consumers can only decrypt data if they meet the risk and identity conditions specified in the metaQube.
+
+This modular subdivision design within iQubes allows them to be transferred across networks, embedded in AI services, and integrated into composable workflows while maintaining verifiable risk, provenance, and usage rights through the coordinated interaction of all three subdivisions.`,
     section: 'Core Architecture',
     category: 'technical',
     keywords: ['metaQubes', 'blakQubes', 'tokenQubes', 'cryptographic primitives', 'entanglement', 'access control', 'risk scoring'],

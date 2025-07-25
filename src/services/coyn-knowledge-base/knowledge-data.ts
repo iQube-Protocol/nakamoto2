@@ -3,6 +3,45 @@ import { COYNKnowledgeItem } from './types';
 
 export const COYN_KNOWLEDGE_DATA: COYNKnowledgeItem[] = [
   {
+    id: 'iqube-protocol-ontology-structure',
+    title: 'iQube Protocol Ontology in COYN Economy',
+    content: `Within the COYN economy, the iQube Protocol establishes a clear ontological hierarchy that underpins the entire data-as-asset framework:
+
+**iQube (Foundational Data Primitive):**
+iQubes serve as the core data containers in the QryptoCOYN ecosystem, representing complete information assets with built-in economic valuation, security, and metadata management. Each iQube functions as a self-contained unit of value within the COYN economy.
+
+**Three Economic Subdivisions within each iQube:**
+
+**1. metaQubes (Value Discovery & Risk Assessment):**
+- Store provenance and quality metadata for economic valuation
+- Contain usage rights and risk profiles for pricing mechanisms
+- Enable transparent price discovery through quality metrics
+- Support the Proof-of-Price consensus mechanism
+- Provide compliance states for regulatory token classification
+
+**2. blakQubes (Asset Protection & Value Preservation):**
+- Contain the encrypted data assets that represent economic value
+- Ensure asset protection through cryptographic security
+- Preserve value through tamper-proof storage mechanisms
+- Enable confidential transactions while maintaining asset integrity
+- Support the data-as-asset backing model for QryptoCOYN
+
+**3. tokenQubes (Access Control & Value Exchange):**
+- Manage the economic exchange mechanisms and payment flows
+- Contain decryption keys and access control for value realization
+- Handle QryptoCENT microtransactions for data access
+- Implement smart contract governance for value distribution
+- Enable the monetization of data assets through controlled access
+
+**Economic Integration:**
+This ontological structure enables the COYN economy's core principle of treating data as a valuable, tradable asset. The subdivision approach ensures that value assessment (metaQubes), asset protection (blakQubes), and value exchange (tokenQubes) work together to create a comprehensive economic framework for data monetization.`,
+    section: 'Economic Framework',
+    category: 'economics',
+    keywords: ['iqube', 'ontology', 'metaqube', 'blakqube', 'tokenqube', 'data-as-asset', 'value discovery', 'economic structure', 'COYN economy'],
+    timestamp: new Date().toISOString(),
+    source: 'COYN Economic Framework Documentation'
+  },
+  {
     id: 'qryptocoyn-definition',
     title: 'QryptoCOYN: Definition and Etymology',
     content: `QryptoCOYN is a compound term combining two key concepts:
