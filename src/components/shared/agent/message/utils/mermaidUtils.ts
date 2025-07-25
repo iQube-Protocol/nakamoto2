@@ -85,60 +85,29 @@ export const validateMermaidSyntax = (code: string): { isValid: boolean; errors:
 
 // Process the code to fix common Mermaid syntax issues
 export const processCode = (inputCode: string): string => {
-  try {
-    // Remove "SHOW_CODE_" prefix if present
-    let result = inputCode.replace(/^SHOW_CODE_/, '').trim();
-    
-    // Handle completely empty input
-    if (!result) {
-      return 'graph TD\n    A[Start] --> B[End]';
-    }
-
-    // Security check first
-    const securityCheck = validateMermaidSecurity(result);
-    if (!securityCheck.isValid) {
-      console.warn('Security validation failed:', securityCheck.errors);
-      return 'graph TD\n    A[Security_Error] --> B[Content_Blocked]';
-    }
-    
-    // Add graph directive if missing
-    if (!result.match(/^(sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph|graph|flowchart)/i)) {
-      result = `graph TD\n    ${result.replace(/\n/g, '\n    ')}`;
-    }
-    
-    // Fix problematic characters in node labels
-    result = result
-      // Fix quoted text in node labels
-      .replace(/\[([^[\]]*)"([^"]*)"([^[\]]*)\]/g, (match, before, quoted, after) => {
-        const safeText = quoted.replace(/[^\w\s]/g, '').replace(/\s+/g, '_');
-        return `[${before}${safeText}${after}]`;
-      })
-      .replace(/\[([^[\]]*)'([^']*)'([^[\]]*)\]/g, (match, before, quoted, after) => {
-        const safeText = quoted.replace(/[^\w\s]/g, '').replace(/\s+/g, '_');
-        return `[${before}${safeText}${after}]`;
-      })
-      // Fix parentheses in node labels
-      .replace(/\[([^\]]*?)\(([^)]*?)\)([^\]]*?)\]/g, (match, before, inside, after) => {
-        return `[${before.trim()}_${inside.replace(/[^\w\s]/g, '').replace(/\s+/g, '_')}_${after.trim()}]`;
-      })
-      // Fix commas in node labels
-      .replace(/\[([^\]]*?),([^\]]*?)\]/g, (match, before, after) => {
-        return `[${before.trim()}_${after.trim()}]`;
-      })
-      // Clean arrow syntax
-      .replace(/--\s*-*/g, '-->')
-      .replace(/\s*-+\s*>/g, '-->')
-      // Remove problematic characters
-      .replace(/(%.*?)(\n|$)/g, '$2')
-      // Clean whitespace
-      .replace(/\s+/g, ' ')
-      .trim();
-      
-    return result;
-  } catch (err) {
-    console.error('Error processing mermaid code:', err);
-    return 'graph TD\n    A[Processing_Error] --> B[Using_Fallback]';
+  if (!inputCode || typeof inputCode !== 'string') {
+    return 'graph TD\n    A[Start] --> B[End]';
   }
+
+  let cleanedCode = inputCode.trim();
+
+  // Basic security check for obvious threats
+  if (cleanedCode.includes('<script') || cleanedCode.includes('javascript:') || cleanedCode.includes('onclick')) {
+    console.warn('Potential security issue detected in diagram code');
+    return 'graph TD\n    A[Security Error] --> B[Please check diagram]';
+  }
+
+  // Add directive if missing
+  if (!cleanedCode.match(/^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph)/)) {
+    cleanedCode = 'graph TD\n' + cleanedCode;
+  }
+
+  // Light cleanup only - preserve valid Mermaid syntax
+  cleanedCode = cleanedCode
+    .replace(/\s+/g, ' ') // Normalize whitespace only
+    .trim();
+
+  return cleanedCode;
 };
 
 // Auto-correct common mermaid syntax issues
@@ -205,107 +174,37 @@ export const setupRenderTimeout = (): (() => void) => {
 
 // Enhanced sanitization for diagrams with complex syntax issues
 export const sanitizeMermaidCode = (code: string): string => {
-  console.log("Performing enhanced sanitization on diagram code");
-  
-  try {
-    let sanitized = code.replace(/^SHOW_CODE_/, '').trim();
-    
-    if (!sanitized) {
-      return 'graph TD\n    A[Start] --> B[End]';
-    }
-    
-    // Security sanitization first
-    sanitized = sanitized
-      // Remove script tags and dangerous patterns
-      .replace(/<script[^>]*>.*?<\/script>/gi, '')
-      .replace(/<iframe[^>]*>.*?<\/iframe>/gi, '')
-      .replace(/javascript:/gi, '')
-      .replace(/data:text\/html/gi, '')
-      .replace(/vbscript:/gi, '')
-      .replace(/on\w+\s*=/gi, '');
-    
-    // Length check
-    if (sanitized.length > 50000) {
-      console.warn("Diagram code too long, truncating");
-      sanitized = sanitized.substring(0, 50000);
-    }
-    
-    // Preserve diagram type
-    const typeMatch = sanitized.match(/^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph)\s+([A-Z]{2})?/i);
-    const diagramType = typeMatch ? typeMatch[0] : 'graph TD';
-    
-    // PRIORITY FIX: Handle all problematic characters in node labels
-    sanitized = sanitized
-      // Fix quoted text - most common cause of parse errors
-      .replace(/\[([^[\]]*)"([^"]*)"([^[\]]*)\]/g, (match, before, quoted, after) => {
-        const safeText = quoted
-          .replace(/[^\w\s]/g, '_') // Replace all special chars with underscore
-          .replace(/\s+/g, '_') // Replace spaces with underscore
-          .replace(/_+/g, '_') // Collapse multiple underscores
-          .replace(/^_|_$/g, ''); // Remove leading/trailing underscores
-        return `[${before}${safeText}${after}]`;
-      })
-      .replace(/\[([^[\]]*)'([^']*)'([^[\]]*)\]/g, (match, before, quoted, after) => {
-        const safeText = quoted
-          .replace(/[^\w\s]/g, '_')
-          .replace(/\s+/g, '_')
-          .replace(/_+/g, '_')
-          .replace(/^_|_$/g, '');
-        return `[${before}${safeText}${after}]`;
-      })
-      // Fix parentheses in labels
-      .replace(/\[([^\]]*)(\(|\))([^\]]*)\]/g, (match, before, paren, after) => {
-        return `[${before.trim()}_${after.trim()}]`;
-      })
-      // Fix commas in labels 
-      .replace(/\[([^\]]*),([^\]]*)\]/g, (match, before, after) => {
-        return `[${before.trim()}_${after.trim()}]`;
-      })
-      // Fix periods and abbreviations
-      .replace(/\[([^\]]*)\s*e\.g\.,?\s*([^\]]*)\]/g, '[eg_$2]')
-      .replace(/\[([^\]]*)\s*etc\.\s*([^\]]*)\]/g, '[$1_etc_$2]')
-      // Remove % comments that cause issues
-      .replace(/%.*/g, '')
-      // Fix arrow syntax issues
-      .replace(/--\s*-+(?!>)/g, '-->')
-      .replace(/--(?!>)/g, '-->')
-      // Clean up extra whitespace
-      .replace(/\s+/g, ' ')
-      .trim();
-    
-    // Complexity check
-    const nodeCount = (sanitized.match(/\w+\[/g) || []).length;
-    const edgeCount = (sanitized.match(/-->/g) || []).length;
-    
-    if (nodeCount > 200 || edgeCount > 300) {
-      console.warn("Diagram too complex, using simplified version");
-      return `${diagramType}\n    A[Complex_Diagram] --> B[Simplified_For_Safety]`;
-    }
-    
-    // Handle specific error patterns
-    if (sanitized.includes('Parse error') || sanitized.includes('Syntax error') || sanitized.includes('NODE_STRING')) {
-      console.log("Creating safe fallback diagram");
-      return `${diagramType}\n    A[Diagram_Content] --> B[Successfully_Rendered]`;
-    }
-    
-    // Validate basic structure
-    const lines = sanitized.split('\n').filter(line => line.trim());
-    if (lines.length < 2) {
-      return `${diagramType}\n    A[Simple] --> B[Diagram]`;
-    }
-    
-    // Ensure diagram type is present
-    if (!sanitized.match(/^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph)/i)) {
-      sanitized = `${diagramType}\n${sanitized}`;
-    }
-    
-    console.log("Enhanced sanitization complete:", sanitized);
-    return sanitized;
-    
-  } catch (err) {
-    console.error('Error during enhanced sanitization:', err);
-    return 'graph TD\n    A[Sanitization_Error] --> B[Using_Safe_Fallback]';
+  if (!code || typeof code !== 'string') {
+    return 'graph TD\n    A[Start] --> B[End]';
   }
+
+  let sanitized = code.trim();
+
+  // Basic security check only for actual threats
+  if (sanitized.includes('<script') || sanitized.includes('javascript:') || sanitized.includes('onclick')) {
+    console.warn('Security threat detected in Mermaid code');
+    return 'graph TD\n    A[Security Error] --> B[Contact Support]';
+  }
+
+  // Length check
+  if (sanitized.length > 10000) {
+    console.warn('Mermaid code too long, truncating');
+    sanitized = sanitized.substring(0, 10000);
+  }
+
+  // Minimal cleaning - preserve valid syntax
+  sanitized = sanitized
+    .replace(/\r\n/g, '\n') // Normalize line endings
+    .replace(/\r/g, '\n') // Convert remaining \r to \n
+    .replace(/\u00A0/g, ' ') // Replace non-breaking spaces
+    .trim();
+
+  // Add missing directive
+  if (!sanitized.match(/^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph)/)) {
+    sanitized = 'graph TD\n' + sanitized;
+  }
+
+  return sanitized;
 };
 
 // Create user-friendly error messages

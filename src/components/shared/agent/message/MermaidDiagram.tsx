@@ -16,44 +16,29 @@ const getMermaid = async () => {
     mermaidPromise = import('mermaid').then(m => {
       const instance = m.default;
       
-      // Configure mermaid with simplified, reliable settings
+      // Configure mermaid with stable, compatible settings
       instance.initialize({
         startOnLoad: false,
-        theme: 'neutral',
-        securityLevel: 'strict', // Use strict for consistent behavior
-        fontFamily: 'Inter, system-ui, sans-serif',
-        fontSize: 16, // Standard readable font size
+        theme: 'default',
+        securityLevel: 'loose', // Use loose for better compatibility
+        fontFamily: 'system-ui, sans-serif',
+        fontSize: 14, // Standard readable font size
         flowchart: {
           htmlLabels: true,
-          curve: 'basis',
-          diagramPadding: 16,
-          nodeSpacing: 50,
-          rankSpacing: 50,
+          useMaxWidth: true
         },
         themeVariables: {
-          // Simplified color scheme for better consistency
-          primaryColor: '#ffffff',
-          primaryTextColor: '#1f2937',
-          primaryBorderColor: '#6b7280',
-          lineColor: '#6b7280',
-          secondaryColor: '#f3f4f6',
-          tertiaryColor: '#ffffff',
-          
-          // Standard text settings
-          fontSize: '16px',
-          fontFamily: 'Inter, system-ui, sans-serif',
-          
-          // Node styling
-          nodeBorder: '2px',
+          primaryColor: '#0f172a',
+          primaryTextColor: '#ffffff',
+          primaryBorderColor: '#334155',
+          lineColor: '#64748b',
+          secondaryColor: '#f1f5f9',
+          tertiaryColor: '#e2e8f0',
+          background: '#ffffff',
           mainBkg: '#ffffff',
-          nodeBkg: '#ffffff',
-          
-          // Clean edge styling
-          edgeLabelBackground: '#ffffff',
-          
-          // Simple label styling
-          labelBackground: '#ffffff',
-          labelBorderRadius: '4px',
+          secondaryBkg: '#f8fafc',
+          fontFamily: 'system-ui, sans-serif',
+          fontSize: '14px'
         },
         logLevel: 'error',
       });
