@@ -139,40 +139,84 @@ const MessageContent = ({ content, sender }: MessageContentProps) => {
     }).flat();
   }, [content, processUserFriendlyContent]);
 
-  // Enhanced inline formatting processor with security hardening
+  // Enhanced inline formatting processor with markdown-style rendering
   const processInlineFormatting = React.useCallback((text: string) => {
     // Input validation
     if (!text || typeof text !== 'string') {
       return <span></span>;
     }
     
-    // Escape dangerous characters before processing
-    let processedText = text
-      .replace(/&/g, '&amp;')
-      .replace(/</g, '&lt;')
-      .replace(/>/g, '&gt;')
-      .replace(/"/g, '&quot;')
-      .replace(/'/g, '&#x27;');
+    // Process markdown-style formatting first
+    const parts: (string | React.ReactElement)[] = [];
+    let processedText = text;
     
-    // Apply key term highlighting with escaped content
-    KEY_TERMS.forEach(term => {
-      const escapedTerm = term.replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
-      const regex = new RegExp(`\\b${escapedTerm}\\b`, 'gi');
-      processedText = processedText.replace(regex, `<span class="key-term">${term}</span>`);
-    });
+    // Handle **bold** formatting
+    const boldRegex = /\*\*([^*]+)\*\*/g;
+    let lastIndex = 0;
+    let match;
     
-    // Enhanced sanitization with strict security settings
-    const sanitizedHtml = DOMPurify.sanitize(processedText, {
-      ALLOWED_TAGS: ['span'],
-      ALLOWED_ATTR: ['class'],
-      ALLOW_DATA_ATTR: false,
-      FORBID_CONTENTS: ['script', 'style'],
-      FORBID_TAGS: ['script', 'style', 'iframe', 'object', 'embed'],
-      FORBID_ATTR: ['onclick', 'onload', 'onerror', 'onmouseover', 'style'],
-      USE_PROFILES: { html: false }
-    });
+    while ((match = boldRegex.exec(text)) !== null) {
+      // Add text before the match
+      if (match.index > lastIndex) {
+        parts.push(text.substring(lastIndex, match.index));
+      }
+      // Add bold text
+      parts.push(<strong key={`bold-${match.index}`} className="font-semibold">{match[1]}</strong>);
+      lastIndex = match.index + match[0].length;
+    }
     
-    return <span dangerouslySetInnerHTML={{ __html: sanitizedHtml }} />;
+    // Add remaining text
+    if (lastIndex < text.length) {
+      parts.push(text.substring(lastIndex));
+    }
+    
+    // If no bold formatting was found, just use the original text
+    if (parts.length === 0) {
+      parts.push(text);
+    }
+    
+    // Process key terms highlighting on string parts only
+    const finalParts = parts.map((part, index) => {
+      if (typeof part === 'string') {
+        // Apply key term highlighting
+        let highlightedText = part;
+        KEY_TERMS.forEach(term => {
+          const regex = new RegExp(`\\b${term}\\b`, 'gi');
+          highlightedText = highlightedText.replace(regex, `**${term}**`);
+        });
+        
+        // If highlighting was applied, re-process for bold formatting
+        if (highlightedText !== part) {
+          const innerParts: (string | React.ReactElement)[] = [];
+          const innerBoldRegex = /\*\*([^*]+)\*\*/g;
+          let innerLastIndex = 0;
+          let innerMatch;
+          
+          while ((innerMatch = innerBoldRegex.exec(highlightedText)) !== null) {
+            if (innerMatch.index > innerLastIndex) {
+              innerParts.push(highlightedText.substring(innerLastIndex, innerMatch.index));
+            }
+            innerParts.push(
+              <span key={`term-${index}-${innerMatch.index}`} className="key-term font-medium text-iqube-accent bg-iqube-accent/10 px-1 rounded">
+                {innerMatch[1]}
+              </span>
+            );
+            innerLastIndex = innerMatch.index + innerMatch[0].length;
+          }
+          
+          if (innerLastIndex < highlightedText.length) {
+            innerParts.push(highlightedText.substring(innerLastIndex));
+          }
+          
+          return innerParts.length > 0 ? innerParts : part;
+        }
+        
+        return part;
+      }
+      return part;
+    }).flat();
+    
+    return <span>{finalParts}</span>;
   }, []);
 
   // Create React elements for the processed content with memoization
