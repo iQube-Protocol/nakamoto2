@@ -100,6 +100,7 @@ const AgentPanel = ({
         data.message,
         {
           ...(data.mcp || {}),
+          ...(data.metadata || {}),
           conversationId: data.conversationId
         }
       );

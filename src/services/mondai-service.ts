@@ -390,9 +390,7 @@ export async function processNakamotoInteraction(
     message,
     'learn', // Always use 'learn' instead of 'mondai' for backend compatibility
     response.message,
-    {
-      conversationId: response.conversationId
-    }
+    response.metadata
   );
   
   return response;
