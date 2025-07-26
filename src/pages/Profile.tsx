@@ -192,14 +192,12 @@ const Profile = () => {
                                   {interaction.metadata.aiProvider === 'Venice AI (Uncensored)' ? 'Venice AI' : interaction.metadata.aiProvider}
                                 </Badge>
                               )}
+                              {interaction.metadata?.modelUsed && (
+                                <Badge variant="outline" className="text-xs bg-blue-100 text-blue-800">
+                                  {interaction.metadata.modelUsed}
+                                </Badge>
+                              )}
                             </div>
-                           {interaction.metadata?.modelUsed && (
-                             <div className="flex items-center gap-2">
-                               <Badge variant="outline" className="text-xs bg-blue-100 text-blue-800">
-                                 {interaction.metadata.modelUsed}
-                               </Badge>
-                             </div>
-                           )}
                            {interaction.metadata && (
                              <div className="flex flex-wrap gap-1">
                                {interaction.metadata.qryptoItemsFound > 0 && (
