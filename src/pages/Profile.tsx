@@ -45,37 +45,37 @@ const Profile = () => {
   if (!user) return null;
   
   return (
-    <div className="container max-w-full px-4 sm:px-6 py-4 sm:py-6">
-      <div className="grid gap-4 sm:gap-6">
+    <div className="min-h-screen w-full overflow-x-hidden">
+      <div className="max-w-full px-3 sm:px-6 py-3 sm:py-6 space-y-4">
         {/* User info section - mobile optimized */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2">
-              <div className="text-lg">User Profile</div>
-              <Badge variant="outline" className="text-xs sm:text-sm truncate max-w-full">
+        <Card className="w-full">
+          <CardHeader className="pb-3 px-3 sm:px-6">
+            <CardTitle className="text-base sm:text-lg">Profile</CardTitle>
+            <div className="mt-2">
+              <Badge variant="outline" className="text-xs break-all max-w-full">
                 {user.email}
               </Badge>
-            </CardTitle>
+            </div>
           </CardHeader>
-          <CardContent className="grid grid-cols-1 gap-4">
+          <CardContent className="px-3 sm:px-6 pb-4">
             <div className="space-y-3">
-              <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
-                <span className="text-muted-foreground text-sm">User ID:</span>
-                <span className="font-mono text-xs bg-muted px-2 py-1 rounded break-all">
+              <div className="grid grid-cols-2 gap-2 text-xs sm:text-sm">
+                <span className="text-muted-foreground">ID:</span>
+                <span className="font-mono bg-muted px-2 py-1 rounded text-xs break-all">
                   {user.id.substring(0, 8)}...
                 </span>
               </div>
-              <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
-                <span className="text-muted-foreground text-sm">Last Sign In:</span>
-                <span className="text-sm">{getRelativeTime(new Date(user.last_sign_in_at || ''))}</span>
+              <div className="grid grid-cols-2 gap-2 text-xs sm:text-sm">
+                <span className="text-muted-foreground">Last Sign In:</span>
+                <span className="break-words">{getRelativeTime(new Date(user.last_sign_in_at || ''))}</span>
               </div>
-              <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
-                <span className="text-muted-foreground text-sm">Account Created:</span>
-                <span className="text-sm">{new Date(user.created_at).toLocaleDateString()}</span>
+              <div className="grid grid-cols-2 gap-2 text-xs sm:text-sm">
+                <span className="text-muted-foreground">Created:</span>
+                <span className="break-words">{new Date(user.created_at).toLocaleDateString()}</span>
               </div>
-              <div className="flex flex-col sm:flex-row sm:justify-between gap-1">
-                <span className="text-muted-foreground text-sm">Status:</span>
-                <Badge variant={user.email_confirmed_at ? "secondary" : "destructive"} className="bg-qrypto-primary w-fit">
+              <div className="grid grid-cols-2 gap-2 text-xs sm:text-sm">
+                <span className="text-muted-foreground">Status:</span>
+                <Badge variant={user.email_confirmed_at ? "secondary" : "destructive"} className="bg-qrypto-primary w-fit text-xs">
                   {user.email_confirmed_at ? "Verified" : "Unverified"}
                 </Badge>
               </div>
@@ -84,13 +84,13 @@ const Profile = () => {
         </Card>
 
         {/* Interaction history section - mobile optimized */}
-        <Card>
-          <CardHeader className="pb-2">
-            <CardTitle className="font-medium text-lg">History</CardTitle>
-            <div className="flex flex-wrap gap-2">
+        <Card className="w-full">
+          <CardHeader className="pb-3 px-3 sm:px-6">
+            <CardTitle className="text-base sm:text-lg">History</CardTitle>
+            <div className="flex flex-wrap gap-2 mt-3">
               <button 
                 onClick={() => setActiveTab('learn')} 
-                className={`px-3 py-2 text-sm rounded transition-colors flex-shrink-0 ${
+                className={`px-3 py-2 text-xs sm:text-sm rounded transition-colors ${
                   activeTab === 'learn' ? 'bg-qrypto-primary text-white' : 'bg-muted hover:bg-muted/80'
                 }`}
               >
@@ -98,7 +98,7 @@ const Profile = () => {
               </button>
               <button 
                 onClick={() => setActiveTab('mondai')} 
-                className={`px-3 py-2 text-sm rounded transition-colors flex-shrink-0 ${
+                className={`px-3 py-2 text-xs sm:text-sm rounded transition-colors ${
                   activeTab === 'mondai' ? 'bg-qrypto-primary text-white' : 'bg-muted hover:bg-muted/80'
                 }`}
               >
@@ -106,7 +106,7 @@ const Profile = () => {
               </button>
               <button 
                 onClick={() => setActiveTab('earn')} 
-                className={`px-3 py-2 text-sm rounded transition-colors flex-shrink-0 ${
+                className={`px-3 py-2 text-xs sm:text-sm rounded transition-colors ${
                   activeTab === 'earn' ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'
                 }`}
               >
@@ -114,7 +114,7 @@ const Profile = () => {
               </button>
               <button 
                 onClick={() => setActiveTab('connect')} 
-                className={`px-3 py-2 text-sm rounded transition-colors flex-shrink-0 ${
+                className={`px-3 py-2 text-xs sm:text-sm rounded transition-colors ${
                   activeTab === 'connect' ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'
                 }`}
               >
@@ -122,33 +122,35 @@ const Profile = () => {
               </button>
             </div>
           </CardHeader>
-          <CardContent className="px-2 sm:px-6">
-            <ScrollArea className="h-[400px] sm:h-[500px] pr-2 sm:pr-4">
-              <div className="space-y-4">
+          <CardContent className="px-2 sm:px-6 pb-4">
+            <ScrollArea className="h-[300px] sm:h-[400px] w-full">
+              <div className="space-y-3 pr-2">
                 {interactions && interactions.length > 0 ? interactions.map(interaction => (
-                  <div key={interaction.id} className="space-y-3 p-3 sm:p-4 border rounded-lg hover:shadow-md transition-shadow historic-content">
+                  <div key={interaction.id} className="w-full overflow-hidden">
                     {/* User Query */}
                     {interaction.query && (
-                      <div className="p-3 rounded-lg bg-[#2d1f17]/45 border-l-4 border-orange-400">
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
-                          <Badge variant="outline" className="text-orange-200 bg-gray-500 border-orange-400 w-fit">
+                      <div className="p-2 sm:p-3 rounded-lg bg-[#2d1f17]/45 border-l-4 border-orange-400 mb-2 overflow-hidden">
+                        <div className="flex flex-col gap-1 mb-2">
+                          <Badge variant="outline" className="text-orange-200 bg-gray-500 border-orange-400 w-fit text-xs">
                             You asked
                           </Badge>
                           <span className="text-xs text-muted-foreground">
                             {new Date(interaction.created_at).toLocaleString()}
                           </span>
                         </div>
-                        <div className="text-sm text-zinc-100 conversational-content break-words">
-                          <MessageContent content={interaction.query} sender="user" />
+                        <div className="text-xs sm:text-sm text-zinc-100 break-words overflow-wrap-anywhere">
+                          <div className="max-w-full overflow-hidden">
+                            <MessageContent content={interaction.query} sender="user" />
+                          </div>
                         </div>
                       </div>
                     )}
                     
                     {/* Agent Response Preview */}
                     {interaction.response && (
-                      <div className="p-3 rounded-lg bg-[#23223f]/[0.32] cursor-pointer hover:bg-[#23223f]/[0.45] transition-colors border-l-4 border-indigo-400" onClick={() => handleResponseClick(interaction)}>
-                        <div className="flex flex-col sm:flex-row sm:items-center gap-2 mb-2">
-                          <Badge variant="secondary" className="bg-qrypto-primary w-fit">
+                      <div className="p-2 sm:p-3 rounded-lg bg-[#23223f]/[0.32] cursor-pointer hover:bg-[#23223f]/[0.45] transition-colors border-l-4 border-indigo-400 overflow-hidden" onClick={() => handleResponseClick(interaction)}>
+                        <div className="flex flex-col gap-1 mb-2">
+                          <Badge variant="secondary" className="bg-qrypto-primary w-fit text-xs">
                             {interaction.interaction_type} agent responded
                           </Badge>
                           {interaction.metadata && (
@@ -167,34 +169,36 @@ const Profile = () => {
                           )}
                         </div>
                         
-                        <div className="text-sm conversational-content break-words">
-                          {interaction.response.length > 300 ? (
-                            <div>
+                        <div className="text-xs sm:text-sm break-words overflow-wrap-anywhere">
+                          {interaction.response.length > 200 ? (
+                            <div className="max-w-full overflow-hidden">
                               <p className="text-foreground leading-relaxed">
-                                {processHistoricPreview(interaction.response.substring(0, 300))}...
+                                {processHistoricPreview(interaction.response.substring(0, 200))}...
                               </p>
-                              <p className="text-xs text-muted-foreground mt-2 flex flex-col sm:flex-row sm:items-center gap-1">
+                              <p className="text-xs text-muted-foreground mt-2">
                                 <span>Click to view full response</span>
                                 {interaction.response.includes('```mermaid') && (
-                                  <Badge variant="outline" className="text-xs bg-purple-100 text-purple-800 w-fit">
+                                  <Badge variant="outline" className="text-xs bg-purple-100 text-purple-800 ml-1">
                                     Contains diagram
                                   </Badge>
                                 )}
                               </p>
                             </div>
                           ) : (
-                            <MessageContent content={interaction.response} sender="agent" />
+                            <div className="max-w-full overflow-hidden">
+                              <MessageContent content={interaction.response} sender="agent" />
+                            </div>
                           )}
                         </div>
                       </div>
                     )}
                   </div>
                 )) : (
-                  <div className="text-center p-6">
-                    <p className="text-sm sm:text-base">
+                  <div className="text-center p-4">
+                    <p className="text-xs sm:text-sm">
                       No {activeTab === 'learn' ? 'Learn/MonDAI' : activeTab === 'mondai' ? 'MonDAI' : activeTab} conversations found.
                     </p>
-                    <p className="text-sm text-muted-foreground mt-2">
+                    <p className="text-xs text-muted-foreground mt-1">
                       Start a conversation with the {activeTab === 'learn' ? 'Learn or MonDAI' : activeTab === 'mondai' ? 'MonDAI' : activeTab} agent to see your history here.
                     </p>
                   </div>
