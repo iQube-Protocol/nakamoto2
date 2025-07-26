@@ -32,21 +32,19 @@ const MetadataBadge = ({ metadata, onModelChange }: MetadataBadgeProps) => {
   
   return (
     <div className="flex items-center">
-      <TooltipProvider>
-        <Tooltip>
-          <TooltipTrigger asChild>
-            <Badge variant="outline" className="text-[10px] mr-1 py-0 h-4">
-              <span className="text-muted-foreground">MCP v{metadata.version || '1.0'}</span>
-            </Badge>
-          </TooltipTrigger>
-          <TooltipContent>
-            <p className="text-xs">Using Model Context Protocol</p>
-            {metadata.contextRetained && 
-              <p className="text-xs text-muted-foreground">Context maintained between messages</p>
-            }
-          </TooltipContent>
-        </Tooltip>
-      </TooltipProvider>
+      <Tooltip>
+        <TooltipTrigger asChild>
+          <Badge variant="outline" className="text-[10px] mr-1 py-0 h-4">
+            <span className="text-muted-foreground">MCP v{metadata.version || '1.0'}</span>
+          </Badge>
+        </TooltipTrigger>
+        <TooltipContent>
+          <p className="text-xs">Using Model Context Protocol</p>
+          {metadata.contextRetained && 
+            <p className="text-xs text-muted-foreground">Context maintained between messages</p>
+          }
+        </TooltipContent>
+      </Tooltip>
       
       {metadata.modelUsed && (
         <ModelSelector

@@ -142,7 +142,10 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
         {getProviderModels('openai').map((model) => (
           <DropdownMenuItem
             key={model.id}
-            onClick={() => handleModelSelect(model)}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleModelSelect(model);
+            }}
             className={`text-xs cursor-pointer ${
               currentModel === model.id && currentProvider === 'openai' 
                 ? 'bg-accent' 
@@ -174,7 +177,10 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
         {getProviderModels('venice').map((model) => (
           <DropdownMenuItem
             key={model.id}
-            onClick={() => handleModelSelect(model)}
+            onClick={(e) => {
+              e.stopPropagation();
+              handleModelSelect(model);
+            }}
             className={`text-xs cursor-pointer ${
               currentModel === model.id && currentProvider === 'venice' 
                 ? 'bg-accent' 
