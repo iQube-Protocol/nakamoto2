@@ -160,15 +160,17 @@ const Profile = () => {
                   <div key={interaction.id} className="w-full overflow-hidden">
                     {/* User Query */}
                     {interaction.query && (
-                      <div className="p-2 sm:p-3 rounded-lg bg-[#2d1f17]/45 border-l-4 border-orange-400 mb-2 overflow-hidden">
-                        <div className="flex flex-col gap-1 mb-2">
-                          <Badge variant="outline" className="text-orange-200 bg-gray-500 border-orange-400 w-fit text-xs">
-                            You asked
-                          </Badge>
-                          <span className="text-xs text-muted-foreground">
-                            {new Date(interaction.created_at).toLocaleString()}
-                          </span>
-                        </div>
+                       <div className="p-2 sm:p-3 rounded-lg bg-[#2d1f17]/45 border-l-4 border-orange-400 mb-2 overflow-hidden">
+                         <div className="flex flex-col gap-1 mb-2">
+                           <div className="flex items-center gap-2">
+                             <Badge variant="outline" className="text-orange-200 bg-gray-500 border-orange-400 w-fit text-xs">
+                               You asked
+                             </Badge>
+                             <span className="text-xs text-muted-foreground">
+                               {new Date(interaction.created_at).toLocaleString()}
+                             </span>
+                           </div>
+                         </div>
                         <div className="text-xs sm:text-sm text-zinc-100 break-words overflow-wrap-anywhere">
                           <div className="max-w-full overflow-hidden">
                             <MessageContent content={interaction.query} sender="user" />
@@ -180,32 +182,34 @@ const Profile = () => {
                     {/* Agent Response Preview */}
                     {interaction.response && (
                       <div className="p-2 sm:p-3 rounded-lg bg-[#23223f]/[0.32] cursor-pointer hover:bg-[#23223f]/[0.45] transition-colors border-l-4 border-indigo-400 overflow-hidden" onClick={() => handleResponseClick(interaction)}>
-                        <div className="flex flex-col gap-1 mb-2">
-                           <div className="flex items-center gap-2">
-                             <Badge variant="secondary" className="bg-qrypto-primary w-fit text-xs">
-                               Nakamoto response
-                             </Badge>
-                             {interaction.metadata?.aiProvider && (
-                               <Badge variant="outline" className="bg-slate-100 text-slate-800 w-fit text-xs">
-                                 {interaction.metadata.aiProvider}
-                               </Badge>
-                             )}
-                           </div>
-                          {interaction.metadata && (
-                            <div className="flex flex-wrap gap-1">
-                              {interaction.metadata.qryptoItemsFound > 0 && (
-                                <Badge variant="outline" className="text-xs bg-blue-100 text-blue-800">
-                                  {interaction.metadata.qryptoItemsFound} KB items
-                                </Badge>
-                              )}
-                              {interaction.metadata.aiProvider && (
-                                <Badge variant="outline" className="text-xs bg-green-100 text-green-800">
-                                  {interaction.metadata.aiProvider}
+                         <div className="flex flex-col gap-1 mb-2">
+                            <div className="flex items-center gap-2">
+                              <Badge variant="secondary" className="bg-qrypto-primary w-fit text-xs">
+                                Nakamoto
+                              </Badge>
+                              {interaction.metadata?.aiProvider && (
+                                <Badge variant="outline" className="bg-green-100 text-green-800 w-fit text-xs">
+                                  {interaction.metadata.aiProvider === 'Venice AI (Uncensored)' ? 'Venice AI' : interaction.metadata.aiProvider}
                                 </Badge>
                               )}
                             </div>
-                          )}
-                        </div>
+                           {interaction.metadata?.modelUsed && (
+                             <div className="flex items-center gap-2">
+                               <Badge variant="outline" className="text-xs bg-blue-100 text-blue-800">
+                                 {interaction.metadata.modelUsed}
+                               </Badge>
+                             </div>
+                           )}
+                           {interaction.metadata && (
+                             <div className="flex flex-wrap gap-1">
+                               {interaction.metadata.qryptoItemsFound > 0 && (
+                                 <Badge variant="outline" className="text-xs bg-blue-100 text-blue-800">
+                                   {interaction.metadata.qryptoItemsFound} KB items
+                                 </Badge>
+                               )}
+                             </div>
+                           )}
+                         </div>
                         
                         <div className="text-xs sm:text-sm break-words overflow-wrap-anywhere">
                           {interaction.response.length > 200 ? (
