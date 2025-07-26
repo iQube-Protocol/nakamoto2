@@ -45,6 +45,11 @@ const ResponseDialog = ({ selectedResponse, isOpen, onClose }: ResponseDialogPro
                 <Badge variant="outline" className="text-xs bg-green-100 text-green-800">
                   {selectedResponse.metadata.aiProvider}
                 </Badge>
+                {selectedResponse.metadata.modelUsed && (
+                  <Badge variant="outline" className="text-xs bg-blue-100 text-blue-800">
+                    {selectedResponse.metadata.modelUsed}
+                  </Badge>
+                )}
               </>
             )}
           </DialogDescription>
