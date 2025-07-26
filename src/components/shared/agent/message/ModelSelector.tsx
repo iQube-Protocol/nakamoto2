@@ -127,7 +127,8 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
       </DropdownMenuTrigger>
       <DropdownMenuContent 
         align="start" 
-        className="w-64 bg-background border border-border shadow-lg z-50"
+        className="w-64 bg-popover border border-border shadow-lg z-[9999]"
+        sideOffset={4}
       >
         <DropdownMenuLabel className="text-xs font-medium">
           Select AI Model
