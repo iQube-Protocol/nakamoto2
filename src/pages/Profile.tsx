@@ -37,6 +37,21 @@ const Profile = () => {
     setSelectedResponse(null);
   };
 
+  const getAgentName = (interactionType: string) => {
+    switch (interactionType) {
+      case 'mondai':
+        return 'Nakamoto';
+      case 'learn':
+        return 'Learning';
+      case 'earn':
+        return 'Earning';
+      case 'connect':
+        return 'Connection';
+      default:
+        return interactionType;
+    }
+  };
+
   const processHistoricPreview = (content: string) => {
     return content
     .replace(/\*\*([^*]+)\*\*/g, '$1').replace(/^\* /gm, '• ').replace(/^- /gm, '• ').replace(/^### (.+)$/gm, '$1:').replace(/^## (.+)$/gm, '$1:').replace(/^# (.+)$/gm, '$1:')
@@ -166,9 +181,9 @@ const Profile = () => {
                     {interaction.response && (
                       <div className="p-2 sm:p-3 rounded-lg bg-[#23223f]/[0.32] cursor-pointer hover:bg-[#23223f]/[0.45] transition-colors border-l-4 border-indigo-400 overflow-hidden" onClick={() => handleResponseClick(interaction)}>
                         <div className="flex flex-col gap-1 mb-2">
-                          <Badge variant="secondary" className="bg-qrypto-primary w-fit text-xs">
-                            {interaction.interaction_type} agent responded
-                          </Badge>
+                           <Badge variant="secondary" className="bg-qrypto-primary w-fit text-xs">
+                             {getAgentName(interaction.interaction_type)} agent responded
+                           </Badge>
                           {interaction.metadata && (
                             <div className="flex flex-wrap gap-1">
                               {interaction.metadata.qryptoItemsFound > 0 && (
