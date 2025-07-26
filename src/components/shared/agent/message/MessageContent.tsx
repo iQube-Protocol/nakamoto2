@@ -139,29 +139,33 @@ const MessageContent = ({ content, sender }: MessageContentProps) => {
     }).flat();
   }, [content, processUserFriendlyContent]);
 
-  // Enhanced inline formatting processor with markdown-style rendering
+  // Enhanced inline formatting processor with persistent markdown-style rendering
   const processInlineFormatting = React.useCallback((text: string) => {
     // Input validation
     if (!text || typeof text !== 'string') {
-      return <span></span>;
+      return <span key="empty"></span>;
     }
     
-    // Process markdown-style formatting first
+    // Process markdown-style formatting with stable keys
     const parts: (string | React.ReactElement)[] = [];
-    let processedText = text;
     
-    // Handle **bold** formatting
+    // Handle **bold** formatting first
     const boldRegex = /\*\*([^*]+)\*\*/g;
     let lastIndex = 0;
     let match;
+    const textHash = text.length + text.charCodeAt(0); // Simple hash for stable keys
     
     while ((match = boldRegex.exec(text)) !== null) {
       // Add text before the match
       if (match.index > lastIndex) {
         parts.push(text.substring(lastIndex, match.index));
       }
-      // Add bold text
-      parts.push(<strong key={`bold-${match.index}`} className="font-semibold">{match[1]}</strong>);
+      // Add bold text with stable key
+      parts.push(
+        <strong key={`bold-${textHash}-${match.index}`} className="font-semibold">
+          {match[1]}
+        </strong>
+      );
       lastIndex = match.index + match[0].length;
     }
     
@@ -170,13 +174,13 @@ const MessageContent = ({ content, sender }: MessageContentProps) => {
       parts.push(text.substring(lastIndex));
     }
     
-    // If no bold formatting was found, just use the original text
+    // If no bold formatting was found, use the original text
     if (parts.length === 0) {
       parts.push(text);
     }
     
-    // Process key terms highlighting on string parts only
-    const finalParts = parts.map((part, index) => {
+    // Process key terms highlighting on string parts only with stable rendering
+    const finalParts = parts.map((part, partIndex) => {
       if (typeof part === 'string') {
         // Apply key term highlighting
         let highlightedText = part;
@@ -197,7 +201,10 @@ const MessageContent = ({ content, sender }: MessageContentProps) => {
               innerParts.push(highlightedText.substring(innerLastIndex, innerMatch.index));
             }
             innerParts.push(
-              <span key={`term-${index}-${innerMatch.index}`} className="key-term font-medium text-iqube-accent bg-iqube-accent/10 px-1 rounded">
+              <span 
+                key={`term-${textHash}-${partIndex}-${innerMatch.index}`} 
+                className="key-term font-medium text-iqube-accent bg-iqube-accent/10 px-1 rounded"
+              >
                 {innerMatch[1]}
               </span>
             );
@@ -216,7 +223,7 @@ const MessageContent = ({ content, sender }: MessageContentProps) => {
       return part;
     }).flat();
     
-    return <span>{finalParts}</span>;
+    return <span key={`processed-${textHash}`}>{finalParts}</span>;
   }, []);
 
   // Create React elements for the processed content with memoization

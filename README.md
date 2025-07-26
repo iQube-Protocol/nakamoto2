@@ -75,6 +75,62 @@ Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-trick
 
 ## Development Lessons Learned
 
+### Message Content Rendering & Lifecycle Management - July 26, 2025
+**Cycles Required:** 12+ cycles
+**Problem:** Complex text rendering issues with chat interface where markdown content would revert to raw markup format when users navigated away from and returned to the chat interface.
+
+**Root Cause:** Multiple interconnected issues:
+1. **Inconsistent Rendering Logic**: The MessageContent component was using `dangerouslySetInnerHTML` with DOMPurify for security but this approach wasn't stable across component lifecycle changes
+2. **Memoization Instability**: React memoization wasn't properly handling component unmount/remount scenarios during navigation
+3. **Key Stability**: Component keys weren't stable enough to maintain proper React reconciliation across navigation events
+4. **Security vs UX Trade-off**: Security-focused HTML sanitization was causing user experience issues in single-page application context
+
+**Solution Approach:**
+1. **Replaced dangerouslySetInnerHTML with React-based rendering**: Completely rewrote the inline formatting processor to use React elements instead of HTML strings
+2. **Enhanced key stability**: Implemented consistent key generation using text hashing to ensure stable component identity across renders
+3. **Improved memoization strategy**: Added proper dependency arrays and stable key generation for React.useMemo and React.useCallback
+4. **Lifecycle-aware processing**: Ensured all text processing functions maintain state correctly across component mount/unmount cycles
+
+**Implementation Details:**
+- **Stable Key Generation**: Used `text.length + text.charCodeAt(0)` for simple but effective key hashing
+- **React Element Processing**: Converted all markup processing to return React.ReactElement arrays instead of HTML strings
+- **Persistent Memoization**: Added stable keys to useCallback dependencies to prevent unnecessary re-computation
+- **Navigation Resilience**: Tested thorough navigation scenarios to ensure rendering consistency
+
+**Key Insights:**
+- **Security vs Stability Trade-off**: While `dangerouslySetInnerHTML` provided strong XSS protection with DOMPurify, it created lifecycle instability in single-page applications
+- **React Reconciliation Importance**: Stable keys are critical for proper React reconciliation, especially in dynamic content scenarios
+- **Component Lifecycle Awareness**: Chat interfaces require special consideration for component lifecycle as users frequently navigate away and return
+- **Memoization Dependencies**: React memoization requires careful consideration of dependencies, especially with complex text processing
+
+**Critical Dependencies:**
+- React's built-in memoization (useMemo, useCallback) for performance
+- Stable key generation for component identity
+- Proper TypeScript typing for React element arrays
+- Navigation state management in single-page applications
+
+**Future Reference:**
+- **Always use React-based rendering** for dynamic text content instead of dangerouslySetInnerHTML in SPA contexts
+- **Implement stable key generation** using content hashing for dynamic lists and text processing
+- **Test navigation scenarios** thoroughly - reproduce mount/unmount cycles during development
+- **Leverage React Developer Tools** to inspect component re-renders and key stability
+- **Consider component lifecycle** when implementing complex text processing in chat interfaces
+
+**Testing Approach:**
+1. Navigate to chat interface and send messages with various formatting (bold, key terms, code blocks)
+2. Navigate away to different routes (Dashboard, Settings, Profile, etc.)
+3. Return to chat interface and verify text rendering remains in proper markdown format
+4. Repeat multiple times to ensure consistency across navigation events
+5. Check React DevTools for unnecessary re-renders and component key stability
+6. Test with different message types: text, code blocks, images, diagrams
+
+**Related Files Modified:**
+- `src/components/shared/agent/message/MessageContent.tsx` - Core text rendering logic with lifecycle-aware processing
+- `src/pages/Profile.tsx` - Summary page display consistency and layout improvements
+- `src/components/profile/ResponseDialog.tsx` - Dialog text rendering consistency
+
+---
+
 ### Invited User Signup Race Conditions and Data Integrity - 2025-07-21
 **Cycles Required:** 12 cycles
 **Problem:** Invited users were signing up successfully but missing their persona data, causing incomplete registrations and broken user experiences.
