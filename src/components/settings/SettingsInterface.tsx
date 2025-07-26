@@ -9,6 +9,8 @@ import PreferencesTab from './PreferencesTab';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useServiceConnections } from '@/hooks/useServiceConnections';
 import { blakQubeService } from '@/services/blakqube-service';
+import { supabase } from '@/integrations/supabase/client';
+import { useAuth } from '@/hooks/use-auth';
 
 interface PrivateData {
   [key: string]: string | string[];
@@ -33,6 +35,16 @@ const SettingsInterface = ({
 }: SettingsInterfaceProps) => {
   const { theme } = useTheme();
   const { connections, connectService, disconnectService, toggleConnection } = useServiceConnections();
+  const { user } = useAuth();
+  
+  // State for profile images
+  const [profileImages, setProfileImages] = useState<{
+    knyt: string | null;
+    qrypto: string | null;
+  }>({
+    knyt: null,
+    qrypto: null
+  });
   
   // Sync settings with actual connection state
   const [settings, setSettings] = useState<UserSettings>({
@@ -68,6 +80,38 @@ const SettingsInterface = ({
       }
     }));
   }, [connections]);
+
+  // Load profile images for personas
+  useEffect(() => {
+    const loadProfileImages = async () => {
+      if (!user) return;
+
+      try {
+        // Fetch KNYT persona profile image
+        const { data: knytData } = await supabase
+          .from('knyt_personas')
+          .select('profile_image_url')
+          .eq('user_id', user.id)
+          .single();
+
+        // Fetch Qrypto persona profile image
+        const { data: qryptoData } = await supabase
+          .from('qrypto_personas')
+          .select('profile_image_url')
+          .eq('user_id', user.id)
+          .single();
+
+        setProfileImages({
+          knyt: knytData?.profile_image_url || null,
+          qrypto: qryptoData?.profile_image_url || null
+        });
+      } catch (error) {
+        console.error('Error loading profile images:', error);
+      }
+    };
+
+    loadProfileImages();
+  }, [user]);
 
   const handleConnectService = async (service: keyof UserSettings['connected']) => {
     console.log(`🔄 HandleConnectService called for ${service}`);
@@ -178,12 +222,23 @@ const SettingsInterface = ({
     }
   };
 
+  // Get the appropriate profile image based on the metaQube type
+  const getProfileImageUrl = () => {
+    if (metaQube["iQube-Identifier"] === "KNYT Persona iQube") {
+      return profileImages.knyt;
+    } else if (metaQube["iQube-Identifier"] === "Qrypto Persona iQube") {
+      return profileImages.qrypto;
+    }
+    return null;
+  };
+
   return (
     <div className="grid grid-cols-1 gap-4">
       <MetaQubeHeader 
         metaQube={metaQube} 
         isActive={isActive(metaQube["iQube-Identifier"])}
         onToggleActive={toggleActive}
+        profileImageUrl={getProfileImageUrl() || undefined}
       />
       
       <Tabs defaultValue="connections" value={activeTab} onValueChange={handleTabChange}>
