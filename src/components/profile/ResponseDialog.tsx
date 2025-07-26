@@ -13,6 +13,21 @@ interface ResponseDialogProps {
 }
 
 const ResponseDialog = ({ selectedResponse, isOpen, onClose }: ResponseDialogProps) => {
+  const getAgentName = (interactionType: string) => {
+    switch (interactionType) {
+      case 'mondai':
+        return 'Nakamoto';
+      case 'learn':
+        return 'Learning';
+      case 'earn':
+        return 'Earning';
+      case 'connect':
+        return 'Connection';
+      default:
+        return interactionType;
+    }
+  };
+
   return (
     <Dialog open={isOpen} onOpenChange={open => !open && onClose()}>
       <DialogContent className="max-w-4xl h-[85vh] flex flex-col">
@@ -20,7 +35,7 @@ const ResponseDialog = ({ selectedResponse, isOpen, onClose }: ResponseDialogPro
           <DialogTitle className="pr-8">Historic Conversation</DialogTitle>
           <DialogDescription className="text-xs flex items-center gap-2">
             <Badge variant="outline" className="bg-qrypto-primary/20">
-              {selectedResponse?.interaction_type}
+              {getAgentName(selectedResponse?.interaction_type)}
             </Badge>
             <span>•</span>
             <span>{selectedResponse?.created_at ? new Date(selectedResponse.created_at).toLocaleString() : ''}</span>
@@ -55,9 +70,9 @@ const ResponseDialog = ({ selectedResponse, isOpen, onClose }: ResponseDialogPro
             {selectedResponse?.response && (
               <div className="historic-response agent-theme">
                 <h4 className="font-medium mb-3 text-sm flex items-center gap-2">
-                  <Badge variant="secondary" className="bg-qrypto-primary">
-                    {selectedResponse.interaction_type} agent response
-                  </Badge>
+                   <Badge variant="secondary" className="bg-qrypto-primary">
+                     {getAgentName(selectedResponse.interaction_type)} agent response
+                   </Badge>
                   {selectedResponse.metadata && (
                     <div className="flex gap-1">
                       {selectedResponse.metadata.qryptoItemsFound > 0 && (
