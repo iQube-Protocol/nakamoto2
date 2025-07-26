@@ -71,8 +71,13 @@ const ResponseDialog = ({ selectedResponse, isOpen, onClose }: ResponseDialogPro
               <div className="historic-response agent-theme">
                 <h4 className="font-medium mb-3 text-sm flex items-center gap-2">
                    <Badge variant="secondary" className="bg-qrypto-primary">
-                     {getAgentName(selectedResponse.interaction_type)} agent response
+                     Nakamoto response
                    </Badge>
+                   {selectedResponse?.metadata?.aiProvider && (
+                     <Badge variant="outline" className="bg-slate-100 text-slate-800">
+                       {selectedResponse.metadata.aiProvider}
+                     </Badge>
+                   )}
                   {selectedResponse.metadata && (
                     <div className="flex gap-1">
                       {selectedResponse.metadata.qryptoItemsFound > 0 && (
