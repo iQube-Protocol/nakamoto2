@@ -181,9 +181,16 @@ const Profile = () => {
                     {interaction.response && (
                       <div className="p-2 sm:p-3 rounded-lg bg-[#23223f]/[0.32] cursor-pointer hover:bg-[#23223f]/[0.45] transition-colors border-l-4 border-indigo-400 overflow-hidden" onClick={() => handleResponseClick(interaction)}>
                         <div className="flex flex-col gap-1 mb-2">
-                           <Badge variant="secondary" className="bg-qrypto-primary w-fit text-xs">
-                             {getAgentName(interaction.interaction_type)} agent responded
-                           </Badge>
+                           <div className="flex items-center gap-2">
+                             <Badge variant="secondary" className="bg-qrypto-primary w-fit text-xs">
+                               Nakamoto response
+                             </Badge>
+                             {interaction.metadata?.aiProvider && (
+                               <Badge variant="outline" className="bg-slate-100 text-slate-800 w-fit text-xs">
+                                 {interaction.metadata.aiProvider}
+                               </Badge>
+                             )}
+                           </div>
                           {interaction.metadata && (
                             <div className="flex flex-wrap gap-1">
                               {interaction.metadata.qryptoItemsFound > 0 && (
