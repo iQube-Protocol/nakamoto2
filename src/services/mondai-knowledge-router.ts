@@ -62,7 +62,9 @@ export class MonDAIKnowledgeRouter {
     const iQubeTerms = [
       'proof of state', 'proof-of-state', 'iqube', 'metaqube', 'blakqube', 'tokenqube',
       'cryptographic entanglement', 'dual-network', 'agentic ai', 'didqube',
-      'proof-of-risk', 'risk scoring', 'data primitive', 'aigent protocol'
+      'proof-of-risk', 'risk scoring', 'data primitive', 'aigent protocol',
+      'contentqube', 'contentqubes', 'dataqube', 'dataqubes', 'toolqube', 'toolqubes',
+      'modelqube', 'modelqubes', 'agentqube', 'agentqubes', 'aigent'
     ];
     
     // COYN-specific terms
