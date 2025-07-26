@@ -24,7 +24,7 @@ const SimplifiedMonDAIInterface: React.FC = React.memo(() => {
   
   // Memoize the welcome message to prevent recreation on every render
   const welcomeMessage = useMemo(() => {
-    const aiProvider = veniceActivated ? "Venice AI" : "OpenAI";
+    const aiProvider = veniceActivated ? "Venice AI (Uncensored)" : "OpenAI";
     const memoryStatus = conversationId ? "🧠 **Memory Active** - I can remember our conversation" : "💭 **New Session** - Starting fresh";
     
     console.log(`🎯 MonDAI Interface: Creating welcome message with memory status: ${memoryStatus}`);
@@ -32,13 +32,13 @@ const SimplifiedMonDAIInterface: React.FC = React.memo(() => {
     return {
       id: "1",
       sender: "agent" as const,
-      message: `Hello! I'm Aigent Nakamoto, your crypto-agentic AI assistant powered by **${aiProvider}** with access to both the **Qrypto COYN technical knowledge base** and the **mẹtaKnyts narrative universe**.
+      message: `Hello! I'm Aigent Nakamoto, your crypto-agentic AI assistant powered by **${aiProvider}** with access to the **iQube Protocol, COYN, Qrypto, and metaKnyts knowledge bases**.
 
 ${memoryStatus}
 
 I can help you with:
 • **Technical concepts**: iQubes, VFTs, COYN Protocol, tokenomics, smart contracts
-• **Narrative elements**: mẹtaKnyts characters (KnowOne, Satoshi Nakamoto, FANG Gang, BAT Pack)
+• **Narrative elements**: metaKnyts characters (KnowOne, Satoshi Nakamoto, FANG Gang, BAT Pack)
 • **Worldbuilding**: Terra/Digitterra dual reality framework  
 • **Philosophy**: Clean Data principles, decentralized AI governance
 • **Bitcoin & Crypto**: Runes, protocols, blockchain technology
@@ -51,12 +51,12 @@ What would you like to explore today?`,
       timestamp: new Date().toISOString(),
       metadata: {
         version: "1.0",
-        modelUsed: veniceActivated ? "venice-gpt-4o-mini" : "gpt-4o-mini",
-        knowledgeSource: "Qrypto COYN + mẹtaKnyts Knowledge Bases",
+        modelUsed: veniceActivated ? "venice-uncensored" : "gpt-4o-mini",
+        knowledgeSource: "iQube + COYN + Qrypto + metaKnyts Knowledge Bases",
         qryptoItemsFound: 0,
         metaKnytsItemsFound: 0,
         citations: [],
-        aiProvider: veniceActivated ? "Venice AI" : "OpenAI",
+        aiProvider: veniceActivated ? "Venice AI (Uncensored)" : "OpenAI",
         conversationMemoryUsed: !!conversationId
       }
     };
@@ -159,7 +159,7 @@ What would you like to explore today?`,
     <div className="h-screen flex flex-col">
       <SimplifiedAgentInterface
         title="Aigent Nakamoto"
-        description={`Crypto-Agentic AI for Qrypto COYN + mẹtaKnyts ${veniceActivated ? '(Venice AI)' : '(OpenAI)'} ${conversationId ? '🧠' : '💭'}`}
+        description={`Crypto-Agentic AI for iQube + COYN + Qrypto + metaKnyts ${veniceActivated ? '(Venice AI)' : '(OpenAI)'} ${conversationId ? '🧠' : '💭'}`}
         agentType="mondai" 
         onMessageSubmit={handleAIMessage}
         conversationId={conversationId}
