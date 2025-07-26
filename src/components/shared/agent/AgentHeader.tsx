@@ -51,7 +51,7 @@ const AgentHeader = ({ title, description, isProcessing, additionalActions }: Ag
             {title === "Aigent Nakamoto" ? (
               <>
                 <Bot className="mr-2 h-5 w-5 text-qrypto-accent" />
-                <div className="relative mr-3">
+                <div className="relative mr-3 ml-2">
                   <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center" 
                        style={{
                          clipPath: 'polygon(50% 0%, 100% 25%, 100% 75%, 50% 100%, 0% 75%, 0% 25%)'
