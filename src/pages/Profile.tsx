@@ -4,6 +4,7 @@ import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
 import { useUserInteractions } from '@/hooks/use-user-interactions';
 import { getRelativeTime } from '@/lib/utils';
 import ResponseDialog from '@/components/profile/ResponseDialog';
@@ -45,26 +46,41 @@ const Profile = () => {
   if (!user) return null;
   
   return (
-    <div className="min-h-screen w-full overflow-x-hidden">
-      <div className="max-w-full px-3 sm:px-6 py-3 sm:py-6 space-y-4">
-        {/* User info section - mobile optimized */}
-        <Card className="w-full">
-          <CardHeader className="pb-3 px-3 sm:px-6">
-            <CardTitle className="text-base sm:text-lg">Profile</CardTitle>
-            <div className="mt-2">
-              <Badge variant="outline" className="text-xs break-all max-w-full">
-                {user.email}
-              </Badge>
-            </div>
-          </CardHeader>
-          <CardContent className="px-3 sm:px-6 pb-4">
-            <div className="space-y-3">
-              <div className="grid grid-cols-2 gap-2 text-xs sm:text-sm">
-                <span className="text-muted-foreground">ID:</span>
-                <span className="font-mono bg-muted px-2 py-1 rounded text-xs break-all">
-                  {user.id.substring(0, 8)}...
-                </span>
-              </div>
+    <TooltipProvider>
+      <div className="min-h-screen w-full overflow-x-hidden">
+        <div className="max-w-full px-3 sm:px-6 py-3 sm:py-6 space-y-4">
+          {/* User info section - mobile optimized */}
+          <Card className="w-full">
+            <CardHeader className="pb-3 px-3 sm:px-6">
+              <CardTitle className="text-base sm:text-lg">Profile</CardTitle>
+            </CardHeader>
+            <CardContent className="px-3 sm:px-6 pb-4">
+              <div className="space-y-3">
+                <div className="grid grid-cols-2 gap-2 text-xs sm:text-sm">
+                  <span className="text-muted-foreground">Account Email:</span>
+                  {user.email.length > 30 ? (
+                    <Tooltip>
+                      <TooltipTrigger asChild>
+                        <span className="font-mono bg-muted px-2 py-1 rounded text-xs break-all cursor-help">
+                          {user.email.substring(0, 25)}...
+                        </span>
+                      </TooltipTrigger>
+                      <TooltipContent>
+                        <p>{user.email}</p>
+                      </TooltipContent>
+                    </Tooltip>
+                  ) : (
+                    <span className="font-mono bg-muted px-2 py-1 rounded text-xs">
+                      {user.email}
+                    </span>
+                  )}
+                </div>
+                <div className="grid grid-cols-2 gap-2 text-xs sm:text-sm">
+                  <span className="text-muted-foreground">ID:</span>
+                  <span className="font-mono bg-muted px-2 py-1 rounded text-xs break-all">
+                    {user.id.substring(0, 8)}...
+                  </span>
+                </div>
               <div className="grid grid-cols-2 gap-2 text-xs sm:text-sm">
                 <span className="text-muted-foreground">Last Sign In:</span>
                 <span className="break-words">{getRelativeTime(new Date(user.last_sign_in_at || ''))}</span>
@@ -207,10 +223,11 @@ const Profile = () => {
             </ScrollArea>
           </CardContent>
         </Card>
-      </div>
+        </div>
 
-      <ResponseDialog selectedResponse={selectedResponse} isOpen={isDialogOpen} onClose={handleDialogClose} />
-    </div>
+        <ResponseDialog selectedResponse={selectedResponse} isOpen={isDialogOpen} onClose={handleDialogClose} />
+      </div>
+    </TooltipProvider>
   );
 };
 
