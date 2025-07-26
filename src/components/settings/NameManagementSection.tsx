@@ -3,17 +3,20 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Badge } from '@/components/ui/badge';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { Pencil, User, Users } from 'lucide-react';
+import { Avatar, AvatarFallback, AvatarImage } from '@/components/ui/avatar';
+import { Pencil, User, Users, Camera } from 'lucide-react';
 import { NamePreferenceService, NamePreference, NameConflictData } from '@/services/name-preference-service';
 import { NameConflictDialog } from './NameConflictDialog';
 import { useAuth } from '@/hooks/use-auth';
 import { supabase } from '@/integrations/supabase/client';
+import { toast } from 'sonner';
 
 interface PersonaNameInfo {
   personaType: 'knyt' | 'qrypto';
   currentName: { firstName: string; lastName: string };
   source: 'invitation' | 'linkedin' | 'custom' | 'default';
   preference?: NamePreference;
+  profileImageUrl?: string;
 }
 
 export const NameManagementSection: React.FC = () => {
@@ -22,6 +25,7 @@ export const NameManagementSection: React.FC = () => {
     open: boolean;
     data?: any;
   }>({ open: false, data: undefined });
+  const [uploading, setUploading] = useState<string | null>(null);
   const { user } = useAuth();
 
   useEffect(() => {
@@ -50,6 +54,7 @@ export const NameManagementSection: React.FC = () => {
         },
         source: knytPreference?.name_source || 'default',
         preference: knytPreference || undefined,
+        profileImageUrl: knytData.profile_image_url || '',
       });
     }
 
@@ -70,6 +75,7 @@ export const NameManagementSection: React.FC = () => {
         },
         source: qryptoPreference?.name_source || 'default',
         preference: qryptoPreference || undefined,
+        profileImageUrl: qryptoData.profile_image_url || '',
       });
     }
 
@@ -87,6 +93,46 @@ export const NameManagementSection: React.FC = () => {
 
   const getSourceIcon = (personaType: string) => {
     return personaType === 'knyt' ? <User className="h-4 w-4" /> : <Users className="h-4 w-4" />;
+  };
+
+  const handleImageUpload = async (persona: PersonaNameInfo, file: File) => {
+    if (!user) return;
+
+    setUploading(persona.personaType);
+    try {
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/${persona.personaType}_${Date.now()}.${fileExt}`;
+
+      // Upload file to storage
+      const { error: uploadError } = await supabase.storage
+        .from('persona-profile-images')
+        .upload(fileName, file);
+
+      if (uploadError) throw uploadError;
+
+      // Get public URL
+      const { data: { publicUrl } } = supabase.storage
+        .from('persona-profile-images')
+        .getPublicUrl(fileName);
+
+      // Update persona table with new image URL
+      const tableName = persona.personaType === 'knyt' ? 'knyt_personas' : 'qrypto_personas';
+      const { error: updateError } = await supabase
+        .from(tableName)
+        .update({ profile_image_url: publicUrl })
+        .eq('user_id', user.id);
+
+      if (updateError) throw updateError;
+
+      // Refresh the persona names to show updated image
+      await loadPersonaNames();
+      toast.success('Profile image updated successfully');
+    } catch (error: any) {
+      console.error('Error uploading image:', error);
+      toast.error('Failed to upload profile image');
+    } finally {
+      setUploading(null);
+    }
   };
 
   const handleEdit = async (persona: PersonaNameInfo) => {
@@ -132,6 +178,34 @@ export const NameManagementSection: React.FC = () => {
             <div key={persona.personaType} className="flex items-center justify-between p-4 border rounded-lg">
               <div className="flex items-center gap-3">
                 {getSourceIcon(persona.personaType)}
+                <div className="relative group">
+                  <Avatar className="h-10 w-10">
+                    <AvatarImage src={persona.profileImageUrl} />
+                    <AvatarFallback>
+                      {persona.personaType === 'knyt' ? 'K' : 'Q'}
+                    </AvatarFallback>
+                  </Avatar>
+                  <input
+                    type="file"
+                    accept="image/*"
+                    className="hidden"
+                    id={`upload-${persona.personaType}`}
+                    onChange={(e) => {
+                      const file = e.target.files?.[0];
+                      if (file) handleImageUpload(persona, file);
+                    }}
+                  />
+                  <label
+                    htmlFor={`upload-${persona.personaType}`}
+                    className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                  >
+                    {uploading === persona.personaType ? (
+                      <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
+                    ) : (
+                      <Camera className="h-4 w-4 text-white" />
+                    )}
+                  </label>
+                </div>
                 <div>
                   <div className="font-medium">
                     {persona.personaType.toUpperCase()} Profile

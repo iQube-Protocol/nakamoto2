@@ -337,6 +337,7 @@ export type Database = {
           "Paper-Comics-Owned": string | null
           "Phone-Number": string | null
           Profession: string | null
+          profile_image_url: string | null
           "Telegram-Handle": string | null
           "ThirdWeb-Public-Key": string | null
           "TikTok-Handle": string | null
@@ -380,6 +381,7 @@ export type Database = {
           "Paper-Comics-Owned"?: string | null
           "Phone-Number"?: string | null
           Profession?: string | null
+          profile_image_url?: string | null
           "Telegram-Handle"?: string | null
           "ThirdWeb-Public-Key"?: string | null
           "TikTok-Handle"?: string | null
@@ -423,6 +425,7 @@ export type Database = {
           "Paper-Comics-Owned"?: string | null
           "Phone-Number"?: string | null
           Profession?: string | null
+          profile_image_url?: string | null
           "Telegram-Handle"?: string | null
           "ThirdWeb-Public-Key"?: string | null
           "TikTok-Handle"?: string | null
@@ -455,6 +458,7 @@ export type Database = {
           "LinkedIn-Profile-URL": string | null
           "Local-City": string | null
           Profession: string | null
+          profile_image_url: string | null
           "Qrypto-ID": string | null
           "Telegram-Handle": string | null
           "TikTok-Handle": string | null
@@ -483,6 +487,7 @@ export type Database = {
           "LinkedIn-Profile-URL"?: string | null
           "Local-City"?: string | null
           Profession?: string | null
+          profile_image_url?: string | null
           "Qrypto-ID"?: string | null
           "Telegram-Handle"?: string | null
           "TikTok-Handle"?: string | null
@@ -511,6 +516,7 @@ export type Database = {
           "LinkedIn-Profile-URL"?: string | null
           "Local-City"?: string | null
           Profession?: string | null
+          profile_image_url?: string | null
           "Qrypto-ID"?: string | null
           "Telegram-Handle"?: string | null
           "TikTok-Handle"?: string | null
