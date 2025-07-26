@@ -37,19 +37,12 @@ const ResponseDialog = ({ selectedResponse, isOpen, onClose }: ResponseDialogPro
             <Badge variant="outline" className="bg-qrypto-primary/20">
               {getAgentName(selectedResponse?.interaction_type)}
             </Badge>
-            <span>•</span>
-            <span>{selectedResponse?.created_at ? new Date(selectedResponse.created_at).toLocaleString() : ''}</span>
             {selectedResponse?.metadata?.aiProvider && (
               <>
                 <span>•</span>
                 <Badge variant="outline" className="text-xs bg-green-100 text-green-800">
-                  {selectedResponse.metadata.aiProvider}
+                  {selectedResponse.metadata.aiProvider === 'Venice AI (Uncensored)' ? 'Venice AI' : selectedResponse.metadata.aiProvider}
                 </Badge>
-                {selectedResponse.metadata.modelUsed && (
-                  <Badge variant="outline" className="text-xs bg-blue-100 text-blue-800">
-                    {selectedResponse.metadata.modelUsed}
-                  </Badge>
-                )}
               </>
             )}
           </DialogDescription>
@@ -63,6 +56,8 @@ const ResponseDialog = ({ selectedResponse, isOpen, onClose }: ResponseDialogPro
                   <Badge variant="outline" className="bg-orange-100 text-orange-800">
                     Your Question
                   </Badge>
+                  <span>•</span>
+                  <span>{selectedResponse?.created_at ? new Date(selectedResponse.created_at).toLocaleString() : ''}</span>
                 </h4>
                 <div className="p-4 rounded-lg bg-[#2d1f17]/45 border-l-4 border-orange-400">
                   <div className="conversational-content">
@@ -76,11 +71,11 @@ const ResponseDialog = ({ selectedResponse, isOpen, onClose }: ResponseDialogPro
               <div className="historic-response agent-theme">
                 <h4 className="font-medium mb-3 text-sm flex items-center gap-2">
                    <Badge variant="secondary" className="bg-qrypto-primary">
-                     Nakamoto response
+                     Nakamoto
                    </Badge>
-                   {selectedResponse?.metadata?.aiProvider && (
-                     <Badge variant="outline" className="bg-slate-100 text-slate-800">
-                       {selectedResponse.metadata.aiProvider}
+                   {selectedResponse?.metadata?.modelUsed && (
+                     <Badge variant="outline" className="text-xs bg-blue-100 text-blue-800">
+                       {selectedResponse.metadata.modelUsed}
                      </Badge>
                    )}
                   {selectedResponse.metadata && (
