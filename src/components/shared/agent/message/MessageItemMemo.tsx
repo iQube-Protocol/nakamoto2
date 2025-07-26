@@ -1,5 +1,5 @@
 
-import React from 'react';
+import React, { useState } from 'react';
 import { AgentMessage } from '@/lib/types';
 import MessageContent from './MessageContent';
 import AudioPlayback from './AudioPlayback';
@@ -32,6 +32,16 @@ const MessageItemMemo: React.FC<MessageItemProps> = React.memo(({
   const isUser = message.sender === 'user';
   const isSystem = message.sender === 'system';
   
+  // Track the currently selected model for this message
+  const [selectedModel, setSelectedModel] = useState<string>(
+    message.metadata?.modelUsed || 'gpt-4o-mini'
+  );
+  
+  const handleModelChange = (model: string, provider: 'openai' | 'venice') => {
+    setSelectedModel(model);
+    onModelChange?.(model, provider);
+  };
+  
   return (
     <div className={`message-item ${isUser ? 'user-message' : isSystem ? 'system-message' : 'agent-message'}`}>
       <div className="message-content">
@@ -47,11 +57,11 @@ const MessageItemMemo: React.FC<MessageItemProps> = React.memo(({
         
         {message.metadata && (
           <MessageMetadata 
-            message={message} 
+            message={{...message, metadata: {...message.metadata, modelUsed: selectedModel}}} 
             metisActive={false} 
             isPlaying={isPlaying || false} 
             onPlayAudio={onPlayAudio || (() => {})} 
-            onModelChange={onModelChange}
+            onModelChange={handleModelChange}
           />
         )}
       </div>
