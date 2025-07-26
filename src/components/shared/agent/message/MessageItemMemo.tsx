@@ -17,6 +17,7 @@ interface MessageItemProps {
   };
   onActivateAgent?: (agentName: string, fee: number, description: string) => void;
   onDismissRecommendation?: (agentName: string) => void;
+  onModelChange?: (model: string, provider: 'openai' | 'venice') => void;
 }
 
 const MessageItemMemo: React.FC<MessageItemProps> = React.memo(({ 
@@ -25,7 +26,8 @@ const MessageItemMemo: React.FC<MessageItemProps> = React.memo(({
   onPlayAudio,
   recommendations,
   onActivateAgent,
-  onDismissRecommendation
+  onDismissRecommendation,
+  onModelChange
 }) => {
   const isUser = message.sender === 'user';
   const isSystem = message.sender === 'system';
@@ -49,6 +51,7 @@ const MessageItemMemo: React.FC<MessageItemProps> = React.memo(({
             metisActive={false} 
             isPlaying={isPlaying || false} 
             onPlayAudio={onPlayAudio || (() => {})} 
+            onModelChange={onModelChange}
           />
         )}
       </div>

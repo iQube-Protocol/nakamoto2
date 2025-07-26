@@ -9,9 +9,10 @@ interface MessageMetadataProps {
   metisActive: boolean;
   isPlaying: boolean;
   onPlayAudio: (messageId: string) => void;
+  onModelChange?: (model: string, provider: 'openai' | 'venice') => void;
 }
 
-const MessageMetadata = ({ message, metisActive, isPlaying, onPlayAudio }: MessageMetadataProps) => {
+const MessageMetadata = ({ message, metisActive, isPlaying, onPlayAudio, onModelChange }: MessageMetadataProps) => {
   return (
     <>
       <div className="flex items-center justify-between mb-1">
@@ -21,6 +22,7 @@ const MessageMetadata = ({ message, metisActive, isPlaying, onPlayAudio }: Messa
               ...message.metadata,
               metisActive: message.metadata.metisActive || metisActive
             } : { metisActive: metisActive }} 
+            onModelChange={onModelChange}
           />
         )}
         {message.sender === 'system' && (

@@ -112,23 +112,33 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
   return (
     <DropdownMenu open={isOpen} onOpenChange={setIsOpen}>
       <DropdownMenuTrigger asChild>
-        <Badge 
-          variant="secondary" 
-          className={`text-[10px] py-0 h-4 flex items-center cursor-pointer hover:bg-secondary/80 transition-colors ${className}`}
+        <div 
+          onClick={(e) => {
+            e.stopPropagation();
+            e.preventDefault();
+          }}
         >
-          {iqubeType === 'AgentQube' ? (
-            <Brain className="h-3 w-3 mr-1" />
-          ) : (
-            <Cpu className="h-3 w-3 mr-1" />
-          )}
-          <span>{getModelDisplayName(currentModel)}</span>
-          <ChevronDown className="h-2 w-2 ml-1" />
-        </Badge>
+          <Badge 
+            variant="secondary" 
+            className={`text-[10px] py-0 h-4 flex items-center cursor-pointer hover:bg-secondary/80 transition-colors ${className}`}
+          >
+            {iqubeType === 'AgentQube' ? (
+              <Brain className="h-3 w-3 mr-1" />
+            ) : (
+              <Cpu className="h-3 w-3 mr-1" />
+            )}
+            <span>{getModelDisplayName(currentModel)}</span>
+            <ChevronDown className="h-2 w-2 ml-1" />
+          </Badge>
+        </div>
       </DropdownMenuTrigger>
       <DropdownMenuContent 
         align="start" 
         className="w-64 bg-popover border border-border shadow-lg z-[9999]"
         sideOffset={4}
+        onCloseAutoFocus={(e) => e.preventDefault()}
+        onEscapeKeyDown={(e) => e.stopPropagation()}
+        onPointerDownOutside={(e) => e.stopPropagation()}
       >
         <DropdownMenuLabel className="text-xs font-medium">
           Select AI Model
@@ -142,13 +152,18 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
         {getProviderModels('openai').map((model) => (
           <DropdownMenuItem
             key={model.id}
-            onClick={(e) => {
-              e.stopPropagation();
+            onSelect={(e) => {
+              e.preventDefault();
               handleModelSelect(model);
             }}
-            className={`text-xs cursor-pointer ${
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              handleModelSelect(model);
+            }}
+            className={`text-xs cursor-pointer focus:bg-accent hover:bg-accent ${
               currentModel === model.id && currentProvider === 'openai' 
-                ? 'bg-accent' 
+                ? 'bg-accent text-accent-foreground' 
                 : ''
             }`}
           >
@@ -177,13 +192,18 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
         {getProviderModels('venice').map((model) => (
           <DropdownMenuItem
             key={model.id}
-            onClick={(e) => {
-              e.stopPropagation();
+            onSelect={(e) => {
+              e.preventDefault();
               handleModelSelect(model);
             }}
-            className={`text-xs cursor-pointer ${
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              handleModelSelect(model);
+            }}
+            className={`text-xs cursor-pointer focus:bg-accent hover:bg-accent ${
               currentModel === model.id && currentProvider === 'venice' 
-                ? 'bg-accent' 
+                ? 'bg-accent text-accent-foreground' 
                 : ''
             }`}
           >

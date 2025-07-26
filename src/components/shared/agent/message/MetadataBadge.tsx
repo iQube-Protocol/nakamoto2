@@ -31,14 +31,15 @@ const MetadataBadge = ({ metadata, onModelChange }: MetadataBadgeProps) => {
   const iqubeType = metadata.iqubeType || 'DataQube';
   
   return (
-    <div className="flex items-center">
+    <div className="flex items-center gap-1">
+      {/* MCP Badge with Tooltip - Isolated */}
       <Tooltip>
         <TooltipTrigger asChild>
-          <Badge variant="outline" className="text-[10px] mr-1 py-0 h-4">
+          <Badge variant="outline" className="text-[10px] py-0 h-4">
             <span className="text-muted-foreground">MCP v{metadata.version || '1.0'}</span>
           </Badge>
         </TooltipTrigger>
-        <TooltipContent>
+        <TooltipContent className="z-50">
           <p className="text-xs">Using Model Context Protocol</p>
           {metadata.contextRetained && 
             <p className="text-xs text-muted-foreground">Context maintained between messages</p>
@@ -46,14 +47,18 @@ const MetadataBadge = ({ metadata, onModelChange }: MetadataBadgeProps) => {
         </TooltipContent>
       </Tooltip>
       
+      {/* Model Selector - Completely Separate */}
       {metadata.modelUsed && (
-        <ModelSelector
-          currentModel={metadata.modelUsed}
-          iqubeType={iqubeType}
-          onModelChange={onModelChange}
-        />
+        <div className="relative">
+          <ModelSelector
+            currentModel={metadata.modelUsed}
+            iqubeType={iqubeType}
+            onModelChange={onModelChange}
+          />
+        </div>
       )}
       
+      {/* Metis Badge - Isolated */}
       <MetisAgentBadge isActive={isMetisActive} />
     </div>
   );
