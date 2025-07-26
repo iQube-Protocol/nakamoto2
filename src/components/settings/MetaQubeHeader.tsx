@@ -1,6 +1,7 @@
 
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
+import { Avatar, AvatarImage, AvatarFallback } from '@/components/ui/avatar';
 import { MetaQube } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { Switch } from '@/components/ui/switch';
@@ -11,6 +12,7 @@ interface MetaQubeHeaderProps {
   metaQube: MetaQube;
   isActive: boolean;
   onToggleActive: () => void;
+  profileImageUrl?: string;
 }
 
 interface DotScoreProps {
@@ -65,7 +67,7 @@ const DotScore = ({ value, label, type }: DotScoreProps) => {
   );
 };
 
-const MetaQubeHeader = ({ metaQube, isActive, onToggleActive }: MetaQubeHeaderProps) => {
+const MetaQubeHeader = ({ metaQube, isActive, onToggleActive, profileImageUrl }: MetaQubeHeaderProps) => {
   // Calculate Trust Score as average of Accuracy and Verifiability
   const trustScore = Math.round(((metaQube["Accuracy-Score"] + metaQube["Verifiability-Score"]) / 2) * 10) / 10;
   
@@ -104,7 +106,16 @@ const MetaQubeHeader = ({ metaQube, isActive, onToggleActive }: MetaQubeHeaderPr
               {getQubeIcon()}
             </div>
           </ScoreTooltip>
-          <span className="text-sm font-medium">{metaQube["iQube-Identifier"]}</span>
+          <Avatar className="h-6 w-6">
+            <AvatarImage src={profileImageUrl} />
+            <AvatarFallback className="text-xs">
+              {metaQube["iQube-Identifier"].includes("Qrypto") ? "Q" : 
+               metaQube["iQube-Identifier"].includes("KNYT") ? "K" : "P"}
+            </AvatarFallback>
+          </Avatar>
+          <span className="text-sm font-medium">
+            {metaQube["iQube-Identifier"].replace(" iQube", "")}
+          </span>
         </div>
         <ScoreTooltip type={getTooltipType()}>
           <div className="cursor-help">
