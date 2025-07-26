@@ -50,6 +50,7 @@ const AgentHeader = ({ title, description, isProcessing, additionalActions }: Ag
           <h2 className="text-xl font-semibold flex items-center cursor-help">
             {title === "Aigent Nakamoto" ? (
               <>
+                <Bot className="mr-2 h-5 w-5 text-qrypto-accent" />
                 <div className="relative mr-3">
                   <div className="w-8 h-8 bg-gradient-to-br from-blue-500 to-purple-600 flex items-center justify-center" 
                        style={{
