@@ -10,6 +10,7 @@ import {
 import ScoreTooltip from '../../ScoreTooltips';
 import { Cpu, Brain } from 'lucide-react';
 import MetisAgentBadge from './MetisAgentBadge';
+import ModelSelector from './ModelSelector';
 
 interface MetadataBadgeProps {
   metadata: {
@@ -20,9 +21,10 @@ interface MetadataBadgeProps {
     iqubeType?: 'DataQube' | 'AgentQube';
     [key: string]: any;
   } | null;
+  onModelChange?: (model: string, provider: 'openai' | 'venice') => void;
 }
 
-const MetadataBadge = ({ metadata }: MetadataBadgeProps) => {
+const MetadataBadge = ({ metadata, onModelChange }: MetadataBadgeProps) => {
   if (!metadata) return null;
   
   const isMetisActive = metadata.metisActive === true;
@@ -38,14 +40,11 @@ const MetadataBadge = ({ metadata }: MetadataBadgeProps) => {
             </Badge>
             {metadata.modelUsed && (
               <ScoreTooltip type={iqubeType === 'AgentQube' ? 'agentQube' : 'dataQube'}>
-                <Badge variant="secondary" className="text-[10px] py-0 h-4 flex items-center">
-                  {iqubeType === 'AgentQube' ? (
-                    <Brain className="h-3 w-3 mr-1" />
-                  ) : (
-                    <Cpu className="h-3 w-3 mr-1" />
-                  )}
-                  {metadata.modelUsed}
-                </Badge>
+                <ModelSelector
+                  currentModel={metadata.modelUsed}
+                  iqubeType={iqubeType}
+                  onModelChange={onModelChange}
+                />
               </ScoreTooltip>
             )}
             <MetisAgentBadge isActive={isMetisActive} />
