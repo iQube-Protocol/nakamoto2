@@ -20,7 +20,13 @@ export const storeUserInteraction = async (data: InteractionData) => {
       return { success: false, error: new Error('User not authenticated') };
     }
 
-    console.log('Storing interaction for user:', data.user_id, 'type:', data.interactionType);
+    console.log('STORING USER INTERACTION:', {
+      userId: data.user_id,
+      type: data.interactionType,
+      hasMetadata: !!data.metadata,
+      metadata: data.metadata,
+      metadataKeys: data.metadata ? Object.keys(data.metadata) : []
+    });
 
     const { error, data: insertedData } = await (supabase as any)
       .from('user_interactions')
@@ -83,10 +89,13 @@ export const getUserInteractions = async (
     console.log(`DB QUERY: Retrieved ${data?.length || 0} interactions for ${interactionType || 'all'} type`);
     
     if (data && data.length > 0) {
-      console.log('Sample interaction:', {
+      console.log('Sample interaction with metadata:', {
         id: data[0].id,
         type: data[0].interaction_type, 
         created_at: data[0].created_at,
+        hasMetadata: !!data[0].metadata,
+        metadata: data[0].metadata,
+        metadataKeys: data[0].metadata ? Object.keys(data[0].metadata) : []
       });
     } else {
       console.log('No interactions found for the user');
