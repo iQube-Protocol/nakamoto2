@@ -169,10 +169,20 @@ export const useMessageSubmit = (
             agentType: agentType
           });
 
+          // Extract metadata from agent response, preserving all fields for database storage
+          const metadata = agentResponse.metadata || null;
+          
+          console.log('Agent response metadata being passed to storage:', {
+            metadata,
+            hasMetadata: !!metadata,
+            fields: metadata ? Object.keys(metadata) : []
+          });
+
           const result = await processAgentInteraction(
             userMessage.message,
             agentType,
-            agentResponse.message
+            agentResponse.message,
+            metadata
           );
           
           if (!result.success) {
