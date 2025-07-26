@@ -13,7 +13,7 @@ const Profile = () => {
   const {
     user
   } = useAuth();
-  const [activeTab, setActiveTab] = useState<'learn' | 'earn' | 'connect' | 'mondai'>('learn');
+  const [activeTab, setActiveTab] = useState<'learn' | 'earn' | 'connect' | 'mondai'>('mondai');
   const [selectedResponse, setSelectedResponse] = useState<any>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -89,20 +89,20 @@ const Profile = () => {
             <CardTitle className="text-base sm:text-lg">History</CardTitle>
             <div className="flex flex-wrap gap-2 mt-3">
               <button 
-                onClick={() => setActiveTab('learn')} 
-                className={`px-3 py-2 text-xs sm:text-sm rounded transition-colors ${
-                  activeTab === 'learn' ? 'bg-qrypto-primary text-white' : 'bg-muted hover:bg-muted/80'
-                }`}
-              >
-                Learn
-              </button>
-              <button 
                 onClick={() => setActiveTab('mondai')} 
                 className={`px-3 py-2 text-xs sm:text-sm rounded transition-colors ${
                   activeTab === 'mondai' ? 'bg-qrypto-primary text-white' : 'bg-muted hover:bg-muted/80'
                 }`}
               >
                 Nakamoto
+              </button>
+              <button 
+                onClick={() => setActiveTab('learn')} 
+                className={`px-3 py-2 text-xs sm:text-sm rounded transition-colors ${
+                  activeTab === 'learn' ? 'bg-qrypto-primary text-white' : 'bg-muted hover:bg-muted/80'
+                }`}
+              >
+                Learn
               </button>
               <button 
                 onClick={() => setActiveTab('earn')} 
