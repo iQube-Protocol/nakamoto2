@@ -10,6 +10,7 @@ import { invitationService, type UserDetail } from '@/services/invitation-servic
 import { Button } from '@/components/ui/button';
 import { toast } from 'sonner';
 import { personaDataSync } from '@/services/persona-data-sync';
+import UserPersonaDisplay from './UserPersonaDisplay';
 
 interface UserDetailModalProps {
   open: boolean;
@@ -227,47 +228,13 @@ const UserDetailModal = ({ open, onClose, userId }: UserDetailModalProps) => {
                 </CardContent>
               </Card>
 
-              <Tabs defaultValue="persona-data" className="w-full">
-                <TabsList className="grid w-full grid-cols-2">
-                  <TabsTrigger value="persona-data">Original Invitation Data</TabsTrigger>
-                  <TabsTrigger value="current-persona" disabled={!userDetail.blak_qube_data}>
-                    Current Persona Data {!userDetail.blak_qube_data && '(Not Available)'}
-                  </TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="persona-data" className="space-y-4">
-                  {renderDataSection(
-                    'Original Data from Invitation',
-                    userDetail.persona_data,
-                    <Database className="h-4 w-4" />
-                  )}
-                </TabsContent>
-
-                <TabsContent value="current-persona" className="space-y-4">
-                  {userDetail.blak_qube_data ? (
-                    renderDataSection(
-                      `Current ${userDetail.persona_type === 'knyt' ? 'KNYT' : 'Qrypto'} Persona Data`,
-                      userDetail.blak_qube_data,
-                      <Settings className="h-4 w-4" />
-                    )
-                  ) : (
-                    <Card>
-                      <CardContent className="flex items-center justify-center py-12">
-                        <div className="text-center">
-                          <Settings className="h-12 w-12 text-gray-400 mx-auto mb-4" />
-                          <h3 className="text-lg font-medium text-gray-900 mb-2">No Current Persona Data</h3>
-                          <p className="text-gray-500">
-                            {userDetail.signup_completed 
-                              ? "User hasn't updated their persona data yet."
-                              : "User needs to sign up first before persona data is available."
-                            }
-                          </p>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  )}
-                </TabsContent>
-              </Tabs>
+              {/* Enhanced Persona Data Display */}
+              <UserPersonaDisplay
+                userEmail={userDetail.email}
+                personaType={userDetail.persona_type}
+                originalData={userDetail.persona_data}
+                onDataUpdate={loadUserDetail}
+              />
             </div>
           </ScrollArea>
         ) : (

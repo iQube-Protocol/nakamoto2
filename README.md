@@ -75,6 +75,47 @@ Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-trick
 
 ## Development Lessons Learned
 
+### User Data Reconciliation and Admin Dashboard Enhancement - 2025-07-28
+**Cycles Required:** 12+ cycles
+**Problem:** Dashboard showing only 118 signups when actual database contained 153 users, missing direct signups and incomplete invitation records
+**Root Cause:** 
+1. 32 users signed up directly without invitations, not tracked in dashboard
+2. 3 users had invitation records but signup_completed flag was false despite successful signup
+3. Stats calculator was using hardcoded numbers instead of real-time database queries
+4. Admin interface lacked real-time persona data viewing and updates
+**Solution:** 
+1. **Database Reconciliation**: Created comprehensive migration to add missing invitation records for direct signups marked with 'direct_signup' batch_id
+2. **Real-time Stats**: Updated StatsCalculator to query actual persona table counts instead of hardcoded values
+3. **Enhanced Admin Interface**: Created UserPersonaDisplay component showing both KNYT and Qrypto persona data with real-time updates
+4. **Automatic Reconciliation**: Integrated automatic reconciliation on dashboard refresh to keep data current
+5. **Direct Signup Tracking**: Added new stats card and user category for users who registered outside invitation system
+**Key Insights:** 
+- Database reconciliation must be comprehensive and handle edge cases of users who signed up outside normal flow
+- Real-time stats are critical for accurate dashboard representation
+- Admin interfaces need to show complete user data including both persona types
+- Automatic reconciliation on refresh ensures data stays current
+- Direct signups are legitimate users that need proper tracking and representation
+**Future Reference:** 
+- Always use database queries for real-time stats instead of hardcoded values
+- Implement comprehensive reconciliation that covers all user signup scenarios
+- Build admin interfaces that update in real-time when users modify their data
+- Track and properly categorize users regardless of signup method
+- Regular reconciliation prevents data drift between actual users and invitation tracking
+
+### iQube Knowledge Base Routing Issue - 2025-07-28
+**Cycles Required:** 6 cycles  
+**Problem:** Agent was not using iQube Knowledge Base for "contentQubes" and related terms despite being configured
+**Root Cause:** Knowledge router was missing key terms like "contentqube", "dataqube", "toolqube", etc. from the iQubeTerms array
+**Solution:** Added missing terms to mondai-knowledge-router.ts iQubeTerms array to ensure proper knowledge hierarchy (iQube > COYN > metaKnyts > LLM/Internet)
+**Key Insights:** 
+- Knowledge routing is term-dependent and requires comprehensive term mapping
+- Missing terms can break the intended knowledge hierarchy
+- Knowledge base priority must be explicitly defined through routing logic
+**Future Reference:** 
+- Maintain comprehensive term lists for knowledge routing
+- Test knowledge routing with various related terms to ensure proper hierarchy
+- Document knowledge priority clearly: iQube > COYN > metaKnyts > LLM/Internet
+
 ### Message Content Rendering & Lifecycle Management - July 26, 2025
 **Cycles Required:** 12+ cycles
 **Problem:** Complex text rendering issues with chat interface where markdown content would revert to raw markup format when users navigated away from and returned to the chat interface.

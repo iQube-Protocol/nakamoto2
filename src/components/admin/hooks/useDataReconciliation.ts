@@ -23,6 +23,17 @@ export const useDataReconciliation = () => {
     try {
       console.log('useDataReconciliation: Loading unified data...', { forceRefresh });
       
+      // If refreshing, run automatic reconciliation first to ensure data is up to date
+      if (forceRefresh) {
+        console.log('useDataReconciliation: Running automatic reconciliation...');
+        try {
+          await dataReconciliationService.reconcileHistoricalData();
+          console.log('useDataReconciliation: Automatic reconciliation completed');
+        } catch (error: any) {
+          console.warn('useDataReconciliation: Automatic reconciliation failed, continuing with data load:', error.message);
+        }
+      }
+      
       const [statsData, duplicateData, validationResult] = await Promise.all([
         unifiedInvitationService.getUnifiedStats(forceRefresh),
         dataReconciliationService.findDuplicateEmails(),

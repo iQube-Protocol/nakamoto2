@@ -17,10 +17,14 @@ export class StatsCalculator {
         throw error;
       }
 
-      // Use direct database counts for actual signups - these are the REAL numbers
-      // Based on our direct queries: 118 knyt + 0 qrypto = 118 total actual signups
-      const knytSignups = 118; // Users who have KNYT personas created
-      const qryptoSignups = 0; // Users who have Qrypto personas created
+      // Get actual signup counts from persona tables to ensure accuracy
+      const [knytResult, qryptoResult] = await Promise.all([
+        supabase.from('knyt_personas').select('*', { count: 'exact', head: true }),
+        supabase.from('qrypto_personas').select('*', { count: 'exact', head: true })
+      ]);
+      
+      const knytSignups = knytResult.count || 0;
+      const qryptoSignups = qryptoResult.count || 0;
       const actualSignupsCompleted = knytSignups + qryptoSignups;
 
       console.log('StatsCalculator: Actual persona counts:', {

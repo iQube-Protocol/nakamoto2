@@ -7,6 +7,7 @@ import { Badge } from '@/components/ui/badge';
 import { Search, RefreshCw, User, Mail, Calendar } from 'lucide-react';
 import { toast } from 'sonner';
 import { unifiedInvitationService, type PendingInvitation } from '@/services/unified-invitation';
+import { supabase } from '@/integrations/supabase/client';
 
 interface UserDetail {
   id: string;
@@ -70,6 +71,22 @@ const UserListModal: React.FC<UserListModalProps> = ({
         case 'signupsCompleted':
           userData = await unifiedInvitationService.getCompletedInvitations();
           break;
+        case 'directSignups':
+          // Get users who signed up directly (marked with direct_signup batch_id)
+          const { data: directUsers, error: directError } = await supabase
+            .from('invited_users')
+            .select('id, email, persona_type, invited_at, email_sent, email_sent_at, signup_completed, completed_at, batch_id, send_attempts')
+            .eq('batch_id', 'direct_signup')
+            .eq('signup_completed', true);
+          
+          if (directError) {
+            throw directError;
+          }
+          userData = (directUsers || []).map(user => ({
+            ...user,
+            send_attempts: user.send_attempts || 0
+          }));
+          break;
         default:
           console.warn(`UserListModal: Unknown category: ${category}`);
           userData = [];
@@ -118,6 +135,9 @@ const UserListModal: React.FC<UserListModalProps> = ({
   }, [searchTerm, users]);
 
   const getStatusBadge = (user: UserDetail) => {
+    if (category === 'directSignups') {
+      return <Badge className="bg-purple-600">Direct Signup</Badge>;
+    }
     if (category === 'signupsCompleted') {
       return <Badge className="bg-green-600">Signed Up</Badge>;
     }

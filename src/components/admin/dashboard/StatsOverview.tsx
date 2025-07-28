@@ -10,8 +10,11 @@ interface StatsOverviewProps {
 }
 
 const StatsOverview: React.FC<StatsOverviewProps> = ({ stats, onStatCardClick }) => {
+  // Calculate direct signups (users who signed up but marked as direct_signup)
+  const directSignups = stats ? Math.max(0, stats.signupsCompleted - (stats.totalCreated - stats.signupsCompleted)) : 0;
+  
   return (
-    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
       <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => onStatCardClick('totalCreated', 'Total Created')}>
         <CardContent className="p-4">
           <div className="flex items-center space-x-2">
@@ -70,6 +73,19 @@ const StatsOverview: React.FC<StatsOverviewProps> = ({ stats, onStatCardClick })
               <p className="text-xs text-gray-500">
                 {stats?.conversionRate ? `${stats.conversionRate.toFixed(1)}% conversion` : ''}
               </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => onStatCardClick('directSignups', 'Direct Signups')}>
+        <CardContent className="p-4">
+          <div className="flex items-center space-x-2">
+            <Users className="h-5 w-5 text-purple-600" />
+            <div>
+              <p className="text-sm font-medium text-gray-600">Direct Signups</p>
+              <p className="text-2xl font-bold">{directSignups}</p>
+              <p className="text-xs text-gray-500">No invitation</p>
             </div>
           </div>
         </CardContent>
