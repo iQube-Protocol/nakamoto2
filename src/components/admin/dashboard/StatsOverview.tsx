@@ -6,7 +6,7 @@ import type { UnifiedInvitationStats } from '@/services/unified-invitation';
 
 interface StatsOverviewProps {
   stats: UnifiedInvitationStats | null;
-  onStatCardClick: (category: string, title: string) => void;
+  onStatCardClick: (category: string, title: string, count: number) => void;
 }
 
 const StatsOverview: React.FC<StatsOverviewProps> = ({ stats, onStatCardClick }) => {
@@ -15,7 +15,7 @@ const StatsOverview: React.FC<StatsOverviewProps> = ({ stats, onStatCardClick })
   
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">
-      <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => onStatCardClick('totalCreated', 'Total Created')}>
+      <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => onStatCardClick('totalCreated', 'Total Created', stats?.totalCreated || 0)}>
         <CardContent className="p-4">
           <div className="flex items-center space-x-2">
             <Users className="h-5 w-5 text-blue-600" />
@@ -27,7 +27,7 @@ const StatsOverview: React.FC<StatsOverviewProps> = ({ stats, onStatCardClick })
         </CardContent>
       </Card>
 
-      <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => onStatCardClick('emailsSent', 'Emails Sent')}>
+      <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => onStatCardClick('emailsSent', 'Emails Sent', stats?.emailsSent || 0)}>
         <CardContent className="p-4">
           <div className="flex items-center space-x-2">
             <Mail className="h-5 w-5 text-green-600" />
@@ -39,7 +39,7 @@ const StatsOverview: React.FC<StatsOverviewProps> = ({ stats, onStatCardClick })
         </CardContent>
       </Card>
 
-      <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => onStatCardClick('emailsPending', 'Pending Send')}>
+      <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => onStatCardClick('emailsPending', 'Pending Send', stats?.emailsPending || 0)}>
         <CardContent className="p-4">
           <div className="flex items-center space-x-2">
             <Clock className="h-5 w-5 text-orange-600" />
@@ -51,7 +51,7 @@ const StatsOverview: React.FC<StatsOverviewProps> = ({ stats, onStatCardClick })
         </CardContent>
       </Card>
 
-      <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => onStatCardClick('awaitingSignup', 'Awaiting Signup')}>
+      <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => onStatCardClick('awaitingSignup', 'Awaiting Signup', stats?.awaitingSignup || 0)}>
         <CardContent className="p-4">
           <div className="flex items-center space-x-2">
             <AlertCircle className="h-5 w-5 text-yellow-600" />
@@ -63,7 +63,7 @@ const StatsOverview: React.FC<StatsOverviewProps> = ({ stats, onStatCardClick })
         </CardContent>
       </Card>
 
-      <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => onStatCardClick('signupsCompleted', 'Completed')}>
+      <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => onStatCardClick('signupsCompleted', 'Completed', stats?.signupsCompleted || 0)}>
         <CardContent className="p-4">
           <div className="flex items-center space-x-2">
             <CheckCircle className="h-5 w-5 text-green-600" />
@@ -78,7 +78,7 @@ const StatsOverview: React.FC<StatsOverviewProps> = ({ stats, onStatCardClick })
         </CardContent>
       </Card>
 
-      <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => onStatCardClick('directSignups', 'Direct Signups')}>
+      <Card className="hover:shadow-md transition-shadow cursor-pointer" onClick={() => onStatCardClick('directSignups', 'Direct Signups', directSignups)}>
         <CardContent className="p-4">
           <div className="flex items-center space-x-2">
             <Users className="h-5 w-5 text-purple-600" />

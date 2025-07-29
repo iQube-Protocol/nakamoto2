@@ -25,6 +25,7 @@ interface UserListModalProps {
   onClose: () => void;
   category: string;
   title: string;
+  totalCount?: number;
   onUserClick: (user: UserDetail) => void;
 }
 
@@ -33,6 +34,7 @@ const UserListModal: React.FC<UserListModalProps> = ({
   onClose,
   category,
   title,
+  totalCount,
   onUserClick
 }) => {
   const [users, setUsers] = useState<UserDetail[]>([]);
@@ -57,6 +59,7 @@ const UserListModal: React.FC<UserListModalProps> = ({
             .from('invited_users')
             .select('id, email, persona_type, invited_at, email_sent, email_sent_at, signup_completed, completed_at, batch_id, send_attempts')
             .or('batch_id.neq.direct_signup,batch_id.is.null')
+            .limit(10000)
             .order('invited_at', { ascending: false });
           
           if (allError) throw allError;
@@ -73,6 +76,7 @@ const UserListModal: React.FC<UserListModalProps> = ({
             .select('id, email, persona_type, invited_at, email_sent, email_sent_at, signup_completed, completed_at, batch_id, send_attempts')
             .or('batch_id.neq.direct_signup,batch_id.is.null')
             .eq('email_sent', true)
+            .limit(10000)
             .order('email_sent_at', { ascending: false });
           
           if (sentError) throw sentError;
@@ -89,6 +93,7 @@ const UserListModal: React.FC<UserListModalProps> = ({
             .select('id, email, persona_type, invited_at, email_sent, email_sent_at, signup_completed, completed_at, batch_id, send_attempts')
             .or('batch_id.neq.direct_signup,batch_id.is.null')
             .eq('email_sent', false)
+            .limit(10000)
             .order('invited_at', { ascending: false });
           
           if (pendingError) throw pendingError;
@@ -106,6 +111,7 @@ const UserListModal: React.FC<UserListModalProps> = ({
             .or('batch_id.neq.direct_signup,batch_id.is.null')
             .eq('email_sent', true)
             .eq('signup_completed', false)
+            .limit(10000)
             .order('email_sent_at', { ascending: false });
           
           if (awaitingError) throw awaitingError;
@@ -122,6 +128,7 @@ const UserListModal: React.FC<UserListModalProps> = ({
             .select('id, email, persona_type, invited_at, email_sent, email_sent_at, signup_completed, completed_at, batch_id, send_attempts')
             .or('batch_id.neq.direct_signup,batch_id.is.null')
             .eq('signup_completed', true)
+            .limit(10000)
             .order('completed_at', { ascending: false });
           
           if (completedError) throw completedError;
@@ -137,6 +144,7 @@ const UserListModal: React.FC<UserListModalProps> = ({
             .from('invited_users')
             .select('id, email, persona_type, invited_at, email_sent, email_sent_at, signup_completed, completed_at, batch_id, send_attempts')
             .eq('batch_id', 'direct_signup')
+            .limit(10000)
             .order('invited_at', { ascending: false });
           
           if (directSignupError) throw directSignupError;
@@ -232,7 +240,7 @@ const UserListModal: React.FC<UserListModalProps> = ({
         <DialogHeader className="flex flex-row items-center justify-between">
           <DialogTitle className="flex items-center">
             <User className="h-5 w-5 mr-2" />
-            {title} ({filteredUsers.length})
+            {title} ({totalCount !== undefined ? totalCount : filteredUsers.length})
           </DialogTitle>
           <Button onClick={handleRefresh} variant="outline" size="sm" disabled={isLoading}>
             <RefreshCw className={`h-4 w-4 mr-1 ${isLoading ? 'animate-spin' : ''}`} />

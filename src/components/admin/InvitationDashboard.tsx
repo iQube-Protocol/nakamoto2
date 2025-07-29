@@ -36,7 +36,7 @@ const InvitationDashboard = () => {
   } = useDashboardData();
 
   // Modal states
-  const [userListModal, setUserListModal] = useState<{ open: boolean; category: string; title: string }>({
+  const [userListModal, setUserListModal] = useState<{ open: boolean; category: string; title: string; totalCount?: number }>({
     open: false,
     category: '',
     title: ''
@@ -50,12 +50,12 @@ const InvitationDashboard = () => {
     loadDashboardData();
   }, [loadDashboardData]);
 
-  const handleStatCardClick = (category: string, title: string) => {
-    setUserListModal({ open: true, category, title });
+  const handleStatCardClick = (category: string, title: string, count: number) => {
+    setUserListModal({ open: true, category, title, totalCount: count });
   };
 
   const handleUserClick = (user: UserDetail) => {
-    setUserListModal({ open: false, category: '', title: '' });
+    setUserListModal({ open: false, category: '', title: '', totalCount: undefined });
     setUserDetailModal({ open: true, userId: user.id });
   };
 
@@ -125,9 +125,10 @@ const InvitationDashboard = () => {
       {/* Modals */}
       <UserListModal
         open={userListModal.open}
-        onClose={() => setUserListModal({ open: false, category: '', title: '' })}
+        onClose={() => setUserListModal({ open: false, category: '', title: '', totalCount: undefined })}
         category={userListModal.category}
         title={userListModal.title}
+        totalCount={userListModal.totalCount}
         onUserClick={handleUserClick}
       />
 
