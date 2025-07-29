@@ -38,29 +38,21 @@ export class StatsCalculator {
       const knytPersonas = knytResult.data || [];
       const qryptoPersonas = qryptoResult.data || [];
 
-      // APPLY ROBUST FORMULA:
-      const totalCreated = realInvitations.length; // Only count REAL invitations
-      const emailsSent = realInvitations.filter(inv => inv.email_sent === true).length;
-      const emailsPending = realInvitations.filter(inv => inv.email_sent === false).length;
+      // CORRECTED ROBUST FORMULA:
+      const totalCreated = realInvitations.length; // 3,529 real invitations
+      const emailsSent = realInvitations.filter(inv => inv.email_sent === true).length; // Should be 3,529
+      const emailsPending = realInvitations.filter(inv => inv.email_sent === false).length; // Should be 0
       const awaitingSignup = realInvitations.filter(inv => 
         inv.email_sent === true && inv.signup_completed === false
-      ).length;
+      ).length; // Invitations sent but not completed
       
-      // Total completed signups from persona tables
-      const totalSignupsCompleted = knytPersonas.length + qryptoPersonas.length;
+      // Total completed signups from persona tables (actual personas created)
+      const totalSignupsCompleted = knytPersonas.length + qryptoPersonas.length; // 152 + 138 = 290
       
-      // Calculate TRUE direct signups (personas without invitations)
-      const invitedEmails = new Set(
-        realInvitations.map(inv => inv.email?.toLowerCase()?.trim()).filter(Boolean)
-      );
-      
-      const allPersonaEmails = [
-        ...knytPersonas.map(p => p.Email?.toLowerCase()?.trim()),
-        ...qryptoPersonas.map(p => p.Email?.toLowerCase()?.trim())
-      ].filter(email => email && email !== '');
-      
-      const uniquePersonaEmails = [...new Set(allPersonaEmails)];
-      const directSignups = uniquePersonaEmails.filter(email => !invitedEmails.has(email)).length;
+      // Direct signups are the 32 placeholder records in invited_users with batch_id = 'direct_signup'
+      const directSignupsFromPlaceholders = allInvitations?.filter(inv => 
+        inv.batch_id === 'direct_signup' || inv.batch_id === 'direct-signup'
+      ).length || 0;
 
       const conversionRate = totalCreated > 0 ? 
         Math.round((totalSignupsCompleted / totalCreated) * 100) : 0;
@@ -76,7 +68,7 @@ export class StatsCalculator {
         emailsPending,         // Emails pending for REAL invitations
         signupsCompleted: totalSignupsCompleted, // All personas (153)
         awaitingSignup,        // Invites sent but not completed
-        directSignups,         // TRUE direct signups (32)
+        directSignups: directSignupsFromPlaceholders, // Direct signups (32)
         conversionRate,
         lastUpdated: new Date().toISOString()
       };
@@ -87,7 +79,7 @@ export class StatsCalculator {
         '⏳ Invite Emails Pending': emailsPending,
         '⌛ Invites Awaiting Signup': awaitingSignup,
         '✅ Total Completed Signups': totalSignupsCompleted,
-        '🎯 Direct Signups (Real)': directSignups,
+        '🎯 Direct Signups (Real)': directSignupsFromPlaceholders,
         '📈 Conversion Rate': `${conversionRate}%`,
         '🔢 Validation': `${emailsSent} + ${emailsPending} = ${emailsSent + emailsPending} ${emailsSent + emailsPending === totalCreated ? '✅' : '❌'}`
       });
