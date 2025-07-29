@@ -75,14 +75,18 @@ const UserListModal: React.FC<UserListModalProps> = ({
       switch (category) {
         case 'totalCreated':
           // Get real invitations only (exclude direct_signup placeholders)
+          console.log('UserListModal: Loading totalCreated users...');
           const { data: allInvites, error: allError } = await supabase
             .from('invited_users')
             .select('id, email, persona_type, invited_at, email_sent, email_sent_at, signup_completed, completed_at, batch_id, send_attempts, persona_data')
             .or('batch_id.neq.direct_signup,batch_id.is.null')
-            .limit(10000)
             .order('invited_at', { ascending: false });
           
-          if (allError) throw allError;
+          if (allError) {
+            console.error('UserListModal: Error loading totalCreated:', allError);
+            throw allError;
+          }
+          console.log('UserListModal: totalCreated raw data count:', allInvites?.length);
           userData = (allInvites || []).map(user => ({
             ...user,
             send_attempts: user.send_attempts || 0
@@ -91,15 +95,28 @@ const UserListModal: React.FC<UserListModalProps> = ({
 
         case 'emailsSent':
           // Get real invitations that had emails sent
+          console.log('UserListModal: Loading emailsSent users...');
           const { data: sentUsers, error: sentError } = await supabase
             .from('invited_users')
             .select('id, email, persona_type, invited_at, email_sent, email_sent_at, signup_completed, completed_at, batch_id, send_attempts, persona_data')
             .or('batch_id.neq.direct_signup,batch_id.is.null')
             .eq('email_sent', true)
-            .limit(10000)
             .order('email_sent_at', { ascending: false });
           
-          if (sentError) throw sentError;
+          if (sentError) {
+            console.error('UserListModal: Error loading emailsSent:', sentError);
+            throw sentError;
+          }
+          console.log('UserListModal: emailsSent raw data count:', sentUsers?.length);
+          
+          // Check specifically for the missing users
+          const abuInSent = sentUsers?.find(u => u.email === 'talha741@gmail.com');
+          const hughInSent = sentUsers?.find(u => u.email === 'hughstiel@gmail.com');
+          const richardInSent = sentUsers?.find(u => u.email?.toLowerCase().includes('richard') && u.email?.toLowerCase().includes('alcala'));
+          
+          console.log('UserListModal: Abu Ahmed in emailsSent:', !!abuInSent, abuInSent);
+          console.log('UserListModal: Hugh Stiel in emailsSent:', !!hughInSent, hughInSent);
+          console.log('UserListModal: Richard Alcala in emailsSent:', !!richardInSent, richardInSent);
           userData = (sentUsers || []).map(user => ({
             ...user,
             send_attempts: user.send_attempts || 0
@@ -108,15 +125,19 @@ const UserListModal: React.FC<UserListModalProps> = ({
 
         case 'emailsPending':
           // Get real invitations pending email send
+          console.log('UserListModal: Loading emailsPending users...');
           const { data: pendingUsers, error: pendingError } = await supabase
             .from('invited_users')
             .select('id, email, persona_type, invited_at, email_sent, email_sent_at, signup_completed, completed_at, batch_id, send_attempts, persona_data')
             .or('batch_id.neq.direct_signup,batch_id.is.null')
             .eq('email_sent', false)
-            .limit(10000)
             .order('invited_at', { ascending: false });
           
-          if (pendingError) throw pendingError;
+          if (pendingError) {
+            console.error('UserListModal: Error loading emailsPending:', pendingError);
+            throw pendingError;
+          }
+          console.log('UserListModal: emailsPending raw data count:', pendingUsers?.length);
           userData = (pendingUsers || []).map(user => ({
             ...user,
             send_attempts: user.send_attempts || 0
@@ -133,7 +154,6 @@ const UserListModal: React.FC<UserListModalProps> = ({
             .eq('email_sent', true)
             .eq('signup_completed', false)
             .gt('expires_at', 'now()')
-            .limit(10000)
             .order('email_sent_at', { ascending: false });
           
           if (awaitingError) {
@@ -198,15 +218,19 @@ const UserListModal: React.FC<UserListModalProps> = ({
 
         case 'signupsCompleted':
           // Get real invited users who completed signup
+          console.log('UserListModal: Loading signupsCompleted users...');
           const { data: completedUsers, error: completedError } = await supabase
             .from('invited_users')
             .select('id, email, persona_type, invited_at, email_sent, email_sent_at, signup_completed, completed_at, batch_id, send_attempts, persona_data')
             .or('batch_id.neq.direct_signup,batch_id.is.null')
             .eq('signup_completed', true)
-            .limit(10000)
             .order('completed_at', { ascending: false });
           
-          if (completedError) throw completedError;
+          if (completedError) {
+            console.error('UserListModal: Error loading signupsCompleted:', completedError);
+            throw completedError;
+          }
+          console.log('UserListModal: signupsCompleted raw data count:', completedUsers?.length);
           userData = (completedUsers || []).map(user => ({
             ...user,
             send_attempts: user.send_attempts || 0
@@ -215,14 +239,18 @@ const UserListModal: React.FC<UserListModalProps> = ({
 
         case 'directSignups':
           // Get direct signup placeholder records
+          console.log('UserListModal: Loading directSignups users...');
           const { data: directSignupUsers, error: directSignupError } = await supabase
             .from('invited_users')
             .select('id, email, persona_type, invited_at, email_sent, email_sent_at, signup_completed, completed_at, batch_id, send_attempts, persona_data')
             .eq('batch_id', 'direct_signup')
-            .limit(10000)
             .order('invited_at', { ascending: false });
           
-          if (directSignupError) throw directSignupError;
+          if (directSignupError) {
+            console.error('UserListModal: Error loading directSignups:', directSignupError);
+            throw directSignupError;
+          }
+          console.log('UserListModal: directSignups raw data count:', directSignupUsers?.length);
           userData = (directSignupUsers || []).map(user => ({
             ...user,
             send_attempts: user.send_attempts || 0
@@ -235,6 +263,7 @@ const UserListModal: React.FC<UserListModalProps> = ({
       }
 
       console.log(`UserListModal: Loaded ${userData.length} users for category ${category}`);
+      console.log('UserListModal: Sample raw userData:', userData.slice(0, 3));
 
       // Convert PendingInvitation to UserDetail format
       const convertedUsers: UserDetail[] = userData.map(user => ({
@@ -249,6 +278,15 @@ const UserListModal: React.FC<UserListModalProps> = ({
         first_name: user.persona_data?.['First-Name'] || '',
         last_name: user.persona_data?.['Last-Name'] || ''
       }));
+
+      console.log('UserListModal: Final converted users count:', convertedUsers.length);
+      console.log('UserListModal: Sample converted users:', convertedUsers.slice(0, 3));
+      
+      // Final check for specific users
+      const abuInFinal = convertedUsers.find(u => u.email === 'talha741@gmail.com');
+      const hughInFinal = convertedUsers.find(u => u.email === 'hughstiel@gmail.com');
+      console.log('UserListModal: Abu Ahmed in final converted data:', !!abuInFinal, abuInFinal);
+      console.log('UserListModal: Hugh Stiel in final converted data:', !!hughInFinal, hughInFinal);
 
       setUsers(convertedUsers);
       setFilteredUsers(convertedUsers);
@@ -283,7 +321,14 @@ const UserListModal: React.FC<UserListModalProps> = ({
   }
 
   useEffect(() => {
+    console.log('UserListModal: Search filtering triggered', { 
+      searchTerm, 
+      usersCount: users.length,
+      searchTermTrimmed: searchTerm.trim() 
+    });
+    
     if (searchTerm.trim() === '') {
+      console.log('UserListModal: No search term, showing all users');
       setFilteredUsers(users);
     } else {
       const searchLower = searchTerm.toLowerCase();
@@ -293,6 +338,14 @@ const UserListModal: React.FC<UserListModalProps> = ({
         (user.first_name && user.first_name.toLowerCase().includes(searchLower)) ||
         (user.last_name && user.last_name.toLowerCase().includes(searchLower))
       );
+      
+      console.log('UserListModal: Search filtered results:', {
+        searchTerm: searchLower,
+        originalCount: users.length,
+        filteredCount: filtered.length,
+        sampleFiltered: filtered.slice(0, 3).map(u => ({ email: u.email, name: `${u.first_name} ${u.last_name}` }))
+      });
+      
       setFilteredUsers(filtered);
     }
   }, [searchTerm, users]);
