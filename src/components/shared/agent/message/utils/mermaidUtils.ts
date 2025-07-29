@@ -1,6 +1,5 @@
 
-// Import mermaid with a safer approach to avoid SSR issues
-import mermaid from 'mermaid';
+// Type-safe mermaid utilities - no direct imports to avoid build issues
 
 // Security validation for Mermaid diagrams
 export const validateMermaidSecurity = (code: string): { isValid: boolean; errors: string[] } => {

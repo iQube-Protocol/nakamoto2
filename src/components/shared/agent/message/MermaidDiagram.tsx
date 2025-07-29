@@ -8,46 +8,56 @@ import { useTheme } from '@/contexts/ThemeContext';
 let mermaidInstance: any = null;
 let mermaidPromise: Promise<any> | null = null;
 
-// Initialize mermaid once and reuse
-const getMermaid = async () => {
+// Initialize mermaid once and reuse with proper error handling
+const getMermaid = async (): Promise<any> => {
   if (mermaidInstance) return mermaidInstance;
   
   if (!mermaidPromise) {
-    mermaidPromise = import('mermaid').then(m => {
-      const instance = m.default;
-      
+    mermaidPromise = (async () => {
+      try {
+        // Dynamic import with proper TypeScript handling
+        const mermaidModule = await import('mermaid');
+        const instance: any = mermaidModule.default || mermaidModule;
+        
+        // Validate that we have a proper mermaid instance
+        if (!instance || typeof instance.initialize !== 'function') {
+          throw new Error('Invalid mermaid instance loaded');
+        }
+        
         // Configure mermaid with stable, proven settings
-        instance.initialize({
+        (instance as any).initialize({
           startOnLoad: false,
           theme: 'neutral',
-          securityLevel: 'loose', // Essential for compatibility
-          fontFamily: 'Arial, sans-serif',
-          fontSize: 15,
+          securityLevel: 'loose',
+          fontFamily: 'system-ui, -apple-system, sans-serif',
+          fontSize: 14,
           flowchart: {
-            htmlLabels: false, // Disable HTML labels to prevent parsing issues
+            htmlLabels: false,
             useMaxWidth: true,
             curve: 'basis'
           },
           sequence: {
-            useMaxWidth: true
+            useMaxWidth: true,
+            showSequenceNumbers: true
           },
           journey: {
             useMaxWidth: true
           },
           themeVariables: {
-            fontFamily: 'Arial, sans-serif',
-            fontSize: '15px'
+            fontFamily: 'system-ui, -apple-system, sans-serif',
+            fontSize: '14px'
           },
           logLevel: 'error'
         });
-      
-      mermaidInstance = instance;
-      return instance;
-    }).catch(err => {
-      console.error("Failed to initialize mermaid:", err);
-      mermaidPromise = null;
-      throw err;
-    });
+        
+        mermaidInstance = instance;
+        return instance;
+      } catch (error) {
+        console.error("Failed to initialize mermaid:", error);
+        mermaidPromise = null;
+        throw new Error(`Mermaid initialization failed: ${error}`);
+      }
+    })();
   }
   
   return mermaidPromise;
@@ -98,14 +108,24 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
         // Process and validate the code
         const processedCode = await import('./utils/mermaidUtils').then(m => m.processCode(currentCode));
         
-        // Get mermaid instance
+        // Get mermaid instance with error handling
         const mermaid = await getMermaid();
+        
+        // Validate mermaid instance
+        if (!mermaid || typeof mermaid.render !== 'function') {
+          throw new Error('Mermaid instance is not properly initialized');
+        }
         
         // Create a unique ID for this render
         const uniqueId = `mermaid-${id}-${Date.now()}`;
         
-        // Render to SVG string using processed code
-        const { svg } = await mermaid.render(uniqueId, processedCode);
+        // Render to SVG string using processed code with error handling
+        const renderResult = await mermaid.render(uniqueId, processedCode);
+        const svg = renderResult?.svg || renderResult;
+        
+        if (!svg || typeof svg !== 'string') {
+          throw new Error('Mermaid render returned invalid SVG');
+        }
         
         if (isMounted) {
           setSvg(svg);
