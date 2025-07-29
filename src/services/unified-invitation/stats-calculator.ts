@@ -42,12 +42,20 @@ export class StatsCalculator {
       const awaitingSignup = emailsSent - actualSignupsCompleted; // People who got emails but haven't actually completed signup
       const conversionRate = emailsSent > 0 ? (signupsCompleted / emailsSent) * 100 : 0;
 
+      // Get direct signups count 
+      const { count: directSignupsCount } = await supabase
+        .from('invited_users')
+        .select('*', { count: 'exact', head: true })
+        .eq('batch_id', 'direct_signup')
+        .eq('signup_completed', true);
+
       const stats: UnifiedInvitationStats = {
         totalCreated,
         emailsSent,
         emailsPending,
         signupsCompleted,
         awaitingSignup,
+        directSignups: directSignupsCount || 0,
         conversionRate,
         lastUpdated: new Date().toISOString()
       };
@@ -239,7 +247,8 @@ export class StatsCalculator {
         { count: emailsSent },
         { count: emailsPending },
         { count: signupsCompleted },
-        { count: awaitingSignup }
+        { count: awaitingSignup },
+        { count: directSignups }
       ] = await Promise.all([
         supabase.from('invited_users').select('*', { count: 'exact', head: true }),
         supabase.from('invited_users').select('*', { count: 'exact', head: true }).eq('email_sent', true),
@@ -247,7 +256,10 @@ export class StatsCalculator {
         supabase.from('invited_users').select('*', { count: 'exact', head: true }).eq('signup_completed', true),
         supabase.from('invited_users').select('*', { count: 'exact', head: true })
           .eq('email_sent', true)
-          .eq('signup_completed', false)
+          .eq('signup_completed', false),
+        supabase.from('invited_users').select('*', { count: 'exact', head: true })
+          .eq('batch_id', 'direct_signup')
+          .eq('signup_completed', true)
       ]);
 
       const conversionRate = (emailsSent || 0) > 0 ? ((signupsCompleted || 0) / (emailsSent || 0)) * 100 : 0;
@@ -258,6 +270,7 @@ export class StatsCalculator {
         emailsPending: emailsPending || 0,
         signupsCompleted: signupsCompleted || 0,
         awaitingSignup: awaitingSignup || 0,
+        directSignups: directSignups || 0,
         conversionRate,
         lastUpdated: new Date().toISOString()
       };

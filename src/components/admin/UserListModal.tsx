@@ -49,44 +49,95 @@ const UserListModal: React.FC<UserListModalProps> = ({
       
       let userData: PendingInvitation[] = [];
       
-      // Use the unified service for ALL categories
+      // Query database directly to get accurate counts and data
       switch (category) {
         case 'totalCreated':
-          // Get all invitations by combining pending and sent
-          const [pending, sent] = await Promise.all([
-            unifiedInvitationService.getPendingEmailSend(10000),
-            unifiedInvitationService.getEmailsSent()
-          ]);
-          userData = [...pending, ...sent];
+          // Get all invitations
+          const { data: allInvites, error: allError } = await supabase
+            .from('invited_users')
+            .select('id, email, persona_type, invited_at, email_sent, email_sent_at, signup_completed, completed_at, batch_id, send_attempts')
+            .order('invited_at', { ascending: false });
+          
+          if (allError) throw allError;
+          userData = (allInvites || []).map(user => ({
+            ...user,
+            send_attempts: user.send_attempts || 0
+          }));
           break;
+
         case 'emailsSent':
-          userData = await unifiedInvitationService.getEmailsSent();
+          const { data: sentUsers, error: sentError } = await supabase
+            .from('invited_users')
+            .select('id, email, persona_type, invited_at, email_sent, email_sent_at, signup_completed, completed_at, batch_id, send_attempts')
+            .eq('email_sent', true)
+            .order('email_sent_at', { ascending: false });
+          
+          if (sentError) throw sentError;
+          userData = (sentUsers || []).map(user => ({
+            ...user,
+            send_attempts: user.send_attempts || 0
+          }));
           break;
+
         case 'emailsPending':
-          userData = await unifiedInvitationService.getPendingEmailSend(10000);
+          const { data: pendingUsers, error: pendingError } = await supabase
+            .from('invited_users')
+            .select('id, email, persona_type, invited_at, email_sent, email_sent_at, signup_completed, completed_at, batch_id, send_attempts')
+            .eq('email_sent', false)
+            .order('invited_at', { ascending: false });
+          
+          if (pendingError) throw pendingError;
+          userData = (pendingUsers || []).map(user => ({
+            ...user,
+            send_attempts: user.send_attempts || 0
+          }));
           break;
+
         case 'awaitingSignup':
-          userData = await unifiedInvitationService.getAwaitingSignup();
+          const { data: awaitingUsers, error: awaitingError } = await supabase
+            .from('invited_users')
+            .select('id, email, persona_type, invited_at, email_sent, email_sent_at, signup_completed, completed_at, batch_id, send_attempts')
+            .eq('email_sent', true)
+            .eq('signup_completed', false)
+            .order('email_sent_at', { ascending: false });
+          
+          if (awaitingError) throw awaitingError;
+          userData = (awaitingUsers || []).map(user => ({
+            ...user,
+            send_attempts: user.send_attempts || 0
+          }));
           break;
+
         case 'signupsCompleted':
-          userData = await unifiedInvitationService.getCompletedInvitations();
+          const { data: completedUsers, error: completedError } = await supabase
+            .from('invited_users')
+            .select('id, email, persona_type, invited_at, email_sent, email_sent_at, signup_completed, completed_at, batch_id, send_attempts')
+            .eq('signup_completed', true)
+            .order('completed_at', { ascending: false });
+          
+          if (completedError) throw completedError;
+          userData = (completedUsers || []).map(user => ({
+            ...user,
+            send_attempts: user.send_attempts || 0
+          }));
           break;
+
         case 'directSignups':
           // Get users who signed up directly (marked with direct_signup batch_id)
           const { data: directUsers, error: directError } = await supabase
             .from('invited_users')
             .select('id, email, persona_type, invited_at, email_sent, email_sent_at, signup_completed, completed_at, batch_id, send_attempts')
             .eq('batch_id', 'direct_signup')
-            .eq('signup_completed', true);
+            .eq('signup_completed', true)
+            .order('completed_at', { ascending: false });
           
-          if (directError) {
-            throw directError;
-          }
+          if (directError) throw directError;
           userData = (directUsers || []).map(user => ({
             ...user,
             send_attempts: user.send_attempts || 0
           }));
           break;
+
         default:
           console.warn(`UserListModal: Unknown category: ${category}`);
           userData = [];

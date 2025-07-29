@@ -10,8 +10,8 @@ interface StatsOverviewProps {
 }
 
 const StatsOverview: React.FC<StatsOverviewProps> = ({ stats, onStatCardClick }) => {
-  // Calculate direct signups (users who signed up but marked as direct_signup)
-  const directSignups = stats ? Math.max(0, stats.signupsCompleted - (stats.totalCreated - stats.signupsCompleted)) : 0;
+  // Use the direct signups from stats or fallback to 0
+  const directSignups = stats?.directSignups || 0;
   
   return (
     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-6 gap-4">

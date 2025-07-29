@@ -5,6 +5,7 @@ export interface UnifiedInvitationStats {
   emailsPending: number;
   signupsCompleted: number;
   awaitingSignup: number;
+  directSignups: number;
   conversionRate: number;
   lastUpdated: string;
 }
