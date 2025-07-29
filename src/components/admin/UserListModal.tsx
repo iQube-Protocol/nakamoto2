@@ -9,6 +9,20 @@ import { toast } from 'sonner';
 import { unifiedInvitationService, type PendingInvitation } from '@/services/unified-invitation';
 import { supabase } from '@/integrations/supabase/client';
 
+interface DatabaseUserResult {
+  id: string;
+  email: string;
+  persona_type: string;
+  invited_at: string;
+  email_sent: boolean;
+  email_sent_at?: string;
+  signup_completed?: boolean;
+  completed_at?: string;
+  batch_id?: string;
+  send_attempts: number;
+  persona_data?: any;
+}
+
 interface UserDetail {
   id: string;
   email: string;
@@ -18,6 +32,8 @@ interface UserDetail {
   email_sent_at?: string;
   signup_completed?: boolean;
   completed_at?: string;
+  first_name?: string;
+  last_name?: string;
 }
 
 interface UserListModalProps {
@@ -49,7 +65,7 @@ const UserListModal: React.FC<UserListModalProps> = ({
     try {
       console.log(`UserListModal: Loading users for category: ${category}`);
       
-      let userData: PendingInvitation[] = [];
+      let userData: DatabaseUserResult[] = [];
       
       // Query database with corrected formulas (exclude direct_signup placeholders)
       switch (category) {
@@ -57,7 +73,7 @@ const UserListModal: React.FC<UserListModalProps> = ({
           // Get real invitations only (exclude direct_signup placeholders)
           const { data: allInvites, error: allError } = await supabase
             .from('invited_users')
-            .select('id, email, persona_type, invited_at, email_sent, email_sent_at, signup_completed, completed_at, batch_id, send_attempts')
+            .select('id, email, persona_type, invited_at, email_sent, email_sent_at, signup_completed, completed_at, batch_id, send_attempts, persona_data')
             .or('batch_id.neq.direct_signup,batch_id.is.null')
             .limit(10000)
             .order('invited_at', { ascending: false });
@@ -66,14 +82,14 @@ const UserListModal: React.FC<UserListModalProps> = ({
           userData = (allInvites || []).map(user => ({
             ...user,
             send_attempts: user.send_attempts || 0
-          }));
+          })) as DatabaseUserResult[];
           break;
 
         case 'emailsSent':
           // Get real invitations that had emails sent
           const { data: sentUsers, error: sentError } = await supabase
             .from('invited_users')
-            .select('id, email, persona_type, invited_at, email_sent, email_sent_at, signup_completed, completed_at, batch_id, send_attempts')
+            .select('id, email, persona_type, invited_at, email_sent, email_sent_at, signup_completed, completed_at, batch_id, send_attempts, persona_data')
             .or('batch_id.neq.direct_signup,batch_id.is.null')
             .eq('email_sent', true)
             .limit(10000)
@@ -90,7 +106,7 @@ const UserListModal: React.FC<UserListModalProps> = ({
           // Get real invitations pending email send
           const { data: pendingUsers, error: pendingError } = await supabase
             .from('invited_users')
-            .select('id, email, persona_type, invited_at, email_sent, email_sent_at, signup_completed, completed_at, batch_id, send_attempts')
+            .select('id, email, persona_type, invited_at, email_sent, email_sent_at, signup_completed, completed_at, batch_id, send_attempts, persona_data')
             .or('batch_id.neq.direct_signup,batch_id.is.null')
             .eq('email_sent', false)
             .limit(10000)
@@ -107,7 +123,7 @@ const UserListModal: React.FC<UserListModalProps> = ({
           // Get real invitations sent but user hasn't signed up yet
           const { data: awaitingUsers, error: awaitingError } = await supabase
             .from('invited_users')
-            .select('id, email, persona_type, invited_at, email_sent, email_sent_at, signup_completed, completed_at, batch_id, send_attempts')
+            .select('id, email, persona_type, invited_at, email_sent, email_sent_at, signup_completed, completed_at, batch_id, send_attempts, persona_data')
             .or('batch_id.neq.direct_signup,batch_id.is.null')
             .eq('email_sent', true)
             .eq('signup_completed', false)
@@ -125,7 +141,7 @@ const UserListModal: React.FC<UserListModalProps> = ({
           // Get real invited users who completed signup
           const { data: completedUsers, error: completedError } = await supabase
             .from('invited_users')
-            .select('id, email, persona_type, invited_at, email_sent, email_sent_at, signup_completed, completed_at, batch_id, send_attempts')
+            .select('id, email, persona_type, invited_at, email_sent, email_sent_at, signup_completed, completed_at, batch_id, send_attempts, persona_data')
             .or('batch_id.neq.direct_signup,batch_id.is.null')
             .eq('signup_completed', true)
             .limit(10000)
@@ -142,7 +158,7 @@ const UserListModal: React.FC<UserListModalProps> = ({
           // Get direct signup placeholder records
           const { data: directSignupUsers, error: directSignupError } = await supabase
             .from('invited_users')
-            .select('id, email, persona_type, invited_at, email_sent, email_sent_at, signup_completed, completed_at, batch_id, send_attempts')
+            .select('id, email, persona_type, invited_at, email_sent, email_sent_at, signup_completed, completed_at, batch_id, send_attempts, persona_data')
             .eq('batch_id', 'direct_signup')
             .limit(10000)
             .order('invited_at', { ascending: false });
@@ -168,7 +184,11 @@ const UserListModal: React.FC<UserListModalProps> = ({
         persona_type: user.persona_type,
         invited_at: user.invited_at,
         email_sent: user.email_sent,
-        email_sent_at: user.email_sent_at
+        email_sent_at: user.email_sent_at,
+        signup_completed: user.signup_completed,
+        completed_at: user.completed_at,
+        first_name: user.persona_data?.['First-Name'] || '',
+        last_name: user.persona_data?.['Last-Name'] || ''
       }));
 
       setUsers(convertedUsers);
@@ -196,7 +216,9 @@ const UserListModal: React.FC<UserListModalProps> = ({
       const searchLower = searchTerm.toLowerCase();
       const filtered = users.filter(user =>
         user.email.toLowerCase().includes(searchLower) ||
-        user.persona_type.toLowerCase().includes(searchLower)
+        user.persona_type.toLowerCase().includes(searchLower) ||
+        (user.first_name && user.first_name.toLowerCase().includes(searchLower)) ||
+        (user.last_name && user.last_name.toLowerCase().includes(searchLower))
       );
       setFilteredUsers(filtered);
     }
@@ -252,7 +274,7 @@ const UserListModal: React.FC<UserListModalProps> = ({
         <div className="flex items-center space-x-2 p-4 border-b">
           <Search className="h-4 w-4 text-gray-500" />
           <Input
-            placeholder="Search by email or persona type..."
+            placeholder="Search by name, email, or persona type..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="flex-1"
