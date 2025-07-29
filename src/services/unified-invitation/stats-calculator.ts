@@ -253,8 +253,7 @@ export class StatsCalculator {
         { count: emailsPending },
         { count: signupsCompleted },
         { count: awaitingSignup },
-        knytResult,
-        qryptoResult
+        { data: directSignupData, error: directSignupError }
       ] = await Promise.all([
         // Real invitations only (exclude direct_signup placeholders)
         supabase.from('invited_users').select('*', { count: 'exact', head: true })
@@ -272,14 +271,12 @@ export class StatsCalculator {
           .or('batch_id.neq.direct_signup,batch_id.is.null')
           .eq('email_sent', true)
           .eq('signup_completed', false),
-        // Get actual persona counts for direct signups calculation
-        supabase.from('knyt_personas').select('*', { count: 'exact', head: true }),
-        supabase.from('qrypto_personas').select('*', { count: 'exact', head: true })
+        // Get actual direct signups count using RPC
+        supabase.rpc('count_direct_signups')
       ]);
 
-      // Calculate true direct signups: total personas minus invited users who completed
-      const totalPersonas = (knytResult.count || 0) + (qryptoResult.count || 0);
-      const directSignupsCount = totalPersonas - (signupsCompleted || 0);
+      // Calculate direct signups from RPC result
+      const directSignupsCount = directSignupError ? 0 : (directSignupData as number || 0);
 
       const conversionRate = (emailsSent || 0) > 0 ? ((signupsCompleted || 0) / (emailsSent || 0)) * 100 : 0;
 
@@ -295,12 +292,9 @@ export class StatsCalculator {
       };
 
       console.log('StatsCalculator: Corrected real-time stats:', stats);
-      console.log('StatsCalculator: Persona breakdown:', {
-        knytPersonas: knytResult.count || 0,
-        qryptoPersonas: qryptoResult.count || 0,
-        totalPersonas,
-        invitedCompleted: signupsCompleted || 0,
-        calculatedDirectSignups: directSignupsCount
+      console.log('StatsCalculator: Direct signup calculation:', {
+        directSignupsFromRPC: directSignupsCount,
+        rpcError: directSignupError
       });
       
       return stats;

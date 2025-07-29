@@ -297,9 +297,9 @@ const UserListModal: React.FC<UserListModalProps> = ({
             </div>
           ) : (
             <div className="space-y-2">
-              {filteredUsers.map((user) => (
+              {filteredUsers.map((user, index) => (
                 <div
-                  key={user.id}
+                  key={`${user.id}-${index}`}
                   className="p-3 border rounded-lg hover:bg-gray-50 cursor-pointer transition-colors"
                   onClick={() => onUserClick(user)}
                 >
