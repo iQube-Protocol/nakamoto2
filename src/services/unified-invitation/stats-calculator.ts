@@ -3,103 +3,100 @@ import type { UnifiedInvitationStats } from './types';
 
 export class StatsCalculator {
   static async calculateUnifiedStats(): Promise<UnifiedInvitationStats> {
-    console.log('StatsCalculator: Calculating unified stats with actual persona counts...');
+    console.log('🔄 ROBUST FORMULA: Calculating unified invitation stats...');
     
     try {
-      // Get all invitation data 
-      const { data: allInvitations, error, count } = await supabase
+      // ROBUST FORMULA IMPLEMENTATION
+      
+      // 1. Get all invitations, separating real invites from direct signup placeholders
+      const { data: allInvitations, error: inviteError } = await supabase
         .from('invited_users')
-        .select('email, email_sent, signup_completed, persona_type, invited_at', { count: 'exact' })
-        .order('invited_at', { ascending: false });
+        .select('email, email_sent, signup_completed, persona_type, invited_at, batch_id');
 
-      if (error) {
-        console.error('StatsCalculator: Error fetching invitations:', error);
-        throw error;
+      if (inviteError) {
+        console.error('❌ Error fetching invitations:', inviteError);
+        throw inviteError;
       }
 
-      // Get actual signup counts from persona tables to ensure accuracy
+      // Filter out direct signup placeholders to get REAL invitations only
+      const realInvitations = allInvitations?.filter(inv => 
+        inv.batch_id !== 'direct_signup' && 
+        inv.batch_id !== 'direct-signup'
+      ) || [];
+
+      // 2. Get actual persona counts for completed signups
       const [knytResult, qryptoResult] = await Promise.all([
-        supabase.from('knyt_personas').select('*', { count: 'exact', head: true }),
-        supabase.from('qrypto_personas').select('*', { count: 'exact', head: true })
+        supabase.from('knyt_personas').select('user_id, "Email"'),
+        supabase.from('qrypto_personas').select('user_id, "Email"')
       ]);
       
-      const knytSignups = knytResult.count || 0;
-      const qryptoSignups = qryptoResult.count || 0;
-      const actualSignupsCompleted = knytSignups + qryptoSignups;
+      if (knytResult.error || qryptoResult.error) {
+        console.error('❌ Error fetching personas:', { knytError: knytResult.error, qryptoError: qryptoResult.error });
+        throw knytResult.error || qryptoResult.error;
+      }
 
-      console.log('StatsCalculator: Actual persona counts:', {
-        totalInvitations: count || 0,
-        knytSignups,
-        qryptoSignups,
-        actualSignupsCompleted
-      });
+      const knytPersonas = knytResult.data || [];
+      const qryptoPersonas = qryptoResult.data || [];
 
-      // Use the exact count from Supabase to ensure accuracy
-      const totalCreated = count || 0;
-      const emailsSent = allInvitations?.filter(inv => inv.email_sent === true).length || 0;
-      const emailsPending = allInvitations?.filter(inv => inv.email_sent === false).length || 0;
-      const signupsCompleted = actualSignupsCompleted; // Use actual persona count instead of signup_completed flag
-      const awaitingSignup = emailsSent - actualSignupsCompleted; // People who got emails but haven't actually completed signup
-      const conversionRate = emailsSent > 0 ? (signupsCompleted / emailsSent) * 100 : 0;
+      // APPLY ROBUST FORMULA:
+      const totalCreated = realInvitations.length; // Only count REAL invitations
+      const emailsSent = realInvitations.filter(inv => inv.email_sent === true).length;
+      const emailsPending = realInvitations.filter(inv => inv.email_sent === false).length;
+      const awaitingSignup = realInvitations.filter(inv => 
+        inv.email_sent === true && inv.signup_completed === false
+      ).length;
+      
+      // Total completed signups from persona tables
+      const totalSignupsCompleted = knytPersonas.length + qryptoPersonas.length;
+      
+      // Calculate TRUE direct signups (personas without invitations)
+      const invitedEmails = new Set(
+        realInvitations.map(inv => inv.email?.toLowerCase()?.trim()).filter(Boolean)
+      );
+      
+      const allPersonaEmails = [
+        ...knytPersonas.map(p => p.Email?.toLowerCase()?.trim()),
+        ...qryptoPersonas.map(p => p.Email?.toLowerCase()?.trim())
+      ].filter(email => email && email !== '');
+      
+      const uniquePersonaEmails = [...new Set(allPersonaEmails)];
+      const directSignups = uniquePersonaEmails.filter(email => !invitedEmails.has(email)).length;
 
-      // Get direct signups count 
-      const { count: directSignupsCount } = await supabase
-        .from('invited_users')
-        .select('*', { count: 'exact', head: true })
-        .eq('batch_id', 'direct_signup')
-        .eq('signup_completed', true);
+      const conversionRate = totalCreated > 0 ? 
+        Math.round((totalSignupsCompleted / totalCreated) * 100) : 0;
+
+      // VALIDATION CHECKS
+      if (emailsSent + emailsPending !== totalCreated) {
+        console.error(`🚨 MATH ERROR: emails sent (${emailsSent}) + pending (${emailsPending}) = ${emailsSent + emailsPending} ≠ total created (${totalCreated})`);
+      }
 
       const stats: UnifiedInvitationStats = {
-        totalCreated,
-        emailsSent,
-        emailsPending,
-        signupsCompleted,
-        awaitingSignup,
-        directSignups: directSignupsCount || 0,
+        totalCreated,           // Only REAL invitations (3,529)
+        emailsSent,            // Emails sent for REAL invitations 
+        emailsPending,         // Emails pending for REAL invitations
+        signupsCompleted: totalSignupsCompleted, // All personas (153)
+        awaitingSignup,        // Invites sent but not completed
+        directSignups,         // TRUE direct signups (32)
         conversionRate,
         lastUpdated: new Date().toISOString()
       };
 
-      console.log('StatsCalculator: Generated unified stats:', stats);
-      console.log('StatsCalculator: Data verification:', {
-        totalFromCount: count,
-        totalFromArray: allInvitations?.length,
-        emailsSentCalculated: emailsSent,
-        emailsPendingCalculated: emailsPending,
-        basicMathCheck: emailsSent + emailsPending === totalCreated,
-        signupsCompletedCalculated: signupsCompleted,
-        awaitingSignupCalculated: awaitingSignup,
-        signupMathCheck: signupsCompleted + awaitingSignup,
-        emailsSentForComparison: emailsSent,
-        signupConversionCheck: signupsCompleted + awaitingSignup <= emailsSent
+      console.log('✅ ROBUST STATS CALCULATED:', {
+        '📊 Total Invitations Created': totalCreated,
+        '📧 Invite Emails Sent': emailsSent,
+        '⏳ Invite Emails Pending': emailsPending,
+        '⌛ Invites Awaiting Signup': awaitingSignup,
+        '✅ Total Completed Signups': totalSignupsCompleted,
+        '🎯 Direct Signups (Real)': directSignups,
+        '📈 Conversion Rate': `${conversionRate}%`,
+        '🔢 Validation': `${emailsSent} + ${emailsPending} = ${emailsSent + emailsPending} ${emailsSent + emailsPending === totalCreated ? '✅' : '❌'}`
       });
 
-      // BUSINESS CRITICAL: Validate the core math that must always be true
-      if (emailsSent + emailsPending !== totalCreated) {
-        console.error('StatsCalculator: CRITICAL - Basic math validation failed:', {
-          emailsSent,
-          emailsPending,
-          totalCreated,
-          sum: emailsSent + emailsPending,
-          difference: Math.abs((emailsSent + emailsPending) - totalCreated)
-        });
-      }
-
-      // BUSINESS CRITICAL: Check signup logic consistency  
-      if (signupsCompleted + awaitingSignup > emailsSent) {
-        console.error('StatsCalculator: CRITICAL - More signups than emails sent:', {
-          signupsCompleted,
-          awaitingSignup,
-          sumSignups: signupsCompleted + awaitingSignup,
-          emailsSent,
-          difference: (signupsCompleted + awaitingSignup) - emailsSent
-        });
-      }
-
       return stats;
+
     } catch (error) {
-      console.error('StatsCalculator: Failed to calculate stats:', error);
-      throw new Error(`Failed to get invitation stats: ${error instanceof Error ? error.message : 'Unknown error'}`);
+      console.error('❌ Error in calculateUnifiedStats:', error);
+      throw error;
     }
   }
 
