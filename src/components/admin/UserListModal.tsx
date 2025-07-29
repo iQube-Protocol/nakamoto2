@@ -252,6 +252,18 @@ const UserListModal: React.FC<UserListModalProps> = ({
     }
   }, [open, category]);
 
+  // Emergency logging to see what's happening
+  if (open) {
+    console.log('UserListModal: EMERGENCY DEBUG', {
+      category,
+      title,
+      totalUsers: users.length,
+      searchTerm,
+      filteredCount: filteredUsers.length,
+      firstFewUsers: users.slice(0, 3).map(u => ({ email: u.email, firstName: u.first_name, lastName: u.last_name }))
+    });
+  }
+
   useEffect(() => {
     if (searchTerm.trim() === '') {
       setFilteredUsers(users);

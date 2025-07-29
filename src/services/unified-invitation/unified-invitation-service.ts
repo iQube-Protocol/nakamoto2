@@ -41,19 +41,19 @@ class UnifiedInvitationService {
     return batchStatuses;
   }
 
-  async getPendingEmailSend(limit: number = 10000): Promise<PendingInvitation[]> {
+  async getPendingEmailSend(limit: number = 50000): Promise<PendingInvitation[]> {
     const cacheKey = `pending-emails-${limit}`;
     
     if (this.cacheManager.isCacheValid(cacheKey)) {
       return this.cacheManager.getCache(cacheKey);
     }
 
-    console.log('UnifiedInvitationService: Fetching pending emails...');
+    console.log(`UnifiedInvitationService: Fetching ALL pending emails (limit: ${limit})...`);
     
-    // Get ALL pending emails (email_sent = false)
+    // Get ALL pending emails (email_sent = false) with much higher limit
     const { data, error } = await supabase
       .from('invited_users')
-      .select('id, email, persona_type, invited_at, email_sent, email_sent_at, batch_id, send_attempts')
+      .select('id, email, persona_type, invited_at, email_sent, email_sent_at, batch_id, send_attempts, persona_data')
       .eq('email_sent', false)
       .eq('signup_completed', false)
       .order('invited_at', { ascending: true })
@@ -65,7 +65,7 @@ class UnifiedInvitationService {
     }
 
     const result = data || [];
-    console.log(`UnifiedInvitationService: Found ${result.length} pending emails`);
+    console.log(`UnifiedInvitationService: Found ${result.length} total pending emails`);
     this.cacheManager.setCache(cacheKey, result);
     return result;
   }
@@ -77,11 +77,12 @@ class UnifiedInvitationService {
       return this.cacheManager.getCache(cacheKey);
     }
 
-    console.log('UnifiedInvitationService: Fetching sent emails...');
+    console.log('UnifiedInvitationService: Fetching ALL sent emails (no limit)...');
     
+    // Get ALL sent emails without any limit
     const { data, error } = await supabase
       .from('invited_users')
-      .select('id, email, persona_type, invited_at, email_sent, email_sent_at, batch_id, send_attempts')
+      .select('id, email, persona_type, invited_at, email_sent, email_sent_at, batch_id, send_attempts, persona_data')
       .eq('email_sent', true)
       .order('email_sent_at', { ascending: false });
 
@@ -91,7 +92,7 @@ class UnifiedInvitationService {
     }
 
     const result = data || [];
-    console.log(`UnifiedInvitationService: Found ${result.length} sent emails`);
+    console.log(`UnifiedInvitationService: Found ${result.length} total sent emails`);
     this.cacheManager.setCache(cacheKey, result);
     return result;
   }
@@ -103,12 +104,12 @@ class UnifiedInvitationService {
       return this.cacheManager.getCache(cacheKey);
     }
 
-    console.log('UnifiedInvitationService: Fetching awaiting signup...');
+    console.log('UnifiedInvitationService: Fetching ALL awaiting signup (no limit)...');
     
     // Get ALL users awaiting signup (email_sent = true, signup_completed = false)
     const { data, error } = await supabase
       .from('invited_users')
-      .select('id, email, persona_type, invited_at, email_sent, email_sent_at, batch_id, send_attempts')
+      .select('id, email, persona_type, invited_at, email_sent, email_sent_at, batch_id, send_attempts, persona_data')
       .eq('email_sent', true)
       .eq('signup_completed', false)
       .order('email_sent_at', { ascending: false });
@@ -119,7 +120,7 @@ class UnifiedInvitationService {
     }
 
     const result = data || [];
-    console.log(`UnifiedInvitationService: Found ${result.length} awaiting signup`);
+    console.log(`UnifiedInvitationService: Found ${result.length} total awaiting signup`);
     this.cacheManager.setCache(cacheKey, result);
     return result;
   }
@@ -131,11 +132,12 @@ class UnifiedInvitationService {
       return this.cacheManager.getCache(cacheKey);
     }
 
-    console.log('UnifiedInvitationService: Fetching completed invitations...');
+    console.log('UnifiedInvitationService: Fetching ALL completed invitations (no limit)...');
     
+    // Get ALL completed invitations without any limit
     const { data, error } = await supabase
       .from('invited_users')
-      .select('id, email, persona_type, invited_at, email_sent, email_sent_at, batch_id, send_attempts')
+      .select('id, email, persona_type, invited_at, email_sent, email_sent_at, batch_id, send_attempts, persona_data')
       .eq('signup_completed', true)
       .order('completed_at', { ascending: false });
 
@@ -145,7 +147,7 @@ class UnifiedInvitationService {
     }
 
     const result = data || [];
-    console.log(`UnifiedInvitationService: Found ${result.length} completed invitations`);
+    console.log(`UnifiedInvitationService: Found ${result.length} total completed invitations`);
     this.cacheManager.setCache(cacheKey, result);
     return result;
   }
