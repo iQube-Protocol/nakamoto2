@@ -19,6 +19,9 @@ const PipelineTab: React.FC<PipelineTabProps> = ({
   isSending,
   onSendBatch
 }) => {
+  // Debug logging to verify data flow
+  console.log('PipelineTab: Received awaiting signup count:', awaitingSignup.length);
+  
   return (
     <div className="space-y-4">
       {/* Next Batch to Send */}
