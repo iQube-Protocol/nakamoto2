@@ -59,7 +59,11 @@ const UserListModal: React.FC<UserListModalProps> = ({
   const [isLoading, setIsLoading] = useState(false);
 
   const loadUsers = async () => {
-    if (!open || !category) return;
+    console.log('UserListModal: loadUsers called', { open, category, title });
+    if (!open || !category) {
+      console.log('UserListModal: Skipping load - not open or no category');
+      return;
+    }
     
     setIsLoading(true);
     try {

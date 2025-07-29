@@ -52,6 +52,7 @@ const InvitationDashboard = () => {
   }, [loadDashboardData]);
 
   const handleStatCardClick = (category: string, title: string, count: number) => {
+    console.log('InvitationDashboard: handleStatCardClick', { category, title, count });
     setUserListModal({ open: true, category, title, totalCount: count });
   };
 
