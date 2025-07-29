@@ -132,11 +132,18 @@ const UserListModal: React.FC<UserListModalProps> = ({
             .order('email_sent_at', { ascending: false });
           
           if (awaitingError) throw awaitingError;
-          console.log('UserListModal: awaitingSignup data:', awaitingUsers);
-          userData = (awaitingUsers || []).map(user => ({
-            ...user,
-            send_attempts: user.send_attempts || 0
-          }));
+          console.log('UserListModal: awaitingSignup raw data:', awaitingUsers);
+          
+          userData = (awaitingUsers || []).map(user => {
+            const mappedUser = {
+              ...user,
+              send_attempts: user.send_attempts || 0,
+              first_name: user.persona_data?.['First-Name'] || '',
+              last_name: user.persona_data?.['Last-Name'] || ''
+            };
+            console.log('UserListModal: mapped user:', mappedUser);
+            return mappedUser;
+          });
           break;
 
         case 'expiringToday':
