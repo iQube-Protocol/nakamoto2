@@ -125,6 +125,7 @@ const UserListModal: React.FC<UserListModalProps> = ({
 
         case 'awaitingSignup':
           // Get real invitations sent but user hasn't signed up yet (only active invitations)
+          console.log('UserListModal: Loading awaitingSignup users...');
           const { data: awaitingUsers, error: awaitingError } = await supabase
             .from('invited_users')
             .select('id, email, persona_type, invited_at, email_sent, email_sent_at, signup_completed, completed_at, batch_id, send_attempts, persona_data, expires_at')
@@ -135,8 +136,19 @@ const UserListModal: React.FC<UserListModalProps> = ({
             .limit(10000)
             .order('email_sent_at', { ascending: false });
           
-          if (awaitingError) throw awaitingError;
-          console.log('UserListModal: awaitingSignup raw data:', awaitingUsers);
+          if (awaitingError) {
+            console.error('UserListModal: Error loading awaitingSignup:', awaitingError);
+            throw awaitingError;
+          }
+          
+          console.log('UserListModal: awaitingSignup raw data count:', awaitingUsers?.length);
+          console.log('UserListModal: Looking for Abu Ahmed and Hugh Stiel...');
+          
+          const abuUser = awaitingUsers?.find(u => u.email === 'talha741@gmail.com');
+          const hughUser = awaitingUsers?.find(u => u.email === 'hughstiel@gmail.com');
+          
+          console.log('UserListModal: Abu Ahmed found in results:', !!abuUser, abuUser);
+          console.log('UserListModal: Hugh Stiel found in results:', !!hughUser, hughUser);
           
           userData = (awaitingUsers || []).map(user => {
             const mappedUser = {
@@ -145,9 +157,15 @@ const UserListModal: React.FC<UserListModalProps> = ({
               first_name: user.persona_data?.['First-Name'] || '',
               last_name: user.persona_data?.['Last-Name'] || ''
             };
-            console.log('UserListModal: mapped user:', mappedUser);
+            
+            if (user.email === 'talha741@gmail.com' || user.email === 'hughstiel@gmail.com') {
+              console.log('UserListModal: Mapping specific user:', user.email, mappedUser);
+            }
+            
             return mappedUser;
           });
+          
+          console.log('UserListModal: Final mapped data count:', userData.length);
           break;
 
         case 'expiringToday':
