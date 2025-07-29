@@ -132,6 +132,7 @@ const UserListModal: React.FC<UserListModalProps> = ({
             .order('email_sent_at', { ascending: false });
           
           if (awaitingError) throw awaitingError;
+          console.log('UserListModal: awaitingSignup data:', awaitingUsers);
           userData = (awaitingUsers || []).map(user => ({
             ...user,
             send_attempts: user.send_attempts || 0
