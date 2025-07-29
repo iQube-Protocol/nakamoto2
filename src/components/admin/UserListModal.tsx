@@ -120,13 +120,14 @@ const UserListModal: React.FC<UserListModalProps> = ({
           break;
 
         case 'awaitingSignup':
-          // Get real invitations sent but user hasn't signed up yet
+          // Get real invitations sent but user hasn't signed up yet (only active invitations)
           const { data: awaitingUsers, error: awaitingError } = await supabase
             .from('invited_users')
-            .select('id, email, persona_type, invited_at, email_sent, email_sent_at, signup_completed, completed_at, batch_id, send_attempts, persona_data')
+            .select('id, email, persona_type, invited_at, email_sent, email_sent_at, signup_completed, completed_at, batch_id, send_attempts, persona_data, expires_at')
             .or('batch_id.neq.direct_signup,batch_id.is.null')
             .eq('email_sent', true)
             .eq('signup_completed', false)
+            .gt('expires_at', 'now()')
             .limit(10000)
             .order('email_sent_at', { ascending: false });
           
@@ -134,6 +135,34 @@ const UserListModal: React.FC<UserListModalProps> = ({
           userData = (awaitingUsers || []).map(user => ({
             ...user,
             send_attempts: user.send_attempts || 0
+          }));
+          break;
+
+        case 'expiringToday':
+        case 'expiring3Days':
+        case 'expiring7Days':
+          // Get invitations expiring soon
+          const daysAhead = category === 'expiringToday' ? 1 : category === 'expiring3Days' ? 3 : 7;
+          const { data: expiringData, error: expiringError } = await supabase
+            .rpc('get_expiring_invitations', { days_ahead: daysAhead });
+          
+          if (expiringError) throw expiringError;
+          
+          // Convert the expiring data to match our format
+          userData = (expiringData || []).map((item: any) => ({
+            id: `expiring-${item.email}`,
+            email: item.email,
+            persona_type: item.persona_type,
+            invited_at: '',
+            email_sent: true,
+            email_sent_at: '',
+            signup_completed: false,
+            completed_at: null,
+            batch_id: null,
+            send_attempts: 0,
+            persona_data: {},
+            expires_at: item.expires_at,
+            days_until_expiry: item.days_until_expiry
           }));
           break;
 
@@ -239,6 +268,15 @@ const UserListModal: React.FC<UserListModalProps> = ({
     }
     if (category === 'emailsPending') {
       return <Badge variant="outline">Pending</Badge>;
+    }
+    if (category === 'expiringToday') {
+      return <Badge variant="destructive">Expires Today</Badge>;
+    }
+    if (category === 'expiring3Days') {
+      return <Badge variant="destructive">Expires in 3 Days</Badge>;
+    }
+    if (category === 'expiring7Days') {
+      return <Badge className="bg-warning text-warning-foreground">Expires in 7 Days</Badge>;
     }
     if (user.email_sent) {
       return <Badge className="bg-green-600">Email Sent</Badge>;

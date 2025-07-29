@@ -721,6 +721,16 @@ export type Database = {
           days_until_expiry: number
         }[]
       }
+      get_invitation_expiration_stats: {
+        Args: Record<PropertyKey, never>
+        Returns: {
+          total_active: number
+          total_expired: number
+          expiring_soon_7_days: number
+          expiring_soon_3_days: number
+          expiring_today: number
+        }[]
+      }
       increment_send_attempts: {
         Args: { target_email: string }
         Returns: undefined

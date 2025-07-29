@@ -6,6 +6,7 @@ import { RefreshCw } from 'lucide-react';
 import UserListModal from './UserListModal';
 import UserDetailModal from './UserDetailModal';
 import DataValidationDashboard from './components/DataValidationDashboard';
+import { ExpirationNotificationCard } from './components/ExpirationNotificationCard';
 import StatsOverview from './dashboard/StatsOverview';
 import PipelineTab from './dashboard/PipelineTab';
 import BatchesTab from './dashboard/BatchesTab';
@@ -79,7 +80,14 @@ const InvitationDashboard = () => {
       </div>
 
       {/* Interactive Stats Overview */}
-      <StatsOverview stats={unifiedStats} onStatCardClick={handleStatCardClick} />
+      <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
+        <div className="lg:col-span-3">
+          <StatsOverview stats={unifiedStats} onStatCardClick={handleStatCardClick} />
+        </div>
+        <div className="lg:col-span-1">
+          <ExpirationNotificationCard onExpiringClick={handleStatCardClick} />
+        </div>
+      </div>
 
       {/* Main Content Tabs */}
       <Tabs defaultValue="pipeline" className="space-y-4">
