@@ -245,7 +245,9 @@ const UserListModal: React.FC<UserListModalProps> = ({
   };
 
   useEffect(() => {
+    console.log('UserListModal: useEffect triggered', { open, category, title });
     if (open && category) {
+      console.log('UserListModal: About to call loadUsers');
       loadUsers();
     }
   }, [open, category]);
@@ -306,6 +308,9 @@ const UserListModal: React.FC<UserListModalProps> = ({
     unifiedInvitationService.clearCache();
     loadUsers();
   };
+
+  // Add console logging for debugging
+  console.log('UserListModal: Rendering modal', { open, category, title, usersLength: users.length, filteredUsersLength: filteredUsers.length });
 
   return (
     <Dialog open={open} onOpenChange={onClose}>
