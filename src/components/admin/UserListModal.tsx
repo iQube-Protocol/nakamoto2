@@ -49,13 +49,14 @@ const UserListModal: React.FC<UserListModalProps> = ({
       
       let userData: PendingInvitation[] = [];
       
-      // Query database directly to get accurate counts and data
+      // Query database with corrected formulas (exclude direct_signup placeholders)
       switch (category) {
         case 'totalCreated':
-          // Get all invitations
+          // Get real invitations only (exclude direct_signup placeholders)
           const { data: allInvites, error: allError } = await supabase
             .from('invited_users')
             .select('id, email, persona_type, invited_at, email_sent, email_sent_at, signup_completed, completed_at, batch_id, send_attempts')
+            .or('batch_id.neq.direct_signup,batch_id.is.null')
             .order('invited_at', { ascending: false });
           
           if (allError) throw allError;
@@ -66,9 +67,11 @@ const UserListModal: React.FC<UserListModalProps> = ({
           break;
 
         case 'emailsSent':
+          // Get real invitations that had emails sent
           const { data: sentUsers, error: sentError } = await supabase
             .from('invited_users')
             .select('id, email, persona_type, invited_at, email_sent, email_sent_at, signup_completed, completed_at, batch_id, send_attempts')
+            .or('batch_id.neq.direct_signup,batch_id.is.null')
             .eq('email_sent', true)
             .order('email_sent_at', { ascending: false });
           
@@ -80,9 +83,11 @@ const UserListModal: React.FC<UserListModalProps> = ({
           break;
 
         case 'emailsPending':
+          // Get real invitations pending email send
           const { data: pendingUsers, error: pendingError } = await supabase
             .from('invited_users')
             .select('id, email, persona_type, invited_at, email_sent, email_sent_at, signup_completed, completed_at, batch_id, send_attempts')
+            .or('batch_id.neq.direct_signup,batch_id.is.null')
             .eq('email_sent', false)
             .order('invited_at', { ascending: false });
           
@@ -94,9 +99,11 @@ const UserListModal: React.FC<UserListModalProps> = ({
           break;
 
         case 'awaitingSignup':
+          // Get real invitations sent but user hasn't signed up yet
           const { data: awaitingUsers, error: awaitingError } = await supabase
             .from('invited_users')
             .select('id, email, persona_type, invited_at, email_sent, email_sent_at, signup_completed, completed_at, batch_id, send_attempts')
+            .or('batch_id.neq.direct_signup,batch_id.is.null')
             .eq('email_sent', true)
             .eq('signup_completed', false)
             .order('email_sent_at', { ascending: false });
@@ -109,9 +116,11 @@ const UserListModal: React.FC<UserListModalProps> = ({
           break;
 
         case 'signupsCompleted':
+          // Get real invited users who completed signup
           const { data: completedUsers, error: completedError } = await supabase
             .from('invited_users')
             .select('id, email, persona_type, invited_at, email_sent, email_sent_at, signup_completed, completed_at, batch_id, send_attempts')
+            .or('batch_id.neq.direct_signup,batch_id.is.null')
             .eq('signup_completed', true)
             .order('completed_at', { ascending: false });
           
@@ -123,19 +132,53 @@ const UserListModal: React.FC<UserListModalProps> = ({
           break;
 
         case 'directSignups':
-          // Get users who signed up directly (marked with direct_signup batch_id)
-          const { data: directUsers, error: directError } = await supabase
-            .from('invited_users')
-            .select('id, email, persona_type, invited_at, email_sent, email_sent_at, signup_completed, completed_at, batch_id, send_attempts')
-            .eq('batch_id', 'direct_signup')
-            .eq('signup_completed', true)
-            .order('completed_at', { ascending: false });
+          // Get true direct signups from persona tables
+          const [knytData, qryptoData] = await Promise.all([
+            supabase.from('knyt_personas').select('user_id, "Email", created_at'),
+            supabase.from('qrypto_personas').select('user_id, "Email", created_at')
+          ]);
           
-          if (directError) throw directError;
-          userData = (directUsers || []).map(user => ({
-            ...user,
-            send_attempts: user.send_attempts || 0
-          }));
+          // Get all real invited emails to filter out
+          const { data: invitedEmails } = await supabase
+            .from('invited_users')
+            .select('email')
+            .or('batch_id.neq.direct_signup,batch_id.is.null');
+          
+          const invitedEmailsSet = new Set(invitedEmails?.map(inv => inv.email) || []);
+          
+          // Process KNYT personas
+          const knytDirectSignups = (knytData.data || [])
+            .filter(p => !invitedEmailsSet.has(p.Email))
+            .map(p => ({
+              id: p.user_id,
+              email: p.Email,
+              persona_type: 'knyt',
+              invited_at: p.created_at,
+              email_sent: false,
+              email_sent_at: null,
+              signup_completed: true,
+              completed_at: p.created_at,
+              batch_id: null,
+              send_attempts: 0
+            }));
+          
+          // Process Qrypto personas  
+          const qryptoDirectSignups = (qryptoData.data || [])
+            .filter(p => !invitedEmailsSet.has(p.Email))
+            .map(p => ({
+              id: p.user_id,
+              email: p.Email,
+              persona_type: 'qrypto',
+              invited_at: p.created_at,
+              email_sent: false,
+              email_sent_at: null,
+              signup_completed: true,
+              completed_at: p.created_at,
+              batch_id: null,
+              send_attempts: 0
+            }));
+          
+          userData = [...knytDirectSignups, ...qryptoDirectSignups];
           break;
 
         default:

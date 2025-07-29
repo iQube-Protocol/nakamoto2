@@ -3,51 +3,53 @@ import type { UnifiedInvitationStats } from './types';
 
 export class StatsCalculator {
   static async calculateUnifiedStats(): Promise<UnifiedInvitationStats> {
-    console.log('StatsCalculator: Calculating unified stats with actual persona counts...');
+    console.log('StatsCalculator: Calculating unified stats with corrected formulas (3,529 total)...');
     
     try {
-      // Get all invitation data 
-      const { data: allInvitations, error, count } = await supabase
+      // 1. TOTAL INVITATIONS CREATED: Real invitations only (exclude 'direct_signup' placeholders)
+      const { data: realInvitations, error: invitationsError, count: realInvitationsCount } = await supabase
         .from('invited_users')
-        .select('email, email_sent, signup_completed, persona_type, invited_at', { count: 'exact' })
+        .select('email, email_sent, signup_completed, persona_type, invited_at, batch_id', { count: 'exact' })
+        .or('batch_id.neq.direct_signup,batch_id.is.null')
         .order('invited_at', { ascending: false });
 
-      if (error) {
-        console.error('StatsCalculator: Error fetching invitations:', error);
-        throw error;
+      if (invitationsError) {
+        console.error('StatsCalculator: Error fetching real invitations:', invitationsError);
+        throw invitationsError;
       }
 
-      // Get actual signup counts from persona tables to ensure accuracy
+      // 2. Get invited users who completed signup (real invitations only)
+      const { count: invitedUsersCompleted } = await supabase
+        .from('invited_users')
+        .select('*', { count: 'exact', head: true })
+        .or('batch_id.neq.direct_signup,batch_id.is.null')
+        .eq('signup_completed', true);
+
+      // 3. Calculate direct signups using persona tables
       const [knytResult, qryptoResult] = await Promise.all([
         supabase.from('knyt_personas').select('*', { count: 'exact', head: true }),
         supabase.from('qrypto_personas').select('*', { count: 'exact', head: true })
       ]);
-      
-      const knytSignups = knytResult.count || 0;
-      const qryptoSignups = qryptoResult.count || 0;
-      const actualSignupsCompleted = knytSignups + qryptoSignups;
 
-      console.log('StatsCalculator: Actual persona counts:', {
-        totalInvitations: count || 0,
-        knytSignups,
-        qryptoSignups,
-        actualSignupsCompleted
+      const totalPersonas = (knytResult.count || 0) + (qryptoResult.count || 0);
+      const directSignupsCount = totalPersonas - (invitedUsersCompleted || 0);
+
+      console.log('StatsCalculator: Corrected data counts:', {
+        realInvitationsCount: realInvitationsCount || 0,
+        invitedUsersCompleted: invitedUsersCompleted || 0,
+        totalPersonas,
+        directSignupsCount,
+        knytPersonas: knytResult.count || 0,
+        qryptoPersonas: qryptoResult.count || 0
       });
 
-      // Use the exact count from Supabase to ensure accuracy
-      const totalCreated = count || 0;
-      const emailsSent = allInvitations?.filter(inv => inv.email_sent === true).length || 0;
-      const emailsPending = allInvitations?.filter(inv => inv.email_sent === false).length || 0;
-      const signupsCompleted = actualSignupsCompleted; // Use actual persona count instead of signup_completed flag
-      const awaitingSignup = emailsSent - actualSignupsCompleted; // People who got emails but haven't actually completed signup
+      // 4. Calculate dashboard metrics using corrected formulas
+      const totalCreated = realInvitationsCount || 0; // Should be 3,529
+      const emailsSent = realInvitations?.filter(inv => inv.email_sent === true).length || 0;
+      const emailsPending = realInvitations?.filter(inv => inv.email_sent === false).length || 0;
+      const signupsCompleted = invitedUsersCompleted || 0; // Real invited users who completed signup
+      const awaitingSignup = emailsSent - signupsCompleted; // People who got emails but haven't signed up
       const conversionRate = emailsSent > 0 ? (signupsCompleted / emailsSent) * 100 : 0;
-
-      // Get direct signups count 
-      const { count: directSignupsCount } = await supabase
-        .from('invited_users')
-        .select('*', { count: 'exact', head: true })
-        .eq('batch_id', 'direct_signup')
-        .eq('signup_completed', true);
 
       const stats: UnifiedInvitationStats = {
         totalCreated,
@@ -62,8 +64,8 @@ export class StatsCalculator {
 
       console.log('StatsCalculator: Generated unified stats:', stats);
       console.log('StatsCalculator: Data verification:', {
-        totalFromCount: count,
-        totalFromArray: allInvitations?.length,
+        totalFromCount: realInvitationsCount,
+        totalFromArray: realInvitations?.length,
         emailsSentCalculated: emailsSent,
         emailsPendingCalculated: emailsPending,
         basicMathCheck: emailsSent + emailsPending === totalCreated,
@@ -236,46 +238,68 @@ export class StatsCalculator {
     }
   }
 
-  // New method to get the most accurate stats directly from database
+  // New method to get the most accurate stats directly from database with corrected formulas
   static async getRealTimeStats(): Promise<UnifiedInvitationStats> {
-    console.log('StatsCalculator: Getting real-time stats directly from database...');
+    console.log('StatsCalculator: Getting real-time stats with corrected formulas (3,529 total)...');
     
     try {
-      // Use individual count queries to ensure accuracy
+      // Use corrected count queries excluding 'direct_signup' placeholders
       const [
         { count: totalCreated },
         { count: emailsSent },
         { count: emailsPending },
         { count: signupsCompleted },
         { count: awaitingSignup },
-        { count: directSignups }
+        knytResult,
+        qryptoResult
       ] = await Promise.all([
-        supabase.from('invited_users').select('*', { count: 'exact', head: true }),
-        supabase.from('invited_users').select('*', { count: 'exact', head: true }).eq('email_sent', true),
-        supabase.from('invited_users').select('*', { count: 'exact', head: true }).eq('email_sent', false),
-        supabase.from('invited_users').select('*', { count: 'exact', head: true }).eq('signup_completed', true),
+        // Real invitations only (exclude direct_signup placeholders)
         supabase.from('invited_users').select('*', { count: 'exact', head: true })
+          .or('batch_id.neq.direct_signup,batch_id.is.null'),
+        supabase.from('invited_users').select('*', { count: 'exact', head: true })
+          .or('batch_id.neq.direct_signup,batch_id.is.null')
+          .eq('email_sent', true),
+        supabase.from('invited_users').select('*', { count: 'exact', head: true })
+          .or('batch_id.neq.direct_signup,batch_id.is.null')
+          .eq('email_sent', false),
+        supabase.from('invited_users').select('*', { count: 'exact', head: true })
+          .or('batch_id.neq.direct_signup,batch_id.is.null')
+          .eq('signup_completed', true),
+        supabase.from('invited_users').select('*', { count: 'exact', head: true })
+          .or('batch_id.neq.direct_signup,batch_id.is.null')
           .eq('email_sent', true)
           .eq('signup_completed', false),
-        supabase.from('invited_users').select('*', { count: 'exact', head: true })
-          .eq('batch_id', 'direct_signup')
-          .eq('signup_completed', true)
+        // Get actual persona counts for direct signups calculation
+        supabase.from('knyt_personas').select('*', { count: 'exact', head: true }),
+        supabase.from('qrypto_personas').select('*', { count: 'exact', head: true })
       ]);
+
+      // Calculate true direct signups: total personas minus invited users who completed
+      const totalPersonas = (knytResult.count || 0) + (qryptoResult.count || 0);
+      const directSignupsCount = totalPersonas - (signupsCompleted || 0);
 
       const conversionRate = (emailsSent || 0) > 0 ? ((signupsCompleted || 0) / (emailsSent || 0)) * 100 : 0;
 
       const stats: UnifiedInvitationStats = {
-        totalCreated: totalCreated || 0,
+        totalCreated: totalCreated || 0, // Should be 3,529
         emailsSent: emailsSent || 0,
         emailsPending: emailsPending || 0,
         signupsCompleted: signupsCompleted || 0,
         awaitingSignup: awaitingSignup || 0,
-        directSignups: directSignups || 0,
+        directSignups: directSignupsCount || 0,
         conversionRate,
         lastUpdated: new Date().toISOString()
       };
 
-      console.log('StatsCalculator: Real-time stats from individual queries:', stats);
+      console.log('StatsCalculator: Corrected real-time stats:', stats);
+      console.log('StatsCalculator: Persona breakdown:', {
+        knytPersonas: knytResult.count || 0,
+        qryptoPersonas: qryptoResult.count || 0,
+        totalPersonas,
+        invitedCompleted: signupsCompleted || 0,
+        calculatedDirectSignups: directSignupsCount
+      });
+      
       return stats;
     } catch (error: any) {
       console.error('StatsCalculator: Real-time stats failed:', error);
