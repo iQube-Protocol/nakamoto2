@@ -25,15 +25,19 @@ export class StatsCalculator {
         .or('batch_id.neq.direct_signup,batch_id.is.null')
         .eq('signup_completed', true);
 
-      // 3. Calculate direct signups: Use RPC function to count auth.users not in invited_users
+      // 3. Calculate direct signups: Count 'direct_signup' placeholder records
       let directSignupsCount = 0;
       try {
-        const { data: directSignupData, error: rpcError } = await supabase.rpc('count_direct_signups');
-        if (rpcError) {
-          console.error('RPC error counting direct signups:', rpcError);
+        const { count: directSignupPlaceholders, error: directSignupError } = await supabase
+          .from('invited_users')
+          .select('*', { count: 'exact', head: true })
+          .eq('batch_id', 'direct_signup');
+        
+        if (directSignupError) {
+          console.error('Error counting direct signups:', directSignupError);
           directSignupsCount = 0;
         } else {
-          directSignupsCount = directSignupData as number || 0;
+          directSignupsCount = directSignupPlaceholders || 0;
         }
       } catch (error) {
         console.warn('Direct signup calculation failed, using fallback of 0:', error);
@@ -253,7 +257,7 @@ export class StatsCalculator {
         { count: emailsPending },
         { count: signupsCompleted },
         { count: awaitingSignup },
-        { data: directSignupData, error: directSignupError }
+        { count: directSignupsCount, error: directSignupError }
       ] = await Promise.all([
         // Real invitations only (exclude direct_signup placeholders)
         supabase.from('invited_users').select('*', { count: 'exact', head: true })
@@ -271,12 +275,11 @@ export class StatsCalculator {
           .or('batch_id.neq.direct_signup,batch_id.is.null')
           .eq('email_sent', true)
           .eq('signup_completed', false),
-        // Get actual direct signups count using RPC
-        supabase.rpc('count_direct_signups')
+        // Get actual direct signups count (direct_signup placeholders)
+        supabase.from('invited_users').select('*', { count: 'exact', head: true }).eq('batch_id', 'direct_signup')
       ]);
 
-      // Calculate direct signups from RPC result
-      const directSignupsCount = directSignupError ? 0 : (directSignupData as number || 0);
+      // Use direct signup count from query (should be 32)
 
       const conversionRate = (emailsSent || 0) > 0 ? ((signupsCompleted || 0) / (emailsSent || 0)) * 100 : 0;
 
@@ -293,8 +296,8 @@ export class StatsCalculator {
 
       console.log('StatsCalculator: Corrected real-time stats:', stats);
       console.log('StatsCalculator: Direct signup calculation:', {
-        directSignupsFromRPC: directSignupsCount,
-        rpcError: directSignupError
+        directSignupsCount: directSignupsCount || 0,
+        directSignupError
       });
       
       return stats;

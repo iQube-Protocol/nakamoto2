@@ -132,53 +132,18 @@ const UserListModal: React.FC<UserListModalProps> = ({
           break;
 
         case 'directSignups':
-          // Get true direct signups from persona tables
-          const [knytData, qryptoData] = await Promise.all([
-            supabase.from('knyt_personas').select('user_id, "Email", created_at'),
-            supabase.from('qrypto_personas').select('user_id, "Email", created_at')
-          ]);
-          
-          // Get all real invited emails to filter out
-          const { data: invitedEmails } = await supabase
+          // Get direct signup placeholder records
+          const { data: directSignupUsers, error: directSignupError } = await supabase
             .from('invited_users')
-            .select('email')
-            .or('batch_id.neq.direct_signup,batch_id.is.null');
+            .select('id, email, persona_type, invited_at, email_sent, email_sent_at, signup_completed, completed_at, batch_id, send_attempts')
+            .eq('batch_id', 'direct_signup')
+            .order('invited_at', { ascending: false });
           
-          const invitedEmailsSet = new Set(invitedEmails?.map(inv => inv.email) || []);
-          
-          // Process KNYT personas
-          const knytDirectSignups = (knytData.data || [])
-            .filter(p => !invitedEmailsSet.has(p.Email))
-            .map(p => ({
-              id: p.user_id,
-              email: p.Email,
-              persona_type: 'knyt',
-              invited_at: p.created_at,
-              email_sent: false,
-              email_sent_at: null,
-              signup_completed: true,
-              completed_at: p.created_at,
-              batch_id: null,
-              send_attempts: 0
-            }));
-          
-          // Process Qrypto personas  
-          const qryptoDirectSignups = (qryptoData.data || [])
-            .filter(p => !invitedEmailsSet.has(p.Email))
-            .map(p => ({
-              id: p.user_id,
-              email: p.Email,
-              persona_type: 'qrypto',
-              invited_at: p.created_at,
-              email_sent: false,
-              email_sent_at: null,
-              signup_completed: true,
-              completed_at: p.created_at,
-              batch_id: null,
-              send_attempts: 0
-            }));
-          
-          userData = [...knytDirectSignups, ...qryptoDirectSignups];
+          if (directSignupError) throw directSignupError;
+          userData = (directSignupUsers || []).map(user => ({
+            ...user,
+            send_attempts: user.send_attempts || 0
+          }));
           break;
 
         default:
