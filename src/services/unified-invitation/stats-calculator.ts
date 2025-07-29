@@ -25,12 +25,16 @@ export class StatsCalculator {
         .or('batch_id.neq.direct_signup,batch_id.is.null')
         .eq('signup_completed', true);
 
-      // 3. Calculate direct signups: Use RPC or raw query since auth.users not directly accessible
+      // 3. Calculate direct signups: Use RPC function to count auth.users not in invited_users
       let directSignupsCount = 0;
       try {
-        // Use raw SQL query to count auth.users not in invited_users
-        const { data: directSignupData } = await supabase.rpc('count_direct_signups');
-        directSignupsCount = directSignupData || 0;
+        const { data: directSignupData, error: rpcError } = await supabase.rpc('count_direct_signups');
+        if (rpcError) {
+          console.error('RPC error counting direct signups:', rpcError);
+          directSignupsCount = 0;
+        } else {
+          directSignupsCount = directSignupData as number || 0;
+        }
       } catch (error) {
         console.warn('Direct signup calculation failed, using fallback of 0:', error);
         directSignupsCount = 0;

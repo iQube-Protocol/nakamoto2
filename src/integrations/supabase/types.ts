@@ -708,6 +708,10 @@ export type Database = {
       }
     }
     Functions: {
+      count_direct_signups: {
+        Args: Record<PropertyKey, never>
+        Returns: number
+      }
       increment_send_attempts: {
         Args: { target_email: string }
         Returns: undefined
