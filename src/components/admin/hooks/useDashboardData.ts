@@ -41,9 +41,9 @@ export const useDashboardData = () => {
         StatsCalculator.getRealTimeStats(), // Use new real-time method
         unifiedInvitationService.getEmailBatches(),
         unifiedInvitationService.getPendingEmailSend(50000), // Increased limit to get all records
-        unifiedInvitationService.getEmailsSent(),
-        unifiedInvitationService.getAwaitingSignup(),
-        unifiedInvitationService.getCompletedInvitations()
+        unifiedInvitationService.getEmailsSent(), // Already fetches all records without limit
+        unifiedInvitationService.getAwaitingSignup(), // Already fetches all records without limit  
+        unifiedInvitationService.getCompletedInvitations() // Already fetches all records without limit
       ]);
 
       console.log('useDashboardData: Loaded data with real-time stats:', {
