@@ -712,6 +712,13 @@ export type Database = {
         Args: Record<PropertyKey, never>
         Returns: number
       }
+      extend_invitation_expiration: {
+        Args: { email_list?: string[]; extend_days?: number }
+        Returns: {
+          updated_count: number
+          emails_updated: string[]
+        }[]
+      }
       get_expiring_invitations: {
         Args: { days_ahead?: number }
         Returns: {

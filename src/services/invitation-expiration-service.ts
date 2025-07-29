@@ -65,10 +65,13 @@ export class InvitationExpirationService {
     extendDays: number = 30
   ): Promise<{ success: boolean; updatedCount: number; errors: string[] }> {
     try {
-      const { data, error } = await supabase.rpc('extend_invitation_expiration', {
-        email_list: emails,
-        extend_days: extendDays
-      });
+      // Use direct SQL since function isn't in types yet
+      const { data, error } = await supabase
+        .from('invited_users')
+        .update({ expires_at: `now() + interval '${extendDays} days'` })
+        .in('email', emails)
+        .eq('signup_completed', false)
+        .select('email');
       
       if (error) {
         console.error('Error extending invitation expiration:', error);
@@ -79,13 +82,13 @@ export class InvitationExpirationService {
         };
       }
 
-      const result = data && data.length > 0 ? data[0] : { updated_count: 0, emails_updated: [] };
+      const updatedCount = data?.length || 0;
       
-      toast.success(`Extended expiration for ${result.updated_count} invitations by ${extendDays} days`);
+      toast.success(`Extended expiration for ${updatedCount} invitations by ${extendDays} days`);
       
       return {
         success: true,
-        updatedCount: result.updated_count || 0,
+        updatedCount,
         errors: []
       };
     } catch (error: any) {
@@ -104,10 +107,12 @@ export class InvitationExpirationService {
    */
   async extendAllActiveInvitations(extendDays: number = 30): Promise<{ success: boolean; updatedCount: number; errors: string[] }> {
     try {
-      const { data, error } = await supabase.rpc('extend_invitation_expiration', {
-        email_list: null, // null means all active invitations
-        extend_days: extendDays
-      });
+      // Use direct SQL since function isn't in types yet
+      const { data, error } = await supabase
+        .from('invited_users')
+        .update({ expires_at: `now() + interval '${extendDays} days'` })
+        .eq('signup_completed', false)
+        .select('email');
       
       if (error) {
         console.error('Error extending all invitations:', error);
@@ -118,13 +123,13 @@ export class InvitationExpirationService {
         };
       }
 
-      const result = data && data.length > 0 ? data[0] : { updated_count: 0, emails_updated: [] };
+      const updatedCount = data?.length || 0;
       
-      toast.success(`Extended expiration for ${result.updated_count} active invitations by ${extendDays} days`);
+      toast.success(`Extended expiration for ${updatedCount} active invitations by ${extendDays} days`);
       
       return {
         success: true,
-        updatedCount: result.updated_count || 0,
+        updatedCount,
         errors: []
       };
     } catch (error: any) {
