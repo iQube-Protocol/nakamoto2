@@ -25,22 +25,21 @@ export class StatsCalculator {
         .or('batch_id.neq.direct_signup,batch_id.is.null')
         .eq('signup_completed', true);
 
-      // 3. Calculate direct signups using persona tables
-      const [knytResult, qryptoResult] = await Promise.all([
-        supabase.from('knyt_personas').select('*', { count: 'exact', head: true }),
-        supabase.from('qrypto_personas').select('*', { count: 'exact', head: true })
-      ]);
-
-      const totalPersonas = (knytResult.count || 0) + (qryptoResult.count || 0);
-      const directSignupsCount = totalPersonas - (invitedUsersCompleted || 0);
+      // 3. Calculate direct signups: Use RPC or raw query since auth.users not directly accessible
+      let directSignupsCount = 0;
+      try {
+        // Use raw SQL query to count auth.users not in invited_users
+        const { data: directSignupData } = await supabase.rpc('count_direct_signups');
+        directSignupsCount = directSignupData || 0;
+      } catch (error) {
+        console.warn('Direct signup calculation failed, using fallback of 0:', error);
+        directSignupsCount = 0;
+      }
 
       console.log('StatsCalculator: Corrected data counts:', {
         realInvitationsCount: realInvitationsCount || 0,
         invitedUsersCompleted: invitedUsersCompleted || 0,
-        totalPersonas,
-        directSignupsCount,
-        knytPersonas: knytResult.count || 0,
-        qryptoPersonas: qryptoResult.count || 0
+        directSignupsCount
       });
 
       // 4. Calculate dashboard metrics using corrected formulas
