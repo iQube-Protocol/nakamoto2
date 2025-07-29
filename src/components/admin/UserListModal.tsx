@@ -193,9 +193,10 @@ const UserListModal: React.FC<UserListModalProps> = ({
     if (searchTerm.trim() === '') {
       setFilteredUsers(users);
     } else {
+      const searchLower = searchTerm.toLowerCase();
       const filtered = users.filter(user =>
-        user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
-        user.persona_type.toLowerCase().includes(searchTerm.toLowerCase())
+        user.email.toLowerCase().includes(searchLower) ||
+        user.persona_type.toLowerCase().includes(searchLower)
       );
       setFilteredUsers(filtered);
     }
@@ -240,7 +241,7 @@ const UserListModal: React.FC<UserListModalProps> = ({
         <DialogHeader className="flex flex-row items-center justify-between">
           <DialogTitle className="flex items-center">
             <User className="h-5 w-5 mr-2" />
-            {title} ({totalCount !== undefined ? totalCount : filteredUsers.length})
+            {title} ({searchTerm.trim() ? filteredUsers.length : (totalCount !== undefined ? totalCount : filteredUsers.length)})
           </DialogTitle>
           <Button onClick={handleRefresh} variant="outline" size="sm" disabled={isLoading}>
             <RefreshCw className={`h-4 w-4 mr-1 ${isLoading ? 'animate-spin' : ''}`} />
@@ -251,7 +252,7 @@ const UserListModal: React.FC<UserListModalProps> = ({
         <div className="flex items-center space-x-2 p-4 border-b">
           <Search className="h-4 w-4 text-gray-500" />
           <Input
-            placeholder="Search by name or email..."
+            placeholder="Search by email or persona type..."
             value={searchTerm}
             onChange={(e) => setSearchTerm(e.target.value)}
             className="flex-1"
