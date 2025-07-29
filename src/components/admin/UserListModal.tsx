@@ -45,191 +45,120 @@ const UserListModal: React.FC<UserListModalProps> = ({
     
     setIsLoading(true);
     try {
-      console.log(`🔄 UserListModal: Loading users for category: ${category}`);
+      console.log(`UserListModal: Loading users for category: ${category}`);
       
-      let users: UserDetail[] = [];
+      let userData: PendingInvitation[] = [];
       
+      // Query database directly to get accurate counts and data
       switch (category) {
         case 'totalCreated':
-          // Get all REAL invitations (exclude direct signup placeholders)
+          // Get all invitations
           const { data: allInvites, error: allError } = await supabase
             .from('invited_users')
-            .select('id, email, persona_type, invited_at, email_sent, email_sent_at, signup_completed, completed_at, batch_id')
-            .not('batch_id', 'in', '("direct_signup","direct-signup")')
+            .select('id, email, persona_type, invited_at, email_sent, email_sent_at, signup_completed, completed_at, batch_id, send_attempts')
             .order('invited_at', { ascending: false });
           
           if (allError) throw allError;
-          users = (allInvites || []).map(user => ({
-            id: user.id,
-            email: user.email,
-            persona_type: user.persona_type,
-            invited_at: user.invited_at,
-            email_sent: user.email_sent,
-            email_sent_at: user.email_sent_at,
-            signup_completed: user.signup_completed,
-            completed_at: user.completed_at
+          userData = (allInvites || []).map(user => ({
+            ...user,
+            send_attempts: user.send_attempts || 0
           }));
           break;
 
         case 'emailsSent':
-          // Get REAL invitations where emails were sent
           const { data: sentUsers, error: sentError } = await supabase
             .from('invited_users')
-            .select('id, email, persona_type, invited_at, email_sent, email_sent_at, signup_completed, completed_at, batch_id')
+            .select('id, email, persona_type, invited_at, email_sent, email_sent_at, signup_completed, completed_at, batch_id, send_attempts')
             .eq('email_sent', true)
-            .not('batch_id', 'in', '("direct_signup","direct-signup")')
             .order('email_sent_at', { ascending: false });
           
           if (sentError) throw sentError;
-          users = (sentUsers || []).map(user => ({
-            id: user.id,
-            email: user.email,
-            persona_type: user.persona_type,
-            invited_at: user.invited_at,
-            email_sent: user.email_sent,
-            email_sent_at: user.email_sent_at,
-            signup_completed: user.signup_completed,
-            completed_at: user.completed_at
+          userData = (sentUsers || []).map(user => ({
+            ...user,
+            send_attempts: user.send_attempts || 0
           }));
           break;
 
         case 'emailsPending':
-          // Get REAL invitations where emails are pending
           const { data: pendingUsers, error: pendingError } = await supabase
             .from('invited_users')
-            .select('id, email, persona_type, invited_at, email_sent, email_sent_at, signup_completed, completed_at, batch_id')
+            .select('id, email, persona_type, invited_at, email_sent, email_sent_at, signup_completed, completed_at, batch_id, send_attempts')
             .eq('email_sent', false)
-            .not('batch_id', 'in', '("direct_signup","direct-signup")')
             .order('invited_at', { ascending: false });
           
           if (pendingError) throw pendingError;
-          users = (pendingUsers || []).map(user => ({
-            id: user.id,
-            email: user.email,
-            persona_type: user.persona_type,
-            invited_at: user.invited_at,
-            email_sent: user.email_sent,
-            email_sent_at: user.email_sent_at,
-            signup_completed: user.signup_completed,
-            completed_at: user.completed_at
+          userData = (pendingUsers || []).map(user => ({
+            ...user,
+            send_attempts: user.send_attempts || 0
           }));
           break;
 
         case 'awaitingSignup':
-          // Get REAL invitations where emails sent but signup not completed
           const { data: awaitingUsers, error: awaitingError } = await supabase
             .from('invited_users')
-            .select('id, email, persona_type, invited_at, email_sent, email_sent_at, signup_completed, completed_at, batch_id')
+            .select('id, email, persona_type, invited_at, email_sent, email_sent_at, signup_completed, completed_at, batch_id, send_attempts')
             .eq('email_sent', true)
             .eq('signup_completed', false)
-            .not('batch_id', 'in', '("direct_signup","direct-signup")')
             .order('email_sent_at', { ascending: false });
           
           if (awaitingError) throw awaitingError;
-          users = (awaitingUsers || []).map(user => ({
-            id: user.id,
-            email: user.email,
-            persona_type: user.persona_type,
-            invited_at: user.invited_at,
-            email_sent: user.email_sent,
-            email_sent_at: user.email_sent_at,
-            signup_completed: user.signup_completed,
-            completed_at: user.completed_at
+          userData = (awaitingUsers || []).map(user => ({
+            ...user,
+            send_attempts: user.send_attempts || 0
           }));
           break;
 
         case 'signupsCompleted':
-          // Get all personas (total completed signups)
-          const [knytData, qryptoData] = await Promise.all([
-            supabase.from('knyt_personas').select('user_id, "Email", created_at'),
-            supabase.from('qrypto_personas').select('user_id, "Email", created_at')
-          ]);
+          const { data: completedUsers, error: completedError } = await supabase
+            .from('invited_users')
+            .select('id, email, persona_type, invited_at, email_sent, email_sent_at, signup_completed, completed_at, batch_id, send_attempts')
+            .eq('signup_completed', true)
+            .order('completed_at', { ascending: false });
           
-          if (knytData.error || qryptoData.error) {
-            throw knytData.error || qryptoData.error;
-          }
-
-          const allPersonas = [
-            ...(knytData.data || []).map(p => ({ ...p, persona_type: 'knyt' })),
-            ...(qryptoData.data || []).map(p => ({ ...p, persona_type: 'qrypto' }))
-          ];
-
-          users = allPersonas.map(persona => ({
-            id: persona.user_id,
-            email: persona.Email || '',
-            persona_type: persona.persona_type,
-            invited_at: persona.created_at,
-            email_sent: true,
-            email_sent_at: null,
-            signup_completed: true,
-            completed_at: persona.created_at
+          if (completedError) throw completedError;
+          userData = (completedUsers || []).map(user => ({
+            ...user,
+            send_attempts: user.send_attempts || 0
           }));
           break;
 
         case 'directSignups':
-          // Get TRUE direct signups (personas without invitation records)
-          const [allKnytData, allQryptoData] = await Promise.all([
-            supabase.from('knyt_personas').select('user_id, "Email", created_at'),
-            supabase.from('qrypto_personas').select('user_id, "Email", created_at')
-          ]);
-          
-          if (allKnytData.error || allQryptoData.error) {
-            throw allKnytData.error || allQryptoData.error;
-          }
-
-          // Get all REAL invitation emails
-          const { data: inviteEmails, error: inviteError } = await supabase
+          // Get users who signed up directly (marked with direct_signup batch_id)
+          const { data: directUsers, error: directError } = await supabase
             .from('invited_users')
-            .select('email')
-            .not('batch_id', 'in', '("direct_signup","direct-signup")');
-
-          if (inviteError) throw inviteError;
-
-          const invitedEmailSet = new Set(
-            inviteEmails?.map(inv => inv.email?.toLowerCase()?.trim()).filter(Boolean) || []
-          );
-
-          // Find personas without invitations
-          const directKnyt = (allKnytData.data || [])
-            .filter(p => p.Email && p.Email.trim() !== '' && !invitedEmailSet.has(p.Email.toLowerCase().trim()))
-            .map(p => ({
-              id: p.user_id,
-              email: p.Email || '',
-              persona_type: 'knyt',
-              invited_at: p.created_at,
-              email_sent: false,
-              email_sent_at: null,
-              signup_completed: true,
-              completed_at: p.created_at
-            }));
-
-          const directQrypto = (allQryptoData.data || [])
-            .filter(p => p.Email && p.Email.trim() !== '' && !invitedEmailSet.has(p.Email.toLowerCase().trim()))
-            .map(p => ({
-              id: p.user_id,
-              email: p.Email || '',
-              persona_type: 'qrypto',
-              invited_at: p.created_at,
-              email_sent: false,
-              email_sent_at: null,
-              signup_completed: true,
-              completed_at: p.created_at
-            }));
-
-          users = [...directKnyt, ...directQrypto];
+            .select('id, email, persona_type, invited_at, email_sent, email_sent_at, signup_completed, completed_at, batch_id, send_attempts')
+            .eq('batch_id', 'direct_signup')
+            .eq('signup_completed', true)
+            .order('completed_at', { ascending: false });
+          
+          if (directError) throw directError;
+          userData = (directUsers || []).map(user => ({
+            ...user,
+            send_attempts: user.send_attempts || 0
+          }));
           break;
 
         default:
-          console.warn(`⚠️ UserListModal: Unknown category: ${category}`);
-          users = [];
+          console.warn(`UserListModal: Unknown category: ${category}`);
+          userData = [];
       }
 
-      console.log(`✅ UserListModal: Loaded ${users.length} users for category ${category}`);
-      setUsers(users);
-      setFilteredUsers(users);
+      console.log(`UserListModal: Loaded ${userData.length} users for category ${category}`);
 
+      // Convert PendingInvitation to UserDetail format
+      const convertedUsers: UserDetail[] = userData.map(user => ({
+        id: user.id,
+        email: user.email,
+        persona_type: user.persona_type,
+        invited_at: user.invited_at,
+        email_sent: user.email_sent,
+        email_sent_at: user.email_sent_at
+      }));
+
+      setUsers(convertedUsers);
+      setFilteredUsers(convertedUsers);
     } catch (error: any) {
-      console.error('❌ UserListModal: Error loading users:', error);
+      console.error('UserListModal: Error loading users:', error);
       toast.error(`Failed to load users: ${error.message}`);
       setUsers([]);
       setFilteredUsers([]);
@@ -244,27 +173,14 @@ const UserListModal: React.FC<UserListModalProps> = ({
     }
   }, [open, category]);
 
-  // Enhanced search - case insensitive and comprehensive
   useEffect(() => {
     if (searchTerm.trim() === '') {
       setFilteredUsers(users);
     } else {
-      const searchLower = searchTerm.toLowerCase().trim();
-      const filtered = users.filter(user => {
-        const email = user.email?.toLowerCase() || '';
-        const personaType = user.persona_type?.toLowerCase() || '';
-        
-        // Search email parts separately for better matching
-        const emailParts = email.split('@');
-        const emailName = emailParts[0] || '';
-        const emailDomain = emailParts[1] || '';
-        
-        return email.includes(searchLower) ||
-               emailName.includes(searchLower) ||
-               emailDomain.includes(searchLower) ||
-               personaType.includes(searchLower) ||
-               user.id?.toLowerCase().includes(searchLower);
-      });
+      const filtered = users.filter(user =>
+        user.email.toLowerCase().includes(searchTerm.toLowerCase()) ||
+        user.persona_type.toLowerCase().includes(searchTerm.toLowerCase())
+      );
       setFilteredUsers(filtered);
     }
   }, [searchTerm, users]);
@@ -308,7 +224,7 @@ const UserListModal: React.FC<UserListModalProps> = ({
         <DialogHeader className="flex flex-row items-center justify-between">
           <DialogTitle className="flex items-center">
             <User className="h-5 w-5 mr-2" />
-            {title} ({users.length})
+            {title} ({filteredUsers.length})
           </DialogTitle>
           <Button onClick={handleRefresh} variant="outline" size="sm" disabled={isLoading}>
             <RefreshCw className={`h-4 w-4 mr-1 ${isLoading ? 'animate-spin' : ''}`} />

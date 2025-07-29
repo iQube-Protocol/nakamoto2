@@ -3,92 +3,103 @@ import type { UnifiedInvitationStats } from './types';
 
 export class StatsCalculator {
   static async calculateUnifiedStats(): Promise<UnifiedInvitationStats> {
-    console.log('🔄 ROBUST FORMULA: Calculating unified invitation stats...');
+    console.log('StatsCalculator: Calculating unified stats with actual persona counts...');
     
     try {
-      // ROBUST FORMULA IMPLEMENTATION
-      
-      // 1. Get all invitations, separating real invites from direct signup placeholders
-      const { data: allInvitations, error: inviteError } = await supabase
+      // Get all invitation data 
+      const { data: allInvitations, error, count } = await supabase
         .from('invited_users')
-        .select('email, email_sent, signup_completed, persona_type, invited_at, batch_id');
+        .select('email, email_sent, signup_completed, persona_type, invited_at', { count: 'exact' })
+        .order('invited_at', { ascending: false });
 
-      if (inviteError) {
-        console.error('❌ Error fetching invitations:', inviteError);
-        throw inviteError;
+      if (error) {
+        console.error('StatsCalculator: Error fetching invitations:', error);
+        throw error;
       }
 
-      // Filter out direct signup placeholders to get REAL invitations only
-      const realInvitations = allInvitations?.filter(inv => 
-        inv.batch_id !== 'direct_signup' && 
-        inv.batch_id !== 'direct-signup'
-      ) || [];
-
-      // 2. Get actual persona counts for completed signups
+      // Get actual signup counts from persona tables to ensure accuracy
       const [knytResult, qryptoResult] = await Promise.all([
-        supabase.from('knyt_personas').select('user_id, "Email"'),
-        supabase.from('qrypto_personas').select('user_id, "Email"')
+        supabase.from('knyt_personas').select('*', { count: 'exact', head: true }),
+        supabase.from('qrypto_personas').select('*', { count: 'exact', head: true })
       ]);
       
-      if (knytResult.error || qryptoResult.error) {
-        console.error('❌ Error fetching personas:', { knytError: knytResult.error, qryptoError: qryptoResult.error });
-        throw knytResult.error || qryptoResult.error;
-      }
+      const knytSignups = knytResult.count || 0;
+      const qryptoSignups = qryptoResult.count || 0;
+      const actualSignupsCompleted = knytSignups + qryptoSignups;
 
-      const knytPersonas = knytResult.data || [];
-      const qryptoPersonas = qryptoResult.data || [];
+      console.log('StatsCalculator: Actual persona counts:', {
+        totalInvitations: count || 0,
+        knytSignups,
+        qryptoSignups,
+        actualSignupsCompleted
+      });
 
-      // CORRECTED ROBUST FORMULA:
-      const totalCreated = realInvitations.length; // 3,529 real invitations
-      const emailsSent = realInvitations.filter(inv => inv.email_sent === true).length; // Should be 3,529
-      const emailsPending = realInvitations.filter(inv => inv.email_sent === false).length; // Should be 0
-      const awaitingSignup = realInvitations.filter(inv => 
-        inv.email_sent === true && inv.signup_completed === false
-      ).length; // Invitations sent but not completed
-      
-      // Total completed signups from persona tables (actual personas created)
-      const totalSignupsCompleted = knytPersonas.length + qryptoPersonas.length; // 152 + 138 = 290
-      
-      // Direct signups are the 32 placeholder records in invited_users with batch_id = 'direct_signup'
-      const directSignupsFromPlaceholders = allInvitations?.filter(inv => 
-        inv.batch_id === 'direct_signup' || inv.batch_id === 'direct-signup'
-      ).length || 0;
+      // Use the exact count from Supabase to ensure accuracy
+      const totalCreated = count || 0;
+      const emailsSent = allInvitations?.filter(inv => inv.email_sent === true).length || 0;
+      const emailsPending = allInvitations?.filter(inv => inv.email_sent === false).length || 0;
+      const signupsCompleted = actualSignupsCompleted; // Use actual persona count instead of signup_completed flag
+      const awaitingSignup = emailsSent - actualSignupsCompleted; // People who got emails but haven't actually completed signup
+      const conversionRate = emailsSent > 0 ? (signupsCompleted / emailsSent) * 100 : 0;
 
-      const conversionRate = totalCreated > 0 ? 
-        Math.round((totalSignupsCompleted / totalCreated) * 100) : 0;
-
-      // VALIDATION CHECKS
-      if (emailsSent + emailsPending !== totalCreated) {
-        console.error(`🚨 MATH ERROR: emails sent (${emailsSent}) + pending (${emailsPending}) = ${emailsSent + emailsPending} ≠ total created (${totalCreated})`);
-      }
+      // Get direct signups count 
+      const { count: directSignupsCount } = await supabase
+        .from('invited_users')
+        .select('*', { count: 'exact', head: true })
+        .eq('batch_id', 'direct_signup')
+        .eq('signup_completed', true);
 
       const stats: UnifiedInvitationStats = {
-        totalCreated,           // Only REAL invitations (3,529)
-        emailsSent,            // Emails sent for REAL invitations 
-        emailsPending,         // Emails pending for REAL invitations
-        signupsCompleted: totalSignupsCompleted, // All personas (153)
-        awaitingSignup,        // Invites sent but not completed
-        directSignups: directSignupsFromPlaceholders, // Direct signups (32)
+        totalCreated,
+        emailsSent,
+        emailsPending,
+        signupsCompleted,
+        awaitingSignup,
+        directSignups: directSignupsCount || 0,
         conversionRate,
         lastUpdated: new Date().toISOString()
       };
 
-      console.log('✅ ROBUST STATS CALCULATED:', {
-        '📊 Total Invitations Created': totalCreated,
-        '📧 Invite Emails Sent': emailsSent,
-        '⏳ Invite Emails Pending': emailsPending,
-        '⌛ Invites Awaiting Signup': awaitingSignup,
-        '✅ Total Completed Signups': totalSignupsCompleted,
-        '🎯 Direct Signups (Real)': directSignupsFromPlaceholders,
-        '📈 Conversion Rate': `${conversionRate}%`,
-        '🔢 Validation': `${emailsSent} + ${emailsPending} = ${emailsSent + emailsPending} ${emailsSent + emailsPending === totalCreated ? '✅' : '❌'}`
+      console.log('StatsCalculator: Generated unified stats:', stats);
+      console.log('StatsCalculator: Data verification:', {
+        totalFromCount: count,
+        totalFromArray: allInvitations?.length,
+        emailsSentCalculated: emailsSent,
+        emailsPendingCalculated: emailsPending,
+        basicMathCheck: emailsSent + emailsPending === totalCreated,
+        signupsCompletedCalculated: signupsCompleted,
+        awaitingSignupCalculated: awaitingSignup,
+        signupMathCheck: signupsCompleted + awaitingSignup,
+        emailsSentForComparison: emailsSent,
+        signupConversionCheck: signupsCompleted + awaitingSignup <= emailsSent
       });
 
-      return stats;
+      // BUSINESS CRITICAL: Validate the core math that must always be true
+      if (emailsSent + emailsPending !== totalCreated) {
+        console.error('StatsCalculator: CRITICAL - Basic math validation failed:', {
+          emailsSent,
+          emailsPending,
+          totalCreated,
+          sum: emailsSent + emailsPending,
+          difference: Math.abs((emailsSent + emailsPending) - totalCreated)
+        });
+      }
 
+      // BUSINESS CRITICAL: Check signup logic consistency  
+      if (signupsCompleted + awaitingSignup > emailsSent) {
+        console.error('StatsCalculator: CRITICAL - More signups than emails sent:', {
+          signupsCompleted,
+          awaitingSignup,
+          sumSignups: signupsCompleted + awaitingSignup,
+          emailsSent,
+          difference: (signupsCompleted + awaitingSignup) - emailsSent
+        });
+      }
+
+      return stats;
     } catch (error) {
-      console.error('❌ Error in calculateUnifiedStats:', error);
-      throw error;
+      console.error('StatsCalculator: Failed to calculate stats:', error);
+      throw new Error(`Failed to get invitation stats: ${error instanceof Error ? error.message : 'Unknown error'}`);
     }
   }
 
