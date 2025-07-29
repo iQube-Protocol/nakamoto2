@@ -40,7 +40,7 @@ export const useDashboardData = () => {
       ] = await Promise.all([
         StatsCalculator.getRealTimeStats(), // Use new real-time method
         unifiedInvitationService.getEmailBatches(),
-        unifiedInvitationService.getPendingEmailSend(10000),
+        unifiedInvitationService.getPendingEmailSend(50000), // Increased limit to get all records
         unifiedInvitationService.getEmailsSent(),
         unifiedInvitationService.getAwaitingSignup(),
         unifiedInvitationService.getCompletedInvitations()
