@@ -34,6 +34,7 @@ interface UserDetail {
   completed_at?: string;
   first_name?: string;
   last_name?: string;
+  full_name?: string;
 }
 
 interface UserListModalProps {
@@ -147,10 +148,17 @@ const UserListModal: React.FC<UserListModalProps> = ({
           
           if (directSignupError) throw directSignupError;
           
-          serviceData = (directSignupUsers || []).map(user => ({
-            ...user,
-            send_attempts: user.send_attempts || 0
-          }));
+          serviceData = (directSignupUsers || []).map(user => {
+            const personaData = (user.persona_data as Record<string, any>) || {};
+            return {
+              ...user,
+              persona_data: personaData,
+              send_attempts: user.send_attempts || 0,
+              first_name: personaData['First-Name'] || '',
+              last_name: personaData['Last-Name'] || '',
+              full_name: `${personaData['First-Name'] || ''} ${personaData['Last-Name'] || ''}`.trim()
+            };
+          });
           break;
 
         default:
@@ -161,18 +169,24 @@ const UserListModal: React.FC<UserListModalProps> = ({
       console.log(`UserListModal: Loaded ${serviceData.length} users for category ${category} from unified service`);
       
       // Convert service data to UserDetail format
-      const convertedUsers: UserDetail[] = serviceData.map(user => ({
-        id: user.id,
-        email: user.email,
-        persona_type: user.persona_type,
-        invited_at: user.invited_at,
-        email_sent: user.email_sent,
-        email_sent_at: user.email_sent_at,
-        signup_completed: (user as any).signup_completed,
-        completed_at: (user as any).completed_at,
-        first_name: (user as any).persona_data?.['First-Name'] || '',
-        last_name: (user as any).persona_data?.['Last-Name'] || ''
-      }));
+      const convertedUsers: UserDetail[] = serviceData.map(user => {
+        const personaData = (user.persona_data as Record<string, any>) || {};
+        const firstName = (user as any).first_name || personaData['First-Name'] || '';
+        const lastName = (user as any).last_name || personaData['Last-Name'] || '';
+        return {
+          id: user.id,
+          email: user.email,
+          persona_type: user.persona_type,
+          invited_at: user.invited_at,
+          email_sent: user.email_sent,
+          email_sent_at: user.email_sent_at,
+          signup_completed: (user as any).signup_completed || false,
+          completed_at: (user as any).completed_at || null,
+          first_name: firstName,
+          last_name: lastName,
+          full_name: (user as any).full_name || `${firstName} ${lastName}`.trim()
+        };
+      });
 
       console.log('UserListModal: Final converted users count:', convertedUsers.length);
       
@@ -224,7 +238,8 @@ const UserListModal: React.FC<UserListModalProps> = ({
         user.email.toLowerCase().includes(searchLower) ||
         user.persona_type.toLowerCase().includes(searchLower) ||
         (user.first_name && user.first_name.toLowerCase().includes(searchLower)) ||
-        (user.last_name && user.last_name.toLowerCase().includes(searchLower))
+        (user.last_name && user.last_name.toLowerCase().includes(searchLower)) ||
+        (user.full_name && user.full_name.toLowerCase().includes(searchLower))
       );
       
       console.log('UserListModal: Search filtered results:', {

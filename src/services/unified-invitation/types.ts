@@ -49,6 +49,12 @@ export interface PendingInvitation {
   email_sent_at?: string;
   batch_id?: string;
   send_attempts: number;
+  persona_data?: Record<string, any>;
+  first_name?: string;
+  last_name?: string;
+  full_name?: string;
+  signup_completed?: boolean;
+  completed_at?: string;
 }
 
 export interface EmailBatch {

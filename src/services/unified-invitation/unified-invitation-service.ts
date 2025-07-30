@@ -64,10 +64,19 @@ class UnifiedInvitationService {
       throw error;
     }
 
-    const result = data || [];
-    console.log(`UnifiedInvitationService: Found ${result.length} total pending emails`);
-    this.cacheManager.setCache(cacheKey, result);
-    return result;
+    const enrichedResult = (data || []).map(invitation => {
+      const personaData = invitation.persona_data as Record<string, any> || {};
+      return {
+        ...invitation,
+        persona_data: personaData,
+        first_name: personaData['First-Name'] || '',
+        last_name: personaData['Last-Name'] || '',
+        full_name: `${personaData['First-Name'] || ''} ${personaData['Last-Name'] || ''}`.trim()
+      };
+    });
+    console.log(`UnifiedInvitationService: Found ${enrichedResult.length} total pending emails`);
+    this.cacheManager.setCache(cacheKey, enrichedResult);
+    return enrichedResult;
   }
 
   async getEmailsSent(): Promise<PendingInvitation[]> {
@@ -87,9 +96,21 @@ class UnifiedInvitationService {
         .order('email_sent_at', { ascending: false })
     );
 
-    console.log(`UnifiedInvitationService: Found ${result.length} total sent emails via batching`);
-    this.cacheManager.setCache(cacheKey, result);
-    return result;
+    // Extract names from persona_data for searching
+    const enrichedResult = result.map(invitation => {
+      const personaData = invitation.persona_data as Record<string, any> || {};
+      return {
+        ...invitation,
+        persona_data: personaData,
+        first_name: personaData['First-Name'] || '',
+        last_name: personaData['Last-Name'] || '',
+        full_name: `${personaData['First-Name'] || ''} ${personaData['Last-Name'] || ''}`.trim()
+      };
+    });
+
+    console.log(`UnifiedInvitationService: Found ${enrichedResult.length} total sent emails via batching`);
+    this.cacheManager.setCache(cacheKey, enrichedResult);
+    return enrichedResult;
   }
 
   async getAwaitingSignup(): Promise<PendingInvitation[]> {
@@ -110,9 +131,21 @@ class UnifiedInvitationService {
         .order('email_sent_at', { ascending: false })
     );
 
-    console.log(`UnifiedInvitationService: Found ${result.length} total awaiting signup via batching`);
-    this.cacheManager.setCache(cacheKey, result);
-    return result;
+    // Extract names from persona_data for searching
+    const enrichedResult = result.map(invitation => {
+      const personaData = invitation.persona_data as Record<string, any> || {};
+      return {
+        ...invitation,
+        persona_data: personaData,
+        first_name: personaData['First-Name'] || '',
+        last_name: personaData['Last-Name'] || '',
+        full_name: `${personaData['First-Name'] || ''} ${personaData['Last-Name'] || ''}`.trim()
+      };
+    });
+
+    console.log(`UnifiedInvitationService: Found ${enrichedResult.length} total awaiting signup via batching`);
+    this.cacheManager.setCache(cacheKey, enrichedResult);
+    return enrichedResult;
   }
 
   async getCompletedInvitations(): Promise<PendingInvitation[]> {
@@ -132,9 +165,21 @@ class UnifiedInvitationService {
         .order('completed_at', { ascending: false })
     );
 
-    console.log(`UnifiedInvitationService: Found ${result.length} total completed invitations via batching`);
-    this.cacheManager.setCache(cacheKey, result);
-    return result;
+    // Extract names from persona_data for searching
+    const enrichedResult = result.map(invitation => {
+      const personaData = invitation.persona_data as Record<string, any> || {};
+      return {
+        ...invitation,
+        persona_data: personaData,
+        first_name: personaData['First-Name'] || '',
+        last_name: personaData['Last-Name'] || '',
+        full_name: `${personaData['First-Name'] || ''} ${personaData['Last-Name'] || ''}`.trim()
+      };
+    });
+
+    console.log(`UnifiedInvitationService: Found ${enrichedResult.length} total completed invitations via batching`);
+    this.cacheManager.setCache(cacheKey, enrichedResult);
+    return enrichedResult;
   }
 
   // Get ALL email batches without any limit
