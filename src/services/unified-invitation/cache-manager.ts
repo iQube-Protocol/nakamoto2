@@ -47,7 +47,10 @@ export class CacheManager {
   }
 
   clearInvitationCache(): void {
+    // Clear all pending email cache keys with different limits
     this.clearCacheKey('pending-emails-1000');
+    this.clearCacheKey('pending-emails-10000');
+    this.clearCacheKey('pending-emails-50000');
     this.clearCacheKey('emails-sent');
     this.clearCacheKey('awaiting-signup');
     this.clearCacheKey('completed-invitations');

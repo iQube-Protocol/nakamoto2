@@ -77,14 +77,15 @@ class UnifiedInvitationService {
       return this.cacheManager.getCache(cacheKey);
     }
 
-    console.log('UnifiedInvitationService: Fetching ALL sent emails (no limit)...');
+    console.log('UnifiedInvitationService: Fetching ALL sent emails with explicit limit...');
     
-    // Get ALL sent emails without any limit
+    // Get ALL sent emails with explicit high limit
     const { data, error } = await supabase
       .from('invited_users')
       .select('id, email, persona_type, invited_at, email_sent, email_sent_at, batch_id, send_attempts, persona_data')
       .eq('email_sent', true)
-      .order('email_sent_at', { ascending: false });
+      .order('email_sent_at', { ascending: false })
+      .limit(50000);
 
     if (error) {
       console.error('UnifiedInvitationService: Error fetching sent emails:', error);
@@ -104,7 +105,7 @@ class UnifiedInvitationService {
       return this.cacheManager.getCache(cacheKey);
     }
 
-    console.log('UnifiedInvitationService: Fetching ALL awaiting signup (no limit)...');
+    console.log('UnifiedInvitationService: Fetching ALL awaiting signup with explicit limit...');
     
     // Get ALL users awaiting signup (email_sent = true, signup_completed = false)
     const { data, error } = await supabase
@@ -112,7 +113,8 @@ class UnifiedInvitationService {
       .select('id, email, persona_type, invited_at, email_sent, email_sent_at, batch_id, send_attempts, persona_data')
       .eq('email_sent', true)
       .eq('signup_completed', false)
-      .order('email_sent_at', { ascending: false });
+      .order('email_sent_at', { ascending: false })
+      .limit(50000);
 
     if (error) {
       console.error('UnifiedInvitationService: Error fetching awaiting signup:', error);
@@ -132,14 +134,15 @@ class UnifiedInvitationService {
       return this.cacheManager.getCache(cacheKey);
     }
 
-    console.log('UnifiedInvitationService: Fetching ALL completed invitations (no limit)...');
+    console.log('UnifiedInvitationService: Fetching ALL completed invitations with explicit limit...');
     
-    // Get ALL completed invitations without any limit
+    // Get ALL completed invitations with explicit high limit
     const { data, error } = await supabase
       .from('invited_users')
       .select('id, email, persona_type, invited_at, email_sent, email_sent_at, batch_id, send_attempts, persona_data')
       .eq('signup_completed', true)
-      .order('completed_at', { ascending: false });
+      .order('completed_at', { ascending: false })
+      .limit(50000);
 
     if (error) {
       console.error('UnifiedInvitationService: Error fetching completed invitations:', error);
