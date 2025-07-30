@@ -73,9 +73,10 @@ class UnifiedInvitationService {
   async getEmailsSent(): Promise<PendingInvitation[]> {
     const cacheKey = 'emails-sent';
     
-    if (this.cacheManager.isCacheValid(cacheKey)) {
-      return this.cacheManager.getCache(cacheKey);
-    }
+    // Temporarily bypass cache to ensure fresh data
+    // if (this.cacheManager.isCacheValid(cacheKey)) {
+    //   return this.cacheManager.getCache(cacheKey);
+    // }
 
     console.log('UnifiedInvitationService: Fetching ALL sent emails with explicit limit...');
     
@@ -94,6 +95,7 @@ class UnifiedInvitationService {
 
     const result = data || [];
     console.log(`UnifiedInvitationService: Found ${result.length} total sent emails`);
+    console.log(`UnifiedInvitationService: First few sent emails:`, result.slice(0, 3).map(r => ({ email: r.email, sent_at: r.email_sent_at })));
     this.cacheManager.setCache(cacheKey, result);
     return result;
   }
@@ -101,9 +103,10 @@ class UnifiedInvitationService {
   async getAwaitingSignup(): Promise<PendingInvitation[]> {
     const cacheKey = 'awaiting-signup';
     
-    if (this.cacheManager.isCacheValid(cacheKey)) {
-      return this.cacheManager.getCache(cacheKey);
-    }
+    // Temporarily bypass cache to ensure fresh data
+    // if (this.cacheManager.isCacheValid(cacheKey)) {
+    //   return this.cacheManager.getCache(cacheKey);
+    // }
 
     console.log('UnifiedInvitationService: Fetching ALL awaiting signup with explicit limit...');
     
@@ -123,6 +126,7 @@ class UnifiedInvitationService {
 
     const result = data || [];
     console.log(`UnifiedInvitationService: Found ${result.length} total awaiting signup`);
+    console.log(`UnifiedInvitationService: First few awaiting:`, result.slice(0, 3).map(r => ({ email: r.email, sent_at: r.email_sent_at })));
     this.cacheManager.setCache(cacheKey, result);
     return result;
   }
@@ -233,14 +237,22 @@ class UnifiedInvitationService {
     this.clearCache();
     
     // Pre-load all data with fresh queries
-    await Promise.all([
+    const [stats, pending, sent, awaiting, completed, batches] = await Promise.all([
       this.getUnifiedStats(true),
-      this.getPendingEmailSend(10000),
+      this.getPendingEmailSend(50000),
       this.getEmailsSent(),
       this.getAwaitingSignup(),
       this.getCompletedInvitations(),
       this.getEmailBatches()
     ]);
+    
+    console.log('UnifiedInvitationService: Force refresh completed with counts:', {
+      pending: pending.length,
+      sent: sent.length,
+      awaiting: awaiting.length,
+      completed: completed.length,
+      batches: batches.length
+    });
     
     console.log('UnifiedInvitationService: All data refreshed successfully');
   }

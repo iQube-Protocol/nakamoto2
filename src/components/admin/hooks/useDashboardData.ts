@@ -46,6 +46,13 @@ export const useDashboardData = () => {
         unifiedInvitationService.getCompletedInvitations() // Already fetches all records without limit
       ]);
 
+      console.log('useDashboardData: Raw data lengths from service:', {
+        sentRawLength: sentData.length,
+        awaitingRawLength: awaitingData.length,
+        completedRawLength: completedData.length,
+        pendingRawLength: pendingData.length
+      });
+
       console.log('useDashboardData: Loaded data with real-time stats:', {
         realTimeStats,
         batchesCount: batchesData.length,
