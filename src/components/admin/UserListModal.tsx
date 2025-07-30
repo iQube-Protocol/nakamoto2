@@ -59,149 +59,69 @@ const UserListModal: React.FC<UserListModalProps> = ({
   const [isLoading, setIsLoading] = useState(false);
 
   const loadUsers = async () => {
-    console.log('🔥 UserListModal: loadUsers called', { open, category, title });
-    alert(`DEBUGGING: Modal opened with category: ${category}, title: ${title}, open: ${open}`);
     if (!open || !category) {
-      console.log('🔥 UserListModal: Skipping load - not open or no category');
-      alert('DEBUGGING: Skipping load - modal not open or no category');
       return;
     }
     
     setIsLoading(true);
     try {
-      console.log(`UserListModal: Loading users for category: ${category}`);
+      console.log(`UserListModal: Loading users for category: ${category} using unified service`);
       
-      let userData: DatabaseUserResult[] = [];
+      let serviceData: PendingInvitation[] = [];
       
-      // Query database with corrected formulas (exclude direct_signup placeholders)
+      // Use unified invitation service methods instead of direct Supabase queries
       switch (category) {
         case 'totalCreated':
-          // Get real invitations only (exclude direct_signup placeholders)
-          console.log('UserListModal: Loading totalCreated users...');
-          const { data: allInvites, error: allError } = await supabase
-            .from('invited_users')
-            .select('id, email, persona_type, invited_at, email_sent, email_sent_at, signup_completed, completed_at, batch_id, send_attempts, persona_data')
-            .or('batch_id.neq.direct_signup,batch_id.is.null')
-            .order('invited_at', { ascending: false });
+          // For total created, we need to get all records and filter out direct signups
+          const allData = await unifiedInvitationService.getPendingEmailSend(50000);
+          const sentData = await unifiedInvitationService.getEmailsSent();
+          const awaitingData = await unifiedInvitationService.getAwaitingSignup();
+          const completedData = await unifiedInvitationService.getCompletedInvitations();
           
-          if (allError) {
-            console.error('UserListModal: Error loading totalCreated:', allError);
-            throw allError;
-          }
-          console.log('UserListModal: totalCreated raw data count:', allInvites?.length);
-          userData = (allInvites || []).map(user => ({
-            ...user,
-            send_attempts: user.send_attempts || 0
-          })) as DatabaseUserResult[];
+          // Combine all invitation data and deduplicate by email
+          const allEmails = new Set<string>();
+          serviceData = [];
+          
+          [allData, sentData, awaitingData, completedData].forEach(dataset => {
+            dataset.forEach(item => {
+              if (!allEmails.has(item.email) && item.batch_id !== 'direct_signup') {
+                allEmails.add(item.email);
+                serviceData.push(item);
+              }
+            });
+          });
           break;
 
         case 'emailsSent':
-          // Get real invitations that had emails sent
-          console.log('UserListModal: Loading emailsSent users...');
-          const { data: sentUsers, error: sentError } = await supabase
-            .from('invited_users')
-            .select('id, email, persona_type, invited_at, email_sent, email_sent_at, signup_completed, completed_at, batch_id, send_attempts, persona_data')
-            .or('batch_id.neq.direct_signup,batch_id.is.null')
-            .eq('email_sent', true)
-            .order('email_sent_at', { ascending: false });
-          
-          if (sentError) {
-            console.error('UserListModal: Error loading emailsSent:', sentError);
-            throw sentError;
-          }
-          console.log('UserListModal: emailsSent raw data count:', sentUsers?.length);
-          
-          // Check specifically for the missing users
-          const abuInSent = sentUsers?.find(u => u.email === 'talha741@gmail.com');
-          const hughInSent = sentUsers?.find(u => u.email === 'hughstiel@gmail.com');
-          const richardInSent = sentUsers?.find(u => u.email?.toLowerCase().includes('richard') && u.email?.toLowerCase().includes('alcala'));
-          
-          console.log('UserListModal: Abu Ahmed in emailsSent:', !!abuInSent, abuInSent);
-          console.log('UserListModal: Hugh Stiel in emailsSent:', !!hughInSent, hughInSent);
-          console.log('UserListModal: Richard Alcala in emailsSent:', !!richardInSent, richardInSent);
-          userData = (sentUsers || []).map(user => ({
-            ...user,
-            send_attempts: user.send_attempts || 0
-          }));
+          serviceData = await unifiedInvitationService.getEmailsSent();
+          console.log(`UserListModal: Got ${serviceData.length} emails sent from unified service`);
           break;
 
         case 'emailsPending':
-          // Get real invitations pending email send
-          console.log('UserListModal: Loading emailsPending users...');
-          const { data: pendingUsers, error: pendingError } = await supabase
-            .from('invited_users')
-            .select('id, email, persona_type, invited_at, email_sent, email_sent_at, signup_completed, completed_at, batch_id, send_attempts, persona_data')
-            .or('batch_id.neq.direct_signup,batch_id.is.null')
-            .eq('email_sent', false)
-            .order('invited_at', { ascending: false });
-          
-          if (pendingError) {
-            console.error('UserListModal: Error loading emailsPending:', pendingError);
-            throw pendingError;
-          }
-          console.log('UserListModal: emailsPending raw data count:', pendingUsers?.length);
-          userData = (pendingUsers || []).map(user => ({
-            ...user,
-            send_attempts: user.send_attempts || 0
-          }));
+          serviceData = await unifiedInvitationService.getPendingEmailSend(50000);
           break;
 
         case 'awaitingSignup':
-          // Get real invitations sent but user hasn't signed up yet (only active invitations)
-          console.log('UserListModal: Loading awaitingSignup users...');
-          const { data: awaitingUsers, error: awaitingError } = await supabase
-            .from('invited_users')
-            .select('id, email, persona_type, invited_at, email_sent, email_sent_at, signup_completed, completed_at, batch_id, send_attempts, persona_data, expires_at')
-            .or('batch_id.neq.direct_signup,batch_id.is.null')
-            .eq('email_sent', true)
-            .eq('signup_completed', false)
-            .gt('expires_at', 'now()')
-            .order('email_sent_at', { ascending: false });
-          
-          if (awaitingError) {
-            console.error('UserListModal: Error loading awaitingSignup:', awaitingError);
-            throw awaitingError;
-          }
-          
-          console.log('UserListModal: awaitingSignup raw data count:', awaitingUsers?.length);
-          console.log('UserListModal: Looking for Abu Ahmed and Hugh Stiel...');
-          
-          const abuUser = awaitingUsers?.find(u => u.email === 'talha741@gmail.com');
-          const hughUser = awaitingUsers?.find(u => u.email === 'hughstiel@gmail.com');
-          
-          console.log('UserListModal: Abu Ahmed found in results:', !!abuUser, abuUser);
-          console.log('UserListModal: Hugh Stiel found in results:', !!hughUser, hughUser);
-          
-          userData = (awaitingUsers || []).map(user => {
-            const mappedUser = {
-              ...user,
-              send_attempts: user.send_attempts || 0,
-              first_name: user.persona_data?.['First-Name'] || '',
-              last_name: user.persona_data?.['Last-Name'] || ''
-            };
-            
-            if (user.email === 'talha741@gmail.com' || user.email === 'hughstiel@gmail.com') {
-              console.log('UserListModal: Mapping specific user:', user.email, mappedUser);
-            }
-            
-            return mappedUser;
-          });
-          
-          console.log('UserListModal: Final mapped data count:', userData.length);
+          serviceData = await unifiedInvitationService.getAwaitingSignup();
+          console.log(`UserListModal: Got ${serviceData.length} awaiting signup from unified service`);
+          break;
+
+        case 'signupsCompleted':
+          serviceData = await unifiedInvitationService.getCompletedInvitations();
           break;
 
         case 'expiringToday':
         case 'expiring3Days':
         case 'expiring7Days':
-          // Get invitations expiring soon
+          // For expiring invitations, still use direct query as this isn't in unified service
           const daysAhead = category === 'expiringToday' ? 1 : category === 'expiring3Days' ? 3 : 7;
           const { data: expiringData, error: expiringError } = await supabase
             .rpc('get_expiring_invitations', { days_ahead: daysAhead });
           
           if (expiringError) throw expiringError;
           
-          // Convert the expiring data to match our format
-          userData = (expiringData || []).map((item: any) => ({
+          // Convert the expiring data to match PendingInvitation format
+          serviceData = (expiringData || []).map((item: any) => ({
             id: `expiring-${item.email}`,
             email: item.email,
             persona_type: item.persona_type,
@@ -213,47 +133,21 @@ const UserListModal: React.FC<UserListModalProps> = ({
             batch_id: null,
             send_attempts: 0,
             persona_data: {},
-            expires_at: item.expires_at,
-            days_until_expiry: item.days_until_expiry
-          }));
-          break;
-
-        case 'signupsCompleted':
-          // Get real invited users who completed signup
-          console.log('UserListModal: Loading signupsCompleted users...');
-          const { data: completedUsers, error: completedError } = await supabase
-            .from('invited_users')
-            .select('id, email, persona_type, invited_at, email_sent, email_sent_at, signup_completed, completed_at, batch_id, send_attempts, persona_data')
-            .or('batch_id.neq.direct_signup,batch_id.is.null')
-            .eq('signup_completed', true)
-            .order('completed_at', { ascending: false });
-          
-          if (completedError) {
-            console.error('UserListModal: Error loading signupsCompleted:', completedError);
-            throw completedError;
-          }
-          console.log('UserListModal: signupsCompleted raw data count:', completedUsers?.length);
-          userData = (completedUsers || []).map(user => ({
-            ...user,
-            send_attempts: user.send_attempts || 0
+            expires_at: item.expires_at
           }));
           break;
 
         case 'directSignups':
-          // Get direct signup placeholder records
-          console.log('UserListModal: Loading directSignups users...');
+          // For direct signups, still use direct query as this is specific filtering
           const { data: directSignupUsers, error: directSignupError } = await supabase
             .from('invited_users')
             .select('id, email, persona_type, invited_at, email_sent, email_sent_at, signup_completed, completed_at, batch_id, send_attempts, persona_data')
             .eq('batch_id', 'direct_signup')
             .order('invited_at', { ascending: false });
           
-          if (directSignupError) {
-            console.error('UserListModal: Error loading directSignups:', directSignupError);
-            throw directSignupError;
-          }
-          console.log('UserListModal: directSignups raw data count:', directSignupUsers?.length);
-          userData = (directSignupUsers || []).map(user => ({
+          if (directSignupError) throw directSignupError;
+          
+          serviceData = (directSignupUsers || []).map(user => ({
             ...user,
             send_attempts: user.send_attempts || 0
           }));
@@ -261,35 +155,27 @@ const UserListModal: React.FC<UserListModalProps> = ({
 
         default:
           console.warn(`UserListModal: Unknown category: ${category}`);
-          userData = [];
+          serviceData = [];
       }
 
-      console.log(`UserListModal: Loaded ${userData.length} users for category ${category}`);
-      console.log('UserListModal: Sample raw userData:', userData.slice(0, 3));
-
-      // Convert PendingInvitation to UserDetail format
-      const convertedUsers: UserDetail[] = userData.map(user => ({
+      console.log(`UserListModal: Loaded ${serviceData.length} users for category ${category} from unified service`);
+      
+      // Convert service data to UserDetail format
+      const convertedUsers: UserDetail[] = serviceData.map(user => ({
         id: user.id,
         email: user.email,
         persona_type: user.persona_type,
         invited_at: user.invited_at,
         email_sent: user.email_sent,
         email_sent_at: user.email_sent_at,
-        signup_completed: user.signup_completed,
-        completed_at: user.completed_at,
-        first_name: user.persona_data?.['First-Name'] || '',
-        last_name: user.persona_data?.['Last-Name'] || ''
+        signup_completed: (user as any).signup_completed,
+        completed_at: (user as any).completed_at,
+        first_name: (user as any).persona_data?.['First-Name'] || '',
+        last_name: (user as any).persona_data?.['Last-Name'] || ''
       }));
 
       console.log('UserListModal: Final converted users count:', convertedUsers.length);
-      console.log('UserListModal: Sample converted users:', convertedUsers.slice(0, 3));
       
-      // Final check for specific users
-      const abuInFinal = convertedUsers.find(u => u.email === 'talha741@gmail.com');
-      const hughInFinal = convertedUsers.find(u => u.email === 'hughstiel@gmail.com');
-      console.log('UserListModal: Abu Ahmed in final converted data:', !!abuInFinal, abuInFinal);
-      console.log('UserListModal: Hugh Stiel in final converted data:', !!hughInFinal, hughInFinal);
-
       setUsers(convertedUsers);
       setFilteredUsers(convertedUsers);
     } catch (error: any) {
