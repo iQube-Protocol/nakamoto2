@@ -73,29 +73,21 @@ class UnifiedInvitationService {
   async getEmailsSent(): Promise<PendingInvitation[]> {
     const cacheKey = 'emails-sent';
     
-    // Temporarily bypass cache to ensure fresh data
-    // if (this.cacheManager.isCacheValid(cacheKey)) {
-    //   return this.cacheManager.getCache(cacheKey);
-    // }
-
-    console.log('UnifiedInvitationService: Fetching ALL sent emails with explicit limit...');
-    
-    // Get ALL sent emails with explicit high limit
-    const { data, error } = await supabase
-      .from('invited_users')
-      .select('id, email, persona_type, invited_at, email_sent, email_sent_at, batch_id, send_attempts, persona_data')
-      .eq('email_sent', true)
-      .order('email_sent_at', { ascending: false })
-      .limit(50000);
-
-    if (error) {
-      console.error('UnifiedInvitationService: Error fetching sent emails:', error);
-      throw error;
+    if (this.cacheManager.isCacheValid(cacheKey)) {
+      return this.cacheManager.getCache(cacheKey);
     }
 
-    const result = data || [];
-    console.log(`UnifiedInvitationService: Found ${result.length} total sent emails`);
-    console.log(`UnifiedInvitationService: First few sent emails:`, result.slice(0, 3).map(r => ({ email: r.email, sent_at: r.email_sent_at })));
+    console.log('UnifiedInvitationService: Fetching ALL sent emails using batched approach...');
+    
+    const result = await this.fetchAllRecordsBatched(
+      supabase
+        .from('invited_users')
+        .select('id, email, persona_type, invited_at, email_sent, email_sent_at, batch_id, send_attempts, persona_data')
+        .eq('email_sent', true)
+        .order('email_sent_at', { ascending: false })
+    );
+
+    console.log(`UnifiedInvitationService: Found ${result.length} total sent emails via batching`);
     this.cacheManager.setCache(cacheKey, result);
     return result;
   }
@@ -103,30 +95,22 @@ class UnifiedInvitationService {
   async getAwaitingSignup(): Promise<PendingInvitation[]> {
     const cacheKey = 'awaiting-signup';
     
-    // Temporarily bypass cache to ensure fresh data
-    // if (this.cacheManager.isCacheValid(cacheKey)) {
-    //   return this.cacheManager.getCache(cacheKey);
-    // }
-
-    console.log('UnifiedInvitationService: Fetching ALL awaiting signup with explicit limit...');
-    
-    // Get ALL users awaiting signup (email_sent = true, signup_completed = false)
-    const { data, error } = await supabase
-      .from('invited_users')
-      .select('id, email, persona_type, invited_at, email_sent, email_sent_at, batch_id, send_attempts, persona_data')
-      .eq('email_sent', true)
-      .eq('signup_completed', false)
-      .order('email_sent_at', { ascending: false })
-      .limit(50000);
-
-    if (error) {
-      console.error('UnifiedInvitationService: Error fetching awaiting signup:', error);
-      throw error;
+    if (this.cacheManager.isCacheValid(cacheKey)) {
+      return this.cacheManager.getCache(cacheKey);
     }
 
-    const result = data || [];
-    console.log(`UnifiedInvitationService: Found ${result.length} total awaiting signup`);
-    console.log(`UnifiedInvitationService: First few awaiting:`, result.slice(0, 3).map(r => ({ email: r.email, sent_at: r.email_sent_at })));
+    console.log('UnifiedInvitationService: Fetching ALL awaiting signup using batched approach...');
+    
+    const result = await this.fetchAllRecordsBatched(
+      supabase
+        .from('invited_users')
+        .select('id, email, persona_type, invited_at, email_sent, email_sent_at, batch_id, send_attempts, persona_data')
+        .eq('email_sent', true)
+        .eq('signup_completed', false)
+        .order('email_sent_at', { ascending: false })
+    );
+
+    console.log(`UnifiedInvitationService: Found ${result.length} total awaiting signup via batching`);
     this.cacheManager.setCache(cacheKey, result);
     return result;
   }
@@ -138,23 +122,17 @@ class UnifiedInvitationService {
       return this.cacheManager.getCache(cacheKey);
     }
 
-    console.log('UnifiedInvitationService: Fetching ALL completed invitations with explicit limit...');
+    console.log('UnifiedInvitationService: Fetching ALL completed invitations using batched approach...');
     
-    // Get ALL completed invitations with explicit high limit
-    const { data, error } = await supabase
-      .from('invited_users')
-      .select('id, email, persona_type, invited_at, email_sent, email_sent_at, batch_id, send_attempts, persona_data')
-      .eq('signup_completed', true)
-      .order('completed_at', { ascending: false })
-      .limit(50000);
+    const result = await this.fetchAllRecordsBatched(
+      supabase
+        .from('invited_users')
+        .select('id, email, persona_type, invited_at, email_sent, email_sent_at, batch_id, send_attempts, persona_data')
+        .eq('signup_completed', true)
+        .order('completed_at', { ascending: false })
+    );
 
-    if (error) {
-      console.error('UnifiedInvitationService: Error fetching completed invitations:', error);
-      throw error;
-    }
-
-    const result = data || [];
-    console.log(`UnifiedInvitationService: Found ${result.length} total completed invitations`);
+    console.log(`UnifiedInvitationService: Found ${result.length} total completed invitations via batching`);
     this.cacheManager.setCache(cacheKey, result);
     return result;
   }
@@ -204,6 +182,42 @@ class UnifiedInvitationService {
     this.clearCache();
     
     return result;
+  }
+
+  private async fetchAllRecordsBatched(query: any, batchSize: number = 1000): Promise<PendingInvitation[]> {
+    const allRecords: PendingInvitation[] = [];
+    let offset = 0;
+    let hasMoreData = true;
+    
+    console.log('UnifiedInvitationService: Starting batched fetch with batch size:', batchSize);
+    
+    while (hasMoreData) {
+      const { data, error } = await query
+        .range(offset, offset + batchSize - 1);
+      
+      if (error) {
+        console.error('Error in batched fetch:', error);
+        throw error;
+      }
+      
+      const batchData = data || [];
+      console.log(`UnifiedInvitationService: Fetched batch ${Math.floor(offset / batchSize) + 1} with ${batchData.length} records`);
+      
+      allRecords.push(...batchData);
+      
+      // If we got less than the batch size, we've reached the end
+      hasMoreData = batchData.length === batchSize;
+      offset += batchSize;
+      
+      // Safety check to prevent infinite loops
+      if (offset > 100000) {
+        console.warn('UnifiedInvitationService: Safety limit reached, stopping batch fetch');
+        break;
+      }
+    }
+    
+    console.log(`UnifiedInvitationService: Batched fetch completed with ${allRecords.length} total records`);
+    return allRecords;
   }
 
   clearCache(): void {
