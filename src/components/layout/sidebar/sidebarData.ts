@@ -55,20 +55,20 @@ export const iQubeItems: QubeItem[] = [
     description: 'KNYT ecosystem profile with 2,800 Satoshi reward',
   },
   {
-    id: 'venice',
-    name: 'Venice',
-    type: 'ModelQube',
-    icon: Brain,
-    href: '/settings',
-    description: 'AI service that protects privacy and prevents censorship',
-  },
-  {
     id: 'openai',
     name: 'OpenAI',
     type: 'ModelQube',
     icon: Brain,
     href: '/settings',
     description: 'Advanced AI language models for sophisticated reasoning',
+  },
+  {
+    id: 'venice',
+    name: 'Venice',
+    type: 'ModelQube',
+    icon: Brain,
+    href: '/settings',
+    description: 'AI service that protects privacy and prevents censorship',
   },
   // Metis temporarily hidden - uncomment to reactivate
   // {
