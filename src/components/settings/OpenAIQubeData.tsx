@@ -1,13 +1,13 @@
 import React from 'react';
 import { Badge } from '@/components/ui/badge';
-import { Bot, Cpu, Lock } from 'lucide-react';
+import { Brain, Cpu, Lock } from 'lucide-react';
 
 export const OpenAIQubeData = () => {
   return (
     <div className="space-y-4">
       <div className="flex items-center justify-between">
         <div className="flex items-center space-x-3">
-          <Bot className="h-6 w-6 text-primary" />
+          <Brain className="h-6 w-6 text-primary" />
           <div>
             <h3 className="text-lg font-semibold">OpenAI Provider</h3>
             <p className="text-sm text-muted-foreground">Advanced AI language models</p>

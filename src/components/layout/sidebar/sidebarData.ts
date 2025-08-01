@@ -1,5 +1,5 @@
 
-import { LucideIcon, Database, Settings, FolderGit2, Bot, User } from 'lucide-react';
+import { LucideIcon, Database, Settings, FolderGit2, Bot, User, Brain } from 'lucide-react';
 import CubeIcon from '../sidebar/CubeIcon';
 
 export interface NavItem {
@@ -57,16 +57,16 @@ export const iQubeItems: QubeItem[] = [
   {
     id: 'venice',
     name: 'Venice',
-    type: 'AgentQube',
-    icon: Bot,
+    type: 'ModelQube',
+    icon: Brain,
     href: '/settings',
     description: 'AI service that protects privacy and prevents censorship',
   },
   {
     id: 'openai',
     name: 'OpenAI',
-    type: 'AgentQube',
-    icon: Bot,
+    type: 'ModelQube',
+    icon: Brain,
     href: '/settings',
     description: 'Advanced AI language models for sophisticated reasoning',
   },

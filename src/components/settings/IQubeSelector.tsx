@@ -36,6 +36,9 @@ const IQubeSelector = ({
       } else if (iQubeId === "Venice" || iQubeId === "Venice iQube") {
         setSelectedIQube(qubeData.venice);
         selectIQube("Venice");
+      } else if (iQubeId === "OpenAI" || iQubeId === "OpenAI iQube") {
+        setSelectedIQube(qubeData.openai);
+        selectIQube("OpenAI");
       } else if ((iQubeId === "Metis" || iQubeId === "Metis iQube")) {
         setSelectedIQube(qubeData.metis);
         selectIQube("Metis");
