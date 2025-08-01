@@ -106,11 +106,22 @@ const MetaQubeHeader = ({ metaQube, isActive, onToggleActive, profileImageUrl }:
               {getQubeIcon()}
             </div>
           </ScoreTooltip>
-          <Avatar className="h-6 w-6">
-            <AvatarImage src={profileImageUrl} />
+          <Avatar className="h-7 w-7">
+            <AvatarImage 
+              src={
+                metaQube["iQube-Identifier"] === "OpenAI iQube" 
+                  ? "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=400&h=400&fit=crop&crop=face"
+                  : metaQube["iQube-Identifier"] === "Venice iQube"
+                  ? "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=400&h=400&fit=crop&crop=center"
+                  : profileImageUrl
+              } 
+              className="object-cover"
+            />
             <AvatarFallback className="text-xs">
               {metaQube["iQube-Identifier"].includes("Qrypto") ? "Q" : 
-               metaQube["iQube-Identifier"].includes("KNYT") ? "K" : "P"}
+               metaQube["iQube-Identifier"].includes("KNYT") ? "K" : 
+               metaQube["iQube-Identifier"].includes("OpenAI") ? "O" :
+               metaQube["iQube-Identifier"].includes("Venice") ? "V" : "P"}
             </AvatarFallback>
           </Avatar>
           <span className="text-sm font-medium">
