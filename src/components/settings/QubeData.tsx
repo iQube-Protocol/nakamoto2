@@ -63,6 +63,21 @@ export const qubeData = {
     "Accuracy-Score": 9,
     "Risk-Score": 1
   },
+  openai: {
+    "iQube-Identifier": "OpenAI iQube",
+    "iQube-Type": "ModelQube",
+    "iQube-Designer": "OpenAI",
+    "iQube-Use": "For advanced language model services and AI capabilities",
+    "Owner-Type": "Algorithm",
+    "Owner-Identifiability": "Non-Identifiable",
+    "Date-Minted": new Date().toISOString(),
+    "Related-iQubes": ["AIModelQube", "LanguageQube", "ReasoningQube"],
+    "X-of-Y": "3 of 7",
+    "Sensitivity-Score": 3,
+    "Verifiability-Score": 8,
+    "Accuracy-Score": 9,
+    "Risk-Score": 2
+  },
   gdrive: {
     "iQube-Identifier": "GDrive iQube",
     "iQube-Type": "DataQube",

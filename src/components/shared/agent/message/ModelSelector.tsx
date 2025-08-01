@@ -10,6 +10,7 @@ import {
 import { Badge } from '@/components/ui/badge';
 import { ChevronDown, Cpu, Brain } from 'lucide-react';
 import { useVeniceAgent } from '@/hooks/use-venice-agent';
+import { useOpenAIAgent } from '@/hooks/use-openai-agent';
 
 interface ModelSelectorProps {
   currentModel?: string;
@@ -75,17 +76,27 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
 }) => {
   const [isOpen, setIsOpen] = useState(false);
   const { veniceActivated, activateVenice, deactivateVenice } = useVeniceAgent();
+  const { openAIActivated, activateOpenAI, deactivateOpenAI } = useOpenAIAgent();
 
   const currentModelInfo = AVAILABLE_MODELS.find(m => m.id === currentModel);
-  const currentProvider = currentModelInfo?.provider || (veniceActivated ? 'venice' : 'openai');
+  const currentProvider = currentModelInfo?.provider || 
+    (veniceActivated ? 'venice' : openAIActivated ? 'openai' : 'openai');
 
   const handleModelSelect = async (model: ModelOption) => {
     try {
-      // If switching providers, toggle Venice activation
+      // Handle mutual exclusion between providers
       if (model.provider === 'venice' && !veniceActivated) {
         activateVenice();
-      } else if (model.provider === 'openai' && veniceActivated) {
-        deactivateVenice();
+        // Deactivate OpenAI if active
+        if (openAIActivated) {
+          deactivateOpenAI();
+        }
+      } else if (model.provider === 'openai' && !openAIActivated) {
+        activateOpenAI();
+        // Deactivate Venice if active
+        if (veniceActivated) {
+          deactivateVenice();
+        }
       }
       
       // Call the callback with selected model

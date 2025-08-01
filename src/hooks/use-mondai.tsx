@@ -3,16 +3,20 @@ import { useState, useCallback } from 'react';
 import { generateAigentNakamotoResponse } from '@/services/qrypto-mondai-service';
 import { AgentMessage } from '@/lib/types';
 import { useVeniceAgent } from '@/hooks/use-venice-agent';
+import { useOpenAIAgent } from '@/hooks/use-openai-agent';
 
 export const useMondAI = () => {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [documentUpdates, setDocumentUpdates] = useState(0);
   const { veniceActivated } = useVeniceAgent();
+  const { openAIActivated } = useOpenAIAgent();
 
   const handleAIMessage = useCallback(async (message: string): Promise<AgentMessage> => {
+    const useVenice = veniceActivated && !openAIActivated;
+    
     try {
-      console.log(`🔄 MonDAI Hook: Processing message with Venice ${veniceActivated ? 'ENABLED' : 'DISABLED'}`);
-      console.log(`🔧 MonDAI Hook: Venice state in useMondAI:`, veniceActivated);
+      console.log(`🔄 MonDAI Hook: Processing message - Venice: ${useVenice ? 'ENABLED' : 'DISABLED'}, OpenAI: ${openAIActivated ? 'ENABLED' : 'DISABLED'}`);
+      console.log(`🔧 MonDAI Hook: Provider states - Venice:`, veniceActivated, 'OpenAI:', openAIActivated);
       
       // Generate conversation ID on first message if not already set
       let currentConversationId = conversationId;
@@ -27,7 +31,7 @@ export const useMondAI = () => {
       const response = await generateAigentNakamotoResponse(
         message, 
         currentConversationId,
-        veniceActivated // Pass Venice toggle state
+        useVenice // Pass provider selection
       );
       
       // Ensure conversation ID is consistent
@@ -58,7 +62,7 @@ export const useMondAI = () => {
       console.error('❌ MonDAI Hook: Error in handleAIMessage:', error);
       throw error;
     }
-  }, [conversationId, veniceActivated]);
+  }, [conversationId, veniceActivated, openAIActivated]);
 
   const handleDocumentContextUpdated = useCallback(() => {
     setDocumentUpdates(prev => prev + 1);

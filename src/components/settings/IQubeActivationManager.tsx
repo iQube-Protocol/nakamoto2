@@ -1,9 +1,9 @@
-
 import React, { useEffect } from 'react';
 import { toast } from 'sonner';
 import { useQryptoPersona } from '@/hooks/use-qrypto-persona';
 import { useVeniceAgent } from '@/hooks/use-venice-agent';
 import { useKNYTPersona } from '@/hooks/use-knyt-persona';
+import { useOpenAIAgent } from '@/hooks/use-openai-agent';
 
 interface IQubeActivationManagerProps {
   activeQubes: { [key: string]: boolean };
@@ -17,16 +17,18 @@ const IQubeActivationManager = ({
   const { qryptoPersonaActivated, activateQryptoPersona, deactivateQryptoPersona } = useQryptoPersona();
   const { veniceActivated, veniceVisible, activateVenice, deactivateVenice, hideVenice } = useVeniceAgent();
   const { knytPersonaActivated, activateKNYTPersona, deactivateKNYTPersona, hideKNYTPersona } = useKNYTPersona();
+  const { openAIActivated, openAIVisible, activateOpenAI, deactivateOpenAI, hideOpenAI } = useOpenAIAgent();
 
-  // Update active states when hook values change
+  // Sync component state with hook states
   useEffect(() => {
     setActiveQubes(prev => ({
-      ...prev, 
+      ...prev,
       "Qrypto Persona": qryptoPersonaActivated,
+      "KNYT Persona": knytPersonaActivated,
       "Venice": veniceActivated,
-      "KNYT Persona": knytPersonaActivated
+      "OpenAI": openAIActivated
     }));
-  }, [qryptoPersonaActivated, veniceActivated, knytPersonaActivated, setActiveQubes]);
+  }, [qryptoPersonaActivated, knytPersonaActivated, veniceActivated, openAIActivated, setActiveQubes]);
 
   // Listen for iQube activation/deactivation events from sidebar
   useEffect(() => {
@@ -47,10 +49,18 @@ const IQubeActivationManager = ({
         } else if (iqubeId === "Venice") {
           if (active && !veniceActivated) {
             activateVenice();
-            toast.info(`Venice activated`);
+            toast.info("Venice activated");
           } else if (!active && veniceActivated) {
             deactivateVenice();
-            toast.info(`Venice deactivated`);
+            toast.info("Venice deactivated");
+          }
+        } else if (iqubeId === "OpenAI") {
+          if (active && !openAIActivated) {
+            activateOpenAI();
+            toast.info("OpenAI activated");
+          } else if (!active && openAIActivated) {
+            deactivateOpenAI();
+            toast.info("OpenAI deactivated");
           }
         } else if (iqubeId === "KNYT Persona") {
           if (active && !knytPersonaActivated) {
@@ -71,7 +81,7 @@ const IQubeActivationManager = ({
     return () => {
       window.removeEventListener('iqubeToggle', handleIQubeToggle as EventListener);
     };
-  }, [qryptoPersonaActivated, activateQryptoPersona, deactivateQryptoPersona, veniceActivated, activateVenice, deactivateVenice, knytPersonaActivated, activateKNYTPersona, deactivateKNYTPersona, setActiveQubes]);
+  }, [qryptoPersonaActivated, activateQryptoPersona, deactivateQryptoPersona, veniceActivated, activateVenice, deactivateVenice, openAIActivated, activateOpenAI, deactivateOpenAI, knytPersonaActivated, activateKNYTPersona, deactivateKNYTPersona, setActiveQubes]);
 
   return null; // This is a logic-only component, no UI
 };

@@ -62,6 +62,14 @@ export const iQubeItems: QubeItem[] = [
     href: '/settings',
     description: 'AI service that protects privacy and prevents censorship',
   },
+  {
+    id: 'openai',
+    name: 'OpenAI',
+    type: 'AgentQube',
+    icon: Bot,
+    href: '/settings',
+    description: 'Advanced AI language models for sophisticated reasoning',
+  },
   // Metis temporarily hidden - uncomment to reactivate
   // {
   //   id: 'agentqube',
@@ -116,6 +124,15 @@ export const metaQubesData = [
     color: "text-green-400",
     bgColor: "bg-green-500/10",
     borderColor: "border-green-500/20"
+  },
+  {
+    id: "OpenAI",
+    name: "OpenAI",
+    type: "ModelQube" as const,
+    description: "Advanced AI language models and reasoning",
+    color: "text-emerald-400",
+    bgColor: "bg-emerald-500/10",
+    borderColor: "border-emerald-500/20"
   },
   // Metis temporarily hidden - uncomment to reactivate
   // {

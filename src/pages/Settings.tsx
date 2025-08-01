@@ -10,6 +10,7 @@ import { sonnerToast as toast } from '@/hooks/use-toast';
 import { useMetisAgent } from '@/hooks/use-metis-agent';
 import { useQryptoPersona } from '@/hooks/use-qrypto-persona';
 import { useVeniceAgent } from '@/hooks/use-venice-agent';
+import { useOpenAIAgent } from '@/hooks/use-openai-agent';
 import { walletConnectionService } from '@/services/wallet-connection-service';
 
 const Settings = () => {
@@ -17,27 +18,24 @@ const Settings = () => {
   const { metisActivated } = useMetisAgent();
   const { qryptoPersonaActivated } = useQryptoPersona();
   const { veniceActivated } = useVeniceAgent();
+  const { openAIActivated } = useOpenAIAgent();
   
   const [activeQubes, setActiveQubes] = useState<{[key: string]: boolean}>({
-    "Qrypto Persona": false,
-    "KNYT Persona": false,
-    "Venice": false,
-    "Metis": false, // Keep state but hide from UI
-    "GDrive": false,
-    "Content": false,
-    "Model": false
+    "Qrypto Persona": qryptoPersonaActivated,
+    "KNYT Persona": false, // Will be updated by KNYT hook  
+    "Venice": veniceActivated,
+    "OpenAI": openAIActivated,
+    "Metis": metisActivated,
+    "GDrive": false
   });
 
-  // Available iQubes - Metis temporarily removed from UI
   const availableIQubes = [
-    { key: 'monDai', data: qubeData.monDai, name: 'Qrypto Persona' },
-    { key: 'knytPersona', data: qubeData.knytPersona, name: 'KNYT Persona' },
-    { key: 'venice', data: qubeData.venice, name: 'Venice' },
-    // Metis temporarily hidden - uncomment to reactivate
-    // { key: 'metis', data: qubeData.metis, name: 'Metis' },
-    { key: 'gdrive', data: qubeData.gdrive, name: 'GDrive' },
-    { key: 'content', data: qubeData.content, name: 'Content' },
-    { key: 'model', data: qubeData.model, name: 'Model' }
+    { id: "Qrypto Persona", name: "Qrypto Persona", type: "DataQube" as const },
+    { id: "KNYT Persona", name: "KNYT Persona", type: "DataQube" as const },
+    { id: "Venice", name: "Venice", type: "ModelQube" as const },
+    { id: "OpenAI", name: "OpenAI", type: "ModelQube" as const },
+    { id: "Metis", name: "Metis", type: "AgentQube" as const },
+    { id: "GDrive", name: "GDrive", type: "DataQube" as const }
   ];
 
   // Update wallet connections with KNYT balance on component mount and refresh balance
@@ -58,23 +56,34 @@ const Settings = () => {
     updateWalletData();
   }, []);
 
-  // Function to toggle iQube active state
   const toggleQubeActive = (qubeName: string) => {
     const newActiveState = !activeQubes[qubeName];
+    let updatedQubes = { ...activeQubes };
     
-    setActiveQubes(prev => ({
-      ...prev,
-      [qubeName]: newActiveState
-    }));
+    // Implement three-way mutual exclusion for AI providers
+    if (newActiveState && (qubeName === "Venice" || qubeName === "OpenAI")) {
+      if (qubeName === "Venice") {
+        updatedQubes["OpenAI"] = false;  // Deactivate OpenAI
+      } else if (qubeName === "OpenAI") {
+        updatedQubes["Venice"] = false;   // Deactivate Venice
+      }
+    }
     
-    // Dispatch event for sidebar to update
-    const event = new CustomEvent('iqubeToggle', { 
-      detail: { 
-        iqubeId: qubeName, 
-        active: newActiveState 
-      } 
+    updatedQubes[qubeName] = newActiveState;
+    setActiveQubes(updatedQubes);
+    
+    // Dispatch events for ALL changed qubes
+    Object.keys(updatedQubes).forEach(key => {
+      if (updatedQubes[key] !== activeQubes[key]) {
+        const event = new CustomEvent('iqubeToggle', { 
+          detail: { 
+            iqubeId: key, 
+            active: updatedQubes[key] 
+          } 
+        });
+        window.dispatchEvent(event);
+      }
     });
-    window.dispatchEvent(event);
   };
 
   return (

@@ -6,6 +6,7 @@ import { toast } from 'sonner';
 import { useQryptoPersona } from '@/hooks/use-qrypto-persona';
 import { useVeniceAgent } from '@/hooks/use-venice-agent';
 import { useKNYTPersona } from '@/hooks/use-knyt-persona';
+import { useOpenAIAgent } from '@/hooks/use-openai-agent';
 import { useSidebarState } from '@/hooks/use-sidebar-state';
 import { useAuth } from '@/hooks/use-auth';
 
@@ -16,6 +17,7 @@ export const useSidebarLogic = () => {
   const { qryptoPersonaActivated, activateQryptoPersona, deactivateQryptoPersona } = useQryptoPersona();
   const { veniceActivated, veniceVisible, activateVenice, deactivateVenice, hideVenice } = useVeniceAgent();
   const { knytPersonaActivated, activateKNYTPersona, deactivateKNYTPersona, hideKNYTPersona } = useKNYTPersona();
+  const { openAIActivated, openAIVisible, activateOpenAI, deactivateOpenAI, hideOpenAI } = useOpenAIAgent();
   const { 
     collapsed, 
     iQubesOpen, 
@@ -34,7 +36,7 @@ export const useSidebarLogic = () => {
       "Qrypto Persona": qryptoPersonaActivated,
       "KNYT Persona": knytPersonaActivated,
       "Venice": veniceActivated,
-      
+      "OpenAI": openAIActivated,
     };
   });
 
@@ -45,9 +47,9 @@ export const useSidebarLogic = () => {
       "Qrypto Persona": qryptoPersonaActivated,
       "KNYT Persona": knytPersonaActivated,
       "Venice": veniceActivated,
-      
+      "OpenAI": openAIActivated,
     }));
-  }, [qryptoPersonaActivated, knytPersonaActivated, veniceActivated]);
+  }, [qryptoPersonaActivated, knytPersonaActivated, veniceActivated, openAIActivated]);
 
   // Listen for agent activation events from AgentActivationModal
   useEffect(() => {
@@ -81,16 +83,28 @@ export const useSidebarLogic = () => {
       }
     };
 
+    const handleOpenAIStateChanged = (e: CustomEvent) => {
+      const { activated, visible } = e.detail || {};
+      console.log('OpenAI state changed event received:', activated, visible);
+      
+      if (activated && visible) {
+        activateOpenAI();
+        setActiveIQubes(prev => ({...prev, "OpenAI": true}));
+      }
+    };
+
     window.addEventListener('qryptoPersonaStateChanged', handleQryptoPersonaStateChanged as EventListener);
     window.addEventListener('knytPersonaStateChanged', handleKNYTPersonaStateChanged as EventListener);
     window.addEventListener('veniceStateChanged', handleVeniceStateChanged as EventListener);
+    window.addEventListener('openAIStateChanged', handleOpenAIStateChanged as EventListener);
     
     return () => {
       window.removeEventListener('qryptoPersonaStateChanged', handleQryptoPersonaStateChanged as EventListener);
       window.removeEventListener('knytPersonaStateChanged', handleKNYTPersonaStateChanged as EventListener);
       window.removeEventListener('veniceStateChanged', handleVeniceStateChanged as EventListener);
+      window.removeEventListener('openAIStateChanged', handleOpenAIStateChanged as EventListener);
     };
-  }, [activateQryptoPersona, activateKNYTPersona, activateVenice]);
+  }, [activateQryptoPersona, activateKNYTPersona, activateVenice, activateOpenAI]);
 
   // Listen for iQube toggle events from Settings page
   useEffect(() => {
@@ -118,6 +132,12 @@ export const useSidebarLogic = () => {
           } else {
             deactivateVenice();
           }
+        } else if (iqubeId === "OpenAI") {
+          if (active) {
+            activateOpenAI();
+          } else {
+            deactivateOpenAI();
+          }
         }
       }
     };
@@ -127,7 +147,7 @@ export const useSidebarLogic = () => {
     return () => {
       window.removeEventListener('iqubeToggle', handleIQubeToggle as EventListener);
     };
-  }, [activateQryptoPersona, deactivateQryptoPersona, knytPersonaActivated, activateKNYTPersona, deactivateKNYTPersona, veniceActivated, activateVenice, deactivateVenice]);
+  }, [activateQryptoPersona, deactivateQryptoPersona, knytPersonaActivated, activateKNYTPersona, deactivateKNYTPersona, veniceActivated, activateVenice, deactivateVenice, openAIActivated, activateOpenAI, deactivateOpenAI]);
 
   const handleIQubeClick = (iqubeId: string) => {
     console.log("iQube clicked:", iqubeId);
@@ -152,7 +172,19 @@ export const useSidebarLogic = () => {
     e.stopPropagation(); // Prevent the click from triggering the parent element
     
     const newActiveState = !activeIQubes[qubeName];
-    setActiveIQubes(prev => ({...prev, [qubeName]: newActiveState}));
+    let updatedActiveQubes = { ...activeIQubes };
+    
+    // Implement three-way mutual exclusion for AI providers
+    if (newActiveState && (qubeName === "Venice" || qubeName === "OpenAI")) {
+      if (qubeName === "Venice") {
+        updatedActiveQubes["OpenAI"] = false;  // Deactivate OpenAI
+      } else if (qubeName === "OpenAI") {
+        updatedActiveQubes["Venice"] = false;   // Deactivate Venice
+      }
+    }
+    
+    updatedActiveQubes[qubeName] = newActiveState;
+    setActiveIQubes(updatedActiveQubes);
     
     // Use the appropriate hook methods for each iQube type
     if (qubeName === "Qrypto Persona") {
@@ -170,21 +202,47 @@ export const useSidebarLogic = () => {
     } else if (qubeName === "Venice") {
       if (newActiveState) {
         activateVenice();
+        // Deactivate OpenAI
+        if (openAIActivated) {
+          deactivateOpenAI();
+        }
       } else {
         deactivateVenice();
       }
+    } else if (qubeName === "OpenAI") {
+      if (newActiveState) {
+        activateOpenAI();
+        // Deactivate Venice
+        if (veniceActivated) {
+          deactivateVenice();
+        }
+      } else {
+        deactivateOpenAI();
+      }
     }
     
-    // Dispatch event to update Settings page
-    const event = new CustomEvent('iqubeToggle', { 
-      detail: { 
-        iqubeId: qubeName, 
-        active: newActiveState 
-      } 
+    // Dispatch events for ALL changed qubes
+    Object.keys(updatedActiveQubes).forEach(key => {
+      if (updatedActiveQubes[key] !== activeIQubes[key]) {
+        const event = new CustomEvent('iqubeToggle', { 
+          detail: { 
+            iqubeId: key, 
+            active: updatedActiveQubes[key] 
+          } 
+        });
+        window.dispatchEvent(event);
+      }
     });
-    window.dispatchEvent(event);
     
     toast.info(`${qubeName} ${newActiveState ? 'activated' : 'deactivated'}`);
+    
+    // Additional feedback for mutual exclusion
+    if ((qubeName === "Venice" && newActiveState && activeIQubes["OpenAI"]) ||
+        (qubeName === "OpenAI" && newActiveState && activeIQubes["Venice"])) {
+      setTimeout(() => {
+        toast.info(`${qubeName === "Venice" ? "OpenAI" : "Venice"} automatically deactivated`);
+      }, 500);
+    }
   };
 
   const handleSignOut = async () => {

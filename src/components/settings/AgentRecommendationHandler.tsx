@@ -23,14 +23,20 @@ const AgentRecommendationHandler = ({
       setActiveQubes(prev => ({ ...prev, "KNYT Persona": true }));
     };
 
+    const handleOpenAIActivation = () => {
+      setActiveQubes(prev => ({ ...prev, "OpenAI": true }));
+    };
+
     window.addEventListener('veniceStateChanged', handleVeniceActivation);
     window.addEventListener('qryptoPersonaActivated', handleQryptoActivation);
     window.addEventListener('knytPersonaActivated', handleKNYTActivation);
+    window.addEventListener('openAIActivated', handleOpenAIActivation);
     
     return () => {
       window.removeEventListener('veniceStateChanged', handleVeniceActivation);
       window.removeEventListener('qryptoPersonaActivated', handleQryptoActivation);
       window.removeEventListener('knytPersonaActivated', handleKNYTActivation);
+      window.removeEventListener('openAIActivated', handleOpenAIActivation);
     };
   }, [setActiveQubes]);
 
