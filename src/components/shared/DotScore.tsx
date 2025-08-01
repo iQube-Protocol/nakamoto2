@@ -46,9 +46,7 @@ const DotScore = ({ value, label, type, isProcessing = false }: DotScoreProps) =
   const getProcessingAnimationClass = (index: number) => {
     if (!isProcessing) return '';
     
-    // Create staggered animation delays for wave effect
-    const delay = index * 200; // 200ms delay between each dot
-    return `animate-dot-wave`;
+    return 'animate-pulse transition-all duration-700';
   };
   
   return (
@@ -65,7 +63,8 @@ const DotScore = ({ value, label, type, isProcessing = false }: DotScoreProps) =
                 isProcessing && getProcessingAnimationClass(i)
               )}
               style={{
-                animationDelay: isProcessing ? `${i * 200}ms` : '0ms'
+                animationDelay: isProcessing ? `${i * 0.15}s` : '0s',
+                transition: 'all 300ms ease-in-out'
               }}
             />
           ))}
