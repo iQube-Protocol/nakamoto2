@@ -133,7 +133,7 @@ export const setupRenderTimeout = (): (() => void) => {
   return () => clearTimeout(timeoutId);
 };
 
-// Enhanced sanitization for diagrams with complex syntax issues
+// Enhanced sanitization that preserves valid Mermaid syntax
 export const sanitizeMermaidCode = (code: string): string => {
   if (!code || typeof code !== 'string') {
     return 'graph TD\n    A[Start] --> B[End]';
@@ -148,20 +148,25 @@ export const sanitizeMermaidCode = (code: string): string => {
   }
 
   // Length check
-  if (sanitized.length > 10000) {
+  if (sanitized.length > 20000) {
     console.warn('Mermaid code too long, truncating');
-    sanitized = sanitized.substring(0, 10000);
+    sanitized = sanitized.substring(0, 20000);
   }
 
-  // Minimal cleaning - preserve valid syntax
+  // Minimal cleaning - preserve ALL valid syntax including parentheses, commas, etc.
   sanitized = sanitized
     .replace(/\r\n/g, '\n') // Normalize line endings
     .replace(/\r/g, '\n') // Convert remaining \r to \n
     .replace(/\u00A0/g, ' ') // Replace non-breaking spaces
     .trim();
 
-  // Add missing directive
-  if (!sanitized.match(/^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph)/)) {
+  // Only add missing directive if it's clearly missing
+  if (!sanitized.match(/^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph)/i) && 
+      sanitized.length > 0 && 
+      !sanitized.includes('-->') && 
+      !sanitized.includes('participant') &&
+      !sanitized.includes('Alice') &&
+      !sanitized.includes('Bob')) {
     sanitized = 'graph TD\n' + sanitized;
   }
 

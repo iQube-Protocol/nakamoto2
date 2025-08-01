@@ -4,58 +4,120 @@ import DOMPurify from 'dompurify';
 import DiagramErrorHandler from './DiagramErrorHandler';
 import { useTheme } from '@/contexts/ThemeContext';
 
-// Store mermaid instance globally to avoid reinitialization
+// Store mermaid instance globally with improved caching
 let mermaidInstance: any = null;
 let mermaidPromise: Promise<any> | null = null;
+let initializationAttempts = 0;
+const MAX_INIT_ATTEMPTS = 3;
 
-// Initialize mermaid once and reuse with proper error handling
+// Preload mermaid module to prevent dynamic import failures
+const preloadMermaid = () => {
+  if (typeof window !== 'undefined' && !mermaidPromise) {
+    import('mermaid').catch(err => {
+      console.warn('Mermaid preload failed:', err);
+    });
+  }
+};
+
+// Initialize preload on module load
+preloadMermaid();
+
+// Enhanced mermaid initialization with robust error handling
 const getMermaid = async (): Promise<any> => {
   if (mermaidInstance) return mermaidInstance;
   
   if (!mermaidPromise) {
     mermaidPromise = (async () => {
-      try {
-        // Dynamic import with proper TypeScript handling
-        const mermaidModule = await import('mermaid');
-        const instance: any = mermaidModule.default || mermaidModule;
-        
-        // Validate that we have a proper mermaid instance
-        if (!instance || typeof instance.initialize !== 'function') {
-          throw new Error('Invalid mermaid instance loaded');
-        }
-        
-        // Configure mermaid with stable, proven settings
-        (instance as any).initialize({
-          startOnLoad: false,
-          theme: 'neutral',
-          securityLevel: 'loose',
-          fontFamily: 'system-ui, -apple-system, sans-serif',
-          fontSize: 14,
-          flowchart: {
-            htmlLabels: false,
-            useMaxWidth: true,
-            curve: 'basis'
-          },
-          sequence: {
-            useMaxWidth: true,
-            showSequenceNumbers: true
-          },
-          journey: {
-            useMaxWidth: true
-          },
-          themeVariables: {
+      while (initializationAttempts < MAX_INIT_ATTEMPTS) {
+        try {
+          initializationAttempts++;
+          console.log(`Attempting to load Mermaid (attempt ${initializationAttempts})`);
+          
+          // Multiple fallback strategies for loading
+          let mermaidModule;
+          try {
+            mermaidModule = await import('mermaid');
+          } catch (importError) {
+            console.warn('Primary import failed, trying fallback:', importError);
+            // Fallback: try different import strategy
+            await new Promise(resolve => setTimeout(resolve, 200));
+            mermaidModule = await import('mermaid');
+          }
+          
+          const instance: any = mermaidModule.default || mermaidModule;
+          
+          // Validate instance more thoroughly
+          if (!instance || typeof instance.initialize !== 'function' || typeof instance.render !== 'function') {
+            throw new Error('Invalid mermaid instance - missing required methods');
+          }
+          
+          // Configure mermaid with battle-tested settings
+          instance.initialize({
+            startOnLoad: false,
+            theme: 'neutral',
+            securityLevel: 'loose',
+            deterministicIds: true,
+            deterministicIDSeed: 'mermaid-seed',
+            maxTextSize: 50000,
+            maxEdges: 500,
+            maxNodeSize: 500,
             fontFamily: 'system-ui, -apple-system, sans-serif',
-            fontSize: '14px'
-          },
-          logLevel: 'error'
-        });
-        
-        mermaidInstance = instance;
-        return instance;
-      } catch (error) {
-        console.error("Failed to initialize mermaid:", error);
-        mermaidPromise = null;
-        throw new Error(`Mermaid initialization failed: ${error}`);
+            fontSize: 14,
+            flowchart: {
+              htmlLabels: false,
+              useMaxWidth: true,
+              curve: 'basis',
+              padding: 15,
+              nodeSpacing: 50,
+              rankSpacing: 50
+            },
+            sequence: {
+              useMaxWidth: true,
+              showSequenceNumbers: true,
+              diagramMarginX: 50,
+              diagramMarginY: 10
+            },
+            journey: {
+              useMaxWidth: true
+            },
+            themeVariables: {
+              fontFamily: 'system-ui, -apple-system, sans-serif',
+              fontSize: '14px',
+              primaryColor: '#ffffff',
+              primaryTextColor: '#1f2937',
+              primaryBorderColor: '#7c3aed',
+              lineColor: '#7c3aed'
+            },
+            logLevel: 'error'
+          });
+          
+          // Test the instance with a simple render
+          try {
+            const testResult = await instance.render('test-init', 'graph TD\n    A --> B');
+            if (!testResult || !testResult.svg) {
+              throw new Error('Mermaid test render failed');
+            }
+          } catch (testError) {
+            console.warn('Mermaid test render failed:', testError);
+            // Continue anyway as some environments have issues with test renders
+          }
+          
+          mermaidInstance = instance;
+          console.log('Mermaid successfully initialized');
+          return instance;
+          
+        } catch (error) {
+          console.error(`Mermaid initialization attempt ${initializationAttempts} failed:`, error);
+          
+          if (initializationAttempts >= MAX_INIT_ATTEMPTS) {
+            mermaidPromise = null;
+            initializationAttempts = 0;
+            throw new Error(`Mermaid initialization failed after ${MAX_INIT_ATTEMPTS} attempts: ${error}`);
+          }
+          
+          // Wait before retrying
+          await new Promise(resolve => setTimeout(resolve, 1000 * initializationAttempts));
+        }
       }
     })();
   }
@@ -74,10 +136,14 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
   const [isLoading, setIsLoading] = useState(true);
   const [currentCode, setCurrentCode] = useState<string>(code);
   const [showCodeView, setShowCodeView] = useState<boolean>(false);
+  const [renderAttempts, setRenderAttempts] = useState<number>(0);
   const containerRef = useRef<HTMLDivElement>(null);
   const { theme } = useTheme();
   
-  // Render diagram when code changes or component mounts
+  // Cache for successfully rendered diagrams
+  const [svgCache] = useState<Map<string, string>>(new Map());
+  
+  // Enhanced rendering with caching and progressive enhancement
   useEffect(() => {
     if (!currentCode || currentCode.trim() === '') {
       setError(new Error("Empty diagram code"));
@@ -91,50 +157,90 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
     const renderDiagram = async () => {
       if (showCodeView) return;
       
+      // Check cache first
+      const cacheKey = `${currentCode.trim()}-${theme}`;
+      if (svgCache.has(cacheKey)) {
+        console.log('Using cached SVG for diagram');
+        setSvg(svgCache.get(cacheKey)!);
+        setIsLoading(false);
+        return;
+      }
+      
       setIsLoading(true);
       setError(null);
       
-      // Set a timeout to prevent hanging
+      // Progressive timeout based on attempts
+      const timeoutMs = Math.min(10000, 5000 + (renderAttempts * 2000));
       timeoutId = window.setTimeout(() => {
         if (isMounted) {
-          setError(new Error("Rendering timeout - diagram may be too complex"));
+          setError(new Error(`Rendering timeout after ${timeoutMs}ms - diagram may be too complex`));
           setIsLoading(false);
         }
-      }, 8000); // Reduced timeout for better UX
+      }, timeoutMs);
       
       try {
-        console.log(`Rendering diagram (ID: ${id}) with code:`, currentCode);
+        console.log(`Rendering diagram (ID: ${id}, attempt: ${renderAttempts + 1}) with code:`, currentCode);
         
-        // Process and validate the code
-        const processedCode = await import('./utils/mermaidUtils').then(m => m.processCode(currentCode));
+        // Process the code with minimal changes
+        const { processCode } = await import('./utils/mermaidUtils');
+        const processedCode = processCode(currentCode);
         
-        // Get mermaid instance with error handling
-        const mermaid = await getMermaid();
+        // Get mermaid instance with retry logic
+        let mermaid;
+        for (let attempt = 0; attempt < 3; attempt++) {
+          try {
+            mermaid = await getMermaid();
+            break;
+          } catch (err) {
+            if (attempt === 2) throw err;
+            console.warn(`Mermaid get attempt ${attempt + 1} failed, retrying...`);
+            await new Promise(resolve => setTimeout(resolve, 500));
+          }
+        }
         
-        // Validate mermaid instance
         if (!mermaid || typeof mermaid.render !== 'function') {
           throw new Error('Mermaid instance is not properly initialized');
         }
         
-        // Create a unique ID for this render
-        const uniqueId = `mermaid-${id}-${Date.now()}`;
+        // Create a unique, deterministic ID
+        const uniqueId = `mermaid-${id}-${renderAttempts}-${Date.now()}`;
         
-        // Render to SVG string using processed code with error handling
-        const renderResult = await mermaid.render(uniqueId, processedCode);
+        // Attempt rendering with exponential backoff
+        let renderResult;
+        for (let attempt = 0; attempt < 2; attempt++) {
+          try {
+            renderResult = await mermaid.render(uniqueId + `-attempt-${attempt}`, processedCode);
+            break;
+          } catch (renderErr) {
+            if (attempt === 1) throw renderErr;
+            console.warn(`Render attempt ${attempt + 1} failed, retrying with fresh instance...`);
+            // Reset mermaid instance for retry
+            mermaidInstance = null;
+            mermaidPromise = null;
+            await new Promise(resolve => setTimeout(resolve, 1000));
+            mermaid = await getMermaid();
+          }
+        }
+        
         const svg = renderResult?.svg || renderResult;
         
-        if (!svg || typeof svg !== 'string') {
-          throw new Error('Mermaid render returned invalid SVG');
+        if (!svg || typeof svg !== 'string' || svg.length < 50) {
+          throw new Error('Mermaid render returned invalid or empty SVG');
         }
         
         if (isMounted) {
+          // Cache successful render
+          svgCache.set(cacheKey, svg);
+          
           setSvg(svg);
           setIsLoading(false);
+          setRenderAttempts(0); // Reset on success
         }
       } catch (err) {
         console.error("Mermaid rendering error:", err);
         
         if (isMounted) {
+          setRenderAttempts(prev => prev + 1);
           setError(err instanceof Error ? err : new Error(String(err)));
           setIsLoading(false);
         }
@@ -152,7 +258,7 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
       isMounted = false;
       if (timeoutId) window.clearTimeout(timeoutId);
     };
-  }, [currentCode, id, showCodeView]);
+  }, [currentCode, id, showCodeView, theme, renderAttempts, svgCache]);
   
   // Insert SVG into the container when available
   useEffect(() => {

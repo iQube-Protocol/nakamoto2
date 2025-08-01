@@ -43,33 +43,45 @@ const DiagramErrorHandler: React.FC<DiagramErrorHandlerProps> = ({ error, code, 
     // Use a timeout to prevent UI freezing
     setTimeout(() => {
       try {
-        // Choose fixing strategy based on error type
-        if (errorMessage.includes("PS") || 
-            errorMessage.includes("parentheses") || 
-            errorMessage.includes("comma") ||
+        // Smart fixing strategy based on error type
+        if (errorMessage.includes("Parse error") || 
+            errorMessage.includes("Syntax error") ||
+            errorMessage.includes("NODE_STRING") ||
             errorMessage.includes("Expecting")) {
-          console.log("Using deep sanitization for syntax error");
-          // Use the sanitizeMermaidCode function for heavy error fixing
+          console.log("Using intelligent auto-fix for syntax error");
+          
+          // Try the built-in auto-fix first (minimal changes)
+          const autoFixed = attemptAutoFix(code);
+          
+          // If auto-fix didn't change much, try sanitization
+          if (autoFixed === code || autoFixed.length < 20) {
+            console.log("Auto-fix insufficient, using sanitization");
+            const sanitized = sanitizeMermaidCode(code);
+            onRetry(sanitized);
+          } else {
+            onRetry(autoFixed);
+          }
+        } else if (errorMessage.includes("timeout") || errorMessage.includes("Timeout")) {
+          // For timeout errors, create a simpler version
+          console.log("Creating simplified diagram for timeout error");
+          const simplified = `graph TD
+    A[Original diagram was too complex] --> B[Simplified version]
+    B --> C[Try the 'Show code' option for full diagram]`;
+          onRetry(simplified);
+        } else if (errorMessage.includes("initialization") || errorMessage.includes("Invalid mermaid")) {
+          // For initialization errors, use a very basic diagram
+          console.log("Using basic diagram for initialization error");
+          onRetry("graph TD\n    A[Mermaid Loading Issue] --> B[Please refresh page]");
+        } else {
+          // For other errors, preserve as much of the original as possible
+          console.log("Using fallback strategy for general error");
           const sanitized = sanitizeMermaidCode(code);
           onRetry(sanitized);
-        } else if (errorMessage.includes("Parse error")) {
-          // Generic parse errors - try standard autofix first
-          console.log("Using auto fix for parse error");
-          const fixedCode = attemptAutoFix(code);
-          onRetry(fixedCode);
-        } else {
-          // For other errors, use a simplified flowchart
-          console.log("Using simplified diagram for general error");
-          // Create a simpler auto-generated diagram 
-          const simplified = `graph TD
-    A[Starting Point] --> B[Process]
-    B --> C[Result]`;
-          onRetry(simplified);
         }
       } catch (err) {
         console.error('Auto-fix failed:', err);
-        // If auto-fix fails, try with minimal example
-        onRetry("graph TD\n    A[Error] --> B[Try Again]");
+        // Final fallback - minimal working diagram
+        onRetry("graph TD\n    A[Auto-fix Failed] --> B[Use Show Code option]");
       } finally {
         setIsFixing(false);
       }
