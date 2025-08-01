@@ -51,30 +51,8 @@ export const validateMermaidSyntax = (code: string): { isValid: boolean; errors:
     errors.push(...securityValidation.errors);
   }
   
-  // Check for basic diagram type
-  if (!code.match(/^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph)/i)) {
-    errors.push("Missing or invalid diagram type declaration");
-  }
-  
-  // Check for problematic quoted text in node labels
-  if (code.match(/\[[^\]]*"[^"]*"[^\]]*\]/)) {
-    errors.push("Quoted text in node labels can cause parsing errors");
-  }
-  
-  // Check for problematic parentheses in node labels
-  if (code.match(/\[[^\]]*\([^)]*\)[^\]]*\]/)) {
-    errors.push("Parentheses in node labels can cause parsing errors");
-  }
-  
-  // Check for problematic commas in node labels
-  if (code.match(/\[[^\]]*,[^\]]*\]/)) {
-    errors.push("Commas in node labels can cause parsing errors");
-  }
-  
-  // Check for invalid arrow syntax
-  if (code.match(/--(?!>)/)) {
-    errors.push("Invalid arrow syntax detected");
-  }
+  // Only check for actual syntax errors that would break rendering
+  // Remove overly strict checks that reject valid Mermaid syntax
   
   return {
     isValid: errors.length === 0,
@@ -96,8 +74,11 @@ export const processCode = (inputCode: string): string => {
     return 'graph TD\n    A[Security Error] --> B[Please check diagram]';
   }
 
-  // Add directive if missing
-  if (!cleanedCode.match(/^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph)/)) {
+  // Only add directive if it's clearly missing AND the code doesn't look like it has one
+  if (!cleanedCode.match(/^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph)/i) && 
+      cleanedCode.length > 0 && 
+      !cleanedCode.includes('-->') && 
+      !cleanedCode.includes('participant')) {
     cleanedCode = 'graph TD\n' + cleanedCode;
   }
 
@@ -126,28 +107,14 @@ export const attemptAutoFix = (originalCode: string): string => {
       return fixedCode;
     }
     
-    // Fix 1: Ensure proper graph type declaration
-    if (!fixedCode.match(/^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph)/i)) {
+    // Minimal fixes - only fix obvious issues
+    // Don't auto-add diagram type unless clearly missing
+    if (!fixedCode.match(/^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|erDiagram|journey|gantt|pie|gitGraph)/i) && 
+        fixedCode.length > 0 && 
+        !fixedCode.includes('-->') && 
+        !fixedCode.includes('participant')) {
       fixedCode = 'graph TD\n' + fixedCode;
     }
-    
-    // Fix 2: TARGETED fixes for specific syntax issues
-    fixedCode = fixedCode
-      // Fix quotes in node labels - be more conservative
-      .replace(/\[([^[\]]*)"([^"]*)"([^[\]]*)\]/g, (match, before, quoted, after) => {
-        const safeText = quoted.replace(/"/g, '');
-        return `[${before}${safeText}${after}]`;
-      })
-      .replace(/\[([^[\]]*)'([^']*)'([^[\]]*)\]/g, (match, before, quoted, after) => {
-        const safeText = quoted.replace(/'/g, '');
-        return `[${before}${safeText}${after}]`;
-      })
-      // Fix problematic characters in node labels only when necessary
-      .replace(/\[([^\]]*?),([^\]]*?)\]/g, '[text]')
-      .replace(/\[([^\]]*?)\(([^\]]*?)\)([^\]]*?)\]/g, '[text]')
-      // Fix arrow syntax issues
-      .replace(/--(?!>)/g, '-->')
-      .replace(/\s*-+\s*>/g, ' -->');
     
     console.log("Auto-fixed mermaid code:", fixedCode);
     return fixedCode;
