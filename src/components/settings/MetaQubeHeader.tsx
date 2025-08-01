@@ -73,7 +73,7 @@ const MetaQubeHeader = ({ metaQube, isActive, onToggleActive, profileImageUrl }:
   
   // Determine the correct tooltip type based on the iQube identifier and type
   const getTooltipType = (): 'dataQube' | 'agentQube' | 'modelQube' => {
-    if (metaQube["iQube-Identifier"] === "Venice iQube") {
+    if (metaQube["iQube-Identifier"] === "Venice iQube" || metaQube["iQube-Identifier"] === "OpenAI iQube") {
       return "modelQube";
     } else if (metaQube["iQube-Identifier"] === "Metis iQube") {
       return "agentQube";
@@ -84,7 +84,7 @@ const MetaQubeHeader = ({ metaQube, isActive, onToggleActive, profileImageUrl }:
 
   // Determine the correct icon based on the iQube identifier and type
   const getQubeIcon = () => {
-    if (metaQube["iQube-Identifier"] === "Venice iQube") {
+    if (metaQube["iQube-Identifier"] === "Venice iQube" || metaQube["iQube-Identifier"] === "OpenAI iQube") {
       return <Brain className="h-5 w-5 text-green-500" />;
     } else {
       return (
@@ -122,7 +122,7 @@ const MetaQubeHeader = ({ metaQube, isActive, onToggleActive, profileImageUrl }:
             <Badge variant="outline" className="flex items-center gap-1 bg-iqube-primary/10 text-iqube-primary border-iqube-primary/30">
               {metaQube["iQube-Type"] === 'AgentQube' ? (
                 <Brain size={14} />
-              ) : metaQube["iQube-Identifier"] === "Venice iQube" ? (
+              ) : (metaQube["iQube-Identifier"] === "Venice iQube" || metaQube["iQube-Identifier"] === "OpenAI iQube") ? (
                 <Brain size={14} />
               ) : (
                 <Database size={14} />
