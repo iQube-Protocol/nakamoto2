@@ -204,6 +204,7 @@ const SettingsInterface = ({
     if (qubeName === "Qrypto Persona iQube") return activeQubes["Qrypto Persona"];
     if (qubeName === "KNYT Persona iQube") return activeQubes["KNYT Persona"];
     if (qubeName === "Venice iQube") return activeQubes["Venice"];
+    if (qubeName === "OpenAI iQube") return activeQubes["OpenAI"];
     if (qubeName === "Metis iQube") return activeQubes["Metis"];
     if (qubeName === "GDrive iQube") return activeQubes["GDrive"];
     return false;
@@ -214,6 +215,7 @@ const SettingsInterface = ({
     if (metaQube["iQube-Identifier"] === "Qrypto Persona iQube") qubeName = "Qrypto Persona";
     else if (metaQube["iQube-Identifier"] === "KNYT Persona iQube") qubeName = "KNYT Persona";
     else if (metaQube["iQube-Identifier"] === "Venice iQube") qubeName = "Venice";
+    else if (metaQube["iQube-Identifier"] === "OpenAI iQube") qubeName = "OpenAI";
     else if (metaQube["iQube-Identifier"] === "Metis iQube") qubeName = "Metis";
     else if (metaQube["iQube-Identifier"] === "GDrive iQube") qubeName = "GDrive";
     

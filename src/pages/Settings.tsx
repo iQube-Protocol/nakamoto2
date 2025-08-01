@@ -69,6 +69,15 @@ const Settings = () => {
       }
     }
     
+    // Implement mutual exclusion for Persona iQubes
+    if (newActiveState && (qubeName === "Qrypto Persona" || qubeName === "KNYT Persona")) {
+      if (qubeName === "Qrypto Persona") {
+        updatedQubes["KNYT Persona"] = false;  // Deactivate KNYT Persona
+      } else if (qubeName === "KNYT Persona") {
+        updatedQubes["Qrypto Persona"] = false;   // Deactivate Qrypto Persona
+      }
+    }
+    
     updatedQubes[qubeName] = newActiveState;
     setActiveQubes(updatedQubes);
     

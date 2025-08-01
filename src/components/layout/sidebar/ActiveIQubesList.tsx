@@ -57,6 +57,16 @@ const ActiveIQubesList: React.FC<ActiveIQubesListProps> = ({
         </div>
       );
     }
+    if (qubeName === "OpenAI") {
+      return (
+        <div className="space-y-1">
+          <div className="font-semibold">OpenAI Model</div>
+          <div className="text-xs">
+            Advanced AI model service with cutting-edge language capabilities.
+          </div>
+        </div>
+      );
+    }
     return null;
   };
   
@@ -149,6 +159,33 @@ const ActiveIQubesList: React.FC<ActiveIQubesListProps> = ({
               </TooltipTrigger>
               <TooltipContent side={collapsed ? "right" : "top"} align="center">
                 {getTooltipContent("Venice")}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
+
+        {activeQubes["OpenAI"] && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div
+                  className={cn(
+                    "flex items-center rounded-md p-2 text-sm hover:bg-accent/30 cursor-pointer",
+                    collapsed ? "justify-center" : ""
+                  )}
+                  onClick={() => {
+                    onIQubeClick("OpenAI");
+                    if (isMobile && toggleMobileSidebar) {
+                      toggleMobileSidebar();
+                    }
+                  }}
+                >
+                  <Brain className={cn("h-5 w-5 text-green-500", collapsed ? "" : "mr-2")} />
+                  {!collapsed && <span>OpenAI</span>}
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side={collapsed ? "right" : "top"} align="center">
+                {getTooltipContent("OpenAI")}
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>

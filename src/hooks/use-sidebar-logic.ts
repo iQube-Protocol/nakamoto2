@@ -183,6 +183,15 @@ export const useSidebarLogic = () => {
       }
     }
     
+    // Implement mutual exclusion for Persona iQubes
+    if (newActiveState && (qubeName === "Qrypto Persona" || qubeName === "KNYT Persona")) {
+      if (qubeName === "Qrypto Persona") {
+        updatedActiveQubes["KNYT Persona"] = false;  // Deactivate KNYT Persona
+      } else if (qubeName === "KNYT Persona") {
+        updatedActiveQubes["Qrypto Persona"] = false;   // Deactivate Qrypto Persona
+      }
+    }
+    
     updatedActiveQubes[qubeName] = newActiveState;
     setActiveIQubes(updatedActiveQubes);
     
@@ -190,12 +199,20 @@ export const useSidebarLogic = () => {
     if (qubeName === "Qrypto Persona") {
       if (newActiveState) {
         activateQryptoPersona();
+        // Deactivate KNYT Persona
+        if (knytPersonaActivated) {
+          deactivateKNYTPersona();
+        }
       } else {
         deactivateQryptoPersona();
       }
     } else if (qubeName === "KNYT Persona") {
       if (newActiveState) {
         activateKNYTPersona();
+        // Deactivate Qrypto Persona
+        if (qryptoPersonaActivated) {
+          deactivateQryptoPersona();
+        }
       } else {
         deactivateKNYTPersona();
       }
@@ -241,6 +258,13 @@ export const useSidebarLogic = () => {
         (qubeName === "OpenAI" && newActiveState && activeIQubes["Venice"])) {
       setTimeout(() => {
         toast.info(`${qubeName === "Venice" ? "OpenAI" : "Venice"} automatically deactivated`);
+      }, 500);
+    }
+    
+    if ((qubeName === "Qrypto Persona" && newActiveState && activeIQubes["KNYT Persona"]) ||
+        (qubeName === "KNYT Persona" && newActiveState && activeIQubes["Qrypto Persona"])) {
+      setTimeout(() => {
+        toast.info(`${qubeName === "Qrypto Persona" ? "KNYT Persona" : "Qrypto Persona"} automatically deactivated`);
       }, 500);
     }
   };
