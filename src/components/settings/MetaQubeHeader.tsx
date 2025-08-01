@@ -110,12 +110,12 @@ const MetaQubeHeader = ({ metaQube, isActive, onToggleActive, profileImageUrl }:
             <AvatarImage 
               src={
                 metaQube["iQube-Identifier"] === "OpenAI iQube" 
-                  ? "https://images.unsplash.com/photo-1485827404703-89b55fcc595e?w=400&h=400&fit=crop&crop=face"
+                  ? "/lovable-uploads/4734cb91-dd30-4b25-b290-90276884b871.png"
                   : metaQube["iQube-Identifier"] === "Venice iQube"
-                  ? "https://images.unsplash.com/photo-1461749280684-dccba630e2f6?w=400&h=400&fit=crop&crop=center"
+                  ? "/lovable-uploads/acdecfe9-4c63-4a5b-b350-5918662c0d67.png"
                   : profileImageUrl
               } 
-              className="object-cover"
+              className="object-contain bg-white rounded-full p-0.5"
             />
             <AvatarFallback className="text-xs">
               {metaQube["iQube-Identifier"].includes("Qrypto") ? "Q" : 
