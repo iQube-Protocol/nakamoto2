@@ -75,6 +75,94 @@ Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-trick
 
 ## Development Lessons Learned
 
+### Mermaid Diagram TypeScript Rendering Issue Resolution - 2025-08-02
+**Cycles Required:** 15+ cycles
+**Problem:** Persistent Mermaid diagram rendering failures including syntax errors, module loading failures, and broken image rendering across the application
+**Root Cause:** 
+1. **Module Loading Issues**: Dynamic import failures causing "Loading failed for the module with source mermaid.core-DvXDcxrL.js" errors
+2. **Over-Aggressive Content Processing**: ContentFormatters.tsx was breaking valid Mermaid syntax by removing parentheses, commas, and truncating content over 500 characters
+3. **Insufficient Error Handling**: Lack of robust error boundaries and recovery mechanisms when diagrams failed to render
+4. **Strict Validation Logic**: mermaidUtils.ts was applying overly strict validation that rejected valid Mermaid code
+**Solution:** 
+1. **Enhanced Module Loading**: Implemented robust dynamic import with retry mechanisms, preloading, and better error handling in MermaidDiagram.tsx
+2. **Fixed Content Processing**: Removed over-aggressive simplification logic in ContentFormatters.tsx that was breaking valid syntax - now preserves parentheses, commas, and complex structures
+3. **Intelligent Error Recovery**: Added auto-fix system that only fixes actual syntax errors, not valid code, with fallback rendering showing code when diagrams fail
+4. **SVG Caching & Progressive Enhancement**: Implemented caching for successful renders and progressive timeouts to prevent infinite loading states
+**Key Insights:** 
+- Module loading requires retry mechanisms and proper error boundaries for dynamic imports
+- Content processing should preserve valid syntax - only apply security sanitization, not syntax "fixes"
+- Error recovery should show meaningful fallbacks (code display) rather than breaking completely
+- Caching successfully rendered SVGs prevents re-rendering failures
+- Progressive enhancement (show code first, then render) improves user experience
+**Future Reference:** 
+- Use robust dynamic imports with retry logic for external libraries
+- Never modify content that could be valid syntax without understanding the grammar
+- Implement intelligent error boundaries that preserve user intent
+- Cache successful renders to prevent repeated failures
+- Always provide meaningful fallbacks for complex rendering operations
+**Files Modified:**
+- `src/components/shared/agent/message/MermaidDiagram.tsx` - Enhanced module loading and rendering
+- `src/components/shared/agent/message/ContentFormatters.tsx` - Removed aggressive content processing
+- `src/components/shared/agent/message/utils/mermaidUtils.ts` - Improved validation and processing
+- `src/components/shared/agent/message/DiagramErrorHandler.tsx` - Better error recovery and auto-fix
+
+### AI Provider Mutual Exclusion System Implementation - 2025-08-02
+**Cycles Required:** 8 cycles
+**Problem:** Need for proper mutual exclusion between AI providers (OpenAI vs Venice) to prevent conflicts and ensure only one provider is active at a time
+**Root Cause:** Multiple AI providers could be activated simultaneously, potentially causing configuration conflicts and unexpected behavior
+**Solution:** 
+1. **Smart Toggle System**: Implemented mutual exclusion logic in use-sidebar-logic.ts toggleIQubeActive function
+2. **Automatic Deactivation**: When Venice is activated, OpenAI is automatically deactivated and vice versa
+3. **User Feedback**: Added toast notifications to inform users when one provider is automatically deactivated
+4. **State Synchronization**: Ensured activeIQubes state properly reflects mutual exclusion across the application
+**Key Insights:** 
+- AI providers should be mutually exclusive to prevent configuration conflicts
+- User feedback is essential when automatic deactivation occurs
+- State management must be consistent across components for mutual exclusion
+- Toast notifications provide clear communication about automatic state changes
+**Future Reference:** 
+- Implement mutual exclusion for any competing services or providers
+- Always provide user feedback for automatic state changes
+- Test state synchronization across all components when implementing mutual exclusion
+- Document mutual exclusion logic clearly for future developers
+
+### Profile Image Integration for AI Providers - 2025-08-02
+**Cycles Required:** 6 cycles
+**Problem:** AI providers (OpenAI and Venice) lacked visual identity in the interface, making them harder to distinguish
+**Root Cause:** Default avatar fallbacks were generic letter-based, providing poor visual distinction between different AI providers
+**Solution:** 
+1. **Custom Profile Images**: Added PNG profile images for OpenAI (3D geometric logo) and Venice (circuit-face mask design)
+2. **Enhanced MetaQubeHeader**: Updated component to properly display and crop profile images with appropriate sizing
+3. **Size Optimization**: Increased avatar size by 17% (from h-6 w-6 to h-7 w-7) within the 20% limit for better visibility
+4. **Accessibility Fallbacks**: Maintained letter fallbacks "O" and "V" for accessibility and loading states
+**Key Insights:** 
+- Visual identity improves user experience and provider recognition
+- Profile images should be properly sized and positioned for optimal display
+- Accessibility fallbacks remain important even with custom images
+- Size increases should be measured and stay within reasonable limits
+**Future Reference:** 
+- Use custom visual identity for important providers and services
+- Implement proper image sizing and cropping for profile displays
+- Always maintain accessibility fallbacks for images
+- Test image loading and fallback scenarios thoroughly
+
+### Sidebar Navigation Order Optimization - 2025-08-02
+**Cycles Required:** 2 cycles
+**Problem:** Suboptimal order of AI providers in sidebar navigation affecting user experience
+**Root Cause:** Venice was positioned above OpenAI in the iQubes section, but OpenAI is the primary AI provider
+**Solution:** 
+1. **Reordered Navigation**: Swapped OpenAI and Venice order in sidebarData.ts
+2. **Priority Structure**: OpenAI now appears first in the iQubes section as the primary provider
+3. **Consistent Ordering**: Ensured order reflects actual usage priority and importance
+**Key Insights:** 
+- Navigation order should reflect priority and usage patterns
+- Primary services should be positioned prominently in user interfaces
+- Small UX improvements can have significant impact on user workflow
+**Future Reference:** 
+- Order navigation items by priority and frequency of use
+- Position primary services prominently in interface hierarchies
+- Regularly review and optimize navigation structure based on usage patterns
+
 ### User Data Reconciliation and Admin Dashboard Enhancement - 2025-07-28
 **Cycles Required:** 12+ cycles
 **Problem:** Dashboard showing only 118 signups when actual database contained 153 users, missing direct signups and incomplete invitation records
