@@ -58,8 +58,8 @@ const SimplifiedMonDAIInterface: React.FC = React.memo(() => {
     
   }, [buildVersion]);
   
-  // Use optimized hook for better performance
-  const { interactions, refreshInteractions } = useUserInteractionsOptimized('learn');
+  // Use optimized hook for better performance - FIXED: was fetching 'learn' instead of 'mondai'
+  const { interactions, refreshInteractions } = useUserInteractionsOptimized('mondai');
   
   // Memoize the welcome message to prevent recreation on every render
   const welcomeMessage = useMemo(() => {
@@ -101,46 +101,75 @@ What would you like to explore today?`,
     };
   }, [veniceActivated, conversationId]);
 
-  // Memoize the historical message processing to prevent expensive recomputation
+  // ENHANCED: Add error boundaries and content validation for navigation stability
   const processedHistoricalMessages = useMemo(() => {
     if (!interactions || interactions.length === 0) {
       return [];
     }
 
-    console.log(`🎯 MonDAI Interface: Processing ${interactions.length} historical interactions`);
+    console.log(`🎯 MonDAI Interface: Processing ${interactions.length} MONDAI historical interactions`);
 
-    const historicalMessages: AgentMessage[] = [];
-    
-    interactions.forEach((interaction) => {
-      // Create user message from the query
-      if (interaction.query && interaction.query.trim()) {
-        historicalMessages.push({
-          id: `${interaction.id}-user`,
-          sender: 'user',
-          message: interaction.query,
-          timestamp: interaction.created_at,
-        });
-      }
+    try {
+      const historicalMessages: AgentMessage[] = [];
       
-      // Create agent message from the response
-      if (interaction.response && interaction.response.trim()) {
-        historicalMessages.push({
-          id: `${interaction.id}-agent`,
-          sender: 'agent',
-          message: interaction.response,
-          timestamp: interaction.created_at,
-          metadata: interaction.metadata || undefined
-        });
-      }
-    });
-    
-    // Sort messages by timestamp - memoized to prevent repeated sorting
-    const sortedMessages = historicalMessages.sort((a, b) => 
-      new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
-    );
-    
-    console.log(`🎯 MonDAI Interface: Processed ${sortedMessages.length} historical messages`);
-    return sortedMessages;
+      interactions.forEach((interaction, index) => {
+        try {
+          // ENHANCED: Validate interaction data before processing
+          if (!interaction || typeof interaction !== 'object') {
+            console.warn(`⚠️ NAVIGATION FIX: Invalid interaction at index ${index}:`, interaction);
+            return;
+          }
+
+          // Create user message from the query with validation
+          if (interaction.query && typeof interaction.query === 'string' && interaction.query.trim()) {
+            historicalMessages.push({
+              id: `${interaction.id}-user`,
+              sender: 'user',
+              message: interaction.query.trim(),
+              timestamp: interaction.created_at || new Date().toISOString(),
+            });
+          }
+          
+          // Create agent message from the response with validation
+          if (interaction.response && typeof interaction.response === 'string' && interaction.response.trim()) {
+            // ENHANCED: Sanitize content to prevent TypeScript rendering errors
+            let sanitizedResponse = interaction.response.trim();
+            
+            // Remove any potentially corrupted HTML that could cause TypeScript errors
+            if (sanitizedResponse.includes('<div') && !sanitizedResponse.includes('</div>')) {
+              console.warn(`⚠️ NAVIGATION FIX: Corrupted HTML detected, sanitizing...`);
+              sanitizedResponse = sanitizedResponse.replace(/<div[^>]*>/g, '').replace(/<\/div>/g, '');
+            }
+            
+            historicalMessages.push({
+              id: `${interaction.id}-agent`,
+              sender: 'agent',
+              message: sanitizedResponse,
+              timestamp: interaction.created_at || new Date().toISOString(),
+              metadata: interaction.metadata || undefined
+            });
+          }
+        } catch (interactionError) {
+          console.error(`❌ NAVIGATION FIX: Error processing interaction ${index}:`, interactionError);
+        }
+      });
+      
+      // Sort messages by timestamp with error handling
+      const sortedMessages = historicalMessages.sort((a, b) => {
+        try {
+          return new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime();
+        } catch (sortError) {
+          console.warn('⚠️ NAVIGATION FIX: Error sorting messages, using original order');
+          return 0;
+        }
+      });
+      
+      console.log(`✅ MonDAI Interface: Successfully processed ${sortedMessages.length} MONDAI historical messages`);
+      return sortedMessages;
+    } catch (processingError) {
+      console.error('❌ NAVIGATION FIX: Critical error processing historical messages:', processingError);
+      return [];
+    }
   }, [interactions]);
 
   // Add Venice state debugging (only in development)
@@ -151,42 +180,60 @@ What would you like to explore today?`,
     }
   }, [veniceActivated, conversationId]);
   
-  // ENHANCED conversation history loading with production debugging
+  // ENHANCED: Navigation-safe conversation history loading with error boundaries
   useEffect(() => {
     const loadConversationHistory = () => {
       if (!user || isHistoryLoaded) return;
       
       try {
-        console.log(`🎯 PRODUCTION LOAD: Starting conversation history load (Build: ${buildVersion})`);
-        console.log(`📊 PRODUCTION DATA: Historical messages count: ${processedHistoricalMessages.length}`);
+        console.log(`🎯 NAVIGATION FIX: Starting MONDAI conversation history load (Build: ${buildVersion})`);
+        console.log(`📊 NAVIGATION DATA: Historical MONDAI messages count: ${processedHistoricalMessages.length}`);
 
         if (processedHistoricalMessages.length > 0) {
-          console.log(`✅ PRODUCTION SUCCESS: Loaded ${processedHistoricalMessages.length} historical messages for MonDAI`);
+          console.log(`✅ NAVIGATION SUCCESS: Loaded ${processedHistoricalMessages.length} MONDAI historical messages`);
+          
+          // ENHANCED: Validate message integrity before setting state
+          const validMessages = processedHistoricalMessages.filter(msg => {
+            if (!msg || !msg.id || !msg.sender || !msg.message) {
+              console.warn('⚠️ NAVIGATION FIX: Filtering out invalid message:', msg);
+              return false;
+            }
+            return true;
+          });
           
           // Log first few messages to verify content integrity
-          processedHistoricalMessages.slice(0, 3).forEach((msg, i) => {
-            console.log(`📝 PRODUCTION MESSAGE ${i + 1}:`, {
+          validMessages.slice(0, 3).forEach((msg, i) => {
+            console.log(`📝 NAVIGATION MESSAGE ${i + 1}:`, {
               id: msg.id,
               sender: msg.sender,
               hasHTML: msg.message.includes('<div'),
               hasMermaid: msg.message.includes('```mermaid'),
-              preview: msg.message.substring(0, 50)
+              preview: msg.message.substring(0, 50),
+              isValid: typeof msg.message === 'string'
             });
           });
           
-          // Start with welcome message, then add history
-          setInitialMessages([welcomeMessage, ...processedHistoricalMessages]);
+          // ENHANCED: Use navigation-safe state update
+          const safeInitialMessages = [welcomeMessage, ...validMessages];
+          console.log(`🔒 NAVIGATION FIX: Setting ${safeInitialMessages.length} validated messages for MONDAI`);
+          setInitialMessages(safeInitialMessages);
         } else {
           // If no history, just set the welcome message
-          console.log('🎯 PRODUCTION INFO: No historical messages found for MonDAI');
+          console.log('🎯 NAVIGATION INFO: No MONDAI historical messages found, using welcome only');
           setInitialMessages([welcomeMessage]);
         }
         
         setIsHistoryLoaded(true);
+        console.log('✅ NAVIGATION FIX: History loading completed successfully');
       } catch (error) {
-        console.error(`❌ PRODUCTION ERROR: Failed to load conversation history (Build: ${buildVersion}):`, error);
-        setInitialMessages([welcomeMessage]);
-        setIsHistoryLoaded(true);
+        console.error(`❌ NAVIGATION ERROR: Failed to load MONDAI conversation history (Build: ${buildVersion}):`, error);
+        // ENHANCED: Safe fallback that won't break navigation
+        try {
+          setInitialMessages([welcomeMessage]);
+          setIsHistoryLoaded(true);
+        } catch (fallbackError) {
+          console.error('❌ NAVIGATION CRITICAL: Even fallback failed:', fallbackError);
+        }
       }
     };
 
