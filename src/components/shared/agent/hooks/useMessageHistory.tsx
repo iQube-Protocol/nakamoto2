@@ -23,8 +23,9 @@ export const useMessageHistory = (
       try {
         console.log(`Loading ${agentType} conversation history...`);
         
-        // Force clear any cached data that might contain HTML-wrapped content
+        // Force clear any cached data that might contain corrupted content
         const cacheKey = `${agentType}_conversation_cache_${user.id}`;
+        sessionStorage.removeItem(cacheKey);
         localStorage.removeItem(cacheKey);
         
         await refreshInteractions();
@@ -43,28 +44,23 @@ export const useMessageHistory = (
             }
             
             if (interaction.response && interaction.response.trim()) {
-              // Additional content sanitization for database content
-              let cleanResponse = interaction.response
-                .replace(/<div class="historic-response[^"]*">/g, '')
-                .replace(/<\/div>/g, '')
-                .replace(/<div[^>]*>/g, '')
-                .trim();
-              
-              console.log(`Historical message sanitization:`, {
-                original: interaction.response.substring(0, 50),
-                cleaned: cleanResponse.substring(0, 50),
-                hadHTML: interaction.response.includes('<div')
+              // NO CONTENT PROCESSING HERE - pass raw content to MessageContent
+              console.log(`Raw historical message from DB:`, {
+                original: interaction.response.substring(0, 100),
+                hasHTML: interaction.response.includes('<div'),
+                interactionId: interaction.id
               });
               
               historicalMessages.push({
                 id: `${interaction.id}-agent`,
                 sender: 'agent',
-                message: cleanResponse,
+                message: interaction.response, // RAW content - no processing
                 timestamp: interaction.created_at,
                 metadata: {
                   ...interaction.metadata,
                   historicResponse: true,
-                  agentTheme: agentType
+                  agentTheme: agentType,
+                  rawContent: true // Flag for MessageContent to handle sanitization
                 }
               });
             }

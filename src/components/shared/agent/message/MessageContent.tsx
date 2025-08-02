@@ -20,21 +20,40 @@ interface MessageContentProps {
 const KEY_TERMS = ['iQube', 'COYN', 'QryptoCOYN', 'blockchain', 'smart contract', 'token', 'wallet', 'DeFi', 'NFT', 'Web3', 'cryptocurrency', 'metaKnyts', 'mẹtaKnyts', 'VFT', 'BlakQube', 'MetaQube', 'TokenQube'];
 
 const MessageContent = ({ content, sender, metadata }: MessageContentProps) => {
-  // Sanitize content to remove any residual HTML wrapping from historical data
+  // SINGLE-POINT SANITIZATION - All content processing happens here only
   const sanitizedContent = React.useMemo(() => {
     if (!content) return '';
     
-    // Remove any HTML div wrappers that might be in historical data
-    let cleaned = content
+    // Protect Mermaid code blocks from sanitization
+    const mermaidBlocks: string[] = [];
+    let tempContent = content;
+    
+    // Extract and protect Mermaid blocks
+    tempContent = tempContent.replace(/```mermaid\n([\s\S]*?)\n```/g, (match, code) => {
+      const index = mermaidBlocks.length;
+      mermaidBlocks.push(code.trim());
+      return `__MERMAID_BLOCK_${index}__`;
+    });
+    
+    // Now safely remove HTML div wrappers
+    let cleaned = tempContent
       .replace(/<div class="historic-response[^"]*">/g, '')
       .replace(/<\/div>/g, '')
       .replace(/<div[^>]*>/g, '')
+      .replace(/\s*<br\s*\/?>\s*/g, '\n')
       .trim();
     
-    console.log('MessageContent: Content sanitization:', { 
+    // Restore protected Mermaid blocks
+    mermaidBlocks.forEach((code, index) => {
+      cleaned = cleaned.replace(`__MERMAID_BLOCK_${index}__`, `\`\`\`mermaid\n${code}\n\`\`\``);
+    });
+    
+    console.log('MessageContent: SINGLE-POINT sanitization:', { 
       original: content.substring(0, 100), 
       cleaned: cleaned.substring(0, 100),
       hasHTML: content.includes('<div'),
+      hasMermaid: content.includes('```mermaid'),
+      mermaidBlocksFound: mermaidBlocks.length,
       metadata 
     });
     

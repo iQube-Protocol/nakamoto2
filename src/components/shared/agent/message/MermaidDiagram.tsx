@@ -143,10 +143,35 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
   // Cache for successfully rendered diagrams
   const [svgCache] = useState<Map<string, string>>(new Map());
   
-  // Enhanced rendering with caching and progressive enhancement
+  // Input validation to prevent corrupted content from causing errors
+  const validateAndCleanInput = React.useCallback((input: string): { isValid: boolean; cleaned: string; error?: string } => {
+    if (!input || typeof input !== 'string') {
+      return { isValid: false, cleaned: '', error: 'No diagram code provided' };
+    }
+    
+    const trimmed = input.trim();
+    if (trimmed === '') {
+      return { isValid: false, cleaned: '', error: 'Empty diagram code' };
+    }
+    
+    // Check for HTML corruption
+    if (trimmed.includes('<div') || trimmed.includes('</div>')) {
+      return { isValid: false, cleaned: '', error: 'Corrupted diagram code contains HTML tags' };
+    }
+    
+    // Basic Mermaid syntax validation
+    if (!trimmed.match(/^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|journey|pie|gantt|gitGraph|erDiagram)/)) {
+      return { isValid: false, cleaned: '', error: 'Invalid Mermaid diagram type' };
+    }
+    
+    return { isValid: true, cleaned: trimmed };
+  }, []);
+
+  // Enhanced rendering with caching and input validation
   useEffect(() => {
-    if (!currentCode || currentCode.trim() === '') {
-      setError(new Error("Empty diagram code"));
+    const validation = validateAndCleanInput(currentCode);
+    if (!validation.isValid) {
+      setError(new Error(validation.error || "Invalid diagram code"));
       setIsLoading(false);
       return;
     }
@@ -157,10 +182,10 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
     const renderDiagram = async () => {
       if (showCodeView) return;
       
-      // Check cache first
-      const cacheKey = `${currentCode.trim()}-${theme}`;
+      // Check cache first with validation
+      const cacheKey = `${validation.cleaned}-${theme}`;
       if (svgCache.has(cacheKey)) {
-        console.log('Using cached SVG for diagram');
+        console.log('Using cached SVG for validated diagram');
         setSvg(svgCache.get(cacheKey)!);
         setIsLoading(false);
         return;
@@ -179,11 +204,11 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
       }, timeoutMs);
       
       try {
-        console.log(`Rendering diagram (ID: ${id}, attempt: ${renderAttempts + 1}) with code:`, currentCode);
+        console.log(`Rendering diagram (ID: ${id}, attempt: ${renderAttempts + 1}) with validated code:`, validation.cleaned);
         
-        // Process the code with minimal changes
+        // Process the validated code with minimal changes
         const { processCode } = await import('./utils/mermaidUtils');
-        const processedCode = processCode(currentCode);
+        const processedCode = processCode(validation.cleaned);
         
         // Get mermaid instance with retry logic
         let mermaid;
@@ -258,7 +283,7 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
       isMounted = false;
       if (timeoutId) window.clearTimeout(timeoutId);
     };
-  }, [currentCode, id, showCodeView, theme, renderAttempts, svgCache]);
+  }, [currentCode, id, showCodeView, theme, renderAttempts, svgCache, validateAndCleanInput]);
   
   // Insert SVG into the container when available
   useEffect(() => {

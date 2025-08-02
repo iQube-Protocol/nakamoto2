@@ -19,6 +19,24 @@ const SimplifiedMonDAIInterface: React.FC = React.memo(() => {
   const [initialMessages, setInitialMessages] = useState<AgentMessage[]>([]);
   const [isHistoryLoaded, setIsHistoryLoaded] = useState(false);
   
+  // State persistence using sessionStorage for navigation stability
+  const [stateKey] = useState(() => `mondai_state_${Date.now()}`);
+  
+  // Save state on unload to prevent content corruption during navigation
+  useEffect(() => {
+    const handleBeforeUnload = () => {
+      if (initialMessages.length > 0) {
+        sessionStorage.setItem(stateKey, JSON.stringify({
+          messages: initialMessages,
+          timestamp: Date.now()
+        }));
+      }
+    };
+    
+    window.addEventListener('beforeunload', handleBeforeUnload);
+    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
+  }, [initialMessages, stateKey]);
+  
   // Use optimized hook for better performance
   const { interactions, refreshInteractions } = useUserInteractionsOptimized('learn');
   
