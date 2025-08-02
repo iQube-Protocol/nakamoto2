@@ -58,10 +58,10 @@ export const qubeData = {
     "Date-Minted": new Date().toISOString(),
     "Related-iQubes": ["PrivacyQube", "AIModelQube", "DataProtectionQube"],
     "X-of-Y": "2 of 7",
-    "Sensitivity-Score": 2,
-    "Verifiability-Score": 6,
-    "Accuracy-Score": 9,
-    "Risk-Score": 1
+    "Sensitivity-Score": 5,
+    "Verifiability-Score": 8,
+    "Accuracy-Score": 7,
+    "Risk-Score": 2
   },
   openai: {
     "iQube-Identifier": "OpenAI iQube",
@@ -73,10 +73,10 @@ export const qubeData = {
     "Date-Minted": new Date().toISOString(),
     "Related-iQubes": ["AIModelQube", "LanguageQube", "ReasoningQube"],
     "X-of-Y": "3 of 7",
-    "Sensitivity-Score": 3,
-    "Verifiability-Score": 8,
-    "Accuracy-Score": 9,
-    "Risk-Score": 2
+    "Sensitivity-Score": 7,
+    "Verifiability-Score": 5,
+    "Accuracy-Score": 7,
+    "Risk-Score": 7
   },
   gdrive: {
     "iQube-Identifier": "GDrive iQube",
