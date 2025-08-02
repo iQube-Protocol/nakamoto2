@@ -19,23 +19,44 @@ const SimplifiedMonDAIInterface: React.FC = React.memo(() => {
   const [initialMessages, setInitialMessages] = useState<AgentMessage[]>([]);
   const [isHistoryLoaded, setIsHistoryLoaded] = useState(false);
   
-  // State persistence using sessionStorage for navigation stability
-  const [stateKey] = useState(() => `mondai_state_${Date.now()}`);
+  // PRODUCTION FIX: Force clean state and prevent cache corruption
+  const [buildVersion] = useState(() => `mondai_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
   
-  // Save state on unload to prevent content corruption during navigation
   useEffect(() => {
-    const handleBeforeUnload = () => {
-      if (initialMessages.length > 0) {
-        sessionStorage.setItem(stateKey, JSON.stringify({
-          messages: initialMessages,
-          timestamp: Date.now()
-        }));
-      }
-    };
+    // AGGRESSIVE CACHE CLEARING for production
+    console.log('🧹 PRODUCTION FIX: Clearing all mondai-related caches...');
     
-    window.addEventListener('beforeunload', handleBeforeUnload);
-    return () => window.removeEventListener('beforeunload', handleBeforeUnload);
-  }, [initialMessages, stateKey]);
+    // Clear all storage that might contain corrupted content
+    const keysToRemove = [];
+    
+    // Check localStorage
+    for (let i = 0; i < localStorage.length; i++) {
+      const key = localStorage.key(i);
+      if (key && (key.includes('mondai') || key.includes('mermaid') || key.includes('conversation') || key.includes('agent'))) {
+        keysToRemove.push(key);
+      }
+    }
+    
+    // Check sessionStorage
+    for (let i = 0; i < sessionStorage.length; i++) {
+      const key = sessionStorage.key(i);
+      if (key && (key.includes('mondai') || key.includes('mermaid') || key.includes('conversation') || key.includes('agent'))) {
+        keysToRemove.push(key);
+      }
+    }
+    
+    // Remove all identified keys
+    keysToRemove.forEach(key => {
+      localStorage.removeItem(key);
+      sessionStorage.removeItem(key);
+    });
+    
+    console.log(`🗑️ PRODUCTION FIX: Cleared ${keysToRemove.length} cached items:`, keysToRemove);
+    
+    // Set build version for debugging
+    sessionStorage.setItem('mondai_build_version', buildVersion);
+    
+  }, [buildVersion]);
   
   // Use optimized hook for better performance
   const { interactions, refreshInteractions } = useUserInteractionsOptimized('learn');
@@ -130,35 +151,47 @@ What would you like to explore today?`,
     }
   }, [veniceActivated, conversationId]);
   
-  // Optimized conversation history loading with proper dependencies
+  // ENHANCED conversation history loading with production debugging
   useEffect(() => {
     const loadConversationHistory = () => {
       if (!user || isHistoryLoaded) return;
       
       try {
-        console.log('🎯 MonDAI Interface: Loading conversation history...');
+        console.log(`🎯 PRODUCTION LOAD: Starting conversation history load (Build: ${buildVersion})`);
+        console.log(`📊 PRODUCTION DATA: Historical messages count: ${processedHistoricalMessages.length}`);
 
         if (processedHistoricalMessages.length > 0) {
-          console.log(`🎯 MonDAI Interface: Loaded ${processedHistoricalMessages.length} historical messages for MonDAI`);
+          console.log(`✅ PRODUCTION SUCCESS: Loaded ${processedHistoricalMessages.length} historical messages for MonDAI`);
+          
+          // Log first few messages to verify content integrity
+          processedHistoricalMessages.slice(0, 3).forEach((msg, i) => {
+            console.log(`📝 PRODUCTION MESSAGE ${i + 1}:`, {
+              id: msg.id,
+              sender: msg.sender,
+              hasHTML: msg.message.includes('<div'),
+              hasMermaid: msg.message.includes('```mermaid'),
+              preview: msg.message.substring(0, 50)
+            });
+          });
           
           // Start with welcome message, then add history
           setInitialMessages([welcomeMessage, ...processedHistoricalMessages]);
         } else {
           // If no history, just set the welcome message
-          console.log('🎯 MonDAI Interface: No historical messages found for MonDAI');
+          console.log('🎯 PRODUCTION INFO: No historical messages found for MonDAI');
           setInitialMessages([welcomeMessage]);
         }
         
         setIsHistoryLoaded(true);
       } catch (error) {
-        console.error('❌ MonDAI Interface: Error loading conversation history:', error);
+        console.error(`❌ PRODUCTION ERROR: Failed to load conversation history (Build: ${buildVersion}):`, error);
         setInitialMessages([welcomeMessage]);
         setIsHistoryLoaded(true);
       }
     };
 
     loadConversationHistory();
-  }, [user, processedHistoricalMessages, welcomeMessage, isHistoryLoaded]);
+  }, [user, processedHistoricalMessages, welcomeMessage, isHistoryLoaded, buildVersion]);
 
   // Memoized refresh function to prevent unnecessary recreations
   const memoizedRefreshInteractions = useCallback(() => {
@@ -177,7 +210,7 @@ What would you like to explore today?`,
     <div className="h-screen flex flex-col">
       <SimplifiedAgentInterface
         title="Aigent Nakamoto"
-        description={`Crypto-Agentic AI for iQube + COYN + Qrypto + metaKnyts ${veniceActivated ? '(Venice AI)' : '(OpenAI)'} ${conversationId ? '🧠' : '💭'}`}
+        description={`Crypto-Agentic AI for iQube + COYN + Qrypto + metaKnyts ${veniceActivated ? '(Venice AI)' : '(OpenAI)'} ${conversationId ? '🧠' : '💭'} [${buildVersion.substring(0, 8)}]`}
         agentType="mondai" 
         onMessageSubmit={handleAIMessage}
         conversationId={conversationId}

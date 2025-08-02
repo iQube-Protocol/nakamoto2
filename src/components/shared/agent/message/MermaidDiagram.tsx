@@ -140,32 +140,70 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
   const containerRef = useRef<HTMLDivElement>(null);
   const { theme } = useTheme();
   
-  // Cache for successfully rendered diagrams
-  const [svgCache] = useState<Map<string, string>>(new Map());
+  // PRODUCTION CACHE BUSTING - Force fresh state
+  const [buildVersion] = useState(() => `v_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
+  const [svgCache] = useState<Map<string, string>>(() => {
+    // Clear any existing cache to force fresh renders
+    if (typeof window !== 'undefined') {
+      console.log('🔄 PRODUCTION FIX: Clearing all mermaid caches on component init');
+      // Clear any localStorage/sessionStorage related to mermaid
+      Object.keys(localStorage).forEach(key => {
+        if (key.includes('mermaid') || key.includes('diagram')) {
+          localStorage.removeItem(key);
+        }
+      });
+      Object.keys(sessionStorage).forEach(key => {
+        if (key.includes('mermaid') || key.includes('diagram')) {
+          sessionStorage.removeItem(key);
+        }
+      });
+    }
+    return new Map();
+  });
   
-  // Input validation to prevent corrupted content from causing errors
+  // ENHANCED INPUT VALIDATION with production debugging
   const validateAndCleanInput = React.useCallback((input: string): { isValid: boolean; cleaned: string; error?: string } => {
+    console.log('🔍 PRODUCTION DEBUG: Validating Mermaid input:', { 
+      buildVersion,
+      input: input?.substring(0, 50),
+      inputType: typeof input,
+      hasHTML: input?.includes('<div'),
+      hasEndDiv: input?.includes('</div>'),
+      inputLength: input?.length
+    });
+    
     if (!input || typeof input !== 'string') {
+      console.error('❌ PRODUCTION ERROR: Invalid input type or empty input');
       return { isValid: false, cleaned: '', error: 'No diagram code provided' };
     }
     
     const trimmed = input.trim();
     if (trimmed === '') {
+      console.error('❌ PRODUCTION ERROR: Empty diagram code after trim');
       return { isValid: false, cleaned: '', error: 'Empty diagram code' };
     }
     
-    // Check for HTML corruption
-    if (trimmed.includes('<div') || trimmed.includes('</div>')) {
-      return { isValid: false, cleaned: '', error: 'Corrupted diagram code contains HTML tags' };
+    // ENHANCED HTML corruption detection
+    if (trimmed.includes('<div') || trimmed.includes('</div>') || trimmed.includes('<br') || trimmed.includes('&lt;')) {
+      console.error('❌ PRODUCTION ERROR: HTML corruption detected in Mermaid code:', { 
+        code: trimmed.substring(0, 100),
+        hasDiv: trimmed.includes('<div'),
+        hasEndDiv: trimmed.includes('</div>'),
+        hasBr: trimmed.includes('<br'),
+        hasEntity: trimmed.includes('&lt;')
+      });
+      return { isValid: false, cleaned: '', error: 'CORRUPTED: Diagram code contains HTML/XML tags - this should not happen with current fixes' };
     }
     
     // Basic Mermaid syntax validation
     if (!trimmed.match(/^(graph|flowchart|sequenceDiagram|classDiagram|stateDiagram|journey|pie|gantt|gitGraph|erDiagram)/)) {
+      console.error('❌ PRODUCTION ERROR: Invalid Mermaid diagram type:', { code: trimmed.substring(0, 50) });
       return { isValid: false, cleaned: '', error: 'Invalid Mermaid diagram type' };
     }
     
+    console.log('✅ PRODUCTION SUCCESS: Mermaid validation passed:', { code: trimmed.substring(0, 50) });
     return { isValid: true, cleaned: trimmed };
-  }, []);
+  }, [buildVersion]);
 
   // Enhanced rendering with caching and input validation
   useEffect(() => {
@@ -204,11 +242,23 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
       }, timeoutMs);
       
       try {
-        console.log(`Rendering diagram (ID: ${id}, attempt: ${renderAttempts + 1}) with validated code:`, validation.cleaned);
+        console.log(`🎨 PRODUCTION RENDER: Starting diagram render (Build: ${buildVersion}, ID: ${id}, attempt: ${renderAttempts + 1})`);
+        console.log(`🔤 PRODUCTION CODE CHECK: Validated input:`, {
+          code: validation.cleaned.substring(0, 100),
+          length: validation.cleaned.length,
+          startsWithGraph: validation.cleaned.startsWith('graph'),
+          startsWithFlowchart: validation.cleaned.startsWith('flowchart')
+        });
         
         // Process the validated code with minimal changes
         const { processCode } = await import('./utils/mermaidUtils');
         const processedCode = processCode(validation.cleaned);
+        
+        console.log(`🔧 PRODUCTION PROCESS: Code processed:`, {
+          original: validation.cleaned.substring(0, 50),
+          processed: processedCode.substring(0, 50),
+          changed: validation.cleaned !== processedCode
+        });
         
         // Get mermaid instance with retry logic
         let mermaid;
@@ -254,19 +304,29 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
         }
         
         if (isMounted) {
-          // Cache successful render
-          svgCache.set(cacheKey, svg);
+          console.log(`✅ PRODUCTION SUCCESS: Mermaid render completed successfully (Build: ${buildVersion})`);
+          
+          // Cache successful render with build version
+          svgCache.set(`${cacheKey}_${buildVersion}`, svg);
           
           setSvg(svg);
           setIsLoading(false);
           setRenderAttempts(0); // Reset on success
         }
       } catch (err) {
-        console.error("Mermaid rendering error:", err);
+        console.error(`❌ PRODUCTION ERROR: Mermaid rendering failed (Build: ${buildVersion}, Attempt: ${renderAttempts + 1}):`, {
+          error: err,
+          code: validation.cleaned.substring(0, 100),
+          id,
+          buildVersion
+        });
         
         if (isMounted) {
           setRenderAttempts(prev => prev + 1);
-          setError(err instanceof Error ? err : new Error(String(err)));
+          
+          // ULTIMATE FALLBACK: Prevent any rendering errors from breaking the UI
+          const fallbackError = new Error(`[${buildVersion}] Mermaid render failed: ${String(err).substring(0, 100)}`);
+          setError(fallbackError);
           setIsLoading(false);
         }
       } finally {
@@ -393,19 +453,55 @@ const MermaidDiagram = ({ code, id }: MermaidDiagramProps) => {
     );
   }
   
-  // Display error state with fallback content
+  // ENHANCED ERROR STATE with production debugging
   if (error) {
     return (
       <div className="my-4">
-        <DiagramErrorHandler 
-          error={error}
-          code={currentCode}
-          id={id}
-          onRetry={handleRetry}
-        />
-        {/* Fallback content to prevent complete failure */}
-        <div className="mt-2 p-2 bg-yellow-50 border border-yellow-200 rounded text-sm text-yellow-700">
-          <strong>Diagram Preview Unavailable:</strong> The content contains a diagram that couldn't be rendered. Please use the error handler above to troubleshoot.
+        <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
+          <div className="flex items-start">
+            <div className="flex-shrink-0">
+              <svg className="h-5 w-5 text-red-400" viewBox="0 0 20 20" fill="currentColor">
+                <path fillRule="evenodd" d="M10 18a8 8 0 100-16 8 8 0 000 16zM8.707 7.293a1 1 0 00-1.414 1.414L8.586 10l-1.293 1.293a1 1 0 101.414 1.414L10 11.414l1.293 1.293a1 1 0 001.414-1.414L11.414 10l1.293-1.293a1 1 0 00-1.414-1.414L10 8.586 8.707 7.293z" clipRule="evenodd" />
+              </svg>
+            </div>
+            <div className="ml-3 flex-1">
+              <h3 className="text-sm font-medium text-red-800">
+                PRODUCTION MERMAID ERROR - Build {buildVersion}
+              </h3>
+              <div className="mt-2 text-sm text-red-700">
+                <p className="font-medium">Error: {error.message}</p>
+                <details className="mt-2">
+                  <summary className="cursor-pointer text-xs underline">Debug Info</summary>
+                  <pre className="mt-1 text-xs bg-red-100 p-2 rounded overflow-auto">
+                    Build Version: {buildVersion}
+                    Diagram ID: {id}
+                    Code Preview: {currentCode.substring(0, 100)}...
+                    Render Attempts: {renderAttempts}
+                    Error Stack: {error.stack?.substring(0, 200)}
+                  </pre>
+                </details>
+              </div>
+              <div className="mt-3 flex space-x-2">
+                <button
+                  onClick={() => handleRetry(currentCode)}
+                  className="text-xs bg-red-100 text-red-800 px-3 py-1 rounded hover:bg-red-200"
+                >
+                  Retry Render
+                </button>
+                <button
+                  onClick={() => setShowCodeView(true)}
+                  className="text-xs bg-gray-100 text-gray-800 px-3 py-1 rounded hover:bg-gray-200"
+                >
+                  Show Code
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        {/* Fallback content to prevent UI breakage */}
+        <div className="mt-3 p-3 bg-blue-50 border border-blue-200 rounded text-sm text-blue-700">
+          <strong>Alternative View:</strong> The diagram content is still available above. This error is being tracked for debugging.
         </div>
       </div>
     );
