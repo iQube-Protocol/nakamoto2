@@ -244,6 +244,12 @@ const SettingsInterface = ({
       />
       
       <Tabs defaultValue="connections" value={activeTab} onValueChange={handleTabChange}>
+        <TabsList className="w-full grid grid-cols-3 mt-4">
+          <TabsTrigger value="connections" data-tab="connections">Connections</TabsTrigger>
+          <TabsTrigger value="iqube" data-tab="iqube">iQubes</TabsTrigger>
+          <TabsTrigger value="preferences" data-tab="preferences">Preferences</TabsTrigger>
+        </TabsList>
+
         <TabsContent value="connections" className="mt-4">
           <ConnectionsTab 
             settings={settings} 
@@ -269,12 +275,6 @@ const SettingsInterface = ({
             onSaveSettings={handleSaveSettings} 
           />
         </TabsContent>
-        
-        <TabsList className="w-full grid grid-cols-3">
-          <TabsTrigger value="connections" data-tab="connections">Connections</TabsTrigger>
-          <TabsTrigger value="iqube" data-tab="iqube">iQubes</TabsTrigger>
-          <TabsTrigger value="preferences" data-tab="preferences">Preferences</TabsTrigger>
-        </TabsList>
       </Tabs>
     </div>
   );
