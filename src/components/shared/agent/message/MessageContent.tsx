@@ -20,6 +20,26 @@ interface MessageContentProps {
 const KEY_TERMS = ['iQube', 'COYN', 'QryptoCOYN', 'blockchain', 'smart contract', 'token', 'wallet', 'DeFi', 'NFT', 'Web3', 'cryptocurrency', 'metaKnyts', 'mẹtaKnyts', 'VFT', 'BlakQube', 'MetaQube', 'TokenQube'];
 
 const MessageContent = ({ content, sender, metadata }: MessageContentProps) => {
+  // Sanitize content to remove any residual HTML wrapping from historical data
+  const sanitizedContent = React.useMemo(() => {
+    if (!content) return '';
+    
+    // Remove any HTML div wrappers that might be in historical data
+    let cleaned = content
+      .replace(/<div class="historic-response[^"]*">/g, '')
+      .replace(/<\/div>/g, '')
+      .replace(/<div[^>]*>/g, '')
+      .trim();
+    
+    console.log('MessageContent: Content sanitization:', { 
+      original: content.substring(0, 100), 
+      cleaned: cleaned.substring(0, 100),
+      hasHTML: content.includes('<div'),
+      metadata 
+    });
+    
+    return cleaned;
+  }, [content, metadata]);
   // Memoized content processing to reduce re-computation
   const processUserFriendlyContent = React.useMemo(() => {
     return (text: string) => {
@@ -62,7 +82,7 @@ const MessageContent = ({ content, sender, metadata }: MessageContentProps) => {
     let match;
 
     // Split content by images first
-    const contentWithImages = content.replace(imageRegex, (match, alt, src) => {
+    const contentWithImages = sanitizedContent.replace(imageRegex, (match, alt, src) => {
       return `\n\n__IMAGE__${alt}__${src}__\n\n`;
     });
 
@@ -120,6 +140,7 @@ const MessageContent = ({ content, sender, metadata }: MessageContentProps) => {
         
         // Handle Mermaid diagrams
         if (language === 'mermaid') {
+          console.log('MessageContent: Processing Mermaid code:', { code: code.substring(0, 50), metadata });
           return (
             <MermaidDiagram 
               key={`mermaid-${i}-${Date.now()}`} 
@@ -142,7 +163,7 @@ const MessageContent = ({ content, sender, metadata }: MessageContentProps) => {
         );
       }
     }).flat();
-  }, [content, processUserFriendlyContent]);
+  }, [sanitizedContent, processUserFriendlyContent]);
 
   // Enhanced inline formatting processor with persistent markdown-style rendering
   const processInlineFormatting = React.useCallback((text: string) => {

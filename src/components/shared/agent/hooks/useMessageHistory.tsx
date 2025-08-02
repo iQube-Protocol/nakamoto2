@@ -21,7 +21,11 @@ export const useMessageHistory = (
       if (!user || isHistoryLoaded) return;
       
       try {
-        console.log(`Loading ${agentType} conversation history with enhanced styling...`);
+        console.log(`Loading ${agentType} conversation history...`);
+        
+        // Force clear any cached data that might contain HTML-wrapped content
+        const cacheKey = `${agentType}_conversation_cache_${user.id}`;
+        localStorage.removeItem(cacheKey);
         
         await refreshInteractions();
         
@@ -39,10 +43,23 @@ export const useMessageHistory = (
             }
             
             if (interaction.response && interaction.response.trim()) {
+              // Additional content sanitization for database content
+              let cleanResponse = interaction.response
+                .replace(/<div class="historic-response[^"]*">/g, '')
+                .replace(/<\/div>/g, '')
+                .replace(/<div[^>]*>/g, '')
+                .trim();
+              
+              console.log(`Historical message sanitization:`, {
+                original: interaction.response.substring(0, 50),
+                cleaned: cleanResponse.substring(0, 50),
+                hadHTML: interaction.response.includes('<div')
+              });
+              
               historicalMessages.push({
                 id: `${interaction.id}-agent`,
                 sender: 'agent',
-                message: interaction.response,
+                message: cleanResponse,
                 timestamp: interaction.created_at,
                 metadata: {
                   ...interaction.metadata,
@@ -57,7 +74,7 @@ export const useMessageHistory = (
             new Date(a.timestamp).getTime() - new Date(b.timestamp).getTime()
           );
           
-          console.log(`Loaded ${historicalMessages.length} historical messages (${interactions.length} interactions) for ${agentType} with enhanced styling`);
+          console.log(`Loaded ${historicalMessages.length} historical messages (${interactions.length} interactions) for ${agentType}`);
           
           if (historicalMessages.length > 0) {
             setMessages([...initialMessages, ...historicalMessages]);
