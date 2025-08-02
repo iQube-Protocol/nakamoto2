@@ -302,6 +302,31 @@
   border-left-color: rgba(249, 115, 22, 0.3);
 }
 
+.conversational-content .historic-response.learn-theme {
+  background: rgba(34, 197, 94, 0.03);
+  border-left-color: rgba(34, 197, 94, 0.3);
+}
+
+.conversational-content .historic-response.earn-theme {
+  background: rgba(168, 85, 247, 0.03);
+  border-left-color: rgba(168, 85, 247, 0.3);
+}
+
+.conversational-content .historic-response.connect-theme {
+  background: rgba(6, 182, 212, 0.03);
+  border-left-color: rgba(6, 182, 212, 0.3);
+}
+
+.conversational-content .historic-response.mondai-theme {
+  background: rgba(245, 158, 11, 0.03);
+  border-left-color: rgba(245, 158, 11, 0.3);
+}
+
+.conversational-content .historic-response.default-theme {
+  background: rgba(99, 102, 241, 0.03);
+  border-left-color: rgba(99, 102, 241, 0.3);
+}
+
 /* Interactive knowledge elements */
 .knowledge-interactive {
   cursor: pointer;

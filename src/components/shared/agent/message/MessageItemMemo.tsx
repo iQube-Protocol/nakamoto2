@@ -45,7 +45,7 @@ const MessageItemMemo: React.FC<MessageItemProps> = React.memo(({
   return (
     <div className={`message-item ${isUser ? 'user-message' : isSystem ? 'system-message' : 'agent-message'}`}>
       <div className="message-content">
-        <MessageContent content={message.message} sender={message.sender} />
+        <MessageContent content={message.message} sender={message.sender} metadata={message.metadata} />
         
         {!isUser && onPlayAudio && (
           <AudioPlayback

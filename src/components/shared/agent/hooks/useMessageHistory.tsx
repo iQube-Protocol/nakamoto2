@@ -15,15 +15,6 @@ export const useMessageHistory = (
   const { user } = useAuth();
   const { interactions, refreshInteractions } = useUserInteractions(agentType as any);
   
-  const processHistoricContent = (content: string, agentType: string) => {
-    return content
-      .replace(/^(.*?)$/gm, (match) => {
-        if (match.trim()) {
-          return `<div class="historic-response ${agentType}-theme">${match}</div>`;
-        }
-        return match;
-      });
-  };
   
   useEffect(() => {
     const loadConversationHistory = async () => {
@@ -48,18 +39,15 @@ export const useMessageHistory = (
             }
             
             if (interaction.response && interaction.response.trim()) {
-              const processedResponse = processHistoricContent(interaction.response, agentType);
-              
               historicalMessages.push({
                 id: `${interaction.id}-agent`,
                 sender: 'agent',
-                message: processedResponse,
+                message: interaction.response,
                 timestamp: interaction.created_at,
                 metadata: {
                   ...interaction.metadata,
                   historicResponse: true,
-                  agentTheme: agentType,
-                  enhancedStyling: true
+                  agentTheme: agentType
                 }
               });
             }

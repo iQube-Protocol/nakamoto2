@@ -9,12 +9,17 @@ import MermaidDiagram from './MermaidDiagram';
 interface MessageContentProps {
   content: string;
   sender: 'user' | 'agent' | 'system';
+  metadata?: {
+    historicResponse?: boolean;
+    agentTheme?: string;
+    [key: string]: any;
+  };
 }
 
 // Extract key terms to avoid recreating on each render
 const KEY_TERMS = ['iQube', 'COYN', 'QryptoCOYN', 'blockchain', 'smart contract', 'token', 'wallet', 'DeFi', 'NFT', 'Web3', 'cryptocurrency', 'metaKnyts', 'mẹtaKnyts', 'VFT', 'BlakQube', 'MetaQube', 'TokenQube'];
 
-const MessageContent = ({ content, sender }: MessageContentProps) => {
+const MessageContent = ({ content, sender, metadata }: MessageContentProps) => {
   // Memoized content processing to reduce re-computation
   const processUserFriendlyContent = React.useMemo(() => {
     return (text: string) => {
@@ -309,8 +314,19 @@ const MessageContent = ({ content, sender }: MessageContentProps) => {
     });
   }, [processedContent, processInlineFormatting]);
 
+  // Apply historical styling if this is a historic response
+  const containerClassName = React.useMemo(() => {
+    let baseClasses = "prose prose-sm max-w-none conversational-content";
+    
+    if (metadata?.historicResponse) {
+      baseClasses += ` historic-response ${metadata.agentTheme || 'default'}-theme opacity-80`;
+    }
+    
+    return baseClasses;
+  }, [metadata]);
+
   return (
-    <div className="prose prose-sm max-w-none conversational-content">
+    <div className={containerClassName}>
       {elements}
     </div>
   );
