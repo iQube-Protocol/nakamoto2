@@ -102,6 +102,16 @@ const IQubesSection: React.FC<IQubesSectionProps> = ({
         </div>
       );
     }
+    if (qubeName === "OpenAI") {
+      return (
+        <div className="space-y-1">
+          <div className="font-semibold">OpenAI Model</div>
+          <div className="text-xs">
+            Advanced language model services with industry-leading capabilities for text, code, and analysis.
+          </div>
+        </div>
+      );
+    }
     if (qubeName === "GDrive") {
       return (
         <div className="space-y-1">
