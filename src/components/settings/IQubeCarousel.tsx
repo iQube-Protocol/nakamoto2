@@ -82,6 +82,7 @@ const IQubeCarousel = ({
   getProfileImageUrl 
 }: IQubeCarouselProps) => {
   const [scrollPosition, setScrollPosition] = React.useState(0);
+  const [maxScroll, setMaxScroll] = React.useState(0);
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
 
   // Mock MetaQube data for each iQube (in a real app, this would come from props or context)
@@ -107,10 +108,30 @@ const IQubeCarousel = ({
     currentMetaQube["iQube-Identifier"] === `${q.id} iQube`
   );
 
+  // Update max scroll when container or content changes
+  React.useEffect(() => {
+    if (scrollContainerRef.current && open) {
+      // Small delay to ensure DOM is ready
+      setTimeout(() => {
+        if (scrollContainerRef.current) {
+          const container = scrollContainerRef.current;
+          const newMaxScroll = container.scrollWidth - container.clientWidth;
+          setMaxScroll(newMaxScroll);
+          console.log('Updated scroll dimensions:', {
+            scrollWidth: container.scrollWidth,
+            clientWidth: container.clientWidth,
+            maxScroll: newMaxScroll
+          });
+        }
+      }, 100);
+    }
+  }, [metaQubesData, open]);
+
   const scrollLeft = () => {
     if (scrollContainerRef.current) {
-      const containerWidth = scrollContainerRef.current.clientWidth;
-      const newPosition = Math.max(0, scrollPosition - containerWidth * 0.8);
+      const scrollAmount = 350; // Fixed scroll amount per click
+      const newPosition = Math.max(0, scrollPosition - scrollAmount);
+      console.log('Scrolling left:', { current: scrollPosition, new: newPosition });
       scrollContainerRef.current.scrollTo({ left: newPosition, behavior: 'smooth' });
       setScrollPosition(newPosition);
     }
@@ -118,9 +139,9 @@ const IQubeCarousel = ({
 
   const scrollRight = () => {
     if (scrollContainerRef.current) {
-      const containerWidth = scrollContainerRef.current.clientWidth;
-      const maxScroll = scrollContainerRef.current.scrollWidth - scrollContainerRef.current.clientWidth;
-      const newPosition = Math.min(maxScroll, scrollPosition + containerWidth * 0.8);
+      const scrollAmount = 350; // Fixed scroll amount per click
+      const newPosition = Math.min(maxScroll, scrollPosition + scrollAmount);
+      console.log('Scrolling right:', { current: scrollPosition, new: newPosition, max: maxScroll });
       scrollContainerRef.current.scrollTo({ left: newPosition, behavior: 'smooth' });
       setScrollPosition(newPosition);
     }
@@ -168,7 +189,7 @@ const IQubeCarousel = ({
             size="icon"
             className="absolute right-2 top-1/2 -translate-y-1/2 z-10 bg-background/90 backdrop-blur-sm shadow-lg"
             onClick={scrollRight}
-            disabled={scrollContainerRef.current && scrollPosition >= (scrollContainerRef.current.scrollWidth - scrollContainerRef.current.clientWidth)}
+            disabled={scrollPosition >= maxScroll}
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
@@ -176,8 +197,12 @@ const IQubeCarousel = ({
           {/* Scrollable container */}
           <div 
             ref={scrollContainerRef}
-            className="flex gap-4 overflow-x-auto scrollbar-hide px-8 py-4 scroll-smooth"
-            onScroll={(e) => setScrollPosition(e.currentTarget.scrollLeft)}
+            className="flex gap-4 overflow-x-auto scrollbar-hide px-8 py-4"
+            onScroll={(e) => {
+              const newScrollPosition = e.currentTarget.scrollLeft;
+              setScrollPosition(newScrollPosition);
+              console.log('Manual scroll:', { position: newScrollPosition, max: maxScroll });
+            }}
           >
             {metaQubesData.map((qube, index) => {
               const metaQube = getMetaQubeData(qube.id);
