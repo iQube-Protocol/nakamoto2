@@ -252,34 +252,31 @@ const SettingsInterface = ({
             <TabsTrigger value="preferences" data-tab="preferences">Preferences</TabsTrigger>
           </TabsList>
 
-          {/* Scrollable content area */}
-          <div className="flex-1 min-h-0">
-            <TabsContent value="connections" className="mt-4 flex-1 overflow-y-auto">
-              <ConnectionsTab 
-                settings={settings} 
-                onConnectService={handleConnectService} 
-              />
-            </TabsContent>
+          <TabsContent value="connections" className="mt-4 flex-1 overflow-y-auto">
+            <ConnectionsTab 
+              settings={settings} 
+              onConnectService={handleConnectService} 
+            />
+          </TabsContent>
 
-            <TabsContent value="iqube" className="mt-4 flex-1 overflow-y-auto">
-              <IQubeManagementTab 
-                settings={settings}
-                privateData={privateData}
-                onUpdatePrivateData={onUpdatePrivateData}
-                onConnectWallet={() => handleConnectService('wallet')}
-                onMintIQube={handleMintIQube}
-                onAddAccessGrant={handleAddAccessGrant}
-                metaQube={metaQube}
-              />
-            </TabsContent>
+          <TabsContent value="iqube" className="mt-4 flex-1 overflow-y-auto">
+            <IQubeManagementTab 
+              settings={settings}
+              privateData={privateData}
+              onUpdatePrivateData={onUpdatePrivateData}
+              onConnectWallet={() => handleConnectService('wallet')}
+              onMintIQube={handleMintIQube}
+              onAddAccessGrant={handleAddAccessGrant}
+              metaQube={metaQube}
+            />
+          </TabsContent>
 
-            <TabsContent value="preferences" className="mt-4 flex-1 overflow-y-auto">
-              <PreferencesTab 
-                settings={settings} 
-                onSaveSettings={handleSaveSettings} 
-              />
-            </TabsContent>
-          </div>
+          <TabsContent value="preferences" className="mt-4 flex-1 overflow-y-auto">
+            <PreferencesTab 
+              settings={settings} 
+              onSaveSettings={handleSaveSettings} 
+            />
+          </TabsContent>
         </Tabs>
       </div>
     </div>
