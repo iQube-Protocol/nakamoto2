@@ -197,7 +197,7 @@ const IQubeCarousel = ({
           {/* Scrollable container */}
           <div 
             ref={scrollContainerRef}
-            className="flex gap-4 overflow-x-auto scrollbar-hide px-8 py-4"
+            className="flex gap-4 px-8 py-4 scroll-container"
             onScroll={(e) => {
               const newScrollPosition = e.currentTarget.scrollLeft;
               setScrollPosition(newScrollPosition);
@@ -212,8 +212,9 @@ const IQubeCarousel = ({
               return (
                 <div
                   key={qube.id}
+                  style={{ minWidth: '320px', flexShrink: 0 }}
                   className={cn(
-                    "flex-shrink-0 w-80 p-4 bg-muted/30 border rounded-lg cursor-pointer transition-all hover:scale-105",
+                    "w-80 p-4 bg-muted/30 border rounded-lg cursor-pointer transition-all hover:scale-105",
                     isCurrentQube && "ring-2 ring-primary bg-primary/5",
                     qube.borderColor
                   )}
