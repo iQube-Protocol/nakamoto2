@@ -111,21 +111,20 @@ const IQubeCarousel = ({
   // Update max scroll when container or content changes
   React.useEffect(() => {
     if (scrollContainerRef.current && open) {
-      // Small delay to ensure DOM is ready
+      // Wait for the dialog to be fully rendered
       setTimeout(() => {
-        if (scrollContainerRef.current) {
-          const container = scrollContainerRef.current;
-          const newMaxScroll = container.scrollWidth - container.clientWidth;
+        const container = scrollContainerRef.current;
+        if (container) {
+          const containerWidth = container.clientWidth;
+          const scrollWidth = container.scrollWidth;
+          const newMaxScroll = Math.max(0, scrollWidth - containerWidth);
           setMaxScroll(newMaxScroll);
-          console.log('Updated scroll dimensions:', {
-            scrollWidth: container.scrollWidth,
-            clientWidth: container.clientWidth,
-            maxScroll: newMaxScroll
-          });
+          console.log('Container width:', containerWidth, 'Scroll width:', scrollWidth, 'Max scroll:', newMaxScroll);
+          console.log('Can scroll:', scrollWidth > containerWidth);
         }
       }, 100);
     }
-  }, [metaQubesData, open]);
+  }, [open, metaQubesData]);
 
   const scrollLeft = () => {
     if (scrollContainerRef.current) {
@@ -167,19 +166,21 @@ const IQubeCarousel = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-6xl max-h-[90vh] overflow-hidden">
+      <DialogContent className="max-w-5xl h-[600px]" style={{ overflow: 'visible' }}>
         <DialogHeader>
-          <DialogTitle>iQube Collection</DialogTitle>
+          <DialogTitle className="text-2xl font-bold text-center">
+            Select Your iQube
+          </DialogTitle>
         </DialogHeader>
         
-        <div className="relative">
-          {/* Navigation buttons */}
+        {/* Navigation buttons */}
+        <div className="flex justify-between items-center mb-4">
           <Button
             variant="outline"
             size="icon"
-            className="absolute left-2 top-1/2 -translate-y-1/2 z-10 bg-background/90 backdrop-blur-sm shadow-lg"
             onClick={scrollLeft}
-            disabled={scrollPosition === 0}
+            disabled={scrollPosition <= 0}
+            className="z-10"
           >
             <ChevronLeft className="h-4 w-4" />
           </Button>
@@ -187,23 +188,34 @@ const IQubeCarousel = ({
           <Button
             variant="outline"
             size="icon"
-            className="absolute right-2 top-1/2 -translate-y-1/2 z-10 bg-background/90 backdrop-blur-sm shadow-lg"
             onClick={scrollRight}
             disabled={scrollPosition >= maxScroll}
+            className="z-10"
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
+        </div>
 
-          {/* Scrollable container */}
-          <div 
-            ref={scrollContainerRef}
-            className="flex gap-4 px-8 py-4 scroll-container"
-            onScroll={(e) => {
-              const newScrollPosition = e.currentTarget.scrollLeft;
-              setScrollPosition(newScrollPosition);
-              console.log('Manual scroll:', { position: newScrollPosition, max: maxScroll });
-            }}
-          >
+        {/* Scrollable container */}
+        <div 
+          ref={scrollContainerRef}
+          style={{
+            display: 'flex',
+            gap: '16px',
+            overflowX: 'auto',
+            paddingLeft: '32px',
+            paddingRight: '32px',
+            paddingTop: '16px',
+            paddingBottom: '16px',
+            width: '100%',
+            flexWrap: 'nowrap'
+          }}
+          onScroll={(e) => {
+            const newScrollPosition = e.currentTarget.scrollLeft;
+            setScrollPosition(newScrollPosition);
+            console.log('Scroll position:', newScrollPosition, 'Max scroll:', maxScroll);
+          }}
+        >
             {metaQubesData.map((qube, index) => {
               const metaQube = getMetaQubeData(qube.id);
               const trustScore = Math.round(((metaQube["Accuracy-Score"] + metaQube["Verifiability-Score"]) / 2) * 10) / 10;
@@ -212,9 +224,14 @@ const IQubeCarousel = ({
               return (
                 <div
                   key={qube.id}
-                  style={{ minWidth: '320px', flexShrink: 0 }}
+                  style={{ 
+                    minWidth: '320px', 
+                    maxWidth: '320px',
+                    flexShrink: 0,
+                    flexGrow: 0
+                  }}
                   className={cn(
-                    "w-80 p-4 bg-muted/30 border rounded-lg cursor-pointer transition-all hover:scale-105",
+                    "p-4 bg-muted/30 border rounded-lg cursor-pointer transition-all hover:scale-105",
                     isCurrentQube && "ring-2 ring-primary bg-primary/5",
                     qube.borderColor
                   )}
@@ -294,7 +311,6 @@ const IQubeCarousel = ({
               );
             })}
           </div>
-        </div>
       </DialogContent>
     </Dialog>
   );
