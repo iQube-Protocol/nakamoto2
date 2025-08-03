@@ -13,6 +13,7 @@ interface MetaQubeHeaderProps {
   isActive: boolean;
   onToggleActive: () => void;
   profileImageUrl?: string;
+  onOpenCarousel?: () => void;
 }
 
 interface DotScoreProps {
@@ -67,7 +68,7 @@ const DotScore = ({ value, label, type }: DotScoreProps) => {
   );
 };
 
-const MetaQubeHeader = ({ metaQube, isActive, onToggleActive, profileImageUrl }: MetaQubeHeaderProps) => {
+const MetaQubeHeader = ({ metaQube, isActive, onToggleActive, profileImageUrl, onOpenCarousel }: MetaQubeHeaderProps) => {
   // Calculate Trust Score as average of Accuracy and Verifiability
   const trustScore = Math.round(((metaQube["Accuracy-Score"] + metaQube["Verifiability-Score"]) / 2) * 10) / 10;
   
@@ -98,7 +99,10 @@ const MetaQubeHeader = ({ metaQube, isActive, onToggleActive, profileImageUrl }:
   };
   
   return (
-    <div className="p-2 bg-muted/30 border rounded-md overflow-x-auto">
+    <div 
+      className="p-2 bg-muted/30 border rounded-md overflow-x-auto cursor-pointer hover:bg-muted/50 transition-colors" 
+      onClick={onOpenCarousel}
+    >
       <div className="flex items-center justify-between mb-3">
         <div className="flex items-center gap-2">
           <ScoreTooltip type={getTooltipType()}>

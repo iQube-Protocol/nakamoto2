@@ -3,6 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { UserSettings, MetaQube } from '@/lib/types';
 import MetaQubeHeader from './MetaQubeHeader';
+import IQubeCarousel from './IQubeCarousel';
 import ConnectionsTab from './ConnectionsTab';
 import IQubeManagementTab from './IQubeManagementTab';
 import PreferencesTab from './PreferencesTab';
@@ -23,6 +24,7 @@ interface SettingsInterfaceProps {
   onToggleIQubeActive: (qubeName: string) => void;
   privateData: PrivateData;
   onUpdatePrivateData: (newData: PrivateData) => void;
+  onQubeSelect?: (qubeId: string) => void;
 }
 
 const SettingsInterface = ({ 
@@ -31,7 +33,8 @@ const SettingsInterface = ({
   activeQubes, 
   onToggleIQubeActive,
   privateData,
-  onUpdatePrivateData 
+  onUpdatePrivateData,
+  onQubeSelect 
 }: SettingsInterfaceProps) => {
   const { theme } = useTheme();
   const { connections, connectService, disconnectService, toggleConnection } = useServiceConnections();
@@ -64,6 +67,7 @@ const SettingsInterface = ({
   
   const { toast } = useToast();
   const [activeTab, setActiveTab] = useState<string>("connections");
+  const [isCarouselOpen, setIsCarouselOpen] = useState(false);
 
   // Update settings when connections change
   useEffect(() => {
@@ -234,6 +238,23 @@ const SettingsInterface = ({
     return null;
   };
 
+  // Get profile image for any qube by ID
+  const getProfileImageUrlByQubeId = (qubeId: string) => {
+    if (qubeId === "KNYT Persona") {
+      return profileImages.knyt;
+    } else if (qubeId === "Qrypto Persona") {
+      return profileImages.qrypto;
+    }
+    return null;
+  };
+
+  const handleQubeSelect = (qubeId: string) => {
+    if (onQubeSelect) {
+      onQubeSelect(qubeId);
+    }
+    setIsCarouselOpen(false);
+  };
+
   return (
     <Tabs defaultValue="connections" value={activeTab} onValueChange={handleTabChange} className="h-full flex flex-col">
       {/* Fixed header area */}
@@ -243,6 +264,7 @@ const SettingsInterface = ({
           isActive={isActive(metaQube["iQube-Identifier"])}
           onToggleActive={toggleActive}
           profileImageUrl={getProfileImageUrl() || undefined}
+          onOpenCarousel={() => setIsCarouselOpen(true)}
         />
         
         <TabsList className="w-full grid grid-cols-3 mt-4">
@@ -280,6 +302,16 @@ const SettingsInterface = ({
           />
         </TabsContent>
       </div>
+      
+      <IQubeCarousel 
+        open={isCarouselOpen}
+        onOpenChange={setIsCarouselOpen}
+        currentMetaQube={metaQube}
+        onQubeSelect={handleQubeSelect}
+        activeQubes={activeQubes}
+        onToggleActive={onToggleIQubeActive}
+        getProfileImageUrl={getProfileImageUrlByQubeId}
+      />
     </Tabs>
   );
 };
