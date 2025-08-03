@@ -166,7 +166,7 @@ const IQubeCarousel = ({
 
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
-      <DialogContent className="max-w-5xl h-[600px]" style={{ overflow: 'visible' }}>
+      <DialogContent className="max-w-5xl h-[400px]" style={{ overflow: 'visible' }}>
         <DialogHeader>
           <DialogTitle className="text-2xl font-bold text-center">
             Select Your iQube
@@ -225,13 +225,13 @@ const IQubeCarousel = ({
                 <div
                   key={qube.id}
                   style={{ 
-                    minWidth: '320px', 
-                    maxWidth: '320px',
+                    minWidth: '280px', 
+                    maxWidth: '280px',
                     flexShrink: 0,
                     flexGrow: 0
                   }}
                   className={cn(
-                    "p-4 bg-muted/30 border rounded-lg cursor-pointer transition-all hover:scale-105",
+                    "p-3 bg-muted/30 border rounded-lg cursor-pointer transition-all hover:scale-105",
                     isCurrentQube && "ring-2 ring-primary bg-primary/5",
                     qube.borderColor
                   )}
