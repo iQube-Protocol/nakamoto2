@@ -235,7 +235,7 @@ const SettingsInterface = ({
   };
 
   return (
-    <div className="h-full flex flex-col">
+    <Tabs defaultValue="connections" value={activeTab} onValueChange={handleTabChange} className="h-full flex flex-col">
       {/* Fixed header area */}
       <div className="flex-shrink-0 bg-background">
         <MetaQubeHeader 
@@ -245,46 +245,42 @@ const SettingsInterface = ({
           profileImageUrl={getProfileImageUrl() || undefined}
         />
         
-        <Tabs defaultValue="connections" value={activeTab} onValueChange={handleTabChange}>
-          <TabsList className="w-full grid grid-cols-3 mt-4">
-            <TabsTrigger value="connections" data-tab="connections">Connections</TabsTrigger>
-            <TabsTrigger value="iqube" data-tab="iqube">iQubes</TabsTrigger>
-            <TabsTrigger value="preferences" data-tab="preferences">Preferences</TabsTrigger>
-          </TabsList>
-        </Tabs>
+        <TabsList className="w-full grid grid-cols-3 mt-4">
+          <TabsTrigger value="connections" data-tab="connections">Connections</TabsTrigger>
+          <TabsTrigger value="iqube" data-tab="iqube">iQubes</TabsTrigger>
+          <TabsTrigger value="preferences" data-tab="preferences">Preferences</TabsTrigger>
+        </TabsList>
       </div>
 
       {/* Scrollable content area */}
       <div className="flex-1 min-h-0">
-        <Tabs defaultValue="connections" value={activeTab} onValueChange={handleTabChange}>
-          <TabsContent value="connections" className="h-full overflow-y-auto p-4">
-            <ConnectionsTab 
-              settings={settings} 
-              onConnectService={handleConnectService} 
-            />
-          </TabsContent>
+        <TabsContent value="connections" className="h-full overflow-y-auto p-4">
+          <ConnectionsTab 
+            settings={settings} 
+            onConnectService={handleConnectService} 
+          />
+        </TabsContent>
 
-          <TabsContent value="iqube" className="h-full overflow-y-auto p-4">
-            <IQubeManagementTab 
-              settings={settings}
-              privateData={privateData}
-              onUpdatePrivateData={onUpdatePrivateData}
-              onConnectWallet={() => handleConnectService('wallet')}
-              onMintIQube={handleMintIQube}
-              onAddAccessGrant={handleAddAccessGrant}
-              metaQube={metaQube}
-            />
-          </TabsContent>
+        <TabsContent value="iqube" className="h-full overflow-y-auto p-4">
+          <IQubeManagementTab 
+            settings={settings}
+            privateData={privateData}
+            onUpdatePrivateData={onUpdatePrivateData}
+            onConnectWallet={() => handleConnectService('wallet')}
+            onMintIQube={handleMintIQube}
+            onAddAccessGrant={handleAddAccessGrant}
+            metaQube={metaQube}
+          />
+        </TabsContent>
 
-          <TabsContent value="preferences" className="h-full overflow-y-auto p-4">
-            <PreferencesTab 
-              settings={settings} 
-              onSaveSettings={handleSaveSettings} 
-            />
-          </TabsContent>
-        </Tabs>
+        <TabsContent value="preferences" className="h-full overflow-y-auto p-4">
+          <PreferencesTab 
+            settings={settings} 
+            onSaveSettings={handleSaveSettings} 
+          />
+        </TabsContent>
       </div>
-    </div>
+    </Tabs>
   );
 };
 
