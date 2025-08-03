@@ -15,9 +15,24 @@ const initializeMermaid = async () => {
     
     mermaidInstance.initialize({
       startOnLoad: false,
-      theme: 'default',
+      theme: 'base',
+      themeVariables: {
+        primaryColor: '#f8f6f0',
+        primaryTextColor: '#000000',
+        primaryBorderColor: '#6b46c1',
+        lineColor: '#6b46c1',
+        sectionBkgColor: '#f8f6f0',
+        altSectionBkgColor: '#ffffff',
+        gridColor: '#6b46c1',
+        secondaryColor: '#ffffff',
+        tertiaryColor: '#f8f6f0',
+        background: '#ffffff',
+        mainBkg: '#f8f6f0',
+        secondBkg: '#ffffff',
+        tertiaryBkg: '#f8f6f0'
+      },
       securityLevel: 'strict',
-      fontFamily: 'monospace'
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
     });
     
     return mermaidInstance;
@@ -104,25 +119,54 @@ const MermaidDiagram: React.FC<MermaidDiagramProps> = ({
       if (currentRenderRef.current === renderKey) {
         container.innerHTML = svg;
         
-        // Force black text on all SVG elements immediately after render
-        const svgElement = container.querySelector('svg');
-        if (svgElement) {
-          // Apply black text to all text elements
-          const textElements = svgElement.querySelectorAll('text, tspan, foreignObject div, foreignObject span');
-          textElements.forEach((element: any) => {
-            element.style.fill = '#000000';
-            element.style.color = '#000000';
-            element.style.opacity = '1';
-          });
-          
-          // Also apply to any elements with specific Mermaid classes
-          const labelElements = svgElement.querySelectorAll('.nodeLabel, .edgeLabel, .label, .actor, .messageText, .labelText, .classTitle, .classLabel');
-          labelElements.forEach((element: any) => {
-            element.style.fill = '#000000';
-            element.style.color = '#000000';
-            element.style.opacity = '1';
-          });
-        }
+        // AGGRESSIVE text styling - use timeout to ensure SVG is fully rendered
+        setTimeout(() => {
+          const svgElement = container.querySelector('svg');
+          if (svgElement) {
+            // Style all possible text elements with maximum specificity
+            const allTextSelectors = [
+              'text', 'tspan', '.nodeLabel', '.edgeLabel', '.label', '.actor', 
+              '.messageText', '.labelText', '.classTitle', '.classLabel',
+              '.cluster-label', '.titleText', '.loopText', '.relation',
+              '.task-text', '.section', '.er-entityLabel', '.pie-title',
+              '.legendText', 'foreignObject div', 'foreignObject span',
+              '.statediagram-state .state-title', 'g text', 'g tspan'
+            ];
+            
+            allTextSelectors.forEach(selector => {
+              const elements = svgElement.querySelectorAll(selector);
+              elements.forEach((element: any) => {
+                element.style.setProperty('fill', '#000000', 'important');
+                element.style.setProperty('color', '#000000', 'important');
+                element.style.setProperty('opacity', '1', 'important');
+                element.style.setProperty('font-weight', '500', 'important');
+                element.style.setProperty('font-size', '14px', 'important');
+                
+                // Also set attributes for SVG elements
+                if (element.tagName === 'text' || element.tagName === 'tspan') {
+                  element.setAttribute('fill', '#000000');
+                  element.setAttribute('opacity', '1');
+                }
+              });
+            });
+            
+            // Apply to ALL elements within SVG as final fallback
+            const allElements = svgElement.querySelectorAll('*');
+            allElements.forEach((element: any) => {
+              if (element.tagName === 'text' || element.tagName === 'tspan' || 
+                  element.textContent || element.innerText) {
+                element.style.setProperty('fill', '#000000', 'important');
+                element.style.setProperty('color', '#000000', 'important');
+                element.style.setProperty('opacity', '1', 'important');
+                
+                if (element.tagName === 'text' || element.tagName === 'tspan') {
+                  element.setAttribute('fill', '#000000');
+                  element.setAttribute('opacity', '1');
+                }
+              }
+            });
+          }
+        }, 10);
         
         setError(null);
         setIsLoading(false);
