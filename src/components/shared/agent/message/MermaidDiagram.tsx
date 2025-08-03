@@ -103,6 +103,27 @@ const MermaidDiagram: React.FC<MermaidDiagramProps> = ({
       // Check if this render is still current (prevent race conditions)
       if (currentRenderRef.current === renderKey) {
         container.innerHTML = svg;
+        
+        // Force black text on all SVG elements immediately after render
+        const svgElement = container.querySelector('svg');
+        if (svgElement) {
+          // Apply black text to all text elements
+          const textElements = svgElement.querySelectorAll('text, tspan, foreignObject div, foreignObject span');
+          textElements.forEach((element: any) => {
+            element.style.fill = '#000000';
+            element.style.color = '#000000';
+            element.style.opacity = '1';
+          });
+          
+          // Also apply to any elements with specific Mermaid classes
+          const labelElements = svgElement.querySelectorAll('.nodeLabel, .edgeLabel, .label, .actor, .messageText, .labelText, .classTitle, .classLabel');
+          labelElements.forEach((element: any) => {
+            element.style.fill = '#000000';
+            element.style.color = '#000000';
+            element.style.opacity = '1';
+          });
+        }
+        
         setError(null);
         setIsLoading(false);
       }
