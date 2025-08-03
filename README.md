@@ -75,6 +75,44 @@ Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-trick
 
 ## Development Lessons Learned
 
+### iQube Carousel Implementation and Horizontal Scrolling Fix - 2025-08-03
+**Cycles Required:** 10+ cycles
+**Problem:** Implementation of a carousel interface for iQube selection with persistent horizontal scrolling issues and data consistency problems
+**Root Cause:** 
+1. **CSS Overflow and Flexbox Issues**: Modal dialogs have default overflow behavior that prevents horizontal scrolling, and complex flexbox layouts required specific styling for proper horizontal scrolling
+2. **Data Inconsistency**: IQubeCarousel was using hardcoded mock scores instead of real data from QubeData.tsx, leading to different scores shown in carousel vs settings pages
+3. **Modal Height Optimization**: Default dialog height wasn't optimized for horizontal carousel layout, causing poor UX
+4. **Inactive Item Management**: Removed inactive GDrive iQube that was cluttering the interface without functionality
+5. **Score Color Coding**: Inconsistent score visualization between carousel and main application
+**Solution:** 
+1. **CSS Overflow Fixes**: Applied `overflow-x: auto` directly to DialogContent via className and created proper scroll container with inline styles for maximum CSS specificity
+2. **Real Score Data Integration**: Replaced hardcoded scores with actual data from QubeData.tsx using proper mapping between qube names and data keys
+3. **Optimized Modal Layout**: Set DialogContent to `max-h-[80vh]` for better vertical space utilization while maintaining horizontal scroll functionality
+4. **Enhanced Score Visualization**: Implemented DotScore component with proper color coding (green for high scores, yellow for medium, red for low) consistent with application standards
+5. **Data Source Cleanup**: Removed inactive GDrive iQube from metaQubesData to streamline interface
+6. **Fallback Handling**: Added proper fallback scores (5/10) for unmapped qubes to prevent broken displays
+**Key Insights:** 
+- Modal dialogs require explicit overflow styling to enable horizontal scrolling - default behavior prevents it
+- Inline CSS styles have higher specificity than className-based styles for critical layout properties
+- Data consistency across components requires centralized data sources rather than component-specific mock data
+- Horizontal carousel layouts work best with optimized modal heights and proper scroll containers
+- Score visualization should be consistent across all components for better UX
+- Removing inactive/non-functional items improves interface clarity
+**Future Reference:** 
+- Use inline `style={{overflowX: 'auto'}}` for horizontal scrolling in modals when className approaches fail
+- Always integrate real data sources (QubeData.tsx) rather than hardcoded values for consistency
+- Set modal heights to `max-h-[80vh]` for optimal horizontal carousel display
+- Implement centralized score visualization components (DotScore) for consistency
+- Regularly audit and remove inactive items from navigation data structures
+- Test horizontal scrolling in various screen sizes and modal contexts
+**Files Modified:**
+- `src/components/settings/IQubeCarousel.tsx` - Complete carousel implementation with real data integration and scroll fixes
+- `src/components/layout/sidebar/sidebarData.ts` - Removed inactive GDrive iQube from metaQubesData
+- `src/index.css` - Added scroll container utilities and proper scrollbar styling
+- `src/components/shared/DotScore.tsx` - Score visualization component for consistent display across application
+
+---
+
 ### Mermaid Diagram TypeScript Rendering Issue Resolution - 2025-08-02
 **Cycles Required:** 15+ cycles
 **Problem:** Persistent Mermaid diagram rendering failures including syntax errors, module loading failures, and broken image rendering across the application
