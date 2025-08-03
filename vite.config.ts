@@ -24,7 +24,7 @@ export default defineConfig(({ mode }) => ({
   },
   build: {
     target: 'es2022',
-    minify: 'terser',
+    minify: mode === 'production' ? 'esbuild' : false,
     sourcemap: false,
     rollupOptions: {
       output: {
@@ -33,12 +33,6 @@ export default defineConfig(({ mode }) => ({
           mermaid: ['mermaid'],
           vendor: ['react', 'react-dom']
         }
-      }
-    },
-    terserOptions: {
-      compress: {
-        drop_console: true,
-        drop_debugger: true
       }
     }
   },
