@@ -245,7 +245,7 @@ const SettingsInterface = ({
           profileImageUrl={getProfileImageUrl() || undefined}
         />
         
-        <Tabs defaultValue="connections" value={activeTab} onValueChange={handleTabChange} className="flex flex-col h-full">
+        <Tabs defaultValue="connections" value={activeTab} onValueChange={handleTabChange} className="h-full flex flex-col">
           <TabsList className="w-full grid grid-cols-3 mt-4 flex-shrink-0">
             <TabsTrigger value="connections" data-tab="connections">Connections</TabsTrigger>
             <TabsTrigger value="iqube" data-tab="iqube">iQubes</TabsTrigger>
@@ -253,31 +253,33 @@ const SettingsInterface = ({
           </TabsList>
 
           {/* Scrollable content area */}
-          <TabsContent value="connections" className="flex-1 mt-4 overflow-y-auto">
-            <ConnectionsTab 
-              settings={settings} 
-              onConnectService={handleConnectService} 
-            />
-          </TabsContent>
+          <div className="flex-1 min-h-0 overflow-y-auto">
+            <TabsContent value="connections" className="mt-4 h-full">
+              <ConnectionsTab 
+                settings={settings} 
+                onConnectService={handleConnectService} 
+              />
+            </TabsContent>
 
-          <TabsContent value="iqube" className="flex-1 mt-4 overflow-y-auto">
-            <IQubeManagementTab 
-              settings={settings}
-              privateData={privateData}
-              onUpdatePrivateData={onUpdatePrivateData}
-              onConnectWallet={() => handleConnectService('wallet')}
-              onMintIQube={handleMintIQube}
-              onAddAccessGrant={handleAddAccessGrant}
-              metaQube={metaQube}
-            />
-          </TabsContent>
+            <TabsContent value="iqube" className="mt-4 h-full">
+              <IQubeManagementTab 
+                settings={settings}
+                privateData={privateData}
+                onUpdatePrivateData={onUpdatePrivateData}
+                onConnectWallet={() => handleConnectService('wallet')}
+                onMintIQube={handleMintIQube}
+                onAddAccessGrant={handleAddAccessGrant}
+                metaQube={metaQube}
+              />
+            </TabsContent>
 
-          <TabsContent value="preferences" className="flex-1 mt-4 overflow-y-auto">
-            <PreferencesTab 
-              settings={settings} 
-              onSaveSettings={handleSaveSettings} 
-            />
-          </TabsContent>
+            <TabsContent value="preferences" className="mt-4 h-full">
+              <PreferencesTab 
+                settings={settings} 
+                onSaveSettings={handleSaveSettings} 
+              />
+            </TabsContent>
+          </div>
         </Tabs>
       </div>
     </div>
