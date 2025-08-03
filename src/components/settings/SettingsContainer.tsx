@@ -13,10 +13,9 @@ interface SettingsContainerProps {
   activeQubes: { [key: string]: boolean };
   toggleQubeActive: (qubeName: string) => void;
   selectedIQube: MetaQube;
-  onQubeSelect?: (qubeId: string) => void;
 }
 
-const SettingsContainer = ({ activeQubes, toggleQubeActive, selectedIQube, onQubeSelect }: SettingsContainerProps) => {
+const SettingsContainer = ({ activeQubes, toggleQubeActive, selectedIQube }: SettingsContainerProps) => {
   const { userSettings } = useSettingsData();
   const { privateData, handleUpdatePrivateData, authError, clearAuthError } = usePrivateData(selectedIQube);
   const { selectIQube } = useSidebarState();
@@ -87,7 +86,6 @@ const SettingsContainer = ({ activeQubes, toggleQubeActive, selectedIQube, onQub
             onToggleIQubeActive={handleToggleIQubeActive}
             privateData={privateData}
             onUpdatePrivateData={handleUpdatePrivateData}
-            onQubeSelect={onQubeSelect}
           />
         </div>
       </div>

@@ -109,7 +109,8 @@ const IQubeCarousel = ({
 
   const scrollLeft = () => {
     if (scrollContainerRef.current) {
-      const newPosition = Math.max(0, scrollPosition - 320);
+      const containerWidth = scrollContainerRef.current.clientWidth;
+      const newPosition = Math.max(0, scrollPosition - containerWidth * 0.8);
       scrollContainerRef.current.scrollTo({ left: newPosition, behavior: 'smooth' });
       setScrollPosition(newPosition);
     }
@@ -117,8 +118,9 @@ const IQubeCarousel = ({
 
   const scrollRight = () => {
     if (scrollContainerRef.current) {
+      const containerWidth = scrollContainerRef.current.clientWidth;
       const maxScroll = scrollContainerRef.current.scrollWidth - scrollContainerRef.current.clientWidth;
-      const newPosition = Math.min(maxScroll, scrollPosition + 320);
+      const newPosition = Math.min(maxScroll, scrollPosition + containerWidth * 0.8);
       scrollContainerRef.current.scrollTo({ left: newPosition, behavior: 'smooth' });
       setScrollPosition(newPosition);
     }
@@ -154,7 +156,7 @@ const IQubeCarousel = ({
           <Button
             variant="outline"
             size="icon"
-            className="absolute left-0 top-1/2 -translate-y-1/2 z-10 bg-background/80 backdrop-blur-sm"
+            className="absolute left-2 top-1/2 -translate-y-1/2 z-10 bg-background/90 backdrop-blur-sm shadow-lg"
             onClick={scrollLeft}
             disabled={scrollPosition === 0}
           >
@@ -164,8 +166,9 @@ const IQubeCarousel = ({
           <Button
             variant="outline"
             size="icon"
-            className="absolute right-0 top-1/2 -translate-y-1/2 z-10 bg-background/80 backdrop-blur-sm"
+            className="absolute right-2 top-1/2 -translate-y-1/2 z-10 bg-background/90 backdrop-blur-sm shadow-lg"
             onClick={scrollRight}
+            disabled={scrollContainerRef.current && scrollPosition >= (scrollContainerRef.current.scrollWidth - scrollContainerRef.current.clientWidth)}
           >
             <ChevronRight className="h-4 w-4" />
           </Button>
@@ -173,8 +176,7 @@ const IQubeCarousel = ({
           {/* Scrollable container */}
           <div 
             ref={scrollContainerRef}
-            className="flex gap-4 overflow-x-auto scrollbar-hide px-12 py-4"
-            style={{ scrollbarWidth: 'none', msOverflowStyle: 'none' }}
+            className="flex gap-4 overflow-x-auto scrollbar-hide px-8 py-4 scroll-smooth"
             onScroll={(e) => setScrollPosition(e.currentTarget.scrollLeft)}
           >
             {metaQubesData.map((qube, index) => {
@@ -190,7 +192,17 @@ const IQubeCarousel = ({
                     isCurrentQube && "ring-2 ring-primary bg-primary/5",
                     qube.borderColor
                   )}
-                  onClick={() => onQubeSelect(qube.id)}
+                  onClick={() => {
+                    // Dispatch iqubeSelected event to match sidebar behavior
+                    const event = new CustomEvent('iqubeSelected', { 
+                      detail: { 
+                        iqubeId: qube.id,
+                        selectTab: true 
+                      } 
+                    });
+                    window.dispatchEvent(event);
+                    onQubeSelect(qube.id);
+                  }}
                 >
                   <div className="flex items-center justify-between mb-4">
                     <div className="flex items-center gap-3">

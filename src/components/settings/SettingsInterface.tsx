@@ -24,7 +24,6 @@ interface SettingsInterfaceProps {
   onToggleIQubeActive: (qubeName: string) => void;
   privateData: PrivateData;
   onUpdatePrivateData: (newData: PrivateData) => void;
-  onQubeSelect?: (qubeId: string) => void;
 }
 
 const SettingsInterface = ({ 
@@ -33,8 +32,7 @@ const SettingsInterface = ({
   activeQubes, 
   onToggleIQubeActive,
   privateData,
-  onUpdatePrivateData,
-  onQubeSelect 
+  onUpdatePrivateData
 }: SettingsInterfaceProps) => {
   const { theme } = useTheme();
   const { connections, connectService, disconnectService, toggleConnection } = useServiceConnections();
@@ -249,9 +247,14 @@ const SettingsInterface = ({
   };
 
   const handleQubeSelect = (qubeId: string) => {
-    if (onQubeSelect) {
-      onQubeSelect(qubeId);
-    }
+    // Dispatch the same event that the sidebar uses to select iQubes
+    const event = new CustomEvent('iqubeSelected', { 
+      detail: { 
+        iqubeId: qubeId,
+        selectTab: true 
+      } 
+    });
+    window.dispatchEvent(event);
     setIsCarouselOpen(false);
   };
 
