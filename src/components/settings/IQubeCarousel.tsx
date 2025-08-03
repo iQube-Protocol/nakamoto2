@@ -8,6 +8,7 @@ import { ChevronLeft, ChevronRight, Brain, Database } from 'lucide-react';
 import { MetaQube } from '@/lib/types';
 import { cn } from '@/lib/utils';
 import { metaQubesData } from '@/components/layout/sidebar/sidebarData';
+import { qubeData } from '@/components/settings/QubeData';
 import ScoreTooltip from '@/components/shared/ScoreTooltips';
 
 interface IQubeCarouselProps {
@@ -92,21 +93,31 @@ const IQubeCarousel = ({
   const [maxScroll, setMaxScroll] = React.useState(0);
   const scrollContainerRef = React.useRef<HTMLDivElement>(null);
 
-  // Mock MetaQube data for each iQube (in a real app, this would come from props or context)
+  // Get real MetaQube data from QubeData.tsx
   const getMetaQubeData = (qubeId: string): MetaQube => {
+    // Map qube IDs to their corresponding data in QubeData.tsx
+    const qubeMapping: {[key: string]: keyof typeof qubeData} = {
+      "Qrypto Persona": "monDai",
+      "KNYT Persona": "knytPersona", 
+      "Venice": "venice",
+      "OpenAI": "openai",
+      "Metis": "metis"
+    };
+
+    const mappedKey = qubeMapping[qubeId];
+    if (mappedKey && qubeData[mappedKey]) {
+      return qubeData[mappedKey] as MetaQube;
+    }
+
+    // Fallback for unmapped qubes
     const baseData = {
       "iQube-Identifier": `${qubeId} iQube`,
       "iQube-Type": metaQubesData.find(q => q.id === qubeId)?.type || "DataQube",
-      "Sensitivity-Score": 7.5,
-      "Risk-Score": 3.2,
-      "Accuracy-Score": 8.9,
-      "Verifiability-Score": 8.1,
+      "Sensitivity-Score": 5,
+      "Risk-Score": 5,
+      "Accuracy-Score": 5,
+      "Verifiability-Score": 5,
     };
-
-    // Use current metaQube data if it matches the queried qube
-    if (currentMetaQube["iQube-Identifier"] === `${qubeId} iQube`) {
-      return currentMetaQube;
-    }
 
     return baseData as MetaQube;
   };
