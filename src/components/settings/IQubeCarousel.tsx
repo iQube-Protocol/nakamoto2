@@ -23,7 +23,7 @@ interface IQubeCarouselProps {
 interface DotScoreProps {
   value: number;
   label: string;
-  type: 'risk' | 'sensitivity' | 'trust' | 'accuracy' | 'verifiability';
+  type: 'risk' | 'sensitivity' | 'trust' | 'accuracy' | 'verifiability' | 'reliability';
 }
 
 const DotScore = ({ value, label, type }: DotScoreProps) => {
@@ -37,6 +37,13 @@ const DotScore = ({ value, label, type }: DotScoreProps) => {
         : value <= 7 
           ? "bg-yellow-500" 
           : "bg-red-500";
+    } else if (type === 'reliability') {
+      // Special purple color scheme for reliability
+      return value <= 3 
+        ? "bg-red-500" 
+        : value <= 6 
+          ? "bg-yellow-500" 
+          : "bg-purple-500"; // Purple for high reliability scores
     } else if (type === 'accuracy' || type === 'verifiability' || type === 'trust') {
       return value <= 3 
         ? "bg-red-500" 

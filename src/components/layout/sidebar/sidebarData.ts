@@ -144,13 +144,4 @@ export const metaQubesData = [
   //   bgColor: "bg-orange-500/10",
   //   borderColor: "border-orange-500/20"
   // },
-  {
-    id: "GDrive",
-    name: "GDrive",
-    type: "DataQube" as const,
-    description: "Google Drive document integration", 
-    color: "text-indigo-400",
-    bgColor: "bg-indigo-500/10",
-    borderColor: "border-indigo-500/20"
-  }
 ];
