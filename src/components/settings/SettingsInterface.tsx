@@ -236,7 +236,7 @@ const SettingsInterface = ({
 
   return (
     <div className="h-full flex flex-col">
-      {/* Fixed header area with MetaQube scores and tabs */}
+      {/* Fixed header area */}
       <div className="flex-shrink-0 bg-background">
         <MetaQubeHeader 
           metaQube={metaQube} 
@@ -245,21 +245,26 @@ const SettingsInterface = ({
           profileImageUrl={getProfileImageUrl() || undefined}
         />
         
-        <Tabs defaultValue="connections" value={activeTab} onValueChange={handleTabChange} className="h-full flex flex-col">
-          <TabsList className="w-full grid grid-cols-3 mt-4 flex-shrink-0">
+        <Tabs defaultValue="connections" value={activeTab} onValueChange={handleTabChange}>
+          <TabsList className="w-full grid grid-cols-3 mt-4">
             <TabsTrigger value="connections" data-tab="connections">Connections</TabsTrigger>
             <TabsTrigger value="iqube" data-tab="iqube">iQubes</TabsTrigger>
             <TabsTrigger value="preferences" data-tab="preferences">Preferences</TabsTrigger>
           </TabsList>
+        </Tabs>
+      </div>
 
-          <TabsContent value="connections" className="mt-4 flex-1 overflow-y-auto">
+      {/* Scrollable content area */}
+      <div className="flex-1 min-h-0">
+        <Tabs defaultValue="connections" value={activeTab} onValueChange={handleTabChange}>
+          <TabsContent value="connections" className="h-full overflow-y-auto p-4">
             <ConnectionsTab 
               settings={settings} 
               onConnectService={handleConnectService} 
             />
           </TabsContent>
 
-          <TabsContent value="iqube" className="mt-4 flex-1 overflow-y-auto">
+          <TabsContent value="iqube" className="h-full overflow-y-auto p-4">
             <IQubeManagementTab 
               settings={settings}
               privateData={privateData}
@@ -271,7 +276,7 @@ const SettingsInterface = ({
             />
           </TabsContent>
 
-          <TabsContent value="preferences" className="mt-4 flex-1 overflow-y-auto">
+          <TabsContent value="preferences" className="h-full overflow-y-auto p-4">
             <PreferencesTab 
               settings={settings} 
               onSaveSettings={handleSaveSettings} 
