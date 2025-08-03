@@ -254,14 +254,14 @@ const SettingsInterface = ({
 
           {/* Scrollable content area */}
           <div className="flex-1 min-h-0 overflow-y-auto">
-            <TabsContent value="connections" className="mt-4 h-full">
+            <TabsContent value="connections" className="mt-4">
               <ConnectionsTab 
                 settings={settings} 
                 onConnectService={handleConnectService} 
               />
             </TabsContent>
 
-            <TabsContent value="iqube" className="mt-4 h-full">
+            <TabsContent value="iqube" className="mt-4">
               <IQubeManagementTab 
                 settings={settings}
                 privateData={privateData}
@@ -273,7 +273,7 @@ const SettingsInterface = ({
               />
             </TabsContent>
 
-            <TabsContent value="preferences" className="mt-4 h-full">
+            <TabsContent value="preferences" className="mt-4">
               <PreferencesTab 
                 settings={settings} 
                 onSaveSettings={handleSaveSettings} 
