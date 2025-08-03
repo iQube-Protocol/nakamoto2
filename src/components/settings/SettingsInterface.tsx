@@ -235,7 +235,7 @@ const SettingsInterface = ({
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="h-full flex flex-col">
       {/* Fixed header area with MetaQube scores and tabs */}
       <div className="flex-shrink-0 bg-background">
         <MetaQubeHeader 
@@ -245,23 +245,23 @@ const SettingsInterface = ({
           profileImageUrl={getProfileImageUrl() || undefined}
         />
         
-        <Tabs defaultValue="connections" value={activeTab} onValueChange={handleTabChange}>
-          <TabsList className="w-full grid grid-cols-3 mt-4">
+        <Tabs defaultValue="connections" value={activeTab} onValueChange={handleTabChange} className="h-full flex flex-col">
+          <TabsList className="w-full grid grid-cols-3 mt-4 flex-shrink-0">
             <TabsTrigger value="connections" data-tab="connections">Connections</TabsTrigger>
             <TabsTrigger value="iqube" data-tab="iqube">iQubes</TabsTrigger>
             <TabsTrigger value="preferences" data-tab="preferences">Preferences</TabsTrigger>
           </TabsList>
 
           {/* Scrollable content area */}
-          <div className="flex-1 overflow-y-auto">
-            <TabsContent value="connections" className="mt-4">
+          <div className="flex-1 min-h-0 overflow-y-auto">
+            <TabsContent value="connections" className="mt-4 h-full">
               <ConnectionsTab 
                 settings={settings} 
                 onConnectService={handleConnectService} 
               />
             </TabsContent>
 
-            <TabsContent value="iqube" className="mt-4">
+            <TabsContent value="iqube" className="mt-4 h-full">
               <IQubeManagementTab 
                 settings={settings}
                 privateData={privateData}
@@ -273,7 +273,7 @@ const SettingsInterface = ({
               />
             </TabsContent>
 
-            <TabsContent value="preferences" className="mt-4">
+            <TabsContent value="preferences" className="mt-4 h-full">
               <PreferencesTab 
                 settings={settings} 
                 onSaveSettings={handleSaveSettings} 

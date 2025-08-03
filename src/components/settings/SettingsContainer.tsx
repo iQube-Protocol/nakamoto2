@@ -72,13 +72,13 @@ const SettingsContainer = ({ activeQubes, toggleQubeActive, selectedIQube }: Set
 
   return (
     <TooltipProvider>
-      <div className="container p-2">
-        <div className="flex flex-col md:flex-row justify-between items-center mb-3">
+      <div className="h-screen flex flex-col p-2">
+        <div className="flex flex-col md:flex-row justify-between items-center mb-3 flex-shrink-0">
           <h1 className="text-2xl font-bold tracking-tight">Settings</h1>
         </div>
 
-        {/* Main settings panel */}
-        <div className="flex-1">
+        {/* Main settings panel - takes remaining height */}
+        <div className="flex-1 min-h-0">
           <SettingsInterface 
             userSettings={userSettings} 
             metaQube={selectedIQube} 
