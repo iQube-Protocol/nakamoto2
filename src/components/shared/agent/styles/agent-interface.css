@@ -382,247 +382,166 @@
 }
 
 /* ============= MERMAID DIAGRAM STYLING ============= */
-/* Comprehensive styling for Mermaid SVG elements to ensure readability */
+/* Clean, readable styling matching the original design */
 
 .mermaid-diagram svg,
 .mermaid svg {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
   max-width: 100%;
   height: auto;
+  background: #fefefe !important;
 }
 
-/* Text elements - ensuring readability */
+/* All text elements - black text for readability */
 .mermaid-diagram text,
 .mermaid text,
 .mermaid-diagram tspan,
-.mermaid tspan {
-  fill: hsl(var(--foreground)) !important;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  font-size: 14px;
-  font-weight: 400;
-}
-
-/* Node text - slightly larger for better readability */
-.mermaid-diagram .node text,
-.mermaid .node text,
+.mermaid tspan,
 .mermaid-diagram .nodeLabel,
-.mermaid .nodeLabel {
-  fill: hsl(var(--foreground)) !important;
-  font-size: 14px;
-  font-weight: 500;
-}
-
-/* Edge labels */
+.mermaid .nodeLabel,
 .mermaid-diagram .edgeLabel,
-.mermaid .edgeLabel,
-.mermaid-diagram .edge-label,
-.mermaid .edge-label {
-  fill: hsl(var(--muted-foreground)) !important;
-  font-size: 12px;
+.mermaid .edgeLabel {
+  fill: #000000 !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
 }
 
-/* Node shapes - rectangles, circles, etc. */
+/* Node shapes - off-white background with dark purple borders */
 .mermaid-diagram rect,
 .mermaid rect,
-.mermaid-diagram .node rect {
-  fill: hsl(var(--card)) !important;
-  stroke: hsl(var(--border)) !important;
-  stroke-width: 2px;
+.mermaid-diagram .node rect,
+.mermaid .node rect {
+  fill: #f8f6f0 !important;
+  stroke: #6b46c1 !important;
+  stroke-width: 2px !important;
 }
 
 .mermaid-diagram circle,
 .mermaid circle,
-.mermaid-diagram .node circle {
-  fill: hsl(var(--card)) !important;
-  stroke: hsl(var(--border)) !important;
-  stroke-width: 2px;
+.mermaid-diagram .node circle,
+.mermaid .node circle {
+  fill: #f8f6f0 !important;
+  stroke: #6b46c1 !important;
+  stroke-width: 2px !important;
 }
 
 .mermaid-diagram ellipse,
 .mermaid ellipse,
-.mermaid-diagram .node ellipse {
-  fill: hsl(var(--card)) !important;
-  stroke: hsl(var(--border)) !important;
-  stroke-width: 2px;
+.mermaid-diagram .node ellipse,
+.mermaid .node ellipse {
+  fill: #f8f6f0 !important;
+  stroke: #6b46c1 !important;
+  stroke-width: 2px !important;
 }
 
 .mermaid-diagram polygon,
 .mermaid polygon,
-.mermaid-diagram .node polygon {
-  fill: hsl(var(--card)) !important;
-  stroke: hsl(var(--border)) !important;
-  stroke-width: 2px;
+.mermaid-diagram .node polygon,
+.mermaid .node polygon {
+  fill: #f8f6f0 !important;
+  stroke: #6b46c1 !important;
+  stroke-width: 2px !important;
 }
 
-/* Paths and lines - edges, arrows */
+/* Paths and lines - dark purple */
 .mermaid-diagram path,
 .mermaid path,
-.mermaid-diagram .edge path {
-  stroke: hsl(var(--muted-foreground)) !important;
-  stroke-width: 2px;
-  fill: none;
+.mermaid-diagram .edge path,
+.mermaid .edge path {
+  stroke: #6b46c1 !important;
+  stroke-width: 2px !important;
+  fill: none !important;
 }
 
 .mermaid-diagram line,
 .mermaid line {
-  stroke: hsl(var(--muted-foreground)) !important;
-  stroke-width: 2px;
+  stroke: #6b46c1 !important;
+  stroke-width: 2px !important;
 }
 
 /* Arrow markers */
 .mermaid-diagram marker,
 .mermaid marker,
-.mermaid-diagram defs marker {
-  fill: hsl(var(--muted-foreground)) !important;
+.mermaid-diagram defs marker,
+.mermaid defs marker {
+  fill: #6b46c1 !important;
+  stroke: #6b46c1 !important;
 }
 
-/* Flowchart specific styling */
+/* Flowchart specific elements */
 .mermaid-diagram .flowchart-node,
 .mermaid .flowchart-node {
-  fill: hsl(var(--card)) !important;
-  stroke: hsl(var(--border)) !important;
+  fill: #f8f6f0 !important;
+  stroke: #6b46c1 !important;
+  stroke-width: 2px !important;
 }
 
-/* Sequence diagram styling */
+/* Decision diamond nodes */
+.mermaid-diagram .node.decision polygon,
+.mermaid .node.decision polygon {
+  fill: #f8f6f0 !important;
+  stroke: #6b46c1 !important;
+  stroke-width: 2px !important;
+}
+
+/* Edge labels background */
+.mermaid-diagram .edgeLabel rect,
+.mermaid .edgeLabel rect {
+  fill: #fefefe !important;
+  stroke: none !important;
+}
+
+/* Sequence diagram elements */
 .mermaid-diagram .actor,
 .mermaid .actor {
-  fill: hsl(var(--card)) !important;
-  stroke: hsl(var(--border)) !important;
+  fill: #f8f6f0 !important;
+  stroke: #6b46c1 !important;
+  stroke-width: 2px !important;
 }
 
 .mermaid-diagram .messageLine0,
 .mermaid .messageLine0,
 .mermaid-diagram .messageLine1,
 .mermaid .messageLine1 {
-  stroke: hsl(var(--muted-foreground)) !important;
+  stroke: #6b46c1 !important;
+  stroke-width: 2px !important;
 }
 
-/* Gantt chart styling */
-.mermaid-diagram .section0,
-.mermaid .section0,
-.mermaid-diagram .section1,
-.mermaid .section1,
-.mermaid-diagram .section2,
-.mermaid .section2,
-.mermaid-diagram .section3,
-.mermaid .section3 {
-  fill: hsl(var(--primary) / 0.1) !important;
-}
-
-.mermaid-diagram .task0,
-.mermaid .task0,
-.mermaid-diagram .task1,
-.mermaid .task1,
-.mermaid-diagram .task2,
-.mermaid .task2,
-.mermaid-diagram .task3,
-.mermaid .task3 {
-  fill: hsl(var(--primary)) !important;
-}
-
-/* Class diagram styling */
+/* Class diagram elements */
 .mermaid-diagram .classBox,
 .mermaid .classBox {
-  fill: hsl(var(--card)) !important;
-  stroke: hsl(var(--border)) !important;
+  fill: #f8f6f0 !important;
+  stroke: #6b46c1 !important;
+  stroke-width: 2px !important;
 }
 
-/* Pie chart styling */
-.mermaid-diagram .slice,
-.mermaid .slice {
-  stroke: hsl(var(--background)) !important;
-  stroke-width: 2px;
-}
-
-/* State diagram styling */
+/* State diagram elements */
 .mermaid-diagram .state-start,
 .mermaid .state-start,
 .mermaid-diagram .state-end,
 .mermaid .state-end {
-  fill: hsl(var(--primary)) !important;
+  fill: #6b46c1 !important;
+  stroke: #6b46c1 !important;
 }
 
 .mermaid-diagram .state-note,
 .mermaid .state-note {
-  fill: hsl(var(--muted)) !important;
-  stroke: hsl(var(--border)) !important;
+  fill: #f8f6f0 !important;
+  stroke: #6b46c1 !important;
+  stroke-width: 2px !important;
 }
 
-/* Entity relationship diagram styling */
+/* Entity relationship diagram elements */
 .mermaid-diagram .entity,
 .mermaid .entity {
-  fill: hsl(var(--card)) !important;
-  stroke: hsl(var(--border)) !important;
+  fill: #f8f6f0 !important;
+  stroke: #6b46c1 !important;
+  stroke-width: 2px !important;
 }
 
 .mermaid-diagram .relationshipLine,
 .mermaid .relationshipLine {
-  stroke: hsl(var(--muted-foreground)) !important;
-}
-
-/* User journey diagram styling */
-.mermaid-diagram .journey-section,
-.mermaid .journey-section {
-  fill: hsl(var(--muted)) !important;
-}
-
-/* Git graph styling */
-.mermaid-diagram .commit-id,
-.mermaid .commit-id,
-.mermaid-diagram .commit-msg,
-.mermaid .commit-msg {
-  fill: hsl(var(--foreground)) !important;
-}
-
-/* Dark mode specific overrides */
-.dark .mermaid-diagram text,
-.dark .mermaid text,
-.dark .mermaid-diagram tspan,
-.dark .mermaid tspan {
-  fill: hsl(var(--foreground)) !important;
-}
-
-.dark .mermaid-diagram rect,
-.dark .mermaid rect,
-.dark .mermaid-diagram circle,
-.dark .mermaid circle,
-.dark .mermaid-diagram ellipse,
-.dark .mermaid ellipse,
-.dark .mermaid-diagram polygon,
-.dark .mermaid polygon {
-  fill: hsl(var(--card)) !important;
-  stroke: hsl(var(--border)) !important;
-}
-
-/* Hover effects for interactive elements */
-.mermaid-diagram .node:hover rect,
-.mermaid .node:hover rect,
-.mermaid-diagram .node:hover circle,
-.mermaid .node:hover circle,
-.mermaid-diagram .node:hover ellipse,
-.mermaid .node:hover ellipse,
-.mermaid-diagram .node:hover polygon,
-.mermaid .node:hover polygon {
-  fill: hsl(var(--muted)) !important;
-  transition: fill 0.2s ease;
-}
-
-/* Error handling for missing elements */
-.mermaid-diagram svg {
-  background: transparent;
-}
-
-/* Responsive sizing */
-@media (max-width: 640px) {
-  .mermaid-diagram text,
-  .mermaid text,
-  .mermaid-diagram tspan,
-  .mermaid tspan {
-    font-size: 12px;
-  }
-  
-  .mermaid-diagram .node text,
-  .mermaid .node text {
-    font-size: 12px;
-  }
+  stroke: #6b46c1 !important;
+  stroke-width: 2px !important;
 }
