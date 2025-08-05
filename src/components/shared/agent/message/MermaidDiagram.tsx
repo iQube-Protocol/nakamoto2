@@ -23,7 +23,13 @@ const initializeMermaid = async () => {
         lineColor: '#6b46c1',
         background: 'transparent',
         mainBkg: '#374151',
-        secondBkg: '#4b5563'
+        secondBkg: '#4b5563',
+        primaryTextColor: '#1f2937',
+        secondaryTextColor: '#374151',
+        tertiaryTextColor: '#4b5563',
+        textColor: '#1f2937',
+        labelTextColor: '#1f2937',
+        nodeTextColor: '#1f2937'
       },
       securityLevel: 'strict',
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
