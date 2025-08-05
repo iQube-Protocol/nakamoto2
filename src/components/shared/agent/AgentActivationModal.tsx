@@ -162,57 +162,108 @@ const AgentActivationModal = ({
 
         {currentStep === 'fee' && (
           <div className="py-4">
-            <div className="flex items-center gap-4 mb-6">
-              <div className="bg-amber-100 p-3 rounded-full">
-                <BadgeDollarSign className="h-5 w-5 text-amber-600" />
-              </div>
-              <div>
-                <h3 className="text-base font-medium">{paymentType} Fee</h3>
-                <p className="text-sm text-muted-foreground">
-                  This agent requires a {isMonthly ? 'monthly subscription' : 'one-time payment'} to activate its services.
-                </p>
-              </div>
-            </div>
-
-            <div className="border rounded-md p-4 mb-4">
-              <div className="flex justify-between items-center mb-2">
-                <span className="text-sm text-muted-foreground">{paymentType}</span>
-                <div className="text-right">
-                  <span className="font-medium">{fee} Satoshi</span>
-                  <span className="text-sm text-muted-foreground ml-2">(≈ ${usdEquivalent})</span>
+            {agentName === 'KNYT Persona' ? (
+              // KNYT Persona - Free activation with rewards
+              <>
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="bg-green-100 p-3 rounded-full">
+                    <CheckCircle className="h-5 w-5 text-green-600" />
+                  </div>
+                  <div>
+                    <div className="flex items-center gap-2 mb-1">
+                      <h3 className="text-base font-medium">FREE + REWARD</h3>
+                      <Badge variant="secondary" className="bg-green-100 text-green-700">
+                        Free
+                      </Badge>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      KNYT ecosystem profile with 2,800 Satoshi reward for completing LinkedIn, Twitter, and Discord connections.
+                    </p>
+                  </div>
                 </div>
-              </div>
-              <div className="border-t pt-2 flex justify-between items-center">
-                <span className="text-sm font-medium">Total {isMonthly ? 'per month' : ''}</span>
-                <div className="text-right">
-                  <span className="font-semibold">{fee} Satoshi</span>
-                  <span className="text-sm text-muted-foreground ml-2">(≈ ${usdEquivalent})</span>
-                </div>
-              </div>
-              
-              <div className="mt-4 flex items-center gap-2">
-                <Wallet className="h-4 w-4 text-muted-foreground" />
-                <span className="text-xs text-muted-foreground">
-                  Payment will be made from your connected wallet in Satoshi or US¢ • {fee} Satoshi ≈ {(fee/10).toFixed(0)}¢ • {billingText}
-                </span>
-              </div>
-            </div>
 
-            <div className="flex gap-3">
-              <Button
-                variant="outline"
-                onClick={onClose}
-                className="flex-1"
-              >
-                Cancel
-              </Button>
-              <Button 
-                onClick={handleConfirmPayment}
-                className="flex-1 bg-iqube-primary hover:bg-iqube-primary/90"
-              >
-                {isMonthly ? 'Subscribe Now' : 'Purchase Now'}
-              </Button>
-            </div>
+                <div className="border rounded-md p-4 mb-4 bg-green-50">
+                  <div className="text-center">
+                    <div className="text-2xl font-bold text-green-600 mb-1">💰 Free + 2,800 Satoshi reward!</div>
+                    <p className="text-sm text-green-700">
+                      Complete your KNYT ecosystem profile and earn rewards for connecting your social accounts.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={onClose}
+                    className="flex-1"
+                  >
+                    Dismiss
+                  </Button>
+                  <Button 
+                    onClick={handleConfirmPayment}
+                    className="flex-1 bg-green-600 hover:bg-green-700 text-white"
+                  >
+                    <CheckCircle className="h-4 w-4 mr-2" />
+                    Activate Free
+                  </Button>
+                </div>
+              </>
+            ) : (
+              // Other agents - Standard payment flow
+              <>
+                <div className="flex items-center gap-4 mb-6">
+                  <div className="bg-amber-100 p-3 rounded-full">
+                    <BadgeDollarSign className="h-5 w-5 text-amber-600" />
+                  </div>
+                  <div>
+                    <h3 className="text-base font-medium">{paymentType} Fee</h3>
+                    <p className="text-sm text-muted-foreground">
+                      This agent requires a {isMonthly ? 'monthly subscription' : 'one-time payment'} to activate its services.
+                    </p>
+                  </div>
+                </div>
+
+                <div className="border rounded-md p-4 mb-4">
+                  <div className="flex justify-between items-center mb-2">
+                    <span className="text-sm text-muted-foreground">{paymentType}</span>
+                    <div className="text-right">
+                      <span className="font-medium">{fee} Satoshi</span>
+                      <span className="text-sm text-muted-foreground ml-2">(≈ ${usdEquivalent})</span>
+                    </div>
+                  </div>
+                  <div className="border-t pt-2 flex justify-between items-center">
+                    <span className="text-sm font-medium">Total {isMonthly ? 'per month' : ''}</span>
+                    <div className="text-right">
+                      <span className="font-semibold">{fee} Satoshi</span>
+                      <span className="text-sm text-muted-foreground ml-2">(≈ ${usdEquivalent})</span>
+                    </div>
+                  </div>
+                  
+                  <div className="mt-4 flex items-center gap-2">
+                    <Wallet className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-xs text-muted-foreground">
+                      Payment will be made from your connected wallet in Satoshi or US¢ • {fee} Satoshi ≈ {(fee/10).toFixed(0)}¢ • {billingText}
+                    </span>
+                  </div>
+                </div>
+
+                <div className="flex gap-3">
+                  <Button
+                    variant="outline"
+                    onClick={onClose}
+                    className="flex-1"
+                  >
+                    Cancel
+                  </Button>
+                  <Button 
+                    onClick={handleConfirmPayment}
+                    className="flex-1 bg-iqube-primary hover:bg-iqube-primary/90"
+                  >
+                    {isMonthly ? 'Subscribe Now' : 'Purchase Now'}
+                  </Button>
+                </div>
+              </>
+            )}
           </div>
         )}
 
