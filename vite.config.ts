@@ -14,21 +14,6 @@ export default defineConfig(({ mode }) => ({
       '@': path.resolve(__dirname, './src'),
     }
   },
-  css: {
-    postcss: {
-      plugins: mode === 'production' ? [
-        require('autoprefixer'),
-        require('cssnano')({
-          preset: ['default', {
-            discardComments: { removeAll: true },
-            mergeRules: false,
-            minifySelectors: false
-          }]
-        })
-      ] : []
-    },
-    devSourcemap: mode === 'development'
-  },
   optimizeDeps: {
     include: [
       'react',
@@ -41,19 +26,12 @@ export default defineConfig(({ mode }) => ({
     target: 'es2022',
     minify: mode === 'production' ? 'esbuild' : false,
     sourcemap: false,
-    cssCodeSplit: true,
     rollupOptions: {
       output: {
         manualChunks: {
           // Separate Mermaid into its own chunk to prevent initialization issues
           mermaid: ['mermaid'],
           vendor: ['react', 'react-dom']
-        },
-        assetFileNames: (assetInfo) => {
-          if (assetInfo.name?.endsWith('.css')) {
-            return 'assets/[name].[hash][extname]';
-          }
-          return 'assets/[name].[hash][extname]';
         }
       }
     }
