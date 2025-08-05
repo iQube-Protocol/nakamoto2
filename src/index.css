@@ -45,10 +45,8 @@
     --sidebar-ring: 262 83% 58%;
     
     /* Mermaid diagram colors for light mode */
-    --mermaid-text: hsl(240, 10%, 10%);
-    --mermaid-border: hsl(240, 10%, 80%);
-    --mermaid-bg: hsl(240, 10%, 98%);
-    --mermaid-primary: hsl(262, 83%, 58%);
+    --mermaid-text: 240 10% 10%;
+    --mermaid-border: 240 10% 80%;
     
     /* Tooltip styling for light mode */
     --tooltip-background: 0 0% 100%;
@@ -95,10 +93,8 @@
     --sidebar-ring: 262 83% 58%;
     
     /* Mermaid diagram colors for dark mode */
-    --mermaid-text: hsl(240, 10%, 95%);
-    --mermaid-border: hsl(240, 10%, 20%);
-    --mermaid-bg: hsl(240, 10%, 7%);
-    --mermaid-primary: hsl(262, 83%, 58%);
+    --mermaid-text: 240 10% 95%;
+    --mermaid-border: 240 10% 20%;
     
     /* Tooltip styling for dark mode */
     --tooltip-background: 240 10% 15%;
@@ -213,38 +209,32 @@
   }
 }
 
-/* Mermaid diagram styles with complete text visibility fixes */
+/* Mermaid diagram styles - theme-responsive */
 .mermaid-container svg text,
 .mermaid-container svg tspan,
 .mermaid-diagram svg text,
-.mermaid-diagram svg tspan,
-.mermaid-diagram text,
-.mermaid-diagram tspan,
-.mermaid-diagram .node text,
-.mermaid-diagram .edgeLabel text,
-.mermaid-diagram .actor text,
-.mermaid-diagram .messageText,
-.mermaid-diagram .labelText,
-.mermaid-diagram .cluster-label,
-.mermaid-diagram .edge-label,
-/* More specific Mermaid text overrides */
-.mermaid-container svg text,
-.mermaid-diagram svg text,
-.mermaid-container svg .node text,
-.mermaid-diagram svg .node text,
-.mermaid-container svg .label text,
-.mermaid-diagram svg .label text,
-.mermaid-container svg tspan,
 .mermaid-diagram svg tspan {
-  fill: var(--mermaid-text) !important;
-  color: var(--mermaid-text) !important;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
-  font-size: 14px !important;
-  opacity: 1 !important;
-  visibility: visible !important;
+  fill: hsl(var(--mermaid-text));
+  font-size: 14px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  opacity: 1;
+  visibility: visible;
 }
 
-/* Node styling */
+.mermaid-container svg .node-label,
+.mermaid-container svg .edge-label,
+.mermaid-container svg .cluster-label,
+.mermaid-diagram svg .node-label,
+.mermaid-diagram svg .edge-label,
+.mermaid-diagram svg .cluster-label {
+  fill: hsl(var(--mermaid-text));
+}
+
+.mermaid-container svg,
+.mermaid-diagram svg {
+  background-color: transparent;
+}
+
 .mermaid-container svg .node rect,
 .mermaid-container svg .node circle,
 .mermaid-container svg .node ellipse,
@@ -253,20 +243,6 @@
 .mermaid-diagram svg .node circle,
 .mermaid-diagram svg .node ellipse,
 .mermaid-diagram svg .node polygon {
-  fill: var(--mermaid-bg) !important;
-  stroke: var(--mermaid-border) !important;
-  stroke-width: 2px !important;
-}
-
-/* Flowchart specific overrides */
-.mermaid-container svg .flowchart-label,
-.mermaid-diagram svg .flowchart-label {
-  fill: var(--mermaid-text) !important;
-  color: var(--mermaid-text) !important;
-}
-
-/* Background override */
-.mermaid-container svg,
-.mermaid-diagram svg {
-  background-color: transparent !important;
+  stroke: hsl(var(--mermaid-border));
+  stroke-width: 2px;
 }

@@ -4,70 +4,8 @@ import React, { useEffect, useRef, useCallback, useMemo, useState } from 'react'
 let mermaidInstance: any = null;
 let mermaidPromise: Promise<any> | null = null;
 
-const getThemeVariables = () => {
-  // Get computed style from document to read CSS variables
-  const computedStyle = getComputedStyle(document.documentElement);
-  const textColor = computedStyle.getPropertyValue('--mermaid-text').trim();
-  const bgColor = computedStyle.getPropertyValue('--mermaid-bg').trim();
-  const primaryColor = computedStyle.getPropertyValue('--mermaid-primary').trim();
-  
-  // Fallback colors if CSS variables aren't available
-  const fallbackText = document.documentElement.classList.contains('dark') ? 'hsl(210, 40%, 98%)' : 'hsl(240, 10%, 10%)';
-  const fallbackBg = document.documentElement.classList.contains('dark') ? 'hsl(222, 84%, 5%)' : 'hsl(0, 0%, 100%)';
-  const fallbackPrimary = 'hsl(262, 83%, 58%)';
-  
-  // Convert space-separated HSL to proper hsl() format if needed
-  const formatColor = (color: string, fallback: string) => {
-    if (!color) return fallback;
-    // If color doesn't start with hsl(), rgb(), or # assume it's space-separated HSL
-    if (!color.startsWith('hsl(') && !color.startsWith('rgb(') && !color.startsWith('#')) {
-      const values = color.split(' ').filter(v => v.trim());
-      if (values.length >= 3) {
-        return `hsl(${values[0]}, ${values[1]}, ${values[2]})`;
-      }
-    }
-    return color || fallback;
-  };
-  
-  const finalTextColor = formatColor(textColor, fallbackText);
-  const finalBgColor = formatColor(bgColor, fallbackBg);
-  const finalPrimaryColor = formatColor(primaryColor, fallbackPrimary);
-  
-  return {
-    primaryColor: finalPrimaryColor,
-    primaryBorderColor: finalPrimaryColor,
-    lineColor: finalPrimaryColor,
-    background: 'transparent',
-    mainBkg: finalBgColor,
-    secondBkg: finalBgColor,
-    primaryTextColor: finalTextColor,
-    secondaryTextColor: finalTextColor,
-    tertiaryTextColor: finalTextColor,
-    textColor: finalTextColor,
-    labelTextColor: finalTextColor,
-    nodeTextColor: finalTextColor,
-    edgeLabelText: finalTextColor,
-    actorTextColor: finalTextColor,
-    signalTextColor: finalTextColor,
-    labelBoxBkgColor: finalBgColor,
-    labelBoxBorderColor: finalPrimaryColor,
-    classTitleColor: finalTextColor
-  };
-};
-
 const initializeMermaid = async () => {
-  if (mermaidInstance) {
-    // Reconfigure with current theme
-    mermaidInstance.initialize({
-      startOnLoad: false,
-      htmlLabels: false,
-      theme: 'base',
-      themeVariables: getThemeVariables(),
-      securityLevel: 'strict',
-      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
-    });
-    return mermaidInstance;
-  }
+  if (mermaidInstance) return mermaidInstance;
   
   if (mermaidPromise) return mermaidPromise;
   
@@ -79,7 +17,20 @@ const initializeMermaid = async () => {
       startOnLoad: false,
       htmlLabels: false,
       theme: 'base',
-      themeVariables: getThemeVariables(),
+      themeVariables: {
+        primaryColor: '#374151',
+        primaryBorderColor: '#6b46c1',
+        lineColor: '#6b46c1',
+        background: 'transparent',
+        mainBkg: '#374151',
+        secondBkg: '#4b5563',
+        primaryTextColor: '#1f2937',
+        secondaryTextColor: '#374151',
+        tertiaryTextColor: '#4b5563',
+        textColor: '#1f2937',
+        labelTextColor: '#1f2937',
+        nodeTextColor: '#1f2937'
+      },
       securityLevel: 'strict',
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
     });
