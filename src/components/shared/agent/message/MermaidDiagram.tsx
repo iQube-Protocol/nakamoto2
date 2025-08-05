@@ -111,15 +111,16 @@ const MermaidDiagram: React.FC<MermaidDiagramProps> = ({
       if (currentRenderRef.current === renderKey) {
         container.innerHTML = svg;
         
-        // Surgical text fix - inject style directly into SVG
+        // Direct text element fix - set fill attributes directly
         const svgElement = container.querySelector('svg');
         if (svgElement) {
-          // Create style element and inject into SVG
-          const styleElement = document.createElementNS('http://www.w3.org/2000/svg', 'style');
-          styleElement.textContent = `
-            text, tspan { fill: #000000 !important; font-size: 14px !important; font-weight: 500 !important; opacity: 1 !important; }
-          `;
-          svgElement.insertBefore(styleElement, svgElement.firstChild);
+          // Force text visibility by setting fill attributes directly
+          const textElements = svgElement.querySelectorAll('text, tspan');
+          textElements.forEach((element: any) => {
+            element.setAttribute('fill', '#000000');
+            element.style.fill = '#000000';
+            element.style.opacity = '1';
+          });
         }
         
         setError(null);

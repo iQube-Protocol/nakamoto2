@@ -382,40 +382,52 @@
 }
 
 /* ============= MERMAID DIAGRAM STYLING ============= */
-/* Minimal, surgical approach for text visibility */
+/* Ultra-surgical text visibility fix */
 
-.mermaid-diagram svg,
-.mermaid svg {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  max-width: 100%;
-  height: auto;
-  background: #fefefe !important;
+.mermaid-container {
+  margin: 1rem 0;
+  padding: 1rem;
+  border: 1px solid hsl(var(--border));
+  border-radius: 8px;
+  background: hsl(var(--card));
 }
 
-/* Surgical text visibility fix - minimal selectors */
-.mermaid svg text,
-.mermaid svg tspan {
+.mermaid-diagram {
+  text-align: center;
+  overflow-x: auto;
+}
+
+.mermaid-loading {
+  text-align: center;
+  padding: 2rem;
+  color: hsl(var(--muted-foreground));
+}
+
+.mermaid-error {
+  text-align: center;
+  padding: 1rem;
+  color: hsl(var(--destructive));
+  background: hsl(var(--destructive) / 0.1);
+  border-radius: 4px;
+}
+
+.mermaid-code-view pre {
+  background: hsl(var(--muted));
+  padding: 1rem;
+  border-radius: 4px;
+  overflow-x: auto;
+}
+
+/* Critical: Match actual component classes for text visibility */
+.mermaid-container svg text,
+.mermaid-container svg tspan,
+.mermaid-diagram svg text,
+.mermaid-diagram svg tspan {
   fill: #000000 !important;
   font-size: 14px !important;
   font-weight: 500 !important;
   opacity: 1 !important;
-}
-
-.mermaid-container svg text,
-.mermaid-diagram svg text,
-.mermaid svg text,
-.mermaid-container svg tspan,
-.mermaid-diagram svg tspan,
-.mermaid svg tspan {
-  fill: #000000 !important;
-}
-
-/* Ensure foreignObject content is visible */
-.mermaid-container foreignObject > div,
-.mermaid-diagram foreignObject > div,
-.mermaid foreignObject > div {
   color: #000000 !important;
-  background: transparent !important;
 }
 
 /* Node shapes - off-white background with dark purple borders */
