@@ -385,10 +385,6 @@
 .mermaid-container {
   margin: 16px 0;
 }
-  border-radius: 0.5rem !important;
-  padding: 1rem !important;
-  margin: 1.5rem 0 !important;
-}
 
 /* Node and edge styling for better visibility */
 .mermaid rect,
