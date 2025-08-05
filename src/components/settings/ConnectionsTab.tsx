@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { UserSettings } from '@/lib/types';
 import ServiceConnection from './ServiceConnection';
 import BlakQubeRefreshButton from './BlakQubeRefreshButton';
-import { Linkedin, Wallet, Twitter, MessageCircle, MessageSquare, Calendar, Youtube, Facebook } from 'lucide-react';
+import { Linkedin, Wallet, Twitter, MessageCircle, MessageSquare, Calendar, Youtube, Facebook, Users } from 'lucide-react';
 
 interface ConnectionsTabProps {
   settings: UserSettings;
@@ -47,7 +47,10 @@ const ConnectionsTab = ({ settings, onConnectService }: ConnectionsTabProps) => 
       <CardHeader>
         <div className="flex justify-between items-center">
           <div>
-            <CardTitle>Service Connections</CardTitle>
+            <CardTitle className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              Connect
+            </CardTitle>
             <CardDescription>
               Connect external services to populate your iQube data automatically
             </CardDescription>
