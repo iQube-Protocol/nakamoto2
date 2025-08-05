@@ -4,8 +4,57 @@ import React, { useEffect, useRef, useCallback, useMemo, useState } from 'react'
 let mermaidInstance: any = null;
 let mermaidPromise: Promise<any> | null = null;
 
+const getThemeVariables = () => {
+  // Get computed style from document to read CSS variables
+  const computedStyle = getComputedStyle(document.documentElement);
+  const textColor = computedStyle.getPropertyValue('--mermaid-text').trim();
+  const bgColor = computedStyle.getPropertyValue('--mermaid-bg').trim();
+  const primaryColor = computedStyle.getPropertyValue('--mermaid-primary').trim();
+  
+  // Fallback colors if CSS variables aren't available
+  const fallbackText = document.documentElement.classList.contains('dark') ? '#e5e7eb' : '#1f2937';
+  const fallbackBg = document.documentElement.classList.contains('dark') ? '#1e293b' : '#ffffff';
+  const fallbackPrimary = '#6b46c1';
+  
+  const finalTextColor = textColor || fallbackText;
+  const finalBgColor = bgColor || fallbackBg;
+  const finalPrimaryColor = primaryColor || fallbackPrimary;
+  
+  return {
+    primaryColor: finalPrimaryColor,
+    primaryBorderColor: finalPrimaryColor,
+    lineColor: finalPrimaryColor,
+    background: 'transparent',
+    mainBkg: finalBgColor,
+    secondBkg: finalBgColor,
+    primaryTextColor: finalTextColor,
+    secondaryTextColor: finalTextColor,
+    tertiaryTextColor: finalTextColor,
+    textColor: finalTextColor,
+    labelTextColor: finalTextColor,
+    nodeTextColor: finalTextColor,
+    edgeLabelText: finalTextColor,
+    actorTextColor: finalTextColor,
+    signalTextColor: finalTextColor,
+    labelBoxBkgColor: finalBgColor,
+    labelBoxBorderColor: finalPrimaryColor,
+    classTitleColor: finalTextColor
+  };
+};
+
 const initializeMermaid = async () => {
-  if (mermaidInstance) return mermaidInstance;
+  if (mermaidInstance) {
+    // Reconfigure with current theme
+    mermaidInstance.initialize({
+      startOnLoad: false,
+      htmlLabels: false,
+      theme: 'base',
+      themeVariables: getThemeVariables(),
+      securityLevel: 'strict',
+      fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
+    });
+    return mermaidInstance;
+  }
   
   if (mermaidPromise) return mermaidPromise;
   
@@ -17,20 +66,7 @@ const initializeMermaid = async () => {
       startOnLoad: false,
       htmlLabels: false,
       theme: 'base',
-      themeVariables: {
-        primaryColor: '#374151',
-        primaryBorderColor: '#6b46c1',
-        lineColor: '#6b46c1',
-        background: 'transparent',
-        mainBkg: '#374151',
-        secondBkg: '#4b5563',
-        primaryTextColor: '#1f2937',
-        secondaryTextColor: '#374151',
-        tertiaryTextColor: '#4b5563',
-        textColor: '#1f2937',
-        labelTextColor: '#1f2937',
-        nodeTextColor: '#1f2937'
-      },
+      themeVariables: getThemeVariables(),
       securityLevel: 'strict',
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
     });
