@@ -155,7 +155,7 @@ const MetaQubeHeader = ({ metaQube, isActive, onToggleActive, profileImageUrl, o
           <DotScore value={metaQube["Accuracy-Score"]} label="Accuracy" type="accuracy" />
           <DotScore value={metaQube["Verifiability-Score"]} label="Verifiability" type="verifiability" />
         </div>
-        <div className="flex flex-col items-center ml-2">
+        <div className="flex flex-col items-center ml-2" onClick={(e) => e.stopPropagation()}>
           <span className="text-xs text-muted-foreground mb-1">{isActive ? 'Active' : 'Inactive'}</span>
           <Switch 
             checked={isActive} 
