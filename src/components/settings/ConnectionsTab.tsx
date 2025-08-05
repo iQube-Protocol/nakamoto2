@@ -44,20 +44,16 @@ const LumaIcon = () => (
 const ConnectionsTab = ({ settings, onConnectService }: ConnectionsTabProps) => {
   return (
     <Card>
-      <CardHeader>
-        <div className="flex justify-between items-center">
-          <div>
-            <CardTitle className="flex items-center gap-2">
-              <Users className="h-5 w-5" />
-              Connect
-            </CardTitle>
-            <CardDescription>
-              Connect external services to populate your iQube data automatically
-            </CardDescription>
-          </div>
-          <BlakQubeRefreshButton />
-        </div>
-      </CardHeader>
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Users className="h-5 w-5" />
+            Connect
+            <BlakQubeRefreshButton />
+          </CardTitle>
+          <CardDescription>
+            Connect external services to populate your iQube data automatically
+          </CardDescription>
+        </CardHeader>
       <CardContent>
         <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
           <ServiceConnection
