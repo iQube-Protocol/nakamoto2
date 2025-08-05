@@ -12,13 +12,26 @@ const getThemeVariables = () => {
   const primaryColor = computedStyle.getPropertyValue('--mermaid-primary').trim();
   
   // Fallback colors if CSS variables aren't available
-  const fallbackText = document.documentElement.classList.contains('dark') ? '#e5e7eb' : '#1f2937';
-  const fallbackBg = document.documentElement.classList.contains('dark') ? '#1e293b' : '#ffffff';
-  const fallbackPrimary = '#6b46c1';
+  const fallbackText = document.documentElement.classList.contains('dark') ? 'hsl(210, 40%, 98%)' : 'hsl(240, 10%, 10%)';
+  const fallbackBg = document.documentElement.classList.contains('dark') ? 'hsl(222, 84%, 5%)' : 'hsl(0, 0%, 100%)';
+  const fallbackPrimary = 'hsl(262, 83%, 58%)';
   
-  const finalTextColor = textColor || fallbackText;
-  const finalBgColor = bgColor || fallbackBg;
-  const finalPrimaryColor = primaryColor || fallbackPrimary;
+  // Convert space-separated HSL to proper hsl() format if needed
+  const formatColor = (color: string, fallback: string) => {
+    if (!color) return fallback;
+    // If color doesn't start with hsl(), rgb(), or # assume it's space-separated HSL
+    if (!color.startsWith('hsl(') && !color.startsWith('rgb(') && !color.startsWith('#')) {
+      const values = color.split(' ').filter(v => v.trim());
+      if (values.length >= 3) {
+        return `hsl(${values[0]}, ${values[1]}, ${values[2]})`;
+      }
+    }
+    return color || fallback;
+  };
+  
+  const finalTextColor = formatColor(textColor, fallbackText);
+  const finalBgColor = formatColor(bgColor, fallbackBg);
+  const finalPrimaryColor = formatColor(primaryColor, fallbackPrimary);
   
   return {
     primaryColor: finalPrimaryColor,

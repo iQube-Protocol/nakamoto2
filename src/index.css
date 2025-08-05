@@ -48,6 +48,7 @@
     --mermaid-text: hsl(240, 10%, 10%);
     --mermaid-border: hsl(240, 10%, 80%);
     --mermaid-bg: hsl(240, 10%, 98%);
+    --mermaid-primary: hsl(262, 83%, 58%);
     
     /* Tooltip styling for light mode */
     --tooltip-background: 0 0% 100%;
@@ -97,6 +98,7 @@
     --mermaid-text: hsl(240, 10%, 95%);
     --mermaid-border: hsl(240, 10%, 20%);
     --mermaid-bg: hsl(240, 10%, 7%);
+    --mermaid-primary: hsl(262, 83%, 58%);
     
     /* Tooltip styling for dark mode */
     --tooltip-background: 240 10% 15%;
