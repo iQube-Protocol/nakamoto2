@@ -44,6 +44,10 @@
     --sidebar-border: 240 10% 90%;
     --sidebar-ring: 262 83% 58%;
     
+    /* Mermaid diagram colors for light mode */
+    --mermaid-text: 240 10% 10%;
+    --mermaid-border: 240 10% 80%;
+    
     /* Tooltip styling for light mode */
     --tooltip-background: 0 0% 100%;
     --tooltip-foreground: 240 10% 5%;
@@ -87,6 +91,10 @@
     --sidebar-accent-foreground: 240 10% 95%;
     --sidebar-border: 240 10% 15%;
     --sidebar-ring: 262 83% 58%;
+    
+    /* Mermaid diagram colors for dark mode */
+    --mermaid-text: 240 10% 95%;
+    --mermaid-border: 240 10% 20%;
     
     /* Tooltip styling for dark mode */
     --tooltip-background: 240 10% 15%;
@@ -201,17 +209,16 @@
   }
 }
 
-/* Mermaid Text Visibility Backup CSS - Maximum Specificity */
+/* Mermaid diagram styles - theme-responsive */
 .mermaid-container svg text,
 .mermaid-container svg tspan,
 .mermaid-diagram svg text,
 .mermaid-diagram svg tspan {
-  fill: #1f2937 !important;
-  color: #1f2937 !important;
-  font-size: 14px !important;
-  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
-  opacity: 1 !important;
-  visibility: visible !important;
+  fill: hsl(var(--mermaid-text));
+  font-size: 14px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  opacity: 1;
+  visibility: visible;
 }
 
 .mermaid-container svg .node-label,
@@ -220,6 +227,22 @@
 .mermaid-diagram svg .node-label,
 .mermaid-diagram svg .edge-label,
 .mermaid-diagram svg .cluster-label {
-  fill: #1f2937 !important;
-  color: #1f2937 !important;
+  fill: hsl(var(--mermaid-text));
+}
+
+.mermaid-container svg,
+.mermaid-diagram svg {
+  background-color: transparent;
+}
+
+.mermaid-container svg .node rect,
+.mermaid-container svg .node circle,
+.mermaid-container svg .node ellipse,
+.mermaid-container svg .node polygon,
+.mermaid-diagram svg .node rect,
+.mermaid-diagram svg .node circle,
+.mermaid-diagram svg .node ellipse,
+.mermaid-diagram svg .node polygon {
+  stroke: hsl(var(--mermaid-border));
+  stroke-width: 2px;
 }

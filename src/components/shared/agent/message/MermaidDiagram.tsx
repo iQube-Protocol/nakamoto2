@@ -15,18 +15,15 @@ const initializeMermaid = async () => {
     
     mermaidInstance.initialize({
       startOnLoad: false,
-      htmlLabels: false, // CRITICAL: Force SVG text instead of HTML
-      theme: 'base', // Minimal theme to avoid conflicts
+      htmlLabels: false,
+      theme: 'base',
       themeVariables: {
-        primaryTextColor: '#ffffff', // White text for dark backgrounds
-        secondaryColor: '#ffffff',
-        tertiaryColor: '#ffffff',
         primaryColor: '#374151',
         primaryBorderColor: '#6b46c1',
         lineColor: '#6b46c1',
-        nodeTextColor: '#ffffff', // Ensure node text is white
-        edgeLabelBackground: '#374151',
-        clusterBkg: '#374151'
+        background: 'transparent',
+        mainBkg: '#374151',
+        secondBkg: '#4b5563'
       },
       securityLevel: 'strict',
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
@@ -94,46 +91,13 @@ const MermaidDiagram: React.FC<MermaidDiagramProps> = ({
     return validateAndCleanInput(code);
   }, [code, validateAndCleanInput]);
 
-  // Surgical text fix function with white text for dark backgrounds
-  const applySurgicalTextFix = useCallback((svgElement: SVGElement) => {
-    // Method 1: Remove conflicting attributes
+  // Simple validation for text visibility
+  const ensureTextVisibility = useCallback((svgElement: SVGElement) => {
+    // The CSS will handle all styling, just ensure text elements exist
     const textElements = svgElement.querySelectorAll('text, tspan');
-    textElements.forEach((element: any) => {
-      element.removeAttribute('fill');
-      element.removeAttribute('style');
-      element.removeAttribute('color');
-      
-      // Method 2: Set attributes directly for dark background visibility
-      element.setAttribute('fill', '#ffffff');
-      element.style.fill = '#ffffff';
-      element.style.color = '#ffffff';
-      element.style.visibility = 'visible';
-      element.style.opacity = '1';
-    });
-    
-    // Method 3: Inject CSS directly into SVG with white text
-    const styleElement = document.createElementNS('http://www.w3.org/2000/svg', 'style');
-    styleElement.textContent = `
-      text, tspan, .label text, .node text, .edgeLabel text { 
-        fill: #ffffff !important; 
-        color: #ffffff !important;
-        font-size: 14px !important; 
-        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
-        font-weight: 500 !important; 
-        opacity: 1 !important;
-        visibility: visible !important;
-      }
-      .node-label, .edge-label, .cluster-label {
-        fill: #ffffff !important;
-        color: #ffffff !important;
-      }
-    `;
-    svgElement.insertBefore(styleElement, svgElement.firstChild);
-    
-    // Method 4: Force reflow
-    svgElement.style.display = 'none';
-    (svgElement as any).offsetHeight;
-    svgElement.style.display = '';
+    if (textElements.length === 0) {
+      console.warn('No text elements found in Mermaid diagram');
+    }
   }, []);
 
   // Simplified render function
@@ -160,31 +124,10 @@ const MermaidDiagram: React.FC<MermaidDiagramProps> = ({
       if (currentRenderRef.current === renderKey) {
         container.innerHTML = svg;
         
-        // Apply surgical text fix
+        // Simple validation check
         const svgElement = container.querySelector('svg');
         if (svgElement) {
-          applySurgicalTextFix(svgElement);
-          
-          // MutationObserver to prevent external interference
-          observer = new MutationObserver((mutations) => {
-            mutations.forEach((mutation) => {
-              if (mutation.type === 'attributes' && 
-                  (mutation.attributeName === 'fill' || mutation.attributeName === 'style')) {
-                const target = mutation.target as Element;
-                if (target.tagName === 'text' || target.tagName === 'tspan') {
-                  (target as any).setAttribute('fill', '#ffffff');
-                  (target as any).style.fill = '#ffffff';
-                  (target as any).style.color = '#ffffff';
-                }
-              }
-            });
-          });
-          
-          observer.observe(svgElement, {
-            attributes: true,
-            subtree: true,
-            attributeFilter: ['fill', 'style', 'color']
-          });
+          ensureTextVisibility(svgElement);
         }
         
         setError(null);
@@ -208,7 +151,7 @@ const MermaidDiagram: React.FC<MermaidDiagramProps> = ({
         observer.disconnect();
       }
     };
-  }, [applySurgicalTextFix]);
+  }, [ensureTextVisibility]);
 
   // Main effect - only depends on essential props
   useEffect(() => {
