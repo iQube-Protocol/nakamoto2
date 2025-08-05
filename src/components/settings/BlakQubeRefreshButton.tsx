@@ -150,7 +150,7 @@ const BlakQubeRefreshButton = ({ onRefresh, personaType = 'qrypto' }: BlakQubeRe
       className="gap-2"
     >
       <RefreshCw className={`h-4 w-4 ${isRefreshing ? 'animate-spin' : ''}`} />
-      {isRefreshing ? 'Refreshing...' : `Refresh ${personaType === 'knyt' ? 'KNYT' : 'Qrypto'} Data`}
+      {isRefreshing ? 'Refreshing...' : 'Refresh'}
     </Button>
   );
 };
