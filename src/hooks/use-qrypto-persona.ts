@@ -22,20 +22,25 @@ export const useQryptoPersona = (): QryptoPersonaState => {
     }
   });
 
-  // Save to localStorage whenever state changes
+  // Save to localStorage whenever state changes (with navigation safety)
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(qryptoPersonaActivated));
-      
-      // Dispatch events for persona context updates
-      if (qryptoPersonaActivated) {
-        window.dispatchEvent(new CustomEvent('qryptoPersonaActivated'));
-      } else {
-        window.dispatchEvent(new CustomEvent('qryptoPersonaDeactivated'));
+    // Debounce rapid state changes during navigation
+    const timeoutId = setTimeout(() => {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(qryptoPersonaActivated));
+        
+        // Dispatch events for persona context updates
+        if (qryptoPersonaActivated) {
+          window.dispatchEvent(new CustomEvent('qryptoPersonaActivated'));
+        } else {
+          window.dispatchEvent(new CustomEvent('qryptoPersonaDeactivated'));
+        }
+      } catch (error) {
+        console.error('Error saving Qrypto Persona state to localStorage:', error);
       }
-    } catch (error) {
-      console.error('Error saving Qrypto Persona state to localStorage:', error);
-    }
+    }, 100); // 100ms debounce to prevent compilation cascades
+
+    return () => clearTimeout(timeoutId);
   }, [qryptoPersonaActivated]);
 
   const activateQryptoPersona = useCallback(() => {

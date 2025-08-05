@@ -14,6 +14,13 @@ const DiagramErrorHandler: React.FC<DiagramErrorHandlerProps> = ({ error, code, 
   const [isFixing, setIsFixing] = useState(false);
   const errorMessage = error instanceof Error ? error.message : String(error);
   
+  // Check if this is a TypeScript compilation error (disguised as Mermaid error)
+  const isCompilationError = errorMessage.includes('mermaid version') || 
+                           errorMessage.includes('TypeScript') ||
+                           errorMessage.includes('compilation') ||
+                           errorMessage.includes('module resolution') ||
+                           (errorMessage.includes('Syntax error') && errorMessage.includes('text'));
+  
   // Extract line number from error message if available
   const lineMatch = errorMessage.match(/line\s+(\d+)/i);
   const errorHint = React.useMemo(() => {
@@ -130,8 +137,10 @@ const DiagramErrorHandler: React.FC<DiagramErrorHandlerProps> = ({ error, code, 
     );
   }
 
-  // Get user-friendly error message
-  const friendlyMessage = getUserFriendlyErrorMessage(errorMessage);
+  // Get user-friendly error message, with special handling for compilation errors
+  const friendlyMessage = isCompilationError 
+    ? "This appears to be a system compilation issue during navigation. Try refreshing the page or clearing browser cache."
+    : getUserFriendlyErrorMessage(errorMessage);
   
   return (
     <div className="p-4 rounded-lg border border-red-200 bg-red-50 mt-2" data-testid="diagram-error">

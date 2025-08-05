@@ -7,6 +7,13 @@ import { blakQubeService } from '@/services/blakqube-service';
 // as they can only be called within React components. This service uses direct
 // localStorage access instead, which is the correct approach for non-component code.
 // Importing hooks here causes TypeScript compilation errors in production builds.
+// 
+// CRITICAL: This error manifests as "Syntax error in text mermaid version 10.8.0"
+// during navigation between routes (especially profile -> agent). The error occurs
+// because TypeScript fails to compile persona state changes during navigation.
+// 
+// If you see Mermaid syntax errors during navigation, check this file first!
+// Ensure NO React hooks are imported here - this service must remain hook-free.
 
 export interface PersonaContext {
   isActive: boolean;

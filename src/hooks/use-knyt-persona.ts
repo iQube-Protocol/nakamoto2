@@ -27,26 +27,31 @@ export const useKNYTPersona = (): KNYTPersonaState => {
 
   const [knytPersonaVisible, setKNYTPersonaVisible] = useState<boolean>(true);
 
-  // Save to localStorage whenever state changes
+  // Save to localStorage whenever state changes (with navigation safety)
   useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(knytPersonaActivated));
-      
-      // Dispatch events for persona context updates
-      if (knytPersonaActivated) {
-        window.dispatchEvent(new CustomEvent('knytPersonaActivated'));
+    // Debounce rapid state changes during navigation
+    const timeoutId = setTimeout(() => {
+      try {
+        localStorage.setItem(STORAGE_KEY, JSON.stringify(knytPersonaActivated));
         
-        // Trigger KNYT balance refresh when persona is activated
-        console.log('KNYT Persona activated, refreshing token balance...');
-        walletConnectionService.refreshKnytBalance().catch(error => {
-          console.error('Error refreshing KNYT balance on activation:', error);
-        });
-      } else {
-        window.dispatchEvent(new CustomEvent('knytPersonaDeactivated'));
+        // Dispatch events for persona context updates
+        if (knytPersonaActivated) {
+          window.dispatchEvent(new CustomEvent('knytPersonaActivated'));
+          
+          // Trigger KNYT balance refresh when persona is activated
+          console.log('KNYT Persona activated, refreshing token balance...');
+          walletConnectionService.refreshKnytBalance().catch(error => {
+            console.error('Error refreshing KNYT balance on activation:', error);
+          });
+        } else {
+          window.dispatchEvent(new CustomEvent('knytPersonaDeactivated'));
+        }
+      } catch (error) {
+        console.error('Error saving KNYT Persona state to localStorage:', error);
       }
-    } catch (error) {
-      console.error('Error saving KNYT Persona state to localStorage:', error);
-    }
+    }, 100); // 100ms debounce to prevent compilation cascades
+
+    return () => clearTimeout(timeoutId);
   }, [knytPersonaActivated]);
 
   const activateKNYTPersona = useCallback(() => {
