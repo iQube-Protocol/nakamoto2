@@ -18,10 +18,15 @@ const initializeMermaid = async () => {
       htmlLabels: false, // CRITICAL: Force SVG text instead of HTML
       theme: 'base', // Minimal theme to avoid conflicts
       themeVariables: {
-        primaryTextColor: '#1f2937',
-        primaryColor: '#ffffff',
+        primaryTextColor: '#ffffff', // White text for dark backgrounds
+        secondaryColor: '#ffffff',
+        tertiaryColor: '#ffffff',
+        primaryColor: '#374151',
         primaryBorderColor: '#6b46c1',
-        lineColor: '#6b46c1'
+        lineColor: '#6b46c1',
+        nodeTextColor: '#ffffff', // Ensure node text is white
+        edgeLabelBackground: '#374151',
+        clusterBkg: '#374151'
       },
       securityLevel: 'strict',
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
@@ -89,7 +94,7 @@ const MermaidDiagram: React.FC<MermaidDiagramProps> = ({
     return validateAndCleanInput(code);
   }, [code, validateAndCleanInput]);
 
-  // Surgical text fix function with direct attribute setting
+  // Surgical text fix function with white text for dark backgrounds
   const applySurgicalTextFix = useCallback((svgElement: SVGElement) => {
     // Method 1: Remove conflicting attributes
     const textElements = svgElement.querySelectorAll('text, tspan');
@@ -98,20 +103,20 @@ const MermaidDiagram: React.FC<MermaidDiagramProps> = ({
       element.removeAttribute('style');
       element.removeAttribute('color');
       
-      // Method 2: Set attributes directly (most reliable)
-      element.setAttribute('fill', '#1f2937');
-      element.style.fill = '#1f2937';
-      element.style.color = '#1f2937';
+      // Method 2: Set attributes directly for dark background visibility
+      element.setAttribute('fill', '#ffffff');
+      element.style.fill = '#ffffff';
+      element.style.color = '#ffffff';
       element.style.visibility = 'visible';
       element.style.opacity = '1';
     });
     
-    // Method 3: Inject CSS directly into SVG
+    // Method 3: Inject CSS directly into SVG with white text
     const styleElement = document.createElementNS('http://www.w3.org/2000/svg', 'style');
     styleElement.textContent = `
       text, tspan, .label text, .node text, .edgeLabel text { 
-        fill: #1f2937 !important; 
-        color: #1f2937 !important;
+        fill: #ffffff !important; 
+        color: #ffffff !important;
         font-size: 14px !important; 
         font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
         font-weight: 500 !important; 
@@ -119,8 +124,8 @@ const MermaidDiagram: React.FC<MermaidDiagramProps> = ({
         visibility: visible !important;
       }
       .node-label, .edge-label, .cluster-label {
-        fill: #1f2937 !important;
-        color: #1f2937 !important;
+        fill: #ffffff !important;
+        color: #ffffff !important;
       }
     `;
     svgElement.insertBefore(styleElement, svgElement.firstChild);
@@ -167,9 +172,9 @@ const MermaidDiagram: React.FC<MermaidDiagramProps> = ({
                   (mutation.attributeName === 'fill' || mutation.attributeName === 'style')) {
                 const target = mutation.target as Element;
                 if (target.tagName === 'text' || target.tagName === 'tspan') {
-                  (target as any).setAttribute('fill', '#1f2937');
-                  (target as any).style.fill = '#1f2937';
-                  (target as any).style.color = '#1f2937';
+                  (target as any).setAttribute('fill', '#ffffff');
+                  (target as any).style.fill = '#ffffff';
+                  (target as any).style.color = '#ffffff';
                 }
               }
             });
