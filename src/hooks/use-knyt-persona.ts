@@ -65,16 +65,22 @@ export const useKNYTPersona = (): KNYTPersonaState => {
     setKNYTPersonaVisible(false);
   }, []);
 
-  // Listen for external activation events (from modal)
+  // Listen for external activation and deactivation events (from modal)
   useEffect(() => {
     const handleExternalActivation = () => {
       setKNYTPersonaActivated(true);
     };
 
+    const handleExternalDeactivation = () => {
+      setKNYTPersonaActivated(false);
+    };
+
     window.addEventListener('knytPersonaActivated', handleExternalActivation);
+    window.addEventListener('knytPersonaDeactivated', handleExternalDeactivation);
     
     return () => {
       window.removeEventListener('knytPersonaActivated', handleExternalActivation);
+      window.removeEventListener('knytPersonaDeactivated', handleExternalDeactivation);
     };
   }, []);
 
