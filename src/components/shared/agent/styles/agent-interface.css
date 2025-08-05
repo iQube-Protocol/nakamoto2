@@ -381,18 +381,21 @@
   background: linear-gradient(to right, transparent, rgba(var(--background), 0.8));
 }
 
-/* ============= MERMAID DIAGRAM STYLING ============= */
-/* Clean, readable styling matching the original design */
+/* ============= ENHANCED MERMAID DIAGRAM STYLING ============= */
+/* AGGRESSIVE text styling to override CSS cascade issues */
 
+/* Base SVG container setup */
 .mermaid-diagram svg,
-.mermaid svg {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
-  max-width: 100%;
-  height: auto;
-  background: #fefefe !important;
+.mermaid svg,
+.mermaid-container svg {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  max-width: 100% !important;
+  height: auto !important;
+  background: #ffffff !important;
+  color: #000000 !important;
 }
 
-/* Comprehensive text visibility for all Mermaid elements - MAXIMUM COVERAGE */
+/* CRITICAL: Maximum specificity text styling - targets all possible text elements */
 .mermaid-container svg text,
 .mermaid-container svg tspan,
 .mermaid-container text,
@@ -405,6 +408,7 @@
 .mermaid svg tspan,
 .mermaid text,
 .mermaid tspan,
+/* Mermaid-specific class selectors */
 .mermaid-container .nodeLabel,
 .mermaid-container .edgeLabel,
 .mermaid-container .label,
@@ -471,6 +475,7 @@
 .mermaid .er-attributeBoxOdd text,
 .mermaid .pie-title,
 .mermaid .legendText,
+/* Foreign object and nested elements */
 .mermaid-container foreignObject div,
 .mermaid-diagram foreignObject div,
 .mermaid foreignObject div,
@@ -482,20 +487,90 @@
 .mermaid .node text,
 .mermaid-container .flowchart-label text,
 .mermaid-diagram .flowchart-label text,
-.mermaid .flowchart-label text {
+.mermaid .flowchart-label text,
+/* Additional specific selectors for comprehensive coverage */
+.mermaid-container g text,
+.mermaid-diagram g text,
+.mermaid g text,
+.mermaid-container g tspan,
+.mermaid-diagram g tspan,
+.mermaid g tspan {
   fill: #000000 !important;
   color: #000000 !important;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
   font-size: 14px !important;
   font-weight: 500 !important;
   opacity: 1 !important;
+  stroke: none !important;
+  text-anchor: middle !important;
+  dominant-baseline: middle !important;
+  visibility: visible !important;
+  display: block !important;
 }
 
-/* Universal fallback - force all SVG text to be black */
+/* NUCLEAR OPTION: Force all possible SVG text elements */
+.mermaid-container svg *[text-anchor],
+.mermaid-diagram svg *[text-anchor],
+.mermaid svg *[text-anchor],
+.mermaid-container svg *[class*="label"],
+.mermaid-diagram svg *[class*="label"],
+.mermaid svg *[class*="label"],
+.mermaid-container svg *[class*="text"],
+.mermaid-diagram svg *[class*="text"],
+.mermaid svg *[class*="text"] {
+  fill: #000000 !important;
+  color: #000000 !important;
+  opacity: 1 !important;
+  font-weight: 500 !important;
+  visibility: visible !important;
+}
+
+/* Fallback: Target ALL elements within Mermaid SVGs */
 .mermaid-container svg *,
 .mermaid-diagram svg *,
 .mermaid svg * {
   color: #000000 !important;
+}
+
+/* Container styling */
+.mermaid-container {
+  background: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid rgba(203, 213, 225, 0.3) !important;
+  border-radius: 0.5rem !important;
+  padding: 1rem !important;
+  margin: 1.5rem 0 !important;
+}
+
+/* Node and edge styling for better visibility */
+.mermaid rect,
+.mermaid circle,
+.mermaid ellipse,
+.mermaid polygon,
+.mermaid path {
+  stroke: #374151 !important;
+  stroke-width: 2px !important;
+}
+
+.mermaid .node rect,
+.mermaid .node circle,
+.mermaid .node ellipse,
+.mermaid .node polygon {
+  fill: #f9fafb !important;
+  stroke: #6366f1 !important;
+  stroke-width: 2px !important;
+}
+
+/* Edge path styling */
+.mermaid .edgePath path {
+  stroke: #374151 !important;
+  stroke-width: 2px !important;
+  fill: none !important;
+}
+
+/* Arrow markers */
+.mermaid defs marker path {
+  fill: #374151 !important;
+  stroke: #374151 !important;
 }
 
 .mermaid-container svg text,
