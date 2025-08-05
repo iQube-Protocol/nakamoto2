@@ -119,54 +119,54 @@ const MermaidDiagram: React.FC<MermaidDiagramProps> = ({
       if (currentRenderRef.current === renderKey) {
         container.innerHTML = svg;
         
-        // AGGRESSIVE text visibility fix with multiple approaches
-        const fixTextVisibility = () => {
+        // AGGRESSIVE text styling - use timeout to ensure SVG is fully rendered
+        setTimeout(() => {
           const svgElement = container.querySelector('svg');
           if (svgElement) {
-            // Method 1: Direct style injection into SVG
-            let styleElement = svgElement.querySelector('style.text-visibility-fix');
-            if (!styleElement) {
-              styleElement = document.createElement('style');
-              styleElement.className = 'text-visibility-fix';
-              styleElement.textContent = `
-                text, tspan { 
-                  fill: #000000 !important; 
-                  opacity: 1 !important; 
-                  visibility: visible !important;
+            // Style all possible text elements with maximum specificity
+            const allTextSelectors = [
+              'text', 'tspan', '.nodeLabel', '.edgeLabel', '.label', '.actor', 
+              '.messageText', '.labelText', '.classTitle', '.classLabel',
+              '.cluster-label', '.titleText', '.loopText', '.relation',
+              '.task-text', '.section', '.er-entityLabel', '.pie-title',
+              '.legendText', 'foreignObject div', 'foreignObject span',
+              '.statediagram-state .state-title', 'g text', 'g tspan'
+            ];
+            
+            allTextSelectors.forEach(selector => {
+              const elements = svgElement.querySelectorAll(selector);
+              elements.forEach((element: any) => {
+                element.style.setProperty('fill', '#000000', 'important');
+                element.style.setProperty('color', '#000000', 'important');
+                element.style.setProperty('opacity', '1', 'important');
+                element.style.setProperty('font-weight', '500', 'important');
+                element.style.setProperty('font-size', '14px', 'important');
+                
+                // Also set attributes for SVG elements
+                if (element.tagName === 'text' || element.tagName === 'tspan') {
+                  element.setAttribute('fill', '#000000');
+                  element.setAttribute('opacity', '1');
                 }
-              `;
-              svgElement.appendChild(styleElement);
-            }
-            
-            // Method 2: Direct DOM manipulation
-            const textElements = svgElement.querySelectorAll('text, tspan');
-            textElements.forEach((element: any) => {
-              element.setAttribute('fill', '#000000');
-              element.setAttribute('opacity', '1');
-              element.style.setProperty('fill', '#000000', 'important');
-              element.style.setProperty('opacity', '1', 'important');
-              element.style.setProperty('visibility', 'visible', 'important');
-            });
-            
-            // Method 3: MutationObserver for dynamic content
-            const observer = new MutationObserver(() => {
-              const newTextElements = svgElement.querySelectorAll('text, tspan');
-              newTextElements.forEach((element: any) => {
-                element.setAttribute('fill', '#000000');
-                element.setAttribute('opacity', '1');
               });
             });
-            observer.observe(svgElement, { childList: true, subtree: true });
             
-            // Cleanup observer after 5 seconds
-            setTimeout(() => observer.disconnect(), 5000);
+            // Apply to ALL elements within SVG as final fallback
+            const allElements = svgElement.querySelectorAll('*');
+            allElements.forEach((element: any) => {
+              if (element.tagName === 'text' || element.tagName === 'tspan' || 
+                  element.textContent || element.innerText) {
+                element.style.setProperty('fill', '#000000', 'important');
+                element.style.setProperty('color', '#000000', 'important');
+                element.style.setProperty('opacity', '1', 'important');
+                
+                if (element.tagName === 'text' || element.tagName === 'tspan') {
+                  element.setAttribute('fill', '#000000');
+                  element.setAttribute('opacity', '1');
+                }
+              }
+            });
           }
-        };
-        
-        // Multiple timing attempts
-        setTimeout(fixTextVisibility, 0);
-        setTimeout(fixTextVisibility, 50);
-        setTimeout(fixTextVisibility, 200);
+        }, 10);
         
         setError(null);
         setIsLoading(false);

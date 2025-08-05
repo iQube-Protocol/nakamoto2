@@ -381,9 +381,164 @@
   background: linear-gradient(to right, transparent, rgba(var(--background), 0.8));
 }
 
-/* Mermaid Diagram Styling - Minimal container only */
+/* ============= ENHANCED MERMAID DIAGRAM STYLING ============= */
+/* AGGRESSIVE text styling to override CSS cascade issues */
+
+/* Base SVG container setup */
+.mermaid-diagram svg,
+.mermaid svg,
+.mermaid-container svg {
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  max-width: 100% !important;
+  height: auto !important;
+  background: #ffffff !important;
+  color: #000000 !important;
+}
+
+/* CRITICAL: Maximum specificity text styling - targets all possible text elements */
+.mermaid-container svg text,
+.mermaid-container svg tspan,
+.mermaid-container text,
+.mermaid-container tspan,
+.mermaid-diagram svg text,
+.mermaid-diagram svg tspan,
+.mermaid-diagram text,
+.mermaid-diagram tspan,
+.mermaid svg text,
+.mermaid svg tspan,
+.mermaid text,
+.mermaid tspan,
+/* Mermaid-specific class selectors */
+.mermaid-container .nodeLabel,
+.mermaid-container .edgeLabel,
+.mermaid-container .label,
+.mermaid-container .cluster-label,
+.mermaid-container .titleText,
+.mermaid-container .actor,
+.mermaid-container .messageLine0,
+.mermaid-container .messageLine1,
+.mermaid-container .messageText,
+.mermaid-container .loopText,
+.mermaid-container .labelText,
+.mermaid-container .classTitle,
+.mermaid-container .classLabel,
+.mermaid-container .relation,
+.mermaid-container .statediagram-state .state-title,
+.mermaid-container .task-text,
+.mermaid-container .section,
+.mermaid-container .er-entityLabel,
+.mermaid-container .er-attributeBoxEven text,
+.mermaid-container .er-attributeBoxOdd text,
+.mermaid-container .pie-title,
+.mermaid-container .legendText,
+.mermaid-diagram .nodeLabel,
+.mermaid-diagram .edgeLabel,
+.mermaid-diagram .label,
+.mermaid-diagram .cluster-label,
+.mermaid-diagram .titleText,
+.mermaid-diagram .actor,
+.mermaid-diagram .messageLine0,
+.mermaid-diagram .messageLine1,
+.mermaid-diagram .messageText,
+.mermaid-diagram .loopText,
+.mermaid-diagram .labelText,
+.mermaid-diagram .classTitle,
+.mermaid-diagram .classLabel,
+.mermaid-diagram .relation,
+.mermaid-diagram .statediagram-state .state-title,
+.mermaid-diagram .task-text,
+.mermaid-diagram .section,
+.mermaid-diagram .er-entityLabel,
+.mermaid-diagram .er-attributeBoxEven text,
+.mermaid-diagram .er-attributeBoxOdd text,
+.mermaid-diagram .pie-title,
+.mermaid-diagram .legendText,
+.mermaid .nodeLabel,
+.mermaid .edgeLabel,
+.mermaid .label,
+.mermaid .cluster-label,
+.mermaid .titleText,
+.mermaid .actor,
+.mermaid .messageLine0,
+.mermaid .messageLine1,
+.mermaid .messageText,
+.mermaid .loopText,
+.mermaid .labelText,
+.mermaid .classTitle,
+.mermaid .classLabel,
+.mermaid .relation,
+.mermaid .statediagram-state .state-title,
+.mermaid .task-text,
+.mermaid .section,
+.mermaid .er-entityLabel,
+.mermaid .er-attributeBoxEven text,
+.mermaid .er-attributeBoxOdd text,
+.mermaid .pie-title,
+.mermaid .legendText,
+/* Foreign object and nested elements */
+.mermaid-container foreignObject div,
+.mermaid-diagram foreignObject div,
+.mermaid foreignObject div,
+.mermaid-container foreignObject span,
+.mermaid-diagram foreignObject span,
+.mermaid foreignObject span,
+.mermaid-container .node text,
+.mermaid-diagram .node text,
+.mermaid .node text,
+.mermaid-container .flowchart-label text,
+.mermaid-diagram .flowchart-label text,
+.mermaid .flowchart-label text,
+/* Additional specific selectors for comprehensive coverage */
+.mermaid-container g text,
+.mermaid-diagram g text,
+.mermaid g text,
+.mermaid-container g tspan,
+.mermaid-diagram g tspan,
+.mermaid g tspan {
+  fill: #000000 !important;
+  color: #000000 !important;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
+  font-size: 14px !important;
+  font-weight: 500 !important;
+  opacity: 1 !important;
+  stroke: none !important;
+  text-anchor: middle !important;
+  dominant-baseline: middle !important;
+  visibility: visible !important;
+  display: block !important;
+}
+
+/* NUCLEAR OPTION: Force all possible SVG text elements */
+.mermaid-container svg *[text-anchor],
+.mermaid-diagram svg *[text-anchor],
+.mermaid svg *[text-anchor],
+.mermaid-container svg *[class*="label"],
+.mermaid-diagram svg *[class*="label"],
+.mermaid svg *[class*="label"],
+.mermaid-container svg *[class*="text"],
+.mermaid-diagram svg *[class*="text"],
+.mermaid svg *[class*="text"] {
+  fill: #000000 !important;
+  color: #000000 !important;
+  opacity: 1 !important;
+  font-weight: 500 !important;
+  visibility: visible !important;
+}
+
+/* Fallback: Target ALL elements within Mermaid SVGs */
+.mermaid-container svg *,
+.mermaid-diagram svg *,
+.mermaid svg * {
+  color: #000000 !important;
+}
+
+/* Container styling */
 .mermaid-container {
-  margin: 16px 0;
+  background: rgba(255, 255, 255, 0.95) !important;
+  border: 1px solid rgba(203, 213, 225, 0.3) !important;
+  border-radius: 0.5rem !important;
+  padding: 1rem !important;
+  margin: 1.5rem 0 !important;
 }
 
 /* Node and edge styling for better visibility */
