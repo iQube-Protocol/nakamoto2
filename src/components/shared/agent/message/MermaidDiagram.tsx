@@ -119,51 +119,18 @@ const MermaidDiagram: React.FC<MermaidDiagramProps> = ({
       if (currentRenderRef.current === renderKey) {
         container.innerHTML = svg;
         
-        // AGGRESSIVE text styling - use timeout to ensure SVG is fully rendered
+        // SURGICAL text-only visibility fix
         setTimeout(() => {
           const svgElement = container.querySelector('svg');
           if (svgElement) {
-            // Style all possible text elements with maximum specificity
-            const allTextSelectors = [
-              'text', 'tspan', '.nodeLabel', '.edgeLabel', '.label', '.actor', 
-              '.messageText', '.labelText', '.classTitle', '.classLabel',
-              '.cluster-label', '.titleText', '.loopText', '.relation',
-              '.task-text', '.section', '.er-entityLabel', '.pie-title',
-              '.legendText', 'foreignObject div', 'foreignObject span',
-              '.statediagram-state .state-title', 'g text', 'g tspan'
-            ];
-            
-            allTextSelectors.forEach(selector => {
-              const elements = svgElement.querySelectorAll(selector);
-              elements.forEach((element: any) => {
-                element.style.setProperty('fill', '#000000', 'important');
-                element.style.setProperty('color', '#000000', 'important');
-                element.style.setProperty('opacity', '1', 'important');
-                element.style.setProperty('font-weight', '500', 'important');
-                element.style.setProperty('font-size', '14px', 'important');
-                
-                // Also set attributes for SVG elements
-                if (element.tagName === 'text' || element.tagName === 'tspan') {
-                  element.setAttribute('fill', '#000000');
-                  element.setAttribute('opacity', '1');
-                }
-              });
-            });
-            
-            // Apply to ALL elements within SVG as final fallback
-            const allElements = svgElement.querySelectorAll('*');
-            allElements.forEach((element: any) => {
-              if (element.tagName === 'text' || element.tagName === 'tspan' || 
-                  element.textContent || element.innerText) {
-                element.style.setProperty('fill', '#000000', 'important');
-                element.style.setProperty('color', '#000000', 'important');
-                element.style.setProperty('opacity', '1', 'important');
-                
-                if (element.tagName === 'text' || element.tagName === 'tspan') {
-                  element.setAttribute('fill', '#000000');
-                  element.setAttribute('opacity', '1');
-                }
-              }
+            // Target ONLY text and tspan elements - preserve all other styling
+            const textElements = svgElement.querySelectorAll('text, tspan');
+            textElements.forEach((element: any) => {
+              // Only set text visibility attributes, nothing else
+              element.setAttribute('fill', '#000000');
+              element.setAttribute('opacity', '1');
+              element.style.setProperty('fill', '#000000', 'important');
+              element.style.setProperty('opacity', '1', 'important');
             });
           }
         }, 10);
