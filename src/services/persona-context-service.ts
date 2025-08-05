@@ -1,8 +1,12 @@
 
 import { QryptoPersona, KNYTPersona } from '@/lib/types';
 import { blakQubeService } from '@/services/blakqube-service';
-import { useQryptoPersona } from '@/hooks/use-qrypto-persona';
-import { useKNYTPersona } from '@/hooks/use-knyt-persona';
+
+// WARNING: DO NOT IMPORT REACT HOOKS IN SERVICE FILES!
+// React hooks (useQryptoPersona, useKNYTPersona) cannot be used in service files
+// as they can only be called within React components. This service uses direct
+// localStorage access instead, which is the correct approach for non-component code.
+// Importing hooks here causes TypeScript compilation errors in production builds.
 
 export interface PersonaContext {
   isActive: boolean;
