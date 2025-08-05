@@ -119,52 +119,65 @@ const MermaidDiagram: React.FC<MermaidDiagramProps> = ({
       if (currentRenderRef.current === renderKey) {
         container.innerHTML = svg;
         
-        // AGGRESSIVE text styling - use timeout to ensure SVG is fully rendered
+        // NUCLEAR OPTION: Force text visibility through direct DOM manipulation
         setTimeout(() => {
           const svgElement = container.querySelector('svg');
           if (svgElement) {
-            // Style all possible text elements with maximum specificity
-            const allTextSelectors = [
-              'text', 'tspan', '.nodeLabel', '.edgeLabel', '.label', '.actor', 
-              '.messageText', '.labelText', '.classTitle', '.classLabel',
-              '.cluster-label', '.titleText', '.loopText', '.relation',
-              '.task-text', '.section', '.er-entityLabel', '.pie-title',
-              '.legendText', 'foreignObject div', 'foreignObject span',
-              '.statediagram-state .state-title', 'g text', 'g tspan'
-            ];
-            
-            allTextSelectors.forEach(selector => {
-              const elements = svgElement.querySelectorAll(selector);
-              elements.forEach((element: any) => {
-                element.style.setProperty('fill', '#000000', 'important');
-                element.style.setProperty('color', '#000000', 'important');
-                element.style.setProperty('opacity', '1', 'important');
-                element.style.setProperty('font-weight', '500', 'important');
-                element.style.setProperty('font-size', '14px', 'important');
-                
-                // Also set attributes for SVG elements
-                if (element.tagName === 'text' || element.tagName === 'tspan') {
-                  element.setAttribute('fill', '#000000');
-                  element.setAttribute('opacity', '1');
-                }
-              });
-            });
-            
-            // Apply to ALL elements within SVG as final fallback
-            const allElements = svgElement.querySelectorAll('*');
-            allElements.forEach((element: any) => {
-              if (element.tagName === 'text' || element.tagName === 'tspan' || 
-                  element.textContent || element.innerText) {
-                element.style.setProperty('fill', '#000000', 'important');
-                element.style.setProperty('color', '#000000', 'important');
-                element.style.setProperty('opacity', '1', 'important');
-                
-                if (element.tagName === 'text' || element.tagName === 'tspan') {
-                  element.setAttribute('fill', '#000000');
-                  element.setAttribute('opacity', '1');
-                }
+            // First, add a CSS rule to the SVG itself
+            const style = document.createElement('style');
+            style.textContent = `
+              * { 
+                fill: #000000 !important; 
+                color: #000000 !important; 
+                opacity: 1 !important;
+                font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
               }
-            });
+              text, tspan { 
+                fill: #000000 !important; 
+                font-size: 14px !important; 
+                font-weight: 500 !important;
+              }
+            `;
+            svgElement.appendChild(style);
+            
+            // Then, directly modify EVERY element
+            const walker = document.createTreeWalker(
+              svgElement,
+              NodeFilter.SHOW_ELEMENT,
+              null
+            );
+            
+            let node;
+            while (node = walker.nextNode()) {
+              const element = node as HTMLElement;
+              
+              // Force styles on every single element
+              element.style.cssText += 'fill: #000000 !important; color: #000000 !important; opacity: 1 !important;';
+              
+              // Set SVG attributes directly
+              if (element.tagName === 'text' || element.tagName === 'tspan') {
+                element.setAttribute('fill', '#000000');
+                element.setAttribute('opacity', '1');
+                element.setAttribute('font-size', '14');
+                element.setAttribute('font-family', '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif');
+              }
+              
+              // If element has text content, make it visible
+              if (element.textContent && element.textContent.trim()) {
+                element.style.setProperty('visibility', 'visible', 'important');
+                element.style.setProperty('display', 'inline', 'important');
+              }
+            }
+            
+            // Final nuclear option: modify the SVG's innerHTML to inject styles
+            const originalHTML = svgElement.innerHTML;
+            svgElement.innerHTML = originalHTML.replace(
+              /<text([^>]*)>/g, 
+              '<text$1 fill="#000000" opacity="1" font-size="14">'
+            ).replace(
+              /<tspan([^>]*)>/g,
+              '<tspan$1 fill="#000000" opacity="1">'
+            );
           }
         }, 10);
         
