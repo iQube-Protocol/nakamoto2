@@ -15,18 +15,13 @@ const initializeMermaid = async () => {
     
     mermaidInstance.initialize({
       startOnLoad: false,
-      theme: 'default',
+      htmlLabels: false, // CRITICAL: Force SVG text instead of HTML
+      theme: 'base', // Minimal theme to avoid conflicts
       themeVariables: {
-        primaryTextColor: '#000000',
-        secondaryTextColor: '#000000', 
-        tertiaryTextColor: '#000000',
-        textColor: '#000000',
+        primaryTextColor: '#1f2937',
         primaryColor: '#ffffff',
         primaryBorderColor: '#6b46c1',
-        lineColor: '#6b46c1',
-        background: '#ffffff',
-        mainBkg: '#ffffff',
-        nodeBorder: '#6b46c1'
+        lineColor: '#6b46c1'
       },
       securityLevel: 'strict',
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
@@ -94,8 +89,10 @@ const MermaidDiagram: React.FC<MermaidDiagramProps> = ({
     return validateAndCleanInput(code);
   }, [code, validateAndCleanInput]);
 
-  // Render function with proper error handling
+  // Render function with proper error handling and multi-layer text visibility
   const renderDiagram = useCallback(async (diagramCode: string, containerId: string) => {
+    let observer: MutationObserver | null = null;
+    
     try {
       const mermaid = await initializeMermaid();
       const container = containerRef.current;
@@ -116,34 +113,61 @@ const MermaidDiagram: React.FC<MermaidDiagramProps> = ({
       if (currentRenderRef.current === renderKey) {
         container.innerHTML = svg;
         
-        // Nuclear text visibility fix - multiple approaches
+        // Multi-layer text visibility fix
         const svgElement = container.querySelector('svg');
         if (svgElement) {
-          // Method 1: Direct attribute setting with enhanced properties
+          // Method 1: Remove conflicting attributes
           const textElements = svgElement.querySelectorAll('text, tspan');
           textElements.forEach((element: any) => {
-            element.setAttribute('fill', '#000000');
-            element.setAttribute('color', '#000000');
-            element.setAttribute('stroke', 'none');
-            element.style.fill = '#000000 !important';
-            element.style.color = '#000000 !important';
-            element.style.opacity = '1 !important';
-            element.style.visibility = 'visible !important';
+            element.removeAttribute('fill');
+            element.removeAttribute('style');
+            element.removeAttribute('color');
           });
           
-          // Method 2: Nuclear option - inject style directly into SVG
+          // Method 2: Inject CSS directly into SVG with maximum specificity
           const styleElement = document.createElementNS('http://www.w3.org/2000/svg', 'style');
           styleElement.textContent = `
-            text, tspan { 
-              fill: #000000 !important; 
-              color: #000000 !important;
+            text, tspan, .label text, .node text, .edgeLabel text { 
+              fill: #1f2937 !important; 
+              color: #1f2937 !important;
               font-size: 14px !important; 
+              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
               font-weight: 500 !important; 
               opacity: 1 !important;
               visibility: visible !important;
             }
+            .node-label, .edge-label, .cluster-label {
+              fill: #1f2937 !important;
+              color: #1f2937 !important;
+            }
           `;
           svgElement.insertBefore(styleElement, svgElement.firstChild);
+          
+          // Method 3: Force browser reflow
+          svgElement.style.display = 'none';
+          (svgElement as any).offsetHeight; // Trigger reflow
+          svgElement.style.display = '';
+          
+          // Method 4: MutationObserver to prevent external interference
+          observer = new MutationObserver((mutations) => {
+            mutations.forEach((mutation) => {
+              if (mutation.type === 'attributes' && 
+                  (mutation.attributeName === 'fill' || mutation.attributeName === 'style')) {
+                const target = mutation.target as Element;
+                if (target.tagName === 'text' || target.tagName === 'tspan') {
+                  target.setAttribute('fill', '#1f2937');
+                  (target as any).style.fill = '#1f2937';
+                  (target as any).style.color = '#1f2937';
+                }
+              }
+            });
+          });
+          
+          observer.observe(svgElement, {
+            attributes: true,
+            subtree: true,
+            attributeFilter: ['fill', 'style', 'color']
+          });
         }
         
         setError(null);
@@ -153,12 +177,25 @@ const MermaidDiagram: React.FC<MermaidDiagramProps> = ({
     } catch (err) {
       console.error('Mermaid render error:', err);
       
+      // Cleanup observer on error
+      if (observer) {
+        observer.disconnect();
+        observer = null;
+      }
+      
       // Only update error if this is still the current render
       if (currentRenderRef.current === `${containerId}_${Date.now()}_${renderAttemptRef.current}`) {
         setError(err instanceof Error ? err.message : 'Rendering failed');
         setIsLoading(false);
       }
     }
+    
+    // Cleanup function
+    return () => {
+      if (observer) {
+        observer.disconnect();
+      }
+    };
   }, []);
 
   // Main effect - only depends on essential props
