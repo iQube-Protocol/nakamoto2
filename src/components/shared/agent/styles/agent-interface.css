@@ -35,40 +35,13 @@
   font-size: 0.95rem;
 }
 
-/* Key terms subtle highlighting - enhanced for knowledge base terms */
+/* Key terms subtle highlighting */
 .conversational-content .key-term {
   color: hsl(var(--iqube-accent));
   font-weight: 500;
   padding: 0 2px;
   border-radius: 3px;
   background: hsla(var(--iqube-accent), 0.08);
-}
-
-/* Bullet points styling - more conversational */
-.conversational-content .flex.items-start {
-  line-height: 1.6;
-  margin: 0.5rem 0;
-}
-
-/* Numbered list styling - friendly badges */
-.conversational-content .flex.items-start span.bg-iqube-accent\/10 {
-  font-size: 0.8rem;
-  min-width: 1.5rem;
-  text-align: center;
-}
-
-/* Conversational intro phrases styling */
-.conversational-content .bg-iqube-primary\/5 {
-  transition: all 0.2s ease;
-}
-
-.conversational-content .bg-iqube-primary\/5:hover {
-  background-color: hsla(var(--iqube-primary), 0.08);
-}
-
-/* Important callouts with friendly styling */
-.conversational-content .bg-amber-50 {
-  border-radius: 0.5rem;
 }
 
 /* Code block spacing */
@@ -78,16 +51,16 @@
   box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
-/* Mermaid diagram spacing */
+/* Mermaid diagram container */
 .conversational-content .mermaid-container {
   margin: 1.5rem 0;
   padding: 1rem;
-  background: rgba(255, 255, 255, 0.05);
+  background: rgba(255, 255, 255, 0.95);
   border-radius: 0.5rem;
   border: 1px solid rgba(139, 92, 246, 0.2);
 }
 
-/* Knowledge base content styling with different color themes */
+/* Knowledge base content styling */
 .conversational-content .knowledge-content {
   background: rgba(139, 92, 246, 0.02);
   border: 1px solid rgba(139, 92, 246, 0.1);
@@ -96,29 +69,7 @@
   margin: 1rem 0;
 }
 
-/* iQubes knowledge content - blue theme */
-.knowledge-content.iqubes-theme {
-  background: rgba(59, 130, 246, 0.02);
-  border: 1px solid rgba(59, 130, 246, 0.1);
-}
-
-.knowledge-content.iqubes-theme .knowledge-header {
-  color: rgb(37, 99, 235);
-  border-left-color: rgb(59, 130, 246);
-}
-
-/* COYN knowledge content - orange theme */
-.knowledge-content.coyn-theme {
-  background: rgba(249, 115, 22, 0.02);
-  border: 1px solid rgba(249, 115, 22, 0.1);
-}
-
-.knowledge-content.coyn-theme .knowledge-header {
-  color: rgb(194, 65, 12);
-  border-left-color: rgb(249, 115, 22);
-}
-
-/* Historic response styling with enhanced conversational layout */
+/* Historic response styling */
 .conversational-content .historic-response {
   background: rgba(99, 102, 241, 0.03);
   border-left: 3px solid rgba(99, 102, 241, 0.3);
@@ -127,79 +78,7 @@
   border-radius: 0.375rem;
 }
 
-/* Knowledge base specific styling for cards */
-.knowledge-preview-content {
-  background: rgba(148, 163, 184, 0.1);
-  border-left: 4px solid rgba(148, 163, 184, 0.5);
-  padding: 0.75rem;
-  border-radius: 0 0.375rem 0.375rem 0;
-  font-size: 0.875rem;
-  line-height: 1.6;
-  color: rgba(71, 85, 105, 0.9);
-}
-
-/* Enhanced keyword and connection badges */
-.knowledge-keyword {
-  background: rgba(59, 130, 246, 0.1);
-  color: rgb(30, 64, 175);
-  border: 1px solid rgba(59, 130, 246, 0.2);
-  transition: all 0.2s ease;
-}
-
-.knowledge-keyword:hover {
-  background: rgba(59, 130, 246, 0.2);
-  transform: translateY(-1px);
-}
-
-.knowledge-connection {
-  background: rgba(236, 72, 153, 0.1);
-  color: rgb(157, 23, 77);
-  border: 1px solid rgba(236, 72, 153, 0.2);
-  transition: all 0.2s ease;
-}
-
-.knowledge-connection:hover {
-  background: rgba(236, 72, 153, 0.2);
-  transform: translateY(-1px);
-}
-
-/* Profile specific historic content styling */
-.historic-content {
-  transition: all 0.2s ease;
-}
-
-.historic-content:hover {
-  border-color: rgba(139, 92, 246, 0.3);
-  box-shadow: 0 4px 12px rgba(139, 92, 246, 0.1);
-}
-
-/* Historic response themes for profile */
-.historic-response.user-theme {
-  background: rgba(249, 115, 22, 0.03);
-  border-left-color: rgba(249, 115, 22, 0.4);
-}
-
-.historic-response.agent-theme {
-  background: rgba(99, 102, 241, 0.03);
-  border-left-color: rgba(99, 102, 241, 0.4);
-}
-
-/* Profile conversation preview styling */
-.conversation-preview {
-  background: rgba(148, 163, 184, 0.05);
-  border-radius: 0.5rem;
-  padding: 1rem;
-  margin: 0.5rem 0;
-  border-left: 4px solid rgba(148, 163, 184, 0.3);
-  transition: all 0.2s ease;
-}
-
-.conversation-preview:hover {
-  background: rgba(148, 163, 184, 0.08);
-  border-left-color: rgba(148, 163, 184, 0.5);
-}
-
-/* Responsive text sizing for better readability */
+/* Responsive text sizing for mobile */
 @media (max-width: 640px) {
   .conversational-content {
     font-size: 0.9rem;
@@ -208,328 +87,36 @@
   .conversational-content p {
     font-size: 0.9rem;
   }
-  
-  .knowledge-preview-content {
-    font-size: 0.8rem;
-  }
-  
-  .historic-content {
-    padding: 0.75rem;
-  }
 }
 
-/* Better spacing for lists */
-.conversational-content .flex.items-start + .flex.items-start {
-  margin-top: 0.25rem;
-}
+/* ============= MERMAID DIAGRAM STYLING ============= */
+/* Essential Mermaid text visibility fixes */
 
-/* Smooth transitions for interactive elements */
-.conversational-content * {
-  transition: color 0.2s ease;
-}
-
-/* Enhanced readability for longer text */
-.conversational-content p:not(:last-child) {
-  margin-bottom: 1rem;
-}
-
-/* Gentle hover effects for key terms */
-.conversational-content .key-term:hover {
-  background: hsla(var(--iqube-accent), 0.15);
-  transition: background 0.2s ease;
-}
-
-/* Friendly blockquote styling */
-.conversational-content .border-l-3 {
-  border-left-width: 3px;
-  font-style: normal;
-}
-
-/* Enhanced styling for citations and source references */
-.conversational-content .citation {
-  color: hsl(var(--muted-foreground));
-  font-size: 0.85rem;
-  font-style: italic;
-  margin-top: 0.5rem;
-  padding: 0.25rem 0.5rem;
-  background: hsla(var(--muted), 0.3);
-  border-radius: 0.25rem;
-}
-
-/* Technical term definitions with knowledge base themes */
-.conversational-content .definition {
-  background: rgba(139, 92, 246, 0.05);
-  border-left: 3px solid rgba(139, 92, 246, 0.3);
-  padding: 0.75rem;
-  margin: 0.5rem 0;
-  border-radius: 0.375rem;
-}
-
-.conversational-content .definition.iqubes-theme {
-  background: rgba(59, 130, 246, 0.05);
-  border-left-color: rgba(59, 130, 246, 0.3);
-}
-
-.conversational-content .definition.coyn-theme {
-  background: rgba(249, 115, 22, 0.05);
-  border-left-color: rgba(249, 115, 22, 0.3);
-}
-
-/* Concept explanations with thematic colors */
-.conversational-content .concept-explanation {
-  background: rgba(34, 197, 94, 0.05);
-  border: 1px solid rgba(34, 197, 94, 0.2);
-  padding: 1rem;
-  margin: 1rem 0;
-  border-radius: 0.5rem;
-}
-
-/* Mermaid diagrams in knowledge base context */
-.knowledge-content .mermaid-container {
-  background: rgba(255, 255, 255, 0.8);
-  border: 1px solid rgba(203, 213, 225, 0.5);
-  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
-}
-
-/* Enhanced historic response styling */
-.conversational-content .historic-response.iqubes-theme {
-  background: rgba(59, 130, 246, 0.03);
-  border-left-color: rgba(59, 130, 246, 0.3);
-}
-
-.conversational-content .historic-response.coyn-theme {
-  background: rgba(249, 115, 22, 0.03);
-  border-left-color: rgba(249, 115, 22, 0.3);
-}
-
-.conversational-content .historic-response.learn-theme {
-  background: rgba(34, 197, 94, 0.03);
-  border-left-color: rgba(34, 197, 94, 0.3);
-}
-
-.conversational-content .historic-response.earn-theme {
-  background: rgba(168, 85, 247, 0.03);
-  border-left-color: rgba(168, 85, 247, 0.3);
-}
-
-.conversational-content .historic-response.connect-theme {
-  background: rgba(6, 182, 212, 0.03);
-  border-left-color: rgba(6, 182, 212, 0.3);
-}
-
-.conversational-content .historic-response.mondai-theme {
-  background: rgba(245, 158, 11, 0.03);
-  border-left-color: rgba(245, 158, 11, 0.3);
-}
-
-.conversational-content .historic-response.default-theme {
-  background: rgba(99, 102, 241, 0.03);
-  border-left-color: rgba(99, 102, 241, 0.3);
-}
-
-/* Interactive knowledge elements */
-.knowledge-interactive {
-  cursor: pointer;
-  transition: all 0.2s ease;
-}
-
-.knowledge-interactive:hover {
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-/* Profile specific enhancements */
-.profile-interaction-card {
-  background: rgba(139, 92, 246, 0.02);
-  border: 1px solid rgba(139, 92, 246, 0.1);
-  transition: all 0.2s ease;
-}
-
-.profile-interaction-card:hover {
-  background: rgba(139, 92, 246, 0.04);
-  border-color: rgba(139, 92, 246, 0.2);
-  transform: translateY(-1px);
-}
-
-/* Metadata badges in profile */
-.profile-metadata-badge {
-  font-size: 0.7rem;
-  padding: 0.2rem 0.4rem;
-  border-radius: 0.25rem;
-  font-weight: 500;
-}
-
-/* Enhanced diagram indicators */
-.diagram-indicator {
-  background: rgba(168, 85, 247, 0.1);
-  color: rgb(147, 51, 234);
-  border: 1px solid rgba(168, 85, 247, 0.2);
-}
-
-/* Preview truncation styling */
-.content-preview-truncated {
-  position: relative;
-}
-
-.content-preview-truncated::after {
-  content: '';
-  position: absolute;
-  bottom: 0;
-  right: 0;
-  width: 20%;
-  height: 1.2em;
-  background: linear-gradient(to right, transparent, rgba(var(--background), 0.8));
-}
-
-/* ============= ENHANCED MERMAID DIAGRAM STYLING ============= */
-/* AGGRESSIVE text styling to override CSS cascade issues */
-
-/* Base SVG container setup */
-.mermaid-diagram svg,
-.mermaid svg,
-.mermaid-container svg {
+/* Base SVG container */
+.mermaid-container svg,
+.mermaid svg {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
   max-width: 100% !important;
   height: auto !important;
   background: #ffffff !important;
-  color: #000000 !important;
 }
 
-/* CRITICAL: Maximum specificity text styling - targets all possible text elements */
+/* Critical text element styling */
 .mermaid-container svg text,
 .mermaid-container svg tspan,
-.mermaid-container text,
-.mermaid-container tspan,
-.mermaid-diagram svg text,
-.mermaid-diagram svg tspan,
-.mermaid-diagram text,
-.mermaid-diagram tspan,
 .mermaid svg text,
 .mermaid svg tspan,
-.mermaid text,
-.mermaid tspan,
-/* Mermaid-specific class selectors */
 .mermaid-container .nodeLabel,
 .mermaid-container .edgeLabel,
-.mermaid-container .label,
-.mermaid-container .cluster-label,
-.mermaid-container .titleText,
-.mermaid-container .actor,
-.mermaid-container .messageLine0,
-.mermaid-container .messageLine1,
-.mermaid-container .messageText,
-.mermaid-container .loopText,
-.mermaid-container .labelText,
-.mermaid-container .classTitle,
-.mermaid-container .classLabel,
-.mermaid-container .relation,
-.mermaid-container .statediagram-state .state-title,
-.mermaid-container .task-text,
-.mermaid-container .section,
-.mermaid-container .er-entityLabel,
-.mermaid-container .er-attributeBoxEven text,
-.mermaid-container .er-attributeBoxOdd text,
-.mermaid-container .pie-title,
-.mermaid-container .legendText,
-.mermaid-diagram .nodeLabel,
-.mermaid-diagram .edgeLabel,
-.mermaid-diagram .label,
-.mermaid-diagram .cluster-label,
-.mermaid-diagram .titleText,
-.mermaid-diagram .actor,
-.mermaid-diagram .messageLine0,
-.mermaid-diagram .messageLine1,
-.mermaid-diagram .messageText,
-.mermaid-diagram .loopText,
-.mermaid-diagram .labelText,
-.mermaid-diagram .classTitle,
-.mermaid-diagram .classLabel,
-.mermaid-diagram .relation,
-.mermaid-diagram .statediagram-state .state-title,
-.mermaid-diagram .task-text,
-.mermaid-diagram .section,
-.mermaid-diagram .er-entityLabel,
-.mermaid-diagram .er-attributeBoxEven text,
-.mermaid-diagram .er-attributeBoxOdd text,
-.mermaid-diagram .pie-title,
-.mermaid-diagram .legendText,
 .mermaid .nodeLabel,
-.mermaid .edgeLabel,
-.mermaid .label,
-.mermaid .cluster-label,
-.mermaid .titleText,
-.mermaid .actor,
-.mermaid .messageLine0,
-.mermaid .messageLine1,
-.mermaid .messageText,
-.mermaid .loopText,
-.mermaid .labelText,
-.mermaid .classTitle,
-.mermaid .classLabel,
-.mermaid .relation,
-.mermaid .statediagram-state .state-title,
-.mermaid .task-text,
-.mermaid .section,
-.mermaid .er-entityLabel,
-.mermaid .er-attributeBoxEven text,
-.mermaid .er-attributeBoxOdd text,
-.mermaid .pie-title,
-.mermaid .legendText,
-/* Foreign object and nested elements */
-.mermaid-container foreignObject div,
-.mermaid-diagram foreignObject div,
-.mermaid foreignObject div,
-.mermaid-container foreignObject span,
-.mermaid-diagram foreignObject span,
-.mermaid foreignObject span,
-.mermaid-container .node text,
-.mermaid-diagram .node text,
-.mermaid .node text,
-.mermaid-container .flowchart-label text,
-.mermaid-diagram .flowchart-label text,
-.mermaid .flowchart-label text,
-/* Additional specific selectors for comprehensive coverage */
-.mermaid-container g text,
-.mermaid-diagram g text,
-.mermaid g text,
-.mermaid-container g tspan,
-.mermaid-diagram g tspan,
-.mermaid g tspan {
+.mermaid .edgeLabel {
   fill: #000000 !important;
   color: #000000 !important;
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
   font-size: 14px !important;
   font-weight: 500 !important;
   opacity: 1 !important;
-  stroke: none !important;
-  text-anchor: middle !important;
-  dominant-baseline: middle !important;
   visibility: visible !important;
-  display: block !important;
-}
-
-/* NUCLEAR OPTION: Force all possible SVG text elements */
-.mermaid-container svg *[text-anchor],
-.mermaid-diagram svg *[text-anchor],
-.mermaid svg *[text-anchor],
-.mermaid-container svg *[class*="label"],
-.mermaid-diagram svg *[class*="label"],
-.mermaid svg *[class*="label"],
-.mermaid-container svg *[class*="text"],
-.mermaid-diagram svg *[class*="text"],
-.mermaid svg *[class*="text"] {
-  fill: #000000 !important;
-  color: #000000 !important;
-  opacity: 1 !important;
-  font-weight: 500 !important;
-  visibility: visible !important;
-}
-
-/* Fallback: Target ALL elements within Mermaid SVGs */
-.mermaid-container svg *,
-.mermaid-diagram svg *,
-.mermaid svg * {
-  color: #000000 !important;
 }
 
 /* Container styling */
@@ -541,190 +128,20 @@
   margin: 1.5rem 0 !important;
 }
 
-/* Node and edge styling for better visibility */
+/* Node styling */
 .mermaid rect,
 .mermaid circle,
 .mermaid ellipse,
-.mermaid polygon,
-.mermaid path {
-  stroke: #374151 !important;
-  stroke-width: 2px !important;
-}
-
-.mermaid .node rect,
-.mermaid .node circle,
-.mermaid .node ellipse,
-.mermaid .node polygon {
-  fill: #f9fafb !important;
-  stroke: #6366f1 !important;
-  stroke-width: 2px !important;
-}
-
-/* Edge path styling */
-.mermaid .edgePath path {
-  stroke: #374151 !important;
-  stroke-width: 2px !important;
-  fill: none !important;
-}
-
-/* Arrow markers */
-.mermaid defs marker path {
-  fill: #374151 !important;
-  stroke: #374151 !important;
-}
-
-.mermaid-container svg text,
-.mermaid-diagram svg text,
-.mermaid svg text,
-.mermaid-container svg tspan,
-.mermaid-diagram svg tspan,
-.mermaid svg tspan {
-  fill: #000000 !important;
-}
-
-/* Ensure foreignObject content is visible */
-.mermaid-container foreignObject > div,
-.mermaid-diagram foreignObject > div,
-.mermaid foreignObject > div {
-  color: #000000 !important;
-  background: transparent !important;
-}
-
-/* Node shapes - off-white background with dark purple borders */
-.mermaid-diagram rect,
-.mermaid rect,
-.mermaid-diagram .node rect,
-.mermaid .node rect {
+.mermaid polygon {
   fill: #f8f6f0 !important;
   stroke: #6b46c1 !important;
   stroke-width: 2px !important;
 }
 
-.mermaid-diagram circle,
-.mermaid circle,
-.mermaid-diagram .node circle,
-.mermaid .node circle {
-  fill: #f8f6f0 !important;
-  stroke: #6b46c1 !important;
-  stroke-width: 2px !important;
-}
-
-.mermaid-diagram ellipse,
-.mermaid ellipse,
-.mermaid-diagram .node ellipse,
-.mermaid .node ellipse {
-  fill: #f8f6f0 !important;
-  stroke: #6b46c1 !important;
-  stroke-width: 2px !important;
-}
-
-.mermaid-diagram polygon,
-.mermaid polygon,
-.mermaid-diagram .node polygon,
-.mermaid .node polygon {
-  fill: #f8f6f0 !important;
-  stroke: #6b46c1 !important;
-  stroke-width: 2px !important;
-}
-
-/* Paths and lines - dark purple */
-.mermaid-diagram path,
+/* Edge styling */
 .mermaid path,
-.mermaid-diagram .edge path,
-.mermaid .edge path {
-  stroke: #6b46c1 !important;
-  stroke-width: 2px !important;
-  fill: none !important;
-}
-
-.mermaid-diagram line,
 .mermaid line {
   stroke: #6b46c1 !important;
   stroke-width: 2px !important;
-}
-
-/* Arrow markers */
-.mermaid-diagram marker,
-.mermaid marker,
-.mermaid-diagram defs marker,
-.mermaid defs marker {
-  fill: #6b46c1 !important;
-  stroke: #6b46c1 !important;
-}
-
-/* Flowchart specific elements */
-.mermaid-diagram .flowchart-node,
-.mermaid .flowchart-node {
-  fill: #f8f6f0 !important;
-  stroke: #6b46c1 !important;
-  stroke-width: 2px !important;
-}
-
-/* Decision diamond nodes */
-.mermaid-diagram .node.decision polygon,
-.mermaid .node.decision polygon {
-  fill: #f8f6f0 !important;
-  stroke: #6b46c1 !important;
-  stroke-width: 2px !important;
-}
-
-/* Edge labels background */
-.mermaid-diagram .edgeLabel rect,
-.mermaid .edgeLabel rect {
-  fill: #fefefe !important;
-  stroke: none !important;
-}
-
-/* Sequence diagram elements */
-.mermaid-diagram .actor,
-.mermaid .actor {
-  fill: #f8f6f0 !important;
-  stroke: #6b46c1 !important;
-  stroke-width: 2px !important;
-}
-
-.mermaid-diagram .messageLine0,
-.mermaid .messageLine0,
-.mermaid-diagram .messageLine1,
-.mermaid .messageLine1 {
-  stroke: #6b46c1 !important;
-  stroke-width: 2px !important;
-}
-
-/* Class diagram elements */
-.mermaid-diagram .classBox,
-.mermaid .classBox {
-  fill: #f8f6f0 !important;
-  stroke: #6b46c1 !important;
-  stroke-width: 2px !important;
-}
-
-/* State diagram elements */
-.mermaid-diagram .state-start,
-.mermaid .state-start,
-.mermaid-diagram .state-end,
-.mermaid .state-end {
-  fill: #6b46c1 !important;
-  stroke: #6b46c1 !important;
-}
-
-.mermaid-diagram .state-note,
-.mermaid .state-note {
-  fill: #f8f6f0 !important;
-  stroke: #6b46c1 !important;
-  stroke-width: 2px !important;
-}
-
-/* Entity relationship diagram elements */
-.mermaid-diagram .entity,
-.mermaid .entity {
-  fill: #f8f6f0 !important;
-  stroke: #6b46c1 !important;
-  stroke-width: 2px !important;
-}
-
-.mermaid-diagram .relationshipLine,
-.mermaid .relationshipLine {
-  stroke: #6b46c1 !important;
-  stroke-width: 2px !important;
+  fill: none !important;
 }
