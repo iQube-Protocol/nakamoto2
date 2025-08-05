@@ -89,7 +89,49 @@ const MermaidDiagram: React.FC<MermaidDiagramProps> = ({
     return validateAndCleanInput(code);
   }, [code, validateAndCleanInput]);
 
-  // Render function with proper error handling and multi-layer text visibility
+  // Surgical text fix function with direct attribute setting
+  const applySurgicalTextFix = useCallback((svgElement: SVGElement) => {
+    // Method 1: Remove conflicting attributes
+    const textElements = svgElement.querySelectorAll('text, tspan');
+    textElements.forEach((element: any) => {
+      element.removeAttribute('fill');
+      element.removeAttribute('style');
+      element.removeAttribute('color');
+      
+      // Method 2: Set attributes directly (most reliable)
+      element.setAttribute('fill', '#1f2937');
+      element.style.fill = '#1f2937';
+      element.style.color = '#1f2937';
+      element.style.visibility = 'visible';
+      element.style.opacity = '1';
+    });
+    
+    // Method 3: Inject CSS directly into SVG
+    const styleElement = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+    styleElement.textContent = `
+      text, tspan, .label text, .node text, .edgeLabel text { 
+        fill: #1f2937 !important; 
+        color: #1f2937 !important;
+        font-size: 14px !important; 
+        font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
+        font-weight: 500 !important; 
+        opacity: 1 !important;
+        visibility: visible !important;
+      }
+      .node-label, .edge-label, .cluster-label {
+        fill: #1f2937 !important;
+        color: #1f2937 !important;
+      }
+    `;
+    svgElement.insertBefore(styleElement, svgElement.firstChild);
+    
+    // Method 4: Force reflow
+    svgElement.style.display = 'none';
+    (svgElement as any).offsetHeight;
+    svgElement.style.display = '';
+  }, []);
+
+  // Simplified render function
   const renderDiagram = useCallback(async (diagramCode: string, containerId: string) => {
     let observer: MutationObserver | null = null;
     
@@ -109,53 +151,23 @@ const MermaidDiagram: React.FC<MermaidDiagramProps> = ({
       // Render with Mermaid
       const { svg } = await mermaid.render(renderKey, diagramCode);
       
-      // Check if this render is still current (prevent race conditions)
+      // Check if this render is still current
       if (currentRenderRef.current === renderKey) {
         container.innerHTML = svg;
         
-        // Multi-layer text visibility fix
+        // Apply surgical text fix
         const svgElement = container.querySelector('svg');
         if (svgElement) {
-          // Method 1: Remove conflicting attributes
-          const textElements = svgElement.querySelectorAll('text, tspan');
-          textElements.forEach((element: any) => {
-            element.removeAttribute('fill');
-            element.removeAttribute('style');
-            element.removeAttribute('color');
-          });
+          applySurgicalTextFix(svgElement);
           
-          // Method 2: Inject CSS directly into SVG with maximum specificity
-          const styleElement = document.createElementNS('http://www.w3.org/2000/svg', 'style');
-          styleElement.textContent = `
-            text, tspan, .label text, .node text, .edgeLabel text { 
-              fill: #1f2937 !important; 
-              color: #1f2937 !important;
-              font-size: 14px !important; 
-              font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif !important;
-              font-weight: 500 !important; 
-              opacity: 1 !important;
-              visibility: visible !important;
-            }
-            .node-label, .edge-label, .cluster-label {
-              fill: #1f2937 !important;
-              color: #1f2937 !important;
-            }
-          `;
-          svgElement.insertBefore(styleElement, svgElement.firstChild);
-          
-          // Method 3: Force browser reflow
-          svgElement.style.display = 'none';
-          (svgElement as any).offsetHeight; // Trigger reflow
-          svgElement.style.display = '';
-          
-          // Method 4: MutationObserver to prevent external interference
+          // MutationObserver to prevent external interference
           observer = new MutationObserver((mutations) => {
             mutations.forEach((mutation) => {
               if (mutation.type === 'attributes' && 
                   (mutation.attributeName === 'fill' || mutation.attributeName === 'style')) {
                 const target = mutation.target as Element;
                 if (target.tagName === 'text' || target.tagName === 'tspan') {
-                  target.setAttribute('fill', '#1f2937');
+                  (target as any).setAttribute('fill', '#1f2937');
                   (target as any).style.fill = '#1f2937';
                   (target as any).style.color = '#1f2937';
                 }
@@ -177,26 +189,21 @@ const MermaidDiagram: React.FC<MermaidDiagramProps> = ({
     } catch (err) {
       console.error('Mermaid render error:', err);
       
-      // Cleanup observer on error
       if (observer) {
         observer.disconnect();
-        observer = null;
       }
       
-      // Only update error if this is still the current render
-      if (currentRenderRef.current === `${containerId}_${Date.now()}_${renderAttemptRef.current}`) {
-        setError(err instanceof Error ? err.message : 'Rendering failed');
-        setIsLoading(false);
-      }
+      setError(err instanceof Error ? err.message : 'Rendering failed');
+      setIsLoading(false);
     }
     
-    // Cleanup function
+    // Return cleanup function
     return () => {
       if (observer) {
         observer.disconnect();
       }
     };
-  }, []);
+  }, [applySurgicalTextFix]);
 
   // Main effect - only depends on essential props
   useEffect(() => {
@@ -223,19 +230,7 @@ const MermaidDiagram: React.FC<MermaidDiagramProps> = ({
     };
   }, [validatedCode.cleaned, validatedCode.isValid, id, renderDiagram]);
 
-  // Theme effect - separate from main rendering logic
-  useEffect(() => {
-    if (mermaidInstance && !isLoading && !error) {
-      mermaidInstance.initialize({
-        theme: theme === 'dark' ? 'dark' : 'default'
-      });
-      
-      // Re-render with new theme
-      if (validatedCode.isValid) {
-        renderDiagram(validatedCode.cleaned, id);
-      }
-    }
-  }, [theme, isLoading, error, validatedCode.cleaned, validatedCode.isValid, id, renderDiagram]);
+  // Removed theme effect to prevent configuration conflicts
 
   if (showCodeView) {
     return (
