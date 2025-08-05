@@ -119,21 +119,54 @@ const MermaidDiagram: React.FC<MermaidDiagramProps> = ({
       if (currentRenderRef.current === renderKey) {
         container.innerHTML = svg;
         
-        // SURGICAL text-only visibility fix
-        setTimeout(() => {
+        // AGGRESSIVE text visibility fix with multiple approaches
+        const fixTextVisibility = () => {
           const svgElement = container.querySelector('svg');
           if (svgElement) {
-            // Target ONLY text and tspan elements - preserve all other styling
+            // Method 1: Direct style injection into SVG
+            let styleElement = svgElement.querySelector('style.text-visibility-fix');
+            if (!styleElement) {
+              styleElement = document.createElement('style');
+              styleElement.className = 'text-visibility-fix';
+              styleElement.textContent = `
+                text, tspan { 
+                  fill: #000000 !important; 
+                  opacity: 1 !important; 
+                  visibility: visible !important;
+                }
+              `;
+              svgElement.appendChild(styleElement);
+            }
+            
+            // Method 2: Direct DOM manipulation
             const textElements = svgElement.querySelectorAll('text, tspan');
             textElements.forEach((element: any) => {
-              // Only set text visibility attributes, nothing else
               element.setAttribute('fill', '#000000');
               element.setAttribute('opacity', '1');
               element.style.setProperty('fill', '#000000', 'important');
               element.style.setProperty('opacity', '1', 'important');
+              element.style.setProperty('visibility', 'visible', 'important');
             });
+            
+            // Method 3: MutationObserver for dynamic content
+            const observer = new MutationObserver(() => {
+              const newTextElements = svgElement.querySelectorAll('text, tspan');
+              newTextElements.forEach((element: any) => {
+                element.setAttribute('fill', '#000000');
+                element.setAttribute('opacity', '1');
+              });
+            });
+            observer.observe(svgElement, { childList: true, subtree: true });
+            
+            // Cleanup observer after 5 seconds
+            setTimeout(() => observer.disconnect(), 5000);
           }
-        }, 10);
+        };
+        
+        // Multiple timing attempts
+        setTimeout(fixTextVisibility, 0);
+        setTimeout(fixTextVisibility, 50);
+        setTimeout(fixTextVisibility, 200);
         
         setError(null);
         setIsLoading(false);

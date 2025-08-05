@@ -381,33 +381,10 @@
   background: linear-gradient(to right, transparent, rgba(var(--background), 0.8));
 }
 
-/* ============= SURGICAL MERMAID TEXT VISIBILITY FIX ============= */
-
-/* Base SVG container setup - minimal and clean */
-.mermaid-diagram svg,
-.mermaid svg,
-.mermaid-container svg {
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif !important;
-  max-width: 100% !important;
-  height: auto !important;
-}
-
-/* SURGICAL: Target ONLY text elements for visibility */
-.mermaid-container svg text,
-.mermaid-diagram svg text,
-.mermaid svg text,
-.mermaid-container svg tspan,
-.mermaid-diagram svg tspan,
-.mermaid svg tspan {
-  fill: #000000 !important;
-  opacity: 1 !important;
-  visibility: visible !important;
-}
-
-/* Container styling */
+/* Mermaid Diagram Styling - Minimal container only */
 .mermaid-container {
-  background: rgba(255, 255, 255, 0.95) !important;
-  border: 1px solid rgba(203, 213, 225, 0.3) !important;
+  margin: 16px 0;
+}
   border-radius: 0.5rem !important;
   padding: 1rem !important;
   margin: 1.5rem 0 !important;
