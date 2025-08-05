@@ -15,13 +15,18 @@ const initializeMermaid = async () => {
     
     mermaidInstance.initialize({
       startOnLoad: false,
-      theme: 'base',
+      theme: 'default',
       themeVariables: {
         primaryTextColor: '#000000',
+        secondaryTextColor: '#000000', 
+        tertiaryTextColor: '#000000',
         textColor: '#000000',
-        primaryColor: '#f8f6f0',
+        primaryColor: '#ffffff',
+        primaryBorderColor: '#6b46c1',
         lineColor: '#6b46c1',
-        background: '#ffffff'
+        background: '#ffffff',
+        mainBkg: '#ffffff',
+        nodeBorder: '#6b46c1'
       },
       securityLevel: 'strict',
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
@@ -111,16 +116,34 @@ const MermaidDiagram: React.FC<MermaidDiagramProps> = ({
       if (currentRenderRef.current === renderKey) {
         container.innerHTML = svg;
         
-        // Direct text element fix - set fill attributes directly
+        // Nuclear text visibility fix - multiple approaches
         const svgElement = container.querySelector('svg');
         if (svgElement) {
-          // Force text visibility by setting fill attributes directly
+          // Method 1: Direct attribute setting with enhanced properties
           const textElements = svgElement.querySelectorAll('text, tspan');
           textElements.forEach((element: any) => {
             element.setAttribute('fill', '#000000');
-            element.style.fill = '#000000';
-            element.style.opacity = '1';
+            element.setAttribute('color', '#000000');
+            element.setAttribute('stroke', 'none');
+            element.style.fill = '#000000 !important';
+            element.style.color = '#000000 !important';
+            element.style.opacity = '1 !important';
+            element.style.visibility = 'visible !important';
           });
+          
+          // Method 2: Nuclear option - inject style directly into SVG
+          const styleElement = document.createElementNS('http://www.w3.org/2000/svg', 'style');
+          styleElement.textContent = `
+            text, tspan { 
+              fill: #000000 !important; 
+              color: #000000 !important;
+              font-size: 14px !important; 
+              font-weight: 500 !important; 
+              opacity: 1 !important;
+              visibility: visible !important;
+            }
+          `;
+          svgElement.insertBefore(styleElement, svgElement.firstChild);
         }
         
         setError(null);
