@@ -45,11 +45,31 @@ export const useAgentActivation = () => {
     if (selectedAgent?.name === 'KNYT Persona') {
       localStorage.setItem('knyt-persona-activated', 'true');
       window.dispatchEvent(new CustomEvent('knytPersonaActivated'));
+      
+      // Deactivate Qrypto Persona (mutual exclusivity)
+      localStorage.setItem('qrypto-persona-activated', 'false');
+      window.dispatchEvent(new CustomEvent('qryptoPersonaDeactivated'));
+      
+      toast({
+        title: "Qrypto Persona Deactivated",
+        description: "Only one persona can be active at a time.",
+        variant: "default",
+      });
     }
 
     if (selectedAgent?.name === 'Qrypto Persona') {
       localStorage.setItem('qrypto-persona-activated', 'true');
       window.dispatchEvent(new CustomEvent('qryptoPersonaActivated'));
+      
+      // Deactivate KNYT Persona (mutual exclusivity)
+      localStorage.setItem('knyt-persona-activated', 'false');
+      window.dispatchEvent(new CustomEvent('knytPersonaDeactivated'));
+      
+      toast({
+        title: "KNYT Persona Deactivated",
+        description: "Only one persona can be active at a time.",
+        variant: "default",
+      });
     }
 
     if (selectedAgent?.name === 'Venice') {
