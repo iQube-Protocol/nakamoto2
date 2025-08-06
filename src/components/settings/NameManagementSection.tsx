@@ -179,7 +179,6 @@ export const NameManagementSection: React.FC = () => {
               {/* Desktop Layout */}
               <div className="hidden md:flex items-center justify-between">
                 <div className="flex items-center gap-3">
-                  {getSourceIcon(persona.personaType)}
                   <div className="relative group">
                     <Avatar className="h-10 w-10">
                       <AvatarImage src={persona.profileImageUrl} />
@@ -246,9 +245,8 @@ export const NameManagementSection: React.FC = () => {
 
               {/* Mobile Layout */}
               <div className="md:hidden space-y-3">
-                {/* Row 1: Icon, Avatar, and Profile Label */}
+                {/* Row 1: Avatar and Profile Label */}
                 <div className="flex items-center gap-3">
-                  {getSourceIcon(persona.personaType)}
                   <div className="relative group">
                     <Avatar className="h-10 w-10">
                       <AvatarImage src={persona.profileImageUrl} />
