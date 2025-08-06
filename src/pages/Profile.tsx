@@ -233,7 +233,11 @@ const Profile = () => {
                             </div>
                            ) : (
                              <div className="max-w-full overflow-hidden">
-                               <NavigationAwareMessageContent content={interaction.response} sender="agent" />
+                                <NavigationAwareMessageContent 
+                                  content={interaction.response} 
+                                  sender="agent" 
+                                  messageId={interaction.id}
+                                />
                              </div>
                            )}
                         </div>

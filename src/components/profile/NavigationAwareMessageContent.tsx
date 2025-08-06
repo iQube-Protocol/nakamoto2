@@ -1,10 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import MessageContent from '@/components/shared/agent/message/MessageContent';
+import ProfileMermaidCoordinator from './ProfileMermaidCoordinator';
 import NavigationGuard from '@/utils/NavigationGuard';
 
 interface NavigationAwareMessageContentProps {
   content: string;
   sender: 'user' | 'agent';
+  messageId?: string;
   maxLength?: number;
   showPreview?: boolean;
 }
@@ -12,6 +14,7 @@ interface NavigationAwareMessageContentProps {
 const NavigationAwareMessageContent: React.FC<NavigationAwareMessageContentProps> = ({
   content,
   sender,
+  messageId = 'unknown',
   maxLength = 200,
   showPreview = true
 }) => {
@@ -67,14 +70,23 @@ const NavigationAwareMessageContent: React.FC<NavigationAwareMessageContentProps
     return () => clearInterval(navigationCheckInterval);
   }, [content, maxLength, showPreview, shouldRenderMermaid]);
 
+  // Check if content has Mermaid diagrams
+  const hasMermaidDiagrams = content.includes('```mermaid');
+
   return (
     <div className="navigation-aware-content">
-      <MessageContent 
-        content={displayContent} 
-        sender={sender}
-        // Pass navigation state to potentially optimize mermaid rendering
-        {...(shouldRenderMermaid ? {} : { 'data-defer-mermaid': 'true' })}
-      />
+      {hasMermaidDiagrams ? (
+        <ProfileMermaidCoordinator
+          content={displayContent}
+          messageId={messageId}
+          sender={sender}
+        />
+      ) : (
+        <MessageContent 
+          content={displayContent} 
+          sender={sender}
+        />
+      )}
     </div>
   );
 };

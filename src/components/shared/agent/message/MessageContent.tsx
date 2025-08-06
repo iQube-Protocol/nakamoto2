@@ -4,7 +4,7 @@ import React from 'react';
 import { Prism as SyntaxHighlighter } from 'react-syntax-highlighter';
 import { vscDarkPlus } from 'react-syntax-highlighter/dist/esm/styles/prism';
 import DOMPurify from 'dompurify';
-import MermaidDiagram from './MermaidDiagram';
+import MermaidDiagramSafe from './MermaidDiagramSafe';
 
 interface MessageContentProps {
   content: string;
@@ -161,7 +161,7 @@ const MessageContent = ({ content, sender, metadata }: MessageContentProps) => {
         if (language === 'mermaid') {
           console.log('MessageContent: Processing Mermaid code:', { code: code.substring(0, 50), metadata });
           return (
-            <MermaidDiagram 
+            <MermaidDiagramSafe 
               key={`mermaid-${i}-${Date.now()}`} 
               code={code} 
               id={`mermaid-${i}-${Date.now()}`}
