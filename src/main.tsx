@@ -2,6 +2,7 @@
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
+import NavigationGuard from '@/utils/NavigationGuard';
 
 console.log("Starting application initialization");
 
@@ -59,6 +60,9 @@ if (typeof window !== 'undefined') {
     console.warn('Orientation lock not supported');
   }
 }
+
+// Initialize NavigationGuard globally
+NavigationGuard.init();
 
 // Create root and render immediately
 const root = createRoot(rootElement || document.getElementById("root")!);

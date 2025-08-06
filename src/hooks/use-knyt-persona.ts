@@ -1,6 +1,7 @@
 
 import { useState, useEffect, useCallback, useRef } from 'react';
 import { walletConnectionService } from '@/services/wallet-connection-service';
+import NavigationGuard from '@/utils/NavigationGuard';
 
 interface KNYTPersonaState {
   knytPersonaActivated: boolean;
@@ -12,10 +13,6 @@ interface KNYTPersonaState {
 }
 
 const STORAGE_KEY = 'knyt-persona-activated';
-
-// Navigation state tracking to prevent event cascades during route changes
-let isNavigating = false;
-let navigationTimeout: NodeJS.Timeout | null = null;
 
 export const useKNYTPersona = (): KNYTPersonaState => {
   const mountedRef = useRef(true);
@@ -33,55 +30,18 @@ export const useKNYTPersona = (): KNYTPersonaState => {
 
   const [knytPersonaVisible, setKNYTPersonaVisible] = useState<boolean>(true);
 
-  // Track navigation state to prevent event cascades
+  // Initialize NavigationGuard once
   useEffect(() => {
-    const handleNavigationStart = () => {
-      isNavigating = true;
-      if (navigationTimeout) clearTimeout(navigationTimeout);
-      navigationTimeout = setTimeout(() => {
-        isNavigating = false;
-      }, 500); // 500ms navigation protection window
-    };
-
-    const handleRouteChange = () => {
-      handleNavigationStart();
-    };
-
-    // Listen for navigation events
-    window.addEventListener('beforeunload', handleNavigationStart);
-    window.addEventListener('popstate', handleNavigationStart);
-    
-    // Listen for React Router navigation (if available)
-    const originalPushState = window.history.pushState;
-    const originalReplaceState = window.history.replaceState;
-    
-    window.history.pushState = function(...args) {
-      handleNavigationStart();
-      return originalPushState.apply(this, args);
-    };
-    
-    window.history.replaceState = function(...args) {
-      handleNavigationStart();
-      return originalReplaceState.apply(this, args);
-    };
-
-    return () => {
-      window.removeEventListener('beforeunload', handleNavigationStart);
-      window.removeEventListener('popstate', handleNavigationStart);
-      window.history.pushState = originalPushState;
-      window.history.replaceState = originalReplaceState;
-      if (navigationTimeout) clearTimeout(navigationTimeout);
-    };
+    NavigationGuard.init();
   }, []);
 
   // Save to localStorage whenever state changes (with navigation safety)
   useEffect(() => {
     // Enhanced debounce with navigation state checking
     const timeoutId = setTimeout(() => {
-      // Skip localStorage operations and event dispatching during navigation
-      if (isNavigating || !mountedRef.current) {
-        return;
-      }
+      if (!mountedRef.current) return;
+
+      NavigationGuard.preventDuringNavigation(() => {
 
       try {
         localStorage.setItem(STORAGE_KEY, JSON.stringify(knytPersonaActivated));
@@ -98,10 +58,11 @@ export const useKNYTPersona = (): KNYTPersonaState => {
         } else {
           window.dispatchEvent(new CustomEvent('knytPersonaDeactivated'));
         }
-      } catch (error) {
-        console.error('Error saving KNYT Persona state to localStorage:', error);
-      }
-    }, 150); // Increased debounce to 150ms for better navigation safety
+        } catch (error) {
+          console.error('Error saving KNYT Persona state to localStorage:', error);
+        }
+      });
+    }, 150);
 
     return () => clearTimeout(timeoutId);
   }, [knytPersonaActivated]);
@@ -125,13 +86,13 @@ export const useKNYTPersona = (): KNYTPersonaState => {
   // Listen for external activation and deactivation events (from modal) with navigation protection
   useEffect(() => {
     const handleExternalActivation = () => {
-      if (!isNavigating && mountedRef.current) {
+      if (!NavigationGuard.isNavigationInProgress() && mountedRef.current) {
         setKNYTPersonaActivated(true);
       }
     };
 
     const handleExternalDeactivation = () => {
-      if (!isNavigating && mountedRef.current) {
+      if (!NavigationGuard.isNavigationInProgress() && mountedRef.current) {
         setKNYTPersonaActivated(false);
       }
     };

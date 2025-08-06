@@ -1,6 +1,7 @@
 
 import { QryptoPersona, KNYTPersona } from '@/lib/types';
 import { blakQubeService } from '@/services/blakqube-service';
+import NavigationGuard from '@/utils/NavigationGuard';
 
 /**
  * PersonaContextService - Extracts and formats user persona data for AI conversations
@@ -64,8 +65,7 @@ export class PersonaContextService {
       }
 
       // Navigation safety check - skip operations during route transitions
-      const isNavigating = (window as any).__navigationInProgress;
-      if (isNavigating) {
+      if (NavigationGuard.isNavigationInProgress()) {
         return { isAnonymous: true };
       }
 
