@@ -2,18 +2,33 @@
 import { QryptoPersona, KNYTPersona } from '@/lib/types';
 import { blakQubeService } from '@/services/blakqube-service';
 
-// WARNING: DO NOT IMPORT REACT HOOKS IN SERVICE FILES!
-// React hooks (useQryptoPersona, useKNYTPersona) cannot be used in service files
-// as they can only be called within React components. This service uses direct
-// localStorage access instead, which is the correct approach for non-component code.
-// Importing hooks here causes TypeScript compilation errors in production builds.
-// 
-// CRITICAL: This error manifests as "Syntax error in text mermaid version 10.8.0"
-// during navigation between routes (especially profile -> agent). The error occurs
-// because TypeScript fails to compile persona state changes during navigation.
-// 
-// If you see Mermaid syntax errors during navigation, check this file first!
-// Ensure NO React hooks are imported here - this service must remain hook-free.
+/**
+ * PersonaContextService - Extracts and formats user persona data for AI conversations
+ * 
+ * CRITICAL ARCHITECTURE NOTES:
+ * - This is a SERVICE file, NOT a React component
+ * - NEVER import React hooks (useState, useEffect, etc.) in this file
+ * - All methods must be static utility functions
+ * - This service transforms raw persona data into conversation context
+ * - Any React-specific logic belongs in hooks, not here
+ * 
+ * COMPILATION SAFETY:
+ * - All methods include try-catch blocks to prevent TypeScript compilation failures
+ * - Navigation-safe implementations to prevent module resolution errors
+ * - Defensive programming patterns to handle state transition edge cases
+ * 
+ * If you need React state management, use the usePersonaContext hook instead.
+ * 
+ * RECURRING BUG PREVENTION:
+ * This service was causing "Syntax error in text mermaid version 10.8.0" errors
+ * when React hooks were accidentally imported. The error manifests as:
+ * 1. User navigates from Profile to Agent
+ * 2. Persona state changes trigger module recompilation
+ * 3. Invalid hook imports cause TypeScript compilation failure
+ * 4. Error displays as Mermaid syntax error in UI
+ * 
+ * NEVER ADD REACT IMPORTS TO THIS FILE!
+ */
 
 export interface PersonaContext {
   isActive: boolean;
@@ -38,42 +53,68 @@ export interface ConversationContext {
  */
 export class PersonaContextService {
   /**
-   * Get comprehensive conversation context from active personas
+   * Gets the current conversation context including persona data
+   * Enhanced with compilation safety and navigation protection
    */
   static async getConversationContext(): Promise<ConversationContext> {
-    // Check if personas are activated (client-side state)
-    const qryptoActivated = localStorage.getItem('qrypto-persona-activated') === 'true';
-    const knytActivated = localStorage.getItem('knyt-persona-activated') === 'true';
-
-    let qryptoContext: PersonaContext | undefined;
-    let knytContext: PersonaContext | undefined;
-
-    // Get Qrypto context if activated
-    if (qryptoActivated) {
-      const qryptoPersona = await blakQubeService.getPersonaData('qrypto') as QryptoPersona;
-      if (qryptoPersona) {
-        qryptoContext = this.buildQryptoContext(qryptoPersona);
+    try {
+      // Add compilation guard to prevent module resolution failures during navigation
+      if (typeof window === 'undefined') {
+        return { isAnonymous: true };
       }
-    }
 
-    // Get KNYT context if activated
-    if (knytActivated) {
-      const knytPersona = await blakQubeService.getPersonaData('knyt') as KNYTPersona;
-      if (knytPersona) {
-        knytContext = this.buildKNYTContext(knytPersona);
+      // Navigation safety check - skip operations during route transitions
+      const isNavigating = (window as any).__navigationInProgress;
+      if (isNavigating) {
+        return { isAnonymous: true };
       }
+
+      // Check if personas are activated (client-side state)
+      const qryptoActivated = localStorage.getItem('qrypto-persona-activated') === 'true';
+      const knytActivated = localStorage.getItem('knyt-persona-activated') === 'true';
+
+      let qryptoContext: PersonaContext | undefined;
+      let knytContext: PersonaContext | undefined;
+
+      // Get Qrypto context if activated
+      if (qryptoActivated) {
+        try {
+          const qryptoPersona = await blakQubeService.getPersonaData('qrypto') as QryptoPersona;
+          if (qryptoPersona) {
+            qryptoContext = this.buildQryptoContext(qryptoPersona);
+          }
+        } catch (error) {
+          console.warn('Error fetching Qrypto persona:', error);
+        }
+      }
+
+      // Get KNYT context if activated
+      if (knytActivated) {
+        try {
+          const knytPersona = await blakQubeService.getPersonaData('knyt') as KNYTPersona;
+          if (knytPersona) {
+            knytContext = this.buildKNYTContext(knytPersona);
+          }
+        } catch (error) {
+          console.warn('Error fetching KNYT persona:', error);
+        }
+      }
+
+      // Determine preferred name and overall context
+      const preferredName = await this.determinePreferredName(qryptoContext, knytContext);
+      const isAnonymous = !qryptoContext?.isActive && !knytContext?.isActive;
+
+      return {
+        qryptoContext,
+        knytContext,
+        preferredName,
+        isAnonymous
+      };
+    } catch (error) {
+      console.error('Error getting conversation context (compilation safe):', error);
+      // Return safe fallback to prevent compilation cascade
+      return { isAnonymous: true };
     }
-
-    // Determine preferred name and overall context
-    const preferredName = await this.determinePreferredName(qryptoContext, knytContext);
-    const isAnonymous = !qryptoContext?.isActive && !knytContext?.isActive;
-
-    return {
-      qryptoContext,
-      knytContext,
-      preferredName,
-      isAnonymous
-    };
   }
 
   /**

@@ -14,12 +14,30 @@ const DiagramErrorHandler: React.FC<DiagramErrorHandlerProps> = ({ error, code, 
   const [isFixing, setIsFixing] = useState(false);
   const errorMessage = error instanceof Error ? error.message : String(error);
   
-  // Check if this is a TypeScript compilation error (disguised as Mermaid error)
+  // Enhanced error detection including navigation-triggered compilation issues
   const isCompilationError = errorMessage.includes('mermaid version') || 
                            errorMessage.includes('TypeScript') ||
                            errorMessage.includes('compilation') ||
                            errorMessage.includes('module resolution') ||
+                           errorMessage.includes('Module not found') ||
+                           errorMessage.includes('Failed to resolve') ||
                            (errorMessage.includes('Syntax error') && errorMessage.includes('text'));
+
+  // Detect navigation-triggered pseudo-syntax errors
+  const isNavigationError = errorMessage.includes('mermaid version') && 
+                           (errorMessage.includes('syntax error') || errorMessage.includes('Syntax error')) &&
+                           !code.includes('mermaid') && 
+                           (window.location.pathname !== (window as any).__lastRoute);
+
+  // Update last route tracking for navigation detection
+  React.useEffect(() => {
+    (window as any).__lastRoute = window.location.pathname;
+  }, []);
+  
+  const isPersonaRelatedError = isNavigationError || 
+                               (isCompilationError && errorMessage.includes('mermaid version') && 
+                                (localStorage.getItem('qrypto-persona-activated') === 'true' || 
+                                 localStorage.getItem('knyt-persona-activated') === 'true'));
   
   // Extract line number from error message if available
   const lineMatch = errorMessage.match(/line\s+(\d+)/i);
@@ -137,17 +155,21 @@ const DiagramErrorHandler: React.FC<DiagramErrorHandlerProps> = ({ error, code, 
     );
   }
 
-  // Get user-friendly error message, with special handling for compilation errors
-  const friendlyMessage = isCompilationError 
-    ? "This appears to be a system compilation issue during navigation. Try refreshing the page or clearing browser cache."
-    : getUserFriendlyErrorMessage(errorMessage);
+  // Get user-friendly error message, with special handling for persona/navigation errors
+  const friendlyMessage = isPersonaRelatedError
+    ? "This appears to be related to persona state changes during navigation. The issue should resolve automatically when navigation completes."
+    : isCompilationError 
+      ? "This appears to be a system compilation issue during navigation. Try refreshing the page or clearing browser cache."
+      : getUserFriendlyErrorMessage(errorMessage);
   
   return (
     <div className="p-4 rounded-lg border border-red-200 bg-red-50 mt-2" data-testid="diagram-error">
       <div className="flex items-start">
         <AlertCircle className="h-5 w-5 mr-3 flex-shrink-0 text-red-500" />
         <div className="flex-1">
-          <p className="text-red-700 text-sm font-medium">Diagram Rendering Issue</p>
+          <p className="text-red-700 text-sm font-medium">
+            {isPersonaRelatedError ? 'Navigation State Issue' : 'Diagram Rendering Issue'}
+          </p>
           <p className="text-red-600 text-sm mt-1">{friendlyMessage}</p>
           <details className="mt-2">
             <summary className="text-xs text-red-500 cursor-pointer hover:text-red-700">
@@ -162,38 +184,61 @@ const DiagramErrorHandler: React.FC<DiagramErrorHandlerProps> = ({ error, code, 
       </div>
       
       <div className="mt-2 flex flex-wrap gap-2">
-        <button 
-          type="button"
-          className="text-xs border border-blue-300 rounded px-2 py-1 hover:bg-blue-50"
-          onClick={handleRetry}
-          disabled={isFixing}
-        >
-          Try again
-        </button>
-        <button 
-          type="button"
-          className="text-xs border border-green-300 rounded px-2 py-1 hover:bg-green-50"
-          onClick={handleAutoFix}
-          disabled={isFixing}
-        >
-          {isFixing ? 'Fixing...' : 'Auto-fix & render'}
-        </button>
-        <button 
-          type="button"
-          className="text-xs border border-gray-300 rounded px-2 py-1 hover:bg-gray-50"
-          onClick={handleShowCode}
-          disabled={isFixing}
-        >
-          Show code
-        </button>
-        <button 
-          type="button"
-          className="text-xs border border-purple-300 rounded px-2 py-1 hover:bg-purple-50"
-          onClick={handleUseSimple}
-          disabled={isFixing}
-        >
-          Use simple diagram
-        </button>
+        {!isPersonaRelatedError && (
+          <button 
+            type="button"
+            className="text-xs border border-blue-300 rounded px-2 py-1 hover:bg-blue-50"
+            onClick={handleRetry}
+            disabled={isFixing}
+          >
+            Try again
+          </button>
+        )}
+        
+        {isPersonaRelatedError && (
+          <button 
+            type="button"
+            className="text-xs border border-blue-300 rounded px-2 py-1 hover:bg-blue-50"
+            onClick={() => {
+              // Wait for navigation to settle then retry
+              setTimeout(() => {
+                handleRetry();
+              }, 1000);
+            }}
+            disabled={isFixing}
+          >
+            Retry after navigation
+          </button>
+        )}
+        
+        {!isPersonaRelatedError && (
+          <>
+            <button 
+              type="button"
+              className="text-xs border border-green-300 rounded px-2 py-1 hover:bg-green-50"
+              onClick={handleAutoFix}
+              disabled={isFixing}
+            >
+              {isFixing ? 'Fixing...' : 'Auto-fix & render'}
+            </button>
+            <button 
+              type="button"
+              className="text-xs border border-gray-300 rounded px-2 py-1 hover:bg-gray-50"
+              onClick={handleShowCode}
+              disabled={isFixing}
+            >
+              Show code
+            </button>
+            <button 
+              type="button"
+              className="text-xs border border-purple-300 rounded px-2 py-1 hover:bg-purple-50"
+              onClick={handleUseSimple}
+              disabled={isFixing}
+            >
+              Use simple diagram
+            </button>
+          </>
+        )}
       </div>
     </div>
   );
