@@ -251,12 +251,12 @@ const Profile = () => {
                    </div>
                  ) : (
                    <div className="text-center p-4">
-                     <p className="text-xs sm:text-sm">
-                       No {activeTab === 'learn' ? 'Learn/MonDAI' : activeTab === 'mondai' ? 'MonDAI' : activeTab} conversations found.
-                     </p>
-                     <p className="text-xs text-muted-foreground mt-1">
-                       Start a conversation with the {activeTab === 'learn' ? 'Learn or MonDAI' : activeTab === 'mondai' ? 'MonDAI' : activeTab} agent to see your history here.
-                     </p>
+                      <p className="text-xs sm:text-sm">
+                        No {activeTab === 'learn' ? 'Learn/Nakamoto' : activeTab === 'mondai' ? 'Nakamoto' : activeTab} conversations found.
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Start a conversation with the {activeTab === 'learn' ? 'Learn or Nakamoto' : activeTab === 'mondai' ? 'Nakamoto' : activeTab} agent to see your history here.
+                      </p>
                    </div>
                  )}
                  
