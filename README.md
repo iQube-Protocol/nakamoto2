@@ -113,36 +113,97 @@ Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-trick
 
 ---
 
-### Mermaid Diagram TypeScript Rendering Issue Resolution - 2025-08-02
-**Cycles Required:** 15+ cycles
-**Problem:** Persistent Mermaid diagram rendering failures including syntax errors, module loading failures, and broken image rendering across the application
-**Root Cause:** 
-1. **Module Loading Issues**: Dynamic import failures causing "Loading failed for the module with source mermaid.core-DvXDcxrL.js" errors
-2. **Over-Aggressive Content Processing**: ContentFormatters.tsx was breaking valid Mermaid syntax by removing parentheses, commas, and truncating content over 500 characters
-3. **Insufficient Error Handling**: Lack of robust error boundaries and recovery mechanisms when diagrams failed to render
-4. **Strict Validation Logic**: mermaidUtils.ts was applying overly strict validation that rejected valid Mermaid code
-**Solution:** 
-1. **Enhanced Module Loading**: Implemented robust dynamic import with retry mechanisms, preloading, and better error handling in MermaidDiagram.tsx
-2. **Fixed Content Processing**: Removed over-aggressive simplification logic in ContentFormatters.tsx that was breaking valid syntax - now preserves parentheses, commas, and complex structures
-3. **Intelligent Error Recovery**: Added auto-fix system that only fixes actual syntax errors, not valid code, with fallback rendering showing code when diagrams fail
-4. **SVG Caching & Progressive Enhancement**: Implemented caching for successful renders and progressive timeouts to prevent infinite loading states
+### Mermaid State Contamination & Rendering Chaos Resolution - 2025-08-06
+**Cycles Required:** 25+ cycles across multiple sessions
+**Problem:** Catastrophic Mermaid diagram rendering failures causing entire application instability, with diagrams appearing randomly, breaking navigation, and causing React re-render conflicts
+**Root Cause (Initial Misdiagnosis vs Reality):** 
+1. **INITIAL MISDIAGNOSIS**: Believed issue was TypeScript compilation and module loading - spent 15+ cycles on wrong solution path
+2. **ACTUAL ROOT CAUSE - State Contamination**: Mermaid library's `data-processed="true"` attribute persistence across React component re-renders was causing:
+   - Multiple diagram instances with same IDs competing for DOM space
+   - Diagrams appearing in wrong locations due to stale DOM references
+   - Navigation breaking as Mermaid state persisted across route changes
+   - React reconciliation conflicts when components unmounted/remounted with contaminated state
+3. **Critical Discovery**: The `data-processed` attribute prevents Mermaid from re-rendering, but React's lifecycle creates new components that inherit this contaminated state
+4. **Cascade Effect**: One contaminated render would poison subsequent renders, causing diagrams to appear in completely wrong contexts (Profile page showing Connect page diagrams, etc.)
+
+**Solution Architecture (Three-Layer Approach):** 
+1. **MermaidCleanupManager** - Global state tracking and force cleanup system:
+   - Tracks all active Mermaid renders with unique IDs
+   - Forces cleanup of `data-processed` attributes before new renders
+   - Processes renders sequentially to prevent contamination
+   - Emergency cleanup on page navigation/unload
+   - Statistics tracking for debugging contamination issues
+
+2. **MermaidDiagramSafe** - Safe rendering component with navigation awareness:
+   - Replaces all direct Mermaid usage with cleanup-aware rendering
+   - Integrates with NavigationGuard to prevent renders during navigation
+   - Automatic cleanup on component unmount
+   - Error boundaries with contamination detection
+   - Debounced rendering to prevent rapid re-render conflicts
+
+3. **ProfileMermaidCoordinator** - Context-specific orchestration:
+   - Sequences multiple diagram renders to prevent conflicts
+   - Intersection observer for performance optimization
+   - Navigation-aware rendering state management
+   - Content processing with diagram extraction and placeholder management
+
+**Technical Implementation Details:**
+- **Force Cleanup**: `removeAttribute('data-processed')` and `removeAttribute('id')` on all Mermaid elements
+- **Sequential Processing**: Queue-based render processing to prevent simultaneous contamination
+- **Navigation Awareness**: Integration with NavigationGuard to pause rendering during transitions
+- **Error Recovery**: Contamination detection and automatic retry with forced cleanup
+- **Performance**: Lazy loading and intersection observers to minimize active renders
+
+**Critical Code Patterns:**
+```typescript
+// Force cleanup before any render
+MermaidCleanupManager.forceCleanupRender(id);
+// Register new render with sequential processing
+MermaidCleanupManager.registerRender(id, renderFunction);
+// Navigation-aware rendering
+if (NavigationGuard.isNavigationInProgress()) return;
+```
+
 **Key Insights:** 
-- Module loading requires retry mechanisms and proper error boundaries for dynamic imports
-- Content processing should preserve valid syntax - only apply security sanitization, not syntax "fixes"
-- Error recovery should show meaningful fallbacks (code display) rather than breaking completely
-- Caching successfully rendered SVGs prevents re-rendering failures
-- Progressive enhancement (show code first, then render) improves user experience
+- **State Contamination is Silent**: Mermaid contamination doesn't throw errors, just causes chaotic behavior
+- **React Lifecycle vs Library State**: External libraries with persistent DOM state can poison React's reconciliation
+- **Global State Tracking Required**: Complex libraries need application-level state management, not just component-level
+- **Sequential Processing Critical**: Parallel Mermaid renders will always contaminate each other
+- **Navigation Timing**: Never render complex external library content during navigation transitions
+- **Force Cleanup is Mandatory**: Library cleanup methods are insufficient - direct DOM manipulation required
+
+**Prevention Strategies:**
+1. **Never allow parallel Mermaid renders** - always use sequential processing
+2. **Always force cleanup** before new renders, don't trust library cleanup
+3. **Track all renders globally** - component-level tracking is insufficient
+4. **Pause rendering during navigation** - prevent contamination during route changes
+5. **Use unique IDs** with messageId and timestamp to prevent collisions
+6. **Implement emergency cleanup** on page unload to prevent session contamination
+
 **Future Reference:** 
-- Use robust dynamic imports with retry logic for external libraries
-- Never modify content that could be valid syntax without understanding the grammar
-- Implement intelligent error boundaries that preserve user intent
-- Cache successful renders to prevent repeated failures
-- Always provide meaningful fallbacks for complex rendering operations
-**Files Modified:**
-- `src/components/shared/agent/message/MermaidDiagram.tsx` - Enhanced module loading and rendering
-- `src/components/shared/agent/message/ContentFormatters.tsx` - Removed aggressive content processing
-- `src/components/shared/agent/message/utils/mermaidUtils.ts` - Improved validation and processing
-- `src/components/shared/agent/message/DiagramErrorHandler.tsx` - Better error recovery and auto-fix
+- **CRITICAL**: Any external library that modifies DOM attributes needs global state management
+- Use `MermaidCleanupManager.registerRender()` for ALL Mermaid rendering - no exceptions
+- Never render Mermaid during navigation - always check `NavigationGuard.isNavigationInProgress()`
+- Implement force cleanup with direct `removeAttribute()` calls, don't rely on library methods
+- Use sequential processing queues for any external library that can conflict with itself
+- Test contamination scenarios: rapid navigation, multiple simultaneous renders, component remounting
+- Monitor with `MermaidCleanupManager.getStats()` if issues recur
+
+**Files Created/Modified:**
+- `src/utils/MermaidCleanupManager.ts` - **NEW**: Global state tracking and force cleanup system
+- `src/components/shared/agent/message/MermaidDiagramSafe.tsx` - **NEW**: Safe rendering component
+- `src/components/profile/ProfileMermaidCoordinator.tsx` - **NEW**: Context-specific orchestration
+- `src/utils/NavigationGuard.ts` - Enhanced with navigation state detection
+- `src/components/shared/agent/message/MessageContent.tsx` - Updated to use MermaidDiagramSafe
+- `src/components/profile/NavigationAwareMessageContent.tsx` - Updated to use ProfileMermaidCoordinator
+- `src/pages/Profile.tsx` - Updated to pass messageId for coordination
+
+**NEVER AGAIN Prevention Protocol:**
+1. Before ANY external library integration, assess DOM state persistence risk
+2. Implement global tracking for any library that modifies DOM attributes
+3. Always use sequential processing for potentially conflicting operations
+4. Build navigation awareness into complex rendering operations
+5. Create force cleanup mechanisms for critical external library state
 
 ### AI Provider Mutual Exclusion System Implementation - 2025-08-02
 **Cycles Required:** 8 cycles
