@@ -283,12 +283,12 @@ export const NameManagementSection: React.FC = () => {
                 </div>
 
                 {/* Row 2: First and Last Name */}
-                <div className="text-sm text-muted-foreground pl-16">
+                <div className="text-sm text-muted-foreground">
                   {persona.currentName.firstName} {persona.currentName.lastName}
                 </div>
 
                 {/* Row 3: Badge and Edit Button */}
-                <div className="flex items-center gap-2 pl-16">
+                <div className="flex items-center gap-2">
                   {persona.source === 'default' ? (
                     <Tooltip>
                       <TooltipTrigger asChild>
