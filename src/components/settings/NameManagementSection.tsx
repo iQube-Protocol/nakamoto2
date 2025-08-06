@@ -282,36 +282,36 @@ export const NameManagementSection: React.FC = () => {
                   </div>
                 </div>
 
-                {/* Row 2: First and Last Name */}
-                <div className="text-sm text-muted-foreground">
-                  {persona.currentName.firstName} {persona.currentName.lastName}
-                </div>
-
-                {/* Row 3: Badge and Edit Button */}
-                <div className="flex items-center gap-2">
-                  {persona.source === 'default' ? (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Badge variant={getSourceBadgeVariant(persona.source)}>
-                          System
-                        </Badge>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>No name preference set. Using default persona data.</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  ) : (
-                    <Badge variant={getSourceBadgeVariant(persona.source)}>
-                      {persona.source}
-                    </Badge>
-                  )}
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleEdit(persona)}
-                  >
-                    Edit
-                  </Button>
+                {/* Row 2: Name and Buttons */}
+                <div className="flex items-center justify-between">
+                  <div className="text-sm text-muted-foreground">
+                    {persona.currentName.firstName} {persona.currentName.lastName}
+                  </div>
+                  <div className="flex items-center gap-2">
+                    {persona.source === 'default' ? (
+                      <Tooltip>
+                        <TooltipTrigger asChild>
+                          <Badge variant={getSourceBadgeVariant(persona.source)}>
+                            System
+                          </Badge>
+                        </TooltipTrigger>
+                        <TooltipContent>
+                          <p>No name preference set. Using default persona data.</p>
+                        </TooltipContent>
+                      </Tooltip>
+                    ) : (
+                      <Badge variant={getSourceBadgeVariant(persona.source)}>
+                        {persona.source}
+                      </Badge>
+                    )}
+                    <Button 
+                      variant="outline" 
+                      size="sm"
+                      onClick={() => handleEdit(persona)}
+                    >
+                      Edit
+                    </Button>
+                  </div>
                 </div>
               </div>
             </div>
