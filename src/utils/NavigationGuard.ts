@@ -39,7 +39,7 @@ class NavigationGuard {
   }
 
   /**
-   * Handle navigation start - set protection flags
+   * Handle navigation start - set protection flags with page-specific timeouts
    */
   private static handleNavigationStart = () => {
     this.isNavigating = true;
@@ -48,12 +48,24 @@ class NavigationGuard {
       clearTimeout(this.navigationTimeout);
     }
     
-    // Determine timeout based on current route
-    const isSettingsPage = window.location.pathname.includes('/settings');
-    const timeout = isSettingsPage ? 300 : 150; // Extended timeout for settings
+    // Page-specific timeout configuration for enhanced navigation safety
+    const currentPath = window.location.pathname;
+    let timeout = 150; // Default timeout
+    
+    if (currentPath.includes('/profile')) {
+      timeout = 400; // Extended for message content rendering
+    } else if (currentPath.includes('/learn') || currentPath.includes('/earn') || 
+               currentPath.includes('/connect') || currentPath.includes('/mondai')) {
+      timeout = 500; // Extended for agent interface complexity
+    } else if (currentPath.includes('/settings')) {
+      timeout = 300; // Extended for persona hooks
+    }
+    
+    console.log(`NavigationGuard: Starting navigation protection for ${timeout}ms on ${currentPath}`);
     
     this.navigationTimeout = setTimeout(() => {
       this.isNavigating = false;
+      console.log('NavigationGuard: Navigation protection ended');
     }, timeout);
   };
 

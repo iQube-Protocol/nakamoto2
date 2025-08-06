@@ -5,10 +5,10 @@ import { ScrollArea } from '@/components/ui/scroll-area';
 import { Badge } from '@/components/ui/badge';
 import { Separator } from '@/components/ui/separator';
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from '@/components/ui/tooltip';
-import { useUserInteractions } from '@/hooks/use-user-interactions';
+import { useUserInteractionsOptimized } from '@/hooks/use-user-interactions-optimized';
 import { getRelativeTime } from '@/lib/utils';
 import ResponseDialog from '@/components/profile/ResponseDialog';
-import MessageContent from '@/components/shared/agent/message/MessageContent';
+import NavigationAwareMessageContent from '@/components/profile/NavigationAwareMessageContent';
 
 const Profile = () => {
   const {
@@ -20,8 +20,15 @@ const Profile = () => {
 
   const {
     interactions,
+    loading,
+    hasMore,
+    loadMoreInteractions,
     refreshInteractions
-  } = useUserInteractions(activeTab as any);
+  } = useUserInteractionsOptimized(activeTab as any, {
+    batchSize: 10,
+    enableProgressiveLoading: true,
+    deferDuringNavigation: true
+  });
 
   useEffect(() => {
     refreshInteractions();
@@ -171,11 +178,11 @@ const Profile = () => {
                              </span>
                            </div>
                          </div>
-                        <div className="text-xs sm:text-sm text-zinc-100 break-words overflow-wrap-anywhere">
-                          <div className="max-w-full overflow-hidden">
-                            <MessageContent content={interaction.query} sender="user" />
-                          </div>
-                        </div>
+                         <div className="text-xs sm:text-sm text-zinc-100 break-words overflow-wrap-anywhere">
+                           <div className="max-w-full overflow-hidden">
+                             <NavigationAwareMessageContent content={interaction.query} sender="user" />
+                           </div>
+                         </div>
                       </div>
                     )}
                     
@@ -224,25 +231,42 @@ const Profile = () => {
                                 )}
                               </p>
                             </div>
-                          ) : (
-                            <div className="max-w-full overflow-hidden">
-                              <MessageContent content={interaction.response} sender="agent" />
-                            </div>
-                          )}
+                           ) : (
+                             <div className="max-w-full overflow-hidden">
+                               <NavigationAwareMessageContent content={interaction.response} sender="agent" />
+                             </div>
+                           )}
                         </div>
                       </div>
                     )}
                   </div>
-                )) : (
-                  <div className="text-center p-4">
-                    <p className="text-xs sm:text-sm">
-                      No {activeTab === 'learn' ? 'Learn/MonDAI' : activeTab === 'mondai' ? 'MonDAI' : activeTab} conversations found.
-                    </p>
-                    <p className="text-xs text-muted-foreground mt-1">
-                      Start a conversation with the {activeTab === 'learn' ? 'Learn or MonDAI' : activeTab === 'mondai' ? 'MonDAI' : activeTab} agent to see your history here.
-                    </p>
-                  </div>
-                )}
+                 )) : loading ? (
+                   <div className="text-center p-4">
+                     <div className="animate-spin rounded-full h-8 w-8 border-t-2 border-b-2 border-primary mx-auto mb-2"></div>
+                     <p className="text-xs sm:text-sm text-muted-foreground">Loading conversations...</p>
+                   </div>
+                 ) : (
+                   <div className="text-center p-4">
+                     <p className="text-xs sm:text-sm">
+                       No {activeTab === 'learn' ? 'Learn/MonDAI' : activeTab === 'mondai' ? 'MonDAI' : activeTab} conversations found.
+                     </p>
+                     <p className="text-xs text-muted-foreground mt-1">
+                       Start a conversation with the {activeTab === 'learn' ? 'Learn or MonDAI' : activeTab === 'mondai' ? 'MonDAI' : activeTab} agent to see your history here.
+                     </p>
+                   </div>
+                 )}
+                 
+                 {/* Progressive loading button */}
+                 {hasMore && !loading && (
+                   <div className="text-center p-4">
+                     <button
+                       onClick={loadMoreInteractions}
+                       className="px-4 py-2 text-sm bg-primary text-primary-foreground rounded hover:bg-primary/90 transition-colors"
+                     >
+                       Load More Conversations
+                     </button>
+                   </div>
+                 )}
               </div>
             </ScrollArea>
           </CardContent>
