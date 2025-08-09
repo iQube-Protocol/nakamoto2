@@ -15,8 +15,11 @@ const AuthLayout = ({
         <div className="mx-auto w-full max-w-md">
           <div className="mb-6">
             <Link to="/" className="flex items-center">
-              <div className="w-10 h-10 rounded-full bg-gradient-to-br from-iqube-primary to-iqube-accent flex items-center justify-center text-white font-bold text-xl\n\nShould be an N">N</div>
-              <span className="ml-2 text-2xl font-bold">Nakamoto</span>
+              <img 
+                src="/lovable-uploads/438c385c-d221-4fb4-b8b8-d6d8056933e2.png" 
+                alt="Aigent Nakamoto" 
+                className="h-12 w-auto"
+              />
             </Link>
             <h2 className="mt-6 text-3xl font-extrabold text-foreground">{title}</h2>
             {subtitle && <p className="mt-2 text-sm text-muted-foreground">{subtitle}</p>}
@@ -34,7 +37,11 @@ const AuthLayout = ({
               <span className="text-4xl font-bold">N</span>
             </div>
           </div>
-          <h1 className="text-4xl font-bold mb-4 text-center">Aigent Nakamoto</h1>
+          <img 
+            src="/lovable-uploads/438c385c-d221-4fb4-b8b8-d6d8056933e2.png" 
+            alt="Aigent Nakamoto" 
+            className="h-16 w-auto mb-4"
+          />
           <p className="text-xl opacity-80 max-w-lg text-center">
             Your secure and privacy-focused gateway to Web3 communities
           </p>
