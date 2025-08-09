@@ -18,7 +18,7 @@ const AuthLayout = ({
               <img 
                 src="/lovable-uploads/438c385c-d221-4fb4-b8b8-d6d8056933e2.png" 
                 alt="Aigent Nakamoto" 
-                className="h-20 w-auto"
+                className="h-40 w-auto"
               />
             </Link>
             <h2 className="mt-6 text-3xl font-extrabold text-foreground">{title}</h2>
@@ -35,7 +35,7 @@ const AuthLayout = ({
           <img 
             src="/lovable-uploads/438c385c-d221-4fb4-b8b8-d6d8056933e2.png" 
             alt="Aigent Nakamoto" 
-            className="h-32 w-auto mb-6"
+            className="h-48 w-auto mb-6"
           />
           <p className="text-xl opacity-80 max-w-lg text-center">
             Your secure and privacy-focused gateway to Web3 communities
