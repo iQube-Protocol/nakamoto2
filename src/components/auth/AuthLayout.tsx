@@ -38,7 +38,7 @@ const AuthLayout = ({
             className="h-40 sm:h-48 md:h-56 lg:h-64 xl:h-72 w-auto max-w-full mb-6"
           />
           <p className="text-xl opacity-80 max-w-lg text-center">
-            Your secure and privacy-focused gateway to Web3 communities
+            Your private, personalized and censorship-resistant AI agent.
           </p>
         </div>
       </div>
