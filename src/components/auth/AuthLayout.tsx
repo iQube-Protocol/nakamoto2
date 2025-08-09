@@ -16,7 +16,7 @@ const AuthLayout = ({
           <div className="mb-6">
             <Link to="/" className="flex items-center">
               <img 
-                src="/lovable-uploads/438c385c-d221-4fb4-b8b8-d6d8056933e2.png" 
+                src="/aigent-nakamoto-logo.png" 
                 alt="Aigent Nakamoto" 
                 className="h-32 sm:h-40 md:h-48 lg:h-56 xl:h-64 w-auto max-w-full"
               />
@@ -33,7 +33,7 @@ const AuthLayout = ({
         </div>
         <div className="absolute inset-0 flex flex-col justify-center items-center text-white p-12">
           <img 
-            src="/lovable-uploads/438c385c-d221-4fb4-b8b8-d6d8056933e2.png" 
+            src="/aigent-nakamoto-logo.png" 
             alt="Aigent Nakamoto" 
             className="h-40 sm:h-48 md:h-56 lg:h-64 xl:h-72 w-auto max-w-full mb-6"
           />
