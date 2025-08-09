@@ -18,7 +18,7 @@ const AuthLayout = ({
               <img 
                 src="/lovable-uploads/438c385c-d221-4fb4-b8b8-d6d8056933e2.png" 
                 alt="Aigent Nakamoto" 
-                className="h-32 sm:h-40 md:h-48 lg:h-56 xl:h-64 w-auto max-w-full"
+                className="h-80 sm:h-96 md:h-[500px] lg:h-[600px] xl:h-[700px] w-auto max-w-full"
               />
             </Link>
             <h2 className="mt-6 text-3xl font-extrabold text-foreground">{title}</h2>
@@ -35,7 +35,7 @@ const AuthLayout = ({
           <img 
             src="/lovable-uploads/438c385c-d221-4fb4-b8b8-d6d8056933e2.png" 
             alt="Aigent Nakamoto" 
-            className="h-40 sm:h-48 md:h-56 lg:h-64 xl:h-72 w-auto max-w-full mb-6"
+            className="h-96 sm:h-[500px] md:h-[600px] lg:h-[700px] xl:h-[800px] w-auto max-w-full mb-6"
           />
           <p className="text-xl opacity-80 max-w-lg text-center">
             Your secure and privacy-focused gateway to Web3 communities
