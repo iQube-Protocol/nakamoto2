@@ -36,6 +36,33 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
   const navigate = useNavigate();
   const location = useLocation();
 
+  // Ensure direct signups are reconciled server-side after auth
+  const reconcileDirectSignup = async (currentUser: User | null) => {
+    try {
+      if (!currentUser) return;
+      const key = `reconciled_${currentUser.id}`;
+      // Run once per session unless manually cleared
+      if (localStorage.getItem(key)) return;
+
+      // Defer Supabase call outside the auth callback to avoid deadlocks
+      const invoke = async () => {
+        const { error } = await supabase.functions.invoke('reconcile-direct-signup', { body: {} });
+        if (error) {
+          console.error('Reconcile direct signup failed:', error);
+          toast.error('Could not sync your account data yet. Retrying shortly.');
+          return;
+        }
+        localStorage.setItem(key, new Date().toISOString());
+        console.log('Direct signup reconciliation completed');
+      };
+
+      setTimeout(invoke, 0);
+    } catch (e) {
+      console.error('Unexpected reconcile error:', e);
+    }
+  };
+
+
   // Enhanced helper function to detect password reset flow
   const isPasswordResetFlow = () => {
     const urlParams = new URLSearchParams(window.location.search);
@@ -94,6 +121,9 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
               console.log("PASSWORD RESET FLOW ACTIVE - BLOCKING ALL REDIRECTS");
               return; // Exit immediately, no further processing
             }
+
+            // Trigger server-side reconciliation for direct signups (deferred internally)
+            reconcileDirectSignup(newSession?.user ?? null);
             
             // Only redirect if this is a fresh sign-in (not session restoration)
             // and user is on an unprotected route
