@@ -3,6 +3,79 @@ import { supabase } from '@/integrations/supabase/client';
 import { ReconciliationResult } from './types';
 
 export class PersonaReconciler {
+  async reconcileDirectSignups(result: ReconciliationResult): Promise<void> {
+    try {
+      console.log('PersonaReconciler: Reconciling direct signups...');
+      
+      // Find users with personas but no invitation records
+      const { data: knotPersonas, error: knotError } = await supabase
+        .from('knyt_personas')
+        .select('user_id, "Email"')
+        .not('"Email"', 'is', null);
+        
+      const { data: qryptoPersonas, error: qryptoError } = await supabase
+        .from('qrypto_personas')
+        .select('user_id, "Email"')
+        .not('"Email"', 'is', null);
+
+      if (knotError || qryptoError) {
+        result.errors.push(`Error fetching personas: ${knotError?.message || qryptoError?.message}`);
+        return;
+      }
+
+      const allPersonas = [
+        ...(knotPersonas || []).map(p => ({ ...p, persona_type: 'knyt' })),
+        ...(qryptoPersonas || []).map(p => ({ ...p, persona_type: 'qrypto' }))
+      ];
+
+      console.log(`PersonaReconciler: Found ${allPersonas.length} personas to check`);
+
+      for (const persona of allPersonas) {
+        if (!persona.Email) continue;
+
+        // Check if invitation record exists
+        const { data: invitation, error: invError } = await supabase
+          .from('invited_users')
+          .select('*')
+          .eq('email', persona.Email.toLowerCase())
+          .maybeSingle();
+
+        if (invError) {
+          result.errors.push(`Error checking invitation for ${persona.Email}: ${invError.message}`);
+          continue;
+        }
+
+        if (!invitation) {
+          // This is a direct signup - create placeholder invitation record
+          console.log(`PersonaReconciler: Creating direct signup record for ${persona.Email}`);
+          
+          const { error: insertError } = await supabase
+            .from('invited_users')
+            .insert({
+              email: persona.Email.toLowerCase(),
+              persona_type: persona.persona_type,
+              persona_data: {},
+              batch_id: 'direct_signup',
+              email_sent: false,
+              signup_completed: true,
+              completed_at: new Date().toISOString(),
+              invited_at: new Date().toISOString(),
+              expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() // 30 days from now
+            });
+
+          if (insertError) {
+            result.errors.push(`Failed to create direct signup record for ${persona.Email}: ${insertError.message}`);
+          } else {
+            result.signupsReconciled++;
+            console.log(`PersonaReconciler: Created direct signup record for ${persona.Email}`);
+          }
+        }
+      }
+    } catch (error: any) {
+      result.errors.push(`Error in direct signup reconciliation: ${error.message}`);
+    }
+  }
+
   async reconcileOrphanedPersonas(result: ReconciliationResult): Promise<void> {
     try {
       // Step 1: Find users who have persona data but no invitation record

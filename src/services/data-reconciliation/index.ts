@@ -18,10 +18,13 @@ class DataReconciliationService {
     };
 
     try {
-      // Step 1: Reconcile orphaned personas
+      // Step 1: Reconcile direct signups (new users with personas but no invitation records)
+      await this.personaReconciler.reconcileDirectSignups(result);
+      
+      // Step 2: Reconcile orphaned personas (existing invitation flow)
       await this.personaReconciler.reconcileOrphanedPersonas(result);
 
-      // Step 2: Reconcile email counts by checking actual sent emails
+      // Step 3: Reconcile email counts by checking actual sent emails
       await this.emailReconciler.reconcileEmailCounts(result);
 
       return result;

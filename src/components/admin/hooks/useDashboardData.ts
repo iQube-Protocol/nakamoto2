@@ -1,6 +1,7 @@
 
 import { useState, useEffect, useCallback } from 'react';
 import { toast } from 'sonner';
+import { supabase } from '@/integrations/supabase/client';
 import { unifiedInvitationService } from '@/services/unified-invitation';
 import { StatsCalculator } from '@/services/unified-invitation/stats-calculator';
 import type { 
@@ -125,6 +126,64 @@ export const useDashboardData = () => {
   const handleRefresh = useCallback(async () => {
     console.log('useDashboardData: Manual refresh triggered');
     await loadDashboardData(true);
+  }, [loadDashboardData]);
+
+  // Real-time subscription for invitation updates
+  useEffect(() => {
+    console.log('useDashboardData: Setting up real-time subscription for invitation updates');
+    
+    const channel = supabase
+      .channel('invitation-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'invited_users'
+        },
+        (payload) => {
+          console.log('useDashboardData: New invitation inserted:', payload);
+          // Check if it's a direct signup
+          if (payload.new.batch_id === 'direct_signup') {
+            console.log('useDashboardData: Direct signup detected, refreshing data');
+            toast.info('New direct signup detected');
+          }
+          // Refresh data for any new invitation
+          loadDashboardData(false);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'invited_users',
+          filter: 'signup_completed=eq.true'
+        },
+        (payload) => {
+          console.log('useDashboardData: Signup completed:', payload);
+          const email = payload.new.email;
+          const isDirect = payload.new.batch_id === 'direct_signup';
+          
+          if (isDirect) {
+            toast.success(`Direct signup completed: ${email}`);
+          } else {
+            toast.success(`Invitation signup completed: ${email}`);
+          }
+          
+          // Refresh data when signup is completed
+          loadDashboardData(false);
+        }
+      )
+      .subscribe();
+
+    // Initial data load
+    loadDashboardData();
+
+    return () => {
+      console.log('useDashboardData: Cleaning up real-time subscription');
+      supabase.removeChannel(channel);
+    };
   }, [loadDashboardData]);
 
   return {
