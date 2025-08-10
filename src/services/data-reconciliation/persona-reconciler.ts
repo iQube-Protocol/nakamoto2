@@ -3,6 +3,43 @@ import { supabase } from '@/integrations/supabase/client';
 import { ReconciliationResult } from './types';
 
 export class PersonaReconciler {
+  async reconcileDirectSignupByEmail(email: string, personaType?: 'knyt' | 'qrypto'): Promise<void> {
+    const lower = email.toLowerCase();
+    // Check if invitation already exists
+    const { data: existing, error: invErr } = await supabase
+      .from('invited_users')
+      .select('id')
+      .eq('email', lower)
+      .maybeSingle();
+
+    if (invErr) {
+      console.error('PersonaReconciler: Error checking invitation for', lower, invErr.message);
+      return;
+    }
+
+    if (!existing) {
+      const { error: insertError } = await supabase
+        .from('invited_users')
+        .insert({
+          email: lower,
+          persona_type: personaType || 'knyt',
+          persona_data: {},
+          batch_id: 'direct_signup',
+          email_sent: false,
+          signup_completed: true,
+          completed_at: new Date().toISOString(),
+          invited_at: new Date().toISOString(),
+          expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString()
+        });
+
+      if (insertError) {
+        console.error('PersonaReconciler: Failed creating direct signup record for', lower, insertError.message);
+      } else {
+        console.log('PersonaReconciler: Created direct signup record for', lower);
+      }
+    }
+  }
+
   async reconcileDirectSignups(result: ReconciliationResult): Promise<void> {
     try {
       console.log('PersonaReconciler: Reconciling direct signups...');

@@ -4,6 +4,7 @@ import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 import { unifiedInvitationService } from '@/services/unified-invitation';
 import { StatsCalculator } from '@/services/unified-invitation/stats-calculator';
+import { dataReconciliationService } from '@/services/data-reconciliation';
 import type { 
   UnifiedInvitationStats, 
   PendingInvitation, 
@@ -143,12 +144,10 @@ export const useDashboardData = () => {
         },
         (payload) => {
           console.log('useDashboardData: New invitation inserted:', payload);
-          // Check if it's a direct signup
           if (payload.new.batch_id === 'direct_signup') {
             console.log('useDashboardData: Direct signup detected, refreshing data');
             toast.info('New direct signup detected');
           }
-          // Refresh data for any new invitation
           loadDashboardData(false);
         }
       )
@@ -157,22 +156,49 @@ export const useDashboardData = () => {
         {
           event: 'UPDATE',
           schema: 'public',
-          table: 'invited_users',
-          filter: 'signup_completed=eq.true'
+          table: 'invited_users'
         },
         (payload) => {
-          console.log('useDashboardData: Signup completed:', payload);
-          const email = payload.new.email;
-          const isDirect = payload.new.batch_id === 'direct_signup';
-          
-          if (isDirect) {
-            toast.success(`Direct signup completed: ${email}`);
-          } else {
-            toast.success(`Invitation signup completed: ${email}`);
+          console.log('useDashboardData: Invitation updated:', payload);
+          const email = payload.new?.email;
+          const completed = payload.new?.signup_completed;
+          const isDirect = payload.new?.batch_id === 'direct_signup';
+          if (completed && email) {
+            toast.success(`${isDirect ? 'Direct' : 'Invitation'} signup completed: ${email}`);
+            loadDashboardData(false);
           }
-          
-          // Refresh data when signup is completed
-          loadDashboardData(false);
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'knyt_personas'
+        },
+        async (payload) => {
+          const email = payload.new?.["Email"] || payload.new?.email;
+          if (email) {
+            console.log('useDashboardData: KNYT persona created, reconciling direct signup for', email);
+            await dataReconciliationService.reconcileDirectSignupForEmail(email, 'knyt');
+            loadDashboardData(false);
+          }
+        }
+      )
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'qrypto_personas'
+        },
+        async (payload) => {
+          const email = payload.new?.["Email"] || payload.new?.email;
+          if (email) {
+            console.log('useDashboardData: Qrypto persona created, reconciling direct signup for', email);
+            await dataReconciliationService.reconcileDirectSignupForEmail(email, 'qrypto');
+            loadDashboardData(false);
+          }
         }
       )
       .subscribe();

@@ -34,6 +34,14 @@ class DataReconciliationService {
     }
   }
 
+  async reconcileDirectSignupForEmail(email: string, personaType?: 'knyt' | 'qrypto'): Promise<void> {
+    try {
+      await this.personaReconciler.reconcileDirectSignupByEmail(email, personaType);
+    } catch (error) {
+      console.error('DataReconciliationService: Failed to reconcile direct signup for email', email, error);
+    }
+  }
+
   async getReconciliationReport(): Promise<ReconciliationReport> {
     return this.reportGenerator.getReconciliationReport();
   }
