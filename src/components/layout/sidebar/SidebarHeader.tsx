@@ -28,12 +28,12 @@ const SidebarHeader: React.FC<SidebarHeaderProps> = ({ collapsed, toggleSidebar 
         <TooltipProvider>
           <Tooltip>
             <TooltipTrigger asChild>
-              <Link to="/mondai">
+              <button onClick={toggleSidebar} className="p-0 bg-transparent border-none">
                 <Bot className="h-6 w-6 text-qrypto-primary" />
-              </Link>
+              </button>
             </TooltipTrigger>
             <TooltipContent side="right">
-              iQube
+              Expand Sidebar
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
