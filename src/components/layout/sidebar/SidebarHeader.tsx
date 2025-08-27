@@ -21,7 +21,7 @@ const SidebarHeader: React.FC<SidebarHeaderProps> = ({ collapsed, toggleSidebar 
         <Link to="/mondai" className="flex items-center">
           <Bot className="h-6 w-6 text-qrypto-primary mr-2" />
           <h1 className="text-lg font-bold bg-gradient-to-r from-qrypto-primary to-qrypto-accent inline-block text-transparent bg-clip-text">
-            QryptoCOYN
+            iQube
           </h1>
         </Link>
       ) : (
@@ -33,7 +33,7 @@ const SidebarHeader: React.FC<SidebarHeaderProps> = ({ collapsed, toggleSidebar 
               </Link>
             </TooltipTrigger>
             <TooltipContent side="right">
-              QryptoCOYN
+              iQube
             </TooltipContent>
           </Tooltip>
         </TooltipProvider>
