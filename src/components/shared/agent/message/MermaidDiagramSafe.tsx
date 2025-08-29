@@ -28,7 +28,7 @@ const initializeMermaid = async () => {
 
     mermaidInstance.initialize({
       startOnLoad: false,
-      htmlLabels: false,
+      htmlLabels: true, // Changed to true - might fix missing text elements
       theme: 'base',
       themeVariables: {
         primaryColor: '#374151',
