@@ -23,77 +23,8 @@ const initializeMermaid = async () => {
     const mermaid = await import('mermaid');
     mermaidInstance = mermaid.default;
     
-    // Get computed styles to read CSS variables
-    const computedStyle = getComputedStyle(document.documentElement);
-    const foregroundColor = computedStyle.getPropertyValue('--foreground').trim() || '240 10% 5%';
-    const mutedForegroundColor = computedStyle.getPropertyValue('--muted-foreground').trim() || '240 10% 45%';
-    
-    console.log('MermaidDiagramSafe: CSS Variables Debug:', {
-      foregroundColor,
-      mutedForegroundColor,
-      allCSSVariables: {
-        foreground: computedStyle.getPropertyValue('--foreground'),
-        mutedForeground: computedStyle.getPropertyValue('--muted-foreground'),
-        background: computedStyle.getPropertyValue('--background'),
-        primary: computedStyle.getPropertyValue('--primary')
-      }
-    });
-    
-    // Convert HSL values to hex for Mermaid
-    const hslToHex = (hsl: string) => {
-      if (!hsl) {
-        console.log('MermaidDiagramSafe: Empty HSL, using fallback');
-        return '#e5e7eb'; // Light gray that works on both themes
-      }
-      
-      // Extract h, s, l from the CSS variable format like "240 10% 5%"
-      const matches = hsl.match(/(\d+\.?\d*)\s+(\d+\.?\d*)%\s+(\d+\.?\d*)%/);
-      if (!matches) {
-        console.log('MermaidDiagramSafe: HSL format not matched, using fallback for:', hsl);
-        return '#e5e7eb';
-      }
-      
-      const h = parseFloat(matches[1]) / 360;
-      const s = parseFloat(matches[2]) / 100;
-      const l = parseFloat(matches[3]) / 100;
-      
-      console.log('MermaidDiagramSafe: HSL parsed:', { h, s, l, original: hsl });
-      
-      const hue2rgb = (p: number, q: number, t: number) => {
-        if (t < 0) t += 1;
-        if (t > 1) t -= 1;
-        if (t < 1/6) return p + (q - p) * 6 * t;
-        if (t < 1/2) return q;
-        if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
-        return p;
-      };
-      
-      const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
-      const p = 2 * l - q;
-      const r = Math.round(hue2rgb(p, q, h + 1/3) * 255);
-      const g = Math.round(hue2rgb(p, q, h) * 255);
-      const b = Math.round(hue2rgb(p, q, h - 1/3) * 255);
-      
-      const hex = `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
-      console.log('MermaidDiagramSafe: Converted to hex:', { original: hsl, hex, rgb: { r, g, b } });
-      
-      return hex;
-    };
-    
-    const textColor = hslToHex(foregroundColor);
-    const mutedTextColor = hslToHex(mutedForegroundColor);
-    
-    console.log('MermaidDiagramSafe: Final text colors:', {
-      textColor,
-      mutedTextColor,
-      willUseInMermaid: {
-        primaryTextColor: textColor,
-        secondaryTextColor: mutedTextColor,
-        textColor: textColor,
-        labelTextColor: textColor,
-        nodeTextColor: textColor
-      }
-    });
+    // Let CSS handle text colors via --mermaid-text variable
+    console.log('MermaidDiagramSafe: Letting CSS handle text colors via --mermaid-text variable');
 
     mermaidInstance.initialize({
       startOnLoad: false,
@@ -105,13 +36,8 @@ const initializeMermaid = async () => {
         lineColor: '#6b46c1',
         background: 'transparent',
         mainBkg: '#374151',
-        secondBkg: '#4b5563',
-        primaryTextColor: textColor,
-        secondaryTextColor: mutedTextColor,
-        tertiaryTextColor: mutedTextColor,
-        textColor: textColor,
-        labelTextColor: textColor,
-        nodeTextColor: textColor
+        secondBkg: '#4b5563'
+        // Text colors removed - handled by CSS --mermaid-text variable
       },
       securityLevel: 'strict',
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
