@@ -224,6 +224,20 @@ svg[id^="mermaid-"] tspan {
   color: #000000 !important;
 }
 
+/* Target HTML labels inside foreignObject elements */
+.mermaid-container .nodeLabel,
+.mermaid-container .edgeLabel,
+.mermaid-diagram .nodeLabel,
+.mermaid-diagram .edgeLabel,
+svg[id^="mermaid-"] .nodeLabel,
+svg[id^="mermaid-"] .edgeLabel {
+  color: #000000 !important;
+  font-size: 14px;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
 .mermaid-container svg .node-label,
 .mermaid-container svg .edge-label,
 .mermaid-container svg .cluster-label,
