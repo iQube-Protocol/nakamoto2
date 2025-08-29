@@ -1,7 +1,7 @@
 
 import React from 'react';
 import { AlertCircle, CheckCircle, Lightbulb } from 'lucide-react';
-import MermaidDiagram from './MermaidDiagram';
+import MermaidDiagram from './MermaidDiagramSafe';
 
 // Component to format a code block
 export const CodeBlock = ({ code, language }: { code: string; language?: string }) => {
