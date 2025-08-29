@@ -7,9 +7,17 @@ let mermaidInstance: any = null;
 let mermaidPromise: Promise<any> | null = null;
 
 const initializeMermaid = async () => {
-  if (mermaidInstance) return mermaidInstance;
+  if (mermaidInstance) {
+    console.log('MermaidDiagramSafe: Using cached instance');
+    return mermaidInstance;
+  }
   
-  if (mermaidPromise) return mermaidPromise;
+  if (mermaidPromise) {
+    console.log('MermaidDiagramSafe: Waiting for existing promise');
+    return mermaidPromise;
+  }
+  
+  console.log('MermaidDiagramSafe: Creating new instance');
   
   mermaidPromise = (async () => {
     const mermaid = await import('mermaid');
@@ -17,8 +25,8 @@ const initializeMermaid = async () => {
     
     // Get computed styles to read CSS variables
     const computedStyle = getComputedStyle(document.documentElement);
-    const foregroundColor = computedStyle.getPropertyValue('--foreground').trim() || '222.2 84% 4.9%';
-    const mutedForegroundColor = computedStyle.getPropertyValue('--muted-foreground').trim() || '215.4 16.3% 46.9%';
+    const foregroundColor = computedStyle.getPropertyValue('--foreground').trim() || '240 10% 5%';
+    const mutedForegroundColor = computedStyle.getPropertyValue('--muted-foreground').trim() || '240 10% 45%';
     
     console.log('MermaidDiagramSafe: CSS Variables Debug:', {
       foregroundColor,
@@ -35,14 +43,14 @@ const initializeMermaid = async () => {
     const hslToHex = (hsl: string) => {
       if (!hsl) {
         console.log('MermaidDiagramSafe: Empty HSL, using fallback');
-        return '#1f2937';
+        return '#e5e7eb'; // Light gray that works on both themes
       }
       
-      // Extract h, s, l from the CSS variable format like "222.2 84% 4.9%"
+      // Extract h, s, l from the CSS variable format like "240 10% 5%"
       const matches = hsl.match(/(\d+\.?\d*)\s+(\d+\.?\d*)%\s+(\d+\.?\d*)%/);
       if (!matches) {
         console.log('MermaidDiagramSafe: HSL format not matched, using fallback for:', hsl);
-        return '#1f2937';
+        return '#e5e7eb';
       }
       
       const h = parseFloat(matches[1]) / 360;
@@ -86,7 +94,7 @@ const initializeMermaid = async () => {
         nodeTextColor: textColor
       }
     });
-    
+
     mermaidInstance.initialize({
       startOnLoad: false,
       htmlLabels: false,
@@ -108,6 +116,8 @@ const initializeMermaid = async () => {
       securityLevel: 'strict',
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
     });
+    
+    console.log('MermaidDiagramSafe: Initialization complete');
     
     return mermaidInstance;
   })();
@@ -138,6 +148,11 @@ const MermaidDiagramSafe: React.FC<MermaidDiagramSafeProps> = ({
   useEffect(() => {
     MermaidCleanupManager.init();
     NavigationGuard.init();
+    
+    // Force Mermaid instance reset to apply new color configuration
+    mermaidInstance = null;
+    mermaidPromise = null;
+    console.log('MermaidDiagramSafe: Forced instance reset for color updates');
   }, []);
 
   // Memoize validation function
