@@ -150,6 +150,40 @@ const MermaidDiagramSafe: React.FC<MermaidDiagramSafeProps> = ({
         if (currentRenderRef.current === renderKey && container) {
           container.innerHTML = svg;
           
+          // DEBUG: Comprehensive text element analysis
+          console.log('MermaidDiagramSafe: SVG inserted, analyzing text elements...');
+          
+          const allTextElements = container.querySelectorAll('text, tspan');
+          console.log(`MermaidDiagramSafe: Found ${allTextElements.length} text elements`);
+          
+          allTextElements.forEach((el, index) => {
+            const rect = el.getBoundingClientRect();
+            const computedStyle = window.getComputedStyle(el);
+            console.log(`MermaidDiagramSafe: Text element ${index}:`, {
+              content: el.textContent,
+              fill: el.getAttribute('fill'),
+              style: el.getAttribute('style'),
+              computedFill: computedStyle.fill,
+              computedColor: computedStyle.color,
+              opacity: computedStyle.opacity,
+              visibility: computedStyle.visibility,
+              fontSize: computedStyle.fontSize,
+              rect: { width: rect.width, height: rect.height },
+              hasSize: rect.width > 0 && rect.height > 0
+            });
+          });
+          
+          // Check CSS variable values
+          const rootStyle = getComputedStyle(document.documentElement);
+          const mermaidTextValue = rootStyle.getPropertyValue('--mermaid-text').trim();
+          console.log('MermaidDiagramSafe: Theme analysis:', {
+            isDark: document.documentElement.classList.contains('dark'),
+            mermaidTextVar: mermaidTextValue,
+            mermaidTextComputed: mermaidTextValue ? `hsl(${mermaidTextValue})` : 'not set',
+            foreground: rootStyle.getPropertyValue('--foreground').trim(),
+            background: rootStyle.getPropertyValue('--background').trim()
+          });
+          
           // Remove any lingering data-processed attributes
           setTimeout(() => {
             MermaidCleanupManager.removeDataProcessedAttributes(containerId);
