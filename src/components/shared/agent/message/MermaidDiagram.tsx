@@ -13,6 +13,65 @@ const initializeMermaid = async () => {
     const mermaid = await import('mermaid');
     mermaidInstance = mermaid.default;
     
+    // Get computed styles to read CSS variables
+    const computedStyle = getComputedStyle(document.documentElement);
+    const foregroundColor = computedStyle.getPropertyValue('--foreground').trim() || '240 10% 5%';
+    const mutedForegroundColor = computedStyle.getPropertyValue('--muted-foreground').trim() || '240 10% 45%';
+    
+    console.log('MermaidDiagram: CSS Variables Debug:', {
+      foregroundColor,
+      mutedForegroundColor
+    });
+    
+    // Convert HSL values to hex for Mermaid
+    const hslToHex = (hsl: string) => {
+      if (!hsl) {
+        console.log('MermaidDiagram: Empty HSL, using fallback');
+        return '#1f2937';
+      }
+      
+      // Extract h, s, l from the CSS variable format like "240 10% 5%"
+      const matches = hsl.match(/(\d+\.?\d*)\s+(\d+\.?\d*)%\s+(\d+\.?\d*)%/);
+      if (!matches) {
+        console.log('MermaidDiagram: HSL format not matched, using fallback for:', hsl);
+        return '#1f2937';
+      }
+      
+      const h = parseFloat(matches[1]) / 360;
+      const s = parseFloat(matches[2]) / 100;
+      const l = parseFloat(matches[3]) / 100;
+      
+      console.log('MermaidDiagram: HSL parsed:', { h, s, l, original: hsl });
+      
+      const hue2rgb = (p: number, q: number, t: number) => {
+        if (t < 0) t += 1;
+        if (t > 1) t -= 1;
+        if (t < 1/6) return p + (q - p) * 6 * t;
+        if (t < 1/2) return q;
+        if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+        return p;
+      };
+      
+      const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+      const p = 2 * l - q;
+      const r = Math.round(hue2rgb(p, q, h + 1/3) * 255);
+      const g = Math.round(hue2rgb(p, q, h) * 255);
+      const b = Math.round(hue2rgb(p, q, h - 1/3) * 255);
+      
+      const hex = `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+      console.log('MermaidDiagram: Converted to hex:', { original: hsl, hex });
+      
+      return hex;
+    };
+    
+    const textColor = hslToHex(foregroundColor);
+    const mutedTextColor = hslToHex(mutedForegroundColor);
+    
+    console.log('MermaidDiagram: Final text colors:', {
+      textColor,
+      mutedTextColor
+    });
+    
     mermaidInstance.initialize({
       startOnLoad: false,
       htmlLabels: false,
@@ -24,12 +83,12 @@ const initializeMermaid = async () => {
         background: 'transparent',
         mainBkg: '#374151',
         secondBkg: '#4b5563',
-        primaryTextColor: '#1f2937',
-        secondaryTextColor: '#374151',
-        tertiaryTextColor: '#4b5563',
-        textColor: '#1f2937',
-        labelTextColor: '#1f2937',
-        nodeTextColor: '#1f2937'
+        primaryTextColor: textColor,
+        secondaryTextColor: mutedTextColor,
+        tertiaryTextColor: mutedTextColor,
+        textColor: textColor,
+        labelTextColor: textColor,
+        nodeTextColor: textColor
       },
       securityLevel: 'strict',
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
