@@ -160,13 +160,40 @@ const MermaidDiagramSafe: React.FC<MermaidDiagramSafeProps> = ({
         if (currentRenderRef.current === renderKey && container) {
           container.innerHTML = svg;
           
-          // DEBUG: Comprehensive text element analysis
-          console.log('MermaidDiagramSafe: SVG inserted, analyzing text elements...');
+          // DEBUG: Comprehensive SVG analysis to find ALL elements
+          console.log('MermaidDiagramSafe: SVG inserted, analyzing ALL elements...');
           
-          const allTextElements = container.querySelectorAll('text, tspan');
-          console.log(`MermaidDiagramSafe: Found ${allTextElements.length} text elements`);
+          const allElements = container.querySelectorAll('*');
+          console.log(`MermaidDiagramSafe: Total elements in SVG: ${allElements.length}`);
           
-          allTextElements.forEach((el, index) => {
+          // Check for different types of text-related elements
+          const textElements = container.querySelectorAll('text, tspan');
+          const divElements = container.querySelectorAll('div');  
+          const spanElements = container.querySelectorAll('span');
+          const foreignObjects = container.querySelectorAll('foreignObject');
+          const gElements = container.querySelectorAll('g');
+          
+          console.log('MermaidDiagramSafe: Element breakdown:', {
+            text: textElements.length,
+            tspan: container.querySelectorAll('tspan').length,
+            div: divElements.length,
+            span: spanElements.length,
+            foreignObject: foreignObjects.length,
+            g: gElements.length
+          });
+          
+          // Log first 10 elements and their types
+          Array.from(allElements).slice(0, 10).forEach((el, i) => {
+            console.log(`MermaidDiagramSafe: Element ${i}: ${el.tagName} - content: "${el.textContent?.substring(0, 50)}"`);
+          });
+          
+          // Check if text is in foreignObject (HTML labels)
+          foreignObjects.forEach((fo, i) => {
+            const htmlContent = fo.innerHTML;
+            console.log(`MermaidDiagramSafe: ForeignObject ${i} HTML:`, htmlContent.substring(0, 200));
+          });
+          
+          textElements.forEach((el, index) => {
             const rect = el.getBoundingClientRect();
             const computedStyle = window.getComputedStyle(el);
             console.log(`MermaidDiagramSafe: Text element ${index}:`, {
