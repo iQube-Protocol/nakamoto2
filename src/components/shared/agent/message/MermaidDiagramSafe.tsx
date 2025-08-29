@@ -20,17 +20,36 @@ const initializeMermaid = async () => {
     const foregroundColor = computedStyle.getPropertyValue('--foreground').trim() || '222.2 84% 4.9%';
     const mutedForegroundColor = computedStyle.getPropertyValue('--muted-foreground').trim() || '215.4 16.3% 46.9%';
     
+    console.log('MermaidDiagramSafe: CSS Variables Debug:', {
+      foregroundColor,
+      mutedForegroundColor,
+      allCSSVariables: {
+        foreground: computedStyle.getPropertyValue('--foreground'),
+        mutedForeground: computedStyle.getPropertyValue('--muted-foreground'),
+        background: computedStyle.getPropertyValue('--background'),
+        primary: computedStyle.getPropertyValue('--primary')
+      }
+    });
+    
     // Convert HSL values to hex for Mermaid
     const hslToHex = (hsl: string) => {
-      if (!hsl) return '#1f2937';
+      if (!hsl) {
+        console.log('MermaidDiagramSafe: Empty HSL, using fallback');
+        return '#1f2937';
+      }
       
       // Extract h, s, l from the CSS variable format like "222.2 84% 4.9%"
       const matches = hsl.match(/(\d+\.?\d*)\s+(\d+\.?\d*)%\s+(\d+\.?\d*)%/);
-      if (!matches) return '#1f2937';
+      if (!matches) {
+        console.log('MermaidDiagramSafe: HSL format not matched, using fallback for:', hsl);
+        return '#1f2937';
+      }
       
       const h = parseFloat(matches[1]) / 360;
       const s = parseFloat(matches[2]) / 100;
       const l = parseFloat(matches[3]) / 100;
+      
+      console.log('MermaidDiagramSafe: HSL parsed:', { h, s, l, original: hsl });
       
       const hue2rgb = (p: number, q: number, t: number) => {
         if (t < 0) t += 1;
@@ -47,11 +66,26 @@ const initializeMermaid = async () => {
       const g = Math.round(hue2rgb(p, q, h) * 255);
       const b = Math.round(hue2rgb(p, q, h - 1/3) * 255);
       
-      return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+      const hex = `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+      console.log('MermaidDiagramSafe: Converted to hex:', { original: hsl, hex, rgb: { r, g, b } });
+      
+      return hex;
     };
     
     const textColor = hslToHex(foregroundColor);
     const mutedTextColor = hslToHex(mutedForegroundColor);
+    
+    console.log('MermaidDiagramSafe: Final text colors:', {
+      textColor,
+      mutedTextColor,
+      willUseInMermaid: {
+        primaryTextColor: textColor,
+        secondaryTextColor: mutedTextColor,
+        textColor: textColor,
+        labelTextColor: textColor,
+        nodeTextColor: textColor
+      }
+    });
     
     mermaidInstance.initialize({
       startOnLoad: false,
