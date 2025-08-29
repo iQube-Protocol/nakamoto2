@@ -28,7 +28,7 @@ const initializeMermaid = async () => {
 
     mermaidInstance.initialize({
       startOnLoad: false,
-      htmlLabels: true, // Changed to true - might fix missing text elements
+      htmlLabels: false, // Back to false to generate SVG text
       theme: 'base',
       themeVariables: {
         primaryColor: '#374151',
@@ -36,10 +36,16 @@ const initializeMermaid = async () => {
         lineColor: '#6b46c1',
         background: 'transparent',
         mainBkg: '#374151',
-        secondBkg: '#4b5563'
-        // Text colors removed - handled by CSS --mermaid-text variable
+        secondBkg: '#4b5563',
+        // Force white text for visibility testing
+        primaryTextColor: '#ffffff',
+        secondaryTextColor: '#ffffff',
+        tertiaryTextColor: '#ffffff',
+        textColor: '#ffffff',
+        labelTextColor: '#ffffff',
+        nodeTextColor: '#ffffff'
       },
-      securityLevel: 'strict',
+      securityLevel: 'loose', // Changed from strict
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
     });
     
@@ -142,9 +148,13 @@ const MermaidDiagramSafe: React.FC<MermaidDiagramSafeProps> = ({
         currentRenderRef.current = renderKey;
 
         console.log(`MermaidDiagramSafe: Rendering ${renderKey}`);
+        console.log('MermaidDiagramSafe: Input code:', diagramCode);
 
         // Render with Mermaid
         const { svg } = await mermaid.render(renderKey, diagramCode);
+        
+        console.log('MermaidDiagramSafe: Generated SVG length:', svg.length);
+        console.log('MermaidDiagramSafe: SVG preview:', svg.substring(0, 500));
         
         // Check if this render is still current
         if (currentRenderRef.current === renderKey && container) {
