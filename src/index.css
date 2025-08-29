@@ -209,16 +209,19 @@
   }
 }
 
-/* Mermaid diagram styles - theme-responsive */
+/* Mermaid diagram styles - theme-responsive with forced specificity */
 .mermaid-container svg text,
 .mermaid-container svg tspan,
 .mermaid-diagram svg text,
-.mermaid-diagram svg tspan {
-  fill: hsl(var(--mermaid-text));
+.mermaid-diagram svg tspan,
+svg[id^="mermaid-"] text,
+svg[id^="mermaid-"] tspan {
+  fill: hsl(var(--mermaid-text)) !important;
   font-size: 14px;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-  opacity: 1;
-  visibility: visible;
+  opacity: 1 !important;
+  visibility: visible !important;
+  color: hsl(var(--mermaid-text)) !important;
 }
 
 .mermaid-container svg .node-label,
@@ -226,8 +229,12 @@
 .mermaid-container svg .cluster-label,
 .mermaid-diagram svg .node-label,
 .mermaid-diagram svg .edge-label,
-.mermaid-diagram svg .cluster-label {
-  fill: hsl(var(--mermaid-text));
+.mermaid-diagram svg .cluster-label,
+svg[id^="mermaid-"] .node-label,
+svg[id^="mermaid-"] .edge-label,
+svg[id^="mermaid-"] .cluster-label {
+  fill: hsl(var(--mermaid-text)) !important;
+  color: hsl(var(--mermaid-text)) !important;
 }
 
 .mermaid-container svg,
