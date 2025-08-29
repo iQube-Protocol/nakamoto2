@@ -15,6 +15,44 @@ const initializeMermaid = async () => {
     const mermaid = await import('mermaid');
     mermaidInstance = mermaid.default;
     
+    // Get computed styles to read CSS variables
+    const computedStyle = getComputedStyle(document.documentElement);
+    const foregroundColor = computedStyle.getPropertyValue('--foreground').trim() || '222.2 84% 4.9%';
+    const mutedForegroundColor = computedStyle.getPropertyValue('--muted-foreground').trim() || '215.4 16.3% 46.9%';
+    
+    // Convert HSL values to hex for Mermaid
+    const hslToHex = (hsl: string) => {
+      if (!hsl) return '#1f2937';
+      
+      // Extract h, s, l from the CSS variable format like "222.2 84% 4.9%"
+      const matches = hsl.match(/(\d+\.?\d*)\s+(\d+\.?\d*)%\s+(\d+\.?\d*)%/);
+      if (!matches) return '#1f2937';
+      
+      const h = parseFloat(matches[1]) / 360;
+      const s = parseFloat(matches[2]) / 100;
+      const l = parseFloat(matches[3]) / 100;
+      
+      const hue2rgb = (p: number, q: number, t: number) => {
+        if (t < 0) t += 1;
+        if (t > 1) t -= 1;
+        if (t < 1/6) return p + (q - p) * 6 * t;
+        if (t < 1/2) return q;
+        if (t < 2/3) return p + (q - p) * (2/3 - t) * 6;
+        return p;
+      };
+      
+      const q = l < 0.5 ? l * (1 + s) : l + s - l * s;
+      const p = 2 * l - q;
+      const r = Math.round(hue2rgb(p, q, h + 1/3) * 255);
+      const g = Math.round(hue2rgb(p, q, h) * 255);
+      const b = Math.round(hue2rgb(p, q, h - 1/3) * 255);
+      
+      return `#${((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1)}`;
+    };
+    
+    const textColor = hslToHex(foregroundColor);
+    const mutedTextColor = hslToHex(mutedForegroundColor);
+    
     mermaidInstance.initialize({
       startOnLoad: false,
       htmlLabels: false,
@@ -26,12 +64,12 @@ const initializeMermaid = async () => {
         background: 'transparent',
         mainBkg: '#374151',
         secondBkg: '#4b5563',
-        primaryTextColor: '#1f2937',
-        secondaryTextColor: '#374151',
-        tertiaryTextColor: '#4b5563',
-        textColor: '#1f2937',
-        labelTextColor: '#1f2937',
-        nodeTextColor: '#1f2937'
+        primaryTextColor: textColor,
+        secondaryTextColor: mutedTextColor,
+        tertiaryTextColor: mutedTextColor,
+        textColor: textColor,
+        labelTextColor: textColor,
+        nodeTextColor: textColor
       },
       securityLevel: 'strict',
       fontFamily: '-apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif'
