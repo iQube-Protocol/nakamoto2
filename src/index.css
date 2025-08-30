@@ -224,6 +224,39 @@ svg[id^="mermaid-"] tspan {
   color: #000000 !important;
 }
 
+/* Fix dark green process node backgrounds for better readability */
+.mermaid-container svg .node rect[fill="#00ff00"],
+.mermaid-container svg .node rect[fill="green"],
+.mermaid-container svg .node rect[fill="#008000"],
+.mermaid-diagram svg .node rect[fill="#00ff00"],
+.mermaid-diagram svg .node rect[fill="green"],
+.mermaid-diagram svg .node rect[fill="#008000"],
+svg[id^="mermaid-"] .node rect[fill="#00ff00"],
+svg[id^="mermaid-"] .node rect[fill="green"],
+svg[id^="mermaid-"] .node rect[fill="#008000"] {
+  fill: #90EE90 !important; /* Light green for better contrast */
+}
+
+/* Also target any dark green backgrounds by class or other attributes */
+.mermaid-container svg .flowchart-link,
+.mermaid-diagram svg .flowchart-link,
+svg[id^="mermaid-"] .flowchart-link {
+  stroke: hsl(var(--mermaid-border)) !important;
+}
+
+.mermaid-container svg .node[class*="green"],
+.mermaid-diagram svg .node[class*="green"],
+svg[id^="mermaid-"] .node[class*="green"] {
+  background: #90EE90 !important;
+}
+
+.mermaid-container svg .actor,
+.mermaid-diagram svg .actor,
+svg[id^="mermaid-"] .actor {
+  fill: #ECECFF !important;
+  stroke: hsl(var(--mermaid-border)) !important;
+}
+
 /* Target HTML labels inside foreignObject elements */
 .mermaid-container .nodeLabel,
 .mermaid-container .edgeLabel,
