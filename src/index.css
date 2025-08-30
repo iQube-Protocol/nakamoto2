@@ -224,30 +224,70 @@ svg[id^="mermaid-"] tspan {
   color: #000000 !important;
 }
 
-/* Fix dark green process node backgrounds for better readability */
-.mermaid-container svg .node rect[fill="#00ff00"],
-.mermaid-container svg .node rect[fill="green"],
-.mermaid-container svg .node rect[fill="#008000"],
-.mermaid-diagram svg .node rect[fill="#00ff00"],
-.mermaid-diagram svg .node rect[fill="green"],
-.mermaid-diagram svg .node rect[fill="#008000"],
-svg[id^="mermaid-"] .node rect[fill="#00ff00"],
-svg[id^="mermaid-"] .node rect[fill="green"],
-svg[id^="mermaid-"] .node rect[fill="#008000"] {
-  fill: #90EE90 !important; /* Light green for better contrast */
+/* Comprehensive fix for dark green process node backgrounds */
+.mermaid-container svg .node rect,
+.mermaid-container svg .node polygon,
+.mermaid-container svg .node circle,
+.mermaid-container svg .node ellipse,
+.mermaid-diagram svg .node rect,
+.mermaid-diagram svg .node polygon,
+.mermaid-diagram svg .node circle,
+.mermaid-diagram svg .node ellipse,
+svg[id^="mermaid-"] .node rect,
+svg[id^="mermaid-"] .node polygon,
+svg[id^="mermaid-"] .node circle,
+svg[id^="mermaid-"] .node ellipse {
+  fill: #E8F5E8 !important; /* Very light green for better contrast */
+  stroke: #4A90E2 !important;
 }
 
-/* Also target any dark green backgrounds by class or other attributes */
+/* Target specific green colors that might be applied */
+.mermaid-container svg rect[fill="#00ff00"],
+.mermaid-container svg rect[fill="green"],
+.mermaid-container svg rect[fill="#008000"],
+.mermaid-container svg rect[fill="#228B22"],
+.mermaid-container svg rect[fill="#006400"],
+.mermaid-container svg polygon[fill="#00ff00"],
+.mermaid-container svg polygon[fill="green"],
+.mermaid-container svg polygon[fill="#008000"],
+.mermaid-container svg polygon[fill="#228B22"],
+.mermaid-container svg polygon[fill="#006400"],
+.mermaid-diagram svg rect[fill="#00ff00"],
+.mermaid-diagram svg rect[fill="green"],
+.mermaid-diagram svg rect[fill="#008000"],
+.mermaid-diagram svg rect[fill="#228B22"],
+.mermaid-diagram svg rect[fill="#006400"],
+.mermaid-diagram svg polygon[fill="#00ff00"],
+.mermaid-diagram svg polygon[fill="green"],
+.mermaid-diagram svg polygon[fill="#008000"],
+.mermaid-diagram svg polygon[fill="#228B22"],
+.mermaid-diagram svg polygon[fill="#006400"],
+svg[id^="mermaid-"] rect[fill="#00ff00"],
+svg[id^="mermaid-"] rect[fill="green"],
+svg[id^="mermaid-"] rect[fill="#008000"],
+svg[id^="mermaid-"] rect[fill="#228B22"],
+svg[id^="mermaid-"] rect[fill="#006400"],
+svg[id^="mermaid-"] polygon[fill="#00ff00"],
+svg[id^="mermaid-"] polygon[fill="green"],
+svg[id^="mermaid-"] polygon[fill="#008000"],
+svg[id^="mermaid-"] polygon[fill="#228B22"],
+svg[id^="mermaid-"] polygon[fill="#006400"] {
+  fill: #E8F5E8 !important; /* Light green for better contrast */
+}
+
+/* Target any elements with green background via CSS classes */
+.mermaid-container svg [class*="green"],
+.mermaid-diagram svg [class*="green"],
+svg[id^="mermaid-"] [class*="green"] {
+  fill: #E8F5E8 !important;
+  background: #E8F5E8 !important;
+}
+
+/* Flowchart specific overrides */
 .mermaid-container svg .flowchart-link,
 .mermaid-diagram svg .flowchart-link,
 svg[id^="mermaid-"] .flowchart-link {
   stroke: hsl(var(--mermaid-border)) !important;
-}
-
-.mermaid-container svg .node[class*="green"],
-.mermaid-diagram svg .node[class*="green"],
-svg[id^="mermaid-"] .node[class*="green"] {
-  background: #90EE90 !important;
 }
 
 .mermaid-container svg .actor,
