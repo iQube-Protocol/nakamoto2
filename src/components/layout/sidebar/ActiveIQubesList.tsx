@@ -67,6 +67,16 @@ const ActiveIQubesList: React.FC<ActiveIQubesListProps> = ({
         </div>
       );
     }
+    if (qubeName === "ChainGPT") {
+      return (
+        <div className="space-y-1">
+          <div className="font-semibold">ChainGPT Model</div>
+          <div className="text-xs">
+            Blockchain-focused AI model with high trust and privacy protection.
+          </div>
+        </div>
+      );
+    }
     return null;
   };
   
@@ -180,12 +190,39 @@ const ActiveIQubesList: React.FC<ActiveIQubesListProps> = ({
                     }
                   }}
                 >
-                  <Brain className={cn("h-5 w-5 text-green-500", collapsed ? "" : "mr-2")} />
+                  <Brain className={cn("h-5 w-5 text-blue-500", collapsed ? "" : "mr-2")} />
                   {!collapsed && <span>OpenAI</span>}
                 </div>
               </TooltipTrigger>
               <TooltipContent side={collapsed ? "right" : "top"} align="center">
                 {getTooltipContent("OpenAI")}
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
+        )}
+
+        {activeQubes["ChainGPT"] && (
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <div
+                  className={cn(
+                    "flex items-center rounded-md p-2 text-sm hover:bg-accent/30 cursor-pointer",
+                    collapsed ? "justify-center" : ""
+                  )}
+                  onClick={() => {
+                    onIQubeClick("ChainGPT");
+                    if (isMobile && toggleMobileSidebar) {
+                      toggleMobileSidebar();
+                    }
+                  }}
+                >
+                  <Brain className={cn("h-5 w-5 text-orange-500", collapsed ? "" : "mr-2")} />
+                  {!collapsed && <span>ChainGPT</span>}
+                </div>
+              </TooltipTrigger>
+              <TooltipContent side={collapsed ? "right" : "top"} align="center">
+                {getTooltipContent("ChainGPT")}
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>
