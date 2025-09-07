@@ -38,9 +38,18 @@ const IQubesSection: React.FC<IQubesSectionProps> = ({
   
   // Function to render iQube type icon based on specific qube name and type
   const renderIQubeTypeIcon = (qubeName: string, type: string) => {
-    // Special cases for specific qubes
+    // Special cases for specific model providers with distinct colors
     if (qubeName === "Venice") {
       return <Brain className="h-4 w-4 text-green-500" />;
+    }
+    if (qubeName === "OpenAI") {
+      return <Brain className="h-4 w-4 text-blue-500" />;
+    }
+    if (qubeName === "ChainGPT") {
+      return <Brain className="h-4 w-4 text-orange-500" />;
+    }
+    if (qubeName === "Metis") {
+      return <Brain className="h-4 w-4 text-violet-500" />;
     }
     if (qubeName === "KNYT Persona") {
       return <Database className="h-4 w-4 text-purple-500" />;
@@ -53,7 +62,7 @@ const IQubesSection: React.FC<IQubesSectionProps> = ({
       case 'AgentQube':
         return <Bot className="h-4 w-4 text-purple-500" />;
       case 'ModelQube':
-        return <Brain className="h-4 w-4 text-green-500" />;
+        return <Brain className="h-4 w-4 text-amber-500" />;
       case 'ToolQube':
         return <FolderGit2 className="h-4 w-4 text-green-500" />;
       default:
