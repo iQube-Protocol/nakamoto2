@@ -5,6 +5,7 @@ import DotScore from '@/components/shared/DotScore';
 import ScoreTooltip from '@/components/shared/ScoreTooltips';
 import { useIsMobile } from '@/hooks/use-mobile';
 import { useVeniceAgent } from '@/hooks/use-venice-agent';
+import { useChainGPTAgent } from '@/hooks/use-chaingpt-agent';
 
 interface AgentHeaderProps {
   title: string;
@@ -16,32 +17,41 @@ interface AgentHeaderProps {
 const AgentHeader = ({ title, description, isProcessing, additionalActions }: AgentHeaderProps) => {
   const isMobile = useIsMobile();
   const { veniceActivated } = useVeniceAgent();
+  const { chainGPTActivated } = useChainGPTAgent();
   
-  // Debug logging to track Venice state changes and re-renders
+  // Debug logging to track agent state changes and re-renders
   useEffect(() => {
-    console.log('AgentHeader: Venice state changed, activated:', veniceActivated);
-  }, [veniceActivated]);
+    console.log('AgentHeader: Agent states changed - Venice:', veniceActivated, 'ChainGPT:', chainGPTActivated);
+  }, [veniceActivated, chainGPTActivated]);
   
   useEffect(() => {
-    console.log('AgentHeader: Component re-rendered with Venice state:', veniceActivated);
+    console.log('AgentHeader: Component re-rendered with states - Venice:', veniceActivated, 'ChainGPT:', chainGPTActivated);
   });
   
   // Use shortened name on mobile for Aigent Nakamoto
   const displayTitle = isMobile && title === "Aigent Nakamoto" ? "Nakamoto" : title;
   
-  // Calculate Trust and Reliability scores based on Venice activation and processing state
+  // Calculate Trust and Reliability scores based on activated agents and processing state
   const { trustScore, reliabilityScore } = useMemo(() => {
-    const baseScore = veniceActivated ? 7.5 : 5.0;
-    const processingPenalty = isProcessing ? 0.5 : 0;
+    let baseScore = 5.0; // Default OpenAI score
+    
+    // Both Venice and ChainGPT get high scores but slightly different
+    if (chainGPTActivated) {
+      baseScore = 8.0; // ChainGPT gets 8.0 base score
+    } else if (veniceActivated) {
+      baseScore = 7.8; // Venice gets 7.8 base score (slightly lower than ChainGPT)
+    }
+    
+    const processingPenalty = isProcessing ? 0.3 : 0;
     
     const trust = Math.min(10, Math.max(1, baseScore - processingPenalty));
-    const reliability = Math.min(10, Math.max(1, baseScore + (veniceActivated ? 1.0 : 0) - processingPenalty));
+    const reliability = Math.min(10, Math.max(1, baseScore + (chainGPTActivated || veniceActivated ? 0.8 : 0) - processingPenalty));
     
     return {
       trustScore: Math.round(trust * 10) / 10,
       reliabilityScore: Math.round(reliability * 10) / 10
     };
-  }, [veniceActivated, isProcessing]);
+  }, [veniceActivated, chainGPTActivated, isProcessing]);
   
   return (
     <div className="p-4 border-b flex justify-between items-start">
