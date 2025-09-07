@@ -8,7 +8,7 @@ import {
   DropdownMenuTrigger,
 } from '@/components/ui/dropdown-menu';
 import { Badge } from '@/components/ui/badge';
-import { ChevronDown, Cpu, Brain } from 'lucide-react';
+import { ChevronDown, Cpu, Brain, Zap, Shield, Link } from 'lucide-react';
 import { useVeniceAgent } from '@/hooks/use-venice-agent';
 import { useOpenAIAgent } from '@/hooks/use-openai-agent';
 import { useChainGPTAgent } from '@/hooks/use-chaingpt-agent';
@@ -144,6 +144,24 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
     }
   };
 
+  const getProviderIcon = (provider: string) => {
+    switch (provider) {
+      case 'openai': return <Zap className="h-3 w-3" />;
+      case 'venice': return <Shield className="h-3 w-3" />;
+      case 'chaingpt': return <Link className="h-3 w-3" />;
+      default: return <Cpu className="h-3 w-3" />;
+    }
+  };
+
+  const getProviderColor = (provider: string): string => {
+    switch (provider) {
+      case 'openai': return 'text-green-500';
+      case 'venice': return 'text-blue-500';
+      case 'chaingpt': return 'text-orange-500';
+      default: return 'text-muted-foreground';
+    }
+  };
+
   const getModelDisplayName = (model: string) => {
     const modelInfo = AVAILABLE_MODELS.find(m => m.id === model);
     return modelInfo?.name || model;
@@ -174,7 +192,7 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
       </DropdownMenuTrigger>
       <DropdownMenuContent 
         align="start" 
-        className="w-64 bg-popover border border-border shadow-lg z-[9999]"
+        className="w-64 bg-background/95 backdrop-blur-md border border-border shadow-lg z-[9999]"
         sideOffset={4}
         onCloseAutoFocus={(e) => e.preventDefault()}
         onEscapeKeyDown={(e) => e.stopPropagation()}
@@ -186,7 +204,8 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
         <DropdownMenuSeparator />
         
         {/* OpenAI Models */}
-        <DropdownMenuLabel className="text-xs text-muted-foreground">
+        <DropdownMenuLabel className={`text-xs font-semibold flex items-center gap-2 ${getProviderColor('openai')}`}>
+          {getProviderIcon('openai')}
           {getProviderLabel('openai')}
         </DropdownMenuLabel>
         {getProviderModels('openai').map((model) => (
@@ -226,7 +245,8 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
         <DropdownMenuSeparator />
         
         {/* Venice AI Models */}
-        <DropdownMenuLabel className="text-xs text-muted-foreground">
+        <DropdownMenuLabel className={`text-xs font-semibold flex items-center gap-2 ${getProviderColor('venice')}`}>
+          {getProviderIcon('venice')}
           {getProviderLabel('venice')}
         </DropdownMenuLabel>
         {getProviderModels('venice').map((model) => (
@@ -266,7 +286,8 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
         <DropdownMenuSeparator />
         
         {/* ChainGPT Models */}
-        <DropdownMenuLabel className="text-xs text-muted-foreground">
+        <DropdownMenuLabel className={`text-xs font-semibold flex items-center gap-2 ${getProviderColor('chaingpt')}`}>
+          {getProviderIcon('chaingpt')}
           {getProviderLabel('chaingpt')}
         </DropdownMenuLabel>
         {getProviderModels('chaingpt').map((model) => (
