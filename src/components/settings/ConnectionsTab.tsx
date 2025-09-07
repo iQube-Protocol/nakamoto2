@@ -41,6 +41,12 @@ const LumaIcon = () => (
   </svg>
 );
 
+const ChainGPTIcon = () => (
+  <svg viewBox="0 0 24 24" className="h-4 w-4" fill="currentColor">
+    <path d="M12 2L2 7v10l10 5 10-5V7L12 2zm0 2.18L18.82 7 12 9.82 5.18 7 12 4.18zm-8 2.64L11 9.18V19l-7-3.5V6.82zm16 0V15.5L13 19V9.18l7-2.36z"/>
+  </svg>
+);
+
 const ConnectionsTab = ({ settings, onConnectService }: ConnectionsTabProps) => {
   return (
     <Card>
@@ -142,6 +148,15 @@ const ConnectionsTab = ({ settings, onConnectService }: ConnectionsTabProps) => 
             onConnect={() => onConnectService('luma')}
             comingSoon={true}
             service="luma"
+          />
+          
+          <ServiceConnection
+            name="ChainGPT"
+            icon={<ChainGPTIcon />}
+            connected={false}
+            onConnect={() => {}}
+            comingSoon={true}
+            service="chaingpt"
           />
         </div>
       </CardContent>
