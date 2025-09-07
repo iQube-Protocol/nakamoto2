@@ -2,6 +2,8 @@
 import { serve } from "https://deno.land/std@0.168.0/http/server.ts";
 import { corsHeaders } from "../_shared/cors.ts";
 import { OpenAI } from 'https://esm.sh/openai@4.0.0';
+// Import ChainGPT SDK for better API integration
+import { GeneralChat } from "npm:@chaingpt/generalchat@latest";
 
 // Interface for the response
 interface MonDAIResponse {
@@ -113,7 +115,7 @@ Your tone is conversational, upbeat, and encouraging - like a knowledgeable frie
 `;
 
 /**
- * Create ChainGPT API response using native fetch (ChainGPT has different API format)
+ * Create ChainGPT API response using the official SDK
  */
 async function createChainGPTResponse(
   message: string,
@@ -125,56 +127,46 @@ async function createChainGPTResponse(
     throw new Error('ChainGPT API key not configured');
   }
 
-  console.log('🔧 ChainGPT: Making direct API call to ChainGPT');
+  console.log('🔧 ChainGPT: Using official SDK for API call');
   
-  const requestBody = {
-    messages: [
-      { role: 'system', content: systemPrompt },
-      { role: 'user', content: message }
-    ],
-    stream: false,
-    useHistory: true, // Enable chat history for better context
-    conversationId: conversationId, // Pass conversation ID for context
-  };
-
-  console.log('🔧 ChainGPT: Request body prepared', { messageCount: requestBody.messages.length });
-
-  const response = await fetch('https://api.chaingpt.org/chat/stream', {
-    method: 'POST',
-    headers: {
-      'Authorization': `Bearer ${chainGPTApiKey}`,
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify(requestBody),
+  // Initialize ChainGPT SDK
+  const generalchat = new GeneralChat({
+    apiKey: chainGPTApiKey,
   });
 
-  if (!response.ok) {
-    const errorText = await response.text();
-    console.error('❌ ChainGPT: API Error:', {
-      status: response.status,
-      statusText: response.statusText,
-      error: errorText
+  try {
+    // Use createChatBlob for a complete response (not streaming for now)
+    const response = await generalchat.createChatBlob({
+      question: `${systemPrompt}\n\nUser: ${message}`,
+      chatHistory: "on", // Enable chat history for better context
+      sdkUniqueId: conversationId, // Use conversation ID for history tracking
+      useCustomContext: true, // Use context if configured in AI Hub
     });
-    throw new Error(`ChainGPT API error: ${response.status} - ${errorText}`);
-  }
 
-  const result = await response.json();
-  console.log('✅ ChainGPT: Response received successfully');
-  
-  // ChainGPT response format may vary, handle common response fields
-  return result.message || result.response || result.content || result.text || '';
+    console.log('✅ ChainGPT: Response received successfully via SDK');
+    
+    return response.data.bot || '';
+    
+  } catch (error) {
+    console.error('❌ ChainGPT: SDK Error:', {
+      message: error.message,
+      status: error.status || error.statusCode,
+      code: error.code
+    });
+    throw new Error(`ChainGPT SDK error: ${error.message}`);
+  }
 }
 
 /**
- * Create AI client with proper Venice configuration
+ * Create AI client with proper Venice configuration (OpenAI client for Venice and OpenAI only)
  */
 function createAIClient(useVenice: boolean = false, useChainGPT: boolean = false) {
   const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
   const veniceApiKey = Deno.env.get('VENICE_API_KEY');
   
-  // ChainGPT doesn't use OpenAI-compatible client, handled separately
+  // ChainGPT uses its own SDK, handled separately
   if (useChainGPT) {
-    console.log('🔧 ChainGPT: Will use native API calls (not OpenAI client)');
+    console.log('🔧 ChainGPT: Will use ChainGPT SDK (not OpenAI client)');
     return null; // Return null to indicate ChainGPT uses different approach
   } else if (useVenice) {
     if (!veniceApiKey) {
