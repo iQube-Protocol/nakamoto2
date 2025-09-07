@@ -45,6 +45,9 @@ const IQubeSelector = ({
       } else if (iQubeId === "GDrive" || iQubeId === "GDrive iQube") {
         setSelectedIQube(qubeData.gdrive);
         selectIQube("GDrive");
+      } else if (iQubeId === "ChainGPT" || iQubeId === "ChainGPT iQube") {
+        setSelectedIQube(qubeData.chainGPT);
+        selectIQube("ChainGPT");
       } else if (iQubeId === "Content" || iQubeId === "Content iQube") {
         setSelectedIQube(qubeData.content);
       } else if (iQubeId === "Model" || iQubeId === "Model iQube") {
