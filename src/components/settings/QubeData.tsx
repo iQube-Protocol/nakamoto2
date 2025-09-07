@@ -91,7 +91,8 @@ export const qubeData = {
     "Sensitivity-Score": 6,
     "Verifiability-Score": 8,
     "Accuracy-Score": 8,
-    "Risk-Score": 4
+    "Risk-Score": 4,
+    avatar: "/lovable-uploads/1127945b-2fce-4786-9798-329c18e56689.png"
   },
   gdrive: {
     "iQube-Identifier": "GDrive iQube",
