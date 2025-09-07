@@ -115,11 +115,23 @@ Your tone is conversational, upbeat, and encouraging - like a knowledgeable frie
 /**
  * Create AI client with proper Venice configuration
  */
-function createAIClient(useVenice: boolean = false) {
+function createAIClient(useVenice: boolean = false, useChainGPT: boolean = false) {
   const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
   const veniceApiKey = Deno.env.get('VENICE_API_KEY');
+  const chainGPTApiKey = Deno.env.get('CHAINGPT_API_KEY');
   
-  if (useVenice) {
+  if (useChainGPT) {
+    if (!chainGPTApiKey) {
+      throw new Error('ChainGPT API key not configured');
+    }
+    
+    console.log('🔧 ChainGPT: Creating ChainGPT AI client with proper configuration');
+    
+    return new OpenAI({
+      apiKey: chainGPTApiKey,
+      baseURL: 'https://api.chaingpt.org/v1',
+    });
+  } else if (useVenice) {
     if (!veniceApiKey) {
       throw new Error('Venice AI API key not configured');
     }
@@ -169,6 +181,28 @@ function selectVeniceModel(message: string): string {
   return "venice-uncensored";
 }
 
+function selectChainGPTModel(message: string): string {
+  const messageLower = message.toLowerCase();
+  
+  // Crypto/blockchain specific tasks: use crypto-specialized model
+  if (messageLower.includes('crypto') || messageLower.includes('blockchain') || 
+      messageLower.includes('defi') || messageLower.includes('token') ||
+      messageLower.includes('smart contract') || messageLower.includes('nft') ||
+      messageLower.includes('trading') || messageLower.includes('yield')) {
+    return 'gpt-4-turbo-chaingpt';
+  }
+  
+  // Coding tasks: use code-specialized model
+  if (messageLower.includes('code') || messageLower.includes('develop') || 
+      messageLower.includes('programming') || messageLower.includes('solidity') ||
+      messageLower.includes('function') || messageLower.includes('debug')) {
+    return 'gpt-4-code-chaingpt';
+  }
+  
+  // Default: use general model with crypto knowledge
+  return 'gpt-4-chaingpt';
+}
+
 /**
  * Process the user's query with enhanced persona context, metaKnyts knowledge, and conversation memory
  */
@@ -181,10 +215,11 @@ async function processWithOpenAI(
   qryptoKnowledgeContext?: string,
   conversationMemory?: string,
   useVenice: boolean = false,
+  useChainGPT: boolean = false,
   personaContext?: any,
   contextualPrompt?: string
 ): Promise<string> {
-  const client = createAIClient(useVenice);
+  const client = createAIClient(useVenice, useChainGPT);
 
   // Use provided system prompt or default based on persona context
   let finalSystemPrompt = systemPrompt || DEFAULT_AIGENT_NAKAMOTO_SYSTEM_PROMPT;

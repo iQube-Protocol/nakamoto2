@@ -70,6 +70,14 @@ export const iQubeItems: QubeItem[] = [
     href: '/settings',
     description: 'AI service that protects privacy and prevents censorship',
   },
+  {
+    id: 'chaingpt',
+    name: 'ChainGPT',
+    type: 'ModelQube',
+    icon: Brain,
+    href: '/settings',
+    description: 'Crypto-native AI specialized for blockchain and DeFi',
+  },
   // Metis temporarily hidden - uncomment to reactivate
   // {
   //   id: 'agentqube',
@@ -133,6 +141,15 @@ export const metaQubesData = [
     color: "text-emerald-400",
     bgColor: "bg-emerald-500/10",
     borderColor: "border-emerald-500/20"
+  },
+  {
+    id: "ChainGPT",
+    name: "ChainGPT",
+    type: "ModelQube" as const,
+    description: "Crypto-native AI specialized for blockchain and DeFi applications",
+    color: "text-amber-400",
+    bgColor: "bg-amber-500/10",
+    borderColor: "border-amber-500/20"
   },
   // Metis temporarily hidden - uncomment to reactivate
   // {

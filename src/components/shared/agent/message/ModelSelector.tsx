@@ -11,18 +11,19 @@ import { Badge } from '@/components/ui/badge';
 import { ChevronDown, Cpu, Brain } from 'lucide-react';
 import { useVeniceAgent } from '@/hooks/use-venice-agent';
 import { useOpenAIAgent } from '@/hooks/use-openai-agent';
+import { useChainGPTAgent } from '@/hooks/use-chaingpt-agent';
 
 interface ModelSelectorProps {
   currentModel?: string;
   iqubeType?: 'DataQube' | 'AgentQube';
-  onModelChange?: (model: string, provider: 'openai' | 'venice') => void;
+  onModelChange?: (model: string, provider: 'openai' | 'venice' | 'chaingpt') => void;
   className?: string;
 }
 
 interface ModelOption {
   id: string;
   name: string;
-  provider: 'openai' | 'venice';
+  provider: 'openai' | 'venice' | 'chaingpt';
   description: string;
   category?: string;
 }
@@ -60,11 +61,29 @@ const AVAILABLE_MODELS: ModelOption[] = [
     category: 'Analysis'
   },
   {
-    id: 'venice-large',
-    name: 'Venice Large',
+    id: 'llama-3.1-8b',
+    name: 'Llama 3.1 8B',
     provider: 'venice',
-    description: 'Complex technical and detailed tasks',
-    category: 'Technical'
+    description: 'Fast, efficient model for general tasks'
+  },
+  // ChainGPT Models
+  {
+    id: 'gpt-4-chaingpt',
+    name: 'ChainGPT General',
+    provider: 'chaingpt',
+    description: 'General-purpose AI with crypto knowledge'
+  },
+  {
+    id: 'gpt-4-turbo-chaingpt',
+    name: 'ChainGPT Crypto',
+    provider: 'chaingpt',
+    description: 'Specialized for cryptocurrency and blockchain'
+  },
+  {
+    id: 'gpt-4-code-chaingpt',
+    name: 'ChainGPT Code',
+    provider: 'chaingpt',
+    description: 'Optimized for smart contract development'
   }
 ];
 
@@ -78,25 +97,30 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
   const { veniceActivated, activateVenice, deactivateVenice } = useVeniceAgent();
   const { openAIActivated, activateOpenAI, deactivateOpenAI } = useOpenAIAgent();
 
+  const { chainGPTActivated, activateChainGPT, deactivateChainGPT } = useChainGPTAgent();
+
   const currentModelInfo = AVAILABLE_MODELS.find(m => m.id === currentModel);
   const currentProvider = currentModelInfo?.provider || 
-    (veniceActivated ? 'venice' : openAIActivated ? 'openai' : 'openai');
+    (chainGPTActivated ? 'chaingpt' : veniceActivated ? 'venice' : openAIActivated ? 'openai' : 'openai');
 
-  const handleModelSelect = async (model: ModelOption) => {
+  const handleModelSelect = async (modelId: string) => {
+    const model = AVAILABLE_MODELS.find(m => m.id === modelId);
+    if (!model) return;
+
     try {
-      // Handle mutual exclusion between providers
-      if (model.provider === 'venice' && !veniceActivated) {
+      // Handle provider switching with mutual exclusion
+      if (model.provider === 'venice') {
         activateVenice();
-        // Deactivate OpenAI if active
-        if (openAIActivated) {
-          deactivateOpenAI();
-        }
-      } else if (model.provider === 'openai' && !openAIActivated) {
+        deactivateOpenAI();
+        deactivateChainGPT();
+      } else if (model.provider === 'openai') {
         activateOpenAI();
-        // Deactivate Venice if active
-        if (veniceActivated) {
-          deactivateVenice();
-        }
+        deactivateVenice();
+        deactivateChainGPT();
+      } else if (model.provider === 'chaingpt') {
+        activateChainGPT();
+        deactivateVenice();
+        deactivateOpenAI();
       }
       
       // Call the callback with selected model
@@ -107,12 +131,17 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
     }
   };
 
-  const getProviderModels = (provider: 'openai' | 'venice') => {
+  const getProviderModels = (provider: 'openai' | 'venice' | 'chaingpt') => {
     return AVAILABLE_MODELS.filter(m => m.provider === provider);
   };
 
-  const getProviderLabel = (provider: 'openai' | 'venice') => {
-    return provider === 'venice' ? 'Venice AI (Uncensored)' : 'OpenAI';
+  const getProviderLabel = (provider: string): string => {
+    switch (provider) {
+      case 'openai': return 'OpenAI';
+      case 'venice': return 'Venice AI';
+      case 'chaingpt': return 'ChainGPT';
+      default: return provider;
+    }
   };
 
   const getModelDisplayName = (model: string) => {

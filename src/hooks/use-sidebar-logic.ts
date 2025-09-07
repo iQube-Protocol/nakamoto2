@@ -3,10 +3,11 @@ import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
-import { useQryptoPersona } from '@/hooks/use-qrypto-persona';
-import { useVeniceAgent } from '@/hooks/use-venice-agent';
-import { useKNYTPersona } from '@/hooks/use-knyt-persona';
-import { useOpenAIAgent } from '@/hooks/use-openai-agent';
+import { useQryptoPersona } from './use-qrypto-persona';
+import { useVeniceAgent } from './use-venice-agent';
+import { useKNYTPersona } from './use-knyt-persona';
+import { useOpenAIAgent } from './use-openai-agent';
+import { useChainGPTAgent } from './use-chaingpt-agent';
 import { useSidebarState } from '@/hooks/use-sidebar-state';
 import { useAuth } from '@/hooks/use-auth';
 
@@ -18,6 +19,7 @@ export const useSidebarLogic = () => {
   const { veniceActivated, veniceVisible, activateVenice, deactivateVenice, hideVenice } = useVeniceAgent();
   const { knytPersonaActivated, activateKNYTPersona, deactivateKNYTPersona, hideKNYTPersona } = useKNYTPersona();
   const { openAIActivated, openAIVisible, activateOpenAI, deactivateOpenAI, hideOpenAI } = useOpenAIAgent();
+  const { chainGPTActivated, chainGPTVisible, activateChainGPT, deactivateChainGPT, hideChainGPT } = useChainGPTAgent();
   const { 
     collapsed, 
     iQubesOpen, 
@@ -37,6 +39,7 @@ export const useSidebarLogic = () => {
       "KNYT Persona": knytPersonaActivated,
       "Venice": veniceActivated,
       "OpenAI": openAIActivated,
+      "ChainGPT": chainGPTActivated,
     };
   });
 
@@ -48,8 +51,9 @@ export const useSidebarLogic = () => {
       "KNYT Persona": knytPersonaActivated,
       "Venice": veniceActivated,
       "OpenAI": openAIActivated,
+      "ChainGPT": chainGPTActivated,
     }));
-  }, [qryptoPersonaActivated, knytPersonaActivated, veniceActivated, openAIActivated]);
+  }, [qryptoPersonaActivated, knytPersonaActivated, veniceActivated, openAIActivated, chainGPTActivated]);
 
   // Listen for agent activation events from AgentActivationModal
   useEffect(() => {
@@ -93,18 +97,30 @@ export const useSidebarLogic = () => {
       }
     };
 
+    const handleChainGPTStateChanged = (e: CustomEvent) => {
+      const { activated, visible } = e.detail || {};
+      console.log('ChainGPT state changed event received:', activated, visible);
+      
+      if (activated && visible) {
+        activateChainGPT();
+        setActiveIQubes(prev => ({...prev, "ChainGPT": true}));
+      }
+    };
+
     window.addEventListener('qryptoPersonaStateChanged', handleQryptoPersonaStateChanged as EventListener);
     window.addEventListener('knytPersonaStateChanged', handleKNYTPersonaStateChanged as EventListener);
     window.addEventListener('veniceStateChanged', handleVeniceStateChanged as EventListener);
     window.addEventListener('openAIStateChanged', handleOpenAIStateChanged as EventListener);
+    window.addEventListener('chainGPTStateChanged', handleChainGPTStateChanged as EventListener);
     
     return () => {
       window.removeEventListener('qryptoPersonaStateChanged', handleQryptoPersonaStateChanged as EventListener);
       window.removeEventListener('knytPersonaStateChanged', handleKNYTPersonaStateChanged as EventListener);
       window.removeEventListener('veniceStateChanged', handleVeniceStateChanged as EventListener);
       window.removeEventListener('openAIStateChanged', handleOpenAIStateChanged as EventListener);
+      window.removeEventListener('chainGPTStateChanged', handleChainGPTStateChanged as EventListener);
     };
-  }, [activateQryptoPersona, activateKNYTPersona, activateVenice, activateOpenAI]);
+  }, [activateQryptoPersona, activateKNYTPersona, activateVenice, activateOpenAI, activateChainGPT]);
 
   // Listen for iQube toggle events from Settings page
   useEffect(() => {
@@ -138,6 +154,12 @@ export const useSidebarLogic = () => {
           } else {
             deactivateOpenAI();
           }
+        } else if (iqubeId === "ChainGPT") {
+          if (active) {
+            activateChainGPT();
+          } else {
+            deactivateChainGPT();
+          }
         }
       }
     };
@@ -147,7 +169,7 @@ export const useSidebarLogic = () => {
     return () => {
       window.removeEventListener('iqubeToggle', handleIQubeToggle as EventListener);
     };
-  }, [activateQryptoPersona, deactivateQryptoPersona, knytPersonaActivated, activateKNYTPersona, deactivateKNYTPersona, veniceActivated, activateVenice, deactivateVenice, openAIActivated, activateOpenAI, deactivateOpenAI]);
+  }, [activateQryptoPersona, deactivateQryptoPersona, knytPersonaActivated, activateKNYTPersona, deactivateKNYTPersona, veniceActivated, activateVenice, deactivateVenice, openAIActivated, activateOpenAI, deactivateOpenAI, chainGPTActivated, activateChainGPT, deactivateChainGPT]);
 
   const handleIQubeClick = (iqubeId: string) => {
     console.log("iQube clicked:", iqubeId);
@@ -175,11 +197,16 @@ export const useSidebarLogic = () => {
     let updatedActiveQubes = { ...activeIQubes };
     
     // Implement three-way mutual exclusion for AI providers
-    if (newActiveState && (qubeName === "Venice" || qubeName === "OpenAI")) {
+    if (newActiveState && (qubeName === "Venice" || qubeName === "OpenAI" || qubeName === "ChainGPT")) {
       if (qubeName === "Venice") {
         updatedActiveQubes["OpenAI"] = false;  // Deactivate OpenAI
+        updatedActiveQubes["ChainGPT"] = false;  // Deactivate ChainGPT
       } else if (qubeName === "OpenAI") {
         updatedActiveQubes["Venice"] = false;   // Deactivate Venice
+        updatedActiveQubes["ChainGPT"] = false;   // Deactivate ChainGPT
+      } else if (qubeName === "ChainGPT") {
+        updatedActiveQubes["Venice"] = false;   // Deactivate Venice
+        updatedActiveQubes["OpenAI"] = false;   // Deactivate OpenAI
       }
     }
     
@@ -229,12 +256,28 @@ export const useSidebarLogic = () => {
     } else if (qubeName === "OpenAI") {
       if (newActiveState) {
         activateOpenAI();
-        // Deactivate Venice
+        // Deactivate Venice and ChainGPT
         if (veniceActivated) {
           deactivateVenice();
         }
+        if (chainGPTActivated) {
+          deactivateChainGPT();
+        }
       } else {
         deactivateOpenAI();
+      }
+    } else if (qubeName === "ChainGPT") {
+      if (newActiveState) {
+        activateChainGPT();
+        // Deactivate Venice and OpenAI
+        if (veniceActivated) {
+          deactivateVenice();
+        }
+        if (openAIActivated) {
+          deactivateOpenAI();
+        }
+      } else {
+        deactivateChainGPT();
       }
     }
     
@@ -254,10 +297,24 @@ export const useSidebarLogic = () => {
     toast.info(`${qubeName} ${newActiveState ? 'activated' : 'deactivated'}`);
     
     // Additional feedback for mutual exclusion
-    if ((qubeName === "Venice" && newActiveState && activeIQubes["OpenAI"]) ||
-        (qubeName === "OpenAI" && newActiveState && activeIQubes["Venice"])) {
+    if ((qubeName === "Venice" && newActiveState && (activeIQubes["OpenAI"] || activeIQubes["ChainGPT"])) ||
+        (qubeName === "OpenAI" && newActiveState && (activeIQubes["Venice"] || activeIQubes["ChainGPT"])) ||
+        (qubeName === "ChainGPT" && newActiveState && (activeIQubes["Venice"] || activeIQubes["OpenAI"]))) {
       setTimeout(() => {
-        toast.info(`${qubeName === "Venice" ? "OpenAI" : "Venice"} automatically deactivated`);
+        const deactivatedProviders = [];
+        if (qubeName === "Venice") {
+          if (activeIQubes["OpenAI"]) deactivatedProviders.push("OpenAI");
+          if (activeIQubes["ChainGPT"]) deactivatedProviders.push("ChainGPT");
+        } else if (qubeName === "OpenAI") {
+          if (activeIQubes["Venice"]) deactivatedProviders.push("Venice");
+          if (activeIQubes["ChainGPT"]) deactivatedProviders.push("ChainGPT");
+        } else if (qubeName === "ChainGPT") {
+          if (activeIQubes["Venice"]) deactivatedProviders.push("Venice");
+          if (activeIQubes["OpenAI"]) deactivatedProviders.push("OpenAI");
+        }
+        if (deactivatedProviders.length > 0) {
+          toast.info(`${deactivatedProviders.join(" and ")} automatically deactivated`);
+        }
       }, 500);
     }
     

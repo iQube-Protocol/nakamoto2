@@ -4,6 +4,7 @@ import { useQryptoPersona } from '@/hooks/use-qrypto-persona';
 import { useVeniceAgent } from '@/hooks/use-venice-agent';
 import { useKNYTPersona } from '@/hooks/use-knyt-persona';
 import { useOpenAIAgent } from '@/hooks/use-openai-agent';
+import { useChainGPTAgent } from '@/hooks/use-chaingpt-agent';
 
 interface IQubeActivationManagerProps {
   activeQubes: { [key: string]: boolean };
@@ -18,6 +19,7 @@ const IQubeActivationManager = ({
   const { veniceActivated, veniceVisible, activateVenice, deactivateVenice, hideVenice } = useVeniceAgent();
   const { knytPersonaActivated, activateKNYTPersona, deactivateKNYTPersona, hideKNYTPersona } = useKNYTPersona();
   const { openAIActivated, openAIVisible, activateOpenAI, deactivateOpenAI, hideOpenAI } = useOpenAIAgent();
+  const { chainGPTActivated, chainGPTVisible, activateChainGPT, deactivateChainGPT, hideChainGPT } = useChainGPTAgent();
 
   // Sync component state with hook states
   useEffect(() => {
@@ -26,9 +28,10 @@ const IQubeActivationManager = ({
       "Qrypto Persona": qryptoPersonaActivated,
       "KNYT Persona": knytPersonaActivated,
       "Venice": veniceActivated,
-      "OpenAI": openAIActivated
+      "OpenAI": openAIActivated,
+      "ChainGPT": chainGPTActivated
     }));
-  }, [qryptoPersonaActivated, knytPersonaActivated, veniceActivated, openAIActivated, setActiveQubes]);
+  }, [qryptoPersonaActivated, knytPersonaActivated, veniceActivated, openAIActivated, chainGPTActivated, setActiveQubes]);
 
   // Listen for iQube activation/deactivation events from sidebar
   useEffect(() => {
@@ -70,6 +73,14 @@ const IQubeActivationManager = ({
             deactivateKNYTPersona();
             toast.info(`KNYT Persona deactivated`);
           }
+        } else if (iqubeId === "ChainGPT") {
+          if (active && !chainGPTActivated) {
+            activateChainGPT();
+            toast.info("ChainGPT activated");
+          } else if (!active && chainGPTActivated) {
+            deactivateChainGPT();
+            toast.info("ChainGPT deactivated");
+          }
         } else {
           toast.info(`${iqubeId} ${active ? 'activated' : 'deactivated'}`);
         }
@@ -81,7 +92,7 @@ const IQubeActivationManager = ({
     return () => {
       window.removeEventListener('iqubeToggle', handleIQubeToggle as EventListener);
     };
-  }, [qryptoPersonaActivated, activateQryptoPersona, deactivateQryptoPersona, veniceActivated, activateVenice, deactivateVenice, openAIActivated, activateOpenAI, deactivateOpenAI, knytPersonaActivated, activateKNYTPersona, deactivateKNYTPersona, setActiveQubes]);
+  }, [qryptoPersonaActivated, activateQryptoPersona, deactivateQryptoPersona, veniceActivated, activateVenice, deactivateVenice, openAIActivated, activateOpenAI, deactivateOpenAI, knytPersonaActivated, activateKNYTPersona, deactivateKNYTPersona, chainGPTActivated, activateChainGPT, deactivateChainGPT, setActiveQubes]);
 
   return null; // This is a logic-only component, no UI
 };

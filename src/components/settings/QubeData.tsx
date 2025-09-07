@@ -78,6 +78,24 @@ export const qubeData = {
     "Accuracy-Score": 7,
     "Risk-Score": 7
   },
+  chainGPT: {
+    "iQube-Identifier": "ChainGPT",
+    "iQube-Type": "ModelQube",
+    "iQube-Designer": "ChainGPT Labs",
+    "iQube-Use": "Crypto-native AI specialized for blockchain, DeFi, and smart contract development",
+    "Interoperability-Score": 9.0,
+    "Accessibility-Score": 8.5,
+    "Security-Score": 9.3,
+    "Privacy-Score": 8.8,
+    "Efficiency-Score": 9.2,
+    "Innovation-Score": 9.5,
+    "Cost-Effectiveness-Score": 8.7,
+    "Reliability-Score": 9.1,
+    "User-Experience-Score": 8.9,
+    "Community-Adoption-Score": 8.6,
+    "Total-iQube-Score": 89.6,
+    "Related-iQubes": ["Qrypto Persona", "KNYT Persona", "TokenQube", "Venice"]
+  },
   gdrive: {
     "iQube-Identifier": "GDrive iQube",
     "iQube-Type": "DataQube",
