@@ -113,24 +113,69 @@ Your tone is conversational, upbeat, and encouraging - like a knowledgeable frie
 `;
 
 /**
+ * Create ChainGPT API response using native fetch (ChainGPT has different API format)
+ */
+async function createChainGPTResponse(
+  message: string,
+  systemPrompt: string,
+  conversationId: string
+): Promise<string> {
+  const chainGPTApiKey = Deno.env.get('CHAINGPT_API_KEY');
+  if (!chainGPTApiKey) {
+    throw new Error('ChainGPT API key not configured');
+  }
+
+  console.log('🔧 ChainGPT: Making direct API call to ChainGPT');
+  
+  const requestBody = {
+    messages: [
+      { role: 'system', content: systemPrompt },
+      { role: 'user', content: message }
+    ],
+    stream: false,
+    useHistory: true, // Enable chat history for better context
+    conversationId: conversationId, // Pass conversation ID for context
+  };
+
+  console.log('🔧 ChainGPT: Request body prepared', { messageCount: requestBody.messages.length });
+
+  const response = await fetch('https://api.chaingpt.org/chat/stream', {
+    method: 'POST',
+    headers: {
+      'Authorization': `Bearer ${chainGPTApiKey}`,
+      'Content-Type': 'application/json',
+    },
+    body: JSON.stringify(requestBody),
+  });
+
+  if (!response.ok) {
+    const errorText = await response.text();
+    console.error('❌ ChainGPT: API Error:', {
+      status: response.status,
+      statusText: response.statusText,
+      error: errorText
+    });
+    throw new Error(`ChainGPT API error: ${response.status} - ${errorText}`);
+  }
+
+  const result = await response.json();
+  console.log('✅ ChainGPT: Response received successfully');
+  
+  // ChainGPT response format may vary, handle common response fields
+  return result.message || result.response || result.content || result.text || '';
+}
+
+/**
  * Create AI client with proper Venice configuration
  */
 function createAIClient(useVenice: boolean = false, useChainGPT: boolean = false) {
   const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
   const veniceApiKey = Deno.env.get('VENICE_API_KEY');
-  const chainGPTApiKey = Deno.env.get('CHAINGPT_API_KEY');
   
+  // ChainGPT doesn't use OpenAI-compatible client, handled separately
   if (useChainGPT) {
-    if (!chainGPTApiKey) {
-      throw new Error('ChainGPT API key not configured');
-    }
-    
-    console.log('🔧 ChainGPT: Creating ChainGPT AI client with proper configuration');
-    
-    return new OpenAI({
-      apiKey: chainGPTApiKey,
-      baseURL: 'https://api.chaingpt.org/v1',
-    });
+    console.log('🔧 ChainGPT: Will use native API calls (not OpenAI client)');
+    return null; // Return null to indicate ChainGPT uses different approach
   } else if (useVenice) {
     if (!veniceApiKey) {
       throw new Error('Venice AI API key not configured');
@@ -184,23 +229,9 @@ function selectVeniceModel(message: string): string {
 function selectChainGPTModel(message: string): string {
   const messageLower = message.toLowerCase();
   
-  // Crypto/blockchain specific tasks: use crypto-specialized model
-  if (messageLower.includes('crypto') || messageLower.includes('blockchain') || 
-      messageLower.includes('defi') || messageLower.includes('token') ||
-      messageLower.includes('smart contract') || messageLower.includes('nft') ||
-      messageLower.includes('trading') || messageLower.includes('yield')) {
-    return 'gpt-4-turbo-chaingpt';
-  }
-  
-  // Coding tasks: use code-specialized model
-  if (messageLower.includes('code') || messageLower.includes('develop') || 
-      messageLower.includes('programming') || messageLower.includes('solidity') ||
-      messageLower.includes('function') || messageLower.includes('debug')) {
-    return 'gpt-4-code-chaingpt';
-  }
-  
-  // Default: use general model with crypto knowledge
-  return 'gpt-4-chaingpt';
+  // ChainGPT uses a single Web3-specialized model according to their docs
+  // All requests go to the same model with Web3/crypto expertise built-in
+  return 'ChainGPT Web3 LLM';
 }
 
 /**
@@ -219,7 +250,43 @@ async function processWithOpenAI(
   personaContext?: any,
   contextualPrompt?: string
 ): Promise<string> {
+  // Handle ChainGPT separately since it uses different API format
+  if (useChainGPT) {
+    console.log('🚀 ChainGPT: Processing with native ChainGPT API');
+    
+    // Build the complete system prompt for ChainGPT
+    let finalSystemPrompt = systemPrompt || DEFAULT_AIGENT_NAKAMOTO_SYSTEM_PROMPT;
+    finalSystemPrompt = DEFAULT_AIGENT_NAKAMOTO_SYSTEM_PROMPT;
+    console.log('🧠 Using Aigent Nakamoto system prompt');
+
+    // Add all context to system prompt for ChainGPT
+    const contextParts = [finalSystemPrompt];
+    
+    if (qryptoKnowledgeContext) {
+      contextParts.push(`\n### MetaKnyts Knowledge Context\n${qryptoKnowledgeContext}`);
+    }
+    
+    if (conversationMemory && conversationMemory.trim()) {
+      contextParts.push(`\n### Conversation Memory\n${conversationMemory}`);
+      console.log('🧠 Added conversation memory to system prompt');
+    }
+    
+    if (contextualPrompt && !personaContext?.isAnonymous) {
+      contextParts.push(`\n### User Context\n${contextualPrompt}`);
+      console.log('🔧 Added persona context to system prompt');
+    }
+    
+    const fullSystemPrompt = contextParts.join('\n\n');
+    
+    return await createChainGPTResponse(message, fullSystemPrompt, conversationId);
+  }
+
+  // For OpenAI and Venice, use the existing client approach
   const client = createAIClient(useVenice, useChainGPT);
+  
+  if (!client) {
+    throw new Error('Failed to create AI client');
+  }
 
   // Use provided system prompt or default based on persona context
   let finalSystemPrompt = systemPrompt || DEFAULT_AIGENT_NAKAMOTO_SYSTEM_PROMPT;
@@ -366,6 +433,7 @@ The knowledge base contains visual content (mermaid diagrams and/or images). You
         qryptoKnowledgeContext,
         conversationMemory,
         false, // Use OpenAI as fallback
+        false, // Don't use ChainGPT as fallback
         personaContext,
         contextualPrompt
       );
