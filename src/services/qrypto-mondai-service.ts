@@ -69,10 +69,11 @@ const enhanceSearchQuery = (message: string, conversationThemes: string[] = []):
 export async function generateAigentNakamotoResponse(
   message: string,
   conversationId: string | null = null,
-  useVenice: boolean = false
+  useVenice: boolean = false,
+  useChainGPT: boolean = false
 ): Promise<MonDAIResponse> {
   try {
-    console.log(`🔄 MonDAI: Processing message with Venice ${useVenice ? 'ENABLED' : 'DISABLED'}`);
+    console.log(`🔄 MonDAI: Processing message with Venice ${useVenice ? 'ENABLED' : 'DISABLED'}, ChainGPT ${useChainGPT ? 'ENABLED' : 'DISABLED'}`);
     console.log(`🔍 MonDAI: Original query: "${message}"`);
     
     // Generate conversation ID if not provided
@@ -186,6 +187,7 @@ ${item.content.includes('![') ? '⚠️ CONTAINS IMAGES - MUST PRESERVE ALL IMAG
         qryptoKnowledgeContext: knowledgeContext,
         conversationMemory: memoryContext,
         useVenice,
+        useChainGPT,
         personaContext: conversationContext,
         contextualPrompt
       }

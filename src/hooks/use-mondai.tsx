@@ -4,19 +4,18 @@ import { generateAigentNakamotoResponse } from '@/services/qrypto-mondai-service
 import { AgentMessage } from '@/lib/types';
 import { useVeniceAgent } from '@/hooks/use-venice-agent';
 import { useOpenAIAgent } from '@/hooks/use-openai-agent';
+import { useChainGPTAgent } from '@/hooks/use-chaingpt-agent';
 
 export const useMondAI = () => {
   const [conversationId, setConversationId] = useState<string | null>(null);
   const [documentUpdates, setDocumentUpdates] = useState(0);
   const { veniceActivated } = useVeniceAgent();
   const { openAIActivated } = useOpenAIAgent();
+  const { chainGPTActivated } = useChainGPTAgent();
 
   const handleAIMessage = useCallback(async (message: string): Promise<AgentMessage> => {
-    const useVenice = veniceActivated && !openAIActivated;
-    
     try {
-      console.log(`🔄 MonDAI Hook: Processing message - Venice: ${useVenice ? 'ENABLED' : 'DISABLED'}, OpenAI: ${openAIActivated ? 'ENABLED' : 'DISABLED'}`);
-      console.log(`🔧 MonDAI Hook: Provider states - Venice:`, veniceActivated, 'OpenAI:', openAIActivated);
+      console.log(`🔄 MonDAI Hook: Processing message with providers - Venice: ${veniceActivated}, OpenAI: ${openAIActivated}, ChainGPT: ${chainGPTActivated}`);
       
       // Generate conversation ID on first message if not already set
       let currentConversationId = conversationId;
@@ -28,10 +27,18 @@ export const useMondAI = () => {
         console.log(`🔄 MonDAI Hook: Using existing conversation ID: ${currentConversationId}`);
       }
       
+      // Determine which provider to use based on activation status
+      // ChainGPT takes priority if activated, then Venice, then OpenAI
+      const useChainGPT = chainGPTActivated;
+      const useVenice = veniceActivated && !chainGPTActivated;
+      
+      console.log(`🤖 MonDAI Hook: Provider selection - ChainGPT: ${useChainGPT}, Venice: ${useVenice}, OpenAI: ${!useChainGPT && !useVenice}`);
+      
       const response = await generateAigentNakamotoResponse(
         message, 
         currentConversationId,
-        useVenice // Pass provider selection
+        useVenice,
+        useChainGPT
       );
       
       // Ensure conversation ID is consistent
@@ -62,7 +69,7 @@ export const useMondAI = () => {
       console.error('❌ MonDAI Hook: Error in handleAIMessage:', error);
       throw error;
     }
-  }, [conversationId, veniceActivated, openAIActivated]);
+  }, [conversationId, veniceActivated, openAIActivated, chainGPTActivated]);
 
   const handleDocumentContextUpdated = useCallback(() => {
     setDocumentUpdates(prev => prev + 1);

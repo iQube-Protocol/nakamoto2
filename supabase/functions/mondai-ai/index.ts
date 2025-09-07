@@ -398,6 +398,7 @@ async function processMonDAIInteraction(
   qryptoKnowledgeContext?: string,
   conversationMemory?: string,
   useVenice: boolean = false,
+  useChainGPT: boolean = false,
   personaContext?: any,
   contextualPrompt?: string
 ): Promise<MonDAIResponse> {
@@ -406,7 +407,8 @@ async function processMonDAIInteraction(
     conversationId = crypto.randomUUID();
   }
   
-  console.log(`🔄 MonDAI Edge Function: Processing with ${useVenice ? 'Venice AI (uncensored)' : 'OpenAI'}`);
+  const aiProvider = useChainGPT ? 'ChainGPT' : useVenice ? 'Venice AI (uncensored)' : 'OpenAI';
+  console.log(`🔄 MonDAI Edge Function: Processing with ${aiProvider}`);
   if (personaContext && !personaContext.isAnonymous) {
     console.log(`🧠 MonDAI Edge Function: Using persona context for ${personaContext.preferredName || 'user'}`);
   }
@@ -419,7 +421,7 @@ async function processMonDAIInteraction(
     console.log(`🧠 MonDAI Edge Function: Using conversation memory`);
   }
   
-  // Process with the AI API (OpenAI or Venice) including persona context, metaKnyts knowledge, and conversation memory
+  // Process with the AI API (OpenAI, Venice, or ChainGPT) including persona context, metaKnyts knowledge, and conversation memory
   const aiResponse = await processWithOpenAI(
     message, 
     knowledgeItems, 
@@ -429,6 +431,7 @@ async function processMonDAIInteraction(
     qryptoKnowledgeContext,
     conversationMemory,
     useVenice,
+    useChainGPT,
     personaContext,
     contextualPrompt
   );
@@ -439,8 +442,8 @@ async function processMonDAIInteraction(
   // Determine if response might benefit from visuals
   const visualsProvided = mermaidDiagramIncluded || message.toLowerCase().includes('diagram');
   
-  const modelUsed = useVenice ? selectVeniceModel(message) : "gpt-4o-mini";
-  const aiProvider = useVenice ? "Venice AI (Uncensored)" : "OpenAI";
+  const modelUsed = useChainGPT ? selectChainGPTModel(message) : useVenice ? selectVeniceModel(message) : "gpt-4o-mini";
+  const finalAiProvider = useChainGPT ? "ChainGPT" : useVenice ? "Venice AI (Uncensored)" : "OpenAI";
   
   // Determine knowledge source
   let knowledgeSource = "LLM General Knowledge";
@@ -470,7 +473,7 @@ async function processMonDAIInteraction(
       mermaidDiagramIncluded,
       conversationMemoryUsed: !!conversationMemory,
       isOffline: false,
-      aiProvider,
+      aiProvider: finalAiProvider,
       personaContextUsed: personaContext && !personaContext.isAnonymous,
       preferredName: personaContext?.preferredName,
       metaKnytsContextUsed: !!qryptoKnowledgeContext
@@ -497,12 +500,14 @@ serve(async (req) => {
       qryptoKnowledgeContext,
       conversationMemory,
       useVenice = false,
+      useChainGPT = false,
       personaContext,
       contextualPrompt
     } = await req.json();
 
-    console.log(`🚀 MonDAI Edge Function: Received request with Venice: ${useVenice}`);
+    console.log(`🚀 MonDAI Edge Function: Received request with Venice: ${useVenice}, ChainGPT: ${useChainGPT}`);
     console.log(`🔧 MonDAI Edge Function: useVenice parameter type:`, typeof useVenice, 'value:', useVenice);
+    console.log(`🔧 MonDAI Edge Function: useChainGPT parameter type:`, typeof useChainGPT, 'value:', useChainGPT);
 
     if (!message) {
       return new Response(
@@ -526,6 +531,7 @@ serve(async (req) => {
       qryptoKnowledgeContext,
       conversationMemory,
       useVenice,
+      useChainGPT,
       personaContext,
       contextualPrompt
     );
