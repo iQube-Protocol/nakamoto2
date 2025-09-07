@@ -209,6 +209,7 @@ const SettingsInterface = ({
     if (qubeName === "OpenAI iQube") return activeQubes["OpenAI"];
     if (qubeName === "Metis iQube") return activeQubes["Metis"];
     if (qubeName === "GDrive iQube") return activeQubes["GDrive"];
+    if (qubeName === "ChainGPT iQube") return activeQubes["ChainGPT"];
     return false;
   };
 
@@ -220,6 +221,7 @@ const SettingsInterface = ({
     else if (metaQube["iQube-Identifier"] === "OpenAI iQube") qubeName = "OpenAI";
     else if (metaQube["iQube-Identifier"] === "Metis iQube") qubeName = "Metis";
     else if (metaQube["iQube-Identifier"] === "GDrive iQube") qubeName = "GDrive";
+    else if (metaQube["iQube-Identifier"] === "ChainGPT iQube") qubeName = "ChainGPT";
     
     if (qubeName) {
       onToggleIQubeActive(qubeName);

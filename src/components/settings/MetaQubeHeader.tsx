@@ -74,7 +74,7 @@ const MetaQubeHeader = ({ metaQube, isActive, onToggleActive, profileImageUrl, o
   
   // Determine the correct tooltip type based on the iQube identifier and type
   const getTooltipType = (): 'dataQube' | 'agentQube' | 'modelQube' => {
-    if (metaQube["iQube-Identifier"] === "Venice iQube" || metaQube["iQube-Identifier"] === "OpenAI iQube") {
+    if (metaQube["iQube-Identifier"] === "Venice iQube" || metaQube["iQube-Identifier"] === "OpenAI iQube" || metaQube["iQube-Identifier"] === "ChainGPT iQube") {
       return "modelQube";
     } else if (metaQube["iQube-Identifier"] === "Metis iQube") {
       return "agentQube";
@@ -85,7 +85,7 @@ const MetaQubeHeader = ({ metaQube, isActive, onToggleActive, profileImageUrl, o
 
   // Determine the correct icon based on the iQube identifier and type
   const getQubeIcon = () => {
-    if (metaQube["iQube-Identifier"] === "Venice iQube" || metaQube["iQube-Identifier"] === "OpenAI iQube") {
+    if (metaQube["iQube-Identifier"] === "Venice iQube" || metaQube["iQube-Identifier"] === "OpenAI iQube" || metaQube["iQube-Identifier"] === "ChainGPT iQube") {
       return <Brain className="h-5 w-5 text-green-500" />;
     } else {
       return (
@@ -117,6 +117,8 @@ const MetaQubeHeader = ({ metaQube, isActive, onToggleActive, profileImageUrl, o
                   ? "/lovable-uploads/4734cb91-dd30-4b25-b290-90276884b871.png"
                   : metaQube["iQube-Identifier"] === "Venice iQube"
                   ? "/lovable-uploads/acdecfe9-4c63-4a5b-b350-5918662c0d67.png"
+                  : metaQube["iQube-Identifier"] === "ChainGPT iQube"
+                  ? "/lovable-uploads/785f5606-7fa7-4f91-908e-c6935c3ba485.png"
                   : profileImageUrl
               } 
               className="object-contain bg-white rounded-full p-0.5"
@@ -125,7 +127,8 @@ const MetaQubeHeader = ({ metaQube, isActive, onToggleActive, profileImageUrl, o
               {metaQube["iQube-Identifier"].includes("Qrypto") ? "Q" : 
                metaQube["iQube-Identifier"].includes("KNYT") ? "K" : 
                metaQube["iQube-Identifier"].includes("OpenAI") ? "O" :
-               metaQube["iQube-Identifier"].includes("Venice") ? "V" : "P"}
+               metaQube["iQube-Identifier"].includes("Venice") ? "V" :
+               metaQube["iQube-Identifier"].includes("ChainGPT") ? "C" : "P"}
             </AvatarFallback>
           </Avatar>
           <span className="text-sm font-medium">
@@ -137,7 +140,7 @@ const MetaQubeHeader = ({ metaQube, isActive, onToggleActive, profileImageUrl, o
             <Badge variant="outline" className="flex items-center gap-1 bg-iqube-primary/10 text-iqube-primary border-iqube-primary/30">
               {metaQube["iQube-Type"] === 'AgentQube' ? (
                 <Brain size={14} />
-              ) : (metaQube["iQube-Identifier"] === "Venice iQube" || metaQube["iQube-Identifier"] === "OpenAI iQube") ? (
+              ) : (metaQube["iQube-Identifier"] === "Venice iQube" || metaQube["iQube-Identifier"] === "OpenAI iQube" || metaQube["iQube-Identifier"] === "ChainGPT iQube") ? (
                 <Brain size={14} />
               ) : (
                 <Database size={14} />
