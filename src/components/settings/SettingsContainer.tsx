@@ -40,6 +40,8 @@ const SettingsContainer = ({ activeQubes, toggleQubeActive, selectedIQube }: Set
       selectIQube("Venice");
     } else if (selectedIQube["iQube-Identifier"] === "GDrive iQube") {
       selectIQube("GDrive");
+    } else if (selectedIQube["iQube-Identifier"] === "ChainGPT iQube") {
+      selectIQube("ChainGPT");
     }
   }, [selectedIQube, selectIQube]);
 
