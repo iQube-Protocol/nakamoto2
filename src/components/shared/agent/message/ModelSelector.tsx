@@ -194,12 +194,12 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
             key={model.id}
             onSelect={(e) => {
               e.preventDefault();
-              handleModelSelect(model);
+              handleModelSelect(model.id);
             }}
             onClick={(e) => {
               e.stopPropagation();
               e.preventDefault();
-              handleModelSelect(model);
+              handleModelSelect(model.id);
             }}
             className={`text-xs cursor-pointer focus:bg-accent hover:bg-accent ${
               currentModel === model.id && currentProvider === 'openai' 
@@ -234,15 +234,55 @@ const ModelSelector: React.FC<ModelSelectorProps> = ({
             key={model.id}
             onSelect={(e) => {
               e.preventDefault();
-              handleModelSelect(model);
+              handleModelSelect(model.id);
             }}
             onClick={(e) => {
               e.stopPropagation();
               e.preventDefault();
-              handleModelSelect(model);
+              handleModelSelect(model.id);
             }}
             className={`text-xs cursor-pointer focus:bg-accent hover:bg-accent ${
               currentModel === model.id && currentProvider === 'venice' 
+                ? 'bg-accent text-accent-foreground' 
+                : ''
+            }`}
+          >
+            <div className="flex flex-col w-full">
+              <div className="flex items-center justify-between">
+                <span className="font-medium">{model.name}</span>
+                {model.category && (
+                  <Badge variant="outline" className="text-[8px] h-3 px-1">
+                    {model.category}
+                  </Badge>
+                )}
+              </div>
+              <span className="text-muted-foreground text-[10px]">
+                {model.description}
+              </span>
+            </div>
+          </DropdownMenuItem>
+        ))}
+        
+        <DropdownMenuSeparator />
+        
+        {/* ChainGPT Models */}
+        <DropdownMenuLabel className="text-xs text-muted-foreground">
+          {getProviderLabel('chaingpt')}
+        </DropdownMenuLabel>
+        {getProviderModels('chaingpt').map((model) => (
+          <DropdownMenuItem
+            key={model.id}
+            onSelect={(e) => {
+              e.preventDefault();
+              handleModelSelect(model.id);
+            }}
+            onClick={(e) => {
+              e.stopPropagation();
+              e.preventDefault();
+              handleModelSelect(model.id);
+            }}
+            className={`text-xs cursor-pointer focus:bg-accent hover:bg-accent ${
+              currentModel === model.id && currentProvider === 'chaingpt' 
                 ? 'bg-accent text-accent-foreground' 
                 : ''
             }`}
