@@ -30,20 +30,41 @@ const ExpiredInvitationsManager = () => {
   const loadExpiredInvitations = async () => {
     setIsLoading(true);
     try {
-      const { data, error } = await supabase
-        .from('invited_users')
-        .select('id, email, persona_type, invited_at, expires_at, email_sent, send_attempts')
-        .eq('signup_completed', false)
-        .lt('expires_at', new Date().toISOString())
-        .order('expires_at', { ascending: false });
+      const allInvitations: ExpiredInvitation[] = [];
+      let offset = 0;
+      const limit = 1000;
+      
+      while (true) {
+        const { data, error } = await supabase
+          .from('invited_users')
+          .select('id, email, persona_type, invited_at, expires_at, email_sent, send_attempts')
+          .eq('signup_completed', false)
+          .lt('expires_at', new Date().toISOString())
+          .order('expires_at', { ascending: false })
+          .range(offset, offset + limit - 1);
 
-      if (error) {
-        console.error('Error fetching expired invitations:', error);
-        toast.error('Failed to load expired invitations');
-        return;
+        if (error) {
+          console.error('Error fetching expired invitations:', error);
+          toast.error('Failed to load expired invitations');
+          return;
+        }
+
+        if (!data || data.length === 0) {
+          break;
+        }
+
+        allInvitations.push(...data);
+        
+        // If we got less than the limit, we've reached the end
+        if (data.length < limit) {
+          break;
+        }
+        
+        offset += limit;
       }
 
-      setExpiredInvitations(data || []);
+      console.log(`Loaded ${allInvitations.length} expired invitations`);
+      setExpiredInvitations(allInvitations);
     } catch (error) {
       console.error('Error loading expired invitations:', error);
       toast.error('Failed to load expired invitations');
