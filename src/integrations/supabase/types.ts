@@ -7,7 +7,7 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instanciate createClient with right options
+  // Allows to automatically instantiate createClient with right options
   // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "12.2.3 (519615d)"
@@ -715,27 +715,27 @@ export type Database = {
       extend_invitation_expiration: {
         Args: { email_list?: string[]; extend_days?: number }
         Returns: {
-          updated_count: number
           emails_updated: string[]
+          updated_count: number
         }[]
       }
       get_expiring_invitations: {
         Args: { days_ahead?: number }
         Returns: {
-          email: string
-          persona_type: string
-          expires_at: string
           days_until_expiry: number
+          email: string
+          expires_at: string
+          persona_type: string
         }[]
       }
       get_invitation_expiration_stats: {
         Args: Record<PropertyKey, never>
         Returns: {
+          expiring_soon_3_days: number
+          expiring_soon_7_days: number
+          expiring_today: number
           total_active: number
           total_expired: number
-          expiring_soon_7_days: number
-          expiring_soon_3_days: number
-          expiring_today: number
         }[]
       }
       increment_send_attempts: {
@@ -749,11 +749,11 @@ export type Database = {
       recover_incomplete_invited_signups: {
         Args: Record<PropertyKey, never>
         Returns: {
-          user_email: string
           invitation_id: string
-          user_id: string
           persona_type: string
           recovery_status: string
+          user_email: string
+          user_id: string
         }[]
       }
     }
