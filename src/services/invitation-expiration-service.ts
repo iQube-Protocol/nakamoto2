@@ -81,7 +81,8 @@ export class InvitationExpirationService {
         };
       }
 
-      const result = data && data.length > 0 ? data[0] : { updated_count: 0 };
+      // The function now returns a JSON object directly
+      const result = (data as any) || { updated_count: 0, success: false };
       const updatedCount = result.updated_count || 0;
       
       return {
@@ -104,7 +105,7 @@ export class InvitationExpirationService {
    */
   async extendAllActiveInvitations(extendDays: number = 30): Promise<{ success: boolean; updatedCount: number; errors: string[] }> {
     try {
-      // Use the existing database function with null to extend all
+      // Use the existing database function with null to extend all expired invitations
       const { data, error } = await supabase
         .rpc('extend_invitation_expiration', {
           email_list: null,
@@ -120,7 +121,8 @@ export class InvitationExpirationService {
         };
       }
 
-      const result = data && data.length > 0 ? data[0] : { updated_count: 0 };
+      // The function now returns a JSON object directly
+      const result = (data as any) || { updated_count: 0, success: false };
       const updatedCount = result.updated_count || 0;
       
       return {

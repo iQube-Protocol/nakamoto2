@@ -714,10 +714,7 @@ export type Database = {
       }
       extend_invitation_expiration: {
         Args: { email_list?: string[]; extend_days?: number }
-        Returns: {
-          emails_updated: string[]
-          updated_count: number
-        }[]
+        Returns: Json
       }
       get_expiring_invitations: {
         Args: { days_ahead?: number }
