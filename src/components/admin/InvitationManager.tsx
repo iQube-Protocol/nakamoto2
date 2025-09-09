@@ -12,6 +12,7 @@ import { invitationService, type InvitationData, type PendingInvitation, type De
 import BatchProgressDialog from './BatchProgressDialog';
 import InvitationDashboard from './InvitationDashboard';
 import DataReconciliationPanel from './DataReconciliationPanel';
+import ExpiredInvitationsManager from './ExpiredInvitationsManager';
 
 // Define a simpler BatchProgress for the reconciliation dialog
 interface SimpleProgress {
@@ -187,7 +188,7 @@ const InvitationManager = () => {
       />
 
       <Tabs defaultValue="dashboard" className="space-y-4">
-        <TabsList className="grid w-full grid-cols-4">
+        <TabsList className="grid w-full grid-cols-5">
           <TabsTrigger value="dashboard">
             <BarChart3 className="h-4 w-4 mr-2" />
             Dashboard
@@ -195,6 +196,10 @@ const InvitationManager = () => {
           <TabsTrigger value="upload">
             <Upload className="h-4 w-4 mr-2" />
             Upload CSV
+          </TabsTrigger>
+          <TabsTrigger value="expired">
+            <AlertCircle className="h-4 w-4 mr-2" />
+            Expired
           </TabsTrigger>
           <TabsTrigger value="reconcile">
             <AlertCircle className="h-4 w-4 mr-2" />
@@ -313,6 +318,10 @@ const InvitationManager = () => {
               </Button>
             </CardContent>
           </Card>
+        </TabsContent>
+
+        <TabsContent value="expired">
+          <ExpiredInvitationsManager />
         </TabsContent>
 
         <TabsContent value="reconcile">
