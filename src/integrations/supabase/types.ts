@@ -725,6 +725,16 @@ export type Database = {
           persona_type: string
         }[]
       }
+      get_invitation_by_token: {
+        Args: { token_value: string }
+        Returns: {
+          email: string
+          expires_at: string
+          id: string
+          persona_type: string
+          signup_completed: boolean
+        }[]
+      }
       get_invitation_expiration_stats: {
         Args: Record<PropertyKey, never>
         Returns: {
