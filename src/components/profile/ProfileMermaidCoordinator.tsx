@@ -24,7 +24,7 @@ const ProfileMermaidCoordinator: React.FC<ProfileMermaidCoordinatorProps> = ({
 
   // Extract Mermaid diagrams from content
   const mermaidDiagrams = React.useMemo(() => {
-    const mermaidRegex = /```mermaid\n([\s\S]*?)\n```/g;
+    const mermaidRegex = /```[\t ]*mermaid[\t ]*\r?\n([\s\S]*?)\r?\n```/g;
     const diagrams: Array<{ code: string; index: number }> = [];
     let match;
     
@@ -88,33 +88,23 @@ const ProfileMermaidCoordinator: React.FC<ProfileMermaidCoordinatorProps> = ({
   }, [isVisible]);
 
   // Process content with diagrams
-  const processContentWithDiagrams = useCallback(() => {
-    if (!shouldRender || mermaidDiagrams.length === 0) {
-      // Return content with placeholder for diagrams
-      return content.replace(/```mermaid\n[\s\S]*?\n```/g, '[Diagram - Loading...]');
-    }
-
-    let processedContent = content;
-    let offset = 0;
-
-    mermaidDiagrams.forEach((diagram, index) => {
-      const diagramId = `${messageId}_diagram_${index}`;
-      const placeholder = `<div class="mermaid-placeholder" data-diagram-id="${diagramId}"></div>`;
-      
-      const mermaidBlock = `\`\`\`mermaid\n${diagram.code}\n\`\`\``;
-      const startIndex = diagram.index + offset;
-      const endIndex = startIndex + mermaidBlock.length;
-      
-      processedContent = 
-        processedContent.slice(0, startIndex) +
-        placeholder +
-        processedContent.slice(endIndex);
-      
-      offset += placeholder.length - mermaidBlock.length;
-    });
-
-    return processedContent;
-  }, [content, mermaidDiagrams, messageId, shouldRender]);
+   const processContentWithDiagrams = useCallback(() => {
+     const blockRegex = /```[\t ]*mermaid[\t ]*\r?\n([\s\S]*?)\r?\n```/g;
+ 
+     if (!shouldRender || mermaidDiagrams.length === 0) {
+       // Return content with placeholder for diagrams (matches all variants)
+       return content.replace(blockRegex, '[Diagram - Loading...]');
+     }
+ 
+     // Replace blocks with placeholders using a stable counter matching extraction order
+     let counter = 0;
+     const processed = content.replace(blockRegex, () => {
+       const diagramId = `${messageId}_diagram_${counter++}`;
+       return `<div class="mermaid-placeholder" data-diagram-id="${diagramId}"></div>`;
+     });
+ 
+     return processed;
+   }, [content, mermaidDiagrams.length, messageId, shouldRender]);
 
   // Render diagrams separately for better control
   const renderDiagrams = () => {

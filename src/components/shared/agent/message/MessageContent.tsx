@@ -28,12 +28,12 @@ const MessageContent = ({ content, sender, metadata }: MessageContentProps) => {
     const mermaidBlocks: string[] = [];
     let tempContent = content;
     
-    // Extract and protect Mermaid blocks
-    tempContent = tempContent.replace(/```mermaid\n([\s\S]*?)\n```/g, (match, code) => {
-      const index = mermaidBlocks.length;
-      mermaidBlocks.push(code.trim());
-      return `__MERMAID_BLOCK_${index}__`;
-    });
+     // Extract and protect Mermaid blocks
+     tempContent = tempContent.replace(/```[\t ]*mermaid[\t ]*\r?\n([\s\S]*?)\r?\n```/g, (match, code) => {
+       const index = mermaidBlocks.length;
+       mermaidBlocks.push(code.trim());
+       return `__MERMAID_BLOCK_${index}__`;
+     });
     
     // Now safely remove HTML div wrappers
     let cleaned = tempContent

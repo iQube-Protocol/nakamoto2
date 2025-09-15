@@ -36,11 +36,11 @@ const NavigationAwareMessageContent: React.FC<NavigationAwareMessageContentProps
       if (!mountedRef.current) return;
 
       const isNavigating = NavigationGuard.isNavigationInProgress();
-      const hasMermaid = content.includes('```mermaid');
+      const hasMermaid = /```\s*mermaid\b/.test(content);
       
       if (isNavigating && hasMermaid) {
         // During navigation, show simplified content without mermaid
-        const simplifiedContent = content.replace(/```mermaid[\s\S]*?```/g, '[Diagram - Loading...]');
+        const simplifiedContent = content.replace(/```\s*mermaid[\s\S]*?```/g, '[Diagram - Loading...]');
         setDisplayContent(showPreview && simplifiedContent.length > maxLength 
           ? simplifiedContent.substring(0, maxLength) + '...'
           : simplifiedContent
@@ -61,7 +61,7 @@ const NavigationAwareMessageContent: React.FC<NavigationAwareMessageContentProps
 
     // Re-render after navigation completes
     const navigationCheckInterval = setInterval(() => {
-      if (!NavigationGuard.isNavigationInProgress() && !shouldRenderMermaid && content.includes('```mermaid')) {
+      if (!NavigationGuard.isNavigationInProgress() && !shouldRenderMermaid && /```\s*mermaid\b/.test(content)) {
         renderContent();
         clearInterval(navigationCheckInterval);
       }
@@ -71,7 +71,7 @@ const NavigationAwareMessageContent: React.FC<NavigationAwareMessageContentProps
   }, [content, maxLength, showPreview, shouldRenderMermaid]);
 
   // Check if content has Mermaid diagrams
-  const hasMermaidDiagrams = content.includes('```mermaid');
+  const hasMermaidDiagrams = /```\s*mermaid\b/.test(content);
 
   return (
     <div className="navigation-aware-content">
