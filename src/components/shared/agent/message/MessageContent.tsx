@@ -160,11 +160,12 @@ const MessageContent = ({ content, sender, metadata }: MessageContentProps) => {
         // Handle Mermaid diagrams
         if (language === 'mermaid') {
           console.log('MessageContent: Processing Mermaid code:', { code: code.substring(0, 50), metadata });
+          const stableId = `mermaid-${i}-${code.length}`;
           return (
             <MermaidDiagramSafe 
-              key={`mermaid-${i}-${Date.now()}`} 
+              key={stableId} 
               code={code} 
-              id={`mermaid-${i}-${Date.now()}`}
+              id={stableId}
             />
           );
         }
