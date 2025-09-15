@@ -66,26 +66,25 @@ const ProfileMermaidCoordinator: React.FC<ProfileMermaidCoordinatorProps> = ({
 
   // Control rendering based on navigation state and visibility
   useEffect(() => {
-    if (!isVisible) return;
+    if (!isVisible || shouldRender) return;
 
     const checkRenderConditions = () => {
       const isNavigating = NavigationGuard.isNavigationInProgress();
-      
-      if (!isNavigating && isVisible) {
-        setShouldRender(true);
-      } else if (isNavigating) {
-        setShouldRender(false);
+
+      if (!isNavigating) {
+        setShouldRender(true); // Lock on once ready
+        clearInterval(intervalId);
       }
     };
 
     // Initial check
     checkRenderConditions();
 
-    // Recheck periodically during navigation
-    const interval = setInterval(checkRenderConditions, 100);
+    // Recheck periodically until ready, then stop
+    const intervalId = setInterval(checkRenderConditions, 100);
 
-    return () => clearInterval(interval);
-  }, [isVisible]);
+    return () => clearInterval(intervalId);
+  }, [isVisible, shouldRender]);
 
   // Process content with diagrams
    const processContentWithDiagrams = useCallback(() => {
