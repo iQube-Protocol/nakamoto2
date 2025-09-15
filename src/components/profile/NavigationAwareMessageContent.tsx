@@ -77,7 +77,7 @@ const NavigationAwareMessageContent: React.FC<NavigationAwareMessageContentProps
     <div className="navigation-aware-content">
       {hasMermaidDiagrams ? (
         <ProfileMermaidCoordinator
-          content={displayContent}
+          content={content}
           messageId={messageId}
           sender={sender}
         />
