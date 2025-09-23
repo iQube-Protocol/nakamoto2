@@ -21,11 +21,6 @@ export const navItems: NavItem[] = [
     icon: User,
   },
   {
-    name: 'Persona',
-    href: '/settings',
-    icon: Database,
-  },
-  {
     name: 'Settings',
     href: '/settings',
     icon: Settings,
