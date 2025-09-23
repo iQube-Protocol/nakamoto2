@@ -9,14 +9,24 @@ import { useUserInteractionsOptimized } from '@/hooks/use-user-interactions-opti
 import { getRelativeTime } from '@/lib/utils';
 import ResponseDialog from '@/components/profile/ResponseDialog';
 import NavigationAwareMessageContent from '@/components/profile/NavigationAwareMessageContent';
+import { NameManagementSection } from '@/components/settings/NameManagementSection';
+import { useSidebarState } from '@/hooks/use-sidebar-state';
 
 const Profile = () => {
   const {
     user
   } = useAuth();
+  const { selectedIQube } = useSidebarState();
   const [activeTab, setActiveTab] = useState<'learn' | 'earn' | 'connect' | 'mondai'>('mondai');
   const [selectedResponse, setSelectedResponse] = useState<any>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
+
+  // Determine persona type from selected iQube
+  const getPersonaType = (): 'knyt' | 'qrypto' | null => {
+    if (selectedIQube === 'KNYT Persona') return 'knyt';
+    if (selectedIQube === 'Qrypto Persona') return 'qrypto';
+    return null;
+  };
 
   const {
     interactions,
@@ -71,64 +81,61 @@ const Profile = () => {
     <TooltipProvider>
       <div className="min-h-screen w-full overflow-x-hidden">
         <div className="max-w-full px-3 sm:px-6 py-3 sm:py-6 space-y-4">
-          {/* User info section - mobile optimized */}
+          {/* User info section - compressed */}
           <Card className="w-full">
-            <CardHeader className="pb-3 px-3 sm:px-6">
+            <CardHeader className="pb-2 px-3 sm:px-6">
               <CardTitle className="text-base sm:text-lg">Profile</CardTitle>
             </CardHeader>
-            <CardContent className="px-3 sm:px-6 pb-4">
-              <div className="space-y-3">
-                <div className="grid grid-cols-2 gap-2 text-xs sm:text-sm">
-                  <span className="text-muted-foreground">Account Email:</span>
-                  {user.email.length > 30 ? (
+            <CardContent className="px-3 sm:px-6 pb-3">
+              <div className="grid grid-cols-2 md:grid-cols-4 gap-3 text-xs">
+                <div>
+                  <span className="text-muted-foreground">Email:</span>
+                  {user.email.length > 25 ? (
                     <Tooltip>
                       <TooltipTrigger asChild>
-                        <span className="font-mono bg-muted px-2 py-1 rounded text-xs break-all cursor-help">
-                          {user.email.substring(0, 25)}...
-                        </span>
+                        <div className="font-mono bg-muted px-1 py-0.5 rounded text-xs break-all cursor-help mt-1">
+                          {user.email.substring(0, 20)}...
+                        </div>
                       </TooltipTrigger>
                       <TooltipContent>
                         <p>{user.email}</p>
                       </TooltipContent>
                     </Tooltip>
                   ) : (
-                    <span className="font-mono bg-muted px-2 py-1 rounded text-xs">
+                    <div className="font-mono bg-muted px-1 py-0.5 rounded text-xs mt-1">
                       {user.email}
-                    </span>
+                    </div>
                   )}
                 </div>
-                <div className="grid grid-cols-2 gap-2 text-xs sm:text-sm">
+                <div>
                   <span className="text-muted-foreground">ID:</span>
-                  <span className="font-mono bg-muted px-2 py-1 rounded text-xs break-all">
+                  <div className="font-mono bg-muted px-1 py-0.5 rounded text-xs break-all mt-1">
                     {user.id.substring(0, 8)}...
-                  </span>
+                  </div>
                 </div>
-              <div className="grid grid-cols-2 gap-2 text-xs sm:text-sm">
-                <span className="text-muted-foreground">Last Sign In:</span>
-                <span className="break-words">{getRelativeTime(new Date(user.last_sign_in_at || ''))}</span>
+                <div>
+                  <span className="text-muted-foreground">Last Sign In:</span>
+                  <div className="break-words mt-1">{getRelativeTime(new Date(user.last_sign_in_at || ''))}</div>
+                </div>
+                <div>
+                  <span className="text-muted-foreground">Created:</span>
+                  <div className="break-words mt-1">{new Date(user.created_at).toLocaleDateString()}</div>
+                </div>
               </div>
-              <div className="grid grid-cols-2 gap-2 text-xs sm:text-sm">
-                <span className="text-muted-foreground">Created:</span>
-                <span className="break-words">{new Date(user.created_at).toLocaleDateString()}</span>
-              </div>
-              <div className="grid grid-cols-2 gap-2 text-xs sm:text-sm">
-                <span className="text-muted-foreground">Status:</span>
-                <Badge variant={user.email_confirmed_at ? "secondary" : "destructive"} className="bg-qrypto-primary w-fit text-xs">
-                  {user.email_confirmed_at ? "Verified" : "Unverified"}
-                </Badge>
-              </div>
-            </div>
-          </CardContent>
-        </Card>
+            </CardContent>
+          </Card>
 
-        {/* Interaction history section - mobile optimized */}
+          {/* Name Management Section */}
+          <NameManagementSection filterPersonaType={getPersonaType()} />
+
+        {/* Interaction history section - compressed */}
         <Card className="w-full">
-          <CardHeader className="pb-3 px-3 sm:px-6">
+          <CardHeader className="pb-2 px-3 sm:px-6">
             <CardTitle className="text-base sm:text-lg">History</CardTitle>
-            <div className="flex flex-wrap gap-2 mt-3">
+            <div className="flex flex-wrap gap-2 mt-2">
               <button 
                 onClick={() => setActiveTab('mondai')} 
-                className={`px-3 py-2 text-xs sm:text-sm rounded transition-colors ${
+                className={`px-3 py-1.5 text-xs sm:text-sm rounded transition-colors ${
                   activeTab === 'mondai' ? 'bg-qrypto-primary text-white' : 'bg-muted hover:bg-muted/80'
                 }`}
               >
@@ -136,7 +143,7 @@ const Profile = () => {
               </button>
               <button 
                 onClick={() => setActiveTab('learn')} 
-                className={`px-3 py-2 text-xs sm:text-sm rounded transition-colors ${
+                className={`px-3 py-1.5 text-xs sm:text-sm rounded transition-colors ${
                   activeTab === 'learn' ? 'bg-qrypto-primary text-white' : 'bg-muted hover:bg-muted/80'
                 }`}
               >
@@ -144,7 +151,7 @@ const Profile = () => {
               </button>
               <button 
                 onClick={() => setActiveTab('earn')} 
-                className={`px-3 py-2 text-xs sm:text-sm rounded transition-colors ${
+                className={`px-3 py-1.5 text-xs sm:text-sm rounded transition-colors ${
                   activeTab === 'earn' ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'
                 }`}
               >
@@ -152,7 +159,7 @@ const Profile = () => {
               </button>
               <button 
                 onClick={() => setActiveTab('connect')} 
-                className={`px-3 py-2 text-xs sm:text-sm rounded transition-colors ${
+                className={`px-3 py-1.5 text-xs sm:text-sm rounded transition-colors ${
                   activeTab === 'connect' ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'
                 }`}
               >
@@ -160,8 +167,8 @@ const Profile = () => {
               </button>
             </div>
           </CardHeader>
-          <CardContent className="px-2 sm:px-6 pb-4">
-            <ScrollArea className="h-[300px] sm:h-[400px] w-full">
+          <CardContent className="px-2 sm:px-6 pb-3">
+            <ScrollArea className="h-[250px] sm:h-[300px] w-full">
               <div className="space-y-3 pr-2">
                 {interactions && interactions.length > 0 ? interactions.map(interaction => (
                   <div key={interaction.id} className="w-full overflow-hidden">

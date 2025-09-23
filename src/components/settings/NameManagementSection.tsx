@@ -19,7 +19,11 @@ interface PersonaNameInfo {
   profileImageUrl?: string;
 }
 
-export const NameManagementSection: React.FC = () => {
+interface NameManagementSectionProps {
+  filterPersonaType?: 'knyt' | 'qrypto' | null; // Allow filtering by persona type
+}
+
+export const NameManagementSection: React.FC<NameManagementSectionProps> = ({ filterPersonaType = null }) => {
   const [personaNames, setPersonaNames] = useState<PersonaNameInfo[]>([]);
   const [conflictDialog, setConflictDialog] = useState<{
     open: boolean;
@@ -161,163 +165,187 @@ export const NameManagementSection: React.FC = () => {
     setConflictDialog({ open: true, data: conflictData });
   };
 
+  // Filter personas based on the prop
+  const displayPersonas = filterPersonaType 
+    ? personaNames.filter(persona => persona.personaType === filterPersonaType)
+    : personaNames;
+
   return (
     <TooltipProvider>
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Pencil className="h-5 w-5" />
-            Name Management
-          </CardTitle>
-          <CardDescription>
-            Manage how your name appears across different persona profiles
+      <Card className="w-full">
+        <CardHeader className="pb-2">
+          <CardTitle className="text-base">Name Management</CardTitle>
+          <CardDescription className="text-xs">
+            Manage your display names and profile images{filterPersonaType ? ` for ${filterPersonaType.toUpperCase()} persona` : ' for different personas'}
           </CardDescription>
         </CardHeader>
-        <CardContent className="space-y-4">
-          {personaNames.map((persona) => (
-            <div key={persona.personaType} className="p-4 border rounded-lg">
+        <CardContent>
+          {displayPersonas.length === 0 ? (
+            <div className="flex items-center justify-center h-20 text-muted-foreground text-sm">
+              {personaNames.length === 0 ? 'Loading name preferences...' : 'No data for selected persona'}
+            </div>
+          ) : (
+            <div className="space-y-3">
               {/* Desktop Layout */}
-              <div className="hidden md:flex items-center justify-between">
-                <div className="flex items-center gap-3">
-                  <div className="relative group">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={persona.profileImageUrl} />
-                      <AvatarFallback>
-                        {persona.personaType === 'knyt' ? 'K' : 'Q'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      id={`upload-${persona.personaType}`}
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) handleImageUpload(persona, file);
-                      }}
-                    />
-                    <label
-                      htmlFor={`upload-${persona.personaType}`}
-                      className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                    >
-                      {uploading === persona.personaType ? (
-                        <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
-                      ) : (
-                        <Camera className="h-4 w-4 text-white" />
-                      )}
-                    </label>
-                  </div>
-                  <div>
-                    <div className="font-medium">
-                      {persona.personaType.toUpperCase()} Profile
+              <div className="hidden md:block">
+                <div className="space-y-3">
+                  {displayPersonas.map((persona) => (
+                    <div key={persona.personaType} className="p-3 border rounded-lg">
+                      <div className="flex items-center justify-between">
+                        <div className="flex items-center gap-3">
+                          <div className="relative group">
+                            <Avatar className="h-10 w-10">
+                              <AvatarImage src={persona.profileImageUrl} />
+                              <AvatarFallback>
+                                {persona.personaType === 'knyt' ? 'K' : 'Q'}
+                              </AvatarFallback>
+                            </Avatar>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              id={`upload-${persona.personaType}`}
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) handleImageUpload(persona, file);
+                              }}
+                            />
+                            <label
+                              htmlFor={`upload-${persona.personaType}`}
+                              className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                            >
+                              {uploading === persona.personaType ? (
+                                <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
+                              ) : (
+                                <Camera className="h-4 w-4 text-white" />
+                              )}
+                            </label>
+                          </div>
+                          <div>
+                            <div className="font-medium text-sm">
+                              {persona.personaType.toUpperCase()} Profile
+                            </div>
+                            <div className="text-xs text-muted-foreground">
+                              {persona.currentName.firstName} {persona.currentName.lastName}
+                            </div>
+                          </div>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          {persona.source === 'default' ? (
+                            <Tooltip>
+                              <TooltipTrigger asChild>
+                                <Badge variant={getSourceBadgeVariant(persona.source)} className="text-xs">
+                                  System
+                                </Badge>
+                              </TooltipTrigger>
+                              <TooltipContent>
+                                <p>No name preference set. Using default persona data.</p>
+                              </TooltipContent>
+                            </Tooltip>
+                          ) : (
+                            <Badge variant={getSourceBadgeVariant(persona.source)} className="text-xs">
+                              {persona.source}
+                            </Badge>
+                          )}
+                          <Button 
+                            variant="outline" 
+                            size="sm"
+                            onClick={() => handleEdit(persona)}
+                            className="h-7 px-2 text-xs"
+                          >
+                            Edit
+                          </Button>
+                        </div>
+                      </div>
                     </div>
-                    <div className="text-sm text-muted-foreground">
-                      {persona.currentName.firstName} {persona.currentName.lastName}
-                    </div>
-                  </div>
-                </div>
-                <div className="flex items-center gap-2">
-                  {persona.source === 'default' ? (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Badge variant={getSourceBadgeVariant(persona.source)}>
-                          System
-                        </Badge>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        <p>No name preference set. Using default persona data.</p>
-                      </TooltipContent>
-                    </Tooltip>
-                  ) : (
-                    <Badge variant={getSourceBadgeVariant(persona.source)}>
-                      {persona.source}
-                    </Badge>
-                  )}
-                  <Button 
-                    variant="outline" 
-                    size="sm"
-                    onClick={() => handleEdit(persona)}
-                  >
-                    Edit
-                  </Button>
+                  ))}
                 </div>
               </div>
 
               {/* Mobile Layout */}
-              <div className="md:hidden space-y-3">
-                {/* Row 1: Avatar and Profile Label */}
-                <div className="flex items-center gap-3">
-                  <div className="relative group">
-                    <Avatar className="h-10 w-10">
-                      <AvatarImage src={persona.profileImageUrl} />
-                      <AvatarFallback>
-                        {persona.personaType === 'knyt' ? 'K' : 'Q'}
-                      </AvatarFallback>
-                    </Avatar>
-                    <input
-                      type="file"
-                      accept="image/*"
-                      className="hidden"
-                      id={`upload-mobile-${persona.personaType}`}
-                      onChange={(e) => {
-                        const file = e.target.files?.[0];
-                        if (file) handleImageUpload(persona, file);
-                      }}
-                    />
-                    <label
-                      htmlFor={`upload-mobile-${persona.personaType}`}
-                      className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
-                    >
-                      {uploading === persona.personaType ? (
-                        <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
-                      ) : (
-                        <Camera className="h-4 w-4 text-white" />
-                      )}
-                    </label>
-                  </div>
-                  <div className="font-medium">
-                    {persona.personaType.toUpperCase()} Profile
-                  </div>
-                </div>
+              <div className="block md:hidden">
+                <div className="space-y-3">
+                  {displayPersonas.map((persona) => (
+                    <div key={persona.personaType} className="p-3 border rounded-lg">
+                      <div className="space-y-2">
+                        {/* Row 1: Avatar and Profile Label */}
+                        <div className="flex items-center gap-3">
+                          <div className="relative group">
+                            <Avatar className="h-10 w-10">
+                              <AvatarImage src={persona.profileImageUrl} />
+                              <AvatarFallback>
+                                {persona.personaType === 'knyt' ? 'K' : 'Q'}
+                              </AvatarFallback>
+                            </Avatar>
+                            <input
+                              type="file"
+                              accept="image/*"
+                              className="hidden"
+                              id={`upload-mobile-${persona.personaType}`}
+                              onChange={(e) => {
+                                const file = e.target.files?.[0];
+                                if (file) handleImageUpload(persona, file);
+                              }}
+                            />
+                            <label
+                              htmlFor={`upload-mobile-${persona.personaType}`}
+                              className="absolute inset-0 flex items-center justify-center bg-black/50 rounded-full opacity-0 group-hover:opacity-100 transition-opacity cursor-pointer"
+                            >
+                              {uploading === persona.personaType ? (
+                                <div className="animate-spin h-4 w-4 border-2 border-white border-t-transparent rounded-full" />
+                              ) : (
+                                <Camera className="h-4 w-4 text-white" />
+                              )}
+                            </label>
+                          </div>
+                          <div className="font-medium text-sm">
+                            {persona.personaType.toUpperCase()} Profile
+                          </div>
+                        </div>
 
-                {/* Row 2: Name and Buttons */}
-                <div className="flex items-center justify-between">
-                  <div className="text-sm text-muted-foreground">
-                    {persona.currentName.firstName} {persona.currentName.lastName}
-                  </div>
-                  <div className="flex items-center gap-2">
-                    {persona.source === 'default' ? (
-                      <Tooltip>
-                        <TooltipTrigger asChild>
-                          <Badge variant={getSourceBadgeVariant(persona.source)}>
-                            System
-                          </Badge>
-                        </TooltipTrigger>
-                        <TooltipContent>
-                          <p>No name preference set. Using default persona data.</p>
-                        </TooltipContent>
-                      </Tooltip>
-                    ) : (
-                      <Badge variant={getSourceBadgeVariant(persona.source)}>
-                        {persona.source}
-                      </Badge>
-                    )}
-                    <Button 
-                      variant="outline" 
-                      size="sm"
-                      onClick={() => handleEdit(persona)}
-                    >
-                      Edit
-                    </Button>
-                  </div>
+                        {/* Row 2: Name and Buttons */}
+                        <div className="flex items-center justify-between">
+                          <div className="text-xs text-muted-foreground">
+                            {persona.currentName.firstName} {persona.currentName.lastName}
+                          </div>
+                          <div className="flex items-center gap-2">
+                            {persona.source === 'default' ? (
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Badge variant={getSourceBadgeVariant(persona.source)} className="text-xs">
+                                    System
+                                  </Badge>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>No name preference set. Using default persona data.</p>
+                                </TooltipContent>
+                              </Tooltip>
+                            ) : (
+                              <Badge variant={getSourceBadgeVariant(persona.source)} className="text-xs">
+                                {persona.source}
+                              </Badge>
+                            )}
+                            <Button 
+                              variant="outline" 
+                              size="sm"
+                              onClick={() => handleEdit(persona)}
+                              className="h-7 px-2 text-xs"
+                            >
+                              Edit
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
               </div>
             </div>
-          ))}
+          )}
 
-          {personaNames.length === 0 && (
-            <div className="text-center py-8 text-muted-foreground">
-              No persona profiles found. Complete your profile setup first.
+          {displayPersonas.length === 0 && personaNames.length > 0 && (
+            <div className="text-center py-4 text-muted-foreground text-sm">
+              No data for selected persona
             </div>
           )}
         </CardContent>

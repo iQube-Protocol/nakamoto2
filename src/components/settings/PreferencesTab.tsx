@@ -9,7 +9,7 @@ import { Bell, Shield, Sun, Moon } from 'lucide-react';
 import { UserSettings } from '@/lib/types';
 import { useTheme } from '@/contexts/ThemeContext';
 import { useToast } from '@/hooks/use-toast';
-import { NameManagementSection } from './NameManagementSection';
+
 
 interface PreferencesTabProps {
   settings: UserSettings;
@@ -32,8 +32,6 @@ const PreferencesTab = ({ settings, onSaveSettings }: PreferencesTabProps) => {
 
   return (
     <div className="space-y-6">
-      <NameManagementSection />
-      
       <Card>
       <CardHeader className="pb-2">
         <CardTitle className="text-base">Application Preferences</CardTitle>
