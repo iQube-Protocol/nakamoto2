@@ -21,6 +21,11 @@ export const navItems: NavItem[] = [
     icon: User,
   },
   {
+    name: 'Persona',
+    href: '/settings',
+    icon: Database,
+  },
+  {
     name: 'Settings',
     href: '/settings',
     icon: Settings,
@@ -38,22 +43,6 @@ export interface QubeItem {
 }
 
 export const iQubeItems: QubeItem[] = [
-  {
-    id: 'dataqube',
-    name: 'Qrypto Persona',
-    type: 'DataQube',
-    icon: Database,
-    href: '/settings',
-    description: 'Cryptocurrency AI agent',
-  },
-  {
-    id: 'knytpersona',
-    name: 'KNYT Persona',
-    type: 'DataQube',
-    icon: Database,
-    href: '/settings',
-    description: 'KNYT ecosystem profile with 2,800 Satoshi reward',
-  },
   {
     id: 'openai',
     name: 'OpenAI',
@@ -87,6 +76,25 @@ export const iQubeItems: QubeItem[] = [
   //   href: '/settings',
   //   description: 'Your AI assistant for learning',
   // },
+];
+
+export const personaItems: QubeItem[] = [
+  {
+    id: 'dataqube',
+    name: 'Qrypto Persona',
+    type: 'DataQube',
+    icon: Database,
+    href: '/settings',
+    description: 'Cryptocurrency AI agent',
+  },
+  {
+    id: 'knytpersona',
+    name: 'KNYT Persona',
+    type: 'DataQube',
+    icon: Database,
+    href: '/settings',
+    description: 'KNYT ecosystem profile with 2,800 Satoshi reward',
+  },
 ];
 
 export const nakamotoQubeData = {

@@ -11,11 +11,13 @@ import { navItems, iQubeItems, QubeItem } from './sidebarData';
 interface SidebarContentProps {
   collapsed: boolean;
   iQubesOpen: boolean;
+  personaOpen: boolean;
   selectedIQube: string | null;
   activeQubes: {[key: string]: boolean};
   location: { pathname: string };
   toggleSidebar: () => void;
   toggleIQubesMenu: () => void;
+  togglePersonaMenu: () => void;
   handleIQubeClick: (iqubeId: string) => void;
   toggleIQubeActive: (e: React.MouseEvent<HTMLDivElement>, qubeName: string) => void;
   
@@ -26,11 +28,13 @@ interface SidebarContentProps {
 const SidebarContent: React.FC<SidebarContentProps> = ({
   collapsed,
   iQubesOpen,
+  personaOpen,
   selectedIQube,
   activeQubes,
   location,
   toggleSidebar,
   toggleIQubesMenu,
+  togglePersonaMenu,
   handleIQubeClick,
   toggleIQubeActive,
   
@@ -55,6 +59,8 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
         iQubeItems={iQubeItems}
         iQubesOpen={iQubesOpen}
         toggleIQubesMenu={toggleIQubesMenu}
+        personaOpen={personaOpen}
+        togglePersonaMenu={togglePersonaMenu}
         selectedIQube={selectedIQube}
         activeQubes={activeQubes}
         handleIQubeClick={handleIQubeClick}

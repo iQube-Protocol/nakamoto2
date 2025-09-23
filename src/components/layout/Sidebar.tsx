@@ -14,11 +14,13 @@ const Sidebar = () => {
   const sidebarContentProps = {
     collapsed: sidebarLogic.collapsed,
     iQubesOpen: sidebarLogic.iQubesOpen,
+    personaOpen: sidebarLogic.personaOpen,
     selectedIQube: sidebarLogic.selectedIQube,
     activeQubes: sidebarLogic.activeIQubes,
     location: sidebarLogic.location,
     toggleSidebar: sidebarLogic.toggleSidebar,
     toggleIQubesMenu: sidebarLogic.toggleIQubesMenu,
+    togglePersonaMenu: sidebarLogic.togglePersonaMenu,
     handleIQubeClick: sidebarLogic.handleIQubeClick,
     toggleIQubeActive: sidebarLogic.toggleIQubeActive,
     

@@ -1,8 +1,9 @@
 
 import React from 'react';
-import { NavItem as NavItemType, QubeItem } from './sidebarData';
+import { NavItem as NavItemType, QubeItem, personaItems } from './sidebarData';
 import NavItem from './NavItem';
 import IQubesSection from './IQubesSection';
+import PersonaSection from './PersonaSection';
 
 interface MainNavigationProps {
   navItems: NavItemType[];
@@ -11,6 +12,8 @@ interface MainNavigationProps {
   iQubeItems: QubeItem[];
   iQubesOpen: boolean;
   toggleIQubesMenu: () => void;
+  personaOpen: boolean;
+  togglePersonaMenu: () => void;
   selectedIQube: string | null;
   activeQubes: {[key: string]: boolean};
   handleIQubeClick: (iqubeId: string) => void;
@@ -26,6 +29,8 @@ const MainNavigation: React.FC<MainNavigationProps> = ({
   iQubeItems,
   iQubesOpen,
   toggleIQubesMenu,
+  personaOpen,
+  togglePersonaMenu,
   selectedIQube,
   activeQubes,
   handleIQubeClick,
@@ -33,23 +38,62 @@ const MainNavigation: React.FC<MainNavigationProps> = ({
   location,
   toggleMobileSidebar
 }) => {
+  // Handle Persona nav item click
+  const handlePersonaNavClick = () => {
+    togglePersonaMenu();
+  };
+
   return (
     <div className="flex-1 px-3 py-2 space-y-1">
       {/* Regular Nav Items */}
-      {navItems.map((item, index) => (
-        <NavItem 
-          key={index}
-          icon={item.icon}
-          href={item.href}
-          active={activePath === item.href}
-          collapsed={collapsed}
-          toggleMobileSidebar={toggleMobileSidebar}
-        >
-          {item.name}
-        </NavItem>
-      ))}
+      {navItems.map((item, index) => {
+        // Special handling for Persona nav item
+        if (item.name === 'Persona') {
+          return (
+            <div key={index} onClick={handlePersonaNavClick}>
+              <NavItem 
+                icon={item.icon}
+                href={item.href}
+                active={activePath === item.href}
+                collapsed={collapsed}
+                onClick={() => {}} // Prevent navigation, only toggle menu
+                toggleMobileSidebar={toggleMobileSidebar}
+              >
+                {item.name}
+              </NavItem>
+            </div>
+          );
+        }
+
+        return (
+          <NavItem 
+            key={index}
+            icon={item.icon}
+            href={item.href}
+            active={activePath === item.href}
+            collapsed={collapsed}
+            toggleMobileSidebar={toggleMobileSidebar}
+          >
+            {item.name}
+          </NavItem>
+        );
+      })}
       
-      {/* iQubes Section - Now placed directly under the navigation items */}
+      {/* Persona Section - Collapsible submenu for persona items */}
+      <PersonaSection 
+        personaItems={personaItems}
+        personaOpen={personaOpen}
+        togglePersonaMenu={togglePersonaMenu}
+        collapsed={collapsed}
+        selectedIQube={selectedIQube}
+        activeQubes={activeQubes}
+        handleIQubeClick={handleIQubeClick}
+        toggleIQubeActive={toggleIQubeActive}
+        location={location}
+        toggleMobileSidebar={toggleMobileSidebar}
+      />
+      
+      {/* iQubes Section - Now only contains model qubes */}
       <IQubesSection 
         iQubeItems={iQubeItems}
         iQubesOpen={iQubesOpen}

@@ -18,6 +18,12 @@ export function useSidebarState() {
     return savedState ? JSON.parse(savedState) : true;
   });
 
+  // Added state to track persona submenu
+  const [personaOpen, setPersonaOpen] = useState(() => {
+    const savedState = localStorage.getItem('persona-collapsed');
+    return savedState ? JSON.parse(savedState) : true;
+  });
+
   // Add state to track which iQube is selected
   const [selectedIQube, setSelectedIQube] = useState<string | null>(() => {
     const savedState = localStorage.getItem('selected-iqube');
@@ -33,6 +39,11 @@ export function useSidebarState() {
     // Save iQubes submenu state to localStorage
     localStorage.setItem('iqubes-collapsed', JSON.stringify(iQubesOpen));
   }, [iQubesOpen]);
+
+  useEffect(() => {
+    // Save persona submenu state to localStorage
+    localStorage.setItem('persona-collapsed', JSON.stringify(personaOpen));
+  }, [personaOpen]);
 
   useEffect(() => {
     // Save selected iQube to localStorage
@@ -53,6 +64,10 @@ export function useSidebarState() {
     setIQubesOpen(!iQubesOpen);
   };
 
+  const togglePersonaMenu = () => {
+    setPersonaOpen(!personaOpen);
+  };
+
   const selectIQube = (qubeName: string) => {
     setSelectedIQube(qubeName);
   };
@@ -61,10 +76,12 @@ export function useSidebarState() {
     collapsed,
     mobileOpen,
     iQubesOpen,
+    personaOpen,
     selectedIQube,
     toggleSidebar,
     toggleMobileSidebar,
     toggleIQubesMenu,
+    togglePersonaMenu,
     selectIQube
   };
 }

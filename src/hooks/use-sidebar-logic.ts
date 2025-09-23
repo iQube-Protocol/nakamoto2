@@ -22,12 +22,14 @@ export const useSidebarLogic = () => {
   const { chainGPTActivated, chainGPTVisible, activateChainGPT, deactivateChainGPT, hideChainGPT } = useChainGPTAgent();
   const { 
     collapsed, 
-    iQubesOpen, 
+    iQubesOpen,
+    personaOpen,
     mobileOpen, 
     selectedIQube, 
     toggleSidebar, 
     toggleMobileSidebar, 
     toggleIQubesMenu,
+    togglePersonaMenu,
     selectIQube 
   } = useSidebarState();
   const { signOut } = useAuth();
@@ -341,12 +343,14 @@ export const useSidebarLogic = () => {
     location,
     collapsed,
     iQubesOpen,
+    personaOpen,
     mobileOpen,
     selectedIQube,
     activeIQubes,
     toggleSidebar,
     toggleMobileSidebar,
     toggleIQubesMenu,
+    togglePersonaMenu,
     handleIQubeClick,
     toggleIQubeActive,
     
