@@ -179,12 +179,16 @@ export const useSidebarLogic = () => {
     // Set the selected iQube
     selectIQube(iqubeId);
     
-    // Navigate to settings page and send event to select this iQube
-    navigate('/settings');
+    // Navigate: Personas -> /profile, others -> /settings
+    if (iqubeId === "Qrypto Persona" || iqubeId === "KNYT Persona") {
+      navigate('/profile');
+    } else {
+      navigate('/settings');
+    }
     
     const event = new CustomEvent('iqubeSelected', { 
       detail: { 
-        iqubeId: iqubeId,
+        iqubeId,
         selectTab: true
       } 
     });
