@@ -1,5 +1,6 @@
 
 import React from 'react';
+import { useNavigate } from 'react-router-dom';
 import { NavItem as NavItemType, QubeItem, personaItems } from './sidebarData';
 import NavItem from './NavItem';
 import IQubesSection from './IQubesSection';
@@ -38,8 +39,12 @@ const MainNavigation: React.FC<MainNavigationProps> = ({
   location,
   toggleMobileSidebar
 }) => {
+  const navigate = useNavigate();
+  
   // Handle Persona nav item click
   const handlePersonaNavClick = () => {
+    // Navigate to profile page and toggle menu
+    navigate('/profile');
     togglePersonaMenu();
   };
 
@@ -56,7 +61,7 @@ const MainNavigation: React.FC<MainNavigationProps> = ({
                 href={item.href}
                 active={activePath === item.href}
                 collapsed={collapsed}
-                onClick={() => {}} // Prevent navigation, only toggle menu
+                onClick={handlePersonaNavClick} // Navigate to profile and toggle menu
                 toggleMobileSidebar={toggleMobileSidebar}
               >
                 {item.name}
