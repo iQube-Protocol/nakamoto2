@@ -79,7 +79,7 @@ export const personaItems: QubeItem[] = [
     name: 'Qrypto Persona',
     type: 'DataQube',
     icon: Database,
-    href: '/settings',
+    href: '/profile',
     description: 'Cryptocurrency AI agent',
   },
   {
@@ -87,7 +87,7 @@ export const personaItems: QubeItem[] = [
     name: 'KNYT Persona',
     type: 'DataQube',
     icon: Database,
-    href: '/settings',
+    href: '/profile',
     description: 'KNYT ecosystem profile with 2,800 Satoshi reward',
   },
 ];

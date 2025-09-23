@@ -86,7 +86,7 @@ const PersonaSection: React.FC<PersonaSectionProps> = ({
               <div
                 className={cn(
                   "flex items-center justify-center p-2 rounded-md hover:bg-accent/30 cursor-pointer",
-                  location.pathname === '/settings' && "bg-accent/20"
+                  location.pathname === '/profile' && "bg-accent/20"
                 )}
                 onClick={togglePersonaMenu}
               >
@@ -123,7 +123,7 @@ const PersonaSection: React.FC<PersonaSectionProps> = ({
               key={persona.id}
               className={cn(
                 "flex items-center justify-between px-2 py-2 text-sm rounded-md hover:bg-accent/30 cursor-pointer",
-                location.pathname === '/settings' && selectedIQube === persona.name && "bg-accent/20"
+                location.pathname === '/profile' && selectedIQube === persona.name && "bg-accent/20"
               )}
             >
               <TooltipProvider>
