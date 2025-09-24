@@ -14,8 +14,8 @@ const SidebarHeader: React.FC<SidebarHeaderProps> = ({
 }) => {
   return <div className={cn("flex items-center mb-6 px-3", collapsed ? "justify-center" : "justify-between")}>
       {!collapsed ? <Link to="/mondai" className="flex items-center">
-          <Bot className="h-6 w-6 text-qripto-primary mr-2 mt-4" />
-          <div className="flex flex-col">
+          <Bot className="h-6 w-6 text-qripto-primary mr-2 mt-3" />
+          <div className="flex flex-col mt-3">
             <h1 className="text-2xl font-bold bg-gradient-to-r from-qripto-primary to-qripto-accent inline-block text-transparent bg-clip-text">
               Qripto
             </h1>
@@ -25,7 +25,7 @@ const SidebarHeader: React.FC<SidebarHeaderProps> = ({
           <Tooltip>
             <TooltipTrigger asChild>
               <button onClick={toggleSidebar} className="p-0 bg-transparent border-none">
-                <Bot className="h-6 w-6 text-qripto-primary mt-4" />
+                <Bot className="h-6 w-6 text-qripto-primary mt-3" />
               </button>
             </TooltipTrigger>
             <TooltipContent side="right">
