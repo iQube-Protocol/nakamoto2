@@ -25,7 +25,7 @@ const SidebarHeader: React.FC<SidebarHeaderProps> = ({
           <Tooltip>
             <TooltipTrigger asChild>
               <button onClick={toggleSidebar} className="p-0 bg-transparent border-none">
-                <Bot className="h-6 w-6 text-qripto-primary mt-1" />
+                <Bot className="h-6 w-6 text-qripto-primary mt-0.5" />
               </button>
             </TooltipTrigger>
             <TooltipContent side="right">
