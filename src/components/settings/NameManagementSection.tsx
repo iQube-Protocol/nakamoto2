@@ -34,7 +34,7 @@ export const NameManagementSection: React.FC<NameManagementSectionProps> = ({ fi
 
   useEffect(() => {
     loadPersonaNames();
-  }, [user]);
+  }, [user, filterPersonaType]);
 
   const loadPersonaNames = async () => {
     if (!user) return;
