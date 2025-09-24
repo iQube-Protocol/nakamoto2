@@ -153,7 +153,7 @@ const Profile = () => {
               <button 
                 onClick={() => setActiveTab('qripto')} 
                 className={`px-3 py-1.5 text-xs sm:text-sm rounded transition-colors ${
-                  activeTab === 'qripto' ? 'bg-qrypto-primary text-white' : 'bg-muted hover:bg-muted/80'
+                  activeTab === 'qripto' ? 'bg-qripto-primary text-white' : 'bg-muted hover:bg-muted/80'
                 }`}
               >
                 Qripto
@@ -212,9 +212,9 @@ const Profile = () => {
                       <div className="p-2 sm:p-3 rounded-lg bg-[#23223f]/[0.32] cursor-pointer hover:bg-[#23223f]/[0.45] transition-colors border-l-4 border-indigo-400 overflow-hidden" onClick={() => handleResponseClick(interaction)}>
                          <div className="flex flex-col gap-1 mb-2">
                             <div className="flex items-center gap-2">
-                              <Badge variant="secondary" className="bg-qrypto-primary w-fit text-xs">
-                                Nakamoto
-                              </Badge>
+                               <Badge variant="secondary" className="bg-qripto-primary w-fit text-xs">
+                                 Nakamoto
+                               </Badge>
                               {interaction.metadata?.aiProvider && (
                                 <Badge variant="outline" className="bg-green-100 text-green-800 w-fit text-xs">
                                   {interaction.metadata.aiProvider === 'Venice AI (Uncensored)' ? 'Venice AI' : interaction.metadata.aiProvider}
