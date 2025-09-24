@@ -20,9 +20,12 @@ const SidebarHeader: React.FC<SidebarHeaderProps> = ({ collapsed, toggleSidebar 
       {!collapsed ? (
         <Link to="/mondai" className="flex items-center">
           <Bot className="h-6 w-6 text-qripto-primary mr-2" />
-          <h1 className="text-lg font-bold bg-gradient-to-r from-qripto-primary to-qripto-accent inline-block text-transparent bg-clip-text">
-            iQubed
-          </h1>
+          <div className="flex flex-col">
+            <h1 className="text-lg font-bold bg-gradient-to-r from-qripto-primary to-qripto-accent inline-block text-transparent bg-clip-text">
+              Qripto
+            </h1>
+            <span className="text-xs text-muted-foreground">Quantum Ready Internet Protocol</span>
+          </div>
         </Link>
       ) : (
         <TooltipProvider>
