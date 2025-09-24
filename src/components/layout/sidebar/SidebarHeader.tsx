@@ -35,7 +35,7 @@ const SidebarHeader: React.FC<SidebarHeaderProps> = ({
         </TooltipProvider>}
 
       {/* Collapse/Expand button */}
-      <Button variant="ghost" size="icon" onClick={toggleSidebar} className={collapsed ? "hidden" : ""}>
+      <Button variant="ghost" size="icon" onClick={toggleSidebar} className={collapsed ? "hidden mt-3" : "mt-3"}>
         {collapsed ? <ChevronRight size={18} /> : <ChevronLeft size={18} />}
       </Button>
     </div>;
