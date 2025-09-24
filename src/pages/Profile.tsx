@@ -43,6 +43,12 @@ const Profile = () => {
   useEffect(() => {
     refreshInteractions();
   }, [activeTab, refreshInteractions]);
+
+  // Refresh when persona selection changes
+  useEffect(() => {
+    // Force a re-render when selectedIQube changes
+    setActiveTab(prev => prev); // Trigger state update
+  }, [selectedIQube]);
   
   const handleResponseClick = (interaction: any) => {
     setSelectedResponse(interaction);
@@ -126,7 +132,10 @@ const Profile = () => {
           </Card>
 
           {/* Name Management Section */}
-          <NameManagementSection filterPersonaType={getPersonaType()} />
+          <NameManagementSection 
+            key={selectedIQube} 
+            filterPersonaType={getPersonaType()} 
+          />
 
         {/* Interaction history section - compressed */}
         <Card className="w-full">
