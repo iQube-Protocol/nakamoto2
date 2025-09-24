@@ -71,11 +71,11 @@ export default {
 					light: 'hsl(220 14% 96%)'        // Light background 
 				},
 				knyt: {
-					primary: 'hsl(142 76% 36%)',     // Green primary
-					secondary: 'hsl(142 69% 46%)',   // Lighter green
+					primary: 'hsl(262 83% 58%)',     // Magenta primary (same as qripto)
+					secondary: 'hsl(262 69% 66%)',   // Lighter magenta
 					accent: 'hsl(197 71% 52%)',      // Blue accent
-					dark: 'hsl(142 45% 20%)',        // Dark green
-					light: 'hsl(142 14% 96%)'        // Light background
+					dark: 'hsl(262 45% 20%)',        // Dark magenta
+					light: 'hsl(262 14% 96%)'        // Light background
 				},
 				// Legacy support for any remaining references
 				iqube: {
