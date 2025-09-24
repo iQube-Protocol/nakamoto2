@@ -37,7 +37,7 @@ export const useSidebarLogic = () => {
   // Initialize activeIQubes with proper state from hooks
   const [activeIQubes, setActiveIQubes] = useState<{[key: string]: boolean}>(() => {
     return {
-      "Qrypto Persona": qryptoPersonaActivated,
+      "Qripto Persona": qriptoPersonaActivated,
       "KNYT Persona": knytPersonaActivated,
       "Venice": veniceActivated,
       "OpenAI": openAIActivated,
@@ -49,23 +49,23 @@ export const useSidebarLogic = () => {
   useEffect(() => {
     setActiveIQubes(prev => ({
       ...prev, 
-      "Qrypto Persona": qryptoPersonaActivated,
+      "Qripto Persona": qriptoPersonaActivated,
       "KNYT Persona": knytPersonaActivated,
       "Venice": veniceActivated,
       "OpenAI": openAIActivated,
       "ChainGPT": chainGPTActivated,
     }));
-  }, [qryptoPersonaActivated, knytPersonaActivated, veniceActivated, openAIActivated, chainGPTActivated]);
+  }, [qriptoPersonaActivated, knytPersonaActivated, veniceActivated, openAIActivated, chainGPTActivated]);
 
   // Listen for agent activation events from AgentActivationModal
   useEffect(() => {
-    const handleQryptoPersonaStateChanged = (e: CustomEvent) => {
+    const handleQriptoPersonaStateChanged = (e: CustomEvent) => {
       const { activated } = e.detail || {};
       console.log('Qrypto Persona state changed event received:', activated);
       
       if (activated) {
-        activateQryptoPersona();
-        setActiveIQubes(prev => ({...prev, "Qrypto Persona": true}));
+        activateQriptoPersona();
+        setActiveIQubes(prev => ({...prev, "Qripto Persona": true}));
       }
     };
 
@@ -109,20 +109,20 @@ export const useSidebarLogic = () => {
       }
     };
 
-    window.addEventListener('qryptoPersonaStateChanged', handleQryptoPersonaStateChanged as EventListener);
+    window.addEventListener('qriptoPersonaStateChanged', handleQriptoPersonaStateChanged as EventListener);
     window.addEventListener('knytPersonaStateChanged', handleKNYTPersonaStateChanged as EventListener);
     window.addEventListener('veniceStateChanged', handleVeniceStateChanged as EventListener);
     window.addEventListener('openAIStateChanged', handleOpenAIStateChanged as EventListener);
     window.addEventListener('chainGPTStateChanged', handleChainGPTStateChanged as EventListener);
     
     return () => {
-      window.removeEventListener('qryptoPersonaStateChanged', handleQryptoPersonaStateChanged as EventListener);
+      window.removeEventListener('qriptoPersonaStateChanged', handleQriptoPersonaStateChanged as EventListener);
       window.removeEventListener('knytPersonaStateChanged', handleKNYTPersonaStateChanged as EventListener);
       window.removeEventListener('veniceStateChanged', handleVeniceStateChanged as EventListener);
       window.removeEventListener('openAIStateChanged', handleOpenAIStateChanged as EventListener);
       window.removeEventListener('chainGPTStateChanged', handleChainGPTStateChanged as EventListener);
     };
-  }, [activateQryptoPersona, activateKNYTPersona, activateVenice, activateOpenAI, activateChainGPT]);
+  }, [activateQriptoPersona, activateKNYTPersona, activateVenice, activateOpenAI, activateChainGPT]);
 
   // Listen for iQube toggle events from Settings page
   useEffect(() => {
@@ -132,11 +132,11 @@ export const useSidebarLogic = () => {
         setActiveIQubes(prev => ({...prev, [iqubeId]: active}));
         
         // Special handling for each iQube type
-        if (iqubeId === "Qrypto Persona") {
+        if (iqubeId === "Qripto Persona") {
           if (active) {
-            activateQryptoPersona();
+            activateQriptoPersona();
           } else {
-            deactivateQryptoPersona();
+            deactivateQriptoPersona();
           }
         } else if (iqubeId === "KNYT Persona") {
           if (active) {
@@ -171,7 +171,7 @@ export const useSidebarLogic = () => {
     return () => {
       window.removeEventListener('iqubeToggle', handleIQubeToggle as EventListener);
     };
-  }, [activateQryptoPersona, deactivateQryptoPersona, knytPersonaActivated, activateKNYTPersona, deactivateKNYTPersona, veniceActivated, activateVenice, deactivateVenice, openAIActivated, activateOpenAI, deactivateOpenAI, chainGPTActivated, activateChainGPT, deactivateChainGPT]);
+  }, [activateQriptoPersona, deactivateQriptoPersona, knytPersonaActivated, activateKNYTPersona, deactivateKNYTPersona, veniceActivated, activateVenice, deactivateVenice, openAIActivated, activateOpenAI, deactivateOpenAI, chainGPTActivated, activateChainGPT, deactivateChainGPT]);
 
   const handleIQubeClick = (iqubeId: string) => {
     console.log("iQube clicked:", iqubeId);
@@ -180,7 +180,7 @@ export const useSidebarLogic = () => {
     selectIQube(iqubeId);
     
     // Navigate: Personas -> /profile, others -> /settings
-    if (iqubeId === "Qrypto Persona" || iqubeId === "KNYT Persona") {
+    if (iqubeId === "Qripto Persona" || iqubeId === "KNYT Persona") {
       navigate('/profile');
     } else {
       navigate('/settings');
@@ -217,11 +217,11 @@ export const useSidebarLogic = () => {
     }
     
     // Implement mutual exclusion for Persona iQubes
-    if (newActiveState && (qubeName === "Qrypto Persona" || qubeName === "KNYT Persona")) {
-      if (qubeName === "Qrypto Persona") {
+    if (newActiveState && (qubeName === "Qripto Persona" || qubeName === "KNYT Persona")) {
+      if (qubeName === "Qripto Persona") {
         updatedActiveQubes["KNYT Persona"] = false;  // Deactivate KNYT Persona
       } else if (qubeName === "KNYT Persona") {
-        updatedActiveQubes["Qrypto Persona"] = false;   // Deactivate Qrypto Persona
+        updatedActiveQubes["Qripto Persona"] = false;   // Deactivate Qripto Persona
       }
     }
     
@@ -229,22 +229,22 @@ export const useSidebarLogic = () => {
     setActiveIQubes(updatedActiveQubes);
     
     // Use the appropriate hook methods for each iQube type
-    if (qubeName === "Qrypto Persona") {
+    if (qubeName === "Qripto Persona") {
       if (newActiveState) {
-        activateQryptoPersona();
+        activateQriptoPersona();
         // Deactivate KNYT Persona
         if (knytPersonaActivated) {
           deactivateKNYTPersona();
         }
       } else {
-        deactivateQryptoPersona();
+        deactivateQriptoPersona();
       }
     } else if (qubeName === "KNYT Persona") {
       if (newActiveState) {
         activateKNYTPersona();
-        // Deactivate Qrypto Persona
-        if (qryptoPersonaActivated) {
-          deactivateQryptoPersona();
+        // Deactivate Qripto Persona
+        if (qriptoPersonaActivated) {
+          deactivateQriptoPersona();
         }
       } else {
         deactivateKNYTPersona();
@@ -324,10 +324,10 @@ export const useSidebarLogic = () => {
       }, 500);
     }
     
-    if ((qubeName === "Qrypto Persona" && newActiveState && activeIQubes["KNYT Persona"]) ||
-        (qubeName === "KNYT Persona" && newActiveState && activeIQubes["Qrypto Persona"])) {
+    if ((qubeName === "Qripto Persona" && newActiveState && activeIQubes["KNYT Persona"]) ||
+        (qubeName === "KNYT Persona" && newActiveState && activeIQubes["Qripto Persona"])) {
       setTimeout(() => {
-        toast.info(`${qubeName === "Qrypto Persona" ? "KNYT Persona" : "Qrypto Persona"} automatically deactivated`);
+        toast.info(`${qubeName === "Qripto Persona" ? "KNYT Persona" : "Qripto Persona"} automatically deactivated`);
       }, 500);
     }
   };

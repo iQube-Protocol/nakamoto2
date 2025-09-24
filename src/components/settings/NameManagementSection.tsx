@@ -12,7 +12,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { toast } from 'sonner';
 
 interface PersonaNameInfo {
-  personaType: 'knyt' | 'qrypto';
+  personaType: 'knyt' | 'qripto';
   currentName: { firstName: string; lastName: string };
   source: 'invitation' | 'linkedin' | 'custom' | 'default';
   preference?: NamePreference;
@@ -20,7 +20,7 @@ interface PersonaNameInfo {
 }
 
 interface NameManagementSectionProps {
-  filterPersonaType?: 'knyt' | 'qrypto' | null; // Allow filtering by persona type
+  filterPersonaType?: 'knyt' | 'qripto' | null; // Allow filtering by persona type
 }
 
 export const NameManagementSection: React.FC<NameManagementSectionProps> = ({ filterPersonaType = null }) => {

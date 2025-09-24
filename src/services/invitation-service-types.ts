@@ -1,7 +1,7 @@
 
 export interface InvitationData {
   email: string;
-  personaType: 'knyt' | 'qrypto';
+  personaType: 'knyt' | 'qripto';
   personaData: Record<string, any>;
 }
 

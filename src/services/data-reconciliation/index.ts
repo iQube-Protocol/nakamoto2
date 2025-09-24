@@ -34,7 +34,7 @@ class DataReconciliationService {
     }
   }
 
-  async reconcileDirectSignupForEmail(email: string, personaType?: 'knyt' | 'qrypto'): Promise<void> {
+  async reconcileDirectSignupForEmail(email: string, personaType?: 'knyt' | 'qripto'): Promise<void> {
     try {
       await this.personaReconciler.reconcileDirectSignupByEmail(email, personaType);
     } catch (error) {

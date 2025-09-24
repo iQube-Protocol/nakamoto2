@@ -22,9 +22,9 @@ const Profile = () => {
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
   // Determine persona type from selected iQube
-  const getPersonaType = (): 'knyt' | 'qrypto' | null => {
+  const getPersonaType = (): 'knyt' | 'qripto' | null => {
     if (selectedIQube === 'KNYT Persona') return 'knyt';
-    if (selectedIQube === 'Qrypto Persona') return 'qrypto';
+    if (selectedIQube === 'Qripto Persona') return 'qripto';
     return null;
   };
 

@@ -41,10 +41,10 @@ const SettingsInterface = ({
   // State for profile images
   const [profileImages, setProfileImages] = useState<{
     knyt: string | null;
-    qrypto: string | null;
+    qripto: string | null;
   }>({
     knyt: null,
-    qrypto: null
+    qripto: null
   });
   
   // Sync settings with actual connection state
@@ -233,7 +233,7 @@ const SettingsInterface = ({
     if (metaQube["iQube-Identifier"] === "KNYT Persona iQube") {
       return profileImages.knyt;
     } else if (metaQube["iQube-Identifier"] === "Qrypto Persona iQube") {
-      return profileImages.qrypto;
+      return profileImages.qripto;
     }
     return null;
   };
@@ -243,7 +243,7 @@ const SettingsInterface = ({
     if (qubeId === "KNYT Persona") {
       return profileImages.knyt;
     } else if (qubeId === "Qrypto Persona") {
-      return profileImages.qrypto;
+      return profileImages.qripto;
     }
     return null;
   };

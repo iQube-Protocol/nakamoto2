@@ -20,7 +20,7 @@ export type {
 };
 
 class InvitationService {
-  parseCSV(csvContent: string, personaType: 'knyt' | 'qrypto'): { invitations: InvitationData[], stats: DeduplicationStats } {
+  parseCSV(csvContent: string, personaType: 'knyt' | 'qripto'): { invitations: InvitationData[], stats: DeduplicationStats } {
     const lines = csvContent.trim().split('\n');
     if (lines.length < 2) {
       throw new Error('CSV must have at least a header row and one data row');

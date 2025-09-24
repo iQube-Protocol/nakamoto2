@@ -3,8 +3,8 @@ import { supabase } from '@/integrations/supabase/client';
 import { KNYTPersona, QryptoPersona, BlakQube } from '@/lib/types';
 
 // Determine which persona type to fetch based on the MetaQube identifier
-export const getPersonaType = (metaQubeIdentifier: string): 'knyt' | 'qrypto' => {
-  return metaQubeIdentifier === "KNYT Persona iQube" || metaQubeIdentifier === "KNYT Persona" ? 'knyt' : 'qrypto';
+export const getPersonaType = (metaQubeIdentifier: string): 'knyt' | 'qripto' => {
+  return metaQubeIdentifier === "KNYT Persona iQube" || metaQubeIdentifier === "KNYT Persona" ? 'knyt' : 'qripto';
 };
 
 export const fetchKNYTPersonaFromDB = async (userId: string): Promise<KNYTPersona | null> => {

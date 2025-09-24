@@ -100,20 +100,20 @@ export const useAgentRecommendations = (message: AgentMessage | null) => {
       setTimeout(() => setRecommendations(prev => ({ ...prev, showQryptoRecommendation: true })), 1000);
       recommendationShown = true;
     }
-  }, [message, veniceActivated, qryptoPersonaActivated, knytPersonaActivated]);
+  }, [qriptoPersonaActivated, knytPersonaActivated, veniceActivated]);
 
   // Auto-dismiss recommendations when agents get activated
   useEffect(() => {
     if (veniceActivated) {
       setRecommendations(prev => ({ ...prev, showVeniceRecommendation: false }));
     }
-    if (qryptoPersonaActivated) {
+    if (qriptoPersonaActivated) {
       setRecommendations(prev => ({ ...prev, showQryptoRecommendation: false }));
     }
     if (knytPersonaActivated) {
       setRecommendations(prev => ({ ...prev, showKNYTRecommendation: false }));
     }
-  }, [veniceActivated, qryptoPersonaActivated, knytPersonaActivated]);
+  }, [veniceActivated, qriptoPersonaActivated, knytPersonaActivated]);
 
   // Debug recommendations state changes
   useEffect(() => {

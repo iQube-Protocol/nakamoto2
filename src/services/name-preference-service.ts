@@ -16,14 +16,14 @@ export interface NamePreference {
 }
 
 export interface NameConflictData {
-  personaType: 'knyt' | 'qrypto' | 'blak';
+  personaType: 'knyt' | 'qripto' | 'blak';
   invitationName?: { firstName?: string; lastName?: string };
   linkedinName?: { firstName?: string; lastName?: string };
   currentName?: { firstName?: string; lastName?: string };
 }
 
 export class NamePreferenceService {
-  static async getNamePreference(personaType: 'knyt' | 'qrypto' | 'blak'): Promise<NamePreference | null> {
+  static async getNamePreference(personaType: 'knyt' | 'qripto' | 'blak'): Promise<NamePreference | null> {
     const { data, error } = await supabase
       .from('user_name_preferences')
       .select('*')
@@ -102,7 +102,7 @@ export class NamePreferenceService {
   }
 
   static async detectNameConflict(
-    personaType: 'knyt' | 'qrypto' | 'blak',
+    personaType: 'knyt' | 'qripto' | 'blak',
     linkedinData: { firstName?: string; lastName?: string },
     invitationData?: { firstName?: string; lastName?: string },
     currentData?: { firstName?: string; lastName?: string }

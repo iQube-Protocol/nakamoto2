@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 import { ReconciliationResult } from './types';
 
 export class PersonaReconciler {
-  async reconcileDirectSignupByEmail(email: string, personaType?: 'knyt' | 'qrypto'): Promise<void> {
+  async reconcileDirectSignupByEmail(email: string, personaType?: 'knyt' | 'qripto'): Promise<void> {
     const lower = email.toLowerCase();
     // Check if invitation already exists
     const { data: existing, error: invErr } = await supabase

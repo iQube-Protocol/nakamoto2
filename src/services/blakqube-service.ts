@@ -40,7 +40,7 @@ export const blakQubeService = {
   /**
    * Get persona data for the current user based on persona type
    */
-  getPersonaData: async (personaType: 'knyt' | 'qrypto'): Promise<KNYTPersona | QryptoPersona | null> => {
+  getPersonaData: async (personaType: 'knyt' | 'qripto'): Promise<KNYTPersona | QriptoPersona | null> => {
     try {
       const { data: user, error: authError } = await supabase.auth.getUser();
       if (authError || !user.user) {
@@ -81,7 +81,7 @@ export const blakQubeService = {
   /**
    * Save manually edited persona data to the database
    */
-  saveManualPersonaData: async (data: PrivateData, personaType: 'knyt' | 'qrypto'): Promise<boolean> => {
+  saveManualPersonaData: async (data: PrivateData, personaType: 'knyt' | 'qripto'): Promise<boolean> => {
     try {
       const { data: user, error: authError } = await supabase.auth.getUser();
       if (authError || !user.user) {
@@ -145,7 +145,7 @@ export const blakQubeService = {
   /**
    * Update persona data with information from connected services
    */
-  updatePersonaFromConnections: async (personaType: 'knyt' | 'qrypto'): Promise<boolean> => {
+  updatePersonaFromConnections: async (personaType: 'knyt' | 'qripto'): Promise<boolean> => {
     try {
       const { data: user } = await supabase.auth.getUser();
       if (!user.user) return false;
