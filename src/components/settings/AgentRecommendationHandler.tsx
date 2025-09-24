@@ -15,8 +15,8 @@ const AgentRecommendationHandler = ({
       setActiveQubes(prev => ({ ...prev, "Venice": true }));
     };
 
-    const handleQryptoActivation = () => {
-      setActiveQubes(prev => ({ ...prev, "Qrypto Persona": true }));
+    const handleQriptoActivation = () => {
+      setActiveQubes(prev => ({ ...prev, "Qripto Persona": true }));
     };
 
     const handleKNYTActivation = () => {
@@ -28,13 +28,13 @@ const AgentRecommendationHandler = ({
     };
 
     window.addEventListener('veniceStateChanged', handleVeniceActivation);
-    window.addEventListener('qryptoPersonaActivated', handleQryptoActivation);
+    window.addEventListener('qriptoPersonaActivated', handleQriptoActivation);
     window.addEventListener('knytPersonaActivated', handleKNYTActivation);
     window.addEventListener('openAIActivated', handleOpenAIActivation);
     
     return () => {
       window.removeEventListener('veniceStateChanged', handleVeniceActivation);
-      window.removeEventListener('qryptoPersonaActivated', handleQryptoActivation);
+      window.removeEventListener('qriptoPersonaActivated', handleQriptoActivation);
       window.removeEventListener('knytPersonaActivated', handleKNYTActivation);
       window.removeEventListener('openAIActivated', handleOpenAIActivation);
     };

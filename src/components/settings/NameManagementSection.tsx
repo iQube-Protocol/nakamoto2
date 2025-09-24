@@ -62,7 +62,7 @@ export const NameManagementSection: React.FC<NameManagementSectionProps> = ({ fi
       });
     }
 
-    // Load Qrypto persona
+    // Load Qripto persona
     const { data: qriptoData } = await supabase
       .from('qripto_personas')
       .select('*')

@@ -2,7 +2,7 @@ import { MetaQube } from '@/lib/types';
 
 export const qubeData = {
   monDai: {
-    "iQube-Identifier": "Qrypto Persona iQube",
+    "iQube-Identifier": "Qripto Persona iQube",
     "iQube-Type": "DataQube",
     "iQube-Designer": "Aigent MonDAI",
     "iQube-Use": "For personalized cryptocurrency recommendations and portfolio analysis",
@@ -25,7 +25,7 @@ export const qubeData = {
     "Owner-Type": "Person",
     "Owner-Identifiability": "Semi-Identifiable",
     "Date-Minted": new Date().toISOString(),
-    "Related-iQubes": ["QryptoPersona", "MetisQube", "EcosystemQube"],
+    "Related-iQubes": ["QriptoPersona", "MetisQube", "EcosystemQube"],
     "X-of-Y": "1 of 3",
     "Sensitivity-Score": 7,
     "Verifiability-Score": 8,
@@ -86,7 +86,7 @@ export const qubeData = {
     "Owner-Type": "Algorithm",
     "Owner-Identifiability": "Non-Identifiable",
     "Date-Minted": new Date().toISOString(),
-    "Related-iQubes": ["QryptoPersona", "KNYTPersona", "TokenQube", "VeniceQube"],
+    "Related-iQubes": ["QriptoPersona", "KNYTPersona", "TokenQube", "VeniceQube"],
     "X-of-Y": "4 of 7",
     "Sensitivity-Score": 6,
     "Verifiability-Score": 8,
@@ -143,7 +143,7 @@ export const qubeData = {
 
 export const monDaiQubeData = {
   id: 'monDai',
-  name: 'Qrypto Persona iQube',
+  name: 'Qripto Persona iQube',
   type: 'Personal Data',
   href: '/settings',
   active: true

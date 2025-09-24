@@ -26,9 +26,9 @@ const IQubeSelector = ({
       const shouldSelectTab = e.detail?.selectTab || false;
       console.log("iQube selection event received:", iQubeId, "select tab:", shouldSelectTab);
       
-      if (iQubeId === "Qrypto Persona" || iQubeId === "Qrypto Persona iQube") {
+      if (iQubeId === "Qripto Persona" || iQubeId === "Qripto Persona iQube") {
         setSelectedIQube(qubeData.monDai);
-        selectIQube("Qrypto Persona");
+        selectIQube("Qripto Persona");
       } else if (iQubeId === "KNYT Persona" || iQubeId === "KNYT Persona iQube") {
         console.log("Setting KNYT Persona iQube:", qubeData.knytPersona);
         setSelectedIQube(qubeData.knytPersona);

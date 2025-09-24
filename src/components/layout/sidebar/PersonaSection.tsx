@@ -39,7 +39,7 @@ const PersonaSection: React.FC<PersonaSectionProps> = ({
     if (personaName === "KNYT Persona") {
       return <Database className="h-4 w-4 text-purple-500" />;
     }
-    // Default to blue for Qrypto Persona
+    // Default to blue for Qripto Persona
     return <Database className="h-4 w-4 text-blue-500" />;
   };
 

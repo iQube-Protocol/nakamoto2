@@ -27,10 +27,10 @@ const ActiveIQubesList: React.FC<ActiveIQubesListProps> = ({
   
   // Function to get tooltip content based on qube name
   const getTooltipContent = (qubeName: string) => {
-    if (qubeName === "Qrypto Persona") {
+    if (qubeName === "Qripto Persona") {
       return (
         <div className="space-y-1">
-          <div className="font-semibold">Qrypto Persona</div>
+          <div className="font-semibold">Qripto Persona</div>
           <div className="text-xs">
             Profile information about the user that when activated will be injected into the context window of the Agent, enabling it to give personalized responses.
           </div>
@@ -93,7 +93,7 @@ const ActiveIQubesList: React.FC<ActiveIQubesListProps> = ({
       
       {/* Active iQubes list */}
       <div className="space-y-1">
-        {activeQubes["Qrypto Persona"] && (
+        {activeQubes["Qripto Persona"] && (
           <TooltipProvider>
             <Tooltip>
               <TooltipTrigger asChild>
@@ -103,18 +103,18 @@ const ActiveIQubesList: React.FC<ActiveIQubesListProps> = ({
                     collapsed ? "justify-center" : ""
                   )}
                   onClick={() => {
-                    onIQubeClick("Qrypto Persona");
+                     onIQubeClick("Qripto Persona");
                     if (isMobile && toggleMobileSidebar) {
                       toggleMobileSidebar();
                     }
                   }}
                 >
                   <Database className={cn("h-5 w-5 text-blue-500", collapsed ? "" : "mr-2")} />
-                  {!collapsed && <span>Qrypto Persona</span>}
+                   {!collapsed && <span>Qripto Persona</span>}
                 </div>
               </TooltipTrigger>
               <TooltipContent side={collapsed ? "right" : "top"} align="center">
-                {getTooltipContent("Qrypto Persona")}
+                 {getTooltipContent("Qripto Persona")}
               </TooltipContent>
             </Tooltip>
           </TooltipProvider>

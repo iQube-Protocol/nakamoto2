@@ -140,7 +140,7 @@ What would you like to explore today?`,
     <div className="h-screen flex flex-col">
       <SimplifiedAgentInterface
         title="Aigent Nakamoto"
-        description={`Crypto-Agentic AI for iQube + COYN + Qrypto + metaKnyts ${veniceActivated ? '(Venice AI)' : '(OpenAI)'}`}
+        description={`Crypto-Agentic AI for iQube + COYN + Qripto + metaKnyts ${veniceActivated ? '(Venice AI)' : '(OpenAI)'}`}
         agentType="mondai" 
         onMessageSubmit={handleAIMessage}
         conversationId={conversationId}

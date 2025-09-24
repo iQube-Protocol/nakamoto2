@@ -181,7 +181,7 @@ const UserPersonaDisplay: React.FC<UserPersonaDisplayProps> = ({
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="original">Original Invitation Data</TabsTrigger>
           <TabsTrigger value="knyt">KNYT Persona</TabsTrigger>
-          <TabsTrigger value="qrypto">Qrypto Persona</TabsTrigger>
+          <TabsTrigger value="qrypto">Qripto Persona</TabsTrigger>
         </TabsList>
 
         <TabsContent value="original" className="space-y-4">
@@ -204,10 +204,10 @@ const UserPersonaDisplay: React.FC<UserPersonaDisplayProps> = ({
 
         <TabsContent value="qrypto" className="space-y-4">
           {renderPersonaSection(
-            'Current Qrypto Persona Data',
+            'Current Qripto Persona Data',
             personaData.qrypto_persona,
             <Settings className="h-4 w-4 text-green-600" />,
-            'User does not have a Qrypto persona or has not updated their data yet'
+            'User does not have a Qripto persona or has not updated their data yet'
           )}
         </TabsContent>
       </Tabs>
@@ -220,7 +220,7 @@ const UserPersonaDisplay: React.FC<UserPersonaDisplayProps> = ({
               <span>
                 Active Personas: {[
                   personaData.knyt_persona && 'KNYT',
-                  personaData.qrypto_persona && 'Qrypto'
+                  personaData.qrypto_persona && 'Qripto'
                 ].filter(Boolean).join(', ') || 'None'}
               </span>
             </div>

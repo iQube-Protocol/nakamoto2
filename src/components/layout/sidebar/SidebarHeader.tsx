@@ -19,8 +19,8 @@ const SidebarHeader: React.FC<SidebarHeaderProps> = ({ collapsed, toggleSidebar 
     )}>
       {!collapsed ? (
         <Link to="/mondai" className="flex items-center">
-          <Bot className="h-6 w-6 text-qrypto-primary mr-2" />
-          <h1 className="text-lg font-bold bg-gradient-to-r from-qrypto-primary to-qrypto-accent inline-block text-transparent bg-clip-text">
+          <Bot className="h-6 w-6 text-qripto-primary mr-2" />
+          <h1 className="text-lg font-bold bg-gradient-to-r from-qripto-primary to-qripto-accent inline-block text-transparent bg-clip-text">
             iQubed
           </h1>
         </Link>
@@ -29,7 +29,7 @@ const SidebarHeader: React.FC<SidebarHeaderProps> = ({ collapsed, toggleSidebar 
           <Tooltip>
             <TooltipTrigger asChild>
               <button onClick={toggleSidebar} className="p-0 bg-transparent border-none">
-                <Bot className="h-6 w-6 text-qrypto-primary" />
+                <Bot className="h-6 w-6 text-qripto-primary" />
               </button>
             </TooltipTrigger>
             <TooltipContent side="right">

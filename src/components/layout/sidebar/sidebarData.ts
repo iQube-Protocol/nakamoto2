@@ -71,7 +71,7 @@ export const iQubeItems: QubeItem[] = [
 export const personaItems: QubeItem[] = [
   {
     id: 'dataqube',
-    name: 'Qrypto Persona',
+    name: 'Qripto Persona',
     type: 'DataQube',
     icon: Database,
     href: '/profile',
@@ -89,7 +89,7 @@ export const personaItems: QubeItem[] = [
 
 export const nakamotoQubeData = {
   id: 'nakamoto',
-  name: 'Qrypto Persona iQube',
+  name: 'Qripto Persona iQube',
   type: 'Personal Data',
   href: '/settings',
   active: true
@@ -105,8 +105,8 @@ export const veniceQubeData = {
 
 export const metaQubesData = [
   {
-    id: "Qrypto Persona",
-    name: "Qrypto Persona",
+    id: "Qripto Persona",
+    name: "Qripto Persona",
     type: "DataQube" as const,
     description: "Personal cryptocurrency profile and preferences data",
     color: "text-blue-400",

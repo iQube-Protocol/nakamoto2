@@ -124,7 +124,7 @@ const MetaQubeHeader = ({ metaQube, isActive, onToggleActive, profileImageUrl, o
               className="object-contain bg-white rounded-full p-0.5"
             />
             <AvatarFallback className="text-xs">
-              {metaQube["iQube-Identifier"].includes("Qrypto") ? "Q" : 
+              {metaQube["iQube-Identifier"].includes("Qripto") ? "Q" : 
                metaQube["iQube-Identifier"].includes("KNYT") ? "K" : 
                metaQube["iQube-Identifier"].includes("OpenAI") ? "O" :
                metaQube["iQube-Identifier"].includes("Venice") ? "V" :

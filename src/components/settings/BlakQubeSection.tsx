@@ -62,7 +62,7 @@ Database State:
 - Wallet KNYT: ${dbState.walletConnection?.connection_data?.knytTokenBalance?.formatted || 'None'}
 - KNYT Personas: ${dbState.knytPersonas?.length || 0}
 - KNYT-COYN in DB: ${dbState.knytPersonas?.[0]?.["KNYT-COYN-Owned"] || 'None'}
-- Qrypto Personas: ${dbState.qryptoPersonas?.length || 0}
+- Qripto Personas: ${dbState.qryptoPersonas?.length || 0}
       `;
       
       toast.info(message);

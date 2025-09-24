@@ -99,7 +99,7 @@ const BlakQubeRefreshButton = ({ onRefresh, personaType = 'qripto' }: BlakQubeRe
       
       if (success) {
         console.log('✅ Persona data refresh successful for type:', personaType);
-        toast.success(`${personaType === 'knyt' ? 'KNYT' : 'Qrypto'} Persona data refreshed successfully!`);
+        toast.success(`${personaType === 'knyt' ? 'KNYT' : 'Qripto'} Persona data refreshed successfully!`);
         
         // Trigger immediate data refresh events
         const events = ['privateDataUpdated', 'personaDataUpdated', 'balanceUpdated', 'walletDataRefreshed'];
@@ -126,9 +126,9 @@ const BlakQubeRefreshButton = ({ onRefresh, personaType = 'qripto' }: BlakQubeRe
       circuitBreaker.onFailure();
       
       if (error instanceof TimeoutError) {
-        toast.error(`Refresh timed out for ${personaType === 'knyt' ? 'KNYT' : 'Qrypto'} Persona. Please try again.`);
+        toast.error(`Refresh timed out for ${personaType === 'knyt' ? 'KNYT' : 'Qripto'} Persona. Please try again.`);
       } else {
-        toast.error(`Error refreshing ${personaType === 'knyt' ? 'KNYT' : 'Qrypto'} Persona data`);
+        toast.error(`Error refreshing ${personaType === 'knyt' ? 'KNYT' : 'Qripto'} Persona data`);
       }
     } finally {
       // Always reset the loading state, even if there's an error

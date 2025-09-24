@@ -30,7 +30,7 @@ const Settings = () => {
   });
 
   const availableIQubes = [
-    { id: "Qrypto Persona", name: "Qrypto Persona", type: "DataQube" as const },
+    { id: "Qripto Persona", name: "Qripto Persona", type: "DataQube" as const },
     { id: "KNYT Persona", name: "KNYT Persona", type: "DataQube" as const },
     { id: "Venice", name: "Venice", type: "ModelQube" as const },
     { id: "OpenAI", name: "OpenAI", type: "ModelQube" as const },
@@ -70,11 +70,11 @@ const Settings = () => {
     }
     
     // Implement mutual exclusion for Persona iQubes
-    if (newActiveState && (qubeName === "Qrypto Persona" || qubeName === "KNYT Persona")) {
-      if (qubeName === "Qrypto Persona") {
+    if (newActiveState && (qubeName === "Qripto Persona" || qubeName === "KNYT Persona")) {
+      if (qubeName === "Qripto Persona") {
         updatedQubes["KNYT Persona"] = false;  // Deactivate KNYT Persona
       } else if (qubeName === "KNYT Persona") {
-        updatedQubes["Qrypto Persona"] = false;   // Deactivate Qrypto Persona
+        updatedQubes["Qripto Persona"] = false;   // Deactivate Qripto Persona
       }
     }
     

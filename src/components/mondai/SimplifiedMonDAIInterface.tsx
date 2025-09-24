@@ -71,7 +71,7 @@ const SimplifiedMonDAIInterface: React.FC = React.memo(() => {
     return {
       id: "1",
       sender: "agent" as const,
-      message: `Hello! I'm Aigent Nakamoto, your crypto-agentic AI assistant powered by **${aiProvider}** with access to the **iQube Protocol, COYN, Qrypto, and metaKnyts knowledge bases**.
+      message: `Hello! I'm Aigent Nakamoto, your crypto-agentic AI assistant powered by **${aiProvider}** with access to the **iQube Protocol, COYN, Qripto, and metaKnyts knowledge bases**.
 
 ${memoryStatus}
 
@@ -91,7 +91,7 @@ What would you like to explore today?`,
       metadata: {
         version: "1.0",
         modelUsed: veniceActivated ? "venice-uncensored" : "gpt-4o-mini",
-        knowledgeSource: "iQube + COYN + Qrypto + metaKnyts Knowledge Bases",
+        knowledgeSource: "iQube + COYN + Qripto + metaKnyts Knowledge Bases",
         qryptoItemsFound: 0,
         metaKnytsItemsFound: 0,
         citations: [],
@@ -257,7 +257,7 @@ What would you like to explore today?`,
     <div className="h-screen flex flex-col">
       <SimplifiedAgentInterface
         title="Aigent Nakamoto"
-        description={`Crypto-Agentic AI for iQube + COYN + Qrypto + metaKnyts ${veniceActivated ? '(Venice AI)' : '(OpenAI)'} ${conversationId ? '🧠' : '💭'} [${buildVersion.substring(0, 8)}]`}
+        description={`Crypto-Agentic AI for iQube + COYN + Qripto + metaKnyts ${veniceActivated ? '(Venice AI)' : '(OpenAI)'} ${conversationId ? '🧠' : '💭'} [${buildVersion.substring(0, 8)}]`}
         agentType="mondai" 
         onMessageSubmit={handleAIMessage}
         conversationId={conversationId}

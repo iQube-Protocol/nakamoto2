@@ -68,7 +68,7 @@ const KnowledgeItem = ({
         </div>
         
         {item.connections && item.connections.length > 0 && <div className="mb-3 pt-2 border-t">
-            <p className="text-xs text-gray-500 mb-1">Connected to {isMobile ? 'COYN' : 'QryptoCOYN'} concepts:</p>
+            <p className="text-xs text-gray-500 mb-1">Connected to {isMobile ? 'COYN' : 'QriptoCOYN'} concepts:</p>
             <div className="flex flex-wrap gap-1">
               {item.connections.slice(0, 2).map((connection: string) => <Badge key={connection} variant="outline" className={`text-xs rounded-md px-2 py-1 font-normal ${connectionBgColor} transition-colors`}>
                   {connection}

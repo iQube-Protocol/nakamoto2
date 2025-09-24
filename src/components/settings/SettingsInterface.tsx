@@ -203,7 +203,7 @@ const SettingsInterface = ({
   };
 
   const isActive = (qubeName: string) => {
-    if (qubeName === "Qrypto Persona iQube") return activeQubes["Qrypto Persona"];
+    if (qubeName === "Qripto Persona iQube") return activeQubes["Qripto Persona"];
     if (qubeName === "KNYT Persona iQube") return activeQubes["KNYT Persona"];
     if (qubeName === "Venice iQube") return activeQubes["Venice"];
     if (qubeName === "OpenAI iQube") return activeQubes["OpenAI"];
@@ -215,7 +215,7 @@ const SettingsInterface = ({
 
   const toggleActive = () => {
     let qubeName = "";
-    if (metaQube["iQube-Identifier"] === "Qrypto Persona iQube") qubeName = "Qrypto Persona";
+    if (metaQube["iQube-Identifier"] === "Qripto Persona iQube") qubeName = "Qripto Persona";
     else if (metaQube["iQube-Identifier"] === "KNYT Persona iQube") qubeName = "KNYT Persona";
     else if (metaQube["iQube-Identifier"] === "Venice iQube") qubeName = "Venice";
     else if (metaQube["iQube-Identifier"] === "OpenAI iQube") qubeName = "OpenAI";
@@ -232,7 +232,7 @@ const SettingsInterface = ({
   const getProfileImageUrl = () => {
     if (metaQube["iQube-Identifier"] === "KNYT Persona iQube") {
       return profileImages.knyt;
-    } else if (metaQube["iQube-Identifier"] === "Qrypto Persona iQube") {
+    } else if (metaQube["iQube-Identifier"] === "Qripto Persona iQube") {
       return profileImages.qripto;
     }
     return null;
@@ -242,7 +242,7 @@ const SettingsInterface = ({
   const getProfileImageUrlByQubeId = (qubeId: string) => {
     if (qubeId === "KNYT Persona") {
       return profileImages.knyt;
-    } else if (qubeId === "Qrypto Persona") {
+    } else if (qubeId === "Qripto Persona") {
       return profileImages.qripto;
     }
     return null;

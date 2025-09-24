@@ -30,8 +30,8 @@ const SettingsContainer = ({ activeQubes, toggleQubeActive, selectedIQube }: Set
 
   // When the selected iQube changes, update the sidebar state
   useEffect(() => {
-    if (selectedIQube["iQube-Identifier"] === "Qrypto Persona iQube") {
-      selectIQube("Qrypto Persona");
+    if (selectedIQube["iQube-Identifier"] === "Qripto Persona iQube") {
+      selectIQube("Qripto Persona");
     } else if (selectedIQube["iQube-Identifier"] === "KNYT Persona iQube") {
       selectIQube("KNYT Persona");
     } else if (selectedIQube["iQube-Identifier"] === "Metis iQube") {

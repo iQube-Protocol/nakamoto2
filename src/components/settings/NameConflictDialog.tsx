@@ -30,7 +30,7 @@ export const NameConflictDialog: React.FC<NameConflictDialogProps> = ({
   // Set default option based on persona type
   const getDefaultOption = () => {
     if (conflictData?.personaType === 'qripto') {
-      return 'linkedin'; // Qrypto defaults to LinkedIn
+      return 'linkedin'; // Qripto defaults to LinkedIn
     }
     return 'invitation'; // KNYT defaults to invitation
   };
