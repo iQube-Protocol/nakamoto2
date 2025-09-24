@@ -61,7 +61,7 @@ export const storeUserInteraction = async (data: InteractionData) => {
 };
 
 export const getUserInteractions = async (
-  interactionType?: 'learn' | 'earn' | 'connect' | 'mondai',
+  interactionType?: 'learn' | 'earn' | 'connect' | 'mondai' | 'all' | 'qripto' | 'knyt',
   limit = 50, 
   offset = 0
 ) => {
@@ -81,7 +81,9 @@ export const getUserInteractions = async (
       .select('*')
       .eq('user_id', user_id);
     
-    if (interactionType) {
+    // Only filter by interaction_type for the original types (mondai, learn, earn, connect)
+    // For 'all', 'qripto', 'knyt' we fetch everything and let the UI do persona-based filtering
+    if (interactionType && !['all', 'qripto', 'knyt'].includes(interactionType)) {
       query = query.eq('interaction_type', interactionType);
     }
     

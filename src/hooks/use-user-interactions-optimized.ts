@@ -19,7 +19,7 @@ interface UseUserInteractionsOptimizedOptions {
 }
 
 export const useUserInteractionsOptimized = (
-  interactionType?: 'learn' | 'earn' | 'connect' | 'mondai',
+  interactionType?: 'learn' | 'earn' | 'connect' | 'mondai' | 'all' | 'qripto' | 'knyt',
   options: UseUserInteractionsOptimizedOptions = {}
 ) => {
   const {

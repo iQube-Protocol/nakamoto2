@@ -34,7 +34,7 @@ const Profile = () => {
     hasMore,
     loadMoreInteractions,
     refreshInteractions
-  } = useUserInteractionsOptimized(activeTab as any, {
+  } = useUserInteractionsOptimized('all', {  // Always fetch all interactions
     batchSize: 10,
     enableProgressiveLoading: true,
     deferDuringNavigation: true
