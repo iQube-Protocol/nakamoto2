@@ -17,7 +17,7 @@ const Profile = () => {
     user
   } = useAuth();
   const { selectedIQube } = useSidebarState();
-  const [activeTab, setActiveTab] = useState<'learn' | 'earn' | 'connect' | 'mondai'>('mondai');
+  const [activeTab, setActiveTab] = useState<'both' | 'qripto' | 'knyt'>('both');
   const [selectedResponse, setSelectedResponse] = useState<any>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -143,43 +143,48 @@ const Profile = () => {
             <CardTitle className="text-base sm:text-lg">History</CardTitle>
             <div className="flex flex-wrap gap-2 mt-2">
               <button 
-                onClick={() => setActiveTab('mondai')} 
+                onClick={() => setActiveTab('both')} 
                 className={`px-3 py-1.5 text-xs sm:text-sm rounded transition-colors ${
-                  activeTab === 'mondai' ? 'bg-qrypto-primary text-white' : 'bg-muted hover:bg-muted/80'
+                  activeTab === 'both' ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'
                 }`}
               >
-                Nakamoto
+                Both
               </button>
               <button 
-                onClick={() => setActiveTab('learn')} 
+                onClick={() => setActiveTab('qripto')} 
                 className={`px-3 py-1.5 text-xs sm:text-sm rounded transition-colors ${
-                  activeTab === 'learn' ? 'bg-qrypto-primary text-white' : 'bg-muted hover:bg-muted/80'
+                  activeTab === 'qripto' ? 'bg-qrypto-primary text-white' : 'bg-muted hover:bg-muted/80'
                 }`}
               >
-                Learn
+                Qripto
               </button>
               <button 
-                onClick={() => setActiveTab('earn')} 
+                onClick={() => setActiveTab('knyt')} 
                 className={`px-3 py-1.5 text-xs sm:text-sm rounded transition-colors ${
-                  activeTab === 'earn' ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'
+                  activeTab === 'knyt' ? 'bg-knyt-primary text-white' : 'bg-muted hover:bg-muted/80'
                 }`}
               >
-                Earn
-              </button>
-              <button 
-                onClick={() => setActiveTab('connect')} 
-                className={`px-3 py-1.5 text-xs sm:text-sm rounded transition-colors ${
-                  activeTab === 'connect' ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'
-                }`}
-              >
-                Connect
+                KNYT
               </button>
             </div>
           </CardHeader>
           <CardContent className="px-2 sm:px-6 pb-3">
             <ScrollArea className="h-[250px] sm:h-[300px] w-full">
               <div className="space-y-3 pr-2">
-                {interactions && interactions.length > 0 ? interactions.map(interaction => (
+                {interactions && interactions.length > 0 ? interactions.filter(interaction => {
+                  if (activeTab === 'both') return true;
+                  if (activeTab === 'qripto') {
+                    // Check both new activePersona field and legacy metadata flags
+                    return (interaction.metadata?.activePersona === 'Qripto Persona') || 
+                           (interaction.metadata?.personaContextUsed && !interaction.metadata?.metaKnytsContextUsed);
+                  }
+                  if (activeTab === 'knyt') {
+                    // Check both new activePersona field and legacy metadata flags
+                    return (interaction.metadata?.activePersona === 'KNYT Persona') || 
+                           interaction.metadata?.metaKnytsContextUsed;
+                  }
+                  return true;
+                }).map(interaction => (
                   <div key={interaction.id} className="w-full overflow-hidden">
                     {/* User Query */}
                     {interaction.query && (
@@ -266,14 +271,17 @@ const Profile = () => {
                      <p className="text-xs sm:text-sm text-muted-foreground">Loading conversations...</p>
                    </div>
                  ) : (
-                   <div className="text-center p-4">
-                      <p className="text-xs sm:text-sm">
-                        No {activeTab === 'learn' ? 'Learn/Nakamoto' : activeTab === 'mondai' ? 'Nakamoto' : activeTab} conversations found.
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Start a conversation with the {activeTab === 'learn' ? 'Learn or Nakamoto' : activeTab === 'mondai' ? 'Nakamoto' : activeTab} agent to see your history here.
-                      </p>
-                   </div>
+                    <div className="text-center p-4">
+                       <p className="text-xs sm:text-sm">
+                         No {activeTab === 'both' ? '' : activeTab === 'qripto' ? 'Qripto ' : 'KNYT '}conversations found.
+                       </p>
+                       <p className="text-xs text-muted-foreground mt-1">
+                         {activeTab === 'both' 
+                           ? 'Start a conversation with Nakamoto to see your history here.'
+                           : `Start a conversation with the ${activeTab === 'qripto' ? 'Qripto' : 'KNYT'} persona to see your history here.`
+                         }
+                       </p>
+                    </div>
                  )}
                  
                  {/* Progressive loading button */}

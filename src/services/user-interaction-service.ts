@@ -20,12 +20,19 @@ export const storeUserInteraction = async (data: InteractionData) => {
       return { success: false, error: new Error('User not authenticated') };
     }
 
+    // Enhance metadata with current persona context
+    const enhancedMetadata = {
+      ...data.metadata,
+      activePersona: localStorage.getItem('selected-iqube') || 'Qrypto Persona',
+      timestamp: new Date().toISOString()
+    };
+
     console.log('STORING USER INTERACTION:', {
       userId: data.user_id,
       type: data.interactionType,
-      hasMetadata: !!data.metadata,
-      metadata: data.metadata,
-      metadataKeys: data.metadata ? Object.keys(data.metadata) : []
+      hasMetadata: !!enhancedMetadata,
+      metadata: enhancedMetadata,
+      metadataKeys: enhancedMetadata ? Object.keys(enhancedMetadata) : []
     });
 
     const { error, data: insertedData } = await (supabase as any)
@@ -34,7 +41,7 @@ export const storeUserInteraction = async (data: InteractionData) => {
         query: data.query,
         response: data.response,
         interaction_type: data.interactionType,
-        metadata: data.metadata,
+        metadata: enhancedMetadata,
         user_id: data.user_id
       })
       .select();
