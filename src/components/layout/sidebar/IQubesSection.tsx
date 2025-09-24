@@ -8,6 +8,7 @@ import { Switch } from "@/components/ui/switch";
 import CubeIcon from './CubeIcon';
 import { QubeItem } from './sidebarData';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useNavigate } from 'react-router-dom';
 
 interface IQubesSectionProps {
   iQubeItems: QubeItem[];
@@ -35,6 +36,12 @@ const IQubesSection: React.FC<IQubesSectionProps> = ({
   toggleMobileSidebar
 }) => {
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
+
+  // Handle settings navigation for collapsed view
+  const handleSettingsNavigation = () => {
+    navigate('/settings');
+  };
   
   // Function to render iQube type icon based on specific qube name and type
   const renderIQubeTypeIcon = (qubeName: string, type: string) => {
@@ -145,7 +152,7 @@ const IQubesSection: React.FC<IQubesSectionProps> = ({
                   "flex items-center justify-center p-2 rounded-md hover:bg-accent/30 cursor-pointer",
                   location.pathname.includes('/qubes') && "bg-accent/20"
                 )}
-                onClick={toggleIQubesMenu}
+                onClick={handleSettingsNavigation}
               >
                 <CubeIcon className="h-5 w-5" />
               </div>
