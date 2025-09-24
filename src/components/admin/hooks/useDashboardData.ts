@@ -196,7 +196,7 @@ export const useDashboardData = () => {
           const email = payload.new?.["Email"] || payload.new?.email;
           if (email) {
             console.log('useDashboardData: Qrypto persona created, reconciling direct signup for', email);
-            await dataReconciliationService.reconcileDirectSignupForEmail(email, 'qrypto');
+            await dataReconciliationService.reconcileDirectSignupForEmail(email, 'qripto');
             loadDashboardData(false);
           }
         }

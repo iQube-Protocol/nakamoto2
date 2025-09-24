@@ -40,7 +40,7 @@ export const blakQubeService = {
   /**
    * Get persona data for the current user based on persona type
    */
-  getPersonaData: async (personaType: 'knyt' | 'qripto'): Promise<KNYTPersona | QriptoPersona | null> => {
+  getPersonaData: async (personaType: 'knyt' | 'qripto'): Promise<KNYTPersona | QryptoPersona | null> => {
     try {
       const { data: user, error: authError } = await supabase.auth.getUser();
       if (authError || !user.user) {

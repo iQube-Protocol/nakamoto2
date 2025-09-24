@@ -39,7 +39,7 @@ const BlakQubeSection = ({ privateData, onUpdatePrivateData, metaQube }: BlakQub
                           metaQube?.["iQube-Identifier"] === "KNYT Persona iQube";
     
     // Get persona type for the refresh button
-    const personaType = metaQube ? getPersonaType(metaQube["iQube-Identifier"]) : 'qrypto';
+    const personaType = metaQube ? getPersonaType(metaQube["iQube-Identifier"]) : 'qripto';
     
     console.log("BlakQubeSection - isKNYTPersona:", isKNYTPersona);
     console.log("BlakQubeSection - personaType:", personaType);

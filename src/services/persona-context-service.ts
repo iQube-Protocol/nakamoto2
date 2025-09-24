@@ -79,9 +79,9 @@ export class PersonaContextService {
       // Get Qrypto context if activated
       if (qryptoActivated) {
         try {
-          const qryptoPersona = await blakQubeService.getPersonaData('qrypto') as QryptoPersona;
-          if (qryptoPersona) {
-            qryptoContext = this.buildQryptoContext(qryptoPersona);
+          const qriptoPersona = await blakQubeService.getPersonaData('qripto') as QryptoPersona;
+          if (qriptoPersona) {
+            qryptoContext = this.buildQryptoContext(qriptoPersona);
           }
         } catch (error) {
           console.warn('Error fetching Qrypto persona:', error);
@@ -276,9 +276,9 @@ export class PersonaContextService {
     }
 
     if (qryptoContext?.isActive) {
-      const qryptoPreference = await NamePreferenceService.getNamePreference('qrypto');
-      if (qryptoPreference) {
-        return NamePreferenceService.getEffectiveName(qryptoPreference);
+      const qriptoPreference = await NamePreferenceService.getNamePreference('qripto');
+      if (qriptoPreference) {
+        return NamePreferenceService.getEffectiveName(qriptoPreference);
       }
     }
 

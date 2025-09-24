@@ -61,11 +61,11 @@ export const usePrivateData = (selectedIQube: MetaQube) => {
         }
       } else {
         console.log('🔍 Fetching Qrypto persona data...');
-        const qryptoPersona = await blakQubeService.getPersonaData('qrypto') as QryptoPersona;
-        console.log('📋 Raw Qrypto persona from DB:', qryptoPersona);
+        const qriptoPersona = await blakQubeService.getPersonaData('qripto') as QryptoPersona;
+        console.log('📋 Raw Qripto persona from DB:', qriptoPersona);
         
-        if (qryptoPersona) {
-          const transformedData = qryptoPersonaToPrivateData(qryptoPersona);
+        if (qriptoPersona) {
+          const transformedData = qryptoPersonaToPrivateData(qriptoPersona);
           console.log('📋 Transformed Qrypto data:', transformedData);
           setPrivateData(transformedData);
         } else {

@@ -47,10 +47,10 @@ class AsyncConnectionProcessor {
       console.log('🔄 Updating BlakQube data...');
       
       // Update both persona types for compatibility
-      const qryptoUpdateSuccess = await blakQubeService.updatePersonaFromConnections('qrypto');
+      const qriptoUpdateSuccess = await blakQubeService.updatePersonaFromConnections('qripto');
       const knytUpdateSuccess = await blakQubeService.updatePersonaFromConnections('knyt');
       
-      if (qryptoUpdateSuccess || knytUpdateSuccess) {
+      if (qriptoUpdateSuccess || knytUpdateSuccess) {
         console.log('✅ BlakQube data updated successfully');
         
         // Dispatch update event

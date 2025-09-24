@@ -8,13 +8,13 @@ import { withTimeout, TimeoutError, CircuitBreaker } from '@/utils/async-timeout
 
 interface BlakQubeRefreshButtonProps {
   onRefresh?: () => void;
-  personaType?: 'knyt' | 'qrypto';
+  personaType?: 'knyt' | 'qripto';
 }
 
 // Circuit breaker instance per persona type
 const circuitBreakers = new Map<string, CircuitBreaker>();
 
-const BlakQubeRefreshButton = ({ onRefresh, personaType = 'qrypto' }: BlakQubeRefreshButtonProps) => {
+const BlakQubeRefreshButton = ({ onRefresh, personaType = 'qripto' }: BlakQubeRefreshButtonProps) => {
   const [isRefreshing, setIsRefreshing] = useState(false);
   const abortControllerRef = useRef<AbortController | null>(null);
   const operationIdRef = useRef<string>('');

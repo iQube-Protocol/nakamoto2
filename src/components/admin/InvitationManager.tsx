@@ -227,13 +227,13 @@ const InvitationManager = () => {
             <CardContent className="space-y-4">
               <div>
                 <Label htmlFor="persona-type">Persona Type</Label>
-                <Select value={selectedPersonaType} onValueChange={(value) => setSelectedPersonaType(value as 'knyt' | 'qrypto')}>
+                <Select value={selectedPersonaType} onValueChange={(value) => setSelectedPersonaType(value as 'knyt' | 'qripto')}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
                     <SelectItem value="knyt">KNYT Persona</SelectItem>
-                    <SelectItem value="qrypto">Qrypto Persona</SelectItem>
+                    <SelectItem value="qripto">Qripto Persona</SelectItem>
                   </SelectContent>
                 </Select>
               </div>

@@ -178,10 +178,10 @@ export const walletConnectionService = {
           console.log('KNYT persona update result:', knytUpdateSuccess);
           
           console.log('🔄 Updating Qrypto persona...');
-          const qryptoUpdateSuccess = await blakQubeService.updatePersonaFromConnections('qrypto');
-          console.log('Qrypto persona update result:', qryptoUpdateSuccess);
+          const qriptoUpdateSuccess = await blakQubeService.updatePersonaFromConnections('qripto');
+          console.log('Qripto persona update result:', qriptoUpdateSuccess);
           
-          if (knytUpdateSuccess || qryptoUpdateSuccess) {
+          if (knytUpdateSuccess || qriptoUpdateSuccess) {
             console.log('✅ Persona data updated successfully');
             
             // Dispatch comprehensive events to notify UI components
@@ -321,12 +321,12 @@ export const walletConnectionService = {
         const { blakQubeService } = await import('./blakqube-service');
         
         const knytSuccess = await blakQubeService.updatePersonaFromConnections('knyt');
-        const qryptoSuccess = await blakQubeService.updatePersonaFromConnections('qrypto');
+        const qriptoSuccess = await blakQubeService.updatePersonaFromConnections('qripto');
         
         console.log('KNYT persona update success:', knytSuccess);
-        console.log('Qrypto persona update success:', qryptoSuccess);
+        console.log('Qripto persona update success:', qriptoSuccess);
         
-        if (knytSuccess || qryptoSuccess) {
+        if (knytSuccess || qriptoSuccess) {
           // Dispatch comprehensive events
           const events = ['privateDataUpdated', 'personaDataUpdated', 'balanceUpdated', 'walletDataRefreshed'];
           events.forEach(eventName => {
@@ -425,12 +425,12 @@ export const walletConnectionService = {
         const { blakQubeService } = await import('./blakqube-service');
         
         const knytSuccess = await blakQubeService.updatePersonaFromConnections('knyt');
-        const qryptoSuccess = await blakQubeService.updatePersonaFromConnections('qrypto');
+        const qriptoSuccess = await blakQubeService.updatePersonaFromConnections('qripto');
         
         console.log('KNYT persona update success:', knytSuccess);
-        console.log('Qrypto persona update success:', qryptoSuccess);
+        console.log('Qripto persona update success:', qriptoSuccess);
         
-        if (knytSuccess || qryptoSuccess) {
+        if (knytSuccess || qriptoSuccess) {
           // Dispatch comprehensive events
           const events = ['privateDataUpdated', 'personaDataUpdated', 'balanceUpdated', 'walletDataRefreshed'];
           events.forEach(eventName => {

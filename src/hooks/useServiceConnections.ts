@@ -154,7 +154,7 @@ export function useServiceConnections() {
           
           // Update BlakQube data after wallet connection
           console.log('💰 Wallet connected, updating BlakQube...');
-          const qryptoUpdateSuccess = await blakQubeService.updatePersonaFromConnections('qrypto');
+          const qriptoUpdateSuccess = await blakQubeService.updatePersonaFromConnections('qripto');
           const knytUpdateSuccess = await blakQubeService.updatePersonaFromConnections('knyt');
           
           // Refresh connections to get the latest data

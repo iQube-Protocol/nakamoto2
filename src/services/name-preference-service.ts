@@ -3,7 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 export interface NamePreference {
   id: string;
   user_id: string;
-  persona_type: 'knyt' | 'qrypto' | 'blak';
+  persona_type: 'knyt' | 'qripto' | 'blak';
   name_source: 'invitation' | 'linkedin' | 'custom';
   custom_first_name?: string;
   custom_last_name?: string;
@@ -124,7 +124,7 @@ export class NamePreferenceService {
     }
 
     // For Qrypto personas, only show conflict if user wants to override LinkedIn with custom/invitation
-    if (personaType === 'qrypto' && linkedinData) {
+    if (personaType === 'qripto' && linkedinData) {
       // Always provide the option to change, but default to LinkedIn
       return {
         personaType,
@@ -206,13 +206,13 @@ export class NamePreferenceService {
     }
     
     if (qryptoResult.data) {
-      await this.processLinkedInForPersona(userId, 'qrypto', firstName, lastName);
+      await this.processLinkedInForPersona(userId, 'qripto', firstName, lastName);
     }
   }
 
   private static async processLinkedInForPersona(
     userId: string, 
-    personaType: 'knyt' | 'qrypto', 
+    personaType: 'knyt' | 'qripto', 
     firstName: string, 
     lastName: string
   ): Promise<void> {
@@ -239,7 +239,7 @@ export class NamePreferenceService {
         console.log(`✅ Created ${personaType} name preferences with source: ${defaultSource}`);
         // Only update persona names for Qrypto (which defaults to linkedin)
         // For KNYT, names should come from invitation data
-        if (personaType === 'qrypto') {
+        if (personaType === 'qripto') {
           await this.updatePersonaNames(userId, namePrefs);
         }
       }
@@ -257,7 +257,7 @@ export class NamePreferenceService {
     
     // For KNYT: preserve existing source, DO NOT update persona names automatically
     // For Qrypto: switch to LinkedIn source and update names
-    if (personaType === 'qrypto' && namePrefs.name_source !== 'custom') {
+    if (personaType === 'qripto' && namePrefs.name_source !== 'custom') {
       updatedPrefs.name_source = 'linkedin';
       console.log(`💡 ${personaType}: Switching to LinkedIn as name source`);
       
@@ -294,8 +294,8 @@ export class NamePreferenceService {
 
   static async createNamePreferences(userId: string, preferences: Partial<NamePreference>): Promise<NamePreference | null> {
     // Determine default name source based on persona type
-    const defaultSource: 'invitation' | 'linkedin' = preferences.persona_type === 'qrypto' ? 'linkedin' : 'invitation';
-    const defaultPersonaType: 'knyt' | 'qrypto' = 'knyt';
+    const defaultSource: 'invitation' | 'linkedin' = preferences.persona_type === 'qripto' ? 'linkedin' : 'invitation';
+    const defaultPersonaType: 'knyt' | 'qripto' = 'knyt';
     
     const { data, error } = await supabase
       .from('user_name_preferences')
@@ -322,7 +322,7 @@ export class NamePreferenceService {
   }
 
   static async updateNamePreferences(userId: string, preferences: Partial<NamePreference>): Promise<void> {
-    const defaultPersonaType: 'knyt' | 'qrypto' = 'knyt';
+    const defaultPersonaType: 'knyt' | 'qripto' = 'knyt';
     const defaultNameSource: 'invitation' | 'linkedin' = 'linkedin';
     
     const updateData = {
