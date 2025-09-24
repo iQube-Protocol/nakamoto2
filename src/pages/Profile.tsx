@@ -17,7 +17,7 @@ const Profile = () => {
     user
   } = useAuth();
   const { selectedIQube } = useSidebarState();
-  const [activeTab, setActiveTab] = useState<'learn' | 'earn' | 'connect' | 'mondai'>('mondai');
+  const [activeTab, setActiveTab] = useState<'both' | 'qrypto' | 'knyt'>('both');
   const [selectedResponse, setSelectedResponse] = useState<any>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -34,7 +34,7 @@ const Profile = () => {
     hasMore,
     loadMoreInteractions,
     refreshInteractions
-  } = useUserInteractionsOptimized(activeTab as any, {
+  } = useUserInteractionsOptimized(activeTab === 'both' ? 'mondai' : activeTab as any, {
     batchSize: 10,
     enableProgressiveLoading: true,
     deferDuringNavigation: true
@@ -60,18 +60,16 @@ const Profile = () => {
     setSelectedResponse(null);
   };
 
-  const getAgentName = (interactionType: string) => {
-    switch (interactionType) {
-      case 'mondai':
-        return 'Nakamoto';
-      case 'learn':
-        return 'Learning';
-      case 'earn':
-        return 'Earning';
-      case 'connect':
-        return 'Connection';
+  const getPersonaName = (activeTab: string) => {
+    switch (activeTab) {
+      case 'both':
+        return 'All Personas';
+      case 'qrypto':
+        return 'Qrypto';
+      case 'knyt':
+        return 'KNYT';
       default:
-        return interactionType;
+        return 'Nakamoto';
     }
   };
 
@@ -143,36 +141,28 @@ const Profile = () => {
             <CardTitle className="text-base sm:text-lg">History</CardTitle>
             <div className="flex flex-wrap gap-2 mt-2">
               <button 
-                onClick={() => setActiveTab('mondai')} 
+                onClick={() => setActiveTab('both')} 
                 className={`px-3 py-1.5 text-xs sm:text-sm rounded transition-colors ${
-                  activeTab === 'mondai' ? 'bg-qrypto-primary text-white' : 'bg-muted hover:bg-muted/80'
+                  activeTab === 'both' ? 'bg-qrypto-primary text-white' : 'bg-muted hover:bg-muted/80'
                 }`}
               >
-                Nakamoto
+                Both
               </button>
               <button 
-                onClick={() => setActiveTab('learn')} 
+                onClick={() => setActiveTab('qrypto')} 
                 className={`px-3 py-1.5 text-xs sm:text-sm rounded transition-colors ${
-                  activeTab === 'learn' ? 'bg-qrypto-primary text-white' : 'bg-muted hover:bg-muted/80'
+                  activeTab === 'qrypto' ? 'bg-qrypto-primary text-white' : 'bg-muted hover:bg-muted/80'
                 }`}
               >
-                Learn
+                Qrypto
               </button>
               <button 
-                onClick={() => setActiveTab('earn')} 
+                onClick={() => setActiveTab('knyt')} 
                 className={`px-3 py-1.5 text-xs sm:text-sm rounded transition-colors ${
-                  activeTab === 'earn' ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'
+                  activeTab === 'knyt' ? 'bg-purple-600 text-white' : 'bg-muted hover:bg-muted/80'
                 }`}
               >
-                Earn
-              </button>
-              <button 
-                onClick={() => setActiveTab('connect')} 
-                className={`px-3 py-1.5 text-xs sm:text-sm rounded transition-colors ${
-                  activeTab === 'connect' ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'
-                }`}
-              >
-                Connect
+                KNYT
               </button>
             </div>
           </CardHeader>
@@ -207,9 +197,9 @@ const Profile = () => {
                       <div className="p-2 sm:p-3 rounded-lg bg-[#23223f]/[0.32] cursor-pointer hover:bg-[#23223f]/[0.45] transition-colors border-l-4 border-indigo-400 overflow-hidden" onClick={() => handleResponseClick(interaction)}>
                          <div className="flex flex-col gap-1 mb-2">
                             <div className="flex items-center gap-2">
-                              <Badge variant="secondary" className="bg-qrypto-primary w-fit text-xs">
-                                Nakamoto
-                              </Badge>
+                               <Badge variant="secondary" className="bg-qrypto-primary w-fit text-xs">
+                                 {getPersonaName(activeTab)}
+                               </Badge>
                               {interaction.metadata?.aiProvider && (
                                 <Badge variant="outline" className="bg-green-100 text-green-800 w-fit text-xs">
                                   {interaction.metadata.aiProvider === 'Venice AI (Uncensored)' ? 'Venice AI' : interaction.metadata.aiProvider}
@@ -266,14 +256,14 @@ const Profile = () => {
                      <p className="text-xs sm:text-sm text-muted-foreground">Loading conversations...</p>
                    </div>
                  ) : (
-                   <div className="text-center p-4">
-                      <p className="text-xs sm:text-sm">
-                        No {activeTab === 'learn' ? 'Learn/Nakamoto' : activeTab === 'mondai' ? 'Nakamoto' : activeTab} conversations found.
-                      </p>
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Start a conversation with the {activeTab === 'learn' ? 'Learn or Nakamoto' : activeTab === 'mondai' ? 'Nakamoto' : activeTab} agent to see your history here.
-                      </p>
-                   </div>
+                    <div className="text-center p-4">
+                       <p className="text-xs sm:text-sm">
+                         No {getPersonaName(activeTab)} conversations found.
+                       </p>
+                       <p className="text-xs text-muted-foreground mt-1">
+                         Start a conversation with the {getPersonaName(activeTab)} persona to see your history here.
+                       </p>
+                    </div>
                  )}
                  
                  {/* Progressive loading button */}
