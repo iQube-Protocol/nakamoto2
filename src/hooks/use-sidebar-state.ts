@@ -52,6 +52,21 @@ export function useSidebarState() {
     }
   }, [selectedIQube]);
 
+  // Sync selected iQube across different hook instances via a global event
+  useEffect(() => {
+    const handleSelected = (e: Event) => {
+      const evt = e as CustomEvent;
+      const iqubeId = (evt.detail as any)?.iqubeId as string | undefined;
+      if (iqubeId && iqubeId !== selectedIQube) {
+        setSelectedIQube(iqubeId);
+      }
+    };
+
+    window.addEventListener('iqubeSelected', handleSelected as EventListener);
+    return () => {
+      window.removeEventListener('iqubeSelected', handleSelected as EventListener);
+    };
+  }, [selectedIQube]);
   const toggleSidebar = () => {
     setCollapsed(!collapsed);
   };
