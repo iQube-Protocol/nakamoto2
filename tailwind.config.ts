@@ -70,6 +70,13 @@ export default {
 					dark: 'hsl(237 45% 20%)',        // Dark purple 
 					light: 'hsl(220 14% 96%)'        // Light background 
 				},
+				knyt: {
+					primary: 'hsl(142 76% 36%)',     // Green primary
+					secondary: 'hsl(142 69% 46%)',   // Lighter green
+					accent: 'hsl(197 71% 52%)',      // Blue accent
+					dark: 'hsl(142 45% 20%)',        // Dark green
+					light: 'hsl(142 14% 96%)'        // Light background
+				},
 				// Legacy support for any remaining references
 				iqube: {
 					primary: '#8B5CF6',
