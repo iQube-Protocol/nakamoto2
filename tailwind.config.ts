@@ -64,11 +64,11 @@ export default {
 					ring: 'hsl(var(--sidebar-ring))'
 				},
 				qripto: {
-					primary: '#8B5CF6',     // Purple primary
-					secondary: '#A855F7',   // Purple secondary  
-					accent: '#FB923C',      // Orange accent
-					dark: '#1E1B4B',        // Dark purple
-					light: '#F3F4F6'        // Light background
+					primary: 'hsl(262 83% 58%)',     // Purple primary 
+					secondary: 'hsl(262 69% 66%)',   // Purple secondary 
+					accent: 'hsl(24 95% 53%)',       // Orange accent 
+					dark: 'hsl(237 45% 20%)',        // Dark purple 
+					light: 'hsl(220 14% 96%)'        // Light background 
 				},
 				// Legacy support for any remaining references
 				iqube: {
