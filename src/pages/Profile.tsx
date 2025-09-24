@@ -17,7 +17,7 @@ const Profile = () => {
     user
   } = useAuth();
   const { selectedIQube } = useSidebarState();
-  const [activeTab, setActiveTab] = useState<'both' | 'qripto' | 'knyt'>('both');
+  const [activeTab, setActiveTab] = useState<'all' | 'qripto' | 'knyt'>('all');
   const [selectedResponse, setSelectedResponse] = useState<any>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -143,12 +143,12 @@ const Profile = () => {
             <CardTitle className="text-base sm:text-lg">History</CardTitle>
             <div className="flex flex-wrap gap-2 mt-2">
               <button 
-                onClick={() => setActiveTab('both')} 
+                onClick={() => setActiveTab('all')} 
                 className={`px-3 py-1.5 text-xs sm:text-sm rounded transition-colors ${
-                  activeTab === 'both' ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'
+                  activeTab === 'all' ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'
                 }`}
               >
-                Both
+                All
               </button>
               <button 
                 onClick={() => setActiveTab('qripto')} 
@@ -172,7 +172,7 @@ const Profile = () => {
             <ScrollArea className="h-[250px] sm:h-[300px] w-full">
               <div className="space-y-3 pr-2">
                 {interactions && interactions.length > 0 ? interactions.filter(interaction => {
-                  if (activeTab === 'both') return true;
+                  if (activeTab === 'all') return true;
                   if (activeTab === 'qripto') {
                     // Check both new activePersona field and legacy metadata flags
                     return (interaction.metadata?.activePersona === 'Qripto Persona') || 
@@ -271,17 +271,17 @@ const Profile = () => {
                      <p className="text-xs sm:text-sm text-muted-foreground">Loading conversations...</p>
                    </div>
                  ) : (
-                    <div className="text-center p-4">
-                       <p className="text-xs sm:text-sm">
-                         No {activeTab === 'both' ? '' : activeTab === 'qripto' ? 'Qripto ' : 'KNYT '}conversations found.
-                       </p>
-                       <p className="text-xs text-muted-foreground mt-1">
-                         {activeTab === 'both' 
-                           ? 'Start a conversation with Nakamoto to see your history here.'
-                           : `Start a conversation with the ${activeTab === 'qripto' ? 'Qripto' : 'KNYT'} persona to see your history here.`
-                         }
-                       </p>
-                    </div>
+                     <div className="text-center p-4">
+                        <p className="text-xs sm:text-sm">
+                          No {activeTab === 'all' ? '' : activeTab === 'qripto' ? 'Qripto ' : 'KNYT '}conversations found.
+                        </p>
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {activeTab === 'all' 
+                            ? 'Start a conversation with Nakamoto to see your history here.'
+                            : `Start a conversation with the ${activeTab === 'qripto' ? 'Qripto' : 'KNYT'} persona to see your history here.`
+                          }
+                        </p>
+                     </div>
                  )}
                  
                  {/* Progressive loading button */}

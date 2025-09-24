@@ -21,9 +21,10 @@ export const storeUserInteraction = async (data: InteractionData) => {
     }
 
     // Enhance metadata with current persona context
+    const selectedPersona = localStorage.getItem('selected-iqube');
     const enhancedMetadata = {
       ...data.metadata,
-      activePersona: localStorage.getItem('selected-iqube') || 'Qripto Persona',
+      activePersona: selectedPersona || 'Anon',
       timestamp: new Date().toISOString()
     };
 
