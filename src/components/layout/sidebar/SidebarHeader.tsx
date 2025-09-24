@@ -14,7 +14,7 @@ const SidebarHeader: React.FC<SidebarHeaderProps> = ({
 }) => {
   return <div className={cn("flex items-center mb-6 px-3", collapsed ? "justify-center" : "justify-between")}>
       {!collapsed ? <Link to="/mondai" className="flex items-center">
-          <Bot className="h-6 w-6 text-qripto-primary mr-2" />
+          <Bot className="h-6 w-6 text-qripto-primary mr-2 mt-4" />
           <div className="flex flex-col">
             <h1 className="text-2xl font-bold bg-gradient-to-r from-qripto-primary to-qripto-accent inline-block text-transparent bg-clip-text">
               Qripto
