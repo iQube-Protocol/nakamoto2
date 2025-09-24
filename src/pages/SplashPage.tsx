@@ -20,7 +20,7 @@ const SplashPage = () => {
     };
   }, []);
   return (
-    <div className="h-screen flex flex-col bg-gradient-to-br from-qrypto-dark via-qrypto-primary to-qrypto-secondary">
+    <div className="h-screen flex flex-col bg-gradient-to-br from-qripto-dark via-qripto-primary to-qripto-secondary">
       <div className="container max-w-4xl mx-auto px-4 py-8 flex flex-col h-full">
         {/* Video Section */}
         <div className="flex-1 flex flex-col justify-center items-center space-y-8">
@@ -48,9 +48,9 @@ const SplashPage = () => {
 
           {/* Title and Description */}
           <div className="text-center space-y-4 max-w-2xl">
-            <h2 className="text-xl md:text-2xl font-semibold text-qrypto-accent">
+            <h1 className="text-xl md:text-2xl font-semibold text-qripto-accent">
               Aigent Nakamoto
-            </h2>
+            </h1>
             <p className="text-white/80 text-sm md:text-lg">Get your personalized iQube and COYN AI Agent</p>
             
             {/* Mobile Button - positioned right after description */}
