@@ -21,7 +21,7 @@ const SidebarHeader: React.FC<SidebarHeaderProps> = ({ collapsed, toggleSidebar 
         <Link to="/mondai" className="flex items-center">
           <Bot className="h-6 w-6 text-qripto-primary mr-2" />
           <div className="flex flex-col">
-            <h1 className="text-xl font-bold bg-gradient-to-r from-qripto-primary to-qripto-accent inline-block text-transparent bg-clip-text">
+            <h1 className="text-2xl font-bold bg-gradient-to-r from-qripto-primary to-qripto-accent inline-block text-transparent bg-clip-text">
               Qripto
             </h1>
             <span className="text-xs text-muted-foreground">Quantum Ready Internet Protocol</span>
