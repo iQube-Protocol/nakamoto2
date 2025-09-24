@@ -17,7 +17,7 @@ const Profile = () => {
     user
   } = useAuth();
   const { selectedIQube } = useSidebarState();
-  const [activeTab, setActiveTab] = useState<'qrypto' | 'not_qrypto'>('qrypto');
+  const [activeTab, setActiveTab] = useState<'learn' | 'earn' | 'connect' | 'mondai'>('mondai');
   const [selectedResponse, setSelectedResponse] = useState<any>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -34,7 +34,7 @@ const Profile = () => {
     hasMore,
     loadMoreInteractions,
     refreshInteractions
-  } = useUserInteractionsOptimized(activeTab === 'qrypto' ? 'mondai' : 'mondai', {
+  } = useUserInteractionsOptimized(activeTab as any, {
     batchSize: 10,
     enableProgressiveLoading: true,
     deferDuringNavigation: true
@@ -60,14 +60,18 @@ const Profile = () => {
     setSelectedResponse(null);
   };
 
-  const getPersonaName = (activeTab: string) => {
-    switch (activeTab) {
-      case 'qrypto':
-        return 'Qrypto';
-      case 'not_qrypto':
-        return 'Not Qrypto';
+  const getAgentName = (interactionType: string) => {
+    switch (interactionType) {
+      case 'mondai':
+        return 'Nakamoto';
+      case 'learn':
+        return 'Learning';
+      case 'earn':
+        return 'Earning';
+      case 'connect':
+        return 'Connection';
       default:
-        return 'Qrypto';
+        return interactionType;
     }
   };
 
@@ -139,20 +143,36 @@ const Profile = () => {
             <CardTitle className="text-base sm:text-lg">History</CardTitle>
             <div className="flex flex-wrap gap-2 mt-2">
               <button 
-                onClick={() => setActiveTab('qrypto')} 
+                onClick={() => setActiveTab('mondai')} 
                 className={`px-3 py-1.5 text-xs sm:text-sm rounded transition-colors ${
-                  activeTab === 'qrypto' ? 'bg-qrypto-primary text-white' : 'bg-muted hover:bg-muted/80'
+                  activeTab === 'mondai' ? 'bg-qrypto-primary text-white' : 'bg-muted hover:bg-muted/80'
                 }`}
               >
-                Qrypto
+                Nakamoto
               </button>
               <button 
-                onClick={() => setActiveTab('not_qrypto')} 
+                onClick={() => setActiveTab('learn')} 
                 className={`px-3 py-1.5 text-xs sm:text-sm rounded transition-colors ${
-                  activeTab === 'not_qrypto' ? 'bg-purple-600 text-white' : 'bg-muted hover:bg-muted/80'
+                  activeTab === 'learn' ? 'bg-qrypto-primary text-white' : 'bg-muted hover:bg-muted/80'
                 }`}
               >
-                Not Qrypto
+                Learn
+              </button>
+              <button 
+                onClick={() => setActiveTab('earn')} 
+                className={`px-3 py-1.5 text-xs sm:text-sm rounded transition-colors ${
+                  activeTab === 'earn' ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'
+                }`}
+              >
+                Earn
+              </button>
+              <button 
+                onClick={() => setActiveTab('connect')} 
+                className={`px-3 py-1.5 text-xs sm:text-sm rounded transition-colors ${
+                  activeTab === 'connect' ? 'bg-primary text-primary-foreground' : 'bg-muted hover:bg-muted/80'
+                }`}
+              >
+                Connect
               </button>
             </div>
           </CardHeader>
@@ -187,9 +207,9 @@ const Profile = () => {
                       <div className="p-2 sm:p-3 rounded-lg bg-[#23223f]/[0.32] cursor-pointer hover:bg-[#23223f]/[0.45] transition-colors border-l-4 border-indigo-400 overflow-hidden" onClick={() => handleResponseClick(interaction)}>
                          <div className="flex flex-col gap-1 mb-2">
                             <div className="flex items-center gap-2">
-                               <Badge variant="secondary" className="bg-qrypto-primary w-fit text-xs">
-                                 {getPersonaName(activeTab)}
-                               </Badge>
+                              <Badge variant="secondary" className="bg-qrypto-primary w-fit text-xs">
+                                Nakamoto
+                              </Badge>
                               {interaction.metadata?.aiProvider && (
                                 <Badge variant="outline" className="bg-green-100 text-green-800 w-fit text-xs">
                                   {interaction.metadata.aiProvider === 'Venice AI (Uncensored)' ? 'Venice AI' : interaction.metadata.aiProvider}
@@ -246,14 +266,14 @@ const Profile = () => {
                      <p className="text-xs sm:text-sm text-muted-foreground">Loading conversations...</p>
                    </div>
                  ) : (
-                    <div className="text-center p-4">
-                       <p className="text-xs sm:text-sm">
-                         No {getPersonaName(activeTab)} conversations found.
-                       </p>
-                       <p className="text-xs text-muted-foreground mt-1">
-                         Start a conversation with the {getPersonaName(activeTab)} persona to see your history here.
-                       </p>
-                    </div>
+                   <div className="text-center p-4">
+                      <p className="text-xs sm:text-sm">
+                        No {activeTab === 'learn' ? 'Learn/Nakamoto' : activeTab === 'mondai' ? 'Nakamoto' : activeTab} conversations found.
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Start a conversation with the {activeTab === 'learn' ? 'Learn or Nakamoto' : activeTab === 'mondai' ? 'Nakamoto' : activeTab} agent to see your history here.
+                      </p>
+                   </div>
                  )}
                  
                  {/* Progressive loading button */}
