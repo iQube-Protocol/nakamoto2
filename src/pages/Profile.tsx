@@ -17,7 +17,7 @@ const Profile = () => {
     user
   } = useAuth();
   const { selectedIQube } = useSidebarState();
-  const [activeTab, setActiveTab] = useState<'both' | 'qrypto' | 'knyt'>('both');
+  const [activeTab, setActiveTab] = useState<'qrypto' | 'not_qrypto'>('qrypto');
   const [selectedResponse, setSelectedResponse] = useState<any>(null);
   const [isDialogOpen, setIsDialogOpen] = useState(false);
 
@@ -34,7 +34,7 @@ const Profile = () => {
     hasMore,
     loadMoreInteractions,
     refreshInteractions
-  } = useUserInteractionsOptimized(activeTab === 'both' ? 'mondai' : activeTab as any, {
+  } = useUserInteractionsOptimized(activeTab === 'qrypto' ? 'mondai' : 'mondai', {
     batchSize: 10,
     enableProgressiveLoading: true,
     deferDuringNavigation: true
@@ -62,14 +62,12 @@ const Profile = () => {
 
   const getPersonaName = (activeTab: string) => {
     switch (activeTab) {
-      case 'both':
-        return 'All Personas';
       case 'qrypto':
         return 'Qrypto';
-      case 'knyt':
-        return 'KNYT';
+      case 'not_qrypto':
+        return 'Not Qrypto';
       default:
-        return 'Nakamoto';
+        return 'Qrypto';
     }
   };
 
@@ -141,14 +139,6 @@ const Profile = () => {
             <CardTitle className="text-base sm:text-lg">History</CardTitle>
             <div className="flex flex-wrap gap-2 mt-2">
               <button 
-                onClick={() => setActiveTab('both')} 
-                className={`px-3 py-1.5 text-xs sm:text-sm rounded transition-colors ${
-                  activeTab === 'both' ? 'bg-qrypto-primary text-white' : 'bg-muted hover:bg-muted/80'
-                }`}
-              >
-                Both
-              </button>
-              <button 
                 onClick={() => setActiveTab('qrypto')} 
                 className={`px-3 py-1.5 text-xs sm:text-sm rounded transition-colors ${
                   activeTab === 'qrypto' ? 'bg-qrypto-primary text-white' : 'bg-muted hover:bg-muted/80'
@@ -157,12 +147,12 @@ const Profile = () => {
                 Qrypto
               </button>
               <button 
-                onClick={() => setActiveTab('knyt')} 
+                onClick={() => setActiveTab('not_qrypto')} 
                 className={`px-3 py-1.5 text-xs sm:text-sm rounded transition-colors ${
-                  activeTab === 'knyt' ? 'bg-purple-600 text-white' : 'bg-muted hover:bg-muted/80'
+                  activeTab === 'not_qrypto' ? 'bg-purple-600 text-white' : 'bg-muted hover:bg-muted/80'
                 }`}
               >
-                KNYT
+                Not Qrypto
               </button>
             </div>
           </CardHeader>
