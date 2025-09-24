@@ -16,11 +16,6 @@ export const navItems: NavItem[] = [
     icon: Bot,
   },
   {
-    name: 'Profile',
-    href: '/profile',
-    icon: User,
-  },
-  {
     name: 'Settings',
     href: '/settings',
     icon: Settings,
