@@ -6,6 +6,7 @@ import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/component
 import { Switch } from "@/components/ui/switch";
 import { QubeItem } from './sidebarData';
 import { useIsMobile } from '@/hooks/use-mobile';
+import { useNavigate } from 'react-router-dom';
 
 interface PersonaSectionProps {
   personaItems: QubeItem[];
@@ -33,6 +34,16 @@ const PersonaSection: React.FC<PersonaSectionProps> = ({
   toggleMobileSidebar
 }) => {
   const isMobile = useIsMobile();
+  const navigate = useNavigate();
+
+  // Handle profile navigation with persona activation
+  const handleProfileNavigation = () => {
+    // If no persona is selected, activate Qripto Persona
+    if (!selectedIQube) {
+      handleIQubeClick('Qripto Persona');
+    }
+    navigate('/profile');
+  };
   
   // Function to render persona type icon based on specific persona name
   const renderPersonaTypeIcon = (personaName: string) => {
@@ -88,7 +99,7 @@ const PersonaSection: React.FC<PersonaSectionProps> = ({
                   "flex items-center justify-center p-2 rounded-md hover:bg-accent/30 cursor-pointer",
                   location.pathname === '/profile' && "bg-accent/20"
                 )}
-                onClick={togglePersonaMenu}
+                onClick={handleProfileNavigation}
               >
                 <User className="h-5 w-5" />
               </div>
