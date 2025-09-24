@@ -26,7 +26,7 @@ interface SimpleProgress {
 }
 
 const InvitationManager = () => {
-  const [selectedPersonaType, setSelectedPersonaType] = useState<'knyt' | 'qrypto'>('knyt');
+  const [selectedPersonaType, setSelectedPersonaType] = useState<'knyt' | 'qripto'>('knyt');
   const [csvContent, setCsvContent] = useState('');
   const [parsedInvitations, setParsedInvitations] = useState<InvitationData[]>([]);
   const [deduplicationStats, setDeduplicationStats] = useState<DeduplicationStats | null>(null);

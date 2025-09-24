@@ -97,15 +97,15 @@ const SettingsInterface = ({
           .single();
 
         // Fetch Qrypto persona profile image
-        const { data: qryptoData } = await supabase
-          .from('qrypto_personas')
+        const { data: qriptoData } = await supabase
+          .from('qripto_personas')
           .select('profile_image_url')
           .eq('user_id', user.id)
           .single();
 
         setProfileImages({
           knyt: knytData?.profile_image_url || null,
-          qrypto: qryptoData?.profile_image_url || null
+          qripto: qriptoData?.profile_image_url || null
         });
       } catch (error) {
         console.error('Error loading profile images:', error);

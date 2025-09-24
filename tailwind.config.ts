@@ -63,7 +63,7 @@ export default {
 					border: 'hsl(var(--sidebar-border))',
 					ring: 'hsl(var(--sidebar-ring))'
 				},
-				qrypto: {
+				qripto: {
 					primary: '#8B5CF6',     // Purple primary
 					secondary: '#A855F7',   // Purple secondary  
 					accent: '#FB923C',      // Orange accent

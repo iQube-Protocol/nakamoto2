@@ -7,7 +7,7 @@ import AgentHeader from './AgentHeader';
 import AgentTabs from './tabs/AgentTabs';
 import { useAgentMessagesWithRecommendations } from './hooks/useAgentMessagesWithRecommendations';
 import { useMetisAgent } from '@/hooks/use-metis-agent';
-import { useQryptoPersona } from '@/hooks/use-qrypto-persona';
+import { useQriptoPersona } from '@/hooks/use-qripto-persona';
 import { useVeniceAgent } from '@/hooks/use-venice-agent';
 import { useKNYTPersona } from '@/hooks/use-knyt-persona';
 import './styles/agent-interface.css';
@@ -75,7 +75,7 @@ const AgentInterface = ({
 
   // Get agent activation hooks
   const { activateMetis } = useMetisAgent();
-  const { activateQryptoPersona } = useQryptoPersona();
+  const { activateQriptoPersona } = useQriptoPersona();
   const { activateVenice } = useVeniceAgent();
   const { activateKNYTPersona } = useKNYTPersona();
 
@@ -142,8 +142,8 @@ const AgentInterface = ({
           description: `${description} (Fee: ${fee} Satoshi)`
         });
         break;
-      case 'Qrypto Persona':
-        activateQryptoPersona();
+      case 'Qripto Persona':
+        activateQriptoPersona();
         toast.success(`${agentName} activated successfully!`, {
           description: `${description} (Fee: ${fee} Satoshi)`
         });

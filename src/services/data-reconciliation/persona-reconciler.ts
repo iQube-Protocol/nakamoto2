@@ -50,8 +50,8 @@ export class PersonaReconciler {
         .select('user_id, "Email"')
         .not('"Email"', 'is', null);
         
-      const { data: qryptoPersonas, error: qryptoError } = await supabase
-        .from('qrypto_personas')
+        const { data: qryptoPersonas, error: qryptoError } = await supabase
+        .from('qripto_personas')
         .select('user_id, "Email"')
         .not('"Email"', 'is', null);
 

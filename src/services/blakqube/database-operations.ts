@@ -65,7 +65,7 @@ export const fetchQryptoPersonaFromDB = async (userId: string): Promise<QryptoPe
     }
     
     const { data, error } = await (supabase as any)
-      .from('qrypto_personas')
+      .from('qripto_personas')
       .select('*')
       .eq('user_id', userId)
       .single();
@@ -261,7 +261,7 @@ export const saveQryptoPersonaToDB = async (
     
     // First try to update existing record
     const { data: updateResult, error: updateError } = await (supabase as any)
-      .from('qrypto_personas')
+      .from('qripto_personas')
       .update({
         ...personaData,
         updated_at: new Date().toISOString()
@@ -273,7 +273,7 @@ export const saveQryptoPersonaToDB = async (
     if (updateResult && updateResult.length === 0) {
       console.log('No existing Qrypto Persona found, inserting new record');
       const { error: insertError } = await (supabase as any)
-        .from('qrypto_personas')
+        .from('qripto_personas')
         .insert({
           user_id: userId,
           ...personaData,

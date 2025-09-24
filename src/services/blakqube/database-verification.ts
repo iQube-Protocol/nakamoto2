@@ -43,7 +43,7 @@ export const verifyDatabaseState = async () => {
 
     // Check Qrypto personas
     const { data: qryptoPersonas, error: qryptoError } = await (supabase as any)
-      .from('qrypto_personas')
+      .from('qripto_personas')
       .select('*')
       .eq('user_id', user.user.id);
 

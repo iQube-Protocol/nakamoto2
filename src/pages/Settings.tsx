@@ -8,7 +8,7 @@ import AgentRecommendationHandler from '@/components/settings/AgentRecommendatio
 import SettingsContainer from '@/components/settings/SettingsContainer';
 import { sonnerToast as toast } from '@/hooks/use-toast';
 import { useMetisAgent } from '@/hooks/use-metis-agent';
-import { useQryptoPersona } from '@/hooks/use-qrypto-persona';
+import { useQriptoPersona } from '@/hooks/use-qripto-persona';
 import { useVeniceAgent } from '@/hooks/use-venice-agent';
 import { useOpenAIAgent } from '@/hooks/use-openai-agent';
 import { walletConnectionService } from '@/services/wallet-connection-service';
@@ -16,12 +16,12 @@ import { walletConnectionService } from '@/services/wallet-connection-service';
 const Settings = () => {
   const [selectedIQube, setSelectedIQube] = useState<MetaQube>(qubeData.monDai);
   const { metisActivated } = useMetisAgent();
-  const { qryptoPersonaActivated } = useQryptoPersona();
+  const { qriptoPersonaActivated } = useQriptoPersona();
   const { veniceActivated } = useVeniceAgent();
   const { openAIActivated } = useOpenAIAgent();
   
   const [activeQubes, setActiveQubes] = useState<{[key: string]: boolean}>({
-    "Qrypto Persona": qryptoPersonaActivated,
+    "Qripto Persona": qriptoPersonaActivated,
     "KNYT Persona": false, // Will be updated by KNYT hook  
     "Venice": veniceActivated,
     "OpenAI": openAIActivated,

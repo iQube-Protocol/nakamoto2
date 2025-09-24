@@ -63,23 +63,23 @@ export const NameManagementSection: React.FC<NameManagementSectionProps> = ({ fi
     }
 
     // Load Qrypto persona
-    const { data: qryptoData } = await supabase
-      .from('qrypto_personas')
+    const { data: qriptoData } = await supabase
+      .from('qripto_personas')
       .select('*')
       .eq('user_id', user.id)
       .maybeSingle();
 
-    if (qryptoData) {
-      const qryptoPreference = await NamePreferenceService.getNamePreference('qrypto');
+    if (qriptoData) {
+      const qriptoPreference = await NamePreferenceService.getNamePreference('qripto');
       personas.push({
-        personaType: 'qrypto',
+        personaType: 'qripto',
         currentName: {
-          firstName: qryptoData['First-Name'] || '',
-          lastName: qryptoData['Last-Name'] || '',
+          firstName: qriptoData['First-Name'] || '',
+          lastName: qriptoData['Last-Name'] || '',
         },
-        source: qryptoPreference?.name_source || 'default',
-        preference: qryptoPreference || undefined,
-        profileImageUrl: qryptoData.profile_image_url || '',
+        source: qriptoPreference?.name_source || 'default',
+        preference: qriptoPreference || undefined,
+        profileImageUrl: qriptoData.profile_image_url || '',
       });
     }
 
@@ -120,7 +120,7 @@ export const NameManagementSection: React.FC<NameManagementSectionProps> = ({ fi
         .getPublicUrl(fileName);
 
       // Update persona table with new image URL
-      const tableName = persona.personaType === 'knyt' ? 'knyt_personas' : 'qrypto_personas';
+      const tableName = persona.personaType === 'knyt' ? 'knyt_personas' : 'qripto_personas';
       const { error: updateError } = await supabase
         .from(tableName)
         .update({ profile_image_url: publicUrl })

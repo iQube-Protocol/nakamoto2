@@ -117,11 +117,11 @@
 }
 
 @layer components {
-  .qrypto-gradient {
-    @apply bg-gradient-to-r from-qrypto-primary via-qrypto-secondary to-qrypto-accent bg-[length:300%_100%] animate-gradient-flow;
+  .qripto-gradient {
+    @apply bg-gradient-to-r from-qripto-primary via-qripto-secondary to-qripto-accent bg-[length:300%_100%] animate-gradient-flow;
   }
 
-  .qrypto-card {
+  .qripto-card {
     background: rgba(139, 92, 246, 0.05);
     backdrop-filter: blur(10px);
     border: 1px solid rgba(139, 92, 246, 0.2);
@@ -168,7 +168,7 @@
     border: 1px solid rgba(251, 146, 60, 0.15);
   }
 
-  .light .qrypto-card {
+  .light .qripto-card {
     background: rgba(139, 92, 246, 0.03);
     border: 1px solid rgba(139, 92, 246, 0.1);
   }

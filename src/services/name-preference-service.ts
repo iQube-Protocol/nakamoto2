@@ -197,7 +197,7 @@ export class NamePreferenceService {
     // Check which personas exist for this user
     const [knytResult, qryptoResult] = await Promise.all([
       supabase.from('knyt_personas').select('id').eq('user_id', userId).maybeSingle(),
-      supabase.from('qrypto_personas').select('id').eq('user_id', userId).maybeSingle()
+      supabase.from('qripto_personas').select('id').eq('user_id', userId).maybeSingle()
     ]);
 
     // Process each persona type separately
@@ -355,7 +355,7 @@ export class NamePreferenceService {
                     preferences.invitation_last_name;
 
     // Only update the specific persona type that this preference belongs to
-    const tableName = preferences.persona_type === 'knyt' ? 'knyt_personas' : 'qrypto_personas';
+    const tableName = preferences.persona_type === 'knyt' ? 'knyt_personas' : 'qripto_personas';
     
     const { error } = await supabase
       .from(tableName)

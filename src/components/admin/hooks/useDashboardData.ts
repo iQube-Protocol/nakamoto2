@@ -190,7 +190,7 @@ export const useDashboardData = () => {
         {
           event: 'INSERT',
           schema: 'public',
-          table: 'qrypto_personas'
+          table: 'qripto_personas'
         },
         async (payload) => {
           const email = payload.new?.["Email"] || payload.new?.email;

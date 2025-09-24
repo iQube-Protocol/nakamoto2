@@ -1,6 +1,6 @@
 import React, { useEffect } from 'react';
 import { toast } from 'sonner';
-import { useQryptoPersona } from '@/hooks/use-qrypto-persona';
+import { useQriptoPersona } from '@/hooks/use-qripto-persona';
 import { useVeniceAgent } from '@/hooks/use-venice-agent';
 import { useKNYTPersona } from '@/hooks/use-knyt-persona';
 import { useOpenAIAgent } from '@/hooks/use-openai-agent';
@@ -15,7 +15,7 @@ const IQubeActivationManager = ({
   activeQubes, 
   setActiveQubes 
 }: IQubeActivationManagerProps) => {
-  const { qryptoPersonaActivated, activateQryptoPersona, deactivateQryptoPersona } = useQryptoPersona();
+  const { qriptoPersonaActivated, activateQriptoPersona, deactivateQriptoPersona } = useQriptoPersona();
   const { veniceActivated, veniceVisible, activateVenice, deactivateVenice, hideVenice } = useVeniceAgent();
   const { knytPersonaActivated, activateKNYTPersona, deactivateKNYTPersona, hideKNYTPersona } = useKNYTPersona();
   const { openAIActivated, openAIVisible, activateOpenAI, deactivateOpenAI, hideOpenAI } = useOpenAIAgent();
@@ -25,13 +25,13 @@ const IQubeActivationManager = ({
   useEffect(() => {
     setActiveQubes(prev => ({
       ...prev,
-      "Qrypto Persona": qryptoPersonaActivated,
+      "Qripto Persona": qriptoPersonaActivated,
       "KNYT Persona": knytPersonaActivated,
       "Venice": veniceActivated,
       "OpenAI": openAIActivated,
       "ChainGPT": chainGPTActivated
     }));
-  }, [qryptoPersonaActivated, knytPersonaActivated, veniceActivated, openAIActivated, chainGPTActivated, setActiveQubes]);
+  }, [qriptoPersonaActivated, knytPersonaActivated, veniceActivated, openAIActivated, chainGPTActivated, setActiveQubes]);
 
   // Listen for iQube activation/deactivation events from sidebar
   useEffect(() => {
@@ -41,13 +41,13 @@ const IQubeActivationManager = ({
         setActiveQubes(prev => ({...prev, [iqubeId]: active}));
         
         // Special handling for each iQube type
-        if (iqubeId === "Qrypto Persona") {
-          if (active && !qryptoPersonaActivated) {
-            activateQryptoPersona();
-            toast.info(`Qrypto Persona activated`);
-          } else if (!active && qryptoPersonaActivated) {
-            deactivateQryptoPersona();
-            toast.info(`Qrypto Persona deactivated`);
+        if (iqubeId === "Qripto Persona") {
+          if (active && !qriptoPersonaActivated) {
+            activateQriptoPersona();
+            toast.info(`Qripto Persona activated`);
+          } else if (!active && qriptoPersonaActivated) {
+            deactivateQriptoPersona();
+            toast.info(`Qripto Persona deactivated`);
           }
         } else if (iqubeId === "Venice") {
           if (active && !veniceActivated) {
@@ -92,7 +92,7 @@ const IQubeActivationManager = ({
     return () => {
       window.removeEventListener('iqubeToggle', handleIQubeToggle as EventListener);
     };
-  }, [qryptoPersonaActivated, activateQryptoPersona, deactivateQryptoPersona, veniceActivated, activateVenice, deactivateVenice, openAIActivated, activateOpenAI, deactivateOpenAI, knytPersonaActivated, activateKNYTPersona, deactivateKNYTPersona, chainGPTActivated, activateChainGPT, deactivateChainGPT, setActiveQubes]);
+  }, [qriptoPersonaActivated, activateQriptoPersona, deactivateQriptoPersona, veniceActivated, activateVenice, deactivateVenice, openAIActivated, activateOpenAI, deactivateOpenAI, knytPersonaActivated, activateKNYTPersona, deactivateKNYTPersona, chainGPTActivated, activateChainGPT, deactivateChainGPT, setActiveQubes]);
 
   return null; // This is a logic-only component, no UI
 };

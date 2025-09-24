@@ -440,7 +440,7 @@ export type Database = {
         }
         Relationships: []
       }
-      qrypto_personas: {
+      qripto_personas: {
         Row: {
           "BTC-Public-Key": string | null
           "Chain-IDs": string[] | null
@@ -459,7 +459,7 @@ export type Database = {
           "Local-City": string | null
           Profession: string | null
           profile_image_url: string | null
-          "Qrypto-ID": string | null
+          "Qripto-ID": string | null
           "Telegram-Handle": string | null
           "TikTok-Handle": string | null
           "Tokens-of-Interest": string[] | null
@@ -488,7 +488,7 @@ export type Database = {
           "Local-City"?: string | null
           Profession?: string | null
           profile_image_url?: string | null
-          "Qrypto-ID"?: string | null
+          "Qripto-ID"?: string | null
           "Telegram-Handle"?: string | null
           "TikTok-Handle"?: string | null
           "Tokens-of-Interest"?: string[] | null
@@ -517,7 +517,7 @@ export type Database = {
           "Local-City"?: string | null
           Profession?: string | null
           profile_image_url?: string | null
-          "Qrypto-ID"?: string | null
+          "Qripto-ID"?: string | null
           "Telegram-Handle"?: string | null
           "TikTok-Handle"?: string | null
           "Tokens-of-Interest"?: string[] | null

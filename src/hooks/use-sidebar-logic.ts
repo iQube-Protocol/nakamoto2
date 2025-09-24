@@ -3,7 +3,7 @@ import { useState, useEffect } from 'react';
 import { useLocation, useNavigate } from 'react-router-dom';
 import { toast } from 'sonner';
 
-import { useQryptoPersona } from './use-qrypto-persona';
+import { useQriptoPersona } from './use-qripto-persona';
 import { useVeniceAgent } from './use-venice-agent';
 import { useKNYTPersona } from './use-knyt-persona';
 import { useOpenAIAgent } from './use-openai-agent';
@@ -15,7 +15,7 @@ export const useSidebarLogic = () => {
   const location = useLocation();
   const navigate = useNavigate();
   
-  const { qryptoPersonaActivated, activateQryptoPersona, deactivateQryptoPersona } = useQryptoPersona();
+  const { qriptoPersonaActivated, activateQriptoPersona, deactivateQriptoPersona } = useQriptoPersona();
   const { veniceActivated, veniceVisible, activateVenice, deactivateVenice, hideVenice } = useVeniceAgent();
   const { knytPersonaActivated, activateKNYTPersona, deactivateKNYTPersona, hideKNYTPersona } = useKNYTPersona();
   const { openAIActivated, openAIVisible, activateOpenAI, deactivateOpenAI, hideOpenAI } = useOpenAIAgent();

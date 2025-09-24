@@ -2,7 +2,7 @@
 import { useState, useEffect } from 'react';
 import { AgentMessage } from '@/lib/types';
 import { useVeniceAgent } from '@/hooks/use-venice-agent';
-import { useQryptoPersona } from '@/hooks/use-qrypto-persona';
+import { useQriptoPersona } from '@/hooks/use-qripto-persona';
 import { useKNYTPersona } from '@/hooks/use-knyt-persona';
 
 interface AgentRecommendationState {
@@ -22,7 +22,7 @@ export const useAgentRecommendations = (message: AgentMessage | null) => {
 
   // Get current activation states
   const { veniceActivated } = useVeniceAgent();
-  const { qryptoPersonaActivated } = useQryptoPersona();
+  const { qriptoPersonaActivated } = useQriptoPersona();
   const { knytPersonaActivated } = useKNYTPersona();
 
   // Check for trigger words in user messages
@@ -42,7 +42,7 @@ export const useAgentRecommendations = (message: AgentMessage | null) => {
     
     console.log('useAgentRecommendations: Current activation states:', {
       veniceActivated,
-      qryptoPersonaActivated,
+      qriptoPersonaActivated,
       knytPersonaActivated
     });
     
@@ -75,7 +75,7 @@ export const useAgentRecommendations = (message: AgentMessage | null) => {
     
     console.log('useAgentRecommendations: Trigger analysis:', {
       hasVeniceTrigger, hasQryptoTrigger, hasKNYTTrigger,
-      veniceActivated, qryptoPersonaActivated, knytPersonaActivated
+      veniceActivated, qriptoPersonaActivated, knytPersonaActivated
     });
 
     // Show only one recommendation at a time, prioritizing KNYT > Venice > Qrypto
@@ -95,7 +95,7 @@ export const useAgentRecommendations = (message: AgentMessage | null) => {
       recommendationShown = true;
     }
     
-    if (hasQryptoTrigger && !qryptoPersonaActivated && !recommendationShown) {
+    if (hasQryptoTrigger && !qriptoPersonaActivated && !recommendationShown) {
       console.log('useAgentRecommendations: Setting Qrypto recommendation');
       setTimeout(() => setRecommendations(prev => ({ ...prev, showQryptoRecommendation: true })), 1000);
       recommendationShown = true;

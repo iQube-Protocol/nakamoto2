@@ -320,7 +320,7 @@ class InvitationService {
         }
       } else {
         const { data: qryptoData, error: qryptoError } = await supabase
-          .from('qrypto_personas')
+          .from('qripto_personas')
           .select('user_id, *')
           .eq('Email', invitation.email)
           .maybeSingle();

@@ -44,7 +44,7 @@ const UserPersonaDisplay: React.FC<UserPersonaDisplayProps> = ({
           .eq('Email', userEmail)
           .maybeSingle(),
         supabase
-          .from('qrypto_personas')
+          .from('qripto_personas')
           .select('*')
           .eq('Email', userEmail)
           .maybeSingle()
