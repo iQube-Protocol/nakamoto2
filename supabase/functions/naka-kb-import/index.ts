@@ -21,9 +21,10 @@ serve(async (req) => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseServiceKey = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseServiceKey);
+    // Use Core Hub credentials for migration
+    const coreUrl = Deno.env.get('CORE_SUPABASE_URL')!;
+    const coreServiceKey = Deno.env.get('CORE_SUPABASE_SERVICE_ROLE_KEY')!;
+    const supabase = createClient(coreUrl, coreServiceKey);
 
     const { documents, dry_run = false } = await req.json();
     
