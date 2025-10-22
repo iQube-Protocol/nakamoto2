@@ -6,3 +6,18 @@ verify_jwt = false
 
 [functions.send-password-reset]
 verify_jwt = false
+
+[functions.naka-user-migrate]
+verify_jwt = false
+
+[functions.naka-kb-import]
+verify_jwt = false
+
+[functions.naka-prompt-set-root]
+verify_jwt = false
+
+[functions.naka-kb-upsert-tenant-doc]
+verify_jwt = false
+
+[functions.naka-prompt-set-tenant]
+verify_jwt = false

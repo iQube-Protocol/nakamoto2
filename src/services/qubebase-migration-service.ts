@@ -1,0 +1,305 @@
+import { supabase } from '@/integrations/supabase/client';
+
+/**
+ * QubeBase Migration Service
+ * Handles the migration of users, KB, and prompts to the QubeBase Core Hub
+ */
+
+export interface UserMigrationRecord {
+  source_user_id: string;
+  email: string;
+  tenant_id: string;
+  status?: string;
+  meta?: any;
+}
+
+export interface KBDocument {
+  title: string;
+  content_text?: string;
+  source_uri?: string;
+  lang?: string;
+  tags?: string[];
+  metadata?: any;
+}
+
+export interface MigrationStats {
+  users: {
+    total: number;
+    migrated: number;
+    errors: number;
+  };
+  kb_docs: {
+    total: number;
+    imported: number;
+    skipped: number;
+    errors: number;
+  };
+  prompt: {
+    set: boolean;
+    version?: number;
+  };
+}
+
+/**
+ * Migrate users in batches
+ */
+export async function migrateUsers(
+  users: UserMigrationRecord[],
+  dryRun = false
+): Promise<{ success: boolean; data?: any; error?: string }> {
+  try {
+    console.log(`Migrating ${users.length} users (dry_run: ${dryRun})`);
+
+    const { data, error } = await supabase.functions.invoke('naka-user-migrate', {
+      body: {
+        users,
+        dry_run: dryRun
+      }
+    });
+
+    if (error) {
+      console.error('User migration error:', error);
+      return { success: false, error: error.message };
+    }
+
+    console.log('User migration result:', data);
+    return { success: true, data };
+  } catch (error: any) {
+    console.error('User migration exception:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Import KB documents
+ */
+export async function importKBDocuments(
+  documents: KBDocument[],
+  dryRun = false
+): Promise<{ success: boolean; data?: any; error?: string }> {
+  try {
+    console.log(`Importing ${documents.length} KB documents (dry_run: ${dryRun})`);
+
+    const { data, error } = await supabase.functions.invoke('naka-kb-import', {
+      body: {
+        documents,
+        dry_run: dryRun
+      }
+    });
+
+    if (error) {
+      console.error('KB import error:', error);
+      return { success: false, error: error.message };
+    }
+
+    console.log('KB import result:', data);
+    return { success: true, data };
+  } catch (error: any) {
+    console.error('KB import exception:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Set root system prompt
+ */
+export async function setRootPrompt(
+  promptText: string,
+  metadata?: any
+): Promise<{ success: boolean; data?: any; error?: string }> {
+  try {
+    console.log('Setting root system prompt');
+
+    const { data, error } = await supabase.functions.invoke('naka-prompt-set-root', {
+      body: {
+        prompt_text: promptText,
+        metadata
+      }
+    });
+
+    if (error) {
+      console.error('Root prompt error:', error);
+      return { success: false, error: error.message };
+    }
+
+    console.log('Root prompt result:', data);
+    return { success: true, data };
+  } catch (error: any) {
+    console.error('Root prompt exception:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Upsert tenant-specific KB document
+ */
+export async function upsertTenantKBDoc(params: {
+  tenant_id: string;
+  title: string;
+  content_text?: string;
+  source_uri?: string;
+  lang?: string;
+  tags?: string[];
+  metadata?: any;
+}): Promise<{ success: boolean; data?: any; error?: string }> {
+  try {
+    console.log(`Upserting tenant KB doc: ${params.title}`);
+
+    const { data, error } = await supabase.functions.invoke('naka-kb-upsert-tenant-doc', {
+      body: params
+    });
+
+    if (error) {
+      console.error('Tenant KB doc error:', error);
+      return { success: false, error: error.message };
+    }
+
+    console.log('Tenant KB doc result:', data);
+    return { success: true, data };
+  } catch (error: any) {
+    console.error('Tenant KB doc exception:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Set tenant prompt augmentation
+ */
+export async function setTenantPrompt(
+  tenantId: string,
+  promptText: string,
+  metadata?: any
+): Promise<{ success: boolean; data?: any; error?: string }> {
+  try {
+    console.log(`Setting tenant prompt for: ${tenantId}`);
+
+    const { data, error } = await supabase.functions.invoke('naka-prompt-set-tenant', {
+      body: {
+        tenant_id: tenantId,
+        prompt_text: promptText,
+        metadata
+      }
+    });
+
+    if (error) {
+      console.error('Tenant prompt error:', error);
+      return { success: false, error: error.message };
+    }
+
+    console.log('Tenant prompt result:', data);
+    return { success: true, data };
+  } catch (error: any) {
+    console.error('Tenant prompt exception:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
+ * Get migration statistics
+ */
+export async function getMigrationStats(): Promise<MigrationStats> {
+  try {
+    // Get user migration stats - use direct query to avoid type issues with new schema
+    const { count: userCount } = await (supabase as any)
+      .from('app_nakamoto.user_migration_map')
+      .select('*', { count: 'exact', head: true });
+
+    // Get KB docs stats
+    const { count: kbCount } = await (supabase as any)
+      .from('kb.docs')
+      .select('*', { count: 'exact', head: true })
+      .eq('scope', 'root')
+      .eq('is_active', true);
+
+    // Get active root prompt
+    const { data: rootPrompt } = await (supabase as any)
+      .from('prompts.prompts')
+      .select('version')
+      .eq('app', 'nakamoto')
+      .eq('scope', 'root')
+      .eq('status', 'active')
+      .single();
+
+    return {
+      users: {
+        total: userCount || 0,
+        migrated: userCount || 0,
+        errors: 0
+      },
+      kb_docs: {
+        total: kbCount || 0,
+        imported: kbCount || 0,
+        skipped: 0,
+        errors: 0
+      },
+      prompt: {
+        set: !!rootPrompt,
+        version: rootPrompt?.version
+      }
+    };
+  } catch (error) {
+    console.error('Error getting migration stats:', error);
+    return {
+      users: { total: 0, migrated: 0, errors: 0 },
+      kb_docs: { total: 0, imported: 0, skipped: 0, errors: 0 },
+      prompt: { set: false }
+    };
+  }
+}
+
+/**
+ * Get effective KB documents (root + tenant)
+ */
+export async function getEffectiveKBDocs(tenantId?: string) {
+  try {
+    let query = (supabase as any)
+      .from('kb.v_effective_docs')
+      .select('*')
+      .order('created_at', { ascending: false });
+
+    // If tenant context is provided, filter appropriately
+    if (tenantId) {
+      query = query.or(`scope.eq.root,and(scope.eq.tenant,tenant_id.eq.${tenantId})`);
+    }
+
+    const { data, error } = await query;
+
+    if (error) {
+      console.error('Error fetching effective KB docs:', error);
+      return { data: null, error };
+    }
+
+    return { data, error: null };
+  } catch (error: any) {
+    console.error('Exception fetching effective KB docs:', error);
+    return { data: null, error };
+  }
+}
+
+/**
+ * Get effective prompt (root + tenant augmentation)
+ */
+export async function getEffectivePrompt(tenantId?: string) {
+  try {
+    let query = (supabase as any)
+      .from('prompts.v_effective_prompt')
+      .select('effective_prompt')
+      .eq('app', 'nakamoto');
+
+    if (tenantId) {
+      query = query.eq('tenant_id', tenantId);
+    }
+
+    const { data, error } = await query.single();
+
+    if (error) {
+      console.error('Error fetching effective prompt:', error);
+      return { data: null, error };
+    }
+
+    return { data: data?.effective_prompt || '', error: null };
+  } catch (error: any) {
+    console.error('Exception fetching effective prompt:', error);
+    return { data: null, error };
+  }
+}
