@@ -1,11 +1,16 @@
-import { initAgentiqClient } from '@qriptoagentiq/core-client';
+// QubeBase SDK integration - temporarily commented until SDK is fully configured
+// import { initAgentiqClient } from '@qriptoagentiq/core-client';
 
-let _core: ReturnType<typeof initAgentiqClient> | null = null;
+// let _core: ReturnType<typeof initAgentiqClient> | null = null;
+
+// Placeholder until SDK is configured
+let _core: any = null;
 
 export async function getCore() {
-  if (!_core) _core = initAgentiqClient();
-  await _core.ensureIamUser();   // mirrors auth.user -> iam.users
-  return _core;
+  // TODO: Uncomment once SDK is available
+  // if (!_core) _core = initAgentiqClient();
+  // await _core.ensureIamUser();
+  throw new Error('QubeBase SDK not yet configured');
 }
 
 export function getCtx() {
