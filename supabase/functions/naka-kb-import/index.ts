@@ -37,16 +37,28 @@ serve(async (req) => {
 
     console.log(`Processing ${documents.length} KB documents (dry_run: ${dry_run})`);
 
-    // Get the root corpus ID from the public view
-    const { data: corpus, error: corpusError } = await supabase
+    // Get the root corpus ID (or create it if it doesn't exist)
+    let corpus = await supabase
       .from('kb_corpora')
       .select('id')
-      .eq('app', 'nakamoto')
-      .eq('name', 'Root')
+      .eq('site_id', 'nakamoto')
+      .eq('name', 'Nakamoto Root Corpus')
       .single();
 
-    if (corpusError || !corpus) {
-      throw new Error('Root corpus not found. Please ensure database schema is properly initialized.');
+    if (corpus.error || !corpus.data) {
+      throw new Error('Nakamoto corpus not found. Please run this SQL on your Core Hub:\n\n' +
+        `INSERT INTO kb.corpora (tenant_id, site_id, name, description)\n` +
+        `VALUES (\n` +
+        `  '00000000-0000-0000-0000-000000000000',\n` +
+        `  'nakamoto',\n` +
+        `  'Nakamoto Root Corpus',\n` +
+        `  'Root knowledge base for Nakamoto platform'\n` +
+        `) ON CONFLICT (tenant_id, site_id) DO NOTHING;`
+      );
+    }
+
+    if (!corpus.data) {
+      throw new Error('Failed to find or create Nakamoto corpus');
     }
 
     const response = {
@@ -61,9 +73,9 @@ serve(async (req) => {
         const { data: existing } = await supabase
           .from('kb_docs')
           .select('id')
-          .eq('corpus_id', corpus.id)
+          .eq('corpus_id', corpus.data.id)
           .eq('title', doc.title)
-          .eq('scope', 'root')
+          .eq('tenant_id', '00000000-0000-0000-0000-000000000000')
           .single();
 
         if (existing) {
@@ -82,14 +94,13 @@ serve(async (req) => {
         const { data: newDoc, error: insertError } = await supabase
           .from('kb_docs')
           .insert({
-            corpus_id: corpus.id,
-            scope: 'root',
-            tenant_id: null,
+            corpus_id: corpus.data.id,
+            tenant_id: '00000000-0000-0000-0000-000000000000',
             title: doc.title,
-            content_text: doc.content_text,
-            source_uri: doc.source_uri,
-            lang: doc.lang || 'en',
+            content: doc.content_text || '',
+            content_type: 'text/markdown',
             tags: doc.tags || [],
+            storage_path: doc.source_uri || null,
             metadata: doc.metadata || {},
             is_active: true,
             version: 1
@@ -103,13 +114,7 @@ serve(async (req) => {
           continue;
         }
 
-        // Enqueue for reindexing (if vector search is enabled)
-        await supabase
-          .from('kb.reindex_queue')
-          .insert({
-            doc_id: newDoc.id,
-            action: 'upsert'
-          });
+        // Note: Reindexing queue not yet implemented in Core Hub schema
 
         response.imported++;
         console.log(`Successfully imported document "${doc.title}"`);
