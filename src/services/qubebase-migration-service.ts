@@ -60,6 +60,17 @@ export interface KBDocument {
   metadata?: any;
 }
 
+export interface InteractionHistory {
+  source_user_id: string;
+  query: string;
+  response: string;
+  interaction_type: string;
+  metadata: any;
+  summarized: boolean;
+  created_at: string;
+  persona_type?: 'knyt' | 'qripto';
+}
+
 export interface MigrationStats {
   users: {
     total: number;
@@ -70,6 +81,11 @@ export interface MigrationStats {
     total: number;
     imported: number;
     skipped: number;
+    errors: number;
+  };
+  interactions: {
+    total: number;
+    migrated: number;
     errors: number;
   };
   prompt: {
@@ -233,6 +249,36 @@ export async function setTenantPrompt(
 }
 
 /**
+ * Migrate interaction histories in batches
+ */
+export async function migrateInteractionHistories(
+  interactions: InteractionHistory[],
+  dryRun = false
+): Promise<{ success: boolean; data?: any; error?: string }> {
+  try {
+    console.log(`Migrating ${interactions.length} interaction histories (dry_run: ${dryRun})`);
+
+    const { data, error } = await supabase.functions.invoke('naka-history-migrate', {
+      body: {
+        interactions,
+        dry_run: dryRun
+      }
+    });
+
+    if (error) {
+      console.error('Interaction history migration error:', error);
+      return { success: false, error: error.message };
+    }
+
+    console.log('Interaction history migration result:', data);
+    return { success: true, data };
+  } catch (error: any) {
+    console.error('Interaction history migration exception:', error);
+    return { success: false, error: error.message };
+  }
+}
+
+/**
  * Get migration statistics
  */
 export async function getMigrationStats(): Promise<MigrationStats> {
@@ -282,6 +328,20 @@ export async function getMigrationStats(): Promise<MigrationStats> {
       .eq('is_active', true)
       .single();
 
+    // Get interaction history count from local cache
+    let migratedInteractions = 0;
+    let interactionErrors = 0;
+    try {
+      const cached = localStorage.getItem('last_interaction_migration_summary');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        migratedInteractions = parsed.migrated || 0;
+        interactionErrors = parsed.errors || 0;
+      }
+    } catch (_) {
+      // Ignore cache errors
+    }
+
     return {
       users: {
         total: migratedUsers,
@@ -294,6 +354,11 @@ export async function getMigrationStats(): Promise<MigrationStats> {
         skipped: 0,
         errors: 0
       },
+      interactions: {
+        total: migratedInteractions,
+        migrated: migratedInteractions,
+        errors: interactionErrors
+      },
       prompt: {
         set: !!rootPrompt,
         version: rootPrompt?.version
@@ -304,6 +369,7 @@ export async function getMigrationStats(): Promise<MigrationStats> {
     return {
       users: { total: 0, migrated: 0, errors: 0 },
       kb_docs: { total: 0, imported: 0, skipped: 0, errors: 0 },
+      interactions: { total: 0, migrated: 0, errors: 0 },
       prompt: { set: false }
     };
   }

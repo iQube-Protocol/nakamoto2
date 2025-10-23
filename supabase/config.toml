@@ -21,3 +21,6 @@ verify_jwt = false
 
 [functions.naka-prompt-set-tenant]
 verify_jwt = false
+
+[functions.naka-history-migrate]
+verify_jwt = false

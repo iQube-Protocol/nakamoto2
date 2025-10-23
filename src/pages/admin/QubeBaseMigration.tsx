@@ -11,8 +11,10 @@ import {
   importKBDocuments, 
   setRootPrompt,
   getMigrationStats,
+  migrateInteractionHistories,
   type UserMigrationRecord,
   type KBDocument,
+  type InteractionHistory,
   type MigrationStats
 } from '@/services/qubebase-migration-service';
 import { checkCoreHubHealth } from '@/services/qubebase-core-client';
@@ -380,6 +382,129 @@ const QubeBaseMigration = () => {
     }
   };
 
+  const handleInteractionMigration = async () => {
+    const confirmed = window.confirm(
+      `⚠️ Migrate ALL interaction histories?\n\n` +
+      'This will migrate:\n' +
+      '• All user queries and AI responses\n' +
+      '• Interaction types and metadata\n' +
+      '• Persona type tagging (KNYT/Qripto)\n' +
+      '• Agent and conversation context\n' +
+      '• Timestamps and summaries\n\n' +
+      'This may take several minutes depending on data volume.\n\n' +
+      'Proceed?'
+    );
+
+    if (!confirmed) return;
+
+    setLoading(true);
+    setProgress(0);
+
+    try {
+      toast({
+        title: "Fetching Interaction Histories",
+        description: "Gathering all user interactions from database..."
+      });
+
+      // Fetch all user interactions with persona type from knyt_personas and qripto_personas
+      const { data: interactions, error } = await supabase
+        .from('user_interactions')
+        .select(`
+          *,
+          knyt_personas!left(id),
+          qripto_personas!left(id)
+        `);
+
+      if (error) {
+        throw new Error(`Failed to fetch interactions: ${error.message}`);
+      }
+
+      if (!interactions || interactions.length === 0) {
+        toast({
+          title: "No Interactions Found",
+          description: "There are no interaction histories to migrate."
+        });
+        return;
+      }
+
+      setProgress(10);
+
+      // Map interactions to migration format
+      const interactionRecords: InteractionHistory[] = interactions.map((int: any) => ({
+        source_user_id: int.user_id,
+        query: int.query,
+        response: int.response,
+        interaction_type: int.interaction_type,
+        metadata: int.metadata || {},
+        summarized: int.summarized || false,
+        created_at: int.created_at,
+        persona_type: int.knyt_personas?.id ? 'knyt' : int.qripto_personas?.id ? 'qripto' : undefined
+      }));
+
+      setProgress(20);
+
+      toast({
+        title: "Starting Migration",
+        description: `Migrating ${interactionRecords.length} interaction histories...`
+      });
+
+      // Migrate in batches of 50
+      const batchSize = 50;
+      let totalMigrated = 0;
+      let totalErrors = 0;
+
+      for (let i = 0; i < interactionRecords.length; i += batchSize) {
+        const batch = interactionRecords.slice(i, i + batchSize);
+        const batchNum = Math.floor(i / batchSize) + 1;
+        const totalBatches = Math.ceil(interactionRecords.length / batchSize);
+
+        toast({
+          title: `Migrating Batch ${batchNum}/${totalBatches}`,
+          description: `Processing ${batch.length} interactions...`
+        });
+
+        const result = await migrateInteractionHistories(batch, false);
+        
+        if (result.success && result.data) {
+          totalMigrated += result.data.inserted || 0;
+          totalErrors += result.data.errors?.length || 0;
+        }
+
+        const batchProgress = 20 + (70 * (i + batch.length) / interactionRecords.length);
+        setProgress(batchProgress);
+      }
+
+      setProgress(100);
+
+      // Persist summary for status card
+      try {
+        localStorage.setItem(
+          'last_interaction_migration_summary',
+          JSON.stringify({ migrated: totalMigrated, errors: totalErrors, at: new Date().toISOString() })
+        );
+      } catch {}
+
+      // Refresh stats
+      const newStats = await getMigrationStats();
+      setStats(newStats);
+
+      toast({
+        title: "Interaction Migration Complete! 🎉",
+        description: `Successfully migrated ${totalMigrated} interaction histories (${totalErrors} errors)`,
+        duration: 8000
+      });
+
+    } catch (error: any) {
+      toast({
+        title: "Migration Failed",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="container mx-auto p-6 max-w-6xl">
       <div className="mb-6">
@@ -455,7 +580,7 @@ const QubeBaseMigration = () => {
             </CardDescription>
           </CardHeader>
           <CardContent>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
               <div className="p-4 border rounded-lg">
                 <div className="text-sm text-muted-foreground mb-1">Users</div>
                 <div className="text-2xl font-bold">{stats.users.migrated}</div>
@@ -469,6 +594,14 @@ const QubeBaseMigration = () => {
                 <div className="text-2xl font-bold">{stats.kb_docs.imported}</div>
                 <div className="text-xs text-muted-foreground">
                   {stats.kb_docs.skipped} skipped
+                </div>
+              </div>
+
+              <div className="p-4 border rounded-lg">
+                <div className="text-sm text-muted-foreground mb-1">Interactions</div>
+                <div className="text-2xl font-bold">{stats.interactions.migrated}</div>
+                <div className="text-xs text-muted-foreground">
+                  {stats.interactions.errors} errors
                 </div>
               </div>
 
@@ -488,9 +621,10 @@ const QubeBaseMigration = () => {
 
       {/* Migration Tabs */}
       <Tabs value={activeTab} onValueChange={setActiveTab}>
-        <TabsList className="grid w-full grid-cols-2">
+        <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="kb">KB & Prompts</TabsTrigger>
           <TabsTrigger value="users">Users & Personas</TabsTrigger>
+          <TabsTrigger value="interactions">Interactions</TabsTrigger>
         </TabsList>
 
         <TabsContent value="kb" className="space-y-6">
@@ -798,6 +932,82 @@ const QubeBaseMigration = () => {
                 </Button>
               </CardContent>
             </Card>
+          </div>
+        </TabsContent>
+
+        {/* Interaction History Tab */}
+        <TabsContent value="interactions" className="space-y-6">
+          <div className="grid grid-cols-1 gap-6">
+            {/* Migrate Interaction Histories */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Migrate Interaction Histories</CardTitle>
+                <CardDescription>
+                  Migrate all user interaction histories with persona tagging and full metadata
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Alert>
+                  <AlertCircle className="w-4 h-4" />
+                  <AlertDescription className="text-xs">
+                    Migrates ALL user queries, responses, and metadata including agent info and persona types
+                  </AlertDescription>
+                </Alert>
+
+                {progress > 0 && (
+                  <div className="space-y-2">
+                    <Progress value={progress} />
+                    <p className="text-sm text-muted-foreground text-center">
+                      Migrating interactions... {progress}%
+                    </p>
+                  </div>
+                )}
+
+                <Button
+                  onClick={handleInteractionMigration}
+                  disabled={loading || !coreHubConnected}
+                  className="w-full"
+                  variant="default"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Migrating Interactions...
+                    </>
+                  ) : (
+                    'Migrate All Interaction Histories'
+                  )}
+                </Button>
+
+                <p className="text-xs text-muted-foreground">
+                  This will migrate all user interaction histories including conversation context, 
+                  persona types, and agent metadata to the QubeBase Core Hub.
+                </p>
+              </CardContent>
+            </Card>
+
+            {/* Interaction Stats */}
+            {stats && stats.interactions.migrated > 0 && (
+              <Card>
+                <CardHeader>
+                  <CardTitle>Migration Summary</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-2">
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">Total Migrated:</span>
+                      <span className="text-sm font-semibold">{stats.interactions.migrated}</span>
+                    </div>
+                    <div className="flex justify-between">
+                      <span className="text-sm text-muted-foreground">Errors:</span>
+                      <span className="text-sm font-semibold text-destructive">
+                        {stats.interactions.errors}
+                      </span>
+                    </div>
+                  </div>
+                </CardContent>
+              </Card>
+            )}
           </div>
         </TabsContent>
       </Tabs>
