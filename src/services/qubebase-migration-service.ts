@@ -9,8 +9,46 @@ export interface UserMigrationRecord {
   source_user_id: string;
   email: string;
   tenant_id: string;
-  status?: string;
-  meta?: any;
+  status: 'completed' | 'invited' | 'expired';
+  persona_type: 'knyt' | 'qripto';
+  invitation_status: {
+    invited_at: string;
+    invited_by: string | null;
+    batch_id: string | null;
+    email_sent: boolean;
+    email_sent_at: string | null;
+    send_attempts: number;
+    expires_at: string;
+    signup_completed: boolean;
+    completed_at: string | null;
+    invitation_token: string;
+  };
+  persona_data: Record<string, any>;
+  connection_data: Array<{
+    service: string;
+    connected_at: string;
+    connection_data: any;
+  }>;
+  name_preferences: {
+    persona_type: string;
+    name_source: string;
+    invitation_first_name: string | null;
+    invitation_last_name: string | null;
+    linkedin_first_name?: string | null;
+    linkedin_last_name?: string | null;
+    custom_first_name?: string | null;
+    custom_last_name?: string | null;
+  } | null;
+  profile: {
+    first_name: string | null;
+    last_name: string | null;
+    avatar_url: string | null;
+    total_points: number;
+    level: number;
+  } | null;
+  auth_user_id: string | null;
+  auth_created_at: string | null;
+  meta: Record<string, any>;
 }
 
 export interface KBDocument {

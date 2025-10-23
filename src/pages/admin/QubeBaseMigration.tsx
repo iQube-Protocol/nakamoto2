@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/com
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
 import { 
   migrateUsers, 
@@ -19,22 +20,35 @@ import {
   exportNakamotoRootPrompt,
   getMigrationStats as getKBExportStats
 } from '@/services/qubebase-kb-export';
-import { Upload, Database, FileText, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
+import {
+  getUserMigrationStats,
+  exportUsersForMigration,
+  type UserMigrationStats
+} from '@/services/user-export-service';
+import { Upload, Database, FileText, CheckCircle, AlertCircle, Loader2, Users } from 'lucide-react';
 
 const QubeBaseMigration = () => {
   const { toast } = useToast();
   const [loading, setLoading] = useState(false);
   const [stats, setStats] = useState<MigrationStats | null>(null);
+  const [userStats, setUserStats] = useState<UserMigrationStats | null>(null);
   const [coreHubConnected, setCoreHubConnected] = useState<boolean | null>(null);
   const [progress, setProgress] = useState(0);
+  const [activeTab, setActiveTab] = useState('kb');
 
   useEffect(() => {
-    // Auto-check Core Hub connection on mount
+    // Auto-check Core Hub connection on mount and load user stats
     if (coreHubConnected === null) {
       checkHealth();
     }
+    loadUserStats();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
+
+  const loadUserStats = async () => {
+    const stats = await getUserMigrationStats();
+    setUserStats(stats);
+  };
 
   const checkHealth = async () => {
     setLoading(true);
@@ -103,7 +117,27 @@ const QubeBaseMigration = () => {
           source_user_id: 'test-1',
           email: 'test1@example.com',
           tenant_id: '00000000-0000-0000-0000-000000000000',
-          status: 'active'
+          status: 'completed',
+          persona_type: 'knyt',
+          invitation_status: {
+            invited_at: new Date().toISOString(),
+            invited_by: null,
+            batch_id: null,
+            email_sent: true,
+            email_sent_at: new Date().toISOString(),
+            send_attempts: 1,
+            expires_at: new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString(),
+            signup_completed: true,
+            completed_at: new Date().toISOString(),
+            invitation_token: 'test-token'
+          },
+          persona_data: {},
+          connection_data: [],
+          name_preferences: null,
+          profile: null,
+          auth_user_id: null,
+          auth_created_at: null,
+          meta: {}
         }
       ];
 
@@ -246,6 +280,97 @@ const QubeBaseMigration = () => {
     }
   };
 
+  const handleUserMigration = async (statusFilter?: 'completed' | 'pending' | 'expired') => {
+    if (!userStats) return;
+
+    const filterLabel = statusFilter ? ` (${statusFilter})` : '';
+    const count = statusFilter 
+      ? statusFilter === 'completed' ? userStats.completed 
+        : statusFilter === 'pending' ? userStats.pending 
+        : userStats.expired
+      : userStats.total;
+
+    const confirmed = window.confirm(
+      `⚠️ Migrate ${count} users${filterLabel}?\n\n` +
+      'This will migrate:\n' +
+      '• User accounts and authentication\n' +
+      '• Persona data (KNYT/Qrypto)\n' +
+      '• Connection data (LinkedIn, wallets)\n' +
+      '• Name preferences\n' +
+      '• Profile information\n' +
+      '• Invitation status and metadata\n\n' +
+      'Proceed?'
+    );
+
+    if (!confirmed) return;
+
+    setLoading(true);
+    setProgress(0);
+
+    try {
+      toast({
+        title: "Starting User Migration",
+        description: `Exporting ${count} user records${filterLabel}...`
+      });
+
+      const { data: migrationRecords, error: exportError } = await exportUsersForMigration(statusFilter);
+      
+      if (exportError || !migrationRecords) {
+        throw new Error(exportError || 'Failed to export users');
+      }
+
+      setProgress(20);
+
+      // Migrate in batches of 100
+      const batchSize = 100;
+      let totalMigrated = 0;
+      let totalErrors = 0;
+
+      for (let i = 0; i < migrationRecords.length; i += batchSize) {
+        const batch = migrationRecords.slice(i, i + batchSize);
+        const batchNum = Math.floor(i / batchSize) + 1;
+        const totalBatches = Math.ceil(migrationRecords.length / batchSize);
+
+        toast({
+          title: `Migrating Batch ${batchNum}/${totalBatches}`,
+          description: `Processing ${batch.length} users...`
+        });
+
+        const result = await migrateUsers(batch, false);
+        
+        if (result.success && result.data) {
+          totalMigrated += result.data.inserted || 0;
+          totalErrors += result.data.errors?.length || 0;
+        }
+
+        const batchProgress = 20 + (70 * (i + batch.length) / migrationRecords.length);
+        setProgress(batchProgress);
+      }
+
+      setProgress(100);
+
+      // Refresh stats
+      await loadUserStats();
+      const newStats = await getMigrationStats();
+      setStats(newStats);
+
+      toast({
+        title: "User Migration Complete! 🎉",
+        description: `Successfully migrated ${totalMigrated} users${filterLabel} (${totalErrors} errors)`,
+        duration: 8000
+      });
+
+    } catch (error: any) {
+      toast({
+        title: "Migration Failed",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   return (
     <div className="container mx-auto p-6 max-w-6xl">
       <div className="mb-6">
@@ -352,8 +477,16 @@ const QubeBaseMigration = () => {
         </Card>
       )}
 
-      {/* Migration Actions */}
-      <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+      {/* Migration Tabs */}
+      <Tabs value={activeTab} onValueChange={setActiveTab}>
+        <TabsList className="grid w-full grid-cols-2">
+          <TabsTrigger value="kb">KB & Prompts</TabsTrigger>
+          <TabsTrigger value="users">Users & Personas</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="kb" className="space-y-6">
+          {/* Migration Actions */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Test Migration */}
         <Card>
           <CardHeader>
@@ -436,7 +569,200 @@ const QubeBaseMigration = () => {
             </p>
           </CardContent>
         </Card>
-      </div>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="users" className="space-y-6">
+          {/* User Migration Stats */}
+          {userStats && (
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2">
+                  <Users className="w-5 h-5" />
+                  User Migration Overview
+                </CardTitle>
+                <CardDescription>
+                  Comprehensive view of all users, invitations, and personas
+                </CardDescription>
+              </CardHeader>
+              <CardContent>
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4 mb-6">
+                  <div className="p-4 border rounded-lg">
+                    <div className="text-sm text-muted-foreground mb-1">Total Users</div>
+                    <div className="text-3xl font-bold">{userStats.total}</div>
+                  </div>
+                  <div className="p-4 border rounded-lg">
+                    <div className="text-sm text-muted-foreground mb-1">Completed</div>
+                    <div className="text-3xl font-bold text-green-600">{userStats.completed}</div>
+                    <div className="text-xs text-muted-foreground">Active accounts</div>
+                  </div>
+                  <div className="p-4 border rounded-lg">
+                    <div className="text-sm text-muted-foreground mb-1">Pending</div>
+                    <div className="text-3xl font-bold text-blue-600">{userStats.pending}</div>
+                    <div className="text-xs text-muted-foreground">Valid invitations</div>
+                  </div>
+                  <div className="p-4 border rounded-lg">
+                    <div className="text-sm text-muted-foreground mb-1">Expired</div>
+                    <div className="text-3xl font-bold text-orange-600">{userStats.expired}</div>
+                    <div className="text-xs text-muted-foreground">Needs renewal</div>
+                  </div>
+                </div>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="p-3 border rounded-lg">
+                    <div className="text-xs text-muted-foreground mb-1">KNYT Personas</div>
+                    <div className="text-xl font-bold">{userStats.by_persona_type.knyt}</div>
+                  </div>
+                  <div className="p-3 border rounded-lg">
+                    <div className="text-xs text-muted-foreground mb-1">Qrypto Personas</div>
+                    <div className="text-xl font-bold">{userStats.by_persona_type.qrypto}</div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* Migration Controls */}
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {/* Migrate Completed Users */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Migrate Completed Users</CardTitle>
+                <CardDescription>
+                  Migrate {userStats?.completed || 0} active users with full persona data
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Alert>
+                  <CheckCircle className="w-4 h-4" />
+                  <AlertDescription className="text-xs">
+                    Includes auth accounts, persona data, connections, and profiles
+                  </AlertDescription>
+                </Alert>
+
+                {progress > 0 && (
+                  <div className="space-y-2">
+                    <Progress value={progress} />
+                    <p className="text-sm text-muted-foreground text-center">
+                      Migrating users... {Math.round(progress)}%
+                    </p>
+                  </div>
+                )}
+
+                <Button
+                  onClick={() => handleUserMigration('completed')}
+                  disabled={loading || !coreHubConnected || !userStats?.completed}
+                  className="w-full"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Migrating...
+                    </>
+                  ) : (
+                    `Migrate ${userStats?.completed || 0} Completed Users`
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Migrate Pending Invitations */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Migrate Pending Invitations</CardTitle>
+                <CardDescription>
+                  Migrate {userStats?.pending || 0} valid invitations awaiting signup
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Alert>
+                  <AlertCircle className="w-4 h-4" />
+                  <AlertDescription className="text-xs">
+                    Preserves invitation tokens and expiration dates for future redemption
+                  </AlertDescription>
+                </Alert>
+
+                <Button
+                  onClick={() => handleUserMigration('pending')}
+                  disabled={loading || !coreHubConnected || !userStats?.pending}
+                  className="w-full"
+                  variant="outline"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Migrating...
+                    </>
+                  ) : (
+                    `Migrate ${userStats?.pending || 0} Pending Invitations`
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Handle Expired Invitations */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Handle Expired Invitations</CardTitle>
+                <CardDescription>
+                  {userStats?.expired || 0} expired invitations need review
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Alert variant="destructive">
+                  <AlertCircle className="w-4 h-4" />
+                  <AlertDescription className="text-xs">
+                    These invitations are past their expiration date. Consider renewal before migration.
+                  </AlertDescription>
+                </Alert>
+
+                <Button
+                  onClick={() => handleUserMigration('expired')}
+                  disabled={loading || !coreHubConnected || !userStats?.expired}
+                  className="w-full"
+                  variant="destructive"
+                >
+                  Migrate {userStats?.expired || 0} Expired Invitations
+                </Button>
+              </CardContent>
+            </Card>
+
+            {/* Migrate All Users */}
+            <Card>
+              <CardHeader>
+                <CardTitle>Migrate All Users</CardTitle>
+                <CardDescription>
+                  Complete migration of all {userStats?.total || 0} users and invitations
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="space-y-4">
+                <Alert>
+                  <AlertCircle className="w-4 h-4" />
+                  <AlertDescription className="text-xs">
+                    Migrates completed users, pending invitations, and expired records
+                  </AlertDescription>
+                </Alert>
+
+                <Button
+                  onClick={() => handleUserMigration()}
+                  disabled={loading || !coreHubConnected || !userStats?.total}
+                  className="w-full"
+                  variant="default"
+                >
+                  {loading ? (
+                    <>
+                      <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                      Migrating All...
+                    </>
+                  ) : (
+                    `Migrate All ${userStats?.total || 0} Users`
+                  )}
+                </Button>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
 
       {/* Migration Guide Reference */}
       <Card className="mt-6">
