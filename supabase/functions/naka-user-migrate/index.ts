@@ -90,11 +90,12 @@ serve(async (req) => {
       try {
         // Check if user already migrated
         const { data: existing } = await supabase
-          .from('app_nakamoto.user_migration_map')
+          .schema('app_nakamoto')
+          .from('user_migration_map')
           .select('*')
           .eq('source_email', user.email.toLowerCase())
           .eq('tenant_id', user.tenant_id)
-          .single();
+          .maybeSingle();
 
         if (existing) {
           response.matched++;
@@ -144,7 +145,8 @@ serve(async (req) => {
 
         // Insert into migration map with comprehensive data
         const { error: mapError } = await supabase
-          .from('app_nakamoto.user_migration_map')
+          .schema('app_nakamoto')
+          .from('user_migration_map')
           .insert({
             source_user_id: user.source_user_id,
             source_email: user.email.toLowerCase(),
