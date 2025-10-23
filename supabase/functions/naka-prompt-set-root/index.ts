@@ -12,7 +12,7 @@ serve(async (req) => {
   }
 
   try {
-    // Use Core Hub credentials for migration
+    // Use Core Hub credentials
     const coreUrl = Deno.env.get('CORE_SUPABASE_URL')!;
     const coreServiceKey = Deno.env.get('CORE_SUPABASE_SERVICE_ROLE_KEY')!;
     const supabase = createClient(coreUrl, coreServiceKey);
@@ -26,111 +26,45 @@ serve(async (req) => {
       );
     }
 
-    console.log('Setting root system prompt for Nakamoto via kb_docs fallback');
+    console.log('Setting root system prompt for Nakamoto via RPC');
 
-    // Find the Nakamoto Root Corpus from kb.corpora (schema-qualified)
-    // Ensure the Nakamoto Root corpus exists (create if missing)
     const ROOT_TENANT = '00000000-0000-0000-0000-000000000000';
-    let { data: corpusRow, error: corpusErr } = await supabase
-      .schema('kb')
-      .from('corpora')
-      .select('id')
-      .eq('app', 'nakamoto')
-      .eq('name', 'Root')
-      .eq('scope', 'root')
-      .single();
 
-    if (corpusErr || !corpusRow) {
-      console.log('Root corpus missing - creating it');
-      const { data: newCorpus, error: createErr } = await supabase
-        .schema('kb')
-        .from('corpora')
-        .insert({
-          tenant_id: ROOT_TENANT,
-          app: 'nakamoto',
-          name: 'Root',
-          scope: 'root',
-          description: 'Root knowledge base for Nakamoto platform'
-        })
-        .select('id')
-        .single();
+    // Ensure or create the Root corpus via RPC
+    const { data: corpusId, error: corpusErr } = await supabase.rpc('ensure_corpus', {
+      _tenant: ROOT_TENANT,
+      _app: 'nakamoto',
+      _name: 'Root',
+      _scope: 'root',
+      _description: 'Root knowledge base for Nakamoto platform'
+    });
 
-      if (createErr) {
-        throw new Error(`Failed to create Nakamoto root corpus: ${createErr.message}`);
-      }
-
-      corpusRow = newCorpus;
+    if (corpusErr || !corpusId) {
+      throw new Error(`Failed to ensure/get Root corpus: ${corpusErr?.message || 'unknown error'}`);
     }
 
-    const corpusId = corpusRow.id;
     const TITLE = 'Nakamoto Root System Prompt';
 
-    // Check if a prompt doc already exists in kb.docs
-    const { data: existing } = await supabase
-      .schema('kb')
-      .from('docs')
-      .select('id, version')
-      .eq('corpus_id', corpusId)
-      .eq('tenant_id', ROOT_TENANT)
-      .eq('title', TITLE)
-      .single();
+    // Upsert the prompt doc via RPC
+    const { data: upsertRes, error: upsertErr } = await supabase.rpc('upsert_kb_doc', {
+      _corpus_id: corpusId,
+      _tenant: ROOT_TENANT,
+      _title: TITLE,
+      _content_text: prompt_text,
+      _tags: ['system', 'prompt'],
+      _storage_path: null,
+      _metadata: { ...(metadata || {}), type: 'root_system_prompt' }
+    });
 
-    let version = 1;
-    if (existing) {
-      version = (existing.version || 1) + 1;
-      const { error: updateError } = await supabase
-        .schema('kb')
-        .from('docs')
-        .update({
-          content_text: prompt_text,
-          content_type: 'text/markdown',
-          metadata: { ...(metadata || {}), type: 'root_system_prompt' },
-          is_active: true,
-          version
-        })
-        .eq('id', existing.id);
-
-      if (updateError) {
-        console.error('Error updating prompt doc:', updateError);
-        throw updateError;
-      }
-
-      console.log(`Updated existing root prompt doc (version ${version})`);
-
-      return new Response(
-        JSON.stringify({ success: true, stored_in: 'kb.docs', version, doc_id: existing.id }),
-        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
-      );
+    if (upsertErr) {
+      console.error('Error upserting prompt doc:', upsertErr);
+      throw upsertErr;
     }
 
-    // Insert new prompt doc into kb.docs
-    const { data: newDoc, error: insertError } = await supabase
-      .schema('kb')
-      .from('docs')
-      .insert({
-        corpus_id: corpusId,
-        tenant_id: ROOT_TENANT,
-        title: TITLE,
-        content_text: prompt_text,
-        content_type: 'text/markdown',
-        tags: ['system', 'prompt'],
-        storage_path: null,
-        metadata: { ...(metadata || {}), type: 'root_system_prompt' },
-        is_active: true,
-        version
-      })
-      .select('id')
-      .single();
-
-    if (insertError) {
-      console.error('Error inserting prompt doc:', insertError);
-      throw insertError;
-    }
-
-    console.log(`Inserted new root prompt doc (version ${version})`);
+    console.log(`Upserted root prompt doc`, upsertRes);
 
     return new Response(
-      JSON.stringify({ success: true, stored_in: 'kb.docs', version, doc_id: newDoc.id }),
+      JSON.stringify({ success: true, stored_in: 'kb.docs', ...upsertRes }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 

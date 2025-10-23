@@ -37,41 +37,19 @@ serve(async (req) => {
 
     console.log(`Processing ${documents.length} KB documents (dry_run: ${dry_run})`);
 
-    // Get the root corpus ID from kb.corpora (schema-qualified)
-    // Ensure the root corpus exists (create if missing)
+    // Resolve or create the root corpus via RPCs in public schema
     const ROOT_TENANT = '00000000-0000-0000-0000-000000000000';
-    let { data: corpusRow, error: corpusErr } = await supabase
-      .schema('kb')
-      .from('corpora')
-      .select('id')
-      .eq('app', 'nakamoto')
-      .eq('name', 'Root')
-      .eq('scope', 'root')
-      .single();
+    const { data: corpusId, error: corpusErr } = await supabase.rpc('ensure_corpus', {
+      _tenant: ROOT_TENANT,
+      _app: 'nakamoto',
+      _name: 'Root',
+      _scope: 'root',
+      _description: 'Root knowledge base for Nakamoto platform'
+    });
 
-    if (corpusErr || !corpusRow) {
-      console.log('Root corpus missing - creating it');
-      const { data: newCorpus, error: createErr } = await supabase
-        .schema('kb')
-        .from('corpora')
-        .insert({
-          tenant_id: ROOT_TENANT,
-          app: 'nakamoto',
-          name: 'Root',
-          scope: 'root',
-          description: 'Root knowledge base for Nakamoto platform'
-        })
-        .select('id')
-        .single();
-
-      if (createErr) {
-        throw new Error(`Failed to create Nakamoto root corpus: ${createErr.message}`);
-      }
-
-      corpusRow = newCorpus;
+    if (corpusErr || !corpusId) {
+      throw new Error(`Failed to ensure/get Root corpus: ${corpusErr?.message || 'unknown error'}`);
     }
-
-    const corpusId = corpusRow.id;
 
     const response = {
       imported: 0,
@@ -81,57 +59,46 @@ serve(async (req) => {
 
     for (const doc of documents as KBDocument[]) {
       try {
-        // Check if document already exists by title in kb.docs (schema-qualified)
-        const { data: existing } = await supabase
-          .schema('kb')
-          .from('docs')
-          .select('id')
-          .eq('corpus_id', corpusId)
-          .eq('title', doc.title)
-          .eq('tenant_id', '00000000-0000-0000-0000-000000000000')
-          .single();
-
-        if (existing) {
-          response.skipped++;
-          console.log(`Document "${doc.title}" already exists`);
-          continue;
-        }
-
         if (dry_run) {
-          response.imported++;
-          console.log(`[DRY RUN] Would import document "${doc.title}"`);
+          const { data: existingId, error: findErr } = await supabase.rpc('find_kb_doc_id', {
+            _corpus_id: corpusId,
+            _tenant: ROOT_TENANT,
+            _title: doc.title
+          });
+          if (findErr) {
+            response.errors.push({ title: doc.title, error: findErr.message });
+            console.error(`Error checking existence for "${doc.title}":`, findErr);
+            continue;
+          }
+          if (existingId) {
+            response.skipped++;
+            console.log(`Document "${doc.title}" already exists (dry run)`);
+          } else {
+            response.imported++;
+            console.log(`[DRY RUN] Would import document "${doc.title}"`);
+          }
           continue;
         }
 
-        // Insert root KB document into kb.docs
-        const { data: newDoc, error: insertError } = await supabase
-          .schema('kb')
-          .from('docs')
-          .insert({
-            corpus_id: corpusId,
-            tenant_id: '00000000-0000-0000-0000-000000000000',
-            title: doc.title,
-            content_text: doc.content_text || '',
-            content_type: 'text/markdown',
-            tags: doc.tags || [],
-            storage_path: doc.source_uri || null,
-            metadata: doc.metadata || {},
-            is_active: true,
-            version: 1
-          })
-          .select('id')
-          .single();
+        // Upsert the KB document via RPC
+        const { data: upsertRes, error: upsertErr } = await supabase.rpc('upsert_kb_doc', {
+          _corpus_id: corpusId,
+          _tenant: ROOT_TENANT,
+          _title: doc.title,
+          _content_text: doc.content_text || '',
+          _tags: doc.tags || [],
+          _storage_path: doc.source_uri || null,
+          _metadata: doc.metadata || {}
+        });
 
-        if (insertError) {
-          response.errors.push({ title: doc.title, error: insertError.message });
-          console.error(`Error importing "${doc.title}":`, insertError);
+        if (upsertErr) {
+          response.errors.push({ title: doc.title, error: upsertErr.message });
+          console.error(`Error importing "${doc.title}":`, upsertErr);
           continue;
         }
-
-        // Note: Reindexing queue not yet implemented in Core Hub schema
 
         response.imported++;
-        console.log(`Successfully imported document "${doc.title}"`);
+        console.log(`Successfully upserted document "${doc.title}"`, upsertRes);
 
       } catch (error: any) {
         response.errors.push({ 

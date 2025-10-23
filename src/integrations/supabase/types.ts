@@ -1737,9 +1737,23 @@ export type Database = {
     }
     Functions: {
       count_direct_signups: { Args: never; Returns: number }
+      ensure_corpus: {
+        Args: {
+          _app: string
+          _description: string
+          _name: string
+          _scope: string
+          _tenant: string
+        }
+        Returns: string
+      }
       extend_invitation_expiration: {
         Args: { email_list?: string[]; extend_days?: number }
         Returns: Json
+      }
+      find_kb_doc_id: {
+        Args: { _corpus_id: string; _tenant: string; _title: string }
+        Returns: string
       }
       get_expiring_invitations: {
         Args: { days_ahead?: number }
@@ -1816,6 +1830,22 @@ export type Database = {
               error: true
             } & "Could not choose the best candidate function between: public.role_rank(r => admin_role), public.role_rank(r => role_type). Try renaming the parameters or the function itself in the database so function overloading can be resolved"
           }
+      upsert_kb_doc: {
+        Args: {
+          _content_text: string
+          _corpus_id: string
+          _metadata?: Json
+          _storage_path?: string
+          _tags?: string[]
+          _tenant: string
+          _title: string
+        }
+        Returns: {
+          id: string
+          updated: boolean
+          version: number
+        }[]
+      }
       user_role_rank: {
         Args: { p_agent_site_id: string; uid?: string }
         Returns: number
