@@ -416,7 +416,7 @@ const QubeBaseMigration = () => {
 
             <Button
               onClick={handleFullMigration}
-              disabled={loading || !coreHubConnected || !stats?.users.migrated}
+              disabled={loading || !coreHubConnected}
               className="w-full"
               variant="destructive"
             >
