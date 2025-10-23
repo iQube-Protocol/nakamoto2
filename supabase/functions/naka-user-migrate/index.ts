@@ -88,16 +88,24 @@ serve(async (req) => {
 
     for (const user of users as UserMigrationRecord[]) {
       try {
-        // Check if user already migrated
-        const { data: existing } = await supabase
-          .schema('app_nakamoto')
-          .from('user_migration_map')
-          .select('*')
-          .eq('source_email', user.email.toLowerCase())
-          .eq('tenant_id', user.tenant_id)
-          .maybeSingle();
+        // Check if user already migrated (if schema accessible)
+        let alreadyMigrated = false;
+        try {
+          const { data: existing } = await supabase
+            .schema('app_nakamoto')
+            .from('user_migration_map')
+            .select('*')
+            .eq('source_email', user.email.toLowerCase())
+            .eq('tenant_id', user.tenant_id)
+            .maybeSingle();
+          if (existing) {
+            alreadyMigrated = true;
+          }
+        } catch (e) {
+          console.log('Migration map not accessible; skipping pre-check');
+        }
 
-        if (existing) {
+        if (alreadyMigrated) {
           response.matched++;
           console.log(`User ${user.email} already migrated`);
           continue;
@@ -113,68 +121,72 @@ serve(async (req) => {
 
         // Handle completed users - create auth if not exists
         if (user.status === 'completed' && !authUserId) {
-          // Check if auth user exists
-          const { data: authUser } = await supabase.auth.admin.listUsers();
-          const existingAuthUser = authUser.users.find(u => u.email === user.email);
+          const { data: newUser, error: authError } = await supabase.auth.admin.createUser({
+            email: user.email,
+            email_confirm: true,
+            user_metadata: {
+              ...user.meta,
+              persona_type: user.persona_type,
+              migrated_from: 'nakamoto-aigent',
+              requires_password_reset: true
+            }
+          });
 
-          if (existingAuthUser) {
-            authUserId = existingAuthUser.id;
-          } else {
-            // Create auth user with password reset requirement
-            const { data: newUser, error: authError } = await supabase.auth.admin.createUser({
-              email: user.email,
-              email_confirm: true,
-              user_metadata: {
-                ...user.meta,
-                persona_type: user.persona_type,
-                migrated_from: 'nakamoto-aigent',
-                requires_password_reset: true
-              }
-            });
-
-            if (authError) {
-              response.errors.push({ email: user.email, error: authError.message });
+          if (authError) {
+            const msg = authError.message || '';
+            if (msg.includes('already been registered')) {
+              console.log(`Auth user already exists for ${user.email}, proceeding without create.`);
+            } else {
+              response.errors.push({ email: user.email, error: msg });
               console.error(`Auth error for ${user.email}:`, authError);
               continue;
             }
-
+          } else if (newUser?.user?.id) {
             authUserId = newUser.user.id;
             console.log(`Created auth user for ${user.email}`);
           }
         }
 
-        // Insert into migration map with comprehensive data
-        const { error: mapError } = await supabase
-          .schema('app_nakamoto')
-          .from('user_migration_map')
-          .insert({
-            source_user_id: user.source_user_id,
-            source_email: user.email.toLowerCase(),
-            tenant_id: user.tenant_id,
-            auth_user_id: authUserId,
-            status: user.status,
-            persona_type: user.persona_type,
-            invitation_status: user.invitation_status,
-            persona_data: user.persona_data,
-            connection_data: user.connection_data,
-            name_preferences: user.name_preferences,
-            profile_data: user.profile,
-            meta: {
-              ...user.meta,
-              auth_created_at: user.auth_created_at,
+        // Insert into migration map with comprehensive data (best-effort)
+        let mapInserted = false;
+        try {
+          const { error: mapError } = await supabase
+            .schema('app_nakamoto')
+            .from('user_migration_map')
+            .insert({
+              source_user_id: user.source_user_id,
+              source_email: user.email.toLowerCase(),
+              tenant_id: user.tenant_id,
+              auth_user_id: authUserId,
+              status: user.status,
+              persona_type: user.persona_type,
+              invitation_status: user.invitation_status,
+              persona_data: user.persona_data,
+              connection_data: user.connection_data,
+              name_preferences: user.name_preferences,
+              profile_data: user.profile,
+              meta: {
+                ...user.meta,
+                auth_created_at: user.auth_created_at,
+                migrated_at: new Date().toISOString()
+              },
               migrated_at: new Date().toISOString()
-            },
-            migrated_at: new Date().toISOString()
-          });
-
-        if (mapError) {
-          response.errors.push({ email: user.email, error: mapError.message });
-          console.error(`Map error for ${user.email}:`, mapError);
-          continue;
+            });
+          if (mapError) throw mapError;
+          mapInserted = true;
+        } catch (mapErr: any) {
+          const msg = mapErr?.message || String(mapErr);
+          if (msg.includes('schema must be one of') || msg.includes('Could not find the table')) {
+            console.warn(`Skipping map insert for ${user.email}: ${msg}`);
+          } else {
+            response.errors.push({ email: user.email, error: msg });
+            console.error(`Map error for ${user.email}:`, mapErr);
+            continue;
+          }
         }
 
         response.inserted++;
-        console.log(`Successfully migrated user ${user.email} (${user.status})`);
+        console.log(`Migrated user ${user.email} (${user.status})${mapInserted ? '' : ' [no map]'}`);
 
       } catch (error: any) {
         response.errors.push({ 
