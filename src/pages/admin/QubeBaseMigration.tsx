@@ -562,7 +562,7 @@ const QubeBaseMigration = () => {
             <Alert className="border-green-500 text-green-700">
               <CheckCircle className="w-4 h-4" />
               <AlertDescription>
-                Successfully connected to Core Hub (bsjhfvctmduxhohtllly.supabase.co)
+                Successfully connected to Core Hub (ysykvckvggaqykhhntyo.supabase.co)
               </AlertDescription>
             </Alert>
           )}
