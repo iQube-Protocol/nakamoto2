@@ -12,7 +12,7 @@ import { createClient } from '@supabase/supabase-js';
 
 // Core Hub connection (read-only for client-side)
 const CORE_HUB_URL = 'https://bsjhfvctmduxhohtllly.supabase.co';
-const CORE_HUB_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzamhmdmN0bWR1eGhvaHRsbGx5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDgyNTgsImV4cCI6MjA3MzEyNDI1OH0.vN9Y_xHQqXqWLQQfnUfhqJI-EjOx5ov-F8G0qKdQjOo';
+const CORE_HUB_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzamhmdmN0bWR1eGhvaHRsbGx5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDgyNTgsImV4cCI6MjA3MzEyNDI1OH0.JVDp4-F6EEXqVQ8sts2Z8KQg168aZ1YdtY53RRM_s7M';
 
 export const coreHubClient = createClient(CORE_HUB_URL, CORE_HUB_ANON_KEY);
 
