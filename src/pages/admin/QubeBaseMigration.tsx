@@ -406,14 +406,10 @@ const QubeBaseMigration = () => {
         description: "Gathering all user interactions from database..."
       });
 
-      // Fetch all user interactions with persona type from knyt_personas and qripto_personas
+      // Fetch all user interactions
       const { data: interactions, error } = await supabase
         .from('user_interactions')
-        .select(`
-          *,
-          knyt_personas!left(id),
-          qripto_personas!left(id)
-        `);
+        .select('*');
 
       if (error) {
         throw new Error(`Failed to fetch interactions: ${error.message}`);
@@ -427,19 +423,46 @@ const QubeBaseMigration = () => {
         return;
       }
 
+      setProgress(5);
+
+      // Fetch persona data separately to determine persona type
+      const { data: knytPersonas } = await supabase
+        .from('knyt_personas')
+        .select('user_id');
+      
+      const { data: qriptoPersonas } = await supabase
+        .from('qripto_personas')
+        .select('user_id');
+
+      // Create lookup sets for fast persona type determination
+      const knytUserIds = new Set(knytPersonas?.map(p => p.user_id) || []);
+      const qriptoUserIds = new Set(qriptoPersonas?.map(p => p.user_id) || []);
+
       setProgress(10);
 
-      // Map interactions to migration format
-      const interactionRecords: InteractionHistory[] = interactions.map((int: any) => ({
-        source_user_id: int.user_id,
-        query: int.query,
-        response: int.response,
-        interaction_type: int.interaction_type,
-        metadata: int.metadata || {},
-        summarized: int.summarized || false,
-        created_at: int.created_at,
-        persona_type: int.knyt_personas?.id ? 'knyt' : int.qripto_personas?.id ? 'qripto' : undefined
-      }));
+      // Map interactions to migration format with persona tagging
+      // Default to 'qripto' for any interaction not tagged with a persona
+      const interactionRecords: InteractionHistory[] = interactions.map((int: any) => {
+        let personaType: 'knyt' | 'qripto' = 'qripto'; // Default to qripto
+        
+        if (knytUserIds.has(int.user_id)) {
+          personaType = 'knyt';
+        } else if (qriptoUserIds.has(int.user_id)) {
+          personaType = 'qripto';
+        }
+        // If neither persona exists, default to qripto as requested
+
+        return {
+          source_user_id: int.user_id,
+          query: int.query,
+          response: int.response,
+          interaction_type: int.interaction_type,
+          metadata: int.metadata || {},
+          summarized: int.summarized || false,
+          created_at: int.created_at,
+          persona_type: personaType
+        };
+      });
 
       setProgress(20);
 
