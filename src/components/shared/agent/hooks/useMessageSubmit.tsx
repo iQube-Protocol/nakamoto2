@@ -213,7 +213,34 @@ export const useMessageSubmit = (
       }
     } catch (error) {
       console.error('Error handling message:', error);
-      toast.error('There was a problem with your request');
+      
+      // Extract meaningful error message
+      let errorMessage = 'There was a problem with your request';
+      let errorDescription;
+      
+      if (error instanceof Error) {
+        errorMessage = error.message;
+        
+        // Handle specific API key errors
+        if (errorMessage.includes('API key not configured')) {
+          errorDescription = 'Please configure the API key in Supabase secrets';
+        } else if (errorMessage.includes('401') || errorMessage.includes('unauthorized')) {
+          errorDescription = 'Invalid API key - please check your configuration';
+        } else if (errorMessage.includes('429')) {
+          errorDescription = 'Rate limit exceeded - please try again later';
+        }
+      } else if (typeof error === 'object' && error !== null) {
+        const errorObj = error as any;
+        if (errorObj.message) {
+          errorMessage = errorObj.message;
+        } else if (errorObj.error) {
+          errorMessage = errorObj.error;
+        }
+      }
+      
+      toast.error(errorMessage, {
+        description: errorDescription
+      });
     } finally {
       setIsProcessing(false);
     }
