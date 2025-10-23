@@ -37,9 +37,9 @@ serve(async (req) => {
 
     console.log(`Processing ${documents.length} KB documents (dry_run: ${dry_run})`);
 
-    // Get the root corpus ID
+    // Get the root corpus ID from the public view
     const { data: corpus, error: corpusError } = await supabase
-      .from('kb.corpora')
+      .from('kb_corpora')
       .select('id')
       .eq('app', 'nakamoto')
       .eq('name', 'Root')
@@ -59,7 +59,7 @@ serve(async (req) => {
       try {
         // Check if document already exists by title
         const { data: existing } = await supabase
-          .from('kb.docs')
+          .from('kb_docs')
           .select('id')
           .eq('corpus_id', corpus.id)
           .eq('title', doc.title)
@@ -80,7 +80,7 @@ serve(async (req) => {
 
         // Insert root KB document
         const { data: newDoc, error: insertError } = await supabase
-          .from('kb.docs')
+          .from('kb_docs')
           .insert({
             corpus_id: corpus.id,
             scope: 'root',
