@@ -66,21 +66,48 @@ export async function queryCoreHub<T = any>(
 /**
  * Health check for Core Hub connection
  */
-export async function checkCoreHubHealth(): Promise<{ connected: boolean; error?: string }> {
+export async function checkCoreHubHealth(): Promise<{ connected: boolean; error?: string; details?: any }> {
   try {
-    const { error } = await coreHubClient
-      .from('kb.corpora')
+    console.log('🔍 Testing Core Hub connection to:', CORE_HUB_URL);
+    
+    // First try basic connection - query any public table or use a simpler endpoint
+    const { data, error } = await coreHubClient
+      .from('kb_corpora')  // Try without schema prefix first
       .select('id')
-      .limit(1)
-      .single();
+      .limit(1);
 
-    if (error && error.code !== 'PGRST116') {
-      // PGRST116 = no rows returned (acceptable)
-      return { connected: false, error: error.message };
+    console.log('Core Hub query result:', { data, error });
+
+    if (error) {
+      // Check if it's a "table doesn't exist" error
+      if (error.code === '42P01' || error.message.includes('does not exist')) {
+        return { 
+          connected: true, // Connection works, but schema not set up
+          error: 'Core Hub connected, but kb.corpora table not found. QubeBase schema needs to be initialized.',
+          details: { 
+            code: error.code,
+            message: error.message,
+            hint: 'Run the QubeBase schema migration on the Core Hub first'
+          }
+        };
+      }
+      
+      // Other errors (permissions, network, etc.)
+      return { 
+        connected: false, 
+        error: error.message,
+        details: { code: error.code, hint: error.hint }
+      };
     }
 
+    // Success
     return { connected: true };
   } catch (error: any) {
-    return { connected: false, error: error.message };
+    console.error('Core Hub health check exception:', error);
+    return { 
+      connected: false, 
+      error: error.message || 'Unknown connection error',
+      details: error
+    };
   }
 }

@@ -33,15 +33,27 @@ const QubeBaseMigration = () => {
     const health = await checkCoreHubHealth();
     setCoreHubConnected(health.connected);
     
+    console.log('Health check result:', health);
+    
     if (health.connected) {
-      toast({
-        title: "Core Hub Connected",
-        description: "Successfully connected to QubeBase Core Hub"
-      });
-      
-      // Fetch current stats
-      const currentStats = await getMigrationStats();
-      setStats(currentStats);
+      if (health.error) {
+        // Connected but schema not ready
+        toast({
+          title: "Core Hub Connected ⚠️",
+          description: health.error,
+          duration: 8000
+        });
+      } else {
+        // Fully connected and ready
+        toast({
+          title: "Core Hub Connected ✓",
+          description: "Successfully connected to QubeBase Core Hub"
+        });
+        
+        // Fetch current stats
+        const currentStats = await getMigrationStats();
+        setStats(currentStats);
+      }
     } else {
       toast({
         title: "Connection Failed",
