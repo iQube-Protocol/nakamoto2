@@ -14,6 +14,11 @@ import {
   type MigrationStats
 } from '@/services/qubebase-migration-service';
 import { checkCoreHubHealth } from '@/services/qubebase-core-client';
+import {
+  exportNakamotoRootKB,
+  exportNakamotoRootPrompt,
+  getMigrationStats as getKBExportStats
+} from '@/services/qubebase-kb-export';
 import { Upload, Database, FileText, CheckCircle, AlertCircle, Loader2 } from 'lucide-react';
 
 const QubeBaseMigration = () => {
@@ -53,46 +58,56 @@ const QubeBaseMigration = () => {
     setProgress(0);
 
     try {
-      // Test with 10 sample users (dry run)
+      // Step 1: Export KB from code files
+      toast({
+        title: "Exporting KB from code",
+        description: "Reading knowledge base from source files..."
+      });
+      
+      const kbDocs = exportNakamotoRootKB();
+      const kbPrompt = exportNakamotoRootPrompt();
+      const kbStats = getKBExportStats();
+      
+      setProgress(20);
+      
+      toast({
+        title: "KB Export Complete",
+        description: `Found ${kbStats.totalDocuments} documents (COYN: ${kbStats.byDomain.qryptocoyn}, KNYT: ${kbStats.byDomain.knyt}, iQubes: ${kbStats.byDomain.iqubes})`,
+        duration: 4000
+      });
+
+      // Step 2: Test user migration (dry run)
+      setProgress(40);
       const testUsers: UserMigrationRecord[] = [
         {
           source_user_id: 'test-1',
           email: 'test1@example.com',
           tenant_id: '00000000-0000-0000-0000-000000000000',
           status: 'active'
-        },
-        // Add more test users...
+        }
       ];
 
-      setProgress(30);
       const userResult = await migrateUsers(testUsers, true);
       
       if (userResult.success) {
         toast({
-          title: "Dry Run Successful",
+          title: "User Migration Test Passed",
           description: `Would migrate ${userResult.data?.inserted || 0} users`
         });
       } else {
         throw new Error(userResult.error);
       }
 
-      setProgress(60);
+      setProgress(70);
 
-      // Test KB import (dry run)
-      const testDocs: KBDocument[] = [
-        {
-          title: 'Test Document',
-          content_text: 'This is a test document',
-          tags: ['test']
-        }
-      ];
-
+      // Step 3: Test KB import (dry run with first 5 docs)
+      const testDocs = kbDocs.slice(0, 5);
       const kbResult = await importKBDocuments(testDocs, true);
       
       if (kbResult.success) {
         toast({
-          title: "KB Test Successful",
-          description: `Would import ${kbResult.data?.imported || 0} documents`
+          title: "KB Import Test Passed",
+          description: `Would import ${kbDocs.length} documents (tested ${testDocs.length})`
         });
       } else {
         throw new Error(kbResult.error);
@@ -101,9 +116,9 @@ const QubeBaseMigration = () => {
       setProgress(100);
 
       toast({
-        title: "Test Migration Complete",
-        description: "All dry-run tests passed. Ready for production migration.",
-        duration: 5000
+        title: "Test Migration Complete ✅",
+        description: `Ready to migrate ${kbStats.totalDocuments} KB docs, system prompt, and users`,
+        duration: 6000
       });
 
     } catch (error: any) {
@@ -118,22 +133,97 @@ const QubeBaseMigration = () => {
   };
 
   const handleFullMigration = async () => {
+    const kbStats = getKBExportStats();
+    
     const confirmed = window.confirm(
       '⚠️ WARNING: This will perform the FULL migration to QubeBase Core Hub.\n\n' +
+      'This will migrate:\n' +
+      `• ${kbStats.totalDocuments} KB documents (COYN + KNYT + iQubes)\n` +
+      '• Root system prompt\n' +
+      '• Set up ROOT corpus for Nakamoto\n\n' +
       'Please ensure:\n' +
-      '1. You have exported all data from current Nakamoto\n' +
+      '1. Test migration passed\n' +
       '2. You have reviewed the migration guide\n' +
-      '3. You are ready for the cutover\n\n' +
+      '3. You are ready for cutover\n\n' +
       'Proceed with full migration?'
     );
 
     if (!confirmed) return;
 
-    toast({
-      title: "Full Migration Not Yet Implemented",
-      description: "Please use the migration guide to perform manual migration with your exported data.",
-      duration: 8000
-    });
+    setLoading(true);
+    setProgress(0);
+
+    try {
+      // Step 1: Export KB from code
+      toast({
+        title: "Starting Full Migration",
+        description: "Exporting knowledge base from source files..."
+      });
+      
+      const kbDocs = exportNakamotoRootKB();
+      const kbPrompt = exportNakamotoRootPrompt();
+      
+      setProgress(10);
+
+      // Step 2: Set root system prompt
+      toast({
+        title: "Migrating System Prompt",
+        description: "Setting root system prompt in QubeBase..."
+      });
+      
+      const promptResult = await setRootPrompt(kbPrompt.prompt_text, kbPrompt.metadata);
+      
+      if (!promptResult.success) {
+        throw new Error(`Prompt migration failed: ${promptResult.error}`);
+      }
+      
+      toast({
+        title: "System Prompt Migrated",
+        description: "Root prompt active in QubeBase"
+      });
+      
+      setProgress(30);
+
+      // Step 3: Import all KB documents
+      toast({
+        title: "Importing KB Documents",
+        description: `Importing ${kbDocs.length} documents to ROOT corpus...`
+      });
+      
+      const kbResult = await importKBDocuments(kbDocs, false);
+      
+      if (!kbResult.success) {
+        throw new Error(`KB import failed: ${kbResult.error}`);
+      }
+      
+      setProgress(90);
+      
+      toast({
+        title: "KB Documents Imported",
+        description: `${kbDocs.length} documents migrated to ROOT corpus`
+      });
+
+      // Refresh stats
+      const newStats = await getMigrationStats();
+      setStats(newStats);
+      
+      setProgress(100);
+
+      toast({
+        title: "Migration Complete! 🎉",
+        description: `Successfully migrated ${kbDocs.length} KB documents and root system prompt to QubeBase`,
+        duration: 8000
+      });
+
+    } catch (error: any) {
+      toast({
+        title: "Migration Failed",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
