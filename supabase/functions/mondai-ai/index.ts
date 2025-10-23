@@ -161,8 +161,9 @@ async function createChainGPTResponse(
  * Create AI client with proper Venice configuration (OpenAI client for Venice and OpenAI only)
  */
 function createAIClient(useVenice: boolean = false, useChainGPT: boolean = false) {
-  const openAIApiKey = Deno.env.get('OPENAI_API_KEY');
-  const veniceApiKey = Deno.env.get('VENICE_API_KEY');
+  // Trim to avoid leading/trailing spaces accidentally breaking auth
+  const openAIApiKey = (Deno.env.get('OPENAI_API_KEY') ?? '').trim();
+  const veniceApiKey = (Deno.env.get('VENICE_API_KEY') ?? '').trim();
   
   // ChainGPT uses its own SDK, handled separately
   if (useChainGPT) {
