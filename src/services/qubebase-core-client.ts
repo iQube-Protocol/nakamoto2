@@ -69,10 +69,16 @@ export async function queryCoreHub<T = any>(
 export async function checkCoreHubHealth(): Promise<{ connected: boolean; error?: string; details?: any }> {
   try {
     console.log('🔍 Testing Core Hub connection to:', CORE_HUB_URL);
-    
-    // Query with schema prefix since client must use public schema
+
+    // Prefer RPC health function if available (bypasses RLS via SECURITY DEFINER)
+    const rpc = await coreHubClient.rpc('core_hub_health');
+    if (!rpc.error) {
+      return { connected: true };
+    }
+
+    // Fallback: query a public view that should proxy kb.corpora
     const { data, error } = await coreHubClient
-      .from('kb.corpora')
+      .from('kb_corpora')
       .select('id')
       .limit(1);
 
