@@ -206,18 +206,18 @@ export async function getMigrationStats(): Promise<MigrationStats> {
 
     // Get KB docs stats
     const { count: kbCount } = await (supabase as any)
-      .from('kb.docs')
+      .from('kb_docs')
       .select('*', { count: 'exact', head: true })
-      .eq('scope', 'root')
+      .eq('tenant_id', '00000000-0000-0000-0000-000000000000')
       .eq('is_active', true);
 
     // Get active root prompt
     const { data: rootPrompt } = await (supabase as any)
-      .from('prompts.prompts')
+      .from('kb_docs')
       .select('version')
-      .eq('app', 'nakamoto')
-      .eq('scope', 'root')
-      .eq('status', 'active')
+      .eq('tenant_id', '00000000-0000-0000-0000-000000000000')
+      .eq('title', 'Nakamoto Root System Prompt')
+      .eq('is_active', true)
       .single();
 
     return {

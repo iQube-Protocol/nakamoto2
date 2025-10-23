@@ -26,65 +26,99 @@ serve(async (req) => {
       );
     }
 
-    console.log('Setting new root prompt for Nakamoto');
+    console.log('Setting root system prompt for Nakamoto via kb_docs fallback');
 
-    // Get current max version for root prompt
-    const { data: current } = await supabase
-      .from('prompts.prompts')
-      .select('version')
-      .eq('app', 'nakamoto')
-      .eq('scope', 'root')
-      .order('version', { ascending: false })
-      .limit(1)
+    // Find the Nakamoto Root Corpus (same logic as KB import)
+    let corpus = await supabase
+      .from('kb_corpora')
+      .select('id')
+      .eq('site_id', 'nakamoto')
+      .eq('name', 'Nakamoto Root Corpus')
       .single();
 
-    const newVersion = current ? current.version + 1 : 1;
-
-    // Archive previous root prompt
-    if (current) {
-      await supabase
-        .from('prompts.prompts')
-        .update({ status: 'archived' })
-        .eq('app', 'nakamoto')
-        .eq('scope', 'root')
-        .eq('status', 'active');
-      
-      console.log(`Archived previous root prompt (version ${current.version})`);
+    if (corpus.error || !corpus.data) {
+      throw new Error('Nakamoto corpus not found. Please run this SQL on your Core Hub:\n\n' +
+        `INSERT INTO kb.corpora (tenant_id, site_id, name, description)\n` +
+        `VALUES (\n` +
+        `  '00000000-0000-0000-0000-000000000000',\n` +
+        `  'nakamoto',\n` +
+        `  'Nakamoto Root Corpus',\n` +
+        `  'Root knowledge base for Nakamoto platform'\n` +
+        `) ON CONFLICT (tenant_id, site_id) DO NOTHING;`
+      );
     }
 
-    // Insert new root prompt
-    const { data: newPrompt, error: insertError } = await supabase
-      .from('prompts.prompts')
+    if (!corpus.data) {
+      throw new Error('Failed to find Nakamoto corpus');
+    }
+
+    const ROOT_TENANT = '00000000-0000-0000-0000-000000000000';
+    const TITLE = 'Nakamoto Root System Prompt';
+
+    // Check if a prompt doc already exists
+    const { data: existing } = await supabase
+      .from('kb_docs')
+      .select('id, version')
+      .eq('corpus_id', corpus.data.id)
+      .eq('tenant_id', ROOT_TENANT)
+      .eq('title', TITLE)
+      .single();
+
+    let version = 1;
+    if (existing) {
+      version = (existing.version || 1) + 1;
+      const { error: updateError } = await supabase
+        .from('kb_docs')
+        .update({
+          content: prompt_text,
+          content_type: 'text/markdown',
+          metadata: { ...(metadata || {}), type: 'root_system_prompt' },
+          is_active: true,
+          version
+        })
+        .eq('id', existing.id);
+
+      if (updateError) {
+        console.error('Error updating prompt doc:', updateError);
+        throw updateError;
+      }
+
+      console.log(`Updated existing root prompt doc (version ${version})`);
+
+      return new Response(
+        JSON.stringify({ success: true, stored_in: 'kb_docs', version, doc_id: existing.id }),
+        { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
+      );
+    }
+
+    // Insert new prompt doc
+    const { data: newDoc, error: insertError } = await supabase
+      .from('kb_docs')
       .insert({
-        app: 'nakamoto',
-        scope: 'root',
-        tenant_id: null,
-        version: newVersion,
-        prompt_text,
-        status: 'active',
-        metadata: metadata || {}
+        corpus_id: corpus.data.id,
+        tenant_id: ROOT_TENANT,
+        title: TITLE,
+        content: prompt_text,
+        content_type: 'text/markdown',
+        tags: ['system', 'prompt'],
+        storage_path: null,
+        metadata: { ...(metadata || {}), type: 'root_system_prompt' },
+        is_active: true,
+        version
       })
-      .select()
+      .select('id')
       .single();
 
     if (insertError) {
-      console.error('Error inserting new root prompt:', insertError);
+      console.error('Error inserting prompt doc:', insertError);
       throw insertError;
     }
 
-    console.log(`Successfully set root prompt (version ${newVersion})`);
+    console.log(`Inserted new root prompt doc (version ${version})`);
 
     return new Response(
-      JSON.stringify({
-        success: true,
-        version: newVersion,
-        prompt_id: newPrompt.id,
-        previous_version: current?.version || null
-      }),
-      { 
-        status: 200, 
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' } 
-      }
+      JSON.stringify({ success: true, stored_in: 'kb_docs', version, doc_id: newDoc.id }),
+      { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 
   } catch (error: any) {
