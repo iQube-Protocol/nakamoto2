@@ -41,7 +41,8 @@ serve(async (req) => {
     // Ensure the root corpus exists (create if missing)
     const ROOT_TENANT = '00000000-0000-0000-0000-000000000000';
     let { data: corpusRow, error: corpusErr } = await supabase
-      .from('kb.corpora')
+      .schema('kb')
+      .from('corpora')
       .select('id')
       .eq('app', 'nakamoto')
       .eq('name', 'Root')
@@ -51,7 +52,8 @@ serve(async (req) => {
     if (corpusErr || !corpusRow) {
       console.log('Root corpus missing - creating it');
       const { data: newCorpus, error: createErr } = await supabase
-        .from('kb.corpora')
+        .schema('kb')
+        .from('corpora')
         .insert({
           tenant_id: ROOT_TENANT,
           app: 'nakamoto',
@@ -81,7 +83,8 @@ serve(async (req) => {
       try {
         // Check if document already exists by title in kb.docs (schema-qualified)
         const { data: existing } = await supabase
-          .from('kb.docs')
+          .schema('kb')
+          .from('docs')
           .select('id')
           .eq('corpus_id', corpusId)
           .eq('title', doc.title)
@@ -102,7 +105,8 @@ serve(async (req) => {
 
         // Insert root KB document into kb.docs
         const { data: newDoc, error: insertError } = await supabase
-          .from('kb.docs')
+          .schema('kb')
+          .from('docs')
           .insert({
             corpus_id: corpusId,
             tenant_id: '00000000-0000-0000-0000-000000000000',

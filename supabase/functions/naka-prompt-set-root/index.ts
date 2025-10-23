@@ -32,7 +32,8 @@ serve(async (req) => {
     // Ensure the Nakamoto Root corpus exists (create if missing)
     const ROOT_TENANT = '00000000-0000-0000-0000-000000000000';
     let { data: corpusRow, error: corpusErr } = await supabase
-      .from('kb.corpora')
+      .schema('kb')
+      .from('corpora')
       .select('id')
       .eq('app', 'nakamoto')
       .eq('name', 'Root')
@@ -42,7 +43,8 @@ serve(async (req) => {
     if (corpusErr || !corpusRow) {
       console.log('Root corpus missing - creating it');
       const { data: newCorpus, error: createErr } = await supabase
-        .from('kb.corpora')
+        .schema('kb')
+        .from('corpora')
         .insert({
           tenant_id: ROOT_TENANT,
           app: 'nakamoto',
@@ -65,7 +67,8 @@ serve(async (req) => {
 
     // Check if a prompt doc already exists in kb.docs
     const { data: existing } = await supabase
-      .from('kb.docs')
+      .schema('kb')
+      .from('docs')
       .select('id, version')
       .eq('corpus_id', corpusId)
       .eq('tenant_id', ROOT_TENANT)
@@ -76,7 +79,8 @@ serve(async (req) => {
     if (existing) {
       version = (existing.version || 1) + 1;
       const { error: updateError } = await supabase
-        .from('kb.docs')
+        .schema('kb')
+        .from('docs')
         .update({
           content_text: prompt_text,
           content_type: 'text/markdown',
@@ -101,7 +105,8 @@ serve(async (req) => {
 
     // Insert new prompt doc into kb.docs
     const { data: newDoc, error: insertError } = await supabase
-      .from('kb.docs')
+      .schema('kb')
+      .from('docs')
       .insert({
         corpus_id: corpusId,
         tenant_id: ROOT_TENANT,
