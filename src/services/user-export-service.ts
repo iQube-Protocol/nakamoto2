@@ -276,23 +276,6 @@ export async function exportAllUsers(): Promise<{ data: ExportedUser[] | null; e
                   level: profile.level || 1
                 };
               }
-            } else {
-              // Fallback profile by email if user_id not found
-              const { data: profileRows } = await supabase
-                .from('profiles')
-                .select('first_name, last_name, avatar_url, total_points, level')
-                .eq('email', invitation.email)
-                .limit(1);
-              const profile = profileRows?.[0];
-              if (profile) {
-                enrichedUser.profile = {
-                  first_name: profile.first_name,
-                  last_name: profile.last_name,
-                  avatar_url: profile.avatar_url,
-                  total_points: profile.total_points || 0,
-                  level: profile.level || 1
-                };
-              }
             }
           } catch (e) {
             console.warn('Enrichment lookup failed for', invitation.email, e);
