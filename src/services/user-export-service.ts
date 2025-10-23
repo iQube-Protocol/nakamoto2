@@ -131,27 +131,46 @@ export async function exportAllUsers(): Promise<{ data: ExportedUser[] | null; e
   try {
     console.log('Starting comprehensive user export...');
 
-    // Get all invited users
-    const { data: invitations, error: invError } = await supabase
-      .from('invited_users')
-      .select('*')
-      .order('invited_at', { ascending: false });
+    // Get all invited users with pagination (PostgREST default limit = 1000)
+    const pageSize = 1000;
+    let from = 0;
+    let page = 1;
+    const allInvitations: any[] = [];
+    let totalCount: number | null = null;
 
-    if (invError) {
-      console.error('Error fetching invitations:', invError);
-      return { data: null, error: invError.message };
+    while (true) {
+      const { data, error, count } = await (supabase as any)
+        .from('invited_users')
+        .select('*', { count: 'exact' })
+        .order('invited_at', { ascending: false })
+        .range(from, from + pageSize - 1);
+
+      if (error) {
+        console.error(`Error fetching invitations page ${page}:`, error);
+        return { data: null, error: error.message };
+      }
+
+      if (typeof count === 'number' && totalCount === null) totalCount = count;
+
+      if (data?.length) {
+        allInvitations.push(...data);
+      }
+
+      if (!data || data.length < pageSize) break;
+      from += pageSize;
+      page += 1;
     }
 
-    if (!invitations || invitations.length === 0) {
+    if (allInvitations.length === 0) {
       return { data: [], error: null };
     }
 
-    console.log(`Found ${invitations.length} invitation records`);
+    console.log(`Found ${allInvitations.length} invitation records${totalCount ? ` (total=${totalCount})` : ''}`);
 
     // Process each invitation and enrich with additional data
     const exportedUsers: ExportedUser[] = [];
     
-    for (const invitation of invitations) {
+    for (const invitation of allInvitations) {
       try {
         const enrichedUser: ExportedUser = {
           invitation_id: invitation.id,
@@ -175,90 +194,108 @@ export async function exportAllUsers(): Promise<{ data: ExportedUser[] | null; e
           profile: null
         };
 
-        // If signup completed, fetch auth and related data
+        // If signup completed, enrich via persona and profile lookups without admin API
         if (invitation.signup_completed) {
-          // Get auth user data
-          const { data: authData } = await supabase.auth.admin.listUsers();
-          const authUser = authData?.users?.find((u: any) => u.email === invitation.email);
-          
-          if (authUser) {
-            enrichedUser.auth_user_id = authUser.id;
-            enrichedUser.auth_created_at = authUser.created_at;
+          let foundUserId: string | null = null;
 
-            // Fetch persona data
+          try {
             if (invitation.persona_type === 'knyt') {
-              const { data: persona } = await supabase
+              const { data: personaRows } = await (supabase as any)
                 .from('knyt_personas')
                 .select('*')
-                .eq('user_id', authUser.id)
-                .single();
-              
+                .eq('Email', invitation.email)
+                .limit(1);
+              const persona = personaRows?.[0];
               if (persona) {
+                foundUserId = persona.user_id;
                 enrichedUser.persona_data = { ...enrichedUser.persona_data, ...persona };
               }
             } else if (invitation.persona_type === 'qripto') {
-              const { data: persona } = await supabase
+              const { data: personaRows } = await supabase
                 .from('qripto_personas')
                 .select('*')
-                .eq('user_id', authUser.id)
-                .single();
-              
+                .eq('Email', invitation.email)
+                .limit(1);
+              const persona = personaRows?.[0];
               if (persona) {
+                foundUserId = persona.user_id;
                 enrichedUser.persona_data = { ...enrichedUser.persona_data, ...persona };
               }
             }
 
-            // Fetch connections
-            const { data: connections } = await supabase
-              .from('user_connections')
-              .select('*')
-              .eq('user_id', authUser.id);
-            
-            if (connections) {
-              enrichedUser.connections = connections.map(c => ({
-                service: c.service,
-                connected_at: c.connected_at,
-                connection_data: c.connection_data
-              }));
-            }
+            if (foundUserId) {
+              enrichedUser.auth_user_id = foundUserId; // Use persona's user_id as linkage
 
-            // Fetch name preferences
-            const { data: namePrefs } = await supabase
-              .from('user_name_preferences')
-              .select('*')
-              .eq('user_id', authUser.id)
-              .eq('persona_type', invitation.persona_type)
-              .single();
-            
-            if (namePrefs) {
-              enrichedUser.name_preferences = {
-                persona_type: namePrefs.persona_type,
-                name_source: namePrefs.name_source,
-                invitation_first_name: namePrefs.invitation_first_name,
-                invitation_last_name: namePrefs.invitation_last_name,
-                linkedin_first_name: namePrefs.linkedin_first_name,
-                linkedin_last_name: namePrefs.linkedin_last_name,
-                custom_first_name: namePrefs.custom_first_name,
-                custom_last_name: namePrefs.custom_last_name
-              };
-            }
+              // Connections
+              const { data: connections } = await (supabase as any)
+                .from('user_connections')
+                .select('*')
+                .eq('user_id', foundUserId);
+              if (connections) {
+                enrichedUser.connections = connections.map((c: any) => ({
+                  service: c.service,
+                  connected_at: c.connected_at,
+                  connection_data: c.connection_data
+                }));
+              }
 
-            // Fetch profile
-            const { data: profile } = await supabase
-              .from('profiles')
-              .select('first_name, last_name, avatar_url, total_points, level')
-              .eq('user_id', authUser.id)
-              .single();
-            
-            if (profile) {
-              enrichedUser.profile = {
-                first_name: profile.first_name,
-                last_name: profile.last_name,
-                avatar_url: profile.avatar_url,
-                total_points: profile.total_points || 0,
-                level: profile.level || 1
-              };
+              // Name preferences
+              const { data: namePrefRows } = await supabase
+                .from('user_name_preferences')
+                .select('*')
+                .eq('user_id', foundUserId)
+                .eq('persona_type', invitation.persona_type)
+                .limit(1);
+              const namePrefs = namePrefRows?.[0];
+              if (namePrefs) {
+                enrichedUser.name_preferences = {
+                  persona_type: namePrefs.persona_type,
+                  name_source: namePrefs.name_source,
+                  invitation_first_name: namePrefs.invitation_first_name,
+                  invitation_last_name: namePrefs.invitation_last_name,
+                  linkedin_first_name: namePrefs.linkedin_first_name,
+                  linkedin_last_name: namePrefs.linkedin_last_name,
+                  custom_first_name: namePrefs.custom_first_name,
+                  custom_last_name: namePrefs.custom_last_name
+                };
+              }
+
+              // Profile by user_id
+              const { data: profileRows } = await supabase
+                .from('profiles')
+                .select('first_name, last_name, avatar_url, total_points, level')
+                .eq('user_id', foundUserId)
+                .limit(1);
+              const profile = profileRows?.[0];
+              if (profile) {
+                enrichedUser.profile = {
+                  first_name: profile.first_name,
+                  last_name: profile.last_name,
+                  avatar_url: profile.avatar_url,
+                  total_points: profile.total_points || 0,
+                  level: profile.level || 1
+                };
+              }
+            } else {
+              // Fallback profile by email if user_id not found
+              const { data: profileRows } = await supabase
+                .from('profiles')
+                .select('first_name, last_name, avatar_url, total_points, level')
+                .eq('email', invitation.email)
+                .limit(1);
+              const profile = profileRows?.[0];
+              if (profile) {
+                enrichedUser.profile = {
+                  first_name: profile.first_name,
+                  last_name: profile.last_name,
+                  avatar_url: profile.avatar_url,
+                  total_points: profile.total_points || 0,
+                  level: profile.level || 1
+                };
+              }
             }
+          } catch (e) {
+            console.warn('Enrichment lookup failed for', invitation.email, e);
           }
         }
 
