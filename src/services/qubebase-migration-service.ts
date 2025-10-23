@@ -237,10 +237,34 @@ export async function setTenantPrompt(
  */
 export async function getMigrationStats(): Promise<MigrationStats> {
   try {
-    // Get user migration stats - use direct query to avoid type issues with new schema
-    const { count: userCount } = await (supabase as any)
-      .from('app_nakamoto.user_migration_map')
-      .select('*', { count: 'exact', head: true });
+    // Derive user migration stats
+    let migratedUsers = 0;
+    let migrationErrors = 0;
+
+    try {
+      const { count, error } = await (supabase as any)
+        .from('app_nakamoto.user_migration_map')
+        .select('*', { count: 'exact', head: true });
+
+      if (!error) {
+        migratedUsers = count || 0;
+      } else {
+        // Fallback to client-side cache when schema/table isn't exposed
+        const cached = localStorage.getItem('last_user_migration_summary');
+        if (cached) {
+          const parsed = JSON.parse(cached);
+          migratedUsers = parsed.migrated || 0;
+          migrationErrors = parsed.errors || 0;
+        }
+      }
+    } catch (_) {
+      const cached = localStorage.getItem('last_user_migration_summary');
+      if (cached) {
+        const parsed = JSON.parse(cached);
+        migratedUsers = parsed.migrated || 0;
+        migrationErrors = parsed.errors || 0;
+      }
+    }
 
     // Get KB docs stats
     const { count: kbCount } = await (supabase as any)
@@ -260,9 +284,9 @@ export async function getMigrationStats(): Promise<MigrationStats> {
 
     return {
       users: {
-        total: userCount || 0,
-        migrated: userCount || 0,
-        errors: 0
+        total: migratedUsers,
+        migrated: migratedUsers,
+        errors: migrationErrors
       },
       kb_docs: {
         total: kbCount || 0,

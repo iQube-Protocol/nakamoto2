@@ -350,6 +350,14 @@ const QubeBaseMigration = () => {
 
       setProgress(100);
 
+      // Persist summary for status card fallback
+      try {
+        localStorage.setItem(
+          'last_user_migration_summary',
+          JSON.stringify({ migrated: totalMigrated, errors: totalErrors, at: new Date().toISOString() })
+        );
+      } catch {}
+
       // Refresh stats
       await loadUserStats();
       const newStats = await getMigrationStats();
