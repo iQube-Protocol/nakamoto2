@@ -14,9 +14,7 @@ import { createClient } from '@supabase/supabase-js';
 const CORE_HUB_URL = 'https://bsjhfvctmduxhohtllly.supabase.co';
 const CORE_HUB_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzamhmdmN0bWR1eGhvaHRsbGx5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc1NDgyNTgsImV4cCI6MjA3MzEyNDI1OH0.JVDp4-F6EEXqVQ8sts2Z8KQg168aZ1YdtY53RRM_s7M';
 
-export const coreHubClient = createClient(CORE_HUB_URL, CORE_HUB_ANON_KEY, {
-  db: { schema: 'kb' }
-});
+export const coreHubClient = createClient(CORE_HUB_URL, CORE_HUB_ANON_KEY);
 
 /**
  * Get current tenant context from localStorage
@@ -72,9 +70,9 @@ export async function checkCoreHubHealth(): Promise<{ connected: boolean; error?
   try {
     console.log('🔍 Testing Core Hub connection to:', CORE_HUB_URL);
     
-    // First try basic connection - query any public table or use a simpler endpoint
+    // Query with schema prefix since client must use public schema
     const { data, error } = await coreHubClient
-      .from('corpora')
+      .from('kb.corpora')
       .select('id')
       .limit(1);
 
