@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Progress } from '@/components/ui/progress';
@@ -27,6 +27,14 @@ const QubeBaseMigration = () => {
   const [stats, setStats] = useState<MigrationStats | null>(null);
   const [coreHubConnected, setCoreHubConnected] = useState<boolean | null>(null);
   const [progress, setProgress] = useState(0);
+
+  useEffect(() => {
+    // Auto-check Core Hub connection on mount
+    if (coreHubConnected === null) {
+      checkHealth();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   const checkHealth = async () => {
     setLoading(true);
