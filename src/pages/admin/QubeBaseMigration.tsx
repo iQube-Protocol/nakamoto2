@@ -5,6 +5,7 @@ import { Progress } from '@/components/ui/progress';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { useToast } from '@/hooks/use-toast';
+import { supabase } from '@/integrations/supabase/client';
 import { 
   migrateUsers, 
   importKBDocuments, 
@@ -715,6 +716,35 @@ const QubeBaseMigration = () => {
                     These invitations are past their expiration date. Consider renewal before migration.
                   </AlertDescription>
                 </Alert>
+
+                <Button
+                  onClick={async () => {
+                    try {
+                      const { data, error } = await supabase.rpc('extend_invitation_expiration', {
+                        email_list: null,
+                        extend_days: 30
+                      });
+                      if (error) throw error;
+                      const result = data as { updated_count: number; success: boolean };
+                      toast({
+                        title: "Invitations Extended",
+                        description: `Extended ${result.updated_count} expired invitations by 30 days`
+                      });
+                      await loadUserStats();
+                    } catch (error: any) {
+                      toast({
+                        title: "Extension Failed",
+                        description: error.message,
+                        variant: "destructive"
+                      });
+                    }
+                  }}
+                  disabled={!userStats?.expired}
+                  className="w-full"
+                  variant="outline"
+                >
+                  Extend Expired Invitations (30 days)
+                </Button>
 
                 <Button
                   onClick={() => handleUserMigration('expired')}
