@@ -37,28 +37,30 @@ serve(async (req) => {
 
     console.log(`Processing ${documents.length} KB documents (dry_run: ${dry_run})`);
 
-    // Get the root corpus ID (or create it if it doesn't exist)
+    // Get the root corpus ID from kb.corpora (schema-qualified)
     let corpus = await supabase
-      .from('kb_corpora')
+      .from('kb.corpora')
       .select('id')
-      .eq('site_id', 'nakamoto')
-      .eq('name', 'Nakamoto Root Corpus')
+      .eq('app', 'nakamoto')
+      .eq('name', 'Root')
+      .eq('scope', 'root')
       .single();
 
     if (corpus.error || !corpus.data) {
-      throw new Error('Nakamoto corpus not found. Please run this SQL on your Core Hub:\n\n' +
-        `INSERT INTO kb.corpora (tenant_id, site_id, name, description)\n` +
+      throw new Error('Nakamoto root corpus not found. Please run this SQL on your Core Hub:\n\n' +
+        `INSERT INTO kb.corpora (tenant_id, app, name, scope, description)\n` +
         `VALUES (\n` +
         `  '00000000-0000-0000-0000-000000000000',\n` +
         `  'nakamoto',\n` +
-        `  'Nakamoto Root Corpus',\n` +
+        `  'Root',\n` +
+        `  'root',\n` +
         `  'Root knowledge base for Nakamoto platform'\n` +
-        `) ON CONFLICT (tenant_id, site_id) DO NOTHING;`
+        `);`
       );
     }
 
     if (!corpus.data) {
-      throw new Error('Failed to find or create Nakamoto corpus');
+      throw new Error('Failed to find Nakamoto root corpus');
     }
 
     const response = {
@@ -69,9 +71,9 @@ serve(async (req) => {
 
     for (const doc of documents as KBDocument[]) {
       try {
-        // Check if document already exists by title
+        // Check if document already exists by title in kb.docs (schema-qualified)
         const { data: existing } = await supabase
-          .from('kb_docs')
+          .from('kb.docs')
           .select('id')
           .eq('corpus_id', corpus.data.id)
           .eq('title', doc.title)
@@ -90,14 +92,14 @@ serve(async (req) => {
           continue;
         }
 
-        // Insert root KB document
+        // Insert root KB document into kb.docs
         const { data: newDoc, error: insertError } = await supabase
-          .from('kb_docs')
+          .from('kb.docs')
           .insert({
             corpus_id: corpus.data.id,
             tenant_id: '00000000-0000-0000-0000-000000000000',
             title: doc.title,
-            content: doc.content_text || '',
+            content_text: doc.content_text || '',
             content_type: 'text/markdown',
             tags: doc.tags || [],
             storage_path: doc.source_uri || null,

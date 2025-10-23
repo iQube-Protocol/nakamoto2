@@ -28,36 +28,38 @@ serve(async (req) => {
 
     console.log('Setting root system prompt for Nakamoto via kb_docs fallback');
 
-    // Find the Nakamoto Root Corpus (same logic as KB import)
+    // Find the Nakamoto Root Corpus from kb.corpora (schema-qualified)
     let corpus = await supabase
-      .from('kb_corpora')
+      .from('kb.corpora')
       .select('id')
-      .eq('site_id', 'nakamoto')
-      .eq('name', 'Nakamoto Root Corpus')
+      .eq('app', 'nakamoto')
+      .eq('name', 'Root')
+      .eq('scope', 'root')
       .single();
 
     if (corpus.error || !corpus.data) {
-      throw new Error('Nakamoto corpus not found. Please run this SQL on your Core Hub:\n\n' +
-        `INSERT INTO kb.corpora (tenant_id, site_id, name, description)\n` +
+      throw new Error('Nakamoto root corpus not found. Please run this SQL on your Core Hub:\n\n' +
+        `INSERT INTO kb.corpora (tenant_id, app, name, scope, description)\n` +
         `VALUES (\n` +
         `  '00000000-0000-0000-0000-000000000000',\n` +
         `  'nakamoto',\n` +
-        `  'Nakamoto Root Corpus',\n` +
+        `  'Root',\n` +
+        `  'root',\n` +
         `  'Root knowledge base for Nakamoto platform'\n` +
-        `) ON CONFLICT (tenant_id, site_id) DO NOTHING;`
+        `);`
       );
     }
 
     if (!corpus.data) {
-      throw new Error('Failed to find Nakamoto corpus');
+      throw new Error('Failed to find Nakamoto root corpus');
     }
 
     const ROOT_TENANT = '00000000-0000-0000-0000-000000000000';
     const TITLE = 'Nakamoto Root System Prompt';
 
-    // Check if a prompt doc already exists
+    // Check if a prompt doc already exists in kb.docs
     const { data: existing } = await supabase
-      .from('kb_docs')
+      .from('kb.docs')
       .select('id, version')
       .eq('corpus_id', corpus.data.id)
       .eq('tenant_id', ROOT_TENANT)
@@ -68,9 +70,9 @@ serve(async (req) => {
     if (existing) {
       version = (existing.version || 1) + 1;
       const { error: updateError } = await supabase
-        .from('kb_docs')
+        .from('kb.docs')
         .update({
-          content: prompt_text,
+          content_text: prompt_text,
           content_type: 'text/markdown',
           metadata: { ...(metadata || {}), type: 'root_system_prompt' },
           is_active: true,
@@ -86,19 +88,19 @@ serve(async (req) => {
       console.log(`Updated existing root prompt doc (version ${version})`);
 
       return new Response(
-        JSON.stringify({ success: true, stored_in: 'kb_docs', version, doc_id: existing.id }),
+        JSON.stringify({ success: true, stored_in: 'kb.docs', version, doc_id: existing.id }),
         { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
       );
     }
 
-    // Insert new prompt doc
+    // Insert new prompt doc into kb.docs
     const { data: newDoc, error: insertError } = await supabase
-      .from('kb_docs')
+      .from('kb.docs')
       .insert({
         corpus_id: corpus.data.id,
         tenant_id: ROOT_TENANT,
         title: TITLE,
-        content: prompt_text,
+        content_text: prompt_text,
         content_type: 'text/markdown',
         tags: ['system', 'prompt'],
         storage_path: null,
@@ -117,7 +119,7 @@ serve(async (req) => {
     console.log(`Inserted new root prompt doc (version ${version})`);
 
     return new Response(
-      JSON.stringify({ success: true, stored_in: 'kb_docs', version, doc_id: newDoc.id }),
+      JSON.stringify({ success: true, stored_in: 'kb.docs', version, doc_id: newDoc.id }),
       { status: 200, headers: { ...corsHeaders, 'Content-Type': 'application/json' } }
     );
 

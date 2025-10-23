@@ -162,10 +162,19 @@ const QubeBaseMigration = () => {
       const kbResult = await importKBDocuments(testDocs, true);
       
       if (kbResult.success) {
-        toast({
-          title: "KB Import Test Passed",
-          description: `Would import ${kbDocs.length} documents (tested ${testDocs.length})`
-        });
+        // Check for errors in the response data
+        if (kbResult.data?.errors && kbResult.data.errors.length > 0) {
+          toast({
+            title: "KB Import Test Had Errors",
+            description: `${kbResult.data.errors.length} errors: ${kbResult.data.errors[0].error}`,
+            variant: "destructive"
+          });
+        } else {
+          toast({
+            title: "KB Import Test Passed",
+            description: `Would import ${kbDocs.length} documents (tested ${testDocs.length})`
+          });
+        }
       } else {
         throw new Error(kbResult.error);
       }
@@ -253,22 +262,29 @@ const QubeBaseMigration = () => {
         throw new Error(`KB import failed: ${kbResult.error}`);
       }
       
-      setProgress(90);
-      
-      toast({
-        title: "KB Documents Imported",
-        description: `${kbDocs.length} documents migrated to ROOT corpus`
-      });
+      // Check for errors in the actual import data
+      if (kbResult.data?.errors && kbResult.data.errors.length > 0) {
+        toast({
+          title: "KB Import Had Errors ⚠️",
+          description: `Imported ${kbResult.data.imported || 0} documents, ${kbResult.data.errors.length} errors`,
+          variant: "destructive",
+          duration: 10000
+        });
+        console.error('KB import errors:', kbResult.data.errors);
+      } else {
+        setProgress(90);
+        
+        toast({
+          title: "KB Documents Imported",
+          description: `${kbResult.data?.imported || kbDocs.length} documents migrated to ROOT corpus`
+        });
+      }
 
-      // Refresh stats
-      const newStats = await getMigrationStats();
-      setStats(newStats);
-      
       setProgress(100);
 
       toast({
         title: "Migration Complete! 🎉",
-        description: `Successfully migrated ${kbDocs.length} KB documents and root system prompt to QubeBase`,
+        description: `Successfully migrated KB documents and root system prompt to QubeBase`,
         duration: 8000
       });
 
@@ -344,6 +360,13 @@ const QubeBaseMigration = () => {
         if (result.success && result.data) {
           totalMigrated += result.data.inserted || 0;
           totalErrors += result.data.errors?.length || 0;
+          
+          // Log errors for debugging
+          if (result.data.errors && result.data.errors.length > 0) {
+            console.error(`Batch ${batchNum} errors:`, result.data.errors);
+          }
+        } else {
+          console.error(`Batch ${batchNum} failed:`, result.error);
         }
 
         const batchProgress = 20 + (70 * (i + batch.length) / migrationRecords.length);
@@ -491,6 +514,13 @@ const QubeBaseMigration = () => {
         if (result.success && result.data) {
           totalMigrated += result.data.inserted || 0;
           totalErrors += result.data.errors?.length || 0;
+          
+          // Log errors for debugging
+          if (result.data.errors && result.data.errors.length > 0) {
+            console.error(`Batch ${batchNum} errors:`, result.data.errors);
+          }
+        } else {
+          console.error(`Batch ${batchNum} failed:`, result.error);
         }
 
         const batchProgress = 20 + (70 * (i + batch.length) / interactionRecords.length);

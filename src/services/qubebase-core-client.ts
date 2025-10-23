@@ -11,8 +11,9 @@ import { createClient } from '@supabase/supabase-js';
  */
 
 // Core Hub connection (read-only for client-side)
-const CORE_HUB_URL = 'https://ysykvckvggaqykhhntyo.supabase.co';
-const CORE_HUB_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6InlzeWt2Y2t2Z2dhcXlraGhudHlvIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYzMTgxNDUsImV4cCI6MjA2MTg5NDE0NX0._divkcEGq0WFNt4yvokbTrtGGyf_fA39L3udLJapr9A';
+// Updated to point to the actual Core Hub project
+const CORE_HUB_URL = 'https://bsjhfvctmduxhohtllly.supabase.co';
+const CORE_HUB_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzamhmdmN0bWR1eGhvaHRsbGx5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDI5MjYxMjgsImV4cCI6MjA1ODUwMjEyOH0.wBJSVkd5VQ2FiUqLbV5Ek2a8AEpC0wBcpJ4LfW0npUA';
 
 export const coreHubClient = createClient(CORE_HUB_URL, CORE_HUB_ANON_KEY);
 
@@ -76,9 +77,9 @@ export async function checkCoreHubHealth(): Promise<{ connected: boolean; error?
       return { connected: true };
     }
 
-    // Fallback: query a public view that should proxy kb.corpora
+    // Fallback: query kb.corpora using schema-qualified table name
     const { data, error } = await coreHubClient
-      .from('kb_corpora')
+      .from('kb.corpora')
       .select('id')
       .limit(1);
 
@@ -89,11 +90,11 @@ export async function checkCoreHubHealth(): Promise<{ connected: boolean; error?
       if (error.code === '42P01' || error.message.includes('does not exist')) {
         return { 
           connected: true, // Connection works, but schema not set up
-          error: 'Core Hub connected, but kb.corpora table not found. QubeBase schema needs to be initialized.',
+          error: 'Core Hub connected, but kb.corpora schema not found. QubeBase schema needs to be initialized.',
           details: { 
             code: error.code,
             message: error.message,
-            hint: 'Run the QubeBase schema migration on the Core Hub first'
+            hint: 'Run QUBEBASE_CORE_HUB_SCHEMA.sql on the Core Hub first'
           }
         };
       }

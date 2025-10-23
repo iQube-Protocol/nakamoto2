@@ -279,90 +279,22 @@ export async function migrateInteractionHistories(
 }
 
 /**
- * Get migration statistics
+ * Get migration statistics from Core Hub (no localStorage fallbacks)
  */
 export async function getMigrationStats(): Promise<MigrationStats> {
   try {
-    // Derive user migration stats
-    let migratedUsers = 0;
-    let migrationErrors = 0;
-
-    try {
-      const { count, error } = await (supabase as any)
-        .from('app_nakamoto.user_migration_map')
-        .select('*', { count: 'exact', head: true });
-
-      if (!error) {
-        migratedUsers = count || 0;
-      } else {
-        // Fallback to client-side cache when schema/table isn't exposed
-        const cached = localStorage.getItem('last_user_migration_summary');
-        if (cached) {
-          const parsed = JSON.parse(cached);
-          migratedUsers = parsed.migrated || 0;
-          migrationErrors = parsed.errors || 0;
-        }
-      }
-    } catch (_) {
-      const cached = localStorage.getItem('last_user_migration_summary');
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        migratedUsers = parsed.migrated || 0;
-        migrationErrors = parsed.errors || 0;
-      }
-    }
-
-    // Get KB docs stats
-    const { count: kbCount } = await (supabase as any)
-      .from('kb_docs')
-      .select('*', { count: 'exact', head: true })
-      .eq('tenant_id', '00000000-0000-0000-0000-000000000000')
-      .eq('is_active', true);
-
-    // Get active root prompt
-    const { data: rootPrompt } = await (supabase as any)
-      .from('kb_docs')
-      .select('version')
-      .eq('tenant_id', '00000000-0000-0000-0000-000000000000')
-      .eq('title', 'Nakamoto Root System Prompt')
-      .eq('is_active', true)
-      .single();
-
-    // Get interaction history count from local cache
-    let migratedInteractions = 0;
-    let interactionErrors = 0;
-    try {
-      const cached = localStorage.getItem('last_interaction_migration_summary');
-      if (cached) {
-        const parsed = JSON.parse(cached);
-        migratedInteractions = parsed.migrated || 0;
-        interactionErrors = parsed.errors || 0;
-      }
-    } catch (_) {
-      // Ignore cache errors
-    }
-
+    // IMPORTANT: Query the actual Core Hub, not the Nakamoto instance
+    // This requires using the Core Hub edge functions or direct Core Hub client
+    
+    console.warn('getMigrationStats: Cannot query Core Hub from client-side. Stats will be zero until edge functions return real counts.');
+    
+    // For now, return zeros - the UI should call edge functions to get real stats
+    // TODO: Create a read-only edge function that queries Core Hub and returns stats
     return {
-      users: {
-        total: migratedUsers,
-        migrated: migratedUsers,
-        errors: migrationErrors
-      },
-      kb_docs: {
-        total: kbCount || 0,
-        imported: kbCount || 0,
-        skipped: 0,
-        errors: 0
-      },
-      interactions: {
-        total: migratedInteractions,
-        migrated: migratedInteractions,
-        errors: interactionErrors
-      },
-      prompt: {
-        set: !!rootPrompt,
-        version: rootPrompt?.version
-      }
+      users: { total: 0, migrated: 0, errors: 0 },
+      kb_docs: { total: 0, imported: 0, skipped: 0, errors: 0 },
+      interactions: { total: 0, migrated: 0, errors: 0 },
+      prompt: { set: false }
     };
   } catch (error) {
     console.error('Error getting migration stats:', error);

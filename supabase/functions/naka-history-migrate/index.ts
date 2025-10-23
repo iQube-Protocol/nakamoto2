@@ -93,7 +93,7 @@ Deno.serve(async (req) => {
           created_at: interaction.created_at,
         };
 
-        // Insert into app_nakamoto.interaction_history
+        // Insert into app_nakamoto.interaction_history (schema-qualified)
         const { error: insertError } = await coreSupabase
           .from('app_nakamoto.interaction_history')
           .insert(historyRecord);
