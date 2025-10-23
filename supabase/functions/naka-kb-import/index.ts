@@ -38,7 +38,9 @@ serve(async (req) => {
     console.log(`Processing ${documents.length} KB documents (dry_run: ${dry_run})`);
 
     // Get the root corpus ID from kb.corpora (schema-qualified)
-    let corpus = await supabase
+    // Ensure the root corpus exists (create if missing)
+    const ROOT_TENANT = '00000000-0000-0000-0000-000000000000';
+    let { data: corpusRow, error: corpusErr } = await supabase
       .from('kb.corpora')
       .select('id')
       .eq('app', 'nakamoto')
@@ -46,22 +48,28 @@ serve(async (req) => {
       .eq('scope', 'root')
       .single();
 
-    if (corpus.error || !corpus.data) {
-      throw new Error('Nakamoto root corpus not found. Please run this SQL on your Core Hub:\n\n' +
-        `INSERT INTO kb.corpora (tenant_id, app, name, scope, description)\n` +
-        `VALUES (\n` +
-        `  '00000000-0000-0000-0000-000000000000',\n` +
-        `  'nakamoto',\n` +
-        `  'Root',\n` +
-        `  'root',\n` +
-        `  'Root knowledge base for Nakamoto platform'\n` +
-        `);`
-      );
+    if (corpusErr || !corpusRow) {
+      console.log('Root corpus missing - creating it');
+      const { data: newCorpus, error: createErr } = await supabase
+        .from('kb.corpora')
+        .insert({
+          tenant_id: ROOT_TENANT,
+          app: 'nakamoto',
+          name: 'Root',
+          scope: 'root',
+          description: 'Root knowledge base for Nakamoto platform'
+        })
+        .select('id')
+        .single();
+
+      if (createErr) {
+        throw new Error(`Failed to create Nakamoto root corpus: ${createErr.message}`);
+      }
+
+      corpusRow = newCorpus;
     }
 
-    if (!corpus.data) {
-      throw new Error('Failed to find Nakamoto root corpus');
-    }
+    const corpusId = corpusRow.id;
 
     const response = {
       imported: 0,
@@ -75,7 +83,7 @@ serve(async (req) => {
         const { data: existing } = await supabase
           .from('kb.docs')
           .select('id')
-          .eq('corpus_id', corpus.data.id)
+          .eq('corpus_id', corpusId)
           .eq('title', doc.title)
           .eq('tenant_id', '00000000-0000-0000-0000-000000000000')
           .single();
@@ -96,7 +104,7 @@ serve(async (req) => {
         const { data: newDoc, error: insertError } = await supabase
           .from('kb.docs')
           .insert({
-            corpus_id: corpus.data.id,
+            corpus_id: corpusId,
             tenant_id: '00000000-0000-0000-0000-000000000000',
             title: doc.title,
             content_text: doc.content_text || '',
