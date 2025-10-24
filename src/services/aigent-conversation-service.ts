@@ -54,7 +54,7 @@ export class AigentConversationService {
 
     const memory = await this.buildConversationMemory(conversationId);
     this.memoryCache.set(conversationId, memory);
-    console.log(`🧠 MonDAI Memory: Built fresh memory with ${memory.recentHistory.length} exchanges`);
+    console.log(`🧠 Aigent Memory: Built fresh memory with ${memory.recentHistory.length} exchanges`);
     return memory;
   }
 
@@ -62,20 +62,20 @@ export class AigentConversationService {
    * Build comprehensive conversation memory from database
    */
   private async buildConversationMemory(conversationId: string): Promise<ConversationMemory> {
-    console.log(`🧠 MonDAI Memory: Building memory for conversation ${conversationId}`);
+    console.log(`🧠 Aigent Memory: Building memory for conversation ${conversationId}`);
     
     // Get recent interactions
     const recentHistory = await this.getRecentHistory(conversationId);
-    console.log(`🧠 MonDAI Memory: Found ${recentHistory.length} recent interactions`);
+    console.log(`🧠 Aigent Memory: Found ${recentHistory.length} recent interactions`);
     
     // Build session context
     const sessionContext = await this.buildSessionContext(conversationId, recentHistory);
-    console.log(`🧠 MonDAI Memory: Session themes: ${sessionContext.themes.join(', ')}`);
+    console.log(`🧠 Aigent Memory: Session themes: ${sessionContext.themes.join(', ')}`);
     
     // Get long-term summary if available
     const longTermSummary = await this.getLongTermSummary(conversationId);
     if (longTermSummary) {
-      console.log(`🧠 MonDAI Memory: Found long-term summary`);
+      console.log(`🧠 Aigent Memory: Found long-term summary`);
     }
 
     return {
@@ -90,22 +90,22 @@ export class AigentConversationService {
    */
   private async getRecentHistory(conversationId: string): Promise<ConversationExchange[]> {
     try {
-      console.log(`🧠 MonDAI Memory: Querying recent history for conversation ${conversationId}`);
+      console.log(`🧠 Aigent Memory: Querying recent history for conversation ${conversationId}`);
       
       let interactions: any[] = [];
       
-      // Strategy 1: Query MonDAI interactions first (new correct way)
-      const { data: mondaiQuery, error: mondaiError } = await supabase
+      // Strategy 1: Query Aigent interactions first (new correct way)
+      const { data: aigentQuery, error: aigentError } = await supabase
         .from('user_interactions')
         .select('id, query, response, created_at, metadata')
-        .eq('interaction_type', 'mondai')
+        .eq('interaction_type', 'aigent')
         .contains('metadata', { conversationId })
         .order('created_at', { ascending: false })
         .limit(this.MEMORY_WINDOW_SIZE);
 
-      if (!mondaiError && mondaiQuery && mondaiQuery.length > 0) {
-        interactions = mondaiQuery;
-        console.log(`🧠 MonDAI Memory: Found ${interactions.length} MonDAI interactions`);
+      if (!aigentError && aigentQuery && aigentQuery.length > 0) {
+        interactions = aigentQuery;
+        console.log(`🧠 Aigent Memory: Found ${interactions.length} Aigent interactions`);
       } else {
         // Strategy 2: Fallback to learn interactions for backward compatibility
         const { data: learnQuery, error: learnError } = await supabase
@@ -137,7 +137,7 @@ export class AigentConversationService {
         const { data: fallbackQuery, error: fallbackError } = await supabase
           .from('user_interactions')
           .select('id, query, response, created_at, metadata')
-          .or('interaction_type.eq.mondai,interaction_type.eq.learn')
+          .or('interaction_type.eq.aigent,interaction_type.eq.learn,interaction_type.eq.mondai')
           .like('metadata', `%${conversationId}%`)
           .order('created_at', { ascending: false })
           .limit(this.MEMORY_WINDOW_SIZE);
@@ -159,12 +159,12 @@ export class AigentConversationService {
             }
           });
           
-          console.log(`🧠 MonDAI Memory: Found ${interactions.length} interactions via fallback filtering`);
+          console.log(`🧠 Aigent Memory: Found ${interactions.length} interactions via fallback filtering`);
         }
       }
 
       if (interactions.length > 0) {
-        console.log(`🧠 MonDAI Memory: Sample metadata structure:`, interactions[0].metadata);
+        console.log(`🧠 Aigent Memory: Sample metadata structure:`, interactions[0].metadata);
       }
 
       return interactions.reverse().map(interaction => ({
@@ -175,7 +175,7 @@ export class AigentConversationService {
         metadata: interaction.metadata
       }));
     } catch (error) {
-      console.error('🧠 MonDAI Memory: Error in getRecentHistory:', error);
+      console.error('🧠 Aigent Memory: Error in getRecentHistory:', error);
       return [];
     }
   }
@@ -198,7 +198,7 @@ export class AigentConversationService {
       ? recentHistory[recentHistory.length - 1].timestamp 
       : new Date().toISOString();
 
-    console.log(`🧠 MonDAI Memory: Session context - Themes: [${themes.join(', ')}], Preferences: ${JSON.stringify(userPreferences)}`);
+    console.log(`🧠 Aigent Memory: Session context - Themes: [${themes.join(', ')}], Preferences: ${JSON.stringify(userPreferences)}`);
 
     return {
       conversationId,
@@ -296,7 +296,7 @@ export class AigentConversationService {
 
       return summaries[0].summary_text;
     } catch (error) {
-      console.error('🧠 MonDAI Memory: Error fetching long-term summary:', error);
+      console.error('🧠 Aigent Memory: Error fetching long-term summary:', error);
       return undefined;
     }
   }
@@ -306,7 +306,7 @@ export class AigentConversationService {
    */
   formatMemoryForContext(memory: ConversationMemory): string {
     let context = '';
-    console.log(`🧠 MonDAI Memory: Formatting context with ${memory.recentHistory.length} exchanges`);
+    console.log(`🧠 Aigent Memory: Formatting context with ${memory.recentHistory.length} exchanges`);
 
     // Add long-term summary if available
     if (memory.longTermSummary) {
@@ -347,7 +347,7 @@ export class AigentConversationService {
       context = context.substring(0, this.MAX_CONTEXT_LENGTH) + '...\n[Context truncated for length]';
     }
 
-    console.log(`🧠 MonDAI Memory: Generated context with ${context.length} characters`);
+    console.log(`🧠 Aigent Memory: Generated context with ${context.length} characters`);
     return context;
   }
 
@@ -368,7 +368,7 @@ export class AigentConversationService {
     agentResponse: string
   ): Promise<void> {
     try {
-      console.log(`🧠 MonDAI Memory: Storing exchange for conversation ${conversationId}`);
+      console.log(`🧠 Aigent Memory: Storing exchange for conversation ${conversationId}`);
       
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('User not authenticated');
@@ -394,7 +394,7 @@ export class AigentConversationService {
         this.memoryCache.delete(conversationId);
       }
     } catch (error) {
-      console.error('🧠 MonDAI Memory: Exception storing conversation exchange:', error);
+      console.error('🧠 Aigent Memory: Exception storing conversation exchange:', error);
     }
   }
 

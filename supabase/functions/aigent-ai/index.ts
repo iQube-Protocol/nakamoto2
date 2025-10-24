@@ -6,7 +6,7 @@ import { OpenAI } from 'https://esm.sh/openai@4.0.0';
 import { GeneralChat } from "npm:@chaingpt/generalchat@latest";
 
 // Interface for the response
-interface MonDAIResponse {
+interface AigentResponse {
   conversationId: string;
   message: string;
   timestamp: string;
@@ -450,7 +450,7 @@ function detectVisualContent(content: string): boolean {
 /**
  * Process a user message and generate a response with persona context, metaKnyts knowledge, and conversation memory
  */
-async function processMonDAIInteraction(
+async function processAigentInteraction(
   message: string, 
   conversationId: string | null,
   knowledgeItems: KnowledgeItem[] = [],
@@ -462,20 +462,20 @@ async function processMonDAIInteraction(
   useChainGPT: boolean = false,
   personaContext?: any,
   contextualPrompt?: string
-): Promise<MonDAIResponse> {
+): Promise<AigentResponse> {
   // Generate a new conversation ID if none provided
   if (!conversationId) {
     conversationId = crypto.randomUUID();
   }
   
   const aiProvider = useChainGPT ? 'ChainGPT' : useVenice ? 'Venice AI (uncensored)' : 'OpenAI';
-  console.log(`🔄 MonDAI Edge Function: Processing with ${aiProvider}`);
+  console.log(`🔄 Aigent Edge Function: Processing with ${aiProvider}`);
   if (personaContext && !personaContext.isAnonymous) {
-    console.log(`🧠 MonDAI Edge Function: Using persona context for ${personaContext.preferredName || 'user'}`);
+    console.log(`🧠 Aigent Edge Function: Using persona context for ${personaContext.preferredName || 'user'}`);
   }
   
   if (qryptoKnowledgeContext) {
-    console.log(`📚 MonDAI Edge Function: Using metaKnyts knowledge context`);
+    console.log(`📚 Aigent Edge Function: Using metaKnyts knowledge context`);
   }
 
   if (conversationMemory) {
@@ -583,7 +583,7 @@ serve(async (req) => {
     }
 
     // Process the message with enhanced context and AI provider selection
-    const response = await processMonDAIInteraction(
+    const response = await processAigentInteraction(
       message, 
       conversationId, 
       knowledgeItems || [],

@@ -127,7 +127,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             
             // Only redirect if this is a fresh sign-in (not session restoration)
             // and user is on an unprotected route
-            const protectedRoutes = ['/mondai', '/settings', '/learn', '/earn', '/connect', '/profile', '/qubes'];
+            const protectedRoutes = ['/aigent', '/settings', '/learn', '/earn', '/connect', '/profile', '/qubes'];
             const isOnProtectedRoute = protectedRoutes.some(route => location.pathname.startsWith(route));
             
             // Only redirect if:
@@ -140,8 +140,8 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
             if (!isInitialLoad && 
                 isOnUnprotectedPath &&
                 !isOnProtectedRoute) {
-              console.log("Redirecting to MonDAI after fresh sign-in");
-              navigate('/mondai');
+              console.log("Redirecting to Aigent after fresh sign-in");
+              navigate('/aigent');
             } else {
               console.log("Skipping redirect - user already on valid route:", location.pathname);
             }
@@ -315,7 +315,7 @@ export const AuthProvider = ({ children }: { children: ReactNode }) => {
     setIsGuest(true);
     setUser(null);
     setSession(null);
-    navigate('/mondai', { replace: true });
+    navigate('/aigent', { replace: true });
   };
 
   const signOut = async () => {

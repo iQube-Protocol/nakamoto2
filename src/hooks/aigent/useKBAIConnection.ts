@@ -30,7 +30,7 @@ export function useKBAIConnection() {
   const handleManualRetry = async () => {
     setIsRetrying(true);
     try {
-      console.log('MonDAI: Manual connection retry initiated');
+      console.log('Aigent: Manual connection retry initiated');
       toast.info('Attempting to reconnect to knowledge base...', {
         duration: 3000,
       });

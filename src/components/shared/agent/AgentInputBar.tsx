@@ -101,7 +101,7 @@ const AgentInputBar = ({
             value={inputValue}
             onChange={customHandleInputChange}
             onKeyDown={handleKeyDown} 
-            placeholder={window.location.pathname === '/mondai' ? 'Ask Nakamoto...' : `Ask your ${agentType} agent...`}
+            placeholder={window.location.pathname === '/aigent' ? 'Ask Nakamoto...' : `Ask your ${agentType} agent...`}
             className="pl-24 min-h-[40px] max-h-32 flex-1 pr-3 py-2 flex items-center"
             style={{
               resize: 'none',

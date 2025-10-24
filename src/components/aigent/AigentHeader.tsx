@@ -3,7 +3,7 @@ import React from 'react';
 import ConnectionStatus from './ConnectionStatus';
 import { KBAIServerSettings } from '@/integrations/kbai/KBAIDirectService';
 
-interface MonDAIHeaderProps {
+interface AigentHeaderProps {
   isRetrying: boolean;
   connectionStatus: string;
   serverConfig: KBAIServerSettings;
@@ -11,7 +11,7 @@ interface MonDAIHeaderProps {
   onRetryConnection: () => Promise<void>;
 }
 
-const MonDAIHeader: React.FC<MonDAIHeaderProps> = ({
+const AigentHeader: React.FC<AigentHeaderProps> = ({
   isRetrying,
   connectionStatus,
   serverConfig,
@@ -36,4 +36,4 @@ const MonDAIHeader: React.FC<MonDAIHeaderProps> = ({
   );
 };
 
-export default MonDAIHeader;
+export default AigentHeader;
