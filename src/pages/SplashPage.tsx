@@ -56,7 +56,7 @@ const SplashPage = () => {
             {/* Mobile Button - positioned right after description */}
             <div className="md:hidden pt-4">
               <Button 
-                onClick={() => navigate('/mondai')} 
+                onClick={() => navigate('/aigent')} 
                 variant="outline" 
                 className="w-full max-w-md border-white/30 text-white hover:bg-white/10"
               >
@@ -69,7 +69,7 @@ const SplashPage = () => {
         {/* Desktop Action Button */}
         <div className="hidden md:flex flex-col space-y-4 max-w-md mx-auto w-full pb-8">
           <Button 
-            onClick={() => navigate('/mondai')} 
+            onClick={() => navigate('/aigent')} 
             variant="outline" 
             className="w-full border-white/30 text-white hover:bg-white/10"
           >
