@@ -28,7 +28,7 @@ import {
   exportUsersForMigration,
   type UserMigrationStats
 } from '@/services/user-export-service';
-import { Upload, Database, FileText, CheckCircle, AlertCircle, Loader2, Users } from 'lucide-react';
+import { Upload, Database, FileText, CheckCircle, AlertCircle, Loader2, Users, Download } from 'lucide-react';
 
 const QubeBaseMigration = () => {
   const { toast } = useToast();
@@ -391,6 +391,111 @@ const QubeBaseMigration = () => {
     }
   };
 
+  const handleManualExport = async () => {
+    setLoading(true);
+    setProgress(0);
+
+    try {
+      toast({
+        title: "Generating Export",
+        description: "Collecting all data for manual import..."
+      });
+
+      // Step 1: Export KB Documents
+      setProgress(10);
+      const kbDocs = exportNakamotoRootKB();
+      const kbPrompt = exportNakamotoRootPrompt();
+
+      // Step 2: Export Users
+      setProgress(30);
+      toast({
+        title: "Exporting Users",
+        description: "Gathering user and persona data..."
+      });
+      const { data: users, error: userError } = await exportUsersForMigration();
+      if (userError) throw new Error(`User export failed: ${userError}`);
+
+      // Step 3: Export Interactions
+      setProgress(50);
+      toast({
+        title: "Exporting Interactions",
+        description: "Gathering interaction histories..."
+      });
+      const { data: interactions, error: intError } = await supabase
+        .from('user_interactions')
+        .select('*');
+      if (intError) throw new Error(`Interaction export failed: ${intError.message}`);
+
+      // Fetch persona data for tagging
+      const { data: knytPersonas } = await supabase.from('knyt_personas').select('user_id');
+      const { data: qriptoPersonas } = await supabase.from('qripto_personas').select('user_id');
+      const knytUserIds = new Set(knytPersonas?.map(p => p.user_id) || []);
+      const qriptoUserIds = new Set(qriptoPersonas?.map(p => p.user_id) || []);
+
+      const interactionRecords = (interactions || []).map((int: any) => ({
+        source_user_id: int.user_id,
+        query: int.query,
+        response: int.response,
+        interaction_type: int.interaction_type,
+        metadata: int.metadata || {},
+        summarized: int.summarized || false,
+        created_at: int.created_at,
+        persona_type: knytUserIds.has(int.user_id) ? 'knyt' : 'qripto'
+      }));
+
+      setProgress(70);
+
+      // Create complete export package
+      const exportData = {
+        export_metadata: {
+          exported_at: new Date().toISOString(),
+          source_system: 'nakamoto-aigent-v1',
+          version: '1.0.0'
+        },
+        kb_documents: kbDocs,
+        system_prompt: kbPrompt,
+        users: users || [],
+        interactions: interactionRecords,
+        stats: {
+          kb_documents: kbDocs.length,
+          users: (users || []).length,
+          interactions: interactionRecords.length
+        }
+      };
+
+      setProgress(90);
+
+      // Generate and download JSON file
+      const jsonStr = JSON.stringify(exportData, null, 2);
+      const blob = new Blob([jsonStr], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = `qubebase-export-${Date.now()}.json`;
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      URL.revokeObjectURL(url);
+
+      setProgress(100);
+
+      toast({
+        title: "Export Complete! 📥",
+        description: `Downloaded export with ${exportData.stats.kb_documents} KB docs, ${exportData.stats.users} users, ${exportData.stats.interactions} interactions`,
+        duration: 8000
+      });
+
+    } catch (error: any) {
+      toast({
+        title: "Export Failed",
+        description: error.message,
+        variant: "destructive"
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
   const handleInteractionMigration = async () => {
     const confirmed = window.confirm(
       `⚠️ Migrate ALL interaction histories?\n\n` +
@@ -606,6 +711,65 @@ const QubeBaseMigration = () => {
               'Check Connection'
             )}
           </Button>
+        </CardContent>
+      </Card>
+
+      {/* Manual Export */}
+      <Card className="mb-6 border-blue-500">
+        <CardHeader>
+          <CardTitle className="flex items-center gap-2">
+            <Download className="w-5 h-5" />
+            Manual Export for QubeBase
+          </CardTitle>
+          <CardDescription>
+            Download complete JSON export file for manual import into QubeBase
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-4">
+          <Alert>
+            <AlertCircle className="w-4 h-4" />
+            <AlertDescription className="text-xs">
+              <strong>Exports all data:</strong>
+              <ul className="list-disc list-inside mt-2 space-y-1">
+                <li>All KB documents (COYN + KNYT + iQubes)</li>
+                <li>Root system prompt</li>
+                <li>All users with persona data</li>
+                <li>All interaction histories</li>
+              </ul>
+            </AlertDescription>
+          </Alert>
+
+          {progress > 0 && (
+            <div className="space-y-2">
+              <Progress value={progress} />
+              <p className="text-sm text-muted-foreground text-center">
+                Generating export... {progress}%
+              </p>
+            </div>
+          )}
+
+          <Button
+            onClick={handleManualExport}
+            disabled={loading}
+            className="w-full"
+            variant="default"
+          >
+            {loading ? (
+              <>
+                <Loader2 className="w-4 h-4 mr-2 animate-spin" />
+                Generating Export...
+              </>
+            ) : (
+              <>
+                <Download className="w-4 h-4 mr-2" />
+                Download Complete Export
+              </>
+            )}
+          </Button>
+
+          <p className="text-xs text-muted-foreground">
+            Downloads a single JSON file containing all data for manual import into QubeBase Core Hub.
+          </p>
         </CardContent>
       </Card>
 
