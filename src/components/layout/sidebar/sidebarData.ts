@@ -12,7 +12,7 @@ export interface NavItem {
 export const navItems: NavItem[] = [
   {
     name: 'Nakamoto',
-    href: '/mondai',
+    href: '/aigent',
     icon: Bot,
   },
   {

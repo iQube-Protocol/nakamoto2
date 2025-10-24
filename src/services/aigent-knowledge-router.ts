@@ -25,8 +25,8 @@ interface KnowledgeSearchResult {
  * Smart Knowledge Base Router
  * Routes queries to appropriate knowledge bases and combines results intelligently
  */
-export class MonDAIKnowledgeRouter {
-  private static instance: MonDAIKnowledgeRouter;
+export class AigentKnowledgeRouter {
+  private static instance: AigentKnowledgeRouter;
   private coynKB: COYNKnowledgeBase;
   private iQubesKB: iQubesKnowledgeBase;
   private qryptoKB: QryptoKnowledgeBase;
@@ -39,11 +39,11 @@ export class MonDAIKnowledgeRouter {
     this.metaKnytsKB = MetaKnytsKnowledgeBase.getInstance();
   }
 
-  public static getInstance(): MonDAIKnowledgeRouter {
-    if (!MonDAIKnowledgeRouter.instance) {
-      MonDAIKnowledgeRouter.instance = new MonDAIKnowledgeRouter();
+  public static getInstance(): AigentKnowledgeRouter {
+    if (!AigentKnowledgeRouter.instance) {
+      AigentKnowledgeRouter.instance = new AigentKnowledgeRouter();
     }
-    return MonDAIKnowledgeRouter.instance;
+    return AigentKnowledgeRouter.instance;
   }
 
   /**

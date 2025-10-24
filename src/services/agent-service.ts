@@ -4,12 +4,12 @@ import { supabase } from '@/integrations/supabase/client';
 import { prepareConversationContext } from './conversation-summarizer';
 
 export interface ConversationContextOptions {
-  agentType: "learn" | "earn" | "connect" | "mondai";
+  agentType: "learn" | "earn" | "connect" | "aigent";
 }
 
 export const processAgentInteraction = async (
   query: string,
-  agentType: 'learn' | 'earn' | 'connect' | 'mondai',
+  agentType: 'learn' | 'earn' | 'connect' | 'aigent',
   agentResponse: string,
   metadata: any = null
 ) => {

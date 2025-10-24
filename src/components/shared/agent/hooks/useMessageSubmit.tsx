@@ -10,7 +10,7 @@ import { toast } from 'sonner';
  * Hook to handle message submission and processing
  */
 export const useMessageSubmit = (
-  agentType: 'learn' | 'earn' | 'connect' | 'mondai',
+  agentType: 'learn' | 'earn' | 'connect' | 'aigent',
   conversationId: string | null,
   setMessages: React.Dispatch<React.SetStateAction<AgentMessage[]>>,
   setIsProcessing: React.Dispatch<React.SetStateAction<boolean>>,

@@ -1,12 +1,12 @@
 
 import React from 'react';
-import SimplifiedMonDAIInterface from '@/components/mondai/SimplifiedMonDAIInterface';
+import SimplifiedAigentInterface from '@/components/aigent/SimplifiedAigentInterface';
 import { useAuth } from '@/hooks/use-auth';
 
-// Extend the agent service to support 'mondai' type
+// Extend the agent service to support 'aigent' type
 declare module '@/services/agent-service' {
   interface ConversationContextOptions {
-    agentType: "learn" | "earn" | "connect" | "mondai";
+    agentType: "learn" | "earn" | "connect" | "aigent";
   }
 }
 
@@ -25,7 +25,7 @@ const QryptoCOYN = () => {
     );
   }
   
-  return <SimplifiedMonDAIInterface />;
+  return <SimplifiedAigentInterface />;
 };
 
 export default QryptoCOYN;

@@ -3,7 +3,7 @@ import SimplifiedAgentInterface from './SimplifiedAgentInterface';
 import NavigationGuard from '@/utils/NavigationGuard';
 
 interface NavigationAwareAgentInterfaceProps {
-  agentType: 'learn' | 'earn' | 'connect' | 'mondai';
+  agentType: 'learn' | 'earn' | 'connect' | 'aigent';
   title?: string;
   description?: string;
   className?: string;
@@ -50,7 +50,7 @@ const NavigationAwareAgentInterface: React.FC<NavigationAwareAgentInterfaceProps
         setShouldDefer(false);
         
         // Stagger initialization to prevent resource contention
-        const initDelay = agentType === 'mondai' ? 0 : 
+        const initDelay = agentType === 'aigent' ? 0 : 
                          agentType === 'learn' ? 100 :
                          agentType === 'earn' ? 200 : 300;
         

@@ -1,10 +1,10 @@
 
 import { supabase } from '@/integrations/supabase/client';
-import { MonDAIKnowledgeRouter } from '@/services/mondai-knowledge-router';
+import { AigentKnowledgeRouter } from '@/services/aigent-knowledge-router';
 import { PersonaContextService } from '@/services/persona-context-service';
-import { MonDAIConversationService } from './mondai-conversation-service';
+import { AigentConversationService } from './aigent-conversation-service';
 
-interface MonDAIResponse {
+interface AigentResponse {
   conversationId: string;
   message: string;
   timestamp: string;
@@ -29,7 +29,7 @@ const enhanceSearchQuery = (message: string, conversationThemes: string[] = []):
   const baseTerm = message.toLowerCase();
   const enhancedTerms = [baseTerm];
   
-  console.log(`🔍 MonDAI Search: Enhancing query "${message}" with conversation themes: [${conversationThemes.join(', ')}]`);
+  console.log(`🔍 Aigent Search: Enhancing query "${message}" with conversation themes: [${conversationThemes.join(', ')}]`);
   
   // Only add metaKnyts terms if the conversation is already about metaKnyts or explicitly mentions it
   const isMetaKnytsContext = conversationThemes.includes('metaKnyts') || 
@@ -56,13 +56,13 @@ const enhanceSearchQuery = (message: string, conversationThemes: string[] = []):
   
   // Don't enhance with unrelated topics
   if (baseTerm.includes('rune') && !isMetaKnytsContext) {
-    console.log(`🔍 MonDAI Search: Query is about runes, avoiding metaKnyts enhancement`);
+    console.log(`🔍 Aigent Search: Query is about runes, avoiding metaKnyts enhancement`);
     // Only add rune-specific terms
     enhancedTerms.push('bitcoin rune', 'btc rune', 'rune protocol');
     return enhancedTerms.slice(0, 3); // Limit to avoid cross-contamination
   }
   
-  console.log(`🔍 MonDAI Search: Enhanced terms: [${enhancedTerms.join(', ')}]`);
+  console.log(`🔍 Aigent Search: Enhanced terms: [${enhancedTerms.join(', ')}]`);
   return enhancedTerms;
 };
 
@@ -71,14 +71,14 @@ export async function generateAigentNakamotoResponse(
   conversationId: string | null = null,
   useVenice: boolean = false,
   useChainGPT: boolean = false
-): Promise<MonDAIResponse> {
+): Promise<AigentResponse> {
   try {
-    console.log(`🔄 MonDAI: Processing message with Venice ${useVenice ? 'ENABLED' : 'DISABLED'}, ChainGPT ${useChainGPT ? 'ENABLED' : 'DISABLED'}`);
-    console.log(`🔍 MonDAI: Original query: "${message}"`);
+    console.log(`🔄 Aigent: Processing message with Venice ${useVenice ? 'ENABLED' : 'DISABLED'}, ChainGPT ${useChainGPT ? 'ENABLED' : 'DISABLED'}`);
+    console.log(`🔍 Aigent: Original query: "${message}"`);
     
     // Generate conversation ID if not provided
     const currentConversationId = conversationId || crypto.randomUUID();
-    console.log(`🔄 MonDAI: Using conversation ID: ${currentConversationId}`);
+    console.log(`🔄 Aigent: Using conversation ID: ${currentConversationId}`);
     
     // Get conversation memory
     let conversationMemory;
@@ -87,21 +87,21 @@ export async function generateAigentNakamotoResponse(
     
     if (conversationId) {
       try {
-        console.log(`🧠 MonDAI: Retrieving conversation memory for ID: ${conversationId}`);
-        const service = MonDAIConversationService.getInstance();
+        console.log(`🧠 Aigent: Retrieving conversation memory for ID: ${conversationId}`);
+        const service = AigentConversationService.getInstance();
         conversationMemory = await service.getConversationMemory(conversationId);
         memoryContext = service.formatMemoryForContext(conversationMemory);
         conversationThemes = conversationMemory.sessionContext.themes;
-        console.log(`🧠 MonDAI: Memory retrieved with ${conversationMemory.recentHistory.length} recent exchanges`);
-        console.log(`🎯 MonDAI: Session themes: ${conversationThemes.join(', ')}`);
+        console.log(`🧠 Aigent: Memory retrieved with ${conversationMemory.recentHistory.length} recent exchanges`);
+        console.log(`🎯 Aigent: Session themes: ${conversationThemes.join(', ')}`);
       } catch (error) {
-        console.warn('🧠 MonDAI: Failed to retrieve conversation memory:', error);
+        console.warn('🧠 Aigent: Failed to retrieve conversation memory:', error);
         conversationMemory = null;
       }
     }
     
     // Get smart knowledge router
-    const knowledgeRouter = MonDAIKnowledgeRouter.getInstance();
+    const knowledgeRouter = AigentKnowledgeRouter.getInstance();
     
     // Only use knowledge base search if no conversation memory or for specific knowledge requests
     let knowledgeSearchResult = { results: [], sources: [], totalItems: 0 };
@@ -242,7 +242,7 @@ ${item.content.includes('![') ? '⚠️ CONTAINS IMAGES - MUST PRESERVE ALL IMAG
     if (conversationId) {
       try {
         console.log(`🧠 MonDAI: Updating conversation memory for ${currentConversationId}`);
-        const service = MonDAIConversationService.getInstance();
+        const service = AigentConversationService.getInstance();
         await service.storeConversationExchange(
           currentConversationId, 
           message, 

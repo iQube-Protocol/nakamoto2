@@ -10,7 +10,7 @@ import { AgentMessage } from '@/lib/types';
 import { useEffect } from 'react';
 
 interface UseAgentMessagesProps {
-  agentType: 'learn' | 'earn' | 'connect' | 'mondai';
+  agentType: 'learn' | 'earn' | 'connect' | 'aigent';
   initialMessages?: AgentMessage[];
   conversationId?: string | null;
   onMessageSubmit?: (message: string) => Promise<AgentMessage>;
@@ -41,13 +41,13 @@ export const useAgentMessages = ({
   const { conversationId } = useConversationId(externalConversationId);
   
   const { refreshInteractions } = useMessageHistory(
-    agentType, // Now properly supports 'mondai' as a valid type
+    agentType, // Now properly supports 'aigent' as a valid type
     initialMessages,
     setMessages
   );
   
   const { handleSubmit } = useMessageSubmit(
-    agentType, // Now properly supports 'mondai' as a valid type
+    agentType, // Now properly supports 'aigent' as a valid type
     conversationId,
     setMessages,
     setIsProcessing,

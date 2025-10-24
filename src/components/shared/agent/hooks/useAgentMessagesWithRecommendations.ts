@@ -6,7 +6,7 @@ import { useAgentRecommendations } from './useAgentRecommendations';
 import { useAgentActivation } from './useAgentActivation';
 
 interface UseAgentMessagesWithRecommendationsProps {
-  agentType: 'learn' | 'earn' | 'connect' | 'mondai';
+  agentType: 'learn' | 'earn' | 'connect' | 'aigent';
   initialMessages?: AgentMessage[];
   conversationId?: string | null;
   onMessageSubmit?: (message: string) => Promise<AgentMessage>;

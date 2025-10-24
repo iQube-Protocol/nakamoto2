@@ -7,7 +7,7 @@ import { useUserInteractions } from '@/hooks/use-user-interactions';
  * Hook to load and manage message history with enhanced conversational styling
  */
 export const useMessageHistory = (
-  agentType: 'learn' | 'earn' | 'connect' | 'mondai',
+  agentType: 'learn' | 'earn' | 'connect' | 'aigent',
   initialMessages: AgentMessage[] = [],
   setMessages: React.Dispatch<React.SetStateAction<AgentMessage[]>>
 ) => {

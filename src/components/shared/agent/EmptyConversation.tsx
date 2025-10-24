@@ -3,13 +3,13 @@ import React from 'react';
 import { Bot } from 'lucide-react';
 
 interface EmptyConversationProps {
-  agentType: 'learn' | 'earn' | 'connect' | 'mondai';
+  agentType: 'learn' | 'earn' | 'connect' | 'aigent';
 }
 
 const EmptyConversation = ({ agentType }: EmptyConversationProps) => {
   const getAgentName = () => {
     switch (agentType) {
-      case 'mondai':
+      case 'aigent':
         return 'Nakamoto';
       case 'learn':
         return 'learning';
@@ -24,7 +24,7 @@ const EmptyConversation = ({ agentType }: EmptyConversationProps) => {
 
   const getDescription = () => {
     switch (agentType) {
-      case 'mondai':
+      case 'aigent':
         return 'Your Nakamoto agent is ready to assist you with crypto insights and QryptoCOYN knowledge. Ask any question to get started.';
       default:
         return `Your ${getAgentName()} agent is ready to assist you. Ask any question to get started.`;

@@ -33,10 +33,10 @@ export const sidebarConfig: SidebarSection[] = [
     label: 'Main',
     items: [
       {
-        id: 'mondai',
-        label: 'MonDAI',
+        id: 'aigent',
+        label: 'Aigent',
         icon: Bot,
-        href: '/mondai',
+        href: '/aigent',
         description: 'AI Assistant'
       },
       {

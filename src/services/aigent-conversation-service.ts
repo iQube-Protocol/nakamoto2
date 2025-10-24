@@ -22,24 +22,24 @@ export interface SessionContext {
   lastInteraction: string;
 }
 
-export class MonDAIConversationService {
-  private static instance: MonDAIConversationService;
+export class AigentConversationService {
+  private static instance: AigentConversationService;
   private memoryCache = new Map<string, ConversationMemory>();
   private readonly MEMORY_WINDOW_SIZE = 8; // Last 8 exchanges (4 back-and-forth)
   private readonly MAX_CONTEXT_LENGTH = 3000; // Characters limit for context
 
-  static getInstance(): MonDAIConversationService {
-    if (!MonDAIConversationService.instance) {
-      MonDAIConversationService.instance = new MonDAIConversationService();
+  static getInstance(): AigentConversationService {
+    if (!AigentConversationService.instance) {
+      AigentConversationService.instance = new AigentConversationService();
     }
-    return MonDAIConversationService.instance;
+    return AigentConversationService.instance;
   }
 
   /**
    * Retrieve conversation memory for a given conversation ID
    */
   async getConversationMemory(conversationId: string): Promise<ConversationMemory> {
-    console.log(`🧠 MonDAI Memory: Retrieving memory for conversation ${conversationId}`);
+    console.log(`🧠 Aigent Memory: Retrieving memory for conversation ${conversationId}`);
     
     // Check cache first
     if (this.memoryCache.has(conversationId)) {
@@ -47,7 +47,7 @@ export class MonDAIConversationService {
       // Return cached if recent (less than 5 minutes old)
       const fiveMinutesAgo = new Date(Date.now() - 5 * 60 * 1000).toISOString();
       if (cached.sessionContext.lastInteraction > fiveMinutesAgo) {
-        console.log(`🧠 MonDAI Memory: Using cached memory with ${cached.recentHistory.length} exchanges`);
+        console.log(`🧠 Aigent Memory: Using cached memory with ${cached.recentHistory.length} exchanges`);
         return cached;
       }
     }
@@ -117,18 +117,18 @@ export class MonDAIConversationService {
           .limit(this.MEMORY_WINDOW_SIZE);
 
         if (!learnError && learnQuery && learnQuery.length > 0) {
-          // Filter for MonDAI agent interactions
+          // Filter for Aigent agent interactions
           interactions = learnQuery.filter(interaction => {
             try {
               const metadata = typeof interaction.metadata === 'string' 
                 ? JSON.parse(interaction.metadata) 
                 : interaction.metadata;
-              return metadata.agentType === 'mondai';
+              return metadata.agentType === 'aigent' || metadata.agentType === 'mondai'; // Support both for migration
             } catch (e) {
               return false;
             }
           });
-          console.log(`🧠 MonDAI Memory: Found ${interactions.length} legacy MonDAI interactions in learn type`);
+          console.log(`🧠 Aigent Memory: Found ${interactions.length} legacy Aigent interactions in learn type`);
         }
       }
 
@@ -377,20 +377,20 @@ export class MonDAIConversationService {
         .from('user_interactions')
         .insert({
           user_id: user.id,
-          interaction_type: 'mondai', // Changed from 'learn' to 'mondai'
+          interaction_type: 'aigent', // Changed from 'learn' to 'aigent'
           query: userMessage,
           response: agentResponse,
           metadata: {
             conversationId,
             timestamp: new Date().toISOString(),
-            agentType: 'mondai'
+            agentType: 'aigent'
           }
         });
 
       if (error) {
-        console.error('🧠 MonDAI Memory: Error storing conversation exchange:', error);
+        console.error('🧠 Aigent Memory: Error storing conversation exchange:', error);
       } else {
-        console.log(`🧠 MonDAI Memory: Successfully stored exchange`);
+        console.log(`🧠 Aigent Memory: Successfully stored exchange`);
         this.memoryCache.delete(conversationId);
       }
     } catch (error) {

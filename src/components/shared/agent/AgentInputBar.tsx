@@ -12,7 +12,7 @@ interface AgentInputBarProps {
   handleInputChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
   handleSubmit: (e: React.FormEvent) => void;
   isProcessing: boolean;
-  agentType: 'learn' | 'earn' | 'connect' | 'mondai';
+  agentType: 'learn' | 'earn' | 'connect' | 'aigent';
   handleKeyDown?: (e: React.KeyboardEvent<HTMLTextAreaElement>) => void;
   onAfterSubmit?: () => void;
 }

@@ -1,18 +1,18 @@
 
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { SimplifiedAgentInterface } from '@/components/shared/agent';
-import { useMondAI } from '@/hooks/use-mondai';
+import { useAigent } from '@/hooks/use-aigent';
 import { AgentMessage } from '@/lib/types';
 import { useUserInteractionsOptimized } from '@/hooks/useUserInteractionsOptimized';
 import { useAuth } from '@/hooks/use-auth';
 import { useVeniceAgent } from '@/hooks/use-venice-agent';
 
-const SimplifiedMonDAIInterface: React.FC = React.memo(() => {
+const SimplifiedAigentInterface: React.FC = React.memo(() => {
   const {
     conversationId,
     handleAIMessage,
     resetConversation,
-  } = useMondAI();
+  } = useAigent();
   
   const { user } = useAuth();
   const { veniceActivated } = useVeniceAgent();
@@ -20,11 +20,11 @@ const SimplifiedMonDAIInterface: React.FC = React.memo(() => {
   const [isHistoryLoaded, setIsHistoryLoaded] = useState(false);
   
   // PRODUCTION FIX: Force clean state and prevent cache corruption
-  const [buildVersion] = useState(() => `mondai_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
+  const [buildVersion] = useState(() => `aigent_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`);
   
   useEffect(() => {
     // AGGRESSIVE CACHE CLEARING for production
-    console.log('🧹 PRODUCTION FIX: Clearing all mondai-related caches...');
+    console.log('🧹 PRODUCTION FIX: Clearing all aigent-related caches...');
     
     // Clear all storage that might contain corrupted content
     const keysToRemove = [];
@@ -32,7 +32,7 @@ const SimplifiedMonDAIInterface: React.FC = React.memo(() => {
     // Check localStorage
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
-      if (key && (key.includes('mondai') || key.includes('mermaid') || key.includes('conversation') || key.includes('agent'))) {
+      if (key && (key.includes('aigent') || key.includes('mondai') || key.includes('mermaid') || key.includes('conversation') || key.includes('agent'))) {
         keysToRemove.push(key);
       }
     }
@@ -40,7 +40,7 @@ const SimplifiedMonDAIInterface: React.FC = React.memo(() => {
     // Check sessionStorage
     for (let i = 0; i < sessionStorage.length; i++) {
       const key = sessionStorage.key(i);
-      if (key && (key.includes('mondai') || key.includes('mermaid') || key.includes('conversation') || key.includes('agent'))) {
+      if (key && (key.includes('aigent') || key.includes('mondai') || key.includes('mermaid') || key.includes('conversation') || key.includes('agent'))) {
         keysToRemove.push(key);
       }
     }
@@ -54,19 +54,19 @@ const SimplifiedMonDAIInterface: React.FC = React.memo(() => {
     console.log(`🗑️ PRODUCTION FIX: Cleared ${keysToRemove.length} cached items:`, keysToRemove);
     
     // Set build version for debugging
-    sessionStorage.setItem('mondai_build_version', buildVersion);
+    sessionStorage.setItem('aigent_build_version', buildVersion);
     
   }, [buildVersion]);
   
-  // Use optimized hook for better performance - FIXED: was fetching 'learn' instead of 'mondai'
-  const { interactions, refreshInteractions } = useUserInteractionsOptimized('mondai');
+  // Use optimized hook for better performance - FIXED: was fetching 'learn' instead of 'aigent'
+  const { interactions, refreshInteractions } = useUserInteractionsOptimized('aigent');
   
   // Memoize the welcome message to prevent recreation on every render
   const welcomeMessage = useMemo(() => {
     const aiProvider = veniceActivated ? "Venice AI (Uncensored)" : "OpenAI";
     const memoryStatus = conversationId ? "🧠 **Memory Active** - I can remember our conversation" : "💭 **New Session** - Starting fresh";
     
-    console.log(`🎯 MonDAI Interface: Creating welcome message with memory status: ${memoryStatus}`);
+    console.log(`🎯 Aigent Interface: Creating welcome message with memory status: ${memoryStatus}`);
     
     return {
       id: "1",
@@ -107,7 +107,7 @@ What would you like to explore today?`,
       return [];
     }
 
-    console.log(`🎯 MonDAI Interface: Processing ${interactions.length} MONDAI historical interactions`);
+    console.log(`🎯 Aigent Interface: Processing ${interactions.length} AIGENT historical interactions`);
 
     try {
       const historicalMessages: AgentMessage[] = [];
@@ -164,7 +164,7 @@ What would you like to explore today?`,
         }
       });
       
-      console.log(`✅ MonDAI Interface: Successfully processed ${sortedMessages.length} MONDAI historical messages`);
+      console.log(`✅ Aigent Interface: Successfully processed ${sortedMessages.length} AIGENT historical messages`);
       return sortedMessages;
     } catch (processingError) {
       console.error('❌ NAVIGATION FIX: Critical error processing historical messages:', processingError);
@@ -175,8 +175,8 @@ What would you like to explore today?`,
   // Add Venice state debugging (only in development)
   useEffect(() => {
     if (process.env.NODE_ENV === 'development') {
-      console.log('📡 SimplifiedMonDAIInterface: Venice state changed to:', veniceActivated);
-      console.log('🧠 SimplifiedMonDAIInterface: Conversation ID:', conversationId);
+      console.log('📡 SimplifiedAigentInterface: Venice state changed to:', veniceActivated);
+      console.log('🧠 SimplifiedAigentInterface: Conversation ID:', conversationId);
     }
   }, [veniceActivated, conversationId]);
   
@@ -186,11 +186,11 @@ What would you like to explore today?`,
       if (!user || isHistoryLoaded) return;
       
       try {
-        console.log(`🎯 NAVIGATION FIX: Starting MONDAI conversation history load (Build: ${buildVersion})`);
-        console.log(`📊 NAVIGATION DATA: Historical MONDAI messages count: ${processedHistoricalMessages.length}`);
+        console.log(`🎯 NAVIGATION FIX: Starting AIGENT conversation history load (Build: ${buildVersion})`);
+        console.log(`📊 NAVIGATION DATA: Historical AIGENT messages count: ${processedHistoricalMessages.length}`);
 
         if (processedHistoricalMessages.length > 0) {
-          console.log(`✅ NAVIGATION SUCCESS: Loaded ${processedHistoricalMessages.length} MONDAI historical messages`);
+          console.log(`✅ NAVIGATION SUCCESS: Loaded ${processedHistoricalMessages.length} AIGENT historical messages`);
           
           // ENHANCED: Validate message integrity before setting state
           const validMessages = processedHistoricalMessages.filter(msg => {
@@ -215,18 +215,18 @@ What would you like to explore today?`,
           
           // ENHANCED: Use navigation-safe state update
           const safeInitialMessages = [welcomeMessage, ...validMessages];
-          console.log(`🔒 NAVIGATION FIX: Setting ${safeInitialMessages.length} validated messages for MONDAI`);
+          console.log(`🔒 NAVIGATION FIX: Setting ${safeInitialMessages.length} validated messages for AIGENT`);
           setInitialMessages(safeInitialMessages);
         } else {
           // If no history, just set the welcome message
-          console.log('🎯 NAVIGATION INFO: No MONDAI historical messages found, using welcome only');
+          console.log('🎯 NAVIGATION INFO: No AIGENT historical messages found, using welcome only');
           setInitialMessages([welcomeMessage]);
         }
         
         setIsHistoryLoaded(true);
         console.log('✅ NAVIGATION FIX: History loading completed successfully');
       } catch (error) {
-        console.error(`❌ NAVIGATION ERROR: Failed to load MONDAI conversation history (Build: ${buildVersion}):`, error);
+        console.error(`❌ NAVIGATION ERROR: Failed to load AIGENT conversation history (Build: ${buildVersion}):`, error);
         // ENHANCED: Safe fallback that won't break navigation
         try {
           setInitialMessages([welcomeMessage]);
@@ -247,7 +247,7 @@ What would you like to explore today?`,
 
   // Enhanced reset conversation with better logging
   const handleResetConversation = useCallback(() => {
-    console.log('🔄 MonDAI Interface: User requested conversation reset');
+    console.log('🔄 Aigent Interface: User requested conversation reset');
     resetConversation();
     // Optionally refresh the page to clear all state
     // window.location.reload();
@@ -258,7 +258,7 @@ What would you like to explore today?`,
       <SimplifiedAgentInterface
         title="Aigent Nakamoto"
         description={`Crypto-Agentic AI for iQube + COYN + Qripto + metaKnyts ${veniceActivated ? '(Venice AI)' : '(OpenAI)'} ${conversationId ? '🧠' : '💭'} [${buildVersion.substring(0, 8)}]`}
-        agentType="mondai" 
+        agentType="aigent" 
         onMessageSubmit={handleAIMessage}
         conversationId={conversationId}
         initialMessages={initialMessages}
@@ -284,6 +284,6 @@ What would you like to explore today?`,
   );
 });
 
-SimplifiedMonDAIInterface.displayName = 'SimplifiedMonDAIInterface';
+SimplifiedAigentInterface.displayName = 'SimplifiedAigentInterface';
 
-export default SimplifiedMonDAIInterface;
+export default SimplifiedAigentInterface;

@@ -1,17 +1,17 @@
 
 import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { SimplifiedAgentInterface } from '@/components/shared/agent';
-import { useMondAI } from '@/hooks/use-mondai';
+import { useAigent } from '@/hooks/use-aigent';
 import { AgentMessage } from '@/lib/types';
 import { useUserInteractionsOptimized } from '@/hooks/useUserInteractionsOptimized';
 import { useAuth } from '@/hooks/use-auth';
 import { useVeniceAgent } from '@/hooks/use-venice-agent';
 
-const SimplifiedMonDAIInterfaceOptimized: React.FC = React.memo(() => {
+const SimplifiedAigentInterfaceOptimized: React.FC = React.memo(() => {
   const {
     conversationId,
     handleAIMessage,
-  } = useMondAI();
+  } = useAigent();
   
   const { user } = useAuth();
   const { veniceActivated } = useVeniceAgent();
@@ -91,7 +91,7 @@ What would you like to explore today?`,
   // Add Venice state debugging (only in development)
   useEffect(() => {
     if (process.env.NODE_ENV === 'development') {
-      console.log('📡 SimplifiedMonDAIInterface: Venice state changed to:', veniceActivated);
+      console.log('📡 SimplifiedAigentInterface: Venice state changed to:', veniceActivated);
     }
   }, [veniceActivated]);
   
@@ -102,12 +102,12 @@ What would you like to explore today?`,
       
       try {
         if (process.env.NODE_ENV === 'development') {
-          console.log('Loading MonDAI conversation history...');
+          console.log('Loading Aigent conversation history...');
         }
 
         if (processedHistoricalMessages.length > 0) {
           if (process.env.NODE_ENV === 'development') {
-            console.log(`Loaded ${processedHistoricalMessages.length} historical messages for MonDAI`);
+            console.log(`Loaded ${processedHistoricalMessages.length} historical messages for Aigent`);
           }
           
           // Start with welcome message, then add history
@@ -115,7 +115,7 @@ What would you like to explore today?`,
         } else {
           // If no history, just set the welcome message
           if (process.env.NODE_ENV === 'development') {
-            console.log('No historical messages found for MonDAI');
+            console.log('No historical messages found for Aigent');
           }
           setInitialMessages([welcomeMessage]);
         }
@@ -141,7 +141,7 @@ What would you like to explore today?`,
       <SimplifiedAgentInterface
         title="Aigent Nakamoto"
         description={`Crypto-Agentic AI for iQube + COYN + Qripto + metaKnyts ${veniceActivated ? '(Venice AI)' : '(OpenAI)'}`}
-        agentType="mondai" 
+        agentType="aigent" 
         onMessageSubmit={handleAIMessage}
         conversationId={conversationId}
         initialMessages={initialMessages}
@@ -150,6 +150,6 @@ What would you like to explore today?`,
   );
 });
 
-SimplifiedMonDAIInterfaceOptimized.displayName = 'SimplifiedMonDAIInterfaceOptimized';
+SimplifiedAigentInterfaceOptimized.displayName = 'SimplifiedAigentInterfaceOptimized';
 
-export default SimplifiedMonDAIInterfaceOptimized;
+export default SimplifiedAigentInterfaceOptimized;

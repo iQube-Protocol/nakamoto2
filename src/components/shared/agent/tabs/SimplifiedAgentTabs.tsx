@@ -6,7 +6,7 @@ import { Button } from '@/components/ui/button';
 import { cn } from '@/lib/utils';
 import ChatTab from './ChatTab';
 import KnowledgeBase from '../KnowledgeBase';
-import IQubesKnowledgeBase from '@/components/mondai/iQubesKnowledgeBase';
+import IQubesKnowledgeBase from '@/components/aigent/iQubesKnowledgeBase';
 import AgentInputBar from '../AgentInputBar';
 import { AgentMessage } from '@/lib/types';
 import { useIsMobile } from '@/hooks/use-mobile';
@@ -19,7 +19,7 @@ interface SimplifiedAgentTabsProps {
   inputValue: string;
   isProcessing: boolean;
   playing: string | null;
-  agentType: 'learn' | 'earn' | 'connect' | 'mondai';
+  agentType: 'learn' | 'earn' | 'connect' | 'aigent';
   messagesEndRef: React.RefObject<HTMLDivElement>;
   conversationId: string | null;
   handleInputChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
@@ -98,8 +98,8 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps & {
     setActiveTab('chat');
   };
 
-  // Convert 'mondai' to 'learn' for KnowledgeBase component
-  const knowledgeBaseAgentType = agentType === 'mondai' ? 'learn' : agentType;
+  // Convert 'aigent' to 'learn' for KnowledgeBase component
+  const knowledgeBaseAgentType = agentType === 'aigent' ? 'learn' : agentType;
 
   return (
     <Tabs value={activeTab} onValueChange={v => setActiveTab(v as 'chat' | 'knowledge' | 'media')} className="flex-1 flex flex-col h-full">
@@ -120,8 +120,8 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps & {
           )}
           
           <div className="flex items-center gap-3">
-            {/* Show Dual Knowledge Base header only when knowledge tab is active and agent is mondai */}
-            {activeTab === 'knowledge' && agentType === 'mondai' && !tabsCollapsed && (
+            {/* Show Dual Knowledge Base header only when knowledge tab is active and agent is aigent */}
+            {activeTab === 'knowledge' && agentType === 'aigent' && !tabsCollapsed && (
               <div className="flex items-center gap-2">
                 <TooltipProvider>
                   <Tooltip>
@@ -170,7 +170,7 @@ const SimplifiedAgentTabs: React.FC<SimplifiedAgentTabsProps & {
         </TabsContent>
 
         <TabsContent value="knowledge" className="h-full m-0 p-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col flex-1">
-          {agentType === 'mondai' ? <IQubesKnowledgeBase /> : <KnowledgeBase agentType={knowledgeBaseAgentType} />}
+          {agentType === 'aigent' ? <IQubesKnowledgeBase /> : <KnowledgeBase agentType={knowledgeBaseAgentType} />}
         </TabsContent>
 
         <TabsContent value="media" className="h-full m-0 p-0 overflow-hidden data-[state=active]:flex data-[state=active]:flex-col flex-1">

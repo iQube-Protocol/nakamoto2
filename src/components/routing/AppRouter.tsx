@@ -7,7 +7,7 @@ import SplashPage from '@/pages/SplashPage';
 import SignIn from '@/pages/SignIn';
 import SignUpPage from '@/pages/auth/SignUp';
 import PasswordReset from '@/pages/PasswordReset';
-import MonDAI from '@/pages/MonDAI';
+import Aigent from '@/pages/Aigent';
 import Learn from '@/pages/Learn';
 import Earn from '@/pages/Earn';
 import Connect from '@/pages/Connect';
@@ -55,7 +55,7 @@ const AppRouter = () => {
             
             {/* Main app routes with layout */}
             <Route element={<MainLayout />}>
-              <Route path="/mondai" element={<MonDAI />} />
+              <Route path="/aigent" element={<Aigent />} />
               <Route path="/learn" element={<Learn />} />
               <Route path="/earn" element={<Earn />} />
               <Route path="/connect" element={<Connect />} />

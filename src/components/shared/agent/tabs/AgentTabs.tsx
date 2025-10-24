@@ -14,7 +14,7 @@ interface AgentTabsProps {
   inputValue: string;
   isProcessing: boolean;
   playing: string | null;
-  agentType: 'learn' | 'earn' | 'connect' | 'mondai';
+  agentType: 'learn' | 'earn' | 'connect' | 'aigent';
   messagesEndRef: React.RefObject<HTMLDivElement>;
   conversationId: string | null;
   handleInputChange: (e: React.ChangeEvent<HTMLTextAreaElement>) => void;
@@ -59,8 +59,8 @@ const AgentTabs: React.FC<AgentTabsProps> = ({
     setActiveTab('chat');
   };
 
-  // Convert 'mondai' to 'learn' for KnowledgeBase component
-  const knowledgeBaseAgentType = agentType === 'mondai' ? 'learn' : agentType;
+  // Convert 'aigent' to 'learn' for KnowledgeBase component
+  const knowledgeBaseAgentType = agentType === 'aigent' ? 'learn' : agentType;
 
   return (
     <Tabs 
