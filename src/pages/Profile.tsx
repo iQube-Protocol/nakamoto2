@@ -62,7 +62,7 @@ const Profile = () => {
 
   const getAgentName = (interactionType: string) => {
     switch (interactionType) {
-      case 'mondai':
+      case 'aigent':
         return 'Nakamoto';
       case 'learn':
         return 'Learning';

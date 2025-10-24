@@ -7,7 +7,7 @@ export interface UserInteraction {
   id: string;
   query: string;
   response: string;
-  interaction_type: 'learn' | 'earn' | 'connect' | 'mondai';
+  interaction_type: 'learn' | 'earn' | 'connect' | 'aigent';
   metadata?: any;
   created_at: string;
 }
@@ -19,7 +19,7 @@ interface UseUserInteractionsOptimizedOptions {
 }
 
 export const useUserInteractionsOptimized = (
-  interactionType?: 'learn' | 'earn' | 'connect' | 'mondai' | 'all' | 'qripto' | 'knyt',
+  interactionType?: 'learn' | 'earn' | 'connect' | 'aigent' | 'all' | 'qripto' | 'knyt',
   options: UseUserInteractionsOptimizedOptions = {}
 ) => {
   const {

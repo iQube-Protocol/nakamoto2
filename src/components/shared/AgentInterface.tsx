@@ -11,7 +11,7 @@ import './agent/styles/agent-interface.css'; // We'll create this file for style
 interface AgentInterfaceProps {
   title: string;
   description: string;
-  agentType: 'learn' | 'earn' | 'connect' | 'mondai';
+  agentType: 'learn' | 'earn' | 'connect' | 'aigent';
   conversationId?: string | null; 
   initialMessages?: AgentMessage[];
   onMessageSubmit?: (message: string) => Promise<AgentMessage>;

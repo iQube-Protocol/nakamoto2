@@ -15,7 +15,7 @@ interface ResponseDialogProps {
 const ResponseDialog = ({ selectedResponse, isOpen, onClose }: ResponseDialogProps) => {
   const getAgentName = (interactionType: string) => {
     switch (interactionType) {
-      case 'mondai':
+      case 'aigent':
         return 'Nakamoto';
       case 'learn':
         return 'Learning';

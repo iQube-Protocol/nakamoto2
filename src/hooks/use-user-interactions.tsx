@@ -7,12 +7,12 @@ export interface UserInteraction {
   id: string;
   query: string;
   response: string;
-  interaction_type: 'learn' | 'earn' | 'connect' | 'mondai';
+  interaction_type: 'learn' | 'earn' | 'connect' | 'aigent';
   metadata?: any;
   created_at: string;
 }
 
-export const useUserInteractions = (interactionType?: 'learn' | 'earn' | 'connect' | 'mondai') => {
+export const useUserInteractions = (interactionType?: 'learn' | 'earn' | 'connect' | 'aigent') => {
   const [interactions, setInteractions] = useState<UserInteraction[]>([]);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);

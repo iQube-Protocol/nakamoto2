@@ -3,7 +3,7 @@ import { supabase } from '@/integrations/supabase/client';
 export interface InteractionData {
   query: string;
   response: string;
-  interactionType: 'learn' | 'earn' | 'connect' | 'mondai';
+  interactionType: 'learn' | 'earn' | 'connect' | 'aigent';
   metadata?: any;
   user_id?: string;
 }
@@ -61,7 +61,7 @@ export const storeUserInteraction = async (data: InteractionData) => {
 };
 
 export const getUserInteractions = async (
-  interactionType?: 'learn' | 'earn' | 'connect' | 'mondai' | 'all' | 'qripto' | 'knyt',
+  interactionType?: 'learn' | 'earn' | 'connect' | 'aigent' | 'all' | 'qripto' | 'knyt',
   limit = 50, 
   offset = 0
 ) => {
@@ -81,10 +81,16 @@ export const getUserInteractions = async (
       .select('*')
       .eq('user_id', user_id);
     
-    // Only filter by interaction_type for the original types (mondai, learn, earn, connect)
+    // Only filter by interaction_type for the original types (aigent, learn, earn, connect)
     // For 'all', 'qripto', 'knyt' we fetch everything and let the UI do persona-based filtering
+    // Note: For migration support, the DB may still contain 'mondai' records which are treated as 'aigent'
     if (interactionType && !['all', 'qripto', 'knyt'].includes(interactionType)) {
-      query = query.eq('interaction_type', interactionType);
+      // Support both 'aigent' and legacy 'mondai' records
+      if (interactionType === 'aigent') {
+        query = query.or('interaction_type.eq.aigent,interaction_type.eq.mondai');
+      } else {
+        query = query.eq('interaction_type', interactionType);
+      }
     }
     
     const { data, error } = await query

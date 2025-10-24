@@ -6,7 +6,7 @@ export interface AgentMessage {
   metadata?: any;
 }
 
-export type InteractionType = 'learn' | 'earn' | 'connect' | 'mondai';
+export type InteractionType = 'learn' | 'earn' | 'connect' | 'aigent';
 
 export interface MetaQube {
   id?: string;

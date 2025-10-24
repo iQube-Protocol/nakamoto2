@@ -4,7 +4,7 @@ import { useAuth } from './use-auth';
 import { toast } from 'sonner';
 
 export const useUserInteractionsOptimized = (
-  interactionType?: 'learn' | 'earn' | 'connect' | 'mondai'
+  interactionType?: 'learn' | 'earn' | 'connect' | 'aigent'
 ) => {
   const { user } = useAuth();
   const queryClient = useQueryClient();
@@ -63,7 +63,7 @@ export const useUserInteractionsOptimized = (
     await refetch();
   };
 
-  const createTestInteraction = async (type?: 'learn' | 'earn' | 'connect' | 'mondai') => {
+  const createTestInteraction = async (type?: 'learn' | 'earn' | 'connect' | 'aigent') => {
     if (!user) return;
     
     const testType = type || interactionType || 'learn';
