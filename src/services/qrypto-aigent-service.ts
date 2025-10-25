@@ -112,13 +112,13 @@ export async function generateAigentNakamotoResponse(
                                  conversationMemory.recentHistory.length === 0;
     
     if (needsKnowledgeSearch) {
-      console.log(`🔍 MonDAI: Using knowledge search because: ${!conversationMemory ? 'no memory' : 'knowledge request detected'}`);
+      console.log(`🔍 Aigent: Using knowledge search because: ${!conversationMemory ? 'no memory' : 'knowledge request detected'}`);
       
       // Smart knowledge base search with intent detection
       knowledgeSearchResult = knowledgeRouter.searchKnowledge(message, conversationThemes);
-      console.log(`🔍 MonDAI: Found ${knowledgeSearchResult.totalItems} items from: ${knowledgeSearchResult.sources.join(', ')}`);
+      console.log(`🔍 Aigent: Found ${knowledgeSearchResult.totalItems} items from: ${knowledgeSearchResult.sources.join(', ')}`);
     } else {
-      console.log(`🧠 MonDAI: Prioritizing conversation memory over knowledge search`);
+      console.log(`🧠 Aigent: Prioritizing conversation memory over knowledge search`);
     }
     
     const knowledgeResults = knowledgeSearchResult.results;
@@ -173,13 +173,13 @@ ${item.content.includes('![') ? '⚠️ CONTAINS IMAGES - MUST PRESERVE ALL IMAG
     const conversationContext = await PersonaContextService.getConversationContext();
     const contextualPrompt = PersonaContextService.generateContextualPrompt(conversationContext, message);
     
-    console.log(`📝 MonDAI: Using persona context - Anonymous: ${conversationContext.isAnonymous}`);
+    console.log(`📝 Aigent: Using persona context - Anonymous: ${conversationContext.isAnonymous}`);
     if (conversationContext.preferredName) {
-      console.log(`👤 MonDAI: Preferred name: ${conversationContext.preferredName}`);
+      console.log(`👤 Aigent: Preferred name: ${conversationContext.preferredName}`);
     }
     
     // Call the edge function with conversation memory
-    const { data, error } = await supabase.functions.invoke('mondai-ai', {
+    const { data, error } = await supabase.functions.invoke('aigent-ai', {
       body: {
         message,
         conversationId: currentConversationId,
@@ -194,8 +194,8 @@ ${item.content.includes('![') ? '⚠️ CONTAINS IMAGES - MUST PRESERVE ALL IMAG
     });
 
     if (error) {
-      console.error('❌ MonDAI: Edge function error:', error);
-      throw new Error(`MonDAI service error: ${error.message}`);
+      console.error('❌ Aigent: Edge function error:', error);
+      throw new Error(`Aigent service error: ${error.message}`);
     }
 
     // Validate response for visual content
@@ -206,17 +206,17 @@ ${item.content.includes('![') ? '⚠️ CONTAINS IMAGES - MUST PRESERVE ALL IMAG
     );
     
     if (knowledgeHadVisuals && !responseHasMermaid && !responseHasImages) {
-      console.warn('⚠️ MonDAI: Visual content was in knowledge base but missing from response');
-      console.log('🔍 MonDAI: Knowledge items with visuals:', 
+      console.warn('⚠️ Aigent: Visual content was in knowledge base but missing from response');
+      console.log('🔍 Aigent: Knowledge items with visuals:', 
         knowledgeResults.filter(item => 
           item.content.includes('mermaid') || item.content.includes('![')
         ).map(item => item.title)
       );
     }
 
-    console.log(`✅ MonDAI: Response generated successfully`);
-    console.log(`📊 MonDAI: Knowledge sources used: ${data.metadata.knowledgeSource}`);
-    console.log(`🎨 MonDAI: Visual content in response - Mermaid: ${responseHasMermaid}, Images: ${responseHasImages}`);
+    console.log(`✅ Aigent: Response generated successfully`);
+    console.log(`📊 Aigent: Knowledge sources used: ${data.metadata.knowledgeSource}`);
+    console.log(`🎨 Aigent: Visual content in response - Mermaid: ${responseHasMermaid}, Images: ${responseHasImages}`);
     
     // Enhance metadata with memory information
     if (knowledgeResults.length > 0) {
@@ -241,7 +241,7 @@ ${item.content.includes('![') ? '⚠️ CONTAINS IMAGES - MUST PRESERVE ALL IMAG
     // Update conversation memory after successful response
     if (conversationId) {
       try {
-        console.log(`🧠 MonDAI: Updating conversation memory for ${currentConversationId}`);
+        console.log(`🧠 Aigent: Updating conversation memory for ${currentConversationId}`);
         const service = AigentConversationService.getInstance();
         await service.storeConversationExchange(
           currentConversationId, 
@@ -249,13 +249,13 @@ ${item.content.includes('![') ? '⚠️ CONTAINS IMAGES - MUST PRESERVE ALL IMAG
           data.message
         );
       } catch (error) {
-        console.warn('🧠 MonDAI: Failed to update session context:', error);
+        console.warn('🧠 Aigent: Failed to update session context:', error);
       }
     }
 
     return data;
   } catch (error) {
-    console.error('❌ MonDAI: Service error:', error);
+    console.error('❌ Aigent: Service error:', error);
     throw error;
   }
 }

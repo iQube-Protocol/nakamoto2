@@ -70,13 +70,13 @@ const AgentInputBar = ({
     <form onSubmit={handleFormSubmit} className="border-t p-4">
       <div className="flex items-center space-x-2">
         <div className="relative flex-1 flex items-center">
-          <div className="absolute left-3 flex items-center space-x-2">
+          <div className="absolute left-3 flex items-center space-x-2 z-10">
             <ScoreTooltip type="voice">
               <Button
                 type="button"
                 size="sm"
                 variant="ghost"
-                className="h-8 w-8 p-0"
+                className="h-8 w-8 p-0 hover:bg-muted"
                 onClick={handleVoiceInput}
               >
                 <Mic className="h-4 w-4 text-muted-foreground" />
@@ -88,7 +88,7 @@ const AgentInputBar = ({
                 type="button"
                 size="sm"
                 variant="ghost"
-                className="h-8 w-8 p-0"
+                className="h-8 w-8 p-0 hover:bg-muted"
                 onClick={handleAttachment}
               >
                 <Paperclip className="h-4 w-4 text-muted-foreground" />
@@ -102,15 +102,9 @@ const AgentInputBar = ({
             onChange={customHandleInputChange}
             onKeyDown={handleKeyDown} 
             placeholder={window.location.pathname === '/aigent' ? 'Ask Nakamoto...' : `Ask your ${agentType} agent...`}
-            className="pl-24 min-h-[40px] max-h-32 flex-1 pr-3 py-2 flex items-center"
+            className="w-full pl-24 pr-3 py-2.5 min-h-[40px] max-h-32 resize-none"
             style={{
-              resize: 'none',
-              paddingTop: inputValue ? '0.5rem' : '0.625rem', 
-              paddingBottom: inputValue ? '0.5rem' : '0.625rem',
               lineHeight: '1.5',
-              display: 'flex',
-              alignItems: 'center',
-              overflow: 'auto',
             }}
             disabled={isProcessing}
           />
