@@ -20,7 +20,6 @@ import ToolQube from '@/pages/qubes/ToolQube';
 import AgentQube from '@/pages/qubes/AgentQube';
 import NotFound from '@/pages/NotFound';
 import PrivacyPolicy from '@/pages/PrivacyPolicy';
-import InstallPWA from '@/pages/InstallPWA';
 import ProtectedRoute from '@/components/auth/ProtectedRoute';
 import MainLayout from '@/components/layout/MainLayout';
 import InvitationsPage from '@/pages/admin/Invitations';
@@ -47,7 +46,6 @@ const AppRouter = () => {
           <Route path="/invited-signup" element={<InvitedUserSignup />} />
           <Route path="/privacy-policy" element={<PrivacyPolicy />} />
           <Route path="/oauth-callback" element={<OAuthCallback />} />
-          <Route path="/install" element={<InstallPWA />} />
           
           {/* Protected routes */}
           <Route element={<ProtectedRoute />}>

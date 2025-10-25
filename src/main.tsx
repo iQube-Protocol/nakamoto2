@@ -2,7 +2,6 @@
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
-import './styles/pwa.css'
 import NavigationGuard from '@/utils/NavigationGuard';
 
 console.log("Starting application initialization");

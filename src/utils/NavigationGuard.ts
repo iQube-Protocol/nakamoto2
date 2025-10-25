@@ -55,7 +55,7 @@ class NavigationGuard {
     if (currentPath.includes('/profile')) {
       timeout = 400; // Extended for message content rendering
     } else if (currentPath.includes('/learn') || currentPath.includes('/earn') || 
-               currentPath.includes('/connect') || currentPath.includes('/aigent')) {
+               currentPath.includes('/connect') || currentPath.includes('/mondai')) {
       timeout = 500; // Extended for agent interface complexity
     } else if (currentPath.includes('/settings')) {
       timeout = 300; // Extended for persona hooks

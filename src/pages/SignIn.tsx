@@ -29,11 +29,11 @@ const SignIn = () => {
     }
   }, [searchParams]);
   
-  // Check if user is already logged in - redirect to aigent
+  // Check if user is already logged in - redirect to mondai specifically
   useEffect(() => {
     if (user) {
-      console.log("User already logged in, redirecting to aigent");
-      navigate('/aigent', { replace: true });
+      console.log("User already logged in, redirecting to mondai");
+      navigate('/mondai', { replace: true });
     }
   }, [user, navigate]);
 
