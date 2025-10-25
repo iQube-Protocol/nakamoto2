@@ -38,7 +38,13 @@ export default defineConfig(({ mode }) => ({
         ]
       },
       workbox: {
-        globPatterns: ['**/*.{js,css,html,ico,png,svg,jpg,jpeg}'],
+        maximumFileSizeToCacheInBytes: 10 * 1024 * 1024, // 10MB limit
+        globPatterns: ['**/*.{js,css,html,ico,svg}'], // Exclude large images from precache
+        globIgnores: [
+          '**/node_modules/**',
+          '**/flowchart-elk-definition-*.js', // Skip large mermaid diagram
+          '**/lovable-uploads/**' // Don't precache large uploads
+        ],
         runtimeCaching: [
           {
             urlPattern: /^https:\/\/fonts\.googleapis\.com\/.*/i,
@@ -62,6 +68,30 @@ export default defineConfig(({ mode }) => ({
               expiration: {
                 maxEntries: 50,
                 maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
+              }
+            }
+          },
+          {
+            // Runtime cache for large mermaid diagrams
+            urlPattern: /assets\/.*flowchart.*\.js$/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'mermaid-diagrams',
+              expiration: {
+                maxEntries: 20,
+                maxAgeSeconds: 60 * 60 * 24 * 30 // 30 days
+              }
+            }
+          },
+          {
+            // Runtime cache for images
+            urlPattern: /\/lovable-uploads\/.*/,
+            handler: 'CacheFirst',
+            options: {
+              cacheName: 'image-cache',
+              expiration: {
+                maxEntries: 50,
+                maxAgeSeconds: 60 * 60 * 24 * 90 // 90 days
               }
             }
           }
