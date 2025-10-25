@@ -1,24 +1,20 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Button } from '@/components/ui/button';
 
 const SplashPage = () => {
   const navigate = useNavigate();
 
-  // Load Vimeo player script
+  // Safe video loading with fallback
+  const [videoLoaded, setVideoLoaded] = useState(false);
+  const [showFallback, setShowFallback] = useState(false);
+
   useEffect(() => {
-    const script = document.createElement('script');
-    script.src = 'https://player.vimeo.com/api/player.js';
-    script.async = true;
-    document.head.appendChild(script);
-    return () => {
-      // Cleanup script on unmount
-      const existingScript = document.querySelector('script[src="https://player.vimeo.com/api/player.js"]');
-      if (existingScript) {
-        document.head.removeChild(existingScript);
-      }
-    };
-  }, []);
+    const t = setTimeout(() => {
+      if (!videoLoaded) setShowFallback(true);
+    }, 2000);
+    return () => clearTimeout(t);
+  }, [videoLoaded]);
   return (
     <div className="h-screen flex flex-col bg-gradient-to-br from-qripto-dark via-qripto-primary to-qripto-secondary">
       <div className="container max-w-4xl mx-auto px-4 py-8 flex flex-col h-full">
@@ -29,20 +25,47 @@ const SplashPage = () => {
               padding: '56.25% 0 0 0',
               position: 'relative'
             }}>
-              <iframe 
-                src="https://player.vimeo.com/video/1086475550?badge=0&autopause=0&player_id=0&app_id=58479" 
-                frameBorder="0" 
-                allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media" 
-                style={{
-                  position: 'absolute',
-                  top: 0,
-                  left: 0,
-                  width: '100%',
-                  height: '100%'
-                }} 
-                title="AIgent Nakamoto" 
-                className="rounded-lg shadow-2xl" 
-              />
+              {showFallback ? (
+                <div className="relative rounded-lg shadow-2xl overflow-hidden">
+                  <img
+                    src="/placeholder.svg"
+                    alt="Aigent Nakamoto intro video placeholder"
+                    className="w-full h-auto"
+                    loading="lazy"
+                  />
+                  <div className="absolute inset-0 flex items-center justify-center bg-black/60">
+                    <div className="text-center space-y-3 px-6">
+                      <p className="text-white text-sm md:text-base">Video unavailable in this environment.</p>
+                      <a
+                        href="https://vimeo.com/1086475550"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="inline-flex items-center justify-center rounded-md border border-white/30 px-4 py-2 text-white hover:bg-white/10 transition"
+                      >
+                        Open on Vimeo
+                      </a>
+                    </div>
+                  </div>
+                </div>
+              ) : (
+                <iframe 
+                  src="https://player.vimeo.com/video/1086475550?badge=0&autopause=0&player_id=0&app_id=58479" 
+                  frameBorder="0" 
+                  allow="autoplay; fullscreen; picture-in-picture; clipboard-write; encrypted-media" 
+                  style={{
+                    position: 'absolute',
+                    top: 0,
+                    left: 0,
+                    width: '100%',
+                    height: '100%'
+                  }} 
+                  title="AIgent Nakamoto" 
+                  className="rounded-lg shadow-2xl" 
+                  loading="lazy"
+                  referrerPolicy="no-referrer-when-downgrade"
+                  onLoad={() => setVideoLoaded(true)}
+                />
+              )}
             </div>
           </div>
 
