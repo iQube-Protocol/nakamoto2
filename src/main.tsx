@@ -2,6 +2,7 @@
 import { createRoot } from 'react-dom/client'
 import App from './App.tsx'
 import './index.css'
+import './styles/pwa.css'
 import NavigationGuard from '@/utils/NavigationGuard';
 
 console.log("Starting application initialization");
@@ -72,6 +73,25 @@ root.render(<App />);
 // Handle splash logic after rendering
 if (!localStorage.getItem('splashSeen') && window.location.pathname === '/') {
   localStorage.setItem('splashSeen', 'true');
+}
+
+// Register PWA service worker
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => {
+    // The service worker will be automatically registered by vite-plugin-pwa
+    navigator.serviceWorker.register('/sw.js', { scope: '/' })
+      .then((registration) => {
+        console.log('✅ PWA Service Worker registered:', registration.scope);
+        
+        // Check for updates periodically
+        setInterval(() => {
+          registration.update();
+        }, 60 * 60 * 1000); // Check every hour
+      })
+      .catch((error) => {
+        console.log('❌ PWA Service Worker registration failed:', error);
+      });
+  });
 }
 
 console.log("Application initialization complete");
