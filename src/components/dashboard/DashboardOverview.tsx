@@ -112,12 +112,12 @@ const DashboardOverview = ({ metrics, metaQube }: DashboardOverviewProps) => {
         </CardContent>
       </Card>
 
-      {/* MonDAI Health */}
+      {/* Aigent Health */}
       <Card className="shadow-sm">
         <CardHeader className="p-3 pb-0">
           <CardTitle className="text-sm font-medium flex items-center">
             <Shield className="h-4 w-4 mr-2 text-iqube-accent" />
-            MonDAI Health
+            Aigent Health
           </CardTitle>
         </CardHeader>
         <CardContent className="p-3 pt-2">
@@ -142,7 +142,7 @@ const DashboardOverview = ({ metrics, metaQube }: DashboardOverviewProps) => {
       {/* MetaQube Info Card - Using Collapsible */}
       <Card className="shadow-sm md:col-span-2">
         <CardHeader className="p-3 pb-2 flex flex-row items-center justify-between">
-          <CardTitle className="text-sm">MonDAI iQube</CardTitle>
+          <CardTitle className="text-sm">Aigent iQube</CardTitle>
           <Collapsible className="w-full">
             <CollapsibleTrigger className="text-xs text-iqube-accent hover:underline">
               View Details
@@ -194,7 +194,7 @@ const DashboardOverview = ({ metrics, metaQube }: DashboardOverviewProps) => {
           <div className="flex items-center">
             <AlertCircle className="h-5 w-5 mr-2 text-amber-500" />
             <div>
-              <p className="text-sm font-medium">Mint MonDAI iQube</p>
+              <p className="text-sm font-medium">Mint Aigent iQube</p>
               <p className="text-xs text-muted-foreground">Enhance security</p>
             </div>
           </div>

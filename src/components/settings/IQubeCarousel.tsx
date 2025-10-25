@@ -97,8 +97,8 @@ const IQubeCarousel = ({
   const getMetaQubeData = (qubeId: string): MetaQube => {
     // Map qube IDs to their corresponding data in QubeData.tsx
     const qubeMapping: {[key: string]: keyof typeof qubeData} = {
-      "Qripto Persona": "monDai",
-      "KNYT Persona": "knytPersona", 
+      "Qripto Persona": "aigent",
+      "KNYT Persona": "knytPersona",
       "Venice": "venice",
       "OpenAI": "openai",
       "Metis": "metis"

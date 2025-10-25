@@ -1,6 +1,6 @@
 
 import React, { useState, useEffect } from 'react';
-import { qubeData, monDaiQubeData } from '@/components/settings/QubeData';
+import { qubeData, aigentQubeData } from '@/components/settings/QubeData';
 import { MetaQube } from '@/lib/types';
 import IQubeSelector from '@/components/settings/IQubeSelector';
 import IQubeActivationManager from '@/components/settings/IQubeActivationManager';
@@ -14,7 +14,7 @@ import { useOpenAIAgent } from '@/hooks/use-openai-agent';
 import { walletConnectionService } from '@/services/wallet-connection-service';
 
 const Settings = () => {
-  const [selectedIQube, setSelectedIQube] = useState<MetaQube>(qubeData.monDai);
+  const [selectedIQube, setSelectedIQube] = useState<MetaQube>(qubeData.aigent);
   const { metisActivated } = useMetisAgent();
   const { qriptoPersonaActivated } = useQriptoPersona();
   const { veniceActivated } = useVeniceAgent();

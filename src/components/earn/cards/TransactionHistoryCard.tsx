@@ -35,8 +35,8 @@ const TransactionHistoryCard = () => {
                   </div>
                   <div>
                     <div className="text-sm font-medium">
-                      {i % 3 === 0 ? 'Received MonDAI' : 
-                       i % 3 === 1 ? 'Sent MonDAI' : 
+                      {i % 3 === 0 ? 'Received Aigent' : 
+                       i % 3 === 1 ? 'Sent Aigent' : 
                        'Staking Deposit'}
                     </div>
                     <div className="text-xs text-muted-foreground">

@@ -43,7 +43,7 @@ const TokenPriceChart = ({ tokenMetrics, chartData, timeframe, setTimeframe }: T
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center">
             <Activity className="mr-2 h-5 w-5 text-iqube-accent" />
-            MonDAI Token Price
+            Aigent Token Price
           </CardTitle>
           <div className="flex items-center">
             <Button

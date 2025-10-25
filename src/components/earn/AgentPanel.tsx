@@ -137,14 +137,14 @@ const AgentPanel = ({
     <div className={`${isPanelCollapsed ? 'col-span-11' : 'col-span-8'} flex flex-col`}>
       <AgentInterface
         title="Earning Assistant"
-        description="MonDAI token insights and earning opportunities"
+        description="Aigent token insights and earning opportunities"
         agentType="earn"
         onMessageSubmit={handleAIMessage}
         initialMessages={[
           {
             id: "1",
             sender: "agent",
-            message: "Welcome to your Earn dashboard. I see MonDAI token has grown by 3.5% this week! Based on your iQube data, I can suggest personalized earning strategies. Would you like to explore staking options or learn about upcoming airdrops?",
+            message: "Welcome to your Earn dashboard. I see Aigent token has grown by 3.5% this week! Based on your iQube data, I can suggest personalized earning strategies. Would you like to explore staking options or learn about upcoming airdrops?",
             timestamp: new Date().toISOString(),
             metadata: {
               version: "1.0",

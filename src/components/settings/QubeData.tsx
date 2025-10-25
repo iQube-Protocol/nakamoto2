@@ -1,10 +1,10 @@
 import { MetaQube } from '@/lib/types';
 
 export const qubeData = {
-  monDai: {
+  aigent: {
     "iQube-Identifier": "Qripto Persona iQube",
     "iQube-Type": "DataQube",
-    "iQube-Designer": "Aigent MonDAI",
+    "iQube-Designer": "Aigent",
     "iQube-Use": "For personalized cryptocurrency recommendations and portfolio analysis",
     "Owner-Type": "Person",
     "Owner-Identifiability": "Semi-Identifiable",
@@ -141,8 +141,8 @@ export const qubeData = {
   }
 };
 
-export const monDaiQubeData = {
-  id: 'monDai',
+export const aigentQubeData = {
+  id: 'aigent',
   name: 'Qripto Persona iQube',
   type: 'Personal Data',
   href: '/settings',

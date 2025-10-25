@@ -181,7 +181,7 @@ const UserPersonaDisplay: React.FC<UserPersonaDisplayProps> = ({
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="original">Original Invitation Data</TabsTrigger>
           <TabsTrigger value="knyt">KNYT Persona</TabsTrigger>
-          <TabsTrigger value="qrypto">Qripto Persona</TabsTrigger>
+          <TabsTrigger value="qripto">Qripto Persona</TabsTrigger>
         </TabsList>
 
         <TabsContent value="original" className="space-y-4">

@@ -65,10 +65,10 @@ const PersonaSection: React.FC<PersonaSectionProps> = ({
 
   // Function to get tooltip content based on persona name
   const getTooltipContent = (personaName: string) => {
-    if (personaName === "Qrypto Persona") {
+    if (personaName === "Qripto Persona") {
       return (
         <div className="space-y-1">
-          <div className="font-semibold">Qrypto Persona</div>
+          <div className="font-semibold">Qripto Persona</div>
           <div className="text-xs">
             Profile information about the user that when activated will be injected into the context window of the Agent, enabling it to give personalized responses.
           </div>

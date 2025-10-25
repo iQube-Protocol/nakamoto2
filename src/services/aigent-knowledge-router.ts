@@ -52,9 +52,9 @@ export class AigentKnowledgeRouter {
   private detectQueryIntent(message: string): {
     iqube: boolean;
     coyn: boolean;
-    qrypto: boolean;
+    qripto: boolean;
     metaknyts: boolean;
-    priority: 'iqube' | 'coyn' | 'qrypto' | 'metaknyts' | 'general';
+    priority: 'iqube' | 'coyn' | 'qripto' | 'metaknyts' | 'general';
   } {
     const lowerMessage = message.toLowerCase();
     
@@ -73,8 +73,8 @@ export class AigentKnowledgeRouter {
       'micro-stable', 'stablecoin', 'ethereum', 'evm'
     ];
     
-    // Qrypto-specific terms  
-    const qryptoTerms = [
+    // Qripto-specific terms  
+    const qriptoTerms = [
       'consensus', 'blockchain', 'mining', 'proof of work', 'proof of stake',
       'tokenomics', 'defi', 'smart contract', 'gas fees'
     ];
@@ -88,22 +88,22 @@ export class AigentKnowledgeRouter {
 
     const hasIQubeTerms = iQubeTerms.some(term => lowerMessage.includes(term));
     const hasCoynTerms = coynTerms.some(term => lowerMessage.includes(term));
-    const hasQryptoTerms = qryptoTerms.some(term => lowerMessage.includes(term));
+    const hasQriptoTerms = qriptoTerms.some(term => lowerMessage.includes(term));
     const hasMetaKnytsTerms = metaKnytsTerms.some(term => lowerMessage.includes(term));
 
     // Determine priority based on specificity
-    let priority: 'iqube' | 'coyn' | 'qrypto' | 'metaknyts' | 'general' = 'general';
+    let priority: 'iqube' | 'coyn' | 'qripto' | 'metaknyts' | 'general' = 'general';
     if (hasIQubeTerms) priority = 'iqube';
     else if (hasCoynTerms) priority = 'coyn';
-    else if (hasQryptoTerms) priority = 'qrypto';
+    else if (hasQriptoTerms) priority = 'qripto';
     else if (hasMetaKnytsTerms) priority = 'metaknyts';
 
-    console.log(`🎯 Knowledge Router: Query intent detected - iQube: ${hasIQubeTerms}, COYN: ${hasCoynTerms}, Qrypto: ${hasQryptoTerms}, metaKnyts: ${hasMetaKnytsTerms}, Priority: ${priority}`);
+    console.log(`🎯 Knowledge Router: Query intent detected - iQube: ${hasIQubeTerms}, COYN: ${hasCoynTerms}, Qripto: ${hasQriptoTerms}, metaKnyts: ${hasMetaKnytsTerms}, Priority: ${priority}`);
 
     return {
       iqube: hasIQubeTerms,
       coyn: hasCoynTerms || priority === 'general', // Always search COYN as fallback
-      qrypto: hasQryptoTerms,
+      qripto: hasQriptoTerms,
       metaknyts: hasMetaKnytsTerms,
       priority
     };
@@ -142,14 +142,14 @@ export class AigentKnowledgeRouter {
       if (allResults.some(r => r.source.includes('COYN'))) sources.push('COYN Knowledge Base');
     }
 
-    // Search Qrypto KB if relevant
-    if (intent.qrypto || intent.priority === 'qrypto') {
-      console.log(`📚 Knowledge Router: Searching Qrypto KB`);
+    // Search Qripto KB if relevant
+    if (intent.qripto || intent.priority === 'qripto') {
+      console.log(`📚 Knowledge Router: Searching Qripto KB`);
       for (const term of searchTerms) {
         const results = this.qryptoKB.searchKnowledge(term);
         allResults.push(...results);
       }
-      if (allResults.some(r => r.source.includes('Qrypto'))) sources.push('Qrypto Knowledge Base');
+      if (allResults.some(r => r.source.includes('Qripto'))) sources.push('Qripto Knowledge Base');
     }
 
     // Search metaKnyts KB if relevant or as tertiary fallback

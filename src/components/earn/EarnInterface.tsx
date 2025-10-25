@@ -187,7 +187,7 @@ const EarnInterface = ({ tokenMetrics, metaQube, blakQube }: EarnInterfaceProps)
               className="flex items-center"
             >
               <DollarSign className="h-4 w-4 mr-1" />
-              MonDAI Price
+              Aigent Price
             </TabsTrigger>
             <TabsTrigger 
               value="stats" 

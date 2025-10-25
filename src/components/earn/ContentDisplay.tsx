@@ -54,7 +54,7 @@ const ContentDisplay = ({
       return (
         <Card className="h-full fixed top-0 left-0 right-0 bottom-0 z-50 bg-background m-4 rounded-lg shadow-lg">
           <CardHeader className="flex flex-row items-center justify-between">
-            <CardTitle className="text-lg">MonDAI Price</CardTitle>
+            <CardTitle className="text-lg">Aigent Price</CardTitle>
             <Button variant="ghost" size="icon" onClick={onCollapse}>
               <ChevronLeft className="h-4 w-4" />
             </Button>

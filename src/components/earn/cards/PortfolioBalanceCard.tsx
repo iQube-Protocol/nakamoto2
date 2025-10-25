@@ -7,7 +7,7 @@ const PortfolioBalanceCard = () => {
   return (
     <Card className="h-full">
       <CardHeader>
-        <CardTitle className="text-base">Your MonDAI Balance</CardTitle>
+        <CardTitle className="text-base">Your Aigent Balance</CardTitle>
       </CardHeader>
       <CardContent>
         <div className="text-3xl font-bold mb-1">2,500 MDAI</div>
