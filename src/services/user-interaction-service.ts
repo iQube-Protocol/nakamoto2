@@ -87,7 +87,32 @@ export const getUserInteractions = async (
     if (interactionType && !['all', 'qripto', 'knyt'].includes(interactionType)) {
       // Support both 'aigent' and legacy 'mondai' records
       if (interactionType === 'aigent') {
-        query = query.or('interaction_type.eq.aigent,interaction_type.eq.mondai');
+        // Fetch both native 'aigent'/'mondai' and legacy 'learn' rows tagged with agentType: 'aigent'
+        const { data: nativeData, error: nativeError } = await (supabase as any)
+          .from('user_interactions')
+          .select('*')
+          .eq('user_id', user_id)
+          .or('interaction_type.eq.aigent,interaction_type.eq.mondai')
+          .order('created_at', { ascending: false })
+          .limit(limit);
+        const { data: legacyData, error: legacyError } = await (supabase as any)
+          .from('user_interactions')
+          .select('*')
+          .eq('user_id', user_id)
+          .eq('interaction_type', 'learn')
+          .contains('metadata', { agentType: 'aigent' })
+          .order('created_at', { ascending: false })
+          .limit(limit);
+        if (nativeError || legacyError) {
+          const err = nativeError || legacyError;
+          console.error('Error fetching user interactions (aigent merge):', err);
+          return { data: null, error: err };
+        }
+        const merged = [...(nativeData || []), ...(legacyData || [])]
+          .sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime())
+          .slice(0, limit);
+        console.log(`DB QUERY: Merged ${merged.length} aigent interactions (native + legacy)`);
+        return { data: merged, error: null };
       } else {
         query = query.eq('interaction_type', interactionType);
       }

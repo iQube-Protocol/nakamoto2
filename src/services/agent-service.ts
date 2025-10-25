@@ -32,11 +32,12 @@ export const processAgentInteraction = async (
     console.log(`Agent interaction: Processing for user ID ${userId}`);
     
     // Store the interaction in the database using the service method
+    const dbInteractionType = agentType === 'aigent' ? 'learn' : agentType;
     const result = await storeUserInteraction({
       query,
       response: agentResponse,
-      interactionType: agentType,
-      metadata,
+      interactionType: dbInteractionType,
+      metadata: { ...(metadata || {}), agentType },
       user_id: userId
     });
     
@@ -50,8 +51,8 @@ export const processAgentInteraction = async (
         .insert({
           query,
           response: agentResponse,
-          interaction_type: agentType,
-          metadata,
+          interaction_type: dbInteractionType,
+          metadata: { ...(metadata || {}), agentType },
           user_id: userId
         })
         .select();

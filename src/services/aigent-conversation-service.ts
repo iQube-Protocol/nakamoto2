@@ -360,7 +360,7 @@ export class AigentConversationService {
   }
 
   /**
-   * Store conversation exchange with proper metadata - NOW USING MONDAI TYPE
+   * Store conversation exchange with proper metadata - store as 'learn' for DB compatibility
    */
   async storeConversationExchange(
     conversationId: string,
@@ -377,7 +377,7 @@ export class AigentConversationService {
         .from('user_interactions')
         .insert({
           user_id: user.id,
-          interaction_type: 'aigent', // Changed from 'learn' to 'aigent'
+          interaction_type: 'learn', // Use 'learn' for RLS compatibility; tag below with agentType
           query: userMessage,
           response: agentResponse,
           metadata: {
