@@ -377,7 +377,7 @@ export class AigentConversationService {
         .from('user_interactions')
         .insert({
           user_id: user.id,
-          interaction_type: 'learn', // Use 'learn' for RLS compatibility; tag below with agentType
+          interaction_type: 'mondai', // Legacy-compatible type; identify via metadata.agentType
           query: userMessage,
           response: agentResponse,
           metadata: {
