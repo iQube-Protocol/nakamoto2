@@ -6,11 +6,38 @@ export const useOpenAIAgent = () => {
   const [openAIActivated, setOpenAIActivated] = useState(() => {
     const stored = localStorage.getItem(OPENAI_STORAGE_KEY);
     console.log('🏗️ OpenAI Hook: Initial state from localStorage:', stored);
+    
+    // If no stored value exists, check if any other agent is active
+    if (stored === null) {
+      const veniceActive = localStorage.getItem('venice_activated') === 'true';
+      const chainGPTActive = localStorage.getItem('chaingpt_activated') === 'true';
+      
+      // If no other agent is active, default OpenAI to true
+      if (!veniceActive && !chainGPTActive) {
+        localStorage.setItem(OPENAI_STORAGE_KEY, 'true');
+        return true;
+      }
+      return false;
+    }
+    
     return stored === 'true';
   });
 
   const [openAIVisible, setOpenAIVisible] = useState(() => {
     const stored = localStorage.getItem(OPENAI_STORAGE_KEY);
+    
+    // If no stored value exists, check if any other agent is active
+    if (stored === null) {
+      const veniceActive = localStorage.getItem('venice_activated') === 'true';
+      const chainGPTActive = localStorage.getItem('chaingpt_activated') === 'true';
+      
+      // If no other agent is active, default OpenAI to true
+      if (!veniceActive && !chainGPTActive) {
+        return true;
+      }
+      return false;
+    }
+    
     return stored === 'true';
   });
 
