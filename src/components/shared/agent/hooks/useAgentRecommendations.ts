@@ -100,7 +100,7 @@ export const useAgentRecommendations = (message: AgentMessage | null) => {
       setTimeout(() => setRecommendations(prev => ({ ...prev, showQryptoRecommendation: true })), 1000);
       recommendationShown = true;
     }
-  }, [qriptoPersonaActivated, knytPersonaActivated, veniceActivated]);
+  }, [message, qriptoPersonaActivated, knytPersonaActivated, veniceActivated]);
 
   // Auto-dismiss recommendations when agents get activated
   useEffect(() => {
