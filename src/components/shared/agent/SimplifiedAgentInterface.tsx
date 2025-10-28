@@ -11,6 +11,7 @@ import './styles/agent-interface.css';
 
 interface SimplifiedAgentInterfaceProps {
   title: string;
+  titleClassName?: string;
   description: string;
   agentType: 'learn' | 'earn' | 'connect' | 'aigent';
   conversationId?: string | null; 
@@ -23,6 +24,7 @@ interface SimplifiedAgentInterfaceProps {
 
 const SimplifiedAgentInterface = ({
   title,
+  titleClassName,
   description,
   agentType,
   conversationId: externalConversationId,
@@ -77,7 +79,8 @@ const SimplifiedAgentInterface = ({
   return (
     <Card className="flex flex-col h-full overflow-hidden">
       <AgentHeader 
-        title={title} 
+        title={title}
+        titleClassName={titleClassName}
         description={description} 
         isProcessing={isProcessing}
         additionalActions={additionalActions}

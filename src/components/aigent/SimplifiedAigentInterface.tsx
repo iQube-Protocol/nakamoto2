@@ -257,6 +257,7 @@ What would you like to explore today?`,
     <div className="h-screen flex flex-col">
       <SimplifiedAgentInterface
         title="Aigent Nakamoto"
+        titleClassName="font-orbitron"
         description={`Crypto-Agentic AI for iQube + COYN + Qripto + metaKnyts ${veniceActivated ? '(Venice AI)' : '(OpenAI)'} ${conversationId ? '🧠' : '💭'} [${buildVersion.substring(0, 8)}]`}
         agentType="aigent" 
         onMessageSubmit={handleAIMessage}

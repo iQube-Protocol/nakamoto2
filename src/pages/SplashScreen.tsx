@@ -18,7 +18,7 @@ const SplashScreen = () => {
   return (
     <div className="h-screen flex flex-col items-center justify-center bg-gradient-to-b from-background to-secondary/20">
       <div className="container max-w-md text-center space-y-6">
-        <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-iqube-primary to-iqube-accent">
+        <h1 className="text-4xl font-bold text-transparent bg-clip-text bg-gradient-to-r from-iqube-primary to-iqube-accent font-orbitron">
           Aigent
         </h1>
         <p className="text-xl text-muted-foreground">

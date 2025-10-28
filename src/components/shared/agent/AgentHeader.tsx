@@ -9,12 +9,13 @@ import { useChainGPTAgent } from '@/hooks/use-chaingpt-agent';
 
 interface AgentHeaderProps {
   title: string;
+  titleClassName?: string;
   description: string;
   isProcessing: boolean;
   additionalActions?: React.ReactNode;
 }
 
-const AgentHeader = ({ title, description, isProcessing, additionalActions }: AgentHeaderProps) => {
+const AgentHeader = ({ title, titleClassName, description, isProcessing, additionalActions }: AgentHeaderProps) => {
   const isMobile = useIsMobile();
   const { veniceActivated } = useVeniceAgent();
   const { chainGPTActivated } = useChainGPTAgent();
@@ -57,7 +58,7 @@ const AgentHeader = ({ title, description, isProcessing, additionalActions }: Ag
     <div className="p-4 border-b flex justify-between items-start">
       <div>
         <ScoreTooltip type="agentQube">
-          <h2 className="text-xl font-semibold flex items-center cursor-help">
+          <h2 className={`text-xl font-semibold flex items-center cursor-help ${titleClassName || ''}`}>
             {title === "Aigent Nakamoto" ? (
               <>
                 <Bot className="mr-2 h-5 w-5 text-qrypto-accent" />

@@ -16,9 +16,9 @@ const AuthLayout = ({
           <div className="mb-6">
             <Link to="/" className="flex items-center">
               <div className="w-10 h-10 rounded-full bg-gradient-to-br from-iqube-primary to-iqube-accent flex items-center justify-center text-white font-bold text-xl\n\nShould be an N">N</div>
-              <span className="ml-2 text-2xl font-bold">Nakamoto</span>
+              <span className="ml-2 text-2xl font-bold font-orbitron">Nakamoto</span>
             </Link>
-            <h2 className="mt-6 text-3xl font-extrabold text-foreground">{title}</h2>
+            <h2 className="mt-6 text-3xl font-extrabold text-foreground font-orbitron">{title}</h2>
             {subtitle && <p className="mt-2 text-sm text-muted-foreground">{subtitle}</p>}
           </div>
           {children}
@@ -34,7 +34,7 @@ const AuthLayout = ({
               <span className="text-4xl font-bold">N</span>
             </div>
           </div>
-          <h1 className="text-4xl font-bold mb-4 text-center">Aigent Nakamoto</h1>
+          <h1 className="text-4xl font-bold mb-4 text-center font-orbitron">Aigent Nakamoto</h1>
           <p className="text-xl opacity-80 max-w-lg text-center">
             Your private, personalized, censorship proof AI
           </p>
