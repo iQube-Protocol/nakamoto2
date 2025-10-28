@@ -29,7 +29,7 @@ const dashboardMetrics: DashboardMetrics = {
   qubeHealth: 82,
   recentActivity: [
     "Connected with Alex Chen in DeFi Group",
-    "Earned 25 MonDAI tokens from staking rewards",
+    "Earned 25 Aigent tokens from staking rewards",
     "Completed Web3 Fundamentals lesson 8",
     "Updated iQube privacy settings",
     "Joined NFT Collectors community"
@@ -86,7 +86,7 @@ const Index = () => {
           </CardHeader>
           <CardContent>
             <p className="text-sm text-muted-foreground mb-4">
-              Manage your MonDAI tokens and explore earning opportunities in the web3 ecosystem.
+              Manage your Aigent tokens and explore earning opportunities in the web3 ecosystem.
             </p>
             <div className="bg-green-500/10 text-green-600 p-3 rounded-md text-sm mb-2">
               New staking pool available with 8.5% APY

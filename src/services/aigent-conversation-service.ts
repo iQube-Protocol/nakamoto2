@@ -123,7 +123,7 @@ export class AigentConversationService {
               const metadata = typeof interaction.metadata === 'string' 
                 ? JSON.parse(interaction.metadata) 
                 : interaction.metadata;
-              return metadata.agentType === 'aigent' || metadata.agentType === 'mondai'; // Support both for migration
+              return metadata.agentType === 'aigent';
             } catch (e) {
               return false;
             }
@@ -137,7 +137,7 @@ export class AigentConversationService {
         const { data: fallbackQuery, error: fallbackError } = await supabase
           .from('user_interactions')
           .select('id, query, response, created_at, metadata')
-          .or('interaction_type.eq.aigent,interaction_type.eq.learn,interaction_type.eq.mondai')
+          .or('interaction_type.eq.aigent,interaction_type.eq.learn')
           .like('metadata', `%${conversationId}%`)
           .order('created_at', { ascending: false })
           .limit(this.MEMORY_WINDOW_SIZE);
@@ -377,7 +377,7 @@ export class AigentConversationService {
         .from('user_interactions')
         .insert({
           user_id: user.id,
-          interaction_type: 'mondai', // Legacy-compatible type; identify via metadata.agentType
+          interaction_type: 'aigent', // Aigent interaction type
           query: userMessage,
           response: agentResponse,
           metadata: {

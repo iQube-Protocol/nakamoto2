@@ -6,7 +6,7 @@ import { toast } from 'sonner';
 import { KBAIKnowledgeItem } from '@/integrations/kbai';
 import { supabase } from '@/integrations/supabase/client';
 
-export interface MonDAIResponse {
+export interface AigentResponse {
   conversationId: string;
   message: string;
   timestamp: string;
@@ -20,13 +20,13 @@ export interface MonDAIResponse {
 }
 
 /**
- * MonDAI system prompt for conversational responses
+ * Aigent system prompt for conversational responses
  */
-export const MONDAI_SYSTEM_PROMPT = `
-## **MonDAI: Crypto-Agentic AI for the CryptoMondays Community**
+export const AIGENT_SYSTEM_PROMPT = `
+## **Aigent: Crypto-Agentic AI for the CryptoMondays Community**
 
 **<role-description>**
-You are MonDAI, a friendly and intelligent AI agent designed to serve the global CryptoMondays community. Your mission is to help users learn, earn, and connect around the themes of blockchain, Web3, and decentralized AI in a way that is welcoming, clear, and empowering — especially for newcomers.
+You are Aigent, a friendly and intelligent AI agent designed to serve the global CryptoMondays community. Your mission is to help users learn, earn, and connect around the themes of blockchain, Web3, and decentralized AI in a way that is welcoming, clear, and empowering — especially for newcomers.
 
 You are not a typical AI assistant. You are a crypto-agentic AI, meaning you prioritize user sovereignty, privacy, and contextual intelligence. You do not rely on centralized data extraction models. Instead, you use a privacy-preserving and decentralized technology called iQubes. These are secure, modular information containers that allow you to deliver personalized, context-aware support while protecting the user's data rights.
 
@@ -159,11 +159,11 @@ Your tone is conversational, upbeat, and always encouraging — like a helpful f
 export async function generateNakamotoResponse(
   message: string, 
   conversationId: string | null
-): Promise<MonDAIResponse> {
+): Promise<AigentResponse> {
   // Get conversation context if we have a conversationId
   let contextResult;
   if (conversationId) {
-    // Always use 'learn' for mondai backend requests
+    // Always use 'learn' for aigent backend requests
     contextResult = await getConversationContext(conversationId, 'learn');
     conversationId = contextResult.conversationId;
   } else {
@@ -225,7 +225,7 @@ export async function generateNakamotoResponse(
   }
 
   try {
-    // Try to call the mondai-ai function with knowledge items
+    // Try to call the aigent-ai function with knowledge items
     const { data, error } = await supabase.functions.invoke('mondai-ai', {
       body: { 
         message, 
@@ -236,15 +236,15 @@ export async function generateNakamotoResponse(
     });
     
     if (error) {
-      console.error('Error calling mondai-ai function:', error);
+      console.error('Error calling aigent-ai function:', error);
       throw new Error(error.message);
     }
     
     // Return the response from the edge function
     return data;
     
-  } catch (mondaiError) {
-    console.error('Error with mondai-ai function, falling back to learn-ai:', mondaiError);
+  } catch (aigentError) {
+    console.error('Error with aigent-ai function, falling back to learn-ai:', aigentError);
     
     // Fallback to learn-ai with the Nakamoto system prompt
     try {
@@ -263,7 +263,7 @@ export async function generateNakamotoResponse(
         throw new Error(error.message);
       }
       
-      // Map learn-ai response format to MonDAI response format
+      // Map learn-ai response format to Aigent response format
       return {
         conversationId: data.conversationId || conversationId,
         message: data.response || data.message,
@@ -294,7 +294,7 @@ function createBasicFallbackResponse(
   message: string,
   conversationId: string,
   knowledgeItems: KBAIKnowledgeItem[]
-): MonDAIResponse {
+): AigentResponse {
   // Extract main topic for more contextual response
   const topic = extractMainTopic(message);
   
@@ -385,10 +385,10 @@ export async function processNakamotoInteraction(
   // Generate response using the service
   const response = await generateNakamotoResponse(message, conversationId);
   
-  // Store the interaction using the agent service - explicitly use 'learn' for mondai
+  // Store the interaction using the agent service - explicitly use 'learn' for aigent
   await processAgentInteraction(
     message,
-    'learn', // Always use 'learn' instead of 'mondai' for backend compatibility
+    'learn', // Always use 'learn' instead of 'aigent' for backend compatibility
     response.message,
     response.metadata
   );
@@ -397,5 +397,5 @@ export async function processNakamotoInteraction(
 }
 
 // Export both old and new function names for compatibility
-export const generateMonDAIResponse = generateNakamotoResponse;
-export const processMonDAIInteraction = processNakamotoInteraction;
+export const generateAigentResponse = generateNakamotoResponse;
+export const processAigentInteraction = processNakamotoInteraction;

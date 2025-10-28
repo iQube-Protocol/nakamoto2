@@ -21,7 +21,7 @@ const ToolQube = () => {
             <CardDescription>Link your documents and files</CardDescription>
           </CardHeader>
           <CardContent>
-            <p>Connect your Google Drive to access and analyze your documents with MonDAI.</p>
+            <p>Connect your Google Drive to access and analyze your documents with Aigent.</p>
           </CardContent>
         </Card>
         
@@ -31,7 +31,7 @@ const ToolQube = () => {
             <CardDescription>Organize your learning materials</CardDescription>
           </CardHeader>
           <CardContent>
-            <p>Browse, search, and organize documents that you've shared with MonDAI for analysis.</p>
+            <p>Browse, search, and organize documents that you've shared with Aigent for analysis.</p>
           </CardContent>
         </Card>
       </div>

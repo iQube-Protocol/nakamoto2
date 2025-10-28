@@ -6,9 +6,9 @@ import { TooltipProvider } from '@/components/ui/tooltip';
 
 // Sample metaQube data
 const metaQubeData: MetaQube = {
-  "iQube-Identifier": "MonDAI iQube",
+  "iQube-Identifier": "Aigent iQube",
   "iQube-Type": "DataQube",
-  "iQube-Designer": "Aigent MonDAI",
+  "iQube-Designer": "Aigent",
   "iQube-Use": "For learning, earning and networking in web3 communities",
   "Owner-Type": "Person",
   "Owner-Identifiability": "Semi-Identifiable",

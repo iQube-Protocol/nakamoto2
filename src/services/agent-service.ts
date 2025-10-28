@@ -31,8 +31,8 @@ export const processAgentInteraction = async (
     const userId = session.user.id;
     console.log(`Agent interaction: Processing for user ID ${userId}`);
 
-    // For fallback inserts, map 'aigent' to legacy 'mondai' for DB compatibility
-    const dbInteractionType = agentType === 'aigent' ? 'mondai' : agentType;
+    // Use aigent as the interaction type
+    const dbInteractionType = agentType;
     
     // Store the interaction in the database using the service method (tries native type first)
     const result = await storeUserInteraction({

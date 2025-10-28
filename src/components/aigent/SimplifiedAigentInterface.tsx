@@ -32,7 +32,7 @@ const SimplifiedAigentInterface: React.FC = React.memo(() => {
     // Check localStorage
     for (let i = 0; i < localStorage.length; i++) {
       const key = localStorage.key(i);
-      if (key && (key.includes('aigent') || key.includes('mondai') || key.includes('mermaid') || key.includes('conversation') || key.includes('agent'))) {
+      if (key && (key.includes('aigent') || key.includes('mermaid') || key.includes('conversation') || key.includes('agent'))) {
         keysToRemove.push(key);
       }
     }
@@ -40,7 +40,7 @@ const SimplifiedAigentInterface: React.FC = React.memo(() => {
     // Check sessionStorage
     for (let i = 0; i < sessionStorage.length; i++) {
       const key = sessionStorage.key(i);
-      if (key && (key.includes('aigent') || key.includes('mondai') || key.includes('mermaid') || key.includes('conversation') || key.includes('agent'))) {
+      if (key && (key.includes('aigent') || key.includes('mermaid') || key.includes('conversation') || key.includes('agent'))) {
         keysToRemove.push(key);
       }
     }

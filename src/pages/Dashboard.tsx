@@ -12,7 +12,7 @@ const Dashboard = () => {
     qubeHealth: 82,
     recentActivity: [
       "Connected with Alex Chen in DeFi Group",
-      "Earned 25 MonDAI tokens from staking rewards",
+      "Earned 25 Aigent tokens from staking rewards",
       "Completed Web3 Fundamentals lesson 8",
       "Updated iQube privacy settings",
       "Joined NFT Collectors community"

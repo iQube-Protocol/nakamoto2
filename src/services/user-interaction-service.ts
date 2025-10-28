@@ -83,16 +83,16 @@ export const getUserInteractions = async (
     
     // Only filter by interaction_type for the original types (aigent, learn, earn, connect)
     // For 'all', 'qripto', 'knyt' we fetch everything and let the UI do persona-based filtering
-    // Note: For migration support, the DB may still contain 'mondai' records which are treated as 'aigent'
+    // Note: For migration support, the DB may still contain legacy records which are treated as 'aigent'
     if (interactionType && !['all', 'qripto', 'knyt'].includes(interactionType)) {
-      // Support both 'aigent' and legacy 'mondai' records
+      // Support aigent records
       if (interactionType === 'aigent') {
-        // Fetch both native 'aigent'/'mondai' and legacy 'learn' rows tagged with agentType: 'aigent'
+        // Fetch both native 'aigent' and legacy 'learn' rows tagged with agentType: 'aigent'
         const { data: nativeData, error: nativeError } = await (supabase as any)
           .from('user_interactions')
           .select('*')
           .eq('user_id', user_id)
-          .or('interaction_type.eq.aigent,interaction_type.eq.mondai')
+          .eq('interaction_type', 'aigent')
           .order('created_at', { ascending: false })
           .limit(limit);
         const { data: legacyData, error: legacyError } = await (supabase as any)

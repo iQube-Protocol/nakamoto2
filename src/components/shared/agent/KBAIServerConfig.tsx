@@ -28,7 +28,7 @@ export const KBAIServerConfig: React.FC<KBAIServerConfigProps> = ({
     <div className="text-center p-4">
       <WifiOff className="h-8 w-8 mx-auto mb-2 text-muted-foreground" />
       <p className="text-sm text-muted-foreground">
-        MonDAI is running in offline mode with built-in knowledge base.
+        Aigent is running in offline mode with built-in knowledge base.
       </p>
     </div>
   );

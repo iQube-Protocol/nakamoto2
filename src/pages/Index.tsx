@@ -12,8 +12,8 @@ const Index = () => {
     // Only perform redirects if we're actually on the root path
     if (!loading && location.pathname === '/') {
       if (user) {
-        // User is authenticated, redirect directly to MonDAI agent
-        console.log("User authenticated, redirecting to MonDAI");
+        // User is authenticated, redirect directly to Aigent
+        console.log("User authenticated, redirecting to Aigent");
         navigate('/aigent', { replace: true });
       } else {
         // For preview/development, show the splash page instead of forcing sign-in

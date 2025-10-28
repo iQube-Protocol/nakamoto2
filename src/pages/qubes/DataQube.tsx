@@ -9,7 +9,7 @@ const DataQube = () => {
       <div className="flex items-center mb-6">
         <Database className="h-8 w-8 text-iqube-primary mr-3" />
         <div>
-          <h1 className="text-2xl font-bold">MonDAI DataQube</h1>
+          <h1 className="text-2xl font-bold">Aigent DataQube</h1>
           <p className="text-muted-foreground">Explore and manage your personal data insights</p>
         </div>
       </div>

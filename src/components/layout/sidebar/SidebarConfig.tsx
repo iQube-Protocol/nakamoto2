@@ -26,7 +26,7 @@ export interface SidebarSection {
   items: SidebarItem[];
 }
 
-// Simplified sidebar configuration for MonDAI Lite
+// Simplified sidebar configuration for Aigent
 export const sidebarConfig: SidebarSection[] = [
   {
     id: 'main',

@@ -119,7 +119,7 @@ const PrivacyPolicy = () => {
                 <section>
                   <h2 className="text-lg font-semibold mb-3">Data Usage and AI Interactions</h2>
                   <div className="space-y-3 text-muted-foreground">
-                    <p>When you interact with our AI agents (Learn, Earn, Connect, MonDAI):</p>
+                    <p>When you interact with our AI agents (Learn, Earn, Connect, Aigent):</p>
                     <ul className="list-disc list-inside ml-4 space-y-1">
                       <li>Conversation data is stored locally and encrypted</li>
                       <li>AI responses are generated based on your explicit queries</li>

@@ -6,7 +6,7 @@
 import { COYN_KNOWLEDGE_DATA } from './coyn-knowledge-base/knowledge-data';
 import { knytKnowledgeData } from './knyt-knowledge-base/knowledge-data';
 import { IQUBES_KNOWLEDGE_DATA } from './iqubes-knowledge-base/knowledge-data';
-import { NAKAMOTO_SYSTEM_PROMPT } from './mondai-service';
+import { NAKAMOTO_SYSTEM_PROMPT } from './aigent-service';
 
 export interface QubeBaseDocument {
   slug: string;

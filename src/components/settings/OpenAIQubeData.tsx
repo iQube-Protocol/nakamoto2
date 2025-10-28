@@ -54,7 +54,7 @@ export const OpenAIQubeData = () => {
 
       <div className="text-xs text-muted-foreground">
         <p className="mb-1">
-          <strong>Note:</strong> Only one AI provider (MonDAI, OpenAI, or Venice) can be active at a time.
+          <strong>Note:</strong> Only one AI provider (Aigent, OpenAI, or Venice) can be active at a time.
         </p>
         <p>
           Activating OpenAI will automatically deactivate other AI providers.

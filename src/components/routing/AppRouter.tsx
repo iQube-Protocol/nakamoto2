@@ -56,7 +56,6 @@ const AppRouter = () => {
             {/* Main app routes with layout */}
             <Route element={<MainLayout />}>
               <Route path="/aigent" element={<Aigent />} />
-              <Route path="/mondai" element={<Aigent />} />
               <Route path="/learn" element={<Learn />} />
               <Route path="/connect" element={<Connect />} />
               <Route path="/profile" element={<Profile />} />
