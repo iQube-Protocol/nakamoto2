@@ -48,19 +48,19 @@ const SplashPage = () => {
 
           {/* Title and Description */}
           <div className="text-center space-y-4 max-w-2xl">
-            <h1 className="text-xl md:text-2xl font-semibold text-qripto-accent font-orbitron">
-              Aigent Nakamoto
+            <h1 className="text-xl md:text-2xl font-semibold text-qripto-accent font-orbitron uppercase">
+              AIGENT NAKAMOTO
             </h1>
-            <p className="text-white/80 text-sm md:text-lg">Get your personalized iQube and COYN AI Agent</p>
+            <p className="text-white/80 text-sm md:text-lg uppercase">YOUR PERSONALIZED QRIPTO-AGENTIQ AIGENT</p>
             
             {/* Mobile Button - positioned right after description */}
             <div className="md:hidden pt-4">
               <Button 
                 onClick={() => navigate('/aigent')} 
                 variant="outline" 
-                className="w-full max-w-md border-white/30 text-white hover:bg-white/10"
+                className="w-full max-w-md border-white/30 text-white hover:bg-white/10 uppercase"
               >
-                Try Aigent Nakamoto
+                TRY AIGENT NAKAMOTO
               </Button>
             </div>
           </div>
@@ -71,9 +71,9 @@ const SplashPage = () => {
           <Button 
             onClick={() => navigate('/aigent')} 
             variant="outline" 
-            className="w-full border-white/30 text-white hover:bg-white/10"
+            className="w-full border-white/30 text-white hover:bg-white/10 uppercase"
           >
-            Try Aigent Nakamoto
+            TRY AIGENT NAKAMOTO
           </Button>
         </div>
 
