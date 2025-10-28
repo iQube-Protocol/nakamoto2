@@ -33,7 +33,7 @@ const SignIn = () => {
   useEffect(() => {
     if (user) {
       console.log("User already logged in, redirecting to mondai");
-      navigate('/mondai', { replace: true });
+      navigate('/aigent', { replace: true });
     }
   }, [user, navigate]);
 
