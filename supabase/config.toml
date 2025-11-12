@@ -24,3 +24,36 @@ verify_jwt = false
 
 [functions.naka-history-migrate]
 verify_jwt = false
+
+[functions.aa-assets-upload]
+verify_jwt = false
+
+[functions.aa-assets-register]
+verify_jwt = false
+
+[functions.aa-assets-policy]
+verify_jwt = false
+
+[functions.aa-payments-quote]
+verify_jwt = false
+
+[functions.aa-payments-events]
+verify_jwt = false
+
+[functions.aa-entitlements-get]
+verify_jwt = false
+
+[functions.aa-assets-list]
+verify_jwt = false
+
+[functions.aa-assets-get]
+verify_jwt = false
+
+[functions.aa-entitlements-list]
+verify_jwt = false
+
+[functions.aa-auth-login]
+verify_jwt = false
+
+[functions.aa-auth-did]
+verify_jwt = false
