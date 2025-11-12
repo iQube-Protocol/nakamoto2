@@ -1,5 +1,5 @@
 
-import { LucideIcon, Database, Settings, FolderGit2, Bot, User, Brain } from 'lucide-react';
+import { LucideIcon, Database, Settings, FolderGit2, Bot, User, Brain, Wallet } from 'lucide-react';
 import CubeIcon from '../sidebar/CubeIcon';
 
 export interface NavItem {
@@ -14,6 +14,11 @@ export const navItems: NavItem[] = [
     name: 'Nakamoto',
     href: '/aigent',
     icon: Bot,
+  },
+  {
+    name: 'AA Wallet',
+    href: '/aa/library',
+    icon: Wallet,
   },
   {
     name: 'Settings',

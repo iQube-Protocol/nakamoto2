@@ -27,6 +27,7 @@ import QubeBaseMigration from '@/pages/admin/QubeBaseMigration';
 import InvitedUserSignup from '@/components/auth/InvitedUserSignup';
 import OAuthCallback from '@/components/settings/OAuthCallback';
 import PasswordResetGuard from '@/components/auth/PasswordResetGuard';
+import { AAWallet } from '@/pages/AAWallet';
 
 const AppRouter = () => {
   return (
@@ -62,6 +63,9 @@ const AppRouter = () => {
               <Route path="/settings" element={<Settings />} />
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/legacy-dashboard" element={<LegacyDashboard />} />
+              
+              {/* AA Wallet routes */}
+              <Route path="/aa/*" element={<AAWallet />} />
               
               {/* Qube pages */}
               <Route path="/qubes/data" element={<DataQube />} />
