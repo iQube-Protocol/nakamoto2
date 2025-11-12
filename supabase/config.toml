@@ -57,3 +57,12 @@ verify_jwt = false
 
 [functions.aa-auth-did]
 verify_jwt = false
+
+[functions.aa-assets-share]
+verify_jwt = false
+
+[functions.aa-assets-shared]
+verify_jwt = false
+
+[functions.aa-assets-revoke]
+verify_jwt = false

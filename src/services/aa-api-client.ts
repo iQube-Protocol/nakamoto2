@@ -225,3 +225,49 @@ export async function getUserDID(): Promise<string> {
   if (error) throw new Error(`Failed to get DID: ${error.message}`);
   return data.did;
 }
+
+export interface ShareLink {
+  shareToken: string;
+  shareUrl: string;
+  expiresAt: string;
+  accessRights: string[];
+}
+
+/**
+ * Create a shareable link for an asset
+ */
+export async function createShareLink(
+  assetId: string, 
+  expiresIn?: number, 
+  accessRights?: string[]
+): Promise<ShareLink> {
+  const { data, error } = await coreHubClient.functions.invoke('aa-assets-share', {
+    body: { assetId, expiresIn, accessRights }
+  });
+
+  if (error) throw new Error(`Failed to create share link: ${error.message}`);
+  return data;
+}
+
+/**
+ * Access a shared asset via token
+ */
+export async function getSharedAsset(shareToken: string): Promise<{ asset: Asset; entitlement: Entitlement }> {
+  const { data, error } = await coreHubClient.functions.invoke('aa-assets-shared', {
+    body: { shareToken }
+  });
+
+  if (error) throw new Error(`Failed to access shared asset: ${error.message}`);
+  return data;
+}
+
+/**
+ * Revoke a share link
+ */
+export async function revokeShareLink(shareToken: string): Promise<void> {
+  const { data, error } = await coreHubClient.functions.invoke('aa-assets-revoke', {
+    body: { shareToken }
+  });
+
+  if (error) throw new Error(`Failed to revoke share link: ${error.message}`);
+}

@@ -2,7 +2,7 @@ import React, { useEffect, useState } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
 import { Card } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
-import { ArrowLeft, Download, Play, ShoppingCart, Loader2 } from 'lucide-react';
+import { ArrowLeft, Download, Play, ShoppingCart, Loader2, Share2 } from 'lucide-react';
 import { toast } from 'sonner';
 import {
   getAsset,
@@ -18,6 +18,7 @@ import { QRCodeSVG } from 'qrcode.react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { AssetPreview } from './AssetPreview';
+import { ShareAssetDialog } from './ShareAssetDialog';
 
 export const AssetDetail: React.FC = () => {
   const { assetId } = useParams<{ assetId: string }>();
@@ -29,6 +30,7 @@ export const AssetDetail: React.FC = () => {
   const [purchasing, setPurchasing] = useState(false);
   const [paymentQuote, setPaymentQuote] = useState<PaymentQuote | null>(null);
   const [showPaymentDialog, setShowPaymentDialog] = useState(false);
+  const [showShareDialog, setShowShareDialog] = useState(false);
 
   useEffect(() => {
     if (assetId) {
@@ -252,6 +254,14 @@ export const AssetDetail: React.FC = () => {
                   </Button>
                 )}
               </div>
+              <Button 
+                onClick={() => setShowShareDialog(true)} 
+                variant="secondary" 
+                className="w-full"
+              >
+                <Share2 className="w-4 h-4 mr-2" />
+                Share Asset
+              </Button>
             </div>
           ) : (
             <Button 
@@ -309,6 +319,15 @@ export const AssetDetail: React.FC = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {asset && (
+        <ShareAssetDialog
+          open={showShareDialog}
+          onOpenChange={setShowShareDialog}
+          assetId={asset.id}
+          assetTitle={asset.metadata.title}
+        />
+      )}
     </div>
   );
 };

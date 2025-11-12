@@ -4,6 +4,7 @@ import { CreatorFlow } from '@/components/aa/CreatorFlow';
 import { AssetLibrary } from '@/components/aa/AssetLibrary';
 import { AssetDetail } from '@/components/aa/AssetDetail';
 import { DIDLogin } from '@/components/aa/DIDLogin';
+import { SharedAssetView } from '@/components/aa/SharedAssetView';
 
 export const AAWallet: React.FC = () => {
   return (
@@ -14,6 +15,7 @@ export const AAWallet: React.FC = () => {
         <Route path="/create" element={<CreatorFlow />} />
         <Route path="/asset/:assetId" element={<AssetDetail />} />
         <Route path="/login" element={<DIDLogin />} />
+        <Route path="/shared" element={<SharedAssetView />} />
       </Routes>
     </div>
   );
