@@ -1,5 +1,5 @@
 
-import { LucideIcon, Database, Settings, FolderGit2, Bot, User, Brain, Wallet } from 'lucide-react';
+import { LucideIcon, Database, Settings, FolderGit2, Bot, User, Brain, Wallet, Plus, ShoppingBag, KeyRound } from 'lucide-react';
 import CubeIcon from '../sidebar/CubeIcon';
 
 export interface NavItem {
@@ -164,4 +164,36 @@ export const metaQubesData = [
   //   bgColor: "bg-orange-500/10",
   //   borderColor: "border-orange-500/20"
   // },
+];
+
+export interface AAQuickAction {
+  id: string;
+  name: string;
+  icon: LucideIcon;
+  href: string;
+  description: string;
+}
+
+export const aaQuickActions: AAQuickAction[] = [
+  {
+    id: 'create-asset',
+    name: 'Create Asset',
+    icon: Plus,
+    href: '/aa/create',
+    description: 'Upload and register a new digital asset',
+  },
+  {
+    id: 'view-purchases',
+    name: 'View Purchases',
+    icon: ShoppingBag,
+    href: '/aa/library?tab=purchases',
+    description: 'View your purchased entitlements',
+  },
+  {
+    id: 'check-did',
+    name: 'Check DID',
+    icon: KeyRound,
+    href: '/aa/login',
+    description: 'View and manage your Decentralized Identifier',
+  },
 ];

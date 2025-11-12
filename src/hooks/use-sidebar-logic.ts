@@ -24,12 +24,14 @@ export const useSidebarLogic = () => {
     collapsed, 
     iQubesOpen,
     personaOpen,
+    aaActionsOpen,
     mobileOpen, 
     selectedIQube, 
     toggleSidebar, 
     toggleMobileSidebar, 
     toggleIQubesMenu,
     togglePersonaMenu,
+    toggleAAActionsMenu,
     selectIQube 
   } = useSidebarState();
   const { signOut } = useAuth();
@@ -348,6 +350,7 @@ export const useSidebarLogic = () => {
     collapsed,
     iQubesOpen,
     personaOpen,
+    aaActionsOpen,
     mobileOpen,
     selectedIQube,
     activeIQubes,
@@ -355,6 +358,7 @@ export const useSidebarLogic = () => {
     toggleMobileSidebar,
     toggleIQubesMenu,
     togglePersonaMenu,
+    toggleAAActionsMenu,
     handleIQubeClick,
     toggleIQubeActive,
     

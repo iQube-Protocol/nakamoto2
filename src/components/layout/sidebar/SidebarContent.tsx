@@ -10,6 +10,7 @@ interface SidebarContentProps {
   collapsed: boolean;
   iQubesOpen: boolean;
   personaOpen: boolean;
+  aaActionsOpen: boolean;
   selectedIQube: string | null;
   activeQubes: {
     [key: string]: boolean;
@@ -20,6 +21,7 @@ interface SidebarContentProps {
   toggleSidebar: () => void;
   toggleIQubesMenu: () => void;
   togglePersonaMenu: () => void;
+  toggleAAActionsMenu: () => void;
   handleIQubeClick: (iqubeId: string) => void;
   toggleIQubeActive: (e: React.MouseEvent<HTMLDivElement>, qubeName: string) => void;
   handleSignOut: () => void;
@@ -29,12 +31,14 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
   collapsed,
   iQubesOpen,
   personaOpen,
+  aaActionsOpen,
   selectedIQube,
   activeQubes,
   location,
   toggleSidebar,
   toggleIQubesMenu,
   togglePersonaMenu,
+  toggleAAActionsMenu,
   handleIQubeClick,
   toggleIQubeActive,
   handleSignOut,
@@ -47,7 +51,7 @@ const SidebarContent: React.FC<SidebarContentProps> = ({
       </div>
 
       {/* Main Navigation */}
-      <MainNavigation navItems={navItems} activePath={location.pathname} collapsed={collapsed} iQubeItems={iQubeItems} iQubesOpen={iQubesOpen} toggleIQubesMenu={toggleIQubesMenu} personaOpen={personaOpen} togglePersonaMenu={togglePersonaMenu} selectedIQube={selectedIQube} activeQubes={activeQubes} handleIQubeClick={handleIQubeClick} toggleIQubeActive={toggleIQubeActive} location={location} toggleMobileSidebar={toggleMobileSidebar} />
+      <MainNavigation navItems={navItems} activePath={location.pathname} collapsed={collapsed} iQubeItems={iQubeItems} iQubesOpen={iQubesOpen} toggleIQubesMenu={toggleIQubesMenu} personaOpen={personaOpen} togglePersonaMenu={togglePersonaMenu} aaActionsOpen={aaActionsOpen} toggleAAActionsMenu={toggleAAActionsMenu} selectedIQube={selectedIQube} activeQubes={activeQubes} handleIQubeClick={handleIQubeClick} toggleIQubeActive={toggleIQubeActive} location={location} toggleMobileSidebar={toggleMobileSidebar} />
 
       {/* Active iQubes - Fixed at bottom */}
       <div className="mt-auto">

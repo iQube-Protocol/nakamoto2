@@ -1,10 +1,11 @@
 
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { NavItem as NavItemType, QubeItem, personaItems } from './sidebarData';
+import { NavItem as NavItemType, QubeItem, personaItems, aaQuickActions } from './sidebarData';
 import NavItem from './NavItem';
 import IQubesSection from './IQubesSection';
 import PersonaSection from './PersonaSection';
+import AAQuickActionsSection from './AAQuickActionsSection';
 
 interface MainNavigationProps {
   navItems: NavItemType[];
@@ -15,6 +16,8 @@ interface MainNavigationProps {
   toggleIQubesMenu: () => void;
   personaOpen: boolean;
   togglePersonaMenu: () => void;
+  aaActionsOpen: boolean;
+  toggleAAActionsMenu: () => void;
   selectedIQube: string | null;
   activeQubes: {[key: string]: boolean};
   handleIQubeClick: (iqubeId: string) => void;
@@ -32,6 +35,8 @@ const MainNavigation: React.FC<MainNavigationProps> = ({
   toggleIQubesMenu,
   personaOpen,
   togglePersonaMenu,
+  aaActionsOpen,
+  toggleAAActionsMenu,
   selectedIQube,
   activeQubes,
   handleIQubeClick,
@@ -109,6 +114,15 @@ const MainNavigation: React.FC<MainNavigationProps> = ({
         handleIQubeClick={handleIQubeClick}
         toggleIQubeActive={toggleIQubeActive}
         location={location}
+        toggleMobileSidebar={toggleMobileSidebar}
+      />
+
+      {/* AA Quick Actions Section */}
+      <AAQuickActionsSection
+        aaQuickActions={aaQuickActions}
+        aaActionsOpen={aaActionsOpen}
+        toggleAAActionsMenu={toggleAAActionsMenu}
+        collapsed={collapsed}
         toggleMobileSidebar={toggleMobileSidebar}
       />
     </div>
