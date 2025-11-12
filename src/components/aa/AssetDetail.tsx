@@ -16,6 +16,8 @@ import {
 } from '@/services/aa-api-client';
 import { QRCodeSVG } from 'qrcode.react';
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from '@/components/ui/dialog';
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
+import { AssetPreview } from './AssetPreview';
 
 export const AssetDetail: React.FC = () => {
   const { assetId } = useParams<{ assetId: string }>();
@@ -142,17 +144,53 @@ export const AssetDetail: React.FC = () => {
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
         <Card className="p-6">
-          <div className="aspect-video bg-muted rounded-md mb-4 flex items-center justify-center">
-            {asset.metadata.thumbnail ? (
-              <img 
-                src={asset.metadata.thumbnail} 
-                alt={asset.metadata.title}
-                className="w-full h-full object-cover rounded-md"
-              />
-            ) : (
-              <Play className="w-24 h-24 text-muted-foreground" />
-            )}
-          </div>
+          {entitlement ? (
+            <Tabs defaultValue="preview" className="space-y-4">
+              <TabsList className="grid w-full grid-cols-2">
+                <TabsTrigger value="preview">Preview</TabsTrigger>
+                <TabsTrigger value="info">Info</TabsTrigger>
+              </TabsList>
+              
+              <TabsContent value="preview">
+                <AssetPreview 
+                  assetId={asset.id}
+                  contentType={asset.metadata.contentType}
+                  title={asset.metadata.title}
+                />
+              </TabsContent>
+              
+              <TabsContent value="info">
+                <div className="space-y-4">
+                  <div>
+                    <p className="text-sm font-medium mb-1">Creator</p>
+                    <p className="text-sm text-muted-foreground">{asset.metadata.creator}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium mb-1">Content Type</p>
+                    <p className="text-sm text-muted-foreground">{asset.metadata.contentType}</p>
+                  </div>
+                  <div>
+                    <p className="text-sm font-medium mb-1">Created</p>
+                    <p className="text-sm text-muted-foreground">
+                      {new Date(asset.createdAt).toLocaleDateString()}
+                    </p>
+                  </div>
+                </div>
+              </TabsContent>
+            </Tabs>
+          ) : (
+            <div className="aspect-video bg-muted rounded-md flex items-center justify-center">
+              {asset.metadata.thumbnail ? (
+                <img 
+                  src={asset.metadata.thumbnail} 
+                  alt={asset.metadata.title}
+                  className="w-full h-full object-cover rounded-md"
+                />
+              ) : (
+                <Play className="w-24 h-24 text-muted-foreground" />
+              )}
+            </div>
+          )}
         </Card>
 
         <div className="space-y-6">
