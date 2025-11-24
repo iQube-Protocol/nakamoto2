@@ -165,6 +165,53 @@ export type Database = {
           },
         ]
       }
+      asset_policies: {
+        Row: {
+          asset_id: string
+          created_at: string
+          id: string
+          pay_to_did: string
+          price_amount: number | null
+          price_asset: string | null
+          rights: string[]
+          tokenqube_template: string | null
+          updated_at: string
+          visibility: string | null
+        }
+        Insert: {
+          asset_id: string
+          created_at?: string
+          id?: string
+          pay_to_did: string
+          price_amount?: number | null
+          price_asset?: string | null
+          rights?: string[]
+          tokenqube_template?: string | null
+          updated_at?: string
+          visibility?: string | null
+        }
+        Update: {
+          asset_id?: string
+          created_at?: string
+          id?: string
+          pay_to_did?: string
+          price_amount?: number | null
+          price_asset?: string | null
+          rights?: string[]
+          tokenqube_template?: string | null
+          updated_at?: string
+          visibility?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "asset_policies_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "content_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       audit_logs: {
         Row: {
           action: string
@@ -655,6 +702,36 @@ export type Database = {
           },
         ]
       }
+      did_identities: {
+        Row: {
+          agent_handle: string | null
+          created_at: string
+          did: string
+          id: string
+          kybe_did: string | null
+          updated_at: string
+          user_id: string | null
+        }
+        Insert: {
+          agent_handle?: string | null
+          created_at?: string
+          did: string
+          id?: string
+          kybe_did?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Update: {
+          agent_handle?: string | null
+          created_at?: string
+          did?: string
+          id?: string
+          kybe_did?: string | null
+          updated_at?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       email_batches: {
         Row: {
           batch_id: string
@@ -693,6 +770,57 @@ export type Database = {
           total_emails?: number
         }
         Relationships: []
+      }
+      entitlements: {
+        Row: {
+          asset_id: string
+          created_at: string
+          expires_at: string | null
+          holder_did: string
+          holder_user_id: string | null
+          id: string
+          rights: string[]
+          tokenqube_id: string | null
+          x402_id: string | null
+        }
+        Insert: {
+          asset_id: string
+          created_at?: string
+          expires_at?: string | null
+          holder_did: string
+          holder_user_id?: string | null
+          id?: string
+          rights: string[]
+          tokenqube_id?: string | null
+          x402_id?: string | null
+        }
+        Update: {
+          asset_id?: string
+          created_at?: string
+          expires_at?: string | null
+          holder_did?: string
+          holder_user_id?: string | null
+          id?: string
+          rights?: string[]
+          tokenqube_id?: string | null
+          x402_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "entitlements_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "content_items"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "entitlements_x402_id_fkey"
+            columns: ["x402_id"]
+            isOneToOne: false
+            referencedRelation: "x402_transactions"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       invited_users: {
         Row: {
@@ -1720,6 +1848,65 @@ export type Database = {
           },
         ]
       }
+      x402_transactions: {
+        Row: {
+          amount: number
+          asset_id: string
+          asset_symbol: string
+          buyer_did: string
+          created_at: string
+          dest_chain: string | null
+          facilitator_ref: string | null
+          id: string
+          request_id: string
+          seller_did: string
+          src_chain: string | null
+          status: string | null
+          tenant_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          asset_id: string
+          asset_symbol: string
+          buyer_did: string
+          created_at?: string
+          dest_chain?: string | null
+          facilitator_ref?: string | null
+          id?: string
+          request_id: string
+          seller_did: string
+          src_chain?: string | null
+          status?: string | null
+          tenant_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          asset_id?: string
+          asset_symbol?: string
+          buyer_did?: string
+          created_at?: string
+          dest_chain?: string | null
+          facilitator_ref?: string | null
+          id?: string
+          request_id?: string
+          seller_did?: string
+          src_chain?: string | null
+          status?: string | null
+          tenant_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "x402_transactions_asset_id_fkey"
+            columns: ["asset_id"]
+            isOneToOne: false
+            referencedRelation: "content_items"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       invitation_signup_stats: {
@@ -1830,6 +2017,23 @@ export type Database = {
               error: true
             } & "Could not choose the best candidate function between: public.role_rank(r => admin_role), public.role_rank(r => role_type). Try renaming the parameters or the function itself in the database so function overloading can be resolved"
           }
+      rpc_finalize_settlement: {
+        Args: {
+          p_facilitator_ref: string
+          p_request_id: string
+          p_status?: string
+        }
+        Returns: Json
+      }
+      rpc_issue_quote: {
+        Args: {
+          p_asset_id: string
+          p_asset_symbol?: string
+          p_buyer_did: string
+          p_dest_chain?: string
+        }
+        Returns: Json
+      }
       upsert_kb_doc: {
         Args: {
           _content_text: string
