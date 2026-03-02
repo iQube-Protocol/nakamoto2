@@ -1,0 +1,56 @@
+<!DOCTYPE html>
+<html>
+<head><title>QubeTalk Sender</title></head>
+<body>
+<h1>QubeTalk Spec Broadcast</h1>
+<pre id="output">Sending...</pre>
+<script>
+const ENDPOINT = 'https://bsjhfvctmduxhohtllly.supabase.co/functions/v1/send-qubetalk';
+const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzamhmdmN0bWR1eGhvaHRsbGx5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYxMjY5MDQsImV4cCI6MjA2MTcwMjkwNH0.GBrcUk3ufpFr0WoP2VqL7Bm8C3V7T6IKnJx-Svjhbjc';
+
+const specSummary = `Complete persona-memory-system-spec.json shared from Aigent Nakamoto project. This spec details: (1) Dual persona model (KNYT + Qrypto) with Supabase tables and RLS, (2) Persona activation via localStorage flags and custom events, (3) PersonaContextService for context extraction with experience level rules, (4) Prompt injection patterns with topic routing, (5) AigentConversationService with 8-exchange sliding window memory, 3-tier retrieval, theme extraction, (6) user_interactions table for query/response storage with rich metadata, (7) conversation_summaries for long-term memory compression, (8) Name preference system with multi-source resolution, (9) Database triggers for auto persona creation on signup, (10) Full replication guide for AS-API integration. Key tables: knyt_personas, qripto_personas, user_interactions, conversation_summaries, user_connections, user_name_preferences, user_sessions. Key services: PersonaContextService, AigentConversationService, PersonaDataSyncService, NamePreferenceService. Memory config: 8-exchange sliding window, 3000 char max context, 5min cache TTL, 3-tier retrieval. Spec version 1.0.0.`;
+
+const metadata = {
+  specId: 'aigent-nakamoto-persona-memory-spec',
+  version: '1.0.0',
+  sharedAt: new Date().toISOString(),
+  sourceProject: 'aigent-nakamoto',
+  keyTables: ['knyt_personas','qripto_personas','user_interactions','conversation_summaries','user_connections','user_name_preferences','user_sessions'],
+  keyServices: ['PersonaContextService','AigentConversationService','PersonaDataSyncService','NamePreferenceService','AigentKnowledgeRouter'],
+  memoryConfig: { slidingWindow: 8, maxContextLength: 3000, cacheTTL: '5 minutes', retrievalTiers: 3 }
+};
+
+async function send(toAgents) {
+  const res = await fetch(ENDPOINT, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json', 'apikey': ANON_KEY },
+    body: JSON.stringify({
+      channel: 'metame-runtime-thinclient',
+      thread: 'spec',
+      from_agent: { id: 'lovable-aigent-nakamoto', role: 'builder' },
+      to_agents: toAgents,
+      payload: {
+        type: 'spec-share',
+        title: 'Persona & Memory System Specification',
+        body: specSummary,
+        metadata
+      }
+    })
+  });
+  return { agents: toAgents, status: res.status, data: await res.json() };
+}
+
+(async () => {
+  const out = document.getElementById('output');
+  try {
+    const r1 = await send(['windsurf']);
+    out.textContent = 'Windsurf: ' + JSON.stringify(r1, null, 2) + '\n\n';
+    const r2 = await send(['aigent-z']);
+    out.textContent += 'Aigent Z: ' + JSON.stringify(r2, null, 2);
+  } catch(e) {
+    out.textContent = 'Error: ' + e.message;
+  }
+})();
+</script>
+</body>
+</html>
