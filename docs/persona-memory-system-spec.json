@@ -1,0 +1,551 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "aigent-nakamoto-persona-memory-spec",
+  "title": "Aigent Nakamoto Persona & Memory System Specification",
+  "version": "1.0.0",
+  "description": "Complete specification for how personas store identity data and how conversation memory is managed for personalized AI inference. Designed for replication in other AS-API identity management applications.",
+
+  "architecture_overview": {
+    "summary": "The system uses two persona types (KNYT and Qrypto) stored in separate Supabase tables, activated client-side via localStorage flags. Persona data is injected into AI prompts as contextual system instructions. Conversation history is stored in a user_interactions table and summarized for long-term memory.",
+    "layers": [
+      {
+        "layer": "Identity Storage",
+        "description": "Supabase tables (knyt_personas, qripto_personas) store structured persona fields per user_id. RLS ensures users can only access their own data."
+      },
+      {
+        "layer": "Persona Activation",
+        "description": "Client-side localStorage flags ('knyt-persona-activated', 'qrypto-persona-activated') control which persona context is injected into AI conversations."
+      },
+      {
+        "layer": "Context Extraction",
+        "description": "PersonaContextService reads active persona data and builds structured context objects (identity, crypto, social, investment, experience level)."
+      },
+      {
+        "layer": "Prompt Injection",
+        "description": "Context is formatted into natural language system prompt additions, tailored by conversation topic and user experience level."
+      },
+      {
+        "layer": "Memory Storage",
+        "description": "user_interactions table stores every query/response pair with metadata including conversationId, agentType, and activePersona."
+      },
+      {
+        "layer": "Memory Retrieval",
+        "description": "AigentConversationService retrieves recent history (sliding window of 8 exchanges), extracts themes, and builds session context for continuity."
+      },
+      {
+        "layer": "Long-Term Summarization",
+        "description": "conversation_summaries table stores compressed summaries of older interactions, referenced by conversation_type."
+      }
+    ]
+  },
+
+  "persona_types": {
+    "knyt": {
+      "table": "knyt_personas",
+      "description": "KNYT persona - community/investment focused identity for metaKnyts ecosystem members",
+      "rls_policy": "auth.uid() = user_id (all CRUD operations)",
+      "activation_flag": "localStorage:'knyt-persona-activated'",
+      "schema": {
+        "identity_fields": {
+          "user_id": { "type": "uuid", "required": true, "description": "References auth.users, enforced by RLS" },
+          "First-Name": { "type": "text", "nullable": true, "default": "''" },
+          "Last-Name": { "type": "text", "nullable": true, "default": "''" },
+          "KNYT-ID": { "type": "text", "nullable": true, "default": "''", "description": "Unique KNYT identity, format: 'handle@knyt'" },
+          "Email": { "type": "text", "nullable": true, "default": "''" },
+          "Phone-Number": { "type": "text", "nullable": true, "default": "''" },
+          "Age": { "type": "text", "nullable": true, "default": "''" },
+          "Address": { "type": "text", "nullable": true, "default": "''" },
+          "Profession": { "type": "text", "nullable": true, "default": "''" },
+          "Local-City": { "type": "text", "nullable": true, "default": "''" },
+          "profile_image_url": { "type": "text", "nullable": true, "default": "''" }
+        },
+        "crypto_fields": {
+          "EVM-Public-Key": { "type": "text", "nullable": true, "default": "''", "description": "Ethereum-compatible wallet address" },
+          "BTC-Public-Key": { "type": "text", "nullable": true, "default": "''" },
+          "ThirdWeb-Public-Key": { "type": "text", "nullable": true, "default": "''" },
+          "MetaKeep-Public-Key": { "type": "text", "nullable": true, "default": "''" },
+          "Chain-IDs": { "type": "text[]", "nullable": true, "default": "'{}'" },
+          "Wallets-of-Interest": { "type": "text[]", "nullable": true, "default": "'{}'" },
+          "Web3-Interests": { "type": "text[]", "nullable": true, "default": "'{}'" },
+          "Tokens-of-Interest": { "type": "text[]", "nullable": true, "default": "'{}'" }
+        },
+        "social_fields": {
+          "LinkedIn-ID": { "type": "text", "nullable": true, "default": "''" },
+          "LinkedIn-Profile-URL": { "type": "text", "nullable": true, "default": "''" },
+          "Twitter-Handle": { "type": "text", "nullable": true, "default": "''" },
+          "Telegram-Handle": { "type": "text", "nullable": true, "default": "''" },
+          "Discord-Handle": { "type": "text", "nullable": true, "default": "''" },
+          "Instagram-Handle": { "type": "text", "nullable": true, "default": "''" },
+          "YouTube-ID": { "type": "text", "nullable": true, "default": "''" },
+          "Facebook-ID": { "type": "text", "nullable": true, "default": "''" },
+          "TikTok-Handle": { "type": "text", "nullable": true, "default": "''" },
+          "GitHub-Handle": { "type": "text", "nullable": true, "default": "''" }
+        },
+        "investment_fields": {
+          "OM-Member-Since": { "type": "text", "nullable": true, "default": "''", "description": "Original member date" },
+          "OM-Tier-Status": { "type": "text", "nullable": true, "default": "''", "description": "Membership tier level" },
+          "Metaiye-Shares-Owned": { "type": "text", "nullable": true, "default": "''" },
+          "Total-Invested": { "type": "text", "nullable": true, "default": "''" },
+          "KNYT-COYN-Owned": { "type": "text", "nullable": true, "default": "''", "description": "Token balance, updated from on-chain reads" }
+        },
+        "digital_asset_fields": {
+          "Motion-Comics-Owned": { "type": "text", "nullable": true, "default": "''" },
+          "Paper-Comics-Owned": { "type": "text", "nullable": true, "default": "''" },
+          "Digital-Comics-Owned": { "type": "text", "nullable": true, "default": "''" },
+          "KNYT-Posters-Owned": { "type": "text", "nullable": true, "default": "''" },
+          "KNYT-Cards-Owned": { "type": "text", "nullable": true, "default": "''" },
+          "Characters-Owned": { "type": "text", "nullable": true, "default": "''" }
+        },
+        "system_fields": {
+          "id": { "type": "uuid", "default": "gen_random_uuid()" },
+          "created_at": { "type": "timestamptz", "default": "now()" },
+          "updated_at": { "type": "timestamptz", "default": "now()" }
+        }
+      }
+    },
+    "qrypto": {
+      "table": "qripto_personas",
+      "description": "Qrypto persona - general Web3/crypto focused identity",
+      "rls_policy": "auth.uid() = user_id (all CRUD operations)",
+      "activation_flag": "localStorage:'qrypto-persona-activated'",
+      "schema": {
+        "identity_fields": {
+          "user_id": { "type": "uuid", "required": true },
+          "First-Name": { "type": "text", "nullable": true, "default": "''" },
+          "Last-Name": { "type": "text", "nullable": true, "default": "''" },
+          "Qripto-ID": { "type": "text", "nullable": true, "default": "''" },
+          "Email": { "type": "text", "nullable": true, "default": "''" },
+          "Profession": { "type": "text", "nullable": true, "default": "''" },
+          "Local-City": { "type": "text", "nullable": true, "default": "''" },
+          "profile_image_url": { "type": "text", "nullable": true, "default": "''" }
+        },
+        "crypto_fields": {
+          "EVM-Public-Key": { "type": "text", "nullable": true, "default": "''" },
+          "BTC-Public-Key": { "type": "text", "nullable": true, "default": "''" },
+          "Chain-IDs": { "type": "text[]", "nullable": true, "default": "'{}'" },
+          "Wallets-of-Interest": { "type": "text[]", "nullable": true, "default": "'{}'" },
+          "Web3-Interests": { "type": "text[]", "nullable": true, "default": "'{}'" },
+          "Tokens-of-Interest": { "type": "text[]", "nullable": true, "default": "'{}'" }
+        },
+        "social_fields": {
+          "LinkedIn-ID": { "type": "text", "nullable": true, "default": "''" },
+          "LinkedIn-Profile-URL": { "type": "text", "nullable": true, "default": "''" },
+          "Twitter-Handle": { "type": "text", "nullable": true, "default": "''" },
+          "Telegram-Handle": { "type": "text", "nullable": true, "default": "''" },
+          "Discord-Handle": { "type": "text", "nullable": true, "default": "''" },
+          "Instagram-Handle": { "type": "text", "nullable": true, "default": "''" },
+          "YouTube-ID": { "type": "text", "nullable": true, "default": "''" },
+          "Facebook-ID": { "type": "text", "nullable": true, "default": "''" },
+          "TikTok-Handle": { "type": "text", "nullable": true, "default": "''" },
+          "GitHub-Handle": { "type": "text", "nullable": true, "default": "''" }
+        },
+        "system_fields": {
+          "id": { "type": "uuid", "default": "gen_random_uuid()" },
+          "created_at": { "type": "timestamptz", "default": "now()" },
+          "updated_at": { "type": "timestamptz", "default": "now()" }
+        }
+      },
+      "note": "Qrypto has no investment/digital-asset fields unlike KNYT"
+    }
+  },
+
+  "persona_activation_system": {
+    "description": "Personas are activated/deactivated client-side. Events notify the system to refresh context.",
+    "localStorage_keys": {
+      "knyt-persona-activated": { "type": "boolean_string", "values": ["'true'", "'false'"] },
+      "qrypto-persona-activated": { "type": "boolean_string", "values": ["'true'", "'false'"] },
+      "selected-iqube": { "type": "string", "description": "Currently selected iQube identifier for UI display" }
+    },
+    "custom_events": {
+      "qryptoPersonaActivated": "Fired when Qrypto persona is activated",
+      "qryptoPersonaDeactivated": "Fired when Qrypto persona is deactivated",
+      "knytPersonaActivated": "Fired when KNYT persona is activated",
+      "knytPersonaDeactivated": "Fired when KNYT persona is deactivated",
+      "privateDataUpdated": "Fired when persona private data is manually edited",
+      "personaDataUpdated": "Fired when persona data is updated from connections",
+      "balanceUpdated": "Fired when token balance is refreshed",
+      "walletDataRefreshed": "Fired when wallet connection data is refreshed"
+    },
+    "sync_service": {
+      "class": "PersonaDataSyncService",
+      "pattern": "Singleton pub/sub",
+      "description": "Components subscribe to data change notifications. When persona data is saved, notifyDataUpdated() triggers all subscribers to refetch."
+    }
+  },
+
+  "persona_data_sources": {
+    "description": "Persona fields are populated from multiple sources, processed by connection-processors",
+    "sources": {
+      "manual_entry": {
+        "description": "User edits fields directly in Settings UI",
+        "flow": "UI → usePrivateData hook → blakQubeService.saveManualPersonaData → DB upsert"
+      },
+      "linkedin_oauth": {
+        "fields_populated": ["First-Name", "Last-Name", "LinkedIn-ID", "LinkedIn-Profile-URL", "Profession", "Local-City"],
+        "flow": "OAuth callback → user_connections table → blakQubeService.updatePersonaFromConnections → processLinkedInConnection"
+      },
+      "wallet_connection": {
+        "fields_populated": ["EVM-Public-Key", "KNYT-COYN-Owned"],
+        "flow": "MetaMask sign → user_connections table → processWalletConnection → on-chain balance read"
+      },
+      "thirdweb_connection": {
+        "fields_populated": ["ThirdWeb-Public-Key"],
+        "flow": "ThirdWeb auth → user_connections table → processThirdWebConnection"
+      },
+      "social_connections": {
+        "supported": ["twitter", "telegram", "discord", "facebook", "youtube", "tiktok"],
+        "fields_populated": "Corresponding handle field (e.g., Twitter-Handle)",
+        "flow": "Service connect → user_connections table → processSocialConnection"
+      },
+      "invitation_system": {
+        "description": "Pre-populated persona data from admin invitations",
+        "flow": "Admin creates invitation with persona_data JSON → handle_invited_user_signup trigger → inserts persona row on auth signup"
+      }
+    },
+    "connection_storage": {
+      "table": "user_connections",
+      "schema": {
+        "id": "uuid",
+        "user_id": "uuid (RLS: auth.uid())",
+        "service": "text (linkedin|wallet|thirdweb|twitter|telegram|discord|etc.)",
+        "connection_data": "jsonb (service-specific data: profile, address, signature, etc.)",
+        "connected_at": "timestamptz",
+        "created_at": "timestamptz"
+      }
+    }
+  },
+
+  "context_extraction_pipeline": {
+    "service": "PersonaContextService",
+    "input": "Raw persona data from knyt_personas / qripto_personas tables",
+    "output": {
+      "ConversationContext": {
+        "qryptoContext": "PersonaContext | undefined",
+        "knytContext": "PersonaContext | undefined",
+        "preferredName": "string | undefined",
+        "isAnonymous": "boolean"
+      },
+      "PersonaContext": {
+        "isActive": "boolean",
+        "displayName": "string | undefined",
+        "identityContext": "string | undefined — e.g., 'User: KNYT: handle, Developer, New York'",
+        "investmentContext": "string | undefined — KNYT only, e.g., 'Member since: 2023, Tier: ZeroJ, Invested: $5000'",
+        "cryptoContext": "string | undefined — e.g., 'Active on: Ethereum, Base. Interested in: BTC, ETH'",
+        "socialContext": "string | undefined — e.g., 'Active on: LinkedIn, Twitter, GitHub'",
+        "experienceLevel": "'beginner' | 'intermediate' | 'advanced' | 'expert'",
+        "fullPersonaData": "Complete raw persona object for topic-specific lookups"
+      }
+    },
+    "experience_level_rules": {
+      "qrypto": {
+        "expert": "chainIds >= 3 AND tokensOfInterest >= 5 AND web3Interests >= 3",
+        "advanced": "chainIds >= 2 AND tokensOfInterest >= 3 AND hasWalletKeys",
+        "intermediate": "chainIds >= 1 AND tokensOfInterest >= 1",
+        "beginner": "default"
+      },
+      "knyt": {
+        "expert": "tierStatus contains 'ZeroJ' OR digitalAssetCount >= 3",
+        "advanced": "tierStatus contains 'First' OR digitalAssetCount >= 2",
+        "intermediate": "hasMemberSince OR digitalAssetCount >= 1",
+        "beginner": "default"
+      }
+    },
+    "name_resolution_priority": [
+      "1. KNYT-ID prefix (before @)",
+      "2. NamePreferenceService stored preference (from user_name_preferences table)",
+      "3. First-Name from active persona"
+    ]
+  },
+
+  "prompt_injection": {
+    "description": "How persona context is injected into AI system prompts",
+    "anonymous_prompt": "The user is interacting anonymously. Do not make assumptions about their background, preferences, or experience level.",
+    "authenticated_prompt_structure": [
+      "Address the user as '{preferredName}'.",
+      "{topic-relevant context from selectRelevantContext()}",
+      "User experience level: {level}. {level-specific guidance}",
+      "Tailor your response naturally to their context without explicitly mentioning that you're using their profile information."
+    ],
+    "topic_routing": {
+      "invest|stake|yield": "knytContext.investmentContext",
+      "nft|comic|digital asset": "knytContext.digitalAssets (Motion-Comics-Owned, Digital-Comics-Owned, KNYT-Cards-Owned)",
+      "crypto|defi|blockchain": "qryptoContext.cryptoContext + knytContext.cryptoContext",
+      "community|connect|network": "qryptoContext.socialContext + knytContext.socialContext"
+    },
+    "experience_level_guidance": {
+      "beginner": "Explain concepts clearly with examples. Avoid jargon.",
+      "intermediate": "Provide balanced detail. Use some technical terms with brief explanations.",
+      "advanced": "Use technical language appropriately. Focus on nuanced insights.",
+      "expert": "Engage at a high technical level. Reference advanced concepts directly."
+    }
+  },
+
+  "memory_system": {
+    "description": "How user prompts and AI inferences are stored and recalled for conversation continuity",
+
+    "interaction_storage": {
+      "table": "user_interactions",
+      "schema": {
+        "id": "uuid (PK, auto-generated)",
+        "user_id": "uuid (RLS: auth.uid())",
+        "interaction_type": "text — values: 'aigent' | 'learn' | 'earn' | 'connect'",
+        "query": "text — the user's prompt",
+        "response": "text — the AI's full response",
+        "metadata": "jsonb — structured context attached to each interaction",
+        "summarized": "boolean — flag for summarization pipeline",
+        "created_at": "timestamptz"
+      },
+      "metadata_schema": {
+        "conversationId": "string — groups exchanges into a conversation session",
+        "agentType": "string — 'aigent' | 'learn' | 'earn' | 'connect'",
+        "activePersona": "string — which iQube was active during this interaction",
+        "timestamp": "ISO 8601 string",
+        "aiProvider": "string (optional) — which AI provider was used (openai|venice|chaingpt)",
+        "personaContextUsed": "boolean (optional) — whether persona was injected",
+        "preferredName": "string (optional) — name used to address user",
+        "visualsProvided": "boolean (optional) — whether visual content was included",
+        "mermaidDiagramIncluded": "boolean (optional) — whether mermaid diagrams were generated"
+      },
+      "rls_policies": [
+        "Users can CRUD their own interactions: auth.uid() = user_id"
+      ]
+    },
+
+    "conversation_memory_service": {
+      "class": "AigentConversationService",
+      "pattern": "Singleton with in-memory cache (Map<conversationId, ConversationMemory>)",
+      "cache_ttl": "5 minutes (auto-invalidated on new exchange storage)",
+      "memory_window": 8,
+      "max_context_length": 3000,
+
+      "ConversationMemory": {
+        "recentHistory": "ConversationExchange[] — last 8 exchanges",
+        "sessionContext": {
+          "conversationId": "string",
+          "themes": "string[] — auto-extracted topics",
+          "userPreferences": "Record<string, any> — extracted from metadata",
+          "sessionStarted": "ISO timestamp",
+          "lastInteraction": "ISO timestamp"
+        },
+        "longTermSummary": "string | undefined — from conversation_summaries table"
+      },
+
+      "retrieval_strategy": {
+        "description": "Three-tier fallback for finding conversation history",
+        "strategies": [
+          {
+            "priority": 1,
+            "name": "Native aigent query",
+            "query": "SELECT FROM user_interactions WHERE interaction_type = 'aigent' AND metadata @> {conversationId} ORDER BY created_at DESC LIMIT 8"
+          },
+          {
+            "priority": 2,
+            "name": "Legacy learn fallback",
+            "query": "SELECT FROM user_interactions WHERE interaction_type = 'learn' AND metadata @> {conversationId}, then filter for agentType = 'aigent'"
+          },
+          {
+            "priority": 3,
+            "name": "String search fallback",
+            "query": "SELECT FROM user_interactions WHERE interaction_type IN ('aigent','learn') AND metadata::text LIKE '%conversationId%'"
+          }
+        ]
+      },
+
+      "theme_extraction_rules": {
+        "description": "Keyword-based topic detection from message content",
+        "rules": {
+          "Bitcoin Runes": "text contains 'rune' OR 'bitcoin rune' OR 'btc rune'",
+          "KNYT COYN": "text contains 'knyt' AND 'coyn'",
+          "metaKnyts": "text contains 'metaknyts' OR 'meta knyts'",
+          "Wallet Setup": "text contains 'wallet' AND ('metamask' OR 'setup')",
+          "Smart Contracts": "text contains 'token' AND 'contract'",
+          "Blockchain": "text contains 'blockchain' OR 'ethereum'",
+          "DeFi": "text contains 'defi' OR 'protocol'",
+          "NFTs": "text contains 'nft' AND NOT 'knyt'"
+        }
+      },
+
+      "user_preference_extraction": {
+        "preferredAI": "Extracted from metadata.aiProvider",
+        "usePersonaContext": "Set true if metadata.personaContextUsed exists",
+        "preferredName": "From metadata.preferredName",
+        "likesVisualContent": "Set true if metadata.visualsProvided or metadata.mermaidDiagramIncluded"
+      },
+
+      "context_formatting": {
+        "description": "How memory is formatted for injection into AI system prompt",
+        "sections": [
+          "### Previous Conversation Summary (from conversation_summaries if available)",
+          "### Current Session Topics (auto-extracted themes)",
+          "### User Preferences (extracted from interaction metadata)",
+          "### Recent Conversation History (timestamped user/assistant exchanges, responses truncated to 200 chars)"
+        ],
+        "footer": "Continue this conversation naturally, building on the established context."
+      }
+    },
+
+    "long_term_summarization": {
+      "table": "conversation_summaries",
+      "schema": {
+        "id": "uuid",
+        "user_id": "uuid (RLS: auth.uid())",
+        "conversation_type": "text — 'learn' | 'earn' | 'connect'",
+        "summary_text": "text — compressed summary of older interactions",
+        "included_interaction_ids": "text[] — IDs of interactions included in this summary",
+        "created_at": "timestamptz",
+        "updated_at": "timestamptz"
+      },
+      "trigger": "Automatic when unsummarized interaction count exceeds threshold",
+      "purpose": "Prevents context window overflow by compressing old exchanges into summaries"
+    },
+
+    "session_tracking": {
+      "table": "user_sessions",
+      "schema": {
+        "id": "uuid",
+        "user_id": "uuid",
+        "active": "boolean",
+        "device_info": "jsonb (userAgent, language, platform, screen dimensions)",
+        "session_end": "timestamptz | null",
+        "created_at": "timestamptz"
+      }
+    }
+  },
+
+  "data_flow_diagram": {
+    "description": "End-to-end flow for a single AI interaction with persona and memory",
+    "steps": [
+      {
+        "step": 1,
+        "action": "User sends message",
+        "detail": "Message captured in chat UI component"
+      },
+      {
+        "step": 2,
+        "action": "Check persona activation",
+        "detail": "Read localStorage flags: knyt-persona-activated, qrypto-persona-activated"
+      },
+      {
+        "step": 3,
+        "action": "Fetch persona data",
+        "detail": "PersonaContextService.getConversationContext() → blakQubeService.getPersonaData('knyt'|'qripto') → Supabase SELECT from persona table WHERE user_id = auth.uid()"
+      },
+      {
+        "step": 4,
+        "action": "Build persona context",
+        "detail": "Extract identity, crypto, social, investment contexts + determine experience level"
+      },
+      {
+        "step": 5,
+        "action": "Retrieve conversation memory",
+        "detail": "AigentConversationService.getConversationMemory(conversationId) → query user_interactions with 3-tier fallback → extract themes and preferences"
+      },
+      {
+        "step": 6,
+        "action": "Format system prompt",
+        "detail": "Combine: base system prompt + PersonaContextService.generateContextualPrompt() + AigentConversationService.formatMemoryForContext()"
+      },
+      {
+        "step": 7,
+        "action": "Call AI provider",
+        "detail": "Send to edge function (learn-ai, earn-ai, etc.) with message, documentContext, historicalContext"
+      },
+      {
+        "step": 8,
+        "action": "Store interaction",
+        "detail": "storeUserInteraction() → INSERT into user_interactions with metadata { conversationId, agentType, activePersona, timestamp }"
+      },
+      {
+        "step": 9,
+        "action": "Update memory cache",
+        "detail": "AigentConversationService.storeConversationExchange() → clears cache for conversationId so next retrieval is fresh"
+      },
+      {
+        "step": 10,
+        "action": "Check summarization",
+        "detail": "If unsummarized interaction count exceeds threshold, trigger conversation summarization → store in conversation_summaries"
+      }
+    ]
+  },
+
+  "name_preference_system": {
+    "table": "user_name_preferences",
+    "description": "Users can choose which name source to use (invitation, LinkedIn, custom)",
+    "schema": {
+      "id": "uuid",
+      "user_id": "uuid",
+      "persona_type": "text — 'knyt' | 'qripto'",
+      "name_source": "text — 'invitation' | 'linkedin' | 'custom'",
+      "invitation_first_name": "text | null",
+      "invitation_last_name": "text | null",
+      "linkedin_first_name": "text | null",
+      "linkedin_last_name": "text | null",
+      "custom_first_name": "text | null",
+      "custom_last_name": "text | null",
+      "created_at": "timestamptz",
+      "updated_at": "timestamptz"
+    },
+    "resolution_flow": "NamePreferenceService.getNamePreference(personaType) → returns effective first/last name based on selected name_source"
+  },
+
+  "database_triggers": {
+    "handle_new_user_personas": {
+      "fires_on": "INSERT on auth.users",
+      "action": "Creates default empty knyt_personas and qripto_personas rows for new users (if no invitation exists)"
+    },
+    "handle_invited_user_signup": {
+      "fires_on": "INSERT on auth.users",
+      "action": "If matching invitation exists, populates persona with invitation persona_data JSON and marks invitation as completed"
+    },
+    "handle_new_user_registration": {
+      "fires_on": "INSERT on auth.users",
+      "action": "Creates profiles row with first_name/last_name from user metadata"
+    }
+  },
+
+  "replication_guide": {
+    "description": "Steps to replicate this system in another AS-API application",
+    "steps": [
+      {
+        "step": 1,
+        "title": "Create persona tables",
+        "detail": "Create one or more persona tables with identity, crypto, social fields. Add user_id column with RLS policies restricting access to auth.uid() = user_id."
+      },
+      {
+        "step": 2,
+        "title": "Create user_connections table",
+        "detail": "Store OAuth and wallet connection data as JSONB. This is the intermediary between external services and persona fields."
+      },
+      {
+        "step": 3,
+        "title": "Create user_interactions table",
+        "detail": "Columns: id, user_id, interaction_type, query, response, metadata (JSONB), summarized (bool), created_at. Always store conversationId in metadata."
+      },
+      {
+        "step": 4,
+        "title": "Create conversation_summaries table",
+        "detail": "For long-term memory compression. Columns: id, user_id, conversation_type, summary_text, included_interaction_ids, timestamps."
+      },
+      {
+        "step": 5,
+        "title": "Implement PersonaContextService",
+        "detail": "Static service that reads persona data and builds structured context objects. Must NOT import React hooks. Include experience level determination logic."
+      },
+      {
+        "step": 6,
+        "title": "Implement ConversationMemoryService",
+        "detail": "Singleton with in-memory cache. Sliding window of N recent exchanges. Theme extraction from message content. Format memory as structured text for system prompt injection."
+      },
+      {
+        "step": 7,
+        "title": "Implement activation flags",
+        "detail": "Use localStorage or equivalent client-side storage for persona activation state. Emit custom events on activation/deactivation."
+      },
+      {
+        "step": 8,
+        "title": "Wire into AI pipeline",
+        "detail": "Before calling AI provider: (1) get persona context, (2) get conversation memory, (3) format both into system prompt additions, (4) after response, store interaction with full metadata."
+      }
+    ]
+  }
+}
