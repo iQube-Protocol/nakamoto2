@@ -8,44 +8,62 @@
 const ENDPOINT = 'https://bsjhfvctmduxhohtllly.supabase.co/functions/v1/send-qubetalk';
 const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImJzamhmdmN0bWR1eGhvaHRsbGx5Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3NDYxMjY5MDQsImV4cCI6MjA2MTcwMjkwNH0.GBrcUk3ufpFr0WoP2VqL7Bm8C3V7T6IKnJx-Svjhbjc';
 
-const specSummary = `Complete persona-memory-system-spec.json shared from Aigent Nakamoto project. This spec details: (1) Dual persona model (KNYT + Qrypto) with Supabase tables and RLS, (2) Persona activation via localStorage flags and custom events, (3) PersonaContextService for context extraction with experience level rules, (4) Prompt injection patterns with topic routing, (5) AigentConversationService with 8-exchange sliding window memory, 3-tier retrieval, theme extraction, (6) user_interactions table for query/response storage with rich metadata, (7) conversation_summaries for long-term memory compression, (8) Name preference system with multi-source resolution, (9) Database triggers for auto persona creation on signup, (10) Full replication guide for AS-API integration. Key tables: knyt_personas, qripto_personas, user_interactions, conversation_summaries, user_connections, user_name_preferences, user_sessions. Key services: PersonaContextService, AigentConversationService, PersonaDataSyncService, NamePreferenceService. Memory config: 8-exchange sliding window, 3000 char max context, 5min cache TTL, 3-tier retrieval. Spec version 1.0.0.`;
+const specContent = `[SPEC-SHARE] Persona & Memory System Specification v1.0.0 from Aigent Nakamoto
 
-const metadata = {
-  specId: 'aigent-nakamoto-persona-memory-spec',
-  version: '1.0.0',
-  sharedAt: new Date().toISOString(),
-  sourceProject: 'aigent-nakamoto',
-  keyTables: ['knyt_personas','qripto_personas','user_interactions','conversation_summaries','user_connections','user_name_preferences','user_sessions'],
-  keyServices: ['PersonaContextService','AigentConversationService','PersonaDataSyncService','NamePreferenceService','AigentKnowledgeRouter'],
-  memoryConfig: { slidingWindow: 8, maxContextLength: 3000, cacheTTL: '5 minutes', retrievalTiers: 3 }
-};
+Complete persona-memory-system-spec.json details:
 
-async function send(toAgents) {
+1. DUAL PERSONA MODEL: KNYT (community/investment) + Qrypto (Web3/crypto) personas stored in separate Supabase tables (knyt_personas, qripto_personas) with RLS (auth.uid() = user_id).
+
+2. PERSONA ACTIVATION: Client-side localStorage flags (knyt-persona-activated, qrypto-persona-activated) with custom events for activation/deactivation.
+
+3. CONTEXT EXTRACTION: PersonaContextService extracts identity, crypto, social, investment contexts + determines experience level (beginner/intermediate/advanced/expert) based on rules.
+
+4. PROMPT INJECTION: Topic-routed context injection - invest/stake→investmentContext, crypto/defi→cryptoContext, community→socialContext. Experience-level-specific guidance.
+
+5. MEMORY SYSTEM: AigentConversationService with 8-exchange sliding window, 3-tier retrieval strategy, theme extraction, 5min cache TTL, 3000 char max context.
+
+6. STORAGE: user_interactions table (query, response, metadata JSONB with conversationId, agentType, activePersona). conversation_summaries for long-term compression.
+
+7. NAME PREFERENCES: user_name_preferences table with multi-source resolution (invitation, LinkedIn, custom).
+
+8. DB TRIGGERS: handle_new_user_personas (auto-create on signup), handle_invited_user_signup (pre-populate from invitation), handle_new_user_registration (create profile).
+
+9. KEY TABLES: knyt_personas, qripto_personas, user_interactions, conversation_summaries, user_connections, user_name_preferences, user_sessions.
+
+10. KEY SERVICES: PersonaContextService, AigentConversationService, PersonaDataSyncService, NamePreferenceService, AigentKnowledgeRouter.
+
+Full JSON spec available at docs/persona-memory-system-spec.json in aigent-nakamoto repo. Use replication_guide section for AS-API integration.`;
+
+async function send(toAgents, label) {
+  const messageId = crypto.randomUUID();
   const res = await fetch(ENDPOINT, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json', 'apikey': ANON_KEY },
     body: JSON.stringify({
-      channel: 'metame-runtime-thinclient',
+      channel_id: 'metame-runtime-thinclient',
       thread: 'spec',
+      message_id: messageId,
       from_agent: { id: 'lovable-aigent-nakamoto', role: 'builder' },
       to_agents: toAgents,
-      payload: {
+      content: specContent,
+      metadata: {
+        specId: 'aigent-nakamoto-persona-memory-spec',
+        version: '1.0.0',
         type: 'spec-share',
-        title: 'Persona & Memory System Specification',
-        body: specSummary,
-        metadata
+        sharedAt: new Date().toISOString(),
+        sourceProject: 'aigent-nakamoto'
       }
     })
   });
-  return { agents: toAgents, status: res.status, data: await res.json() };
+  return { label, status: res.status, data: await res.json() };
 }
 
 (async () => {
   const out = document.getElementById('output');
   try {
-    const r1 = await send(['windsurf']);
+    const r1 = await send(['windsurf'], 'Windsurf');
     out.textContent = 'Windsurf: ' + JSON.stringify(r1, null, 2) + '\n\n';
-    const r2 = await send(['aigent-z']);
+    const r2 = await send(['aigent-z'], 'Aigent Z');
     out.textContent += 'Aigent Z: ' + JSON.stringify(r2, null, 2);
   } catch(e) {
     out.textContent = 'Error: ' + e.message;
