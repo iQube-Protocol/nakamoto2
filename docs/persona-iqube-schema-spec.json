@@ -1,0 +1,457 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "specId": "aigent-nakamoto-persona-iqube-schema-spec",
+  "version": "1.0.0",
+  "generatedAt": "2026-04-21T20:53:33.917399Z",
+  "sourceProject": "aigent-nakamoto",
+  "title": "Qripto & KNYT Persona iQube Schemas + LinkedIn / MetaMask Integration Spec",
+  "description": "Complete schema and integration specification for the dual-persona iQube system in Aigent Nakamoto. Each persona is a tri-partite iQube composed of (1) metaQube \u2014 public provenance/risk metadata, (2) blakQube \u2014 encrypted private user data, and (3) tokenQube \u2014 access control / ownership / on-chain settlement. This document also specifies how the LinkedIn OAuth integration and the MetaMask Web3 wallet integration populate the blakQube fields for each persona type, including the KNYT $COYN ERC-20 balance ingestion pipeline.",
+  "iQubeOntology": {
+    "principle": "Every persona iQube is cryptographically composed of three entangled subdivisions. Public metadata lives in the metaQube, encrypted PII lives in the blakQube, and access keys + on-chain settlement live in the tokenQube.",
+    "subdivisions": {
+      "metaQube": {
+        "purpose": "Public provenance, risk scoring, usage rights, and routing metadata. Always readable; never contains PII.",
+        "storage": "Static client-side definition (src/components/settings/QubeData.tsx) \u2014 surfaced in the UI's MetaQubeHeader.",
+        "scoringDimensions": [
+          "Sensitivity-Score",
+          "Verifiability-Score",
+          "Accuracy-Score",
+          "Risk-Score"
+        ],
+        "scoringScale": "0\u201310 integer or one decimal. Risk-Score is computed/curated as a function of Sensitivity vs Verifiability+Accuracy."
+      },
+      "blakQube": {
+        "purpose": "Encrypted private payload \u2014 the actual user PII, wallet addresses, social handles, and KNYT asset holdings.",
+        "storage": "Supabase Postgres tables `knyt_personas` and `qripto_personas`, gated by per-user RLS (auth.uid() = user_id).",
+        "encryptionLevel": "AES-256 at rest; TLS in transit; row-level security enforced by Postgres."
+      },
+      "tokenQube": {
+        "purpose": "Ownership, access grants, network settings, and on-chain provenance for the iQube.",
+        "storage": "On-chain (Ethereum mainnet for KNYT $COYN ERC-20 settlement) + `user_connections` table for wallet binding + UI in src/components/settings/tokenqube/",
+        "components": [
+          "WalletConnection",
+          "MintButton",
+          "AccessGrants",
+          "NetworkSettings"
+        ]
+      }
+    }
+  },
+  "personas": {
+    "qriptoPersona": {
+      "displayName": "Qripto Persona",
+      "intendedUser": "Web3 / crypto-native user; lighter PII footprint, focused on wallet identity and social/dev presence.",
+      "metaQube": {
+        "iQube-Identifier": "Qripto Persona iQube",
+        "iQube-Type": "DataQube",
+        "iQube-Designer": "Aigent",
+        "iQube-Use": "For personalized cryptocurrency recommendations and portfolio analysis",
+        "Owner-Type": "Person",
+        "Owner-Identifiability": "Semi-Identifiable",
+        "Date-Minted": "<ISO timestamp>",
+        "Related-iQubes": [
+          "MetisQube",
+          "VeniceQube",
+          "WalletQube"
+        ],
+        "X-of-Y": "1 of 5",
+        "Sensitivity-Score": 6,
+        "Verifiability-Score": 7,
+        "Accuracy-Score": 8,
+        "Risk-Score": 5
+      },
+      "blakQube": {
+        "table": "qripto_personas",
+        "primaryKey": "id (uuid)",
+        "userBinding": "user_id (uuid) \u2014 auth.uid() via RLS",
+        "fields": {
+          "identity": {
+            "First-Name": "text",
+            "Last-Name": "text",
+            "Qripto-ID": "text \u2014 internal Qripto handle",
+            "Profession": "text \u2014 populated from LinkedIn headline",
+            "Local-City": "text \u2014 populated from LinkedIn location",
+            "Email": "text \u2014 populated from LinkedIn email or auth.email",
+            "profile_image_url": "text"
+          },
+          "crypto": {
+            "EVM-Public-Key": "text \u2014 populated from MetaMask eth_requestAccounts[0]",
+            "BTC-Public-Key": "text \u2014 manual entry",
+            "Chain-IDs": "text[] \u2014 chains the user holds assets on",
+            "Wallets-of-Interest": "text[] \u2014 auto-appends 'MetaMask' on wallet connect, 'ThirdWeb' on ThirdWeb connect",
+            "Tokens-of-Interest": "text[] \u2014 auto-appends ['ETH','BTC','USDC','USDT','KNYT'] on wallet connect",
+            "Web3-Interests": "text[] \u2014 derived from LinkedIn industry + skills keyword filter"
+          },
+          "social": {
+            "LinkedIn-ID": "text \u2014 basicProfile.sub or detailedProfile.id",
+            "LinkedIn-Profile-URL": "text \u2014 publicProfileUrl, vanityName, or constructed",
+            "Twitter-Handle": "text \u2014 '@'-prefixed",
+            "Telegram-Handle": "text \u2014 '@'-prefixed",
+            "Discord-Handle": "text",
+            "Instagram-Handle": "text",
+            "GitHub-Handle": "text",
+            "YouTube-ID": "text",
+            "Facebook-ID": "text",
+            "TikTok-Handle": "text"
+          },
+          "audit": {
+            "created_at": "timestamptz default now()",
+            "updated_at": "timestamptz default now()"
+          }
+        },
+        "rlsPolicies": [
+          "SELECT: auth.uid() = user_id",
+          "INSERT: auth.uid() = user_id (WITH CHECK)",
+          "UPDATE: auth.uid() = user_id",
+          "DELETE: auth.uid() = user_id"
+        ]
+      },
+      "tokenQube": {
+        "ownerType": "Person",
+        "settlementNetwork": "Ethereum Mainnet (chainId 0x1)",
+        "accessControl": "Self-sovereign \u2014 only the auth.uid() owner can decrypt blakQube fields",
+        "mintability": "Optional via MintButton (src/components/settings/tokenqube/MintButton.tsx)",
+        "walletBinding": "user_connections row with service='wallet', signed message verifies ownership"
+      },
+      "personaDetectionHeuristic": "A persona is detected as Qripto when KNYT-specific fields (KNYT-COYN-Owned, KNYT-ID, OM-Member-Since, Total-Invested, Metaiye-Shares-Owned) are absent."
+    },
+    "knytPersona": {
+      "displayName": "KNYT Persona",
+      "intendedUser": "metaKnyts ecosystem member; richer PII footprint, includes investment history, OM tier status, and on-chain $KNYT COYN holdings.",
+      "metaQube": {
+        "iQube-Identifier": "KNYT Persona iQube",
+        "iQube-Type": "DataQube",
+        "iQube-Designer": "KNYT Ecosystem",
+        "iQube-Use": "For KNYT ecosystem profile management and reward tracking",
+        "Owner-Type": "Person",
+        "Owner-Identifiability": "Semi-Identifiable",
+        "Date-Minted": "<ISO timestamp>",
+        "Related-iQubes": [
+          "QriptoPersona",
+          "MetisQube",
+          "EcosystemQube"
+        ],
+        "X-of-Y": "1 of 3",
+        "Sensitivity-Score": 7,
+        "Verifiability-Score": 8,
+        "Accuracy-Score": 8,
+        "Risk-Score": 6.5
+      },
+      "blakQube": {
+        "table": "knyt_personas",
+        "primaryKey": "id (uuid)",
+        "userBinding": "user_id (uuid) \u2014 auth.uid() via RLS",
+        "fields": {
+          "identity": {
+            "First-Name": "text",
+            "Last-Name": "text",
+            "KNYT-ID": "text \u2014 KNYT ecosystem handle",
+            "Profession": "text \u2014 from LinkedIn headline",
+            "Local-City": "text \u2014 from LinkedIn location",
+            "Email": "text",
+            "Phone-Number": "text",
+            "Age": "text",
+            "Address": "text",
+            "profile_image_url": "text"
+          },
+          "crypto": {
+            "EVM-Public-Key": "text \u2014 from MetaMask eth_requestAccounts[0]",
+            "BTC-Public-Key": "text",
+            "ThirdWeb-Public-Key": "text",
+            "MetaKeep-Public-Key": "text",
+            "Chain-IDs": "text[]",
+            "Wallets-of-Interest": "text[] \u2014 appends 'MetaMask' on wallet connect",
+            "Tokens-of-Interest": "text[] \u2014 appends ['ETH','BTC','USDC','USDT','KNYT']",
+            "Web3-Interests": "text[]"
+          },
+          "social": {
+            "LinkedIn-ID": "text",
+            "LinkedIn-Profile-URL": "text",
+            "Twitter-Handle": "text",
+            "Telegram-Handle": "text",
+            "Discord-Handle": "text",
+            "Instagram-Handle": "text",
+            "YouTube-ID": "text",
+            "Facebook-ID": "text",
+            "TikTok-Handle": "text"
+          },
+          "investmentAndMembership": {
+            "OM-Member-Since": "text \u2014 date string",
+            "OM-Tier-Status": "text \u2014 e.g., Bronze/Silver/Gold/Platinum",
+            "Metaiye-Shares-Owned": "text \u2014 numeric string",
+            "Total-Invested": "text \u2014 numeric (USD), formatted with $ in UI"
+          },
+          "knytAssetHoldings": {
+            "KNYT-COYN-Owned": "text \u2014 populated from on-chain ERC-20 balanceOf via MetaMask provider (KNYT_TOKEN_CONFIG.address = 0xe53dad36cd0A8EdC656448CE7912bba72beBECb4)",
+            "Motion-Comics-Owned": "text",
+            "Paper-Comics-Owned": "text",
+            "Digital-Comics-Owned": "text",
+            "KNYT-Posters-Owned": "text",
+            "KNYT-Cards-Owned": "text",
+            "Characters-Owned": "text"
+          },
+          "audit": {
+            "created_at": "timestamptz default now()",
+            "updated_at": "timestamptz default now()"
+          }
+        },
+        "rlsPolicies": [
+          "SELECT: auth.uid() = user_id",
+          "INSERT: auth.uid() = user_id (WITH CHECK)",
+          "UPDATE: auth.uid() = user_id",
+          "DELETE: auth.uid() = user_id"
+        ]
+      },
+      "tokenQube": {
+        "ownerType": "Person",
+        "settlementNetwork": "Ethereum Mainnet (chainId 0x1)",
+        "tokenContract": {
+          "symbol": "KNYT",
+          "address": "0xe53dad36cd0A8EdC656448CE7912bba72beBECb4",
+          "decimals": 18,
+          "standard": "ERC-20"
+        },
+        "rewardSystem": {
+          "table": "knyt_persona_rewards",
+          "fields": {
+            "linkedin_connected": "boolean \u2014 set true when LinkedIn OAuth completes",
+            "metamask_connected": "boolean \u2014 set true when wallet signature verified",
+            "data_completed": "boolean \u2014 set true when all required blakQube fields filled",
+            "reward_amount": "integer default 2800 (Satoshi, \u2248 2 $KNYT \u2248 $2.80)",
+            "reward_claimed": "boolean"
+          },
+          "rule": "User earns 2,800 Satoshi reward for completing LinkedIn + MetaMask + full data."
+        },
+        "accessControl": "Self-sovereign + RLS",
+        "walletBinding": "user_connections row with service='wallet'"
+      },
+      "personaDetectionHeuristic": "A persona is detected as KNYT when ANY of these fields exist on the persona object: 'KNYT-COYN-Owned', 'KNYT-ID', 'OM-Member-Since', 'Total-Invested', 'Metaiye-Shares-Owned'. Used by src/services/blakqube/connection-processors.ts to gate KNYT-COYN-Owned writes."
+    }
+  },
+  "personaActivation": {
+    "mechanism": "Client-side localStorage flags + window CustomEvent dispatch. Mutually exclusive between KNYT and Qripto.",
+    "flags": {
+      "knyt-persona-activated": "boolean string in localStorage",
+      "qripto-persona-activated": "boolean string in localStorage"
+    },
+    "events": [
+      "iqubeToggle \u2014 { iqubeId: 'KNYT Persona' | 'Qripto Persona', active: boolean }",
+      "personaDataUpdated",
+      "privateDataUpdated",
+      "balanceUpdated",
+      "walletDataRefreshed"
+    ],
+    "mutualExclusion": "src/pages/Settings.tsx#toggleQubeActive \u2014 activating one persona deactivates the other."
+  },
+  "linkedInIntegration": {
+    "purpose": "Populate identity (First-Name, Last-Name, Profession, Local-City), social (LinkedIn-ID, LinkedIn-Profile-URL, Email), and inferred Web3-Interests fields in the blakQube of whichever persona is active.",
+    "oauthFlow": {
+      "scopes": [
+        "openid",
+        "profile",
+        "email",
+        "w_member_social"
+      ],
+      "step1_initiate": {
+        "edgeFunction": "supabase/functions/connect-linkedin/index.ts",
+        "method": "POST (no body required)",
+        "behavior": "Generates state UUID, builds LinkedIn authorization URL, returns { authUrl, state, redirectUri } to client.",
+        "redirectUri": "${SUPABASE_URL}/functions/v1/oauth-callback-linkedin",
+        "linkedInAuthEndpoint": "https://www.linkedin.com/oauth/v2/authorization"
+      },
+      "step2_userConsent": {
+        "behavior": "Browser navigates to authUrl; user authorizes; LinkedIn redirects to redirectUri with ?code=...&state=..."
+      },
+      "step3_callback": {
+        "edgeFunction": "supabase/functions/oauth-callback-linkedin/index.ts",
+        "actions": [
+          "Exchange authorization code for access_token at https://www.linkedin.com/oauth/v2/accessToken (15s timeout)",
+          "Fetch basic profile from https://api.linkedin.com/v2/userinfo \u2192 { sub, given_name, family_name, email, picture }",
+          "Fetch detailed profile from https://api.linkedin.com/v2/me?projection=(id,firstName,lastName,headline,industryName,localizedFirstName,localizedLastName,profilePicture,publicProfileUrl,vanityName,emailAddress,location)",
+          "Smart client-origin detection from Referer / Origin headers (fallback: https://nakamoto.aigentz.me)",
+          "302 redirect to ${clientOrigin}/oauth-callback?service=linkedin&success=true&state=...&connection_data=<URL-encoded JSON>"
+        ]
+      },
+      "step4_clientPersist": {
+        "handler": "src/components/settings/OAuthCallback.tsx \u2192 connectionService \u2192 upsert into user_connections",
+        "row": {
+          "user_id": "<auth.uid()>",
+          "service": "'linkedin'",
+          "connection_data": {
+            "connected": true,
+            "access_token": "<jwt>",
+            "profile": {
+              "id": "string",
+              "firstName": "string",
+              "lastName": "string",
+              "headline": "string",
+              "industryName": "string",
+              "locationName": "string",
+              "publicProfileUrl": "string",
+              "vanityName": "string",
+              "profilePicture": "url"
+            },
+            "email": "string",
+            "fetchedAt": "ISO timestamp",
+            "version": "3.0"
+          }
+        }
+      },
+      "step5_blakQubePopulation": {
+        "processor": "src/services/blakqube/connection-processors.ts \u2192 processLinkedInConnection()",
+        "fieldMapping": {
+          "First-Name": "profile.firstName (only if persona['First-Name'] is empty)",
+          "Last-Name": "profile.lastName (only if empty)",
+          "LinkedIn-ID": "profile.id (always overwrites)",
+          "LinkedIn-Profile-URL": "profile.publicProfileUrl ?? profile.profileUrl ?? `https://www.linkedin.com/in/${profile.vanityName ?? profile.id}`",
+          "Email": "connection_data.email (only if empty)",
+          "Profession": "profile.headline (only if empty)",
+          "Local-City": "profile.locationName ?? profile.location.name ?? profile.location.preferredGeoPlace.name (only if empty)",
+          "Web3-Interests": "Append profile.industryName if it matches keywords [blockchain, crypto, cryptocurrency, web3, defi, nft, bitcoin, ethereum, fintech, digital assets, smart contracts, dapp, decentralized, tokenization]; also append profile.skills filtered for [blockchain, crypto, web3, smart contract, solidity, defi, nft, ethereum, bitcoin]"
+        },
+        "writeStrategy": "Non-destructive \u2014 only fills empty fields; LinkedIn-ID and LinkedIn-Profile-URL always overwrite."
+      }
+    },
+    "secrets": [
+      "LINKEDIN_CLIENT_ID",
+      "LINKEDIN_CLIENT_SECRET"
+    ],
+    "errorHandling": {
+      "timeouts": "15s for token exchange, 10s for profile fetches",
+      "fallbackEndpoint": "If /v2/me projection fails, falls back to /v2/people/(id:~)?projection=(...)",
+      "userFacingErrors": "HTML error page with auto-redirect to /oauth-callback?service=linkedin&error=<reason> after 3s"
+    }
+  },
+  "metaMaskIntegration": {
+    "purpose": "(1) Bind an EVM wallet to the user. (2) Populate EVM-Public-Key in blakQube. (3) For KNYT personas only \u2014 fetch on-chain $KNYT COYN ERC-20 balance and write it to KNYT-COYN-Owned.",
+    "service": "src/services/wallet-connection-service.ts + src/services/knyt-token-service.ts",
+    "flow": {
+      "step1_providerCheck": "Verify window.ethereum exists. Reject with toast if MetaMask not installed.",
+      "step2_networkValidation": {
+        "method": "knytTokenService.validateNetwork()",
+        "rule": "Must be on Ethereum Mainnet (chainId 0x1). If not, calls switchToMainnet() \u2192 wallet_switchEthereumChain.",
+        "rationale": "KNYT $COYN contract lives on mainnet; off-chain reads would return zero or revert."
+      },
+      "step3_accountAccess": {
+        "rpcCall": "eth_requestAccounts",
+        "timeout": "30s",
+        "result": "accounts[0] becomes the EVM-Public-Key"
+      },
+      "step4_signatureVerification": {
+        "rpcCall": "personal_sign",
+        "messageTemplate": "Please sign this message to verify your wallet ownership.\\n\\nWallet: <address>\\nTimestamp: <ISO>",
+        "timeout": "60s",
+        "purpose": "Proves the user controls the private key \u2014 anti-spoofing for the wallet binding."
+      },
+      "step5_knytBalanceFetch": {
+        "config": {
+          "contractAddress": "0xe53dad36cd0A8EdC656448CE7912bba72beBECb4",
+          "symbol": "KNYT",
+          "decimals": 18,
+          "chainId": "0x1"
+        },
+        "method": "Direct eth_call (no ethers.js dependency)",
+        "callData": "0x70a08231 (balanceOf selector) + walletAddress padded to 32 bytes",
+        "rpc": "window.ethereum.request({ method: 'eth_call', params: [{ to: contractAddress, data: callData }, 'latest'] })",
+        "parsing": "BigInt(0x + hex result) / 10^18 \u2192 human-readable KNYT amount",
+        "caching": {
+          "duration": "30000ms (30s)",
+          "keyedBy": "walletAddress (lowercase)",
+          "deduplication": "pendingBalanceFetches map prevents concurrent duplicate RPC calls per address",
+          "fallback": "If a fresh fetch fails, return cached value if within 90s (3\u00d7 cache duration)"
+        },
+        "fetchTimeout": "15000ms",
+        "monitoring": "knytTokenService.monitorTransactions() listens for accountsChanged + chainChanged and re-fetches balance on changes."
+      },
+      "step6_persistConnection": {
+        "table": "user_connections",
+        "upsert": {
+          "user_id": "auth.uid()",
+          "service": "'wallet'",
+          "connection_data": {
+            "address": "0x...",
+            "signature": "0x...",
+            "message": "<signed message>",
+            "signedAt": "ISO",
+            "knytTokenBalance": {
+              "balance": "raw token amount (string)",
+              "formatted": "'<n.nn> KNYT' with locale separators",
+              "lastUpdated": "epoch ms",
+              "transactionHash": "optional"
+            }
+          }
+        }
+      },
+      "step7_blakQubeSync": {
+        "processor": "src/services/blakqube/connection-processors.ts \u2192 processWalletConnection()",
+        "writes": {
+          "EVM-Public-Key": "Always overwrites with connection_data.address",
+          "Wallets-of-Interest": "Append 'MetaMask' if not present",
+          "Tokens-of-Interest": "Append any of [ETH, BTC, USDC, USDT, KNYT] not yet present",
+          "KNYT-COYN-Owned": "ONLY written if persona is detected as KNYT (see personaDetectionHeuristic). Value = connection_data.knytTokenBalance.formatted (e.g. '1,250 KNYT')."
+        },
+        "auditMetadata": "Logged (not persisted): { lastBalanceUpdate, balanceSource: 'wallet_connection', transactionHash, rawBalance }"
+      },
+      "step8_eventDispatch": "Dispatches CustomEvents: privateDataUpdated, personaDataUpdated, balanceUpdated, walletDataRefreshed \u2014 UI components subscribe to refresh."
+    },
+    "addTokenToWallet": {
+      "method": "knytTokenService.addTokenToWallet()",
+      "rpc": "wallet_watchAsset with { type: 'ERC20', options: { address, symbol: 'KNYT', decimals: 18 } }",
+      "purpose": "One-click 'Add KNYT to MetaMask' UX so users see the token in their wallet."
+    },
+    "refreshAndUpdateMethods": [
+      "walletConnectionService.updateWalletWithKnytBalance() \u2014 called on Settings page mount; cached read.",
+      "walletConnectionService.refreshKnytBalance() \u2014 clears cache and forces fresh on-chain read."
+    ]
+  },
+  "endToEndDataFlow": {
+    "scenario_linkedIn": [
+      "1. User clicks 'Connect LinkedIn' in Settings \u2192 ConnectionsTab.",
+      "2. useServiceConnections.connect('linkedin') \u2192 connectionService.startOAuthFlow('linkedin').",
+      "3. Client invokes connect-linkedin edge function \u2192 receives authUrl, state.",
+      "4. Browser redirects to LinkedIn \u2192 user consents \u2192 LinkedIn redirects to oauth-callback-linkedin edge function.",
+      "5. Edge function exchanges code, fetches /v2/userinfo + /v2/me, builds connection_data, 302 redirects to ${clientOrigin}/oauth-callback?service=linkedin&success=true&connection_data=<urlencoded>.",
+      "6. OAuthCallback.tsx parses connection_data, upserts into user_connections (service='linkedin').",
+      "7. blakQubeService.updatePersonaFromConnections('knyt'|'qripto') runs processLinkedInConnection() against the active persona's row in knyt_personas / qripto_personas.",
+      "8. Persona row updated \u2192 personaDataSync notifies subscribers \u2192 UserPersonaDisplay refreshes."
+    ],
+    "scenario_metaMask": [
+      "1. User clicks 'Connect Wallet' \u2192 walletConnectionService.connectWallet().",
+      "2. Network validated (Ethereum Mainnet) \u2192 switch if needed.",
+      "3. eth_requestAccounts \u2192 personal_sign challenge.",
+      "4. knytTokenService.getTokenBalance(address) \u2192 eth_call balanceOf on KNYT contract \u2192 parse BigInt \u2192 cache.",
+      "5. Upsert user_connections row with { address, signature, knytTokenBalance }.",
+      "6. blakQubeService.updatePersonaFromConnections('knyt') AND ('qripto') run processWalletConnection() on each.",
+      "7. processWalletConnection sets EVM-Public-Key on both; sets KNYT-COYN-Owned ONLY on KNYT persona (heuristic).",
+      "8. CustomEvents dispatched \u2192 KnytBalanceDisplay, BlakQubeSection, MetaQubeHeader re-render."
+    ]
+  },
+  "supabaseSchemaDDL": {
+    "qripto_personas_excerpt": "CREATE TABLE qripto_personas ( id uuid PRIMARY KEY DEFAULT gen_random_uuid(), user_id uuid NOT NULL, \"First-Name\" text DEFAULT '', \"Last-Name\" text DEFAULT '', \"Qripto-ID\" text DEFAULT '', \"Profession\" text DEFAULT '', \"Local-City\" text DEFAULT '', \"Email\" text DEFAULT '', \"EVM-Public-Key\" text DEFAULT '', \"BTC-Public-Key\" text DEFAULT '', \"Chain-IDs\" text[] DEFAULT '{}', \"Wallets-of-Interest\" text[] DEFAULT '{}', \"Web3-Interests\" text[] DEFAULT '{}', \"Tokens-of-Interest\" text[] DEFAULT '{}', \"LinkedIn-ID\" text DEFAULT '', \"LinkedIn-Profile-URL\" text DEFAULT '', \"Twitter-Handle\" text DEFAULT '', \"Telegram-Handle\" text DEFAULT '', \"Discord-Handle\" text DEFAULT '', \"Instagram-Handle\" text DEFAULT '', \"GitHub-Handle\" text DEFAULT '', \"YouTube-ID\" text DEFAULT '', \"Facebook-ID\" text DEFAULT '', \"TikTok-Handle\" text DEFAULT '', profile_image_url text DEFAULT '', created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now() );",
+    "knyt_personas_excerpt": "CREATE TABLE knyt_personas ( id uuid PRIMARY KEY DEFAULT gen_random_uuid(), user_id uuid NOT NULL, \"First-Name\" text DEFAULT '', \"Last-Name\" text DEFAULT '', \"KNYT-ID\" text DEFAULT '', \"Profession\" text DEFAULT '', \"Local-City\" text DEFAULT '', \"Email\" text DEFAULT '', \"Phone-Number\" text DEFAULT '', \"Age\" text DEFAULT '', \"Address\" text DEFAULT '', \"EVM-Public-Key\" text DEFAULT '', \"BTC-Public-Key\" text DEFAULT '', \"ThirdWeb-Public-Key\" text DEFAULT '', \"MetaKeep-Public-Key\" text DEFAULT '', \"Chain-IDs\" text[] DEFAULT '{}', \"Wallets-of-Interest\" text[] DEFAULT '{}', \"Web3-Interests\" text[] DEFAULT '{}', \"Tokens-of-Interest\" text[] DEFAULT '{}', \"LinkedIn-ID\" text DEFAULT '', \"LinkedIn-Profile-URL\" text DEFAULT '', \"Twitter-Handle\" text DEFAULT '', \"Telegram-Handle\" text DEFAULT '', \"Discord-Handle\" text DEFAULT '', \"Instagram-Handle\" text DEFAULT '', \"YouTube-ID\" text DEFAULT '', \"Facebook-ID\" text DEFAULT '', \"TikTok-Handle\" text DEFAULT '', \"OM-Member-Since\" text DEFAULT '', \"OM-Tier-Status\" text DEFAULT '', \"Metaiye-Shares-Owned\" text DEFAULT '', \"Total-Invested\" text DEFAULT '', \"KNYT-COYN-Owned\" text DEFAULT '', \"Motion-Comics-Owned\" text DEFAULT '', \"Paper-Comics-Owned\" text DEFAULT '', \"Digital-Comics-Owned\" text DEFAULT '', \"KNYT-Posters-Owned\" text DEFAULT '', \"KNYT-Cards-Owned\" text DEFAULT '', \"Characters-Owned\" text DEFAULT '', profile_image_url text DEFAULT '', created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now() );",
+    "user_connections": "CREATE TABLE user_connections ( id uuid PRIMARY KEY DEFAULT gen_random_uuid(), user_id uuid NOT NULL, service text NOT NULL, connection_data jsonb, connected_at timestamptz NOT NULL DEFAULT now(), created_at timestamptz NOT NULL DEFAULT now() ); -- service \u2208 { 'linkedin','wallet','thirdweb','twitter','telegram','discord','instagram','facebook','youtube','tiktok','luma' }",
+    "knyt_persona_rewards": "CREATE TABLE knyt_persona_rewards ( id uuid PRIMARY KEY DEFAULT gen_random_uuid(), user_id uuid NOT NULL, linkedin_connected boolean DEFAULT false, metamask_connected boolean DEFAULT false, data_completed boolean DEFAULT false, reward_amount integer DEFAULT 2800, reward_claimed boolean DEFAULT false, created_at timestamptz NOT NULL DEFAULT now(), updated_at timestamptz NOT NULL DEFAULT now() );"
+  },
+  "replicationGuide": {
+    "minimalSteps": [
+      "1. Create knyt_personas + qripto_personas tables with the DDL above; enable RLS with auth.uid() = user_id policies on all CRUD ops.",
+      "2. Create user_connections table for OAuth + wallet bindings (service-keyed JSONB).",
+      "3. Configure LinkedIn OAuth app \u2014 register https://<your-supabase>.supabase.co/functions/v1/oauth-callback-linkedin as the redirect URI; store LINKEDIN_CLIENT_ID + LINKEDIN_CLIENT_SECRET as edge function secrets.",
+      "4. Deploy the two edge functions: connect-linkedin (initiator) and oauth-callback-linkedin (token exchange + profile fetch + redirect).",
+      "5. Implement client-side OAuthCallback page that parses connection_data from URL and upserts into user_connections.",
+      "6. Implement walletConnectionService + knytTokenService \u2014 call eth_requestAccounts, personal_sign, then eth_call balanceOf for the KNYT ERC-20 (0xe53dad36cd0A8EdC656448CE7912bba72beBECb4) on chainId 0x1.",
+      "7. Implement processLinkedInConnection + processWalletConnection mappers (non-destructive writes; KNYT-COYN gated by persona detection heuristic).",
+      "8. Wire blakQubeService.updatePersonaFromConnections(personaType) to fan out connection_data \u2192 persona row updates after every OAuth/wallet event.",
+      "9. Add the 30s in-memory balance cache and pendingFetches dedup map to avoid RPC spam.",
+      "10. Dispatch CustomEvents (privateDataUpdated, personaDataUpdated, balanceUpdated, walletDataRefreshed) so UI re-renders without polling."
+    ],
+    "criticalGotchas": [
+      "Persona-type detection MUST happen before writing KNYT-COYN-Owned \u2014 otherwise Qripto personas will get KNYT fields they don't have columns for.",
+      "Balance cache key MUST be lowercased wallet address \u2014 checksummed addresses cause cache misses.",
+      "LinkedIn redirect_uri at token-exchange time MUST byte-match the redirect_uri registered in LinkedIn's app config \u2014 any trailing slash or protocol mismatch fails silently with a 400.",
+      "Use a 15s AbortController on the LinkedIn token exchange \u2014 LinkedIn's OAuth endpoint occasionally hangs.",
+      "Always validate chainId === 0x1 BEFORE calling balanceOf \u2014 calling on the wrong network returns 0 silently.",
+      "Smart-detect the client origin in the OAuth callback (referer \u2192 origin \u2192 fallback) so Lovable preview URLs and production domains both work."
+    ]
+  }
+}
