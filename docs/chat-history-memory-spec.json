@@ -1,0 +1,337 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "title": "Aigent Nakamoto — Chat History & Persona-Scoped Memory Specification",
+  "version": "1.0.0",
+  "generated": "2026-04-22",
+  "purpose": "Replication-grade specification of how chat history is captured, scoped to active persona (Qripto / KNYT / Anon), enriched with metadata, summarized, and replayed as conversational context. Designed for re-implementation against AS-API identity infrastructure.",
+
+  "operational_model": {
+    "overview": "Chat history is a persona-aware, append-only event log of user↔agent exchanges. Each row is one Q/A pair tagged with an interaction_type (agent channel) plus a metadata JSONB envelope carrying the active persona, conversation ID, model used, knowledge sources, and citations. RLS guarantees per-user isolation. A sliding-window memory cache (last 8 exchanges) plus periodic LLM summarization (every 10 interactions) provides bounded long-term recall.",
+    "lifecycle": [
+      "1. User sends a prompt in an agent interface (Aigent / Learn / Earn / Connect).",
+      "2. Active persona is read from localStorage key 'selected-iqube' (values: 'Qripto', 'KNYT', or null→'Anon').",
+      "3. usePersonaContext hook resolves persona blakQube fields → contextual system-prompt fragment.",
+      "4. prepareConversationContext() retrieves prior summaries + checks if summarization threshold (10 unsummarized) is reached.",
+      "5. AigentConversationService loads sliding-window memory (last 8 exchanges) for the conversationId.",
+      "6. Edge function (aigent-ai / learn-ai / etc.) is invoked with: prompt + persona context + sliding window + historical summaries.",
+      "7. Response is returned to the client and rendered via MessageContent (raw markdown/HTML preserved).",
+      "8. storeUserInteraction() inserts a row into public.user_interactions with enriched metadata envelope.",
+      "9. React Query invalidates ['user-interactions', userId, interactionType] → UI refreshes history.",
+      "10. When unsummarized count ≥ 10, summarize-history edge function is triggered → conversation_summaries row written, source rows marked summarized=true."
+    ],
+    "scoping_rules": {
+      "by_user": "RLS: auth.uid() = user_id on every CRUD. No cross-user access possible.",
+      "by_persona": "Persona is NOT a column — it is stored in metadata.activePersona. UI filters in-memory when interactionType is 'qripto', 'knyt', or 'all'. The interaction_type column ('learn'|'earn'|'connect'|'aigent') represents the agent CHANNEL, not the persona.",
+      "by_conversation": "metadata.conversationId (UUID) groups exchanges within one chat thread. Generated client-side via crypto.randomUUID() if absent.",
+      "legacy_compatibility": "Aigent reads merge native interaction_type='aigent' rows with legacy interaction_type='learn' rows whose metadata.agentType==='aigent' (migration support)."
+    }
+  },
+
+  "storage_layer": {
+    "primary_table": {
+      "name": "public.user_interactions",
+      "purpose": "Append-only log of every user↔agent exchange across all four agent channels.",
+      "ddl": "CREATE TABLE public.user_interactions (\n  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),\n  user_id uuid NOT NULL,\n  query text NOT NULL,\n  response text NOT NULL,\n  interaction_type text NOT NULL,\n  metadata jsonb,\n  summarized boolean NOT NULL DEFAULT false,\n  created_at timestamptz NOT NULL DEFAULT now()\n);\nALTER TABLE public.user_interactions ENABLE ROW LEVEL SECURITY;",
+      "columns": {
+        "id": "uuid PK — exchange identifier; used to derive client-side message IDs ('{id}-user', '{id}-agent').",
+        "user_id": "uuid — auth.uid() of the user; never references auth.users with FK (per Supabase guidance).",
+        "query": "text — the raw user prompt as submitted (no preprocessing).",
+        "response": "text — the raw agent response, preserves markdown/HTML/citations for replay.",
+        "interaction_type": "text — agent channel: 'learn' | 'earn' | 'connect' | 'aigent'.",
+        "metadata": "jsonb — see metadata_envelope schema below.",
+        "summarized": "boolean — flipped to true once included in a conversation_summaries row.",
+        "created_at": "timestamptz — chronological ordering key."
+      },
+      "rls_policies": [
+        { "name": "Users can view their own interactions", "command": "SELECT", "using": "auth.uid() = user_id" },
+        { "name": "Users can create their own interactions", "command": "INSERT", "with_check": "auth.uid() = user_id" },
+        { "name": "Users can update their own interactions", "command": "UPDATE", "using": "auth.uid() = user_id" },
+        { "name": "Users can delete their own interactions", "command": "DELETE", "using": "auth.uid() = user_id" }
+      ],
+      "recommended_indexes": [
+        "CREATE INDEX idx_user_interactions_user_type_created ON public.user_interactions(user_id, interaction_type, created_at DESC);",
+        "CREATE INDEX idx_user_interactions_unsummarized ON public.user_interactions(user_id, interaction_type) WHERE summarized = false;",
+        "CREATE INDEX idx_user_interactions_metadata_gin ON public.user_interactions USING GIN (metadata);"
+      ]
+    },
+
+    "summary_table": {
+      "name": "public.conversation_summaries",
+      "purpose": "Compact LLM-generated rollups of older exchanges, used as long-term context injected into system prompts.",
+      "ddl": "CREATE TABLE public.conversation_summaries (\n  id uuid PRIMARY KEY DEFAULT gen_random_uuid(),\n  user_id uuid NOT NULL,\n  conversation_type text NOT NULL,\n  summary_text text NOT NULL,\n  included_interaction_ids text[] NOT NULL DEFAULT '{}',\n  created_at timestamptz NOT NULL DEFAULT now(),\n  updated_at timestamptz NOT NULL DEFAULT now()\n);\nALTER TABLE public.conversation_summaries ENABLE ROW LEVEL SECURITY;",
+      "columns": {
+        "user_id": "uuid — owner.",
+        "conversation_type": "text — mirrors interaction_type ('learn'|'earn'|'connect'|'aigent').",
+        "summary_text": "text — ≤250-word natural-language summary produced by gpt-4o-mini.",
+        "included_interaction_ids": "text[] — ids of user_interactions rows folded into this summary."
+      },
+      "rls_policies": [
+        { "name": "Users can view their own summaries", "command": "SELECT", "using": "auth.uid() = user_id" },
+        { "name": "Users can create their own summaries", "command": "INSERT", "with_check": "auth.uid() = user_id" },
+        { "name": "Users can update their own summaries", "command": "UPDATE", "using": "auth.uid() = user_id" },
+        { "name": "Users can delete their own summaries", "command": "DELETE", "using": "auth.uid() = user_id" }
+      ],
+      "expiration_policy": "SUMMARY_EXPIRATION_DAYS = 30 (defined in conversation-history.ts) — summaries older than 30 days SHOULD be excluded from prompt injection (currently advisory; not enforced via DB)."
+    },
+
+    "session_table": {
+      "name": "public.user_sessions",
+      "purpose": "Coarse session lifecycle tracking (login/logout, device info). Independent of conversation threads.",
+      "columns": ["id", "user_id", "device_info jsonb", "active boolean", "created_at", "session_end timestamptz"]
+    },
+
+    "chat_session_table": {
+      "name": "public.chat_sessions",
+      "purpose": "Optional per-user chat session container (last_message_at + session_data jsonb). Used for higher-level grouping; the source of truth for individual exchanges remains user_interactions."
+    }
+  },
+
+  "metadata_envelope": {
+    "description": "JSONB shape stored in user_interactions.metadata. Enriched at write-time by storeUserInteraction() and at response-time by the edge function.",
+    "client_injected": {
+      "activePersona": { "type": "string", "values": ["Qripto", "KNYT", "Anon"], "source": "localStorage['selected-iqube']" },
+      "timestamp": { "type": "string (ISO-8601)", "source": "new Date().toISOString() at write time" },
+      "conversationId": { "type": "uuid", "source": "crypto.randomUUID() — stable across a chat thread" },
+      "agentType": { "type": "string", "values": ["aigent", "learn", "earn", "connect"], "purpose": "legacy disambiguator when interaction_type='learn' but logical agent is Aigent" }
+    },
+    "agent_injected": {
+      "version": { "type": "string", "example": "1.0" },
+      "modelUsed": { "type": "string", "example": "gpt-4o-mini | venice-uncensored" },
+      "aiProvider": { "type": "string", "example": "OpenAI | Venice AI (Uncensored)" },
+      "knowledgeSource": { "type": "string", "example": "iQube + COYN + Qripto + metaKnyts Knowledge Bases" },
+      "qryptoItemsFound": { "type": "integer" },
+      "metaKnytsItemsFound": { "type": "integer" },
+      "citations": { "type": "array<{ title, url, source }>" },
+      "veniceActivated": { "type": "boolean" },
+      "trustScores": { "type": "object", "fields": ["sensitivity", "verifiability", "accuracy", "risk"], "purpose": "5-dot Trust & Reliability indicator (see mem://ui/dot-score-system)" }
+    },
+    "history_replay_flags": {
+      "historicResponse": { "type": "boolean", "purpose": "Marks the message as loaded from DB (not freshly generated)." },
+      "agentTheme": { "type": "string", "purpose": "Theme key used by MessageContent for styling." },
+      "rawContent": { "type": "boolean", "purpose": "Tells MessageContent to apply sanitization rather than markdown parsing." }
+    },
+    "example": {
+      "activePersona": "KNYT",
+      "timestamp": "2026-04-22T14:03:11.842Z",
+      "conversationId": "9b7f6d2e-1c3a-4f8e-9b2d-7e5a1c8d4f6b",
+      "agentType": "aigent",
+      "version": "1.0",
+      "modelUsed": "gpt-4o-mini",
+      "aiProvider": "OpenAI",
+      "knowledgeSource": "iQube + COYN + Qripto + metaKnyts Knowledge Bases",
+      "qryptoItemsFound": 3,
+      "metaKnytsItemsFound": 7,
+      "veniceActivated": false,
+      "citations": [
+        { "title": "metaKnyts Codex — KnowOne", "url": "kb://metaknyts/knowone", "source": "metaKnyts KB" }
+      ],
+      "trustScores": { "sensitivity": 4, "verifiability": 5, "accuracy": 5, "risk": 1 }
+    }
+  },
+
+  "memory_subsystem": {
+    "sliding_window": {
+      "implementation": "src/services/aigent-conversation-service.ts → AigentConversationService",
+      "window_size": 8,
+      "description": "Last 8 exchanges (≈4 user/agent pairs) per conversationId, fetched via metadata.conversationId match.",
+      "cache": {
+        "type": "in-memory Map<conversationId, ConversationMemory>",
+        "ttl_minutes": 5,
+        "invalidation": "stale check on sessionContext.lastInteraction"
+      },
+      "context_budget": {
+        "max_context_chars": 3000,
+        "strategy": "truncate oldest exchanges first when budget exceeded"
+      },
+      "lookup_strategies_in_order": [
+        "1. interaction_type='aigent' AND metadata @> { conversationId }",
+        "2. interaction_type='learn' AND metadata @> { conversationId } (legacy)",
+        "3. metadata::text LIKE '%{conversationId}%' (string fallback)"
+      ]
+    },
+    "long_term_summarization": {
+      "trigger_threshold": 10,
+      "trigger_logic": "checkIfSummarizationNeeded() counts WHERE summarized=false AND metadata->>conversationId = :id; fires when ≥10.",
+      "edge_function": "supabase/functions/summarize-history/index.ts",
+      "summarizer_model": "gpt-4o-mini",
+      "max_summary_words": 250,
+      "max_tokens": 500,
+      "temperature": 0.5,
+      "post_actions": [
+        "Insert one conversation_summaries row with included_interaction_ids[]",
+        "PATCH each source user_interactions row to summarized=true"
+      ],
+      "prompt_template": "You are a helpful AI that summarizes conversations. Create a concise summary (maximum 250 words) of the following conversation between a user and an AI assistant about {agentType}-related topics. Focus on the key questions, insights, and takeaways. This summary will be used as context for future conversations."
+    },
+    "context_injection": {
+      "function": "getHistoricalContextForPrompt(agentType, maxSummaries=3)",
+      "output_format": "<conversation-history>\nThe user has had previous conversations with you. Here are summaries of past interactions:\n\nSummary 1 ({date}): {summary_text}\n\n...\n</conversation-history>",
+      "appended_to": "system prompt of the next agent invocation"
+    }
+  },
+
+  "persona_context_layer": {
+    "hook": "src/hooks/use-persona-context.ts → usePersonaContext()",
+    "service": "src/services/persona-context-service.ts → PersonaContextService",
+    "responsibilities": [
+      "Read 'selected-iqube' from localStorage to determine active persona.",
+      "Fetch matching blakQube row (qripto_personas or knyt_personas) for current auth.uid().",
+      "Build a ConversationContext object: { isAnonymous, personaType, displayName, profession, web3Interests, ... }.",
+      "Listen to qryptoPersonaActivated/Deactivated and knytPersonaActivated/Deactivated DOM events for real-time refresh.",
+      "Debounce refreshes (200ms) and gate them behind NavigationGuard to prevent compilation cascades."
+    ],
+    "context_injection_into_prompt": "PersonaContextService.generateContextualPrompt(context, topic) returns a markdown block summarizing the persona that is concatenated to the system prompt. Anonymous users get a generic greeting block."
+  },
+
+  "history_loading_pipeline_client": {
+    "hooks": [
+      {
+        "name": "useUserInteractionsOptimized",
+        "path": "src/hooks/useUserInteractionsOptimized.ts",
+        "tech": "@tanstack/react-query",
+        "queryKey": "['user-interactions', user.id, interactionType]",
+        "staleTime_ms": 300000,
+        "gcTime_ms": 600000,
+        "refetchOnWindowFocus": false,
+        "invalidation_event": "after every successful storeUserInteraction()"
+      },
+      {
+        "name": "useMessageHistory",
+        "path": "src/components/shared/agent/hooks/useMessageHistory.tsx",
+        "responsibility": "Convert raw user_interactions rows into AgentMessage[] (one user msg + one agent msg per row), sort chronologically, and merge with initialMessages."
+      }
+    ],
+    "row_to_message_mapping": {
+      "user_message": {
+        "id": "{interaction.id}-user",
+        "sender": "user",
+        "message": "interaction.query",
+        "timestamp": "interaction.created_at"
+      },
+      "agent_message": {
+        "id": "{interaction.id}-agent",
+        "sender": "agent",
+        "message": "interaction.response (RAW — no preprocessing)",
+        "timestamp": "interaction.created_at",
+        "metadata": "{ ...interaction.metadata, historicResponse: true, agentTheme: agentType, rawContent: true }"
+      }
+    },
+    "cache_busting": "On load, useMessageHistory clears sessionStorage and localStorage entries matching `${agentType}_conversation_cache_${user.id}` to drop any corrupted prior caches."
+  },
+
+  "write_path_pipeline": {
+    "entry": "src/services/user-interaction-service.ts → storeUserInteraction()",
+    "steps": [
+      "1. Resolve user_id via supabase.auth.getSession() if not provided.",
+      "2. Read localStorage['selected-iqube'] → activePersona.",
+      "3. Build enhancedMetadata = { ...callerMetadata, activePersona, timestamp }.",
+      "4. INSERT INTO user_interactions (query, response, interaction_type, metadata, user_id) RETURNING *.",
+      "5. Return { success, data: insertedRow }.",
+      "6. Caller (e.g. useAigent) invalidates the React Query cache."
+    ],
+    "alternate_entry": "src/services/agent-service.ts contains a fallback direct-insert path used by edge-function-driven flows."
+  },
+
+  "edge_functions": {
+    "agent_inference": [
+      { "name": "aigent-ai", "purpose": "Crypto-Agentic AI for the Aigent Nakamoto channel; multiplexes OpenAI vs Venice based on veniceActivated flag." },
+      { "name": "learn-ai", "purpose": "Learn channel agent." },
+      { "name": "earn-ai", "purpose": "Earn channel agent." },
+      { "name": "connect-ai", "purpose": "Connect channel agent." }
+    ],
+    "memory_management": [
+      { "name": "summarize-history", "purpose": "Rolls up unsummarized exchanges into a conversation_summaries row.", "auth": "Service role; called by triggerConversationSummarize from the client." }
+    ],
+    "history_migration": [
+      { "name": "naka-history-migrate", "purpose": "One-shot migration utility to backfill metadata.agentType on legacy 'learn' rows that should be 'aigent'." }
+    ]
+  },
+
+  "configuration_constants": {
+    "MEMORY_WINDOW_SIZE": 8,
+    "MAX_CONTEXT_LENGTH_CHARS": 3000,
+    "CACHE_TTL_MINUTES": 5,
+    "SUMMARIZATION_THRESHOLD": 10,
+    "SUMMARY_EXPIRATION_DAYS": 30,
+    "DEFAULT_SUMMARIES_IN_PROMPT": 3,
+    "REACT_QUERY_STALE_TIME_MS": 300000,
+    "REACT_QUERY_GC_TIME_MS": 600000,
+    "PERSONA_CONTEXT_DEBOUNCE_MS": 200,
+    "DEFAULT_FETCH_LIMIT": 50,
+    "SUMMARIZER_MODEL": "gpt-4o-mini",
+    "SUMMARIZER_MAX_TOKENS": 500,
+    "SUMMARIZER_TEMPERATURE": 0.5,
+    "SUMMARIZER_MAX_WORDS": 250
+  },
+
+  "security_model": {
+    "authentication": "Supabase Auth (JWT via auth.uid()).",
+    "authorization": "RLS-only — every read/write is gated by auth.uid() = user_id. No service-role calls from the client.",
+    "isolation": [
+      "Row-level: a user can never see another user's interactions or summaries.",
+      "Persona-level: filtering by activePersona happens client-side; persona is not a cryptographic boundary, only an organizational tag within a user's own data."
+    ],
+    "service_role_use": "Only the summarize-history edge function uses SUPABASE_SERVICE_ROLE_KEY (to bypass RLS for the summarize+mark-summarized atomic operation).",
+    "pii_handling": "query and response columns may contain PII. They inherit RLS isolation. Persona PII (names, wallets, OM tier) lives in qripto_personas / knyt_personas — see persona-iqube-schema-spec.json."
+  },
+
+  "replication_guide_for_as_api": {
+    "prerequisites": [
+      "AS-API issues a DID (decentralized identifier) per user.",
+      "A relational store (Postgres or equivalent) with row-level filtering by DID.",
+      "An LLM gateway capable of chat-completion calls (for inference + summarization)."
+    ],
+    "steps": [
+      "1. Map AS-API DID → user_id (uuid). Use the DID as the partition key on every table.",
+      "2. Create equivalents of user_interactions and conversation_summaries with the schema above; replace 'auth.uid()' in policies with your DID-bearing claim.",
+      "3. Implement a persona resolver: read the active persona identifier from your client state and inject it as metadata.activePersona on every write.",
+      "4. Implement a write API matching storeUserInteraction (query, response, interaction_type, metadata). Always merge in { activePersona, timestamp, conversationId } server-side or in the client wrapper.",
+      "5. Implement a read API matching getUserInteractions with optional interaction_type filter. Return rows ordered by created_at DESC, limit/offset paginated.",
+      "6. Implement the sliding-window memory loader (last 8 rows by metadata.conversationId match). Include the legacy fallback strategies if you have pre-existing data.",
+      "7. Implement the summarization worker: every Nth interaction per (user, conversationId) where summarized=false, call your LLM with the summarizer prompt; persist the summary; flip summarized=true.",
+      "8. Implement getHistoricalContextForPrompt(agentType, k=3) — return top-k recent summaries formatted as <conversation-history>...</conversation-history>.",
+      "9. Concatenate persona context block + historical summaries block + sliding window transcript into the system prompt of every inference call.",
+      "10. On the client, use a query-cache library (React Query or equivalent) keyed by (user_id, interaction_type); invalidate after every write."
+    ],
+    "compatibility_notes": [
+      "If you do not need multiple agent channels, fix interaction_type to a single value but keep the column for future expansion.",
+      "If your persona model has more than two personas, simply add new values to metadata.activePersona — no schema change required.",
+      "metadata is JSONB on Postgres. On other stores, use a JSON-typed column with a GIN-equivalent index for containment queries."
+    ]
+  },
+
+  "files_of_record": {
+    "client_services": [
+      "src/services/user-interaction-service.ts",
+      "src/services/aigent-conversation-service.ts",
+      "src/services/agent-service.ts",
+      "src/services/persona-context-service.ts",
+      "src/services/conversation-summarizer.ts",
+      "src/services/conversation/conversation-context.ts",
+      "src/services/conversation/conversation-history.ts",
+      "src/services/conversation/conversation-summary.ts"
+    ],
+    "client_hooks": [
+      "src/hooks/use-persona-context.ts",
+      "src/hooks/useUserInteractionsOptimized.ts",
+      "src/hooks/use-user-interactions.ts",
+      "src/components/shared/agent/hooks/useMessageHistory.tsx"
+    ],
+    "edge_functions": [
+      "supabase/functions/summarize-history/index.ts",
+      "supabase/functions/aigent-ai/index.ts",
+      "supabase/functions/learn-ai/index.ts",
+      "supabase/functions/earn-ai/index.ts",
+      "supabase/functions/connect-ai/index.ts",
+      "supabase/functions/naka-history-migrate/index.ts"
+    ],
+    "tables": [
+      "public.user_interactions",
+      "public.conversation_summaries",
+      "public.user_sessions",
+      "public.chat_sessions",
+      "public.qripto_personas",
+      "public.knyt_personas"
+    ]
+  }
+}
